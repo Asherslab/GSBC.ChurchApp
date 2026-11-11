@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Toolbar on the phone</title>
+<link rel="stylesheet" href="kit.css"><script src="icons.js"></script><script src="kit.js"></script>
+<style>
+.ph-tools { display: flex; align-items: center; gap: 8px; }
+.ph-tools .btn--primary { flex: 1; }
+.ph-tools + .segmented { margin-top: 14px; }
+.ph-menu { position: absolute; right: 20px; top: 214px; z-index: 40; min-width: 230px; padding: 6px; border-radius: var(--radius); background: var(--surface); box-shadow: inset 0 0 0 1px var(--line), 0 18px 40px -12px rgb(0 0 0 / 0.35); }
+.ph-menu .menu__item { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 44px; padding: 0 12px; border: 0; border-radius: var(--radius-inner); background: none; color: var(--ink); font-size: var(--text-row); font-weight: 600; }
+.ph-menu .icon { color: var(--ink-3); }
+.week { display: flex; align-items: center; justify-content: space-between; margin-top: 14px; font-weight: 600; font-size: var(--text-label); }
+</style></head>
+<body class="sk-phone" data-tab="More">
+<div class="sk-screen"><div class="page-scroll"><header class="topbar topbar--solid"><div class="topbar__start"><button class="icon-btn icon-btn--back"><i data-icon="chevron-left" data-size="md"></i>Production</button></div><div class="topbar__title">Roster</div><div class="topbar__end"></div></header><div class="page"><section class="section section--first"><div class="section__head"><h2 class="section__title">The roster</h2></div>
+<div class="ph-tools"><button class="btn btn--primary"><i data-icon="plus"></i>Add a date</button><button class="btn btn--quiet btn--icon" aria-label="More" aria-expanded="true"><i data-icon="ellipsis" data-size="md"></i></button></div>
+<div class="segmented" role="radiogroup"><button class="segmented__option" role="radio" aria-checked="true">By date</button><button class="segmented__option" role="radio" aria-checked="false">Grid</button></div>
+<div class="week"><button class="icon-btn" style="color:var(--ink-2)"><i data-icon="chevron-left"></i></button>November<button class="icon-btn" style="color:var(--ink-2)"><i data-icon="chevron-right"></i></button></div>
+<div class="list" style="margin-top:6px"><div class="row"><span class="row__icon"><i data-icon="calendar"></i></span><span class="row__body"><span class="row__title">Sun 15 Nov · 10:30am</span><span class="row__subtitle">Sound: Alex Sample · Lights: Robin Sample</span></span><span class="row__trail">2 of 3</span></div><div class="row"><span class="row__icon"><i data-icon="calendar"></i></span><span class="row__body"><span class="row__title">Sun 22 Nov · 10:30am</span><span class="row__subtitle">Sound: Sam Example</span></span><span class="row__trail">1 of 3</span></div><div class="row"><span class="row__icon"><i data-icon="calendar"></i></span><span class="row__body"><span class="row__title">Sun 29 Nov · 10:30am</span><span class="row__subtitle">Nobody yet</span></span><span class="row__trail">0 of 3</span></div></div></section>
+<div class="ph-menu"><button class="menu__item"><i data-icon="users"></i>Positions</button><button class="menu__item"><i data-icon="info"></i>How it works</button></div></div></div></div>
+</body></html>

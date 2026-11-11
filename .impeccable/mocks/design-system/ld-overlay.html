@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>List and detail: a drawer over the list</title>
+<link rel="stylesheet" href="kit.css"><script src="icons.js"></script><script src="kit.js"></script>
+<style>
+.admin-main { position: relative; overflow: hidden; }
+.toolbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
+.toolbar .search-field { flex: 1 1 260px; max-width: 360px; }
+.toolbar .filter-chips { flex-wrap: nowrap; }
+.data-table__row[aria-selected="true"] td { background: var(--selected-fill); }
+.dim { position: absolute; inset: 0; background: var(--scrim); opacity: 0.55; }
+.drawer { position: absolute; top: 0; right: 0; bottom: 0; width: 520px; background: var(--surface); box-shadow: -18px 0 32px var(--scrim); display: flex; flex-direction: column; }
+.drawer__head { display: flex; align-items: flex-start; gap: 10px; padding: 24px 28px 0; }
+.drawer__head h2 { font-size: var(--text-title-lg); letter-spacing: -0.02em; line-height: 1.2; }
+.drawer__head p { color: var(--ink-2); font-size: var(--text-caption); margin-top: 4px; }
+.drawer__tools { display: flex; gap: 2px; margin-top: -6px; margin-left: auto; }
+.drawer__tools .icon-btn { color: var(--ink-2); }
+.drawer__tabs { padding: 10px 28px 0; }
+.drawer__body { flex: 1; overflow: auto; padding: 0 28px 24px; }
+.pane-section { margin-top: 22px; }
+.pane-section h3 { font-size: var(--text-label); font-weight: 700; margin-bottom: 8px; }
+.drawer__foot { padding: 14px 28px 18px; border-top: 1px solid var(--line); display: flex; gap: 8px; align-items: center; }
+.drawer__foot .grow { flex: 1; }
+.btn--danger-quiet { background: none; color: var(--danger); padding: 0 6px; }
+.esc { display: inline-flex; align-items: center; gap: 6px; color: var(--ink-3); font-size: var(--text-caption); }
+kbd { font: inherit; font-size: var(--text-pill); font-weight: 700; padding: 1px 6px; border-radius: 6px; background: var(--field); color: var(--ink-2); }
+</style></head>
+<body class="sk-admin" data-current="People">
+<main>
+  <header class="title-band"><div class="title-band__text"><h1 class="title-band__title">People</h1><p class="title-band__lead">Everyone with an account. Choose someone and their record slides in over the list; Esc puts it away.</p></div>
+    <div class="title-band__actions"><button class="btn btn--primary"><i data-icon="plus"></i>Add someone</button></div></header>
+  <div class="toolbar">
+    <label class="search-field"><i data-icon="search"></i><input class="search-field__input" placeholder="Find someone by name or email"></label>
+    <div class="filter-chips"><button class="filter-chip filter-chip--on">Everyone<span class="filter-chip__count">22</span></button><button class="filter-chip">Not invited yet<span class="filter-chip__count">13</span></button><button class="filter-chip">No passkey yet<span class="filter-chip__count">6</span></button></div>
+  </div>
+  <div class="data-table"><div class="data-table__scroll"><table class="data-table__table">
+    <thead><tr><th>Name</th><th>Email</th><th>Account</th><th>Ministries</th><th class="num">Joined</th></tr></thead>
+    <tbody>
+      <tr class="data-table__row"><td><span class="cell-strong">Alex Sample</span></td><td><span class="quiet">alex@example.com</span></td><td><span class="pill pill--quiet">Not invited yet</span></td><td><span class="quiet">Production</span></td><td class="num">Wed 11 Nov</td></tr>
+      <tr class="data-table__row" aria-selected="true"><td><span class="cell-strong">Jordan Example</span></td><td><span class="quiet">jordan@example.com</span></td><td><span class="quiet">Ready</span></td><td><span class="quiet">Impact Kids, Production</span></td><td class="num">Sun 1 Nov</td></tr>
+      <tr class="data-table__row"><td><span class="cell-strong">Robin Sample</span></td><td><span class="quiet">robin@example.com</span></td><td><span class="pill">No passkey yet</span></td><td><span class="quiet">Music</span></td><td class="num">Mon 2 Nov</td></tr>
+      <tr class="data-table__row"><td><span class="cell-strong">Sam Example</span></td><td><span class="quiet">sam@example.com</span></td><td><span class="quiet">Ready</span></td><td><span class="quiet">Life Groups</span></td><td class="num">Fri 30 Oct</td></tr>
+      <tr class="data-table__row"><td><span class="cell-strong">Taylor Sample</span></td><td><span class="quiet">taylor@example.com</span></td><td><span class="pill pill--quiet">Not invited yet</span></td><td><span class="quiet">—</span></td><td class="num">Thu 29 Oct</td></tr>
+      <tr class="data-table__row"><td><span class="cell-strong">Casey Example</span></td><td><span class="quiet">casey@example.com</span></td><td><span class="quiet">Ready</span></td><td><span class="quiet">Impact Youth</span></td><td class="num">Tue 27 Oct</td></tr>
+    </tbody></table></div></div>
+  <div class="dim"></div>
+  <aside class="drawer" role="dialog" aria-label="Jordan Example">
+    <div class="drawer__head"><div><h2>Jordan Example</h2><p>jordan@example.com · joined Sun 1 Nov</p></div>
+      <div class="drawer__tools"><button class="icon-btn" title="Open as a page"><i data-icon="maximize-2"></i></button><button class="icon-btn" title="Close"><i data-icon="x"></i></button></div></div>
+    <div class="drawer__tabs"><div class="tab-strip"><button class="tab-strip__tab" aria-selected="true">Roles</button><button class="tab-strip__tab" aria-selected="false">Family</button><button class="tab-strip__tab" aria-selected="false">Safeguarding</button><button class="tab-strip__tab" aria-selected="false">Account</button></div></div>
+    <div class="drawer__body">
+      <div class="pane-section"><h3>Their roles</h3>
+        <div class="list"><div class="row"><span class="row__body"><span class="row__title">Leader</span><span class="row__subtitle">Impact Kids</span></span></div><div class="row"><span class="row__body"><span class="row__title">Member</span><span class="row__subtitle">Production</span></span></div></div></div>
+      <div class="pane-section"><h3>What they can do</h3><p class="hint" style="margin-top:0">Post news and files in Impact Kids, see its people and roster, approve its join requests.</p></div>
+    </div>
+    <div class="drawer__foot"><button class="btn btn--quiet">Send a recovery link</button><span class="esc"><kbd>Esc</kbd> closes</span><span class="grow"></span><button class="btn btn--danger-quiet">Turn off…</button></div>
+  </aside>
+</main>
+</body></html>

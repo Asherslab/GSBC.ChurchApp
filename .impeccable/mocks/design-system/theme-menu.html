@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Admin light and dark: in an account menu</title>
+<link rel="stylesheet" href="kit.css"><script src="icons.js"></script><script src="kit.js"></script>
+<style>.sk-mseg { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; padding: 3px; margin: 0 0 10px; border-radius: var(--radius-field); background: var(--field); }
+.sk-mseg button { min-width: 0; padding: 0 4px; display: inline-flex; align-items: center; justify-content: center; gap: 4px; min-height: 34px; border: 0; border-radius: var(--radius-inner); background: none; color: var(--ink-2); font-size: var(--text-caption); font-weight: 600; }
+.sk-mseg button[aria-checked="true"] { background: var(--surface); color: var(--primary); box-shadow: var(--segment-shadow); }
+.sk-menu { position: fixed; z-index: 60; left: 14px; bottom: 96px; width: 280px; padding: 12px; border-radius: var(--radius); background: var(--surface); box-shadow: 0 0 0 1px var(--line), 0 18px 40px -12px var(--scrim); }
+.sk-menu .who { padding: 4px 6px 12px; border-bottom: 1px solid var(--line); margin-bottom: 12px; }
+.sk-menu .who b { display: block; font-size: var(--text-row); } .sk-menu .who span { color: var(--ink-2); font-size: var(--text-caption); }
+.sk-menu .lbl { font-size: var(--text-caption); font-weight: 600; color: var(--ink-2); margin: 0 6px 6px; }
+.sk-menu .item { display: flex; align-items: center; gap: 10px; min-height: 40px; padding: 0 8px; border-radius: var(--radius-inner); font-size: var(--text-label); font-weight: 600; color: var(--ink); }
+.sk-menu .item .icon { color: var(--ink-2); }
+.sk-menu .sk-mseg button[aria-checked="true"] { background: var(--segment-on); color: var(--ink); }
+.sk-menu hr { border: 0; border-top: 1px solid var(--line); margin: 8px 0; }</style></head>
+<body class="sk-admin" data-current="Home"><main><header class="title-band"><div class="title-band__text"><h1 class="title-band__title">Home</h1><p class="title-band__lead">What's on this week, and what needs you.</p></div></header>
+<section class="section" style="padding:0;margin-top:8px;max-width:720px"><div class="section__head"><h2 class="section__title">Needs you</h2></div>
+<div class="list"><div class="row"><span class="row__icon row__icon--warm"><i data-icon="heart"></i></span><span class="row__body"><span class="row__title">2 prayer requests to read</span><span class="row__subtitle">Sent since Sunday</span></span><i data-icon="chevron-right"></i></div>
+<div class="row"><span class="row__icon"><i data-icon="calendar"></i></span><span class="row__body"><span class="row__title">Family games night needs a picture</span><span class="row__subtitle">Sun 15 Nov</span></span><i data-icon="chevron-right"></i></div>
+<div class="row"><span class="row__icon"><i data-icon="users"></i></span><span class="row__body"><span class="row__title">3 people asked to join Production</span><span class="row__subtitle">Waiting for a leader</span></span><i data-icon="chevron-right"></i></div></div></section></main>
+<script>document.addEventListener("DOMContentLoaded",()=>setTimeout(()=>{document.querySelectorAll(".module-nav__link").forEach(a=>{ if(a.textContent.trim()==="Account") a.style.background="var(--masthead-chip)";});
+document.body.insertAdjacentHTML("beforeend",`<div class="sk-menu" role="menu"><div class="who"><b>Jordan Example</b><span>jordan@example.com</span></div><p class="lbl">Light or dark</p><div class="sk-mseg" role="radiogroup"><button class="segmented__option" role="radio" aria-checked="false"><i data-icon="sun-moon"></i>Auto</button><button class="segmented__option" role="radio" aria-checked="false"><i data-icon="sun"></i>Light</button><button class="segmented__option" role="radio" aria-checked="true"><i data-icon="moon"></i>Dark</button></div><hr><div class="item"><i data-icon="user"></i>Your account</div><div class="item"><i data-icon="log-out"></i>Sign out</div></div>`);fillIcons(document);},0));</script></body></html>

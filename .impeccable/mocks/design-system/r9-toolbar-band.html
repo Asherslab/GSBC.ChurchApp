@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Toolbar: search in the title band</title>
+<link rel="stylesheet" href="kit.css"><script src="icons.js"></script><script src="kit.js"></script>
+<style>
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(168px, 1fr)); gap: 20px 14px; }
+.tile b { display: block; margin-top: 8px; font-size: var(--text-caption); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tile span { display: block; font-size: var(--text-caption); color: var(--ink-3); }
+.tile__thumb { aspect-ratio: 4 / 3; border-radius: var(--radius-field); background: var(--sand-strong); display: grid; place-items: center; color: var(--ink-3); }
+.crumbs { display: flex; align-items: center; gap: 4px; min-height: 36px; margin-bottom: 14px; font-size: var(--text-label); color: var(--ink-2); }
+.crumbs b { color: var(--ink); }
+.seg-auto { grid-auto-columns: auto; } .seg-auto button { padding: 0 14px; }
+.toolbar { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+.toolbar .search-field { flex: 0 1 300px; }
+.toolbar .spacer { flex: 1; }
+.menu { position: absolute; z-index: 20; min-width: 240px; padding: 6px; border-radius: var(--radius-field); background: var(--surface); box-shadow: inset 0 0 0 1px var(--line), var(--lift); }
+.menu__item { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 40px; padding: 0 10px; border: 0; border-radius: var(--radius-inner); background: none; color: var(--ink); font-size: var(--text-label); font-weight: 600; text-align: left; }
+.menu__item:hover, .menu__item.is-active { background: var(--selected-fill); }
+.menu__item .icon { color: var(--ink-3); }
+.menu__sep { height: 1px; margin: 6px 4px; background: var(--line); }
+.menu__label { padding: 6px 10px 2px; font-size: var(--text-caption); font-weight: 600; color: var(--ink-3); }
+.toolbar .filter-chips { flex-wrap: nowrap; }
+.toolbar .search-field { flex: 1 1 200px; min-width: 170px; max-width: 300px; }
+.chip-menu { display: none; }
+@media (max-width: 1200px) { .toolbar .filter-chips { display: none; } .chip-menu { display: inline-flex; } }
+.title-band__actions { flex-wrap: nowrap; }
+
+</style></head>
+<body class="sk-admin" data-current="Media">
+<main><header class="title-band"><div class="title-band__text"><h1 class="title-band__title">Media</h1><p class="title-band__lead">Every picture and file the app uses, in folders.</p></div><div class="title-band__actions"><label class="search-field" style="flex:0 0 250px"><i data-icon=search></i><input class="search-field__input" placeholder="Find a picture or file"></label><button class="btn btn--quiet"><i data-icon="folder-plus"></i>New folder</button><button class="btn btn--primary"><i data-icon="plus"></i>Upload</button></div></header><div class="toolbar"><div class="filter-chips"><button class="filter-chip filter-chip--on">Everything<span class="filter-chip__count">48</span></button><button class="filter-chip">Pictures<span class="filter-chip__count">41</span></button><button class="filter-chip">PDFs<span class="filter-chip__count">7</span></button></div><span class="spacer"></span><button class="btn btn--quiet btn--small"><i data-icon="sliders-horizontal"></i>Not used yet</button><div class="segmented seg-auto" role="radiogroup" aria-label="Show as"><button class="segmented__option" role="radio" aria-checked="true"><i data-icon="layout-grid"></i>Grid</button><button class="segmented__option" role="radio" aria-checked="false"><i data-icon="list"></i>List</button></div></div><div class="crumbs"><span>Library</span><i data-icon="chevron-right"></i><span>Events</span><i data-icon="chevron-right"></i><b>2026</b></div><div class="grid"><div class="tile"><div class="tile__thumb"><i data-icon="image"></i></div><b>Easter 2026 banner</b><span>Used in 3 places</span></div><div class="tile"><div class="tile__thumb"><i data-icon="file"></i></div><b>Kids camp permission form</b><span>PDF · Not used yet</span></div><div class="tile"><div class="tile__thumb"><i data-icon="image"></i></div><b>Summer Fit series art</b><span>Used in 6 places</span></div><div class="tile"><div class="tile__thumb"><i data-icon="image"></i></div><b>Baptism Sunday photos</b><span>Used in 1 place</span></div><div class="tile"><div class="tile__thumb"><i data-icon="image"></i></div><b>Welcome card</b><span>Used in 2 places</span></div><div class="tile"><div class="tile__thumb"><i data-icon="file"></i></div><b>Church map</b><span>PDF · Used in 1 place</span></div><div class="tile"><div class="tile__thumb"><i data-icon="image"></i></div><b>Youth night poster</b><span>Not used yet</span></div><div class="tile"><div class="tile__thumb"><i data-icon="image"></i></div><b>Christmas carols</b><span>Used in 4 places</span></div></div></main>
+</body></html>

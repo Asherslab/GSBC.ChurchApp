@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Settings sections: grouped on sand</title>
+<link rel="stylesheet" href="kit.css"><script src="icons.js"></script><script src="kit.js"></script>
+<style>
+.place { display: flex; align-items: center; gap: 12px; min-height: 56px; }
+.instant { display: flex; align-items: center; gap: 6px; margin-top: 10px; color: var(--ink-2); font-size: var(--text-caption); font-weight: 600; }
+.instant .icon { color: var(--accent); }
+.add-row { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; border: 0; background: none; color: var(--accent); font-size: var(--text-label); font-weight: 600; }
+.danger { display: flex; align-items: center; gap: 16px; justify-content: space-between; padding: 14px 0; border-bottom: 1px solid var(--line); }
+.danger:first-child { border-top: 1px solid var(--line); }
+.danger b { font-size: var(--text-row); }
+.danger p { color: var(--ink-2); font-size: var(--text-caption); margin-top: 2px; max-width: 60ch; }
+.stack { display: grid; gap: var(--stack); }
+.ui-pair { align-items: start; }
+.toggle-row:last-of-type { border-bottom: 0; }
+.admin-main { background: var(--sand); }
+.grp { max-width: 760px; display: grid; gap: 28px; }
+.grp__sec h2 { font-size: var(--text-label); font-weight: 700; color: var(--ink-2); margin: 0 0 8px 16px; }
+.grp__box { border-radius: var(--radius); background: var(--page); padding: 6px 18px; }
+.grp__box > .stack { padding: 14px 0; }
+.grp__lead { color: var(--ink-2); font-size: var(--text-caption); margin: 8px 16px 0; }
+.grp__foot { display: flex; align-items: center; gap: 12px; margin: 10px 0 0; padding-left: 4px; }
+.grp__foot .instant { margin: 0; }
+.grp .danger:first-child { border-top: 0; }
+.grp .danger:last-child { border-bottom: 0; }
+.grp .list { border-top: 0; }
+.grp .field__input, .grp .segmented { background: var(--field); }
+.title-band { margin-bottom: 0; }
+.title-band .btn--quiet { background: var(--page); }
+:root[data-scheme="dark"] .admin-main { background: var(--page); }
+:root[data-scheme="dark"] .grp__box, :root[data-scheme="dark"] .title-band .btn--quiet { background: var(--surface); }
+</style></head>
+<body class="sk-admin" data-current="Ministries">
+<main><header class="title-band"><div class="title-band__text"><h1 class="title-band__title">Kids Ministries</h1><p class="title-band__lead">Serving team · for ages 4 to 11 · 9 leaders and team, 34 attending</p></div>
+<div class="title-band__actions"><button class="btn btn--quiet"><i data-icon="eye"></i>See it in the app</button></div></header>
+<div class="tab-strip" role="tablist" style="margin-bottom:24px"><button class="tab-strip__tab" role="tab" aria-selected="false">About</button><button class="tab-strip__tab" role="tab" aria-selected="false">News</button><button class="tab-strip__tab" role="tab" aria-selected="false">Calendar</button><button class="tab-strip__tab" role="tab" aria-selected="false">Files</button><button class="tab-strip__tab" role="tab" aria-selected="false">People</button><button class="tab-strip__tab" role="tab" aria-selected="true">Settings</button></div><div class="grp"><section class="grp__sec"><h2>The details</h2><div class="grp__box"><div class="stack"><div class="ui-pair"><label class="field"><span class="field__label">Name</span><input class="field__input" value="Kids Ministries"></label><label class="field"><span class="field__label">Ages</span><input class="field__input" value="4 to 11"><span class="field__hint">Shown on the ministry page</span></label></div>
+<label class="field"><span class="field__label">What it's about</span><textarea class="field__input field__input--multiline" style="min-height:76px">Sunday mornings for primary-school kids: Bible stories, songs and a lot of craft.</textarea></label>
+<div class="field"><span class="field__label">How people join</span><div class="segmented" role="radiogroup"><button class="segmented__option" role="radio" aria-checked="true">They ask, a leader says yes</button><button class="segmented__option" role="radio" aria-checked="false">Leaders add them</button></div></div></div></div><p class="grp__lead">What people see on the ministry's page.</p><div class="grp__foot"><div class="save-bar"><button class="btn btn--primary">Save the details</button><p class="save-status save-status--unsaved"><i data-icon="pencil"></i><span>You have changes that aren't saved</span></p></div></div></section><section class="grp__sec"><h2>What it uses</h2><div class="grp__box"><div class="stack"><label class="toggle-row"><span class="toggle-row__body"><span class="toggle-row__title">News</span><span class="toggle-row__description">Leaders post updates for the team and families</span></span><span class="switch"><input type="checkbox" checked><span></span></span></label><label class="toggle-row"><span class="toggle-row__body"><span class="toggle-row__title">Calendar</span><span class="toggle-row__description">Its own calendar of dates</span></span><span class="switch"><input type="checkbox" checked><span></span></span></label><label class="toggle-row"><span class="toggle-row__body"><span class="toggle-row__title">Files</span><span class="toggle-row__description">Documents and links for its people</span></span><span class="switch"><input type="checkbox" checked><span></span></span></label><label class="toggle-row"><span class="toggle-row__body"><span class="toggle-row__title">Chats</span><span class="toggle-row__description">Group chats for the team</span></span><span class="switch"><input type="checkbox" ><span></span></span></label><label class="toggle-row"><span class="toggle-row__body"><span class="toggle-row__title">Roster</span><span class="toggle-row__description">Who's on each Sunday</span></span><span class="switch"><input type="checkbox" checked><span></span></span></label></div></div><p class="grp__lead">Turn parts of the ministry on or off.</p><div class="grp__foot"><p class="instant"><i data-icon="check"></i>These change straight away.</p></div></section><section class="grp__sec"><h2>Where it sits</h2><div class="grp__box"><div class="stack"><div class="place"><span class="row__icon"><i data-icon="users"></i></span><span class="row__body"><span class="row__title">Under Children &amp; Families</span><span class="row__subtitle">Shown with Youth and Playgroup</span></span><button class="btn btn--quiet btn--small">Change</button></div></div></div><p class="grp__lead">Which ministry it's listed under in the app.</p></section><section class="grp__sec"><h2>Ministries under it</h2><div class="grp__box"><div class="stack"><div class="list"><div class="row"><span class="row__icon"><i data-icon="users"></i></span><span class="row__body"><span class="row__title">Kids Ministries Junior</span><span class="row__subtitle">Ages 4 to 7 · 5 leaders</span></span><i data-icon="chevron-right"></i></div><div class="row"><span class="row__icon"><i data-icon="users"></i></span><span class="row__body"><span class="row__title">Kids Ministries Senior</span><span class="row__subtitle">Ages 8 to 11 · 4 leaders</span></span><i data-icon="chevron-right"></i></div></div>
+<button class="add-row"><i data-icon="plus"></i>Add a ministry under it</button></div></div><p class="grp__lead">Smaller teams with their own leaders.</p></section><section class="grp__sec"><h2>Archive or delete</h2><div class="grp__box"><div class="stack"><div class="danger"><div><b>Archive Kids Ministries</b><p>It leaves the app but keeps its people, news and files. You can bring it back.</p></div><button class="btn btn--quiet">Archive…</button></div>
+<div class="danger"><div><b>Delete Kids Ministries</b><p>Its news, calendar and files go too. This can't be undone.</p></div><button class="btn btn--danger">Delete…</button></div></div></div></section></div></main><p class="sk-note">Sketch · Ministry → Settings. The details save with a button; the parts below change straight away.</p>
+</body></html>
