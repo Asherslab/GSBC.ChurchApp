@@ -7,17 +7,22 @@ namespace GSBC.ChurchApp.Features.Ministries.Client;
 
 public sealed class QueuedMinistryWrites(IOutbox outbox) : IMinistryWrites
 {
-    public async Task<JoinOutcome> JoinAsync(MinistryDetails ministry, string personId, string place, string note)
+    public async Task<JoinOutcome> JoinAsync(MinistryDetails ministry, string personId, string place, string note, bool parentFirst = false)
     {
         await SendAsync(MinistryMethods.Join, new JoinRequest { MinistryId = ministry.Id, PersonId = personId, As = place, Note = note });
         bool open = (place == Places.Team ? ministry.TeamJoin : ministry.AttendJoin) == Joining.Open;
-        return open
+        return parentFirst
+            ? new JoinOutcome { Asked = true, Words = "Asked. A parent of yours says yes first, and you'll hear in the app." }
+            : open
             ? new JoinOutcome { Joined = true, Words = $"You're in {ministry.Name}." }
             : new JoinOutcome { Asked = true, Words = "Asked. A leader says yes or no, and you'll hear in the app." };
     }
 
     public Task LeaveAsync(string ministryId, string personId, string place) =>
         SendAsync(MinistryMethods.Leave, new JoinRequest { MinistryId = ministryId, PersonId = personId, As = place });
+
+    public Task ParentAnswerAsync(string ministryId, string askId, bool yes) =>
+        SendAsync(MinistryMethods.ParentAnswer, new AskRef { MinistryId = ministryId, AskId = askId, Yes = yes });
 
     public Task WithdrawAsync(string ministryId, string askId) => SendAsync(MinistryMethods.Withdraw, new AskRef { MinistryId = ministryId, AskId = askId });
 

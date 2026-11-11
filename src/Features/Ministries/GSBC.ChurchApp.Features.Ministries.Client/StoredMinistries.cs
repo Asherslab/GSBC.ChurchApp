@@ -129,6 +129,8 @@ public sealed class StoredMinistries(ILocalFeeds feeds, IAccess access, TimeProv
             })
             .ToList();
         you.Asked = here.Where(ask => ask.PersonId == yours.PersonId || ask.AskedById == yours.PersonId).ToList();
+        you.Minor = yours.Minor;
+        you.ForYourYes = here.Where(ask => ask.WaitingForParent && ask.AskedById != yours.PersonId && yours.Children.Any(child => child.Id == ask.PersonId)).ToList();
         if (access.Can(MinistriesPermissions.Post, ministry.Id))
             you.MayPostFor = [.. MinistryLogic.PostableAudiences(ministry.AttendJoin)];
         you.MayManagePeople = access.Can(MinistriesPermissions.People, ministry.Id);

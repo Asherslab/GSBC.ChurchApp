@@ -41,6 +41,7 @@ public sealed class AskRecord
     public Guid AskedBy { get; set; }
     public string Note { get; set; } = "";
     public DateTime AskedAt { get; set; }
+    public bool WaitingForParent { get; set; }
 }
 
 public sealed class PostRecord

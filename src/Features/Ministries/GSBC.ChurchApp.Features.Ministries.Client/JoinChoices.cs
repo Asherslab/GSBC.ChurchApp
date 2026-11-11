@@ -18,7 +18,7 @@ public static class JoinChoices
                 choices.Add(Choice(child.Id, Places.Attending, $"{child.Name}, to come along", ministry.AttendJoin, child.Name,
                     child.Asked, child.Age is { } age ? $"{age}" : ""));
         if (!you.Roles.Contains(Roles.Team) && !you.Roles.Contains(Roles.Leader) && !you.Roles.Contains(Roles.Admin))
-            choices.Add(Choice("", Places.Team, "Me, on the team", ministry.TeamJoin, "", Waiting(you, "", Places.Team)));
+            choices.Add(you.Minor ? ParentFirst(ministry.TeamJoin, you) : Choice("", Places.Team, "Me, on the team", ministry.TeamJoin, "", Waiting(you, "", Places.Team)));
         return choices;
     }
 
@@ -26,6 +26,18 @@ public static class JoinChoices
 
     private static bool Waiting(YourPlace you, string personId, string place) =>
         you.Asked.Any(ask => ask.As == place && (personId.Length == 0 ? ask.AskedBy.Length == 0 : ask.PersonId == personId));
+
+    private static JoinChoice ParentFirst(string joining, YourPlace you)
+    {
+        AskLine? asked = you.Asked.FirstOrDefault(ask => ask.As == Places.Team && ask.AskedBy.Length == 0);
+        string? refusal = asked is { WaitingForParent: true } ? "Already asked. Waiting for a parent of yours."
+            : asked is not null ? "Already asked. Waiting for a leader."
+            : joining == Joining.Invite ? "Leaders invite people. Ask a leader about joining."
+            : null;
+        return new JoinChoice("", Places.Team, "Me, on the team",
+            joining == Joining.Open ? "A parent of yours says yes, then you're on the team" : "A parent of yours says yes, then a leader does",
+            "Ask a parent", joining == Joining.Ask, refusal);
+    }
 
     private static JoinChoice Choice(string personId, string place, string title, string joining, string childName, bool waiting, string age = "")
     {

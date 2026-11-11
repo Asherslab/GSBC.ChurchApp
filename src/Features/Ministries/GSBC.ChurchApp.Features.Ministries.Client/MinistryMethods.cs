@@ -9,6 +9,7 @@ public static class MinistryMethods
     public const string Join = Ministries + "Join";
     public const string Leave = Ministries + "Leave";
     public const string Withdraw = Ministries + "Withdraw";
+    public const string ParentAnswer = Ministries + "ParentAnswer";
     public const string Answer = Leading + "Answer";
     public const string ChangePerson = Leading + "ChangePerson";
     public const string LinkParent = Leading + "LinkParent";
@@ -32,6 +33,7 @@ public static class MinistryMethods
         "Join" => "your ask to join",
         "Leave" => "leaving",
         "Withdraw" => "taking back your ask",
+        "ParentAnswer" => "your answer for your child",
         "Answer" => "your answer to an ask",
         "ChangePerson" or "LinkParent" => "a change to its people",
         "SavePost" => "a post",

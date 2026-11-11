@@ -56,6 +56,10 @@ namespace GSBC.ChurchApp.Features.Ministries.Api.Data.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("person_id");
 
+                    b.Property<bool>("WaitingForParent")
+                        .HasColumnType("boolean")
+                        .HasColumnName("waiting_for_parent");
+
                     b.HasKey("Id")
                         .HasName("pk_asks");
 

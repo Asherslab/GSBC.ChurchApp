@@ -21,7 +21,10 @@ public sealed class OnlineMinistries(ChannelBase channel) : IMinistryReads, IMin
 
     public async Task<PeopleList> PeopleAsync(string ministryId) => await _leading.PeopleAsync(new MinistryRef { MinistryId = ministryId });
 
-    public async Task<JoinOutcome> JoinAsync(MinistryDetails ministry, string personId, string place, string note) =>
+    public async Task ParentAnswerAsync(string ministryId, string askId, bool yes) =>
+        await _ministries.ParentAnswerAsync(new AskRef { MinistryId = ministryId, AskId = askId, Yes = yes });
+
+    public async Task<JoinOutcome> JoinAsync(MinistryDetails ministry, string personId, string place, string note, bool parentFirst = false) =>
         await _ministries.JoinAsync(new JoinRequest { MinistryId = ministry.Id, PersonId = personId, As = place, Note = note });
 
     public async Task LeaveAsync(string ministryId, string personId, string place) =>

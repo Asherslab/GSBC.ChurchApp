@@ -5,7 +5,9 @@ namespace GSBC.ChurchApp.Features.Ministries.Client;
 
 public interface IMinistryWrites
 {
-    Task<JoinOutcome> JoinAsync(MinistryDetails ministry, string personId, string place, string note);
+    Task<JoinOutcome> JoinAsync(MinistryDetails ministry, string personId, string place, string note, bool parentFirst = false);
+
+    Task ParentAnswerAsync(string ministryId, string askId, bool yes);
 
     Task LeaveAsync(string ministryId, string personId, string place);
 

@@ -30,6 +30,7 @@ public sealed class MinistryFeedTests : IAsyncLifetime
     private readonly TestClock _clock = new();
     private readonly Holdings _roles = new();
     private readonly People _people = new();
+    private readonly Told _told = new();
     private readonly Dictionary<Guid, GrantSet> _grants = [];
     private TestDatabase _database = null!;
     private ServiceProvider _services = null!;
@@ -65,7 +66,7 @@ public sealed class MinistryFeedTests : IAsyncLifetime
             .AddSingleton<IFamilies>(_people)
             .AddSingleton<IMinistryCalendars>(new NoCalendars())
             .AddSingleton<IAccessEvaluator>(new Granted(_grants))
-            .AddSingleton<INotifications>(new NoNotifications())
+            .AddSingleton<INotifications>(_told)
             .AddSingleton<IKeptRegularEvents>(new KeptInSundays())
             .AddScoped<MinistryViews>()
             .AddScoped<MinistryChanges>()
@@ -127,6 +128,41 @@ public sealed class MinistryFeedTests : IAsyncLifetime
             Assert.Equal(Bytes(await ServerDirectoryAsync(person)), Bytes(await phone.Ministries.DirectoryAsync()));
             Assert.Equal(Bytes(await ServerLifeGroupsAsync(person)), Bytes(await phone.Ministries.LifeGroupsAsync()));
         }
+    }
+
+    [Fact]
+    public async Task AYoungPersonJoiningATeamWaitsForAParentsYesAndItsLeadersHearOfIt()
+    {
+        Guid teen = _people.Child("Tom Young", _visitor);
+        _grants[teen] = GrantSet.Empty;
+        await using (AsyncServiceScope scope = _services.CreateAsyncScope())
+        {
+            await scope.ServiceProvider.GetRequiredService<MinistriesDbContext>().Ministries.Where(ministry => ministry.Id == _youth.Id)
+                .ExecuteUpdateAsync(set => set.SetProperty(ministry => ministry.TeamJoin, Joining.Open), Cancel);
+            JoinOutcome outcome = await scope.ServiceProvider.GetRequiredService<MinistriesService>()
+                .JoinAsync(new JoinRequest { MinistryId = _youth.Id.ToString(), As = Places.Team }, Call(teen));
+            Assert.False(outcome.Joined);
+            await scope.ServiceProvider.GetRequiredService<MinistriesPublisher>().PublishAsync(Cancel);
+        }
+        Assert.False(_roles.Holds(Roles.Team, teen, _youth.Id));
+        Assert.Contains(_told.Raised, told => told.Kind == MinistriesNotifications.ForYourYes && told.Audience == NotificationAudience.Person(_visitor));
+        Assert.Contains(_told.Raised, told => told.Kind == MinistriesNotifications.Asked && told.Body.Contains("a parent says yes first", StringComparison.Ordinal));
+
+        MinistryPage parents = await ServerPageAsync(_visitor, _youth.Id);
+        AskLine waiting = Assert.Single(parents.You.ForYourYes);
+        Assert.Equal(Bytes(parents), Bytes(await (await PhoneOfAsync(_visitor)).Ministries.MinistryAsync(_youth.Id.ToString())));
+        await Assert.ThrowsAsync<RpcException>(async () => await ParentAnswerAsync(teen, waiting.Id));
+
+        await ParentAnswerAsync(_visitor, waiting.Id);
+
+        Assert.True(_roles.Holds(Roles.Team, teen, _youth.Id));
+        Assert.Contains(_told.Raised, told => told.Kind == MinistriesNotifications.YoungJoined && told.Body.Contains("Olly said yes", StringComparison.Ordinal));
+    }
+
+    private async Task ParentAnswerAsync(Guid person, string askId)
+    {
+        await using AsyncServiceScope scope = _services.CreateAsyncScope();
+        await scope.ServiceProvider.GetRequiredService<MinistriesService>().ParentAnswerAsync(new AskRef { AskId = askId, Yes = true }, Call(person));
     }
 
     [Fact]
@@ -301,8 +337,13 @@ public sealed class MinistryFeedTests : IAsyncLifetime
         public ValueTask<AssignmentOutcome> TakeAwayAsync(Guid actorId, Guid userId, string roleKey, string? objectId, CancellationToken cancellationToken) =>
             throw new NotSupportedException();
 
-        public ValueTask GiveAsFeatureAsync(Guid userId, string roleKey, string? objectId, DateTime? expiresAt, CancellationToken cancellationToken) =>
-            throw new NotSupportedException();
+        public ValueTask GiveAsFeatureAsync(Guid userId, string roleKey, string? objectId, DateTime? expiresAt, CancellationToken cancellationToken)
+        {
+            _held.Add((roleKey, userId, objectId ?? ""));
+            return ValueTask.CompletedTask;
+        }
+
+        public bool Holds(string role, Guid person, Guid place) => _held.Contains((Roles.KeyOf(role), person, place.ToString()));
 
         public ValueTask TakeAwayAsFeatureAsync(Guid userId, string roleKey, string? objectId, CancellationToken cancellationToken) => throw new NotSupportedException();
 
@@ -312,6 +353,14 @@ public sealed class MinistryFeedTests : IAsyncLifetime
     private sealed class People : IPeopleIndex, IFamilies
     {
         private readonly Dictionary<Guid, string> _names = [];
+        private readonly Dictionary<Guid, Guid> _parentOf = [];
+
+        public Guid Child(string name, Guid parent)
+        {
+            Guid id = Add(name);
+            _parentOf[id] = parent;
+            return id;
+        }
 
         public Guid Add(string name)
         {
@@ -326,7 +375,9 @@ public sealed class MinistryFeedTests : IAsyncLifetime
             ValueTask.FromResult<IReadOnlyDictionary<Guid, string>>(people.Where(_names.ContainsKey).Distinct().ToDictionary(person => person, person => _names[person]));
 
         public ValueTask<IReadOnlyDictionary<Guid, FamilyFacts>> FactsAsync(IReadOnlyCollection<Guid> people, CancellationToken cancellationToken) =>
-            ValueTask.FromResult<IReadOnlyDictionary<Guid, FamilyFacts>>(people.Distinct().ToDictionary(person => person, person => new FamilyFacts(person, null, true, [], [])));
+            ValueTask.FromResult<IReadOnlyDictionary<Guid, FamilyFacts>>(people.Distinct().ToDictionary(person => person, person => _parentOf.TryGetValue(person, out Guid parent)
+                ? new FamilyFacts(person, 14, true, [parent], [])
+                : new FamilyFacts(person, null, true, [], _parentOf.Where(each => each.Value == person).Select(each => each.Key).ToList())));
 
         public ValueTask<IReadOnlyList<IndexedPerson>> FindAsync(string query, int limit, CancellationToken cancellationToken) => throw new NotSupportedException();
 
@@ -374,13 +425,19 @@ public sealed class MinistryFeedTests : IAsyncLifetime
         public ValueTask RemoveAsync(string keeper, CancellationToken cancellationToken) => throw new NotSupportedException();
     }
 
-    private sealed class NoNotifications : INotifications
+    private sealed class Told : INotifications
     {
-        public Task RaiseAsync(Notification notification, CancellationToken cancellationToken) => throw new NotSupportedException();
+        public List<Notification> Raised { get; } = [];
+
+        public Task RaiseAsync(Notification notification, CancellationToken cancellationToken)
+        {
+            Raised.Add(notification);
+            return Task.CompletedTask;
+        }
 
         public Task RaiseOneOfAsync(IReadOnlyList<Notification> mostSpecificFirst, CancellationToken cancellationToken) => throw new NotSupportedException();
 
-        public Task SettleAsync(string subject, CancellationToken cancellationToken) => throw new NotSupportedException();
+        public Task SettleAsync(string subject, CancellationToken cancellationToken) => Task.CompletedTask;
     }
 
     private sealed class Context(ClaimsPrincipal person) : ServerCallContext

@@ -21,6 +21,8 @@ internal static class MinistryRules
         _ => JoinDecision.Refuse("This ministry doesn't take attendees."),
     };
 
+    public static bool NeedsParentsYes(string place, bool minor, bool askingForThemselves) => place == Places.Team && minor && askingForThemselves;
+
     public static string? WhyNotPost(string title, string body, string audience, IReadOnlyCollection<string> mayPostFor)
     {
         if (title.Trim().Length is 0 or > LongestTitle)

@@ -135,6 +135,7 @@ internal sealed class MinistriesPublisher(
         YourMinistries yours = new()
         {
             PersonId = id,
+            Minor = facts.GetValueOrDefault(person)?.Minor == true,
             Children = children.Select(child => new ChildFacts { Id = child.ToString(), Name = names.GetValueOrDefault(child) ?? "Your child", Age = facts.GetValueOrDefault(child)?.Age })
                 .OrderBy(child => child.Name, StringComparer.CurrentCulture).ToList(),
             Places = tree.All.Select(ministry => new YourRoles
@@ -149,7 +150,7 @@ internal sealed class MinistriesPublisher(
                 .ToList(),
             Asked = asks.Where(ask => ask.PersonId == id || childIds.Contains(ask.PersonId) || AskedBy(ask, person)).ToList(),
         };
-        return yours.Children.Count + yours.Places.Count + yours.Asked.Count > 0 ? yours : null;
+        return yours.Minor || yours.Children.Count + yours.Places.Count + yours.Asked.Count > 0 ? yours : null;
     }
 
     private static bool AskedBy(AskLine ask, Guid person) => ask.AskedById == person.ToString();

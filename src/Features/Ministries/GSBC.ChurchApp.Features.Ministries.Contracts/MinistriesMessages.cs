@@ -130,6 +130,8 @@ public sealed class YourPlace
     [ProtoMember(9)] public bool MayDelete { get; set; }
     [ProtoMember(10)] public int Waiting { get; set; }
     [ProtoMember(11)] public bool ParentOfAttendee { get; set; }
+    [ProtoMember(12)] public List<AskLine> ForYourYes { get; set; } = [];
+    [ProtoMember(13)] public bool Minor { get; set; }
 }
 
 [ProtoContract]
@@ -221,6 +223,7 @@ public sealed class AskLine
     [ProtoMember(9)] public string MinistryId { get; set; } = "";
     [ProtoMember(10)] public string MinistryName { get; set; } = "";
     [ProtoMember(11)] public string AskedById { get; set; } = "";
+    [ProtoMember(12)] public bool WaitingForParent { get; set; }
 }
 
 [ProtoContract]
@@ -530,6 +533,7 @@ public sealed class YourMinistries
     [ProtoMember(2)] public List<YourRoles> Places { get; set; } = [];
     [ProtoMember(3)] public List<AskLine> Asked { get; set; } = [];
     [ProtoMember(4)] public string PersonId { get; set; } = "";
+    [ProtoMember(5)] public bool Minor { get; set; }
 }
 
 [ProtoContract]

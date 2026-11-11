@@ -64,6 +64,8 @@ internal sealed class MinistryLeadingService(
         Guid id = Guid.TryParse(request.AskId, out Guid parsed) ? parsed : Guid.Empty;
         AskRecord ask = await db.Asks.SingleOrDefaultAsync(found => found.Id == id && found.MinistryId == ministry.Id, cancellationToken)
                         ?? throw new RpcException(new Status(StatusCode.NotFound, "That ask was already answered or taken back."));
+        if (request.Yes && ask.WaitingForParent)
+            throw Refused("They're under 18, so a parent says yes first. You'll hear when they do.");
         db.Asks.Remove(ask);
         changes.Touch(ministry.Id);
         await db.SaveChangesAsync(cancellationToken);
