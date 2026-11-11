@@ -292,7 +292,8 @@ code, .patterns { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-s
 .media-upload__drop .icon { color: var(--accent); }
 .media-upload__label { color: var(--ink); font-weight: 600; }
 .media-upload__hint { font-size: var(--text-caption); overflow-wrap: anywhere; }
-.media-upload__drop--busy { opacity: 0.6; cursor: progress; }
+.media-upload__drop--busy { color: var(--ink-3); cursor: progress; }
+.media-upload__drop--busy .icon { color: var(--ink-3); }
 .media-upload__match { display: grid; gap: 12px; padding: 16px; border-radius: var(--radius); background: var(--fill-on-surface); }
 .media-upload__match:focus { outline: none; }
 .media-upload__match .btn--quiet { background: var(--surface); }
