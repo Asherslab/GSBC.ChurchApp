@@ -1,4 +1,8 @@
+@using GSBC.ChurchApp.Platform.Client.Uploads
+@using GSBC.ChurchApp.Platform.Contracts.Media
+@using GSBC.ChurchApp.Platform.Ui.Content
 @inject ChatsStore Store
+@inject FileUploads Uploads
 
 @if (Chat.Paused)
 {
@@ -77,10 +81,33 @@ else
                 }
             </div>
         }
+        @if (_picked.Count > 0)
+        {
+            <div class="chat-picked" aria-label="Photos and files to send">
+                @foreach (MediaRef media in _picked)
+                {
+                    <span class="chat-picked__item">
+                        @if (media.ContentType.StartsWith("image/", StringComparison.Ordinal))
+                        {
+                            <MediaImage Media="media" Alt="@media.FileName" Class="chat-picked__photo" />
+                        }
+                        else
+                        {
+                            <span class="chat-picked__file"><Icon Name="file" Size="IconSize.Small" />@media.FileName</span>
+                        }
+                        <button type="button" class="chat-picked__remove" aria-label="@($"Don't send {media.FileName}")" @onclick="() => UnpickAsync(media)"><Icon Name="x" Size="IconSize.Small" /></button>
+                    </span>
+                }
+            </div>
+        }
         <div class="chat-composer__bar">
+            @if (Editing is null && Store.CanAttach && _picked.Count < ChatLimits.AttachmentsPerMessage)
+            {
+                <FilePick Label="Add a photo or file" ImagesOnly="false" Class="chat-composer__attach" OnPicked="Picked" />
+            }
             <textarea class="chat-composer__field" rows="1" placeholder="@Placeholder" aria-label="Message" maxlength="@ChatLimits.TextLength"
                       value="@_text" @oninput="Typed"></textarea>
-            <button type="button" class="chat-composer__send" aria-label="@(Editing is null ? "Send" : "Save the change")" disabled="@(_text.Trim().Length == 0)" @onclick="SendAsync">
+            <button type="button" class="chat-composer__send" aria-label="@(Editing is null ? "Send" : "Save the change")" disabled="@(_text.Trim().Length == 0 && (_picked.Count == 0 || Editing is not null))" @onclick="SendAsync">
                 <Icon Name="@(Editing is null ? "send" : "check")" />
             </button>
         </div>
@@ -92,6 +119,7 @@ else
     private string _forChild = "";
     private string? _editingId;
     private readonly Dictionary<string, string> _mentions = [];
+    private readonly List<MediaRef> _picked = [];
 
     [Parameter, EditorRequired] public required Conversation Chat { get; set; }
     [Parameter] public ChatMessage? Editing { get; set; }
@@ -156,6 +184,14 @@ else
             Store.KeepDraft(Card.Id, _text);
     }
 
+    private void Picked(MediaRef media) => _picked.Add(media);
+
+    private async Task UnpickAsync(MediaRef media)
+    {
+        _picked.Remove(media);
+        await Uploads.ForgetAsync(media);
+    }
+
     private void Mention(ChatPerson person)
     {
         int at = _text.LastIndexOf('@');
@@ -167,12 +203,19 @@ else
     private async Task SendAsync()
     {
         string text = _text.Trim();
-        if (text.Length == 0)
-            return;
         if (Editing is not null)
+        {
+            if (text.Length == 0)
+                return;
             await Store.EditAsync(Editing, text);
+        }
         else
-            await Store.SendAsync(Card, text, ReplyingTo, ChatMentions.Kept(text, _mentions), Card.YouMaySend ? "" : _forChild);
+        {
+            if (text.Length == 0 && _picked.Count == 0)
+                return;
+            await Store.SendAsync(Card, text, ReplyingTo, ChatMentions.Kept(text, _mentions), Card.YouMaySend ? "" : _forChild, _picked.ToList());
+            _picked.Clear();
+        }
         _text = "";
         _mentions.Clear();
         Store.KeepDraft(Card.Id, "");

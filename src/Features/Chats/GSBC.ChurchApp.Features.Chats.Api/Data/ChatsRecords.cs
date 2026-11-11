@@ -39,6 +39,7 @@ public sealed class MessageRecord
 
 public sealed class StoredAttachment
 {
+    public string MediaId { get; set; } = "";
     public string Key { get; set; } = "";
     public string Name { get; set; } = "";
     public string ContentType { get; set; } = "";

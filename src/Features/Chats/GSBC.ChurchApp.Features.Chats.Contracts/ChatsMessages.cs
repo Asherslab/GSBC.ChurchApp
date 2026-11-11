@@ -1,3 +1,4 @@
+using GSBC.ChurchApp.Platform.Contracts.Media;
 using GSBC.ChurchApp.Platform.Contracts.Tiers;
 using ProtoBuf;
 
@@ -89,6 +90,7 @@ public sealed class Attachment
     [ProtoMember(5)] public int Width { get; set; }
     [ProtoMember(6)] public int Height { get; set; }
     [ProtoMember(7)] public string MediaId { get; set; } = "";
+    [ProtoMember(8)] public MediaRef? Media { get; set; }
 }
 
 [ProtoContract]
@@ -404,6 +406,7 @@ public sealed class PendingSend
     [ProtoMember(3)] public DateTime At { get; set; }
     [ProtoMember(4)] public string ReplyName { get; set; } = "";
     [ProtoMember(5)] public string ReplySnippet { get; set; } = "";
+    [ProtoMember(6)] public List<Attachment> Waiting { get; set; } = [];
 }
 
 [ProtoContract]

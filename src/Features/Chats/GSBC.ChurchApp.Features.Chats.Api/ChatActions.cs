@@ -10,7 +10,7 @@ using Microsoft.EntityFrameworkCore;
 namespace GSBC.ChurchApp.Features.Chats.Api;
 
 internal sealed class ChatActions(
-    ChatsDbContext db, ChatFacts facts, ChatPublisher publisher, ChatNotifier notifier, ChatAudit audit, OversightMarks marks,
+    ChatsDbContext db, ChatFacts facts, ChatPublisher publisher, ChatNotifier notifier, ChatAudit audit, OversightMarks marks, ChatMedia media,
     IRoleAssignments roles, IFamilies families, IPeopleIndex people, TimeProvider time)
 {
     public async Task StartAsync(Guid me, StartChat request, CancellationToken cancellationToken)
@@ -170,8 +170,9 @@ internal sealed class ChatActions(
                 : throw ChatErrors.Gone("The message you replied to isn't in this chat.");
         }
 
-        MessageRecord message = await AddMessageAsync(chat, me, forPerson, MessageKinds.Text, clientId, text, replyTo, mentions,
-            request.Attachments.Select(ChatRows.FromAttachment).ToList(), cancellationToken);
+        List<StoredAttachment> attachments = await media.VerifyAsync(request.Attachments, cancellationToken);
+        MessageRecord message = await AddMessageAsync(chat, me, forPerson, MessageKinds.Text, clientId, text, replyTo, mentions, attachments, cancellationToken);
+        await media.KeepAsync(message, chat.Name, cancellationToken);
         Published published = await publisher.PublishAsync(chatId, [message.Id], true, cancellationToken);
         await notifier.MessageAsync(published, message, cancellationToken);
         await notifier.ConsentAsync(published, cancellationToken);

@@ -3,6 +3,8 @@ using GSBC.ChurchApp.Features.Chats.Contracts;
 using GSBC.ChurchApp.Platform.Client.Feeds;
 using GSBC.ChurchApp.Platform.Client.Outbox;
 using GSBC.ChurchApp.Platform.Client.Preferences;
+using GSBC.ChurchApp.Platform.Client.Uploads;
+using GSBC.ChurchApp.Platform.Contracts.Media;
 
 namespace GSBC.ChurchApp.Features.Chats.Client;
 
@@ -33,7 +35,7 @@ public sealed record Conversation(ChatCard Card, IReadOnlyList<ChatLine> Lines, 
 
 public sealed record OpenedChat(Conversation? Chat);
 
-public sealed class ChatsStore(ILocalFeeds feeds, IOutbox outbox, ILocalPreferences preferences, TimeProvider time)
+public sealed class ChatsStore(ILocalFeeds feeds, IOutbox outbox, ILocalPreferences preferences, FileUploads uploads, TimeProvider time)
 {
     public const string Remembered = "chats.home";
     private const string Service = "/gsbc.chats.Chats/";
@@ -86,18 +88,26 @@ public sealed class ChatsStore(ILocalFeeds feeds, IOutbox outbox, ILocalPreferen
         return new Conversation(card, lines, home.Paused);
     }
 
-    public async Task SendAsync(ChatCard card, string text, ChatMessage? replyTo, IReadOnlyCollection<string> mentions, string forPersonId)
+    public bool CanAttach => uploads.CanQueue;
+
+    public async Task SendAsync(ChatCard card, string text, ChatMessage? replyTo, IReadOnlyCollection<string> mentions, string forPersonId,
+        IReadOnlyList<MediaRef> picked)
     {
         SendMessage message = new()
         {
             ChatId = card.Id, ClientId = Guid.NewGuid().ToString("N"), Text = text.Trim(), ReplyToId = replyTo?.Id ?? "",
             Mentions = mentions.ToList(), ForPersonId = forPersonId,
         };
-        string id = await outbox.EnqueueAsync(Service + "Send", message, ChatsContractsModel.Instance);
+        UploadTarget target = new(PrivateTo: ChatsPermissions.MemberNode, PrivateToScope: card.Id, Area: ChatFiles.Area, AreaScopeId: card.Id);
+        List<QueuedUpload> queued = picked.Select(media => uploads.For(media, MediaSlot.Id(ChatFiles.MediaIdInSend), target)).OfType<QueuedUpload>().ToList();
+        using MemoryStream body = new();
+        ChatsContractsModel.Instance.Serialize(body, message);
+        string id = await outbox.EnqueueAsync(Service + "Send", body.ToArray(), queued);
         PendingSends pending = await PendingAsync();
         pending.Sends.Add(new PendingSend
         {
             OutboxId = id, Message = message, At = time.GetUtcNow().UtcDateTime, ReplyName = replyTo?.SenderName ?? "", ReplySnippet = replyTo?.Text ?? "",
+            Waiting = picked.Select(media => new Attachment { Name = media.FileName, ContentType = media.ContentType, Bytes = media.Bytes, Media = media }).ToList(),
         });
         await SaveAsync(pending);
     }
@@ -169,7 +179,7 @@ public sealed class ChatsStore(ILocalFeeds feeds, IOutbox outbox, ILocalPreferen
     {
         Id = send.Message.ClientId, ChatId = send.Message.ChatId, Kind = MessageKinds.Text, SenderId = card.You, SenderName = "You",
         ForName = card.ForChildren.FirstOrDefault(child => child.Id == send.Message.ForPersonId)?.Name ?? "", SentAt = send.At,
-        Text = send.Message.Text, ClientId = send.Message.ClientId, Mentions = send.Message.Mentions,
+        Text = send.Message.Text, ClientId = send.Message.ClientId, Mentions = send.Message.Mentions, Attachments = send.Waiting,
         ReplyTo = send.Message.ReplyToId.Length == 0 ? null : new Quote { MessageId = send.Message.ReplyToId, SenderName = send.ReplyName, Snippet = send.ReplySnippet },
     };
 

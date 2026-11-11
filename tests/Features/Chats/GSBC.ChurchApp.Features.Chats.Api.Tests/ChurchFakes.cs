@@ -2,15 +2,17 @@ using System.Security.Claims;
 using GSBC.ChurchApp.Features.Chats.Contracts;
 using GSBC.ChurchApp.Platform.Api.Access;
 using GSBC.ChurchApp.Platform.Api.Chats;
+using GSBC.ChurchApp.Platform.Api.Media;
 using GSBC.ChurchApp.Platform.Api.Notifications;
 using GSBC.ChurchApp.Platform.Api.People;
 using GSBC.ChurchApp.Platform.Contracts.Chats;
 using GSBC.ChurchApp.Platform.Contracts.Configuration;
+using GSBC.ChurchApp.Platform.Contracts.Media;
 using GSBC.ChurchApp.Platform.Permissions;
 
 namespace GSBC.ChurchApp.Features.Chats.Api.Tests;
 
-internal sealed class Church : IPermissionHolders, IAccessEvaluator, IRoleAssignments, IFamilies, ISafeguardingStandings, IChatPlaces, IPeopleIndex, INotifications
+internal sealed class Church : IPermissionHolders, IAccessEvaluator, IRoleAssignments, IFamilies, ISafeguardingStandings, IChatPlaces, IPeopleIndex, INotifications, IMediaReferences, IMediaSystemFolders
 {
     public const string TeamNode = "ministries.team.view";
 
@@ -25,6 +27,10 @@ internal sealed class Church : IPermissionHolders, IAccessEvaluator, IRoleAssign
     public bool ChatsOn { get; set; } = true;
 
     public List<Notification> Raised { get; } = [];
+
+    public List<(string Scope, string Name, string MediaId)> Filed { get; } = [];
+
+    public HashSet<string> Uploaded { get; } = [];
 
     public Guid Person(string name)
     {
@@ -146,4 +152,26 @@ internal sealed class Church : IPermissionHolders, IAccessEvaluator, IRoleAssign
     public Task RaiseOneOfAsync(IReadOnlyList<Notification> mostSpecificFirst, CancellationToken cancellationToken) => RaiseAsync(mostSpecificFirst[0], cancellationToken);
 
     public Task SettleAsync(string subject, CancellationToken cancellationToken) => Task.CompletedTask;
+
+    public Task<IReadOnlyList<MediaRef>> VerifyAsync(IReadOnlyCollection<MediaRef> claimed, CancellationToken cancellationToken) =>
+        claimed.All(media => Uploaded.Contains(media.Id))
+            ? Task.FromResult<IReadOnlyList<MediaRef>>(claimed.Select(media => new MediaRef
+            {
+                Id = media.Id, Key = $"{media.Id}.jpg", ContentType = "image/jpeg", FileName = "photo.jpg", Bytes = 1200, Width = 800, Height = 600, IsPrivate = true,
+            }).ToList())
+            : throw new InvalidOperationException("That file isn't in the library.");
+
+    public Task UseAsync(string owner, IReadOnlyCollection<MediaRef> verified, CancellationToken cancellationToken) => Task.CompletedTask;
+
+    public Task FileAsync(MediaSystemArea area, string? scopeId, string scopeName, IReadOnlyCollection<MediaRef> media, CancellationToken cancellationToken)
+    {
+        Filed.AddRange(media.Select(each => (scopeId ?? "", scopeName, each.Id)));
+        return Task.CompletedTask;
+    }
+
+    public Task<MediaRef> KeepAsync(MediaSystemArea area, KeptFile file, CancellationToken cancellationToken) => throw new NotSupportedException();
+
+    public Task<MediaRef> KeepStoredAsync(MediaSystemArea area, StoredFile file, CancellationToken cancellationToken) => throw new NotSupportedException();
+
+    public Task NameAsync(MediaSystemArea area, string mediaId, string fileName, CancellationToken cancellationToken) => throw new NotSupportedException();
 }

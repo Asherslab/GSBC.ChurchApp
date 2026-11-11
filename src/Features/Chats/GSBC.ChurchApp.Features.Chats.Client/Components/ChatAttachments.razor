@@ -1,0 +1,66 @@
+@using GSBC.ChurchApp.Platform.Client.Media
+@using GSBC.ChurchApp.Platform.Contracts.Media
+@inject Shell Shell
+@inject IServiceProvider Services
+
+@if (Attachments.Count > 0)
+{
+    <span class="chat-files">
+        @foreach (Attachment attachment in Attachments)
+        {
+            if (attachment.Media is { } media && attachment.ContentType.StartsWith("image/", StringComparison.Ordinal))
+            {
+                <MediaImage Media="media" Alt="@(attachment.Name.Length > 0 ? attachment.Name : "Photo")" Class="chat-photo" />
+            }
+            else
+            {
+                <button type="button" class="chat-file" disabled="@(attachment.MediaId.Length == 0)" @onclick="() => OpenAsync(attachment)">
+                    <span class="chat-file__tile"><Icon Name="file" /></span>
+                    <span><strong>@attachment.Name</strong><span class="chat-file__about">@About(attachment)</span></span>
+                </button>
+            }
+        }
+        @if (_problem is not null)
+        {
+            <span class="chat-file__problem">@_problem</span>
+        }
+    </span>
+}
+
+@code {
+    private string? _problem;
+
+    [Parameter, EditorRequired] public required IReadOnlyList<Attachment> Attachments { get; set; }
+
+    private IPrivateMediaLinks? Links => Services.GetService(typeof(IPrivateMediaLinks)) as IPrivateMediaLinks;
+
+    private static string About(Attachment attachment)
+    {
+        string kind = attachment.Name.Contains('.') ? attachment.Name[(attachment.Name.LastIndexOf('.') + 1)..].ToUpperInvariant() : "File";
+        string size = attachment.Bytes switch
+        {
+            < 1024 => $"{attachment.Bytes} bytes",
+            < 1024 * 1024 => $"{attachment.Bytes / 1024} KB",
+            _ => $"{attachment.Bytes / (1024.0 * 1024):0.#} MB",
+        };
+        return $"{kind} · {size}";
+    }
+
+    private async Task OpenAsync(Attachment attachment)
+    {
+        _problem = null;
+        string? link;
+        try
+        {
+            link = Links is null ? null : await Links.LinkAsync(attachment.MediaId, "");
+        }
+        catch (Grpc.Core.RpcException)
+        {
+            link = null;
+        }
+        if (link is null)
+            _problem = $"{attachment.Name} can't be opened right now. Opening a file needs a connection.";
+        else
+            await Shell.OpenExternalAsync(link);
+    }
+}

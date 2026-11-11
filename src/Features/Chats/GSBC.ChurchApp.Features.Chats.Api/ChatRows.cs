@@ -1,6 +1,7 @@
 using System.Globalization;
 using GSBC.ChurchApp.Features.Chats.Api.Data;
 using GSBC.ChurchApp.Features.Chats.Contracts;
+using GSBC.ChurchApp.Platform.Contracts.Media;
 using GSBC.ChurchApp.Platform.Data;
 
 namespace GSBC.ChurchApp.Features.Chats.Api;
@@ -96,11 +97,12 @@ internal static class ChatRows
     public static Attachment ToAttachment(StoredAttachment attachment) => new()
     {
         Key = attachment.Key, Name = attachment.Name, ContentType = attachment.ContentType, Bytes = attachment.Bytes, Width = attachment.Width, Height = attachment.Height,
-    };
-
-    public static StoredAttachment FromAttachment(Attachment attachment) => new()
-    {
-        Key = attachment.Key, Name = attachment.Name, ContentType = attachment.ContentType, Bytes = attachment.Bytes, Width = attachment.Width, Height = attachment.Height,
+        MediaId = attachment.MediaId,
+        Media = new MediaRef
+        {
+            Id = attachment.MediaId, Key = attachment.Key, ContentType = attachment.ContentType, Bytes = attachment.Bytes, Width = attachment.Width,
+            Height = attachment.Height, FileName = attachment.Name, IsPrivate = true,
+        },
     };
 
     public static byte[] Encode<T>(T value)

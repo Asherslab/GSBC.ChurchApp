@@ -1,4 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
+using GSBC.ChurchApp.Platform.Contracts.Media;
 using ProtoBuf;
 using ProtoBuf.Meta;
 
@@ -49,4 +50,5 @@ namespace GSBC.ChurchApp.Features.Chats.Contracts;
 [ProtoSerializable(typeof(PausedList))]
 [ProtoSerializable(typeof(PendingSend))]
 [ProtoSerializable(typeof(PendingSends))]
+[ProtoSerializable(typeof(MediaRef))]
 public partial class ChatsContractsModel : TypeModel;

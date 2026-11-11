@@ -5,6 +5,16 @@ public static class ChatsParts
     public const string Key = "chats";
 }
 
+public static class ChatFiles
+{
+    public const string Area = "chat-files";
+
+    private const int SendAttachments = 6;
+    private const int AttachmentMediaId = 7;
+
+    public static readonly int[] MediaIdInSend = [SendAttachments, AttachmentMediaId];
+}
+
 public static class ChatKinds
 {
     public const string Group = "group";

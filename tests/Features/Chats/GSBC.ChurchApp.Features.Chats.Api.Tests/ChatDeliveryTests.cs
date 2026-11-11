@@ -4,6 +4,7 @@ using GSBC.ChurchApp.Features.Chats.Api.Data;
 using GSBC.ChurchApp.Features.Chats.Contracts;
 using GSBC.ChurchApp.Platform.Api.Access;
 using GSBC.ChurchApp.Platform.Api.Chats;
+using GSBC.ChurchApp.Platform.Api.Media;
 using GSBC.ChurchApp.Platform.Api.Notifications;
 using GSBC.ChurchApp.Platform.Api.People;
 using GSBC.ChurchApp.Platform.Api.Sync;
@@ -43,8 +44,9 @@ public sealed class ChatDeliveryTests : IAsyncLifetime
             .AddSingleton<IPermissionHolders>(_church).AddSingleton<IAccessEvaluator>(_church).AddSingleton<IRoleAssignments>(_church)
             .AddSingleton<IFamilies>(_church).AddSingleton<ISafeguardingStandings>(_church).AddSingleton<IChatPlaces>(_church)
             .AddSingleton<IPeopleIndex>(_church).AddSingleton<INotifications>(_church)
+            .AddSingleton<IMediaReferences>(_church).AddSingleton<IMediaSystemFolders>(_church)
             .AddScoped<ChatFacts>().AddScoped<ChatPublisher>().AddScoped<ChatNotifier>().AddScoped<ChatAudit>().AddScoped<OversightMarks>()
-            .AddScoped<ChatActions>().AddScoped<ChatOversight>().AddScoped<ChatsPersonData>()
+            .AddScoped<ChatActions>().AddScoped<ChatOversight>().AddScoped<ChatsPersonData>().AddScoped<ChatMedia>().AddScoped<ChatMediaAccess>()
             .AddSingleton(new FeedRegistry([new FeedDefinition(ChatsFeeds.Chats, FeedAudience.OwnRecords), new FeedDefinition(ChatsFeeds.Messages, FeedAudience.OwnRecords)]))
             .AddSingleton<FeedChangeBroadcaster>()
             .AddScoped<SyncService>()
@@ -100,6 +102,33 @@ public sealed class ChatDeliveryTests : IAsyncLifetime
             helper.Changes.Select(change => ChatsContractsModel.Instance.Deserialize<ChatMessage>(new MemoryStream(change.Payload)).Text));
         Assert.All(helper.Changes, change => Assert.StartsWith(_helper.ToString("N"), change.Id, StringComparison.Ordinal));
         Assert.Empty(outsider.Changes);
+    }
+
+    [Fact]
+    public async Task APhotoIsTheLibrarysUploadFiledUnderTheChatAndOnlyThoseInTheChatMayReadIt()
+    {
+        Guid chat = await StartAsync("Sunday team", "Hello all");
+        _church.Uploaded.Add("photo-1");
+
+        await RefusedAsync(actions => actions.SendAsync(_helper, new SendMessage
+        {
+            ChatId = chat.ToString(), ClientId = "claimed", Attachments = [new Attachment { Key = "someone-elses.jpg", Name = "x.jpg" }],
+        }, Cancel));
+        await ActAsync(actions => actions.SendAsync(_helper, new SendMessage
+        {
+            ChatId = chat.ToString(), ClientId = "photo", Attachments = [new Attachment { MediaId = "photo-1" }],
+        }, Cancel));
+
+        Attachment shown = (await MessagesAsync(_leader, chat)).Last().Attachments.Single();
+        Assert.Equal(("photo-1.jpg", "photo-1", true), (shown.Key, shown.Media?.Id, shown.Media?.IsPrivate));
+        Assert.Equal([(chat.ToString(), "Sunday team", "photo-1")], _church.Filed);
+
+        await using AsyncServiceScope scope = _services.CreateAsyncScope();
+        ChatMediaAccess access = scope.ServiceProvider.GetRequiredService<ChatMediaAccess>();
+        Assert.True(await access.MayReadAsync(Signed(_helper), chat.ToString(), Cancel));
+        Assert.False(await access.MayReadAsync(Signed(_teen), chat.ToString(), Cancel));
+        Assert.False(await access.MayReadAsync(Signed(_outsider), chat.ToString(), Cancel));
+        Assert.False(await access.MayUploadAsync(Signed(_outsider), chat.ToString(), Cancel));
     }
 
     [Fact]
@@ -256,10 +285,12 @@ public sealed class ChatDeliveryTests : IAsyncLifetime
         return rows.GroupBy(row => row.RecordId).Select(versions => versions.MaxBy(row => row.Cursor)!).Where(row => !row.Deleted).ToList();
     }
 
+    private static ClaimsPrincipal Signed(Guid person) => new(new ClaimsIdentity(
+        [new Claim(Caller.UserIdClaim, person.ToString()), new Claim(Caller.SessionIdClaim, Guid.NewGuid().ToString())], "test"));
+
     private async Task<FeedBatch> PullAsync(Guid person, string feed)
     {
-        ClaimsPrincipal caller = new(new ClaimsIdentity(
-            [new Claim(Caller.UserIdClaim, person.ToString()), new Claim(Caller.SessionIdClaim, Guid.NewGuid().ToString())], "test"));
+        ClaimsPrincipal caller = Signed(person);
         await using AsyncServiceScope scope = _services.CreateAsyncScope();
         PullReply reply = await scope.ServiceProvider.GetRequiredService<SyncService>().PullAsync(
             new PullRequest { Cursors = [new FeedCursor { Feed = feed, Cursor = 0 }] }, new CallContext(caller, new PersonCallContext(caller)));

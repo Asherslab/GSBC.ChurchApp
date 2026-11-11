@@ -78,3 +78,20 @@
 .chat-checked__text { margin: 4px 0 0; white-space: pre-wrap; }
 .chat-checked__versions { margin-top: 6px; font-size: var(--text-caption); }
 .chat-log { margin: 0; padding-left: 18px; font-size: var(--text-caption); color: var(--ink-2); }
+
+.chat-files { display: grid; gap: 6px; }
+.chat-photo { display: block; width: min(220px, 100%); height: auto; border-radius: var(--radius); background: var(--sand-strong); }
+.chat-file { display: flex; gap: 10px; align-items: center; padding: 6px; border: 0; border-radius: var(--radius-tile); background: var(--page); color: var(--ink); font: inherit; text-align: left; }
+.bubble-row--mine .chat-file { background: color-mix(in srgb, var(--on-primary) 14%, transparent); color: var(--on-primary); }
+.chat-file strong { display: block; font-size: var(--text-caption); overflow-wrap: anywhere; }
+.chat-file__tile { flex: none; display: grid; place-items: center; width: 34px; height: 34px; border-radius: var(--radius-inner); background: var(--sand); color: var(--ink-2); }
+.chat-file__about { display: block; font-size: var(--text-pill); opacity: 0.8; }
+.chat-file__problem { font-size: var(--text-caption); color: var(--danger); }
+.chat-picked { display: flex; gap: 8px; overflow-x: auto; }
+.chat-picked__item { position: relative; flex: none; }
+.chat-picked__photo { display: block; width: 64px; height: 64px; object-fit: cover; border-radius: var(--radius-tile); }
+.chat-picked__file { display: flex; align-items: center; gap: 6px; height: 64px; max-width: 160px; padding: 0 10px; border-radius: var(--radius-tile); background: var(--sand); font-size: var(--text-caption); overflow: hidden; }
+.chat-picked__remove { position: absolute; top: -6px; right: -6px; display: grid; place-items: center; width: 24px; height: 24px; border: 0; border-radius: var(--radius-full); background: var(--ink); color: var(--page); }
+.chat-composer__attach.file-pick { flex: none; display: grid; place-items: center; width: 40px; height: 40px; min-height: 0; padding: 0; border-radius: var(--radius-full); background: var(--sand); color: var(--ink-2); }
+.chat-composer__attach.file-pick > span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.chat-composer__bar + .notice { margin-top: 6px; }

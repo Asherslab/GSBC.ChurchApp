@@ -19,6 +19,12 @@ for the owner to redirect.
 - **In a chat:** reply (quoted), react (six quick reactions), mention with `@`, read receipts ("Seen by 4" under your
   last message, tap for who), edit and delete your own messages ("edited", "You deleted this message"), report,
   mute (mentions still reach you). Leaders can delete any message in their ministry's chats and delete the chat.
+- **Photos and files** (built 2026-11-11, on the shared offline uploads): the composer's paperclip keeps a picked photo or
+  file on the phone, and it goes with the message through the outbox; the message waits for its files and gets their
+  ids (`ChatFiles.MediaIdInSend`). On the server they're the *Chat files* area (`chat-files`): Chats answers who may
+  upload and read (`ChatMediaAccess`, `IMediaAreaAccess`: whoever may write in the chat; whoever is in it, or may check
+  it), the server only accepts files the library verifies, and files them under the chat. Files are kept with the
+  message whatever happens to it. Photos show in the bubble; a file opens through a short-lived private link (online).
 - **Offline:** sending works with no signal. A message shows *Sending* until the server has it and *Couldn't send ·
   Try again · Delete* if it gives up; drafts stay while you move around the app.
 - **A quiet line** opens every chat: "Church staff can check messages in this chat." (with young people: "Parents of
@@ -121,9 +127,6 @@ can't start chats (leaders only).
 
 ## Not built yet
 
-- **Photos and files.** Waiting for the offline-uploads piece (`feature/offline-uploads`: area uploads through the
-  outbox, `IMediaAreaAccess` so Chats decides who may see a chat's files). `Attachment.MediaId` is ready for its
-  splice; the server already stores and shows attachments.
 - **Choosing people by hand** in the start sheet (a chosen-people chat), and adding or removing people from the
   people sheet (the server's `ChangePeople` works).
 - **The auditors' coordination chat** about a report (its shape is open in the interview).

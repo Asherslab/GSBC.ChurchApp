@@ -115,6 +115,7 @@
                                 }
                                 else
                                 {
+                                    <ChatAttachments Attachments="message.Attachments" />
                                     @foreach ((string text, bool mention, bool you) in ChatMentions.Split(message, card))
                                     {
                                         if (mention)
