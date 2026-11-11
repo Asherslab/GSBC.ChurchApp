@@ -5,6 +5,7 @@
     "src/Features/Configuration/GSBC.ChurchApp.Features.Configuration.Client/wwwroot/css/drafts.css": 113,
     "src/Features/Events/GSBC.ChurchApp.Features.Events.Client/wwwroot/css/events.css": 211,
     "src/Features/Feedback/GSBC.ChurchApp.Features.Feedback.Client/wwwroot/css/feedback.css": 85,
+    "src/Features/Media/GSBC.ChurchApp.Features.Media.Client/wwwroot/css/media.css": 65,
     "src/Features/Ministries/GSBC.ChurchApp.Features.Ministries.Client/wwwroot/css/ministries.css": 73,
     "src/Features/Notifications/GSBC.ChurchApp.Features.Notifications.Client/wwwroot/css/notifications.css": 27,
     "src/Features/People/GSBC.ChurchApp.Features.People.Client/wwwroot/css/people.css": 36,
@@ -12,7 +13,7 @@
     "src/Features/Rosters/GSBC.ChurchApp.Features.Rosters.Client/wwwroot/css/rosters.css": 19,
     "src/Features/Sermons/GSBC.ChurchApp.Features.Sermons.Client/wwwroot/css/sermons.css": 77,
     "src/Hosts/App/GSBC.ChurchApp.Hosts.App/wwwroot/css/app.css": 12,
-    "src/Hosts/GSBC.ChurchApp.Hosts.Admin/wwwroot/css/admin.css": 206,
+    "src/Hosts/GSBC.ChurchApp.Hosts.Admin/wwwroot/css/admin.css": 142,
     "src/Platform/GSBC.ChurchApp.Platform.Ui/wwwroot/css/rich-text.css": 10,
     "src/Platform/GSBC.ChurchApp.Platform.Ui/wwwroot/css/ui.css": 416
   },

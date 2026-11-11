@@ -4,7 +4,7 @@
     {
         <p class="save-bar__why">@Blocked</p>
     }
-    else if (State is { } state)
+    else if (State is { } state && !(New && state == SaveState.Unsaved))
     {
         <SaveStatus State="state" SavedText="@SavedText" WaitingText="@WaitingText" FailedText="@FailedText" Detail="@Detail" Retry="Retry" />
     }
@@ -24,6 +24,7 @@
     [Parameter] public EventCallback Retry { get; set; }
     [Parameter] public bool OnMasthead { get; set; }
     [Parameter] public bool Block { get; set; }
+    [Parameter] public bool New { get; set; }
     [Parameter] public bool Submit { get; set; }
     [Parameter] public string? Class { get; set; }
     [Parameter] public RenderFragment? ChildContent { get; set; }

@@ -28,7 +28,7 @@
     </div>
     <div class="editor-foot editor-foot--panel">
         <div class="editor-foot__actions">
-            <SaveBar Block="true" Label="@(Calendar is null ? "Add the calendar" : "Save")" Busy="_saving" OnSave="SaveAsync" State="SaveBar.For(Changed, _saved)"
+            <SaveBar Block="true" New="@(Calendar is null)" Label="@(Calendar is null ? "Add the calendar" : "Save")" Busy="_saving" OnSave="SaveAsync" State="SaveBar.For(Changed, _saved)"
                      Blocked="@(_name.Trim().Length == 0 ? $"Give it a name to {(Calendar is null ? "add" : "save")} it." : null)" />
             <Button Variant="ButtonVariant.Quiet" OnClick="Closed">Close</Button>
         </div>

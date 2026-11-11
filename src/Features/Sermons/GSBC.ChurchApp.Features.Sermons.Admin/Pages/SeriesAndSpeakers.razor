@@ -84,7 +84,7 @@
                 </div>
                 <Notice Tone="NoticeTone.Warning" Text="@_problem" />
                 <div class="panel-actions">
-                    <SaveBar Label="@(editing.Id.Length == 0 ? "Add the series" : "Save")" Busy="_busy" OnSave="SaveSeriesAsync" State="SaveBar.For(Changed, _saved)"
+                    <SaveBar New="@(editing.Id.Length == 0)" Label="@(editing.Id.Length == 0 ? "Add the series" : "Save")" Busy="_busy" OnSave="SaveSeriesAsync" State="SaveBar.For(Changed, _saved)"
                              Blocked="@(_name.Trim().Length == 0 ? $"Give it a name to {(editing.Id.Length == 0 ? "add" : "save")} it." : null)">
                         <Button Variant="ButtonVariant.Quiet" Disabled="_busy" OnClick="() => OpenAsync(Close)">Cancel</Button>
                     </SaveBar>
@@ -119,7 +119,7 @@
                 </div>
                 <Notice Tone="NoticeTone.Warning" Text="@_problem" />
                 <div class="panel-actions">
-                    <SaveBar Label="@(speaker.Id.Length == 0 ? "Add the speaker" : "Save")" Busy="_busy" OnSave="SaveSpeakerAsync" State="SaveBar.For(Changed, _saved)"
+                    <SaveBar New="@(speaker.Id.Length == 0)" Label="@(speaker.Id.Length == 0 ? "Add the speaker" : "Save")" Busy="_busy" OnSave="SaveSpeakerAsync" State="SaveBar.For(Changed, _saved)"
                              Blocked="@(_name.Trim().Length == 0 ? $"Give them a name to {(speaker.Id.Length == 0 ? "add" : "save")} them." : null)">
                         <Button Variant="ButtonVariant.Quiet" Disabled="_busy" OnClick="() => OpenAsync(Close)">Cancel</Button>
                     </SaveBar>

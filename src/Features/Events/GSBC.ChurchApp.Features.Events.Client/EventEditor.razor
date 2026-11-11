@@ -170,7 +170,7 @@ else
             <div class="editor-foot @(InPanel ? "editor-foot--panel" : "")">
                 <Notice Tone="NoticeTone.Warning" Text="@_problem" />
                 <div class="editor-foot__actions">
-                    <SaveBar Block="true" Label="@SaveLabel(draft)" Busy="_saving" OnSave="SaveAsync" Blocked="@(Fields.Title.Trim().Length == 0 ? $"Give it a title to {(draft.IsNew ? "add" : "save")} it." : null)" State="SaveLine" SavedText="@SavedWords"
+                    <SaveBar Block="true" New="draft.IsNew" Label="@SaveLabel(draft)" Busy="_saving" OnSave="SaveAsync" Blocked="@(Fields.Title.Trim().Length == 0 ? $"Give it a title to {(draft.IsNew ? "add" : "save")} it." : null)" State="SaveLine" SavedText="@SavedWords"
                              WaitingText="@EditWaiting.WaitingWords" FailedText="@EditWaiting.FailedWords" Detail="@Waiting?.Problem" Retry="() => Editing.RetryAsync(ItemKey)" />
                     @if (!draft.IsNew)
                     {

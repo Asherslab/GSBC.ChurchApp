@@ -316,7 +316,7 @@ else
     </text>;
 
     private RenderFragment SaveButton(EventDraft draft, bool onMasthead) =>
-        @<SaveBar Block="@(!onMasthead)" OnMasthead="onMasthead" Label="@(draft.IsNew ? "Add the regular event" : "Save every date")" Busy="_saving"
+        @<SaveBar Block="@(!onMasthead)" New="draft.IsNew" OnMasthead="onMasthead" Label="@(draft.IsNew ? "Add the regular event" : "Save every date")" Busy="_saving"
                   Blocked="@(Fields.Title.Trim().Length == 0 ? $"Give it a title to {(draft.IsNew ? "add" : "save")} it." : null)" State="SaveLine" SavedText="@SavedWords"
                   WaitingText="@EditWaiting.WaitingWords" FailedText="@EditWaiting.FailedWords" Detail="@Waiting?.Problem" Retry="() => Editing.RetryAsync(ItemKey)"
                   OnSave="() => SaveAsync(keepOwnConfirmed: false)" />;
