@@ -1,40 +1,19 @@
 @inject IMinistryWrites Ministries
-@inject MinistryLookups Lookups
 
 <UnsavedGuard Changed="() => Open" Editing="Draft" State="() => Shape" What="this calendar" />
 
 <Sheet Open="Open" OpenChanged="OpenChanged" Title="@(Draft.Id.Length == 0 ? "Add a calendar" : Draft.Name)" Lead="Leaders add events to it in the calendar. Who it's for decides who sees its events.">
     <ChildContent>
-        @if (_removal is { } removal)
-        {
-            <Notice Tone="NoticeTone.Warning" Text="@($"Removing {removal.Name} also deletes its {(removal.Events == 1 ? "event" : $"{removal.Events} events")}. This can't be undone.")" />
-        }
-        else
-        {
-            <Segmented TValue="string" Label="Who it's for" ShowLabel="true" Stacked="true" Options="Audiences" Value="Draft.Audience" ValueChanged="value => Draft.Audience = value" />
-            <TextField Label="Name" @bind-Value="Draft.Name" MaxLength="60" Placeholder="@DefaultName" Hint="Leave it empty for the usual name." />
-        }
+        <Segmented TValue="string" Label="Who it's for" ShowLabel="true" Stacked="true" Options="Audiences" Value="Draft.Audience" ValueChanged="value => Draft.Audience = value" />
+        <TextField Label="Name" @bind-Value="Draft.Name" MaxLength="60" Placeholder="@DefaultName" Hint="Leave it empty for the usual name." />
         <Notice Tone="NoticeTone.Warning" Text="@_problem" />
     </ChildContent>
     <Actions>
-        @if (_removal is not null)
-        {
-            <Button Block="true" Variant="ButtonVariant.Danger" Busy="_busy" OnClick="RemoveAsync">Remove it and its events</Button>
-            <Button Block="true" Variant="ButtonVariant.Quiet" Disabled="_busy" OnClick="() => _removal = null">Keep it</Button>
-        }
-        else
-        {
-            <SaveBar Block="true" Label="@(Draft.Id.Length == 0 ? "Add the calendar" : "Save")" Busy="_busy" OnSave="SaveAsync" />
-            @if (Draft.Id.Length > 0)
-            {
-                <Button Block="true" Variant="ButtonVariant.Danger" Disabled="_busy" OnClick="AskRemoveAsync">Remove the calendar</Button>
-            }
-        }
+        <SaveBar Block="true" Label="@(Draft.Id.Length == 0 ? "Add the calendar" : "Save")" Busy="_busy" OnSave="SaveAsync" />
     </Actions>
 </Sheet>
 
 @code {
-    private CalendarRemoval? _removal;
     private bool _busy;
     private string? _problem;
 
@@ -68,16 +47,6 @@
         RunAsync(async () =>
         {
             await Ministries.SaveCalendarAsync(Page.Ministry.Id, Draft);
-            await OpenChanged.InvokeAsync(false);
-            await OnSaved.InvokeAsync();
-        });
-
-    private Task AskRemoveAsync() => RunAsync(async () => _removal = await Lookups.CalendarRemovalAsync(Page.Ministry.Id, Draft.Id));
-
-    private Task RemoveAsync() =>
-        RunAsync(async () =>
-        {
-            await Ministries.RemoveCalendarAsync(Page.Ministry.Id, Draft.Id);
             await OpenChanged.InvokeAsync(false);
             await OnSaved.InvokeAsync();
         });

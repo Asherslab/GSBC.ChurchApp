@@ -2,36 +2,42 @@
 
 <UnsavedGuard Changed="() => HasChanges" What="the words for the prayer wall" />
 
-<section class="prayer-request__wall" aria-label="The prayer wall">
-    <h2>The prayer wall</h2>
-    <p class="prayer-request__lead">@Lead</p>
-    @if (Case.Wall != WallState.TakenDown)
-    {
-        <TextField Label="As the wall shows it" Multiline="true" MaxLength="2000" @bind-Value="_text"
-                   Hint="Change the words if they say more than the church should read, such as someone else's name. What they wrote stays as it is." />
-        @if (Case.FirstName.Length > 0)
+<Section Grouped="true" Title="The prayer wall" Lead="@Lead">
+    <ChildContent>
+        @if (Case.Wall != WallState.TakenDown)
         {
-            <Segmented TValue="bool" Label="Name" ShowLabel="true" Options="Names" @bind-Value="_showName"
-                       Hint="@(Case.Minor ? "They're under 18. No name is safer unless they'd like it." : null)" />
+            <div class="prayer-wall-form">
+                <TextField Label="As the wall shows it" Multiline="true" MaxLength="2000" @bind-Value="_text"
+                           Hint="Change the words if they say more than the church should read, such as someone else's name. What they wrote stays as it is." />
+                @if (Case.ShortName.Length > 0)
+                {
+                    <Segmented TValue="bool" Label="Name" ShowLabel="true" Options="Names" @bind-Value="_showName"
+                               Hint="@NameHint" />
+                }
+                else
+                {
+                    <p class="prayer-wall-form__note">They asked for no name, so the wall shows none.</p>
+                }
+                <DateField Label="Shows until" Min="@Day(Today.AddDays(1))" Max="@Day(Today.AddDays(365))" @bind-Value="_until" />
+            </div>
         }
-        else
+    </ChildContent>
+    <Foot>
+        @if (Case.Wall != WallState.TakenDown)
         {
-            <p class="prayer-request__lead">They asked for no name, so the wall shows none.</p>
-        }
-        <TextField Label="Shows until" Type="date" Min="@Day(Today.AddDays(1))" Max="@Day(Today.AddDays(365))" @bind-Value="_until" />
-        <div class="prayer-request__actions">
             <SaveBar Label="@(Case.Wall == WallState.Shown ? "Save the changes" : "Put it on the wall")" State="@(HasChanges ? SaveState.Unsaved : Status)"
                      WaitingText="Waiting to send. It goes by itself when you're back online" FailedText="Couldn't send" Detail="@Problem" Retry="Retry"
-                     Busy="@(Busy == WallAction.Show)" Blocked="@Blocked" OnSave="ShowAsync" />
-            @if (Case.Wall is WallState.Waiting or WallState.Shown)
-            {
-                <Button Variant="ButtonVariant.Quiet" Busy="@(Busy == WallAction.KeepPrivate)" OnClick="OnKeepPrivate">
-                    @(Case.Wall == WallState.Shown ? "Take it off the wall" : "Not for the wall")
-                </Button>
-            }
-        </div>
-    }
-</section>
+                     Busy="@(Busy == WallAction.Show)" Blocked="@Blocked" OnSave="ShowAsync" OnCancel="@(HasChanges ? Undo : default(EventCallback))">
+                @if (Case.Wall is WallState.Waiting or WallState.Shown)
+                {
+                    <Button Variant="ButtonVariant.Quiet" Busy="@(Busy == WallAction.KeepPrivate)" OnClick="OnKeepPrivate">
+                        @(Case.Wall == WallState.Shown ? "Take it off the wall" : "Not for the wall")
+                    </Button>
+                }
+            </SaveBar>
+        }
+    </Foot>
+</Section>
 
 @code {
     private const int WallDays = 30;
@@ -54,7 +60,13 @@
 
     private DateOnly Today => ChurchTime.Today(Clock);
 
-    private IReadOnlyList<SegmentOption<bool>> Names => [new(false, PrayerWords.NoName), new(true, Case.FirstName)];
+    private IReadOnlyList<SegmentOption<bool>> Names => [new(false, PrayerWords.NoName), new(true, Case.ShortName)];
+
+    private string? NameHint => string.Join(" ", new[]
+    {
+        Case.Wall == WallState.Shown && !Case.WallShowsName ? "They'd like their name shown. The wall shows no name at the moment." : null,
+        Case.Minor ? "They're under 18. No name is safer unless they'd like it." : null,
+    }.OfType<string>()) is { Length: > 0 } hint ? hint : null;
 
     private static string Day(DateOnly day) => day.ToString("yyyy-MM-dd");
 
@@ -79,10 +91,12 @@
             return;
         _from = from;
         DateOnly until = Case.Wall == WallState.Shown && Case.WallUntil is { } shownUntil ? ChurchTime.DayOf(shownUntil) : Today.AddDays(WallDays);
-        bool showName = Case.Wall == WallState.Shown && Case.WallShowsName && Case.FirstName.Length > 0;
+        bool showName = Case.ShortName.Length > 0 && (Case.Wall != WallState.Shown || Case.WallShowsName);
         (_text, _showName, _until) = (Case.WallText.Length > 0 ? Case.WallText : Case.Text, showName, Day(until));
         _was = (_text, _showName, _until);
     }
+
+    private EventCallback Undo => EventCallback.Factory.Create(this, () => (_text, _showName, _until) = _was);
 
     private async Task ShowAsync()
     {

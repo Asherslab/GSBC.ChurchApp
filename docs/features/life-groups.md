@@ -1,8 +1,15 @@
 # Life Groups
 
-Status: built 2026-11-10 as part of Ministries Stage 2 (below); draft 2026-10-26; Life Groups became a kind of ministry on 2026-10-30. Extends
+Status: wave 2 screens built 2026-11-12 (below); built 2026-11-10 as part of Ministries Stage 2; draft 2026-10-26; Life Groups became a kind of ministry on 2026-10-30. Extends
 [SPEC.md](../../SPEC.md) and [ministries.md](ministries.md); the site map it uses is
 [site-map.md](site-map.md).
+
+## Its set's dates, not its Sundays, and Sunday changes in News (owner, 2026-11-12, #56)
+
+Superseding the next section's filter: a linked calendar shows a group's events **while its set runs** (first Sunday to
+last; an all-year group, every set it doesn't sit out), and *Its Sundays* is gone. A change to one Sunday ("No class this
+Sunday") is a **News post for that Sunday**, the owner's pick on the decision page; Coming up shows it under the Sunday.
+The Life Groups desk now uses the shared Board. Details in [ministries.md](ministries.md), *Wave 2*.
 
 ## A linked calendar instead of the Sundays tab (owner, 2026-11-12)
 

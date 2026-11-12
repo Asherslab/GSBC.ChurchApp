@@ -15,7 +15,7 @@ public static class PrayerNotifications
         new TimeOnly(12, 0));
 
     public static readonly NotificationKind PrayedFor = new(
-        "prayer.prayed", "Someone prays for your prayer request", "Prayer", Opens: new("/prayer/yours/{id}"),
+        "prayer.prayed", "How many people have prayed for your prayer request", "Prayer", Opens: new("/prayer/yours/{id}"),
         Digest: new NotificationDigest("Someone prayed for your request", "{0} people prayed for your request", "Your request is on the prayer wall.",
             PrayedForSchedule, ChangedBy: PrayerPermissions.Settings));
 

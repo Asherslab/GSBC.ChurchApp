@@ -23,7 +23,7 @@ else
 
     private string HintId => $"{_id}-hint";
 
-    private RenderFragment Track => @<div class="segmented @(Stacked ? "segmented--stacked" : "") @Class" role="radiogroup" aria-label="@(ShowLabel ? null : Label)"
+    private RenderFragment Track => @<div class="segmented @(Rows ? "segmented--rows" : Stacked ? "segmented--stacked" : "") @Class" role="radiogroup" aria-label="@(ShowLabel ? null : Label)"
      aria-labelledby="@(ShowLabel ? _id : null)" aria-describedby="@(ShowLabel && Hint is not null ? HintId : null)">
     @for (int index = 0; index < Options.Count; index++)
     {
@@ -32,11 +32,15 @@ else
         bool selected = IsSelected(option);
         <button type="button" class="segmented__option" role="radio" aria-checked="@(selected ? "true" : "false")" tabindex="@(at == TabStop ? 0 : -1)"
                 @ref="_buttons[at]" @onclick="() => SelectAsync(option.Value)" @onkeydown="key => StepAsync(key, at)">
-            @if (option.Icon is not null)
+            @if (Rows)
+            {
+                <span class="segmented__radio" aria-hidden="true"></span>
+            }
+            else if (option.Icon is not null)
             {
                 <Icon Name="@option.Icon" Size="IconSize.Small" />
             }
-            @if (Stacked)
+            @if (Stacked || Rows)
             {
                 <span class="segmented__text">
                     <span class="segmented__label">@option.Label</span>
@@ -64,6 +68,7 @@ else
     [Parameter] public EventCallback<TValue> ValueChanged { get; set; }
     [Parameter] public string? Class { get; set; }
     [Parameter] public bool Stacked { get; set; }
+    [Parameter] public bool Rows { get; set; }
     [Parameter] public bool ShowLabel { get; set; }
     [Parameter] public string? Hint { get; set; }
 

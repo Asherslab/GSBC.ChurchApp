@@ -70,9 +70,9 @@ public sealed class StoredMinistries(ILocalFeeds feeds, IAccess access, TimeProv
                 .ToList(),
             You = await YouAsync(map, ministry),
         };
+        List<DaySpan>? within = null;
         if (ministry.ShowsInLifeGroups)
         {
-            page.Sessions = (await AllAsync<GroupSessions>(MinistriesFeeds.Sessions)).FirstOrDefault(group => group.GroupId == id)?.Changes ?? [];
             page.Round = (await AllAsync<Round>(MinistriesFeeds.Rounds)).FirstOrDefault(round => round.Id == ministry.RoundId);
             string today = ChurchTime.Today(time).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
             IReadOnlyList<SittingOut> sittingOut = await AllAsync<SittingOut>(MinistriesFeeds.SittingOut);
@@ -80,19 +80,21 @@ public sealed class StoredMinistries(ILocalFeeds feeds, IAccess access, TimeProv
                 .Where(sitOut => sitOut.GroupId == id && sitOut.Round is { Sundays.Count: > 0 } round && string.CompareOrdinal(round.Sundays.Max(), today) >= 0)
                 .OrderBy(sitOut => sitOut.Round!.Sundays.Min(), StringComparer.Ordinal)
                 .ToList();
-            page.Sundays = LifeGroupRounds.SundaysOf(id, ministry.RoundId, await AllAsync<Round>(MinistriesFeeds.Rounds), sittingOut);
+            IReadOnlyList<Round> rounds = await AllAsync<Round>(MinistriesFeeds.Rounds);
+            page.Sundays = LifeGroupRounds.SundaysOf(id, ministry.RoundId, rounds, sittingOut);
+            within = LifeGroupRounds.SpansOf(id, ministry.RoundId, rounds, sittingOut);
         }
         if (MinistryParts.IsOn(ministry.PartsOff, MinistryParts.Calendar))
             page.Calendars.AddRange((await ItemsAsync<CalendarLine>(MinistriesFeeds.Calendars, MinistriesFeeds.PrivateCalendars, [id]))
                 .Where(calendar => calendar.Linked && calendar.MinistryId == id)
                 .OrderBy(calendar => calendar.Name, StringComparer.Ordinal)
-                .Select(calendar => OnItsDays(calendar, ministry.ShowsInLifeGroups ? page.Sundays : null)));
+                .Select(calendar => OnlyWithin(calendar, within)));
         return page;
     }
 
-    private static CalendarLine OnItsDays(CalendarLine calendar, IReadOnlyList<string>? days)
+    private static CalendarLine OnlyWithin(CalendarLine calendar, IReadOnlyList<DaySpan>? within)
     {
-        (calendar.Days, calendar.OnItsDays) = ([.. days ?? []], days is not null);
+        (calendar.Within, calendar.OnlyWithin) = ([.. within ?? []], within is not null);
         return calendar;
     }
 
@@ -108,7 +110,6 @@ public sealed class StoredMinistries(ILocalFeeds feeds, IAccess access, TimeProv
             SittingOut = (await AllAsync<SittingOut>(MinistriesFeeds.SittingOut)).Where(sitOut => groupIds.Contains(sitOut.GroupId)).Select(WithoutRound).ToList(),
             Rounds = (await AllAsync<Round>(MinistriesFeeds.Rounds)).OrderBy(round => round.Sundays.DefaultIfEmpty("").Min(StringComparer.Ordinal), StringComparer.Ordinal).ToList(),
             Groups = groups.Select(group => Summary(group.Ministry, words.GetValueOrDefault(group.Ministry.Id) ?? "")).ToList(),
-            Sessions = (await AllAsync<GroupSessions>(MinistriesFeeds.Sessions)).Where(group => groupIds.Contains(group.GroupId)).ToList(),
             MayPlan = access.Can(MinistriesPermissions.PlanLifeGroups),
             Under = groups.Select(group => group.Ministry.ParentId).Where(parent => parent.Length > 0).Distinct()
                 .Select(map.Find).OfType<MinistryCard>().Select(parent => new Crumb { Id = parent.Ministry.Id, Name = parent.Ministry.Name }).ToList(),

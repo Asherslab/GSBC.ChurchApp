@@ -1,0 +1,69 @@
+@using System.Globalization
+
+<div class="month-days @Class">
+    <div class="month-days__bar">
+        <Button Small="true" Variant="ButtonVariant.Quiet" Icon="chevron-left" AriaLabel="The month before" Disabled="@(Earliest is { } earliest && First <= earliest)"
+                OnClick="() => MonthChanged.InvokeAsync(First.AddMonths(-1))" />
+        <h3 class="month-days__title" aria-live="polite">@First.ToString("MMMM yyyy", English)</h3>
+        <Button Small="true" Variant="ButtonVariant.Quiet" Icon="chevron-right" AriaLabel="The month after" OnClick="() => MonthChanged.InvokeAsync(First.AddMonths(1))" />
+    </div>
+    <div class="month-days__grid" role="grid" aria-label="@Label">
+        <div class="month-days__week" role="row">
+            @foreach (DayOfWeek weekday in Weekdays)
+            {
+                <span class="month-days__weekday" role="columnheader" aria-label="@weekday">@weekday.ToString()[..1]</span>
+            }
+        </div>
+        @foreach (IReadOnlyList<DateOnly> week in Weeks)
+        {
+            <div class="month-days__week" role="row">
+                @foreach (DateOnly day in week)
+                {
+                    DayMark mark = Marks(day);
+                    bool inMonth = day.Month == First.Month;
+                    bool past = Today is { } today && day < today;
+                    <button type="button" role="gridcell" class="month-days__day month-days__day--@mark.ToString().ToLowerInvariant() @(inMonth ? "" : "month-days__day--outside") @(day == Today ? "month-days__day--today" : "")"
+                            disabled="@(past || !inMonth)" aria-label="@($"{day.ToString("dddd d MMMM", English)}{Describe(mark)}")" @onclick="() => OnPick.InvokeAsync(day)">
+                        <span>@day.Day</span>
+                    </button>
+                }
+            </div>
+        }
+    </div>
+    @if (Key is not null)
+    {
+        <p class="month-days__key">@Key</p>
+    }
+</div>
+
+@code {
+    private static readonly CultureInfo English = CultureInfo.InvariantCulture;
+    private static readonly DayOfWeek[] Weekdays =
+        [DayOfWeek.Monday, DayOfWeek.Tuesday, DayOfWeek.Wednesday, DayOfWeek.Thursday, DayOfWeek.Friday, DayOfWeek.Saturday, DayOfWeek.Sunday];
+
+    [Parameter, EditorRequired] public required string Label { get; set; }
+    [Parameter, EditorRequired] public required DateOnly Month { get; set; }
+    [Parameter] public EventCallback<DateOnly> MonthChanged { get; set; }
+    [Parameter, EditorRequired] public required Func<DateOnly, DayMark> Marks { get; set; }
+    [Parameter] public EventCallback<DateOnly> OnPick { get; set; }
+    [Parameter] public DateOnly? Today { get; set; }
+    [Parameter] public DateOnly? Earliest { get; set; }
+    [Parameter] public Func<DayMark, string>? Words { get; set; }
+    [Parameter] public string? Key { get; set; }
+    [Parameter] public string? Class { get; set; }
+
+    private DateOnly First => new(Month.Year, Month.Month, 1);
+
+    private IEnumerable<IReadOnlyList<DateOnly>> Weeks
+    {
+        get
+        {
+            DateOnly start = First.AddDays(-(((int)First.DayOfWeek + 6) % 7));
+            DateOnly last = First.AddMonths(1).AddDays(-1);
+            for (DateOnly monday = start; monday <= last; monday = monday.AddDays(7))
+                yield return Enumerable.Range(0, 7).Select(monday.AddDays).ToList();
+        }
+    }
+
+    private string Describe(DayMark mark) => mark == DayMark.None ? "" : $": {Words?.Invoke(mark) ?? mark.ToString()}";
+}

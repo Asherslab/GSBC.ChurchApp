@@ -16,6 +16,13 @@
         }
     </TrailingContent>
     <Below>
+        @if (assignment.Training && Replies.Fills(assignment.State))
+        {
+            IReadOnlyList<Assignment> samePosition = Date.Date.Assignments.Where(each => each.PositionId == assignment.PositionId).ToList();
+            <p class="roster-note">@(samePosition.Any(each => each.Id != assignment.Id && each.Fills && !each.Training)
+                                       ? $"{RosterLines.TrainingWith(assignment, samePosition)}."
+                                       : $"Training: a leader puts someone trained for {assignment.PositionName} on with {(Date.Yourself ? "you" : RosterLines.First(Date.For.Name))}.")</p>
+        }
         @if (assignment.RepliedBy.Length > 0)
         {
             <p class="roster-note">Answered by @assignment.RepliedBy</p>
@@ -31,7 +38,7 @@
                 <div class="roster-why">
                     <TextField Label="Want to say why? It goes to the leaders" @bind-Value="_reason" MaxLength="200" />
                     <div class="roster-actions">
-                        <Button Small="true" Variant="ButtonVariant.Danger" Disabled="Busy" OnClick="SendCantAsync">@(Date.Yourself ? "I can't do it" : $"{RosterLines.First(Date.For.Name)} can't do it")</Button>
+                        <Button Small="true" Disabled="Busy" OnClick="SendCantAsync">@(Date.Yourself ? "I can't do it" : $"{RosterLines.First(Date.For.Name)} can't do it")</Button>
                         <Button Small="true" Variant="ButtonVariant.Quiet" OnClick="() => _why = false">Keep it</Button>
                     </div>
                 </div>

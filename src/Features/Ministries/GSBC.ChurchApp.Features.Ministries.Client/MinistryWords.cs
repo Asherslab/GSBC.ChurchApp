@@ -1,5 +1,6 @@
 using System.Globalization;
 using GSBC.ChurchApp.Features.Ministries.Contracts;
+using GSBC.ChurchApp.Platform.Client.Modules;
 
 namespace GSBC.ChurchApp.Features.Ministries.Client;
 
@@ -55,13 +56,21 @@ public static class MinistryWords
         _ => "Attends",
     };
 
+    public static string Allows(string role) => role switch
+    {
+        Roles.Leader => "Leads it and everything under it, and is listed as a leader",
+        Roles.Admin => "Can do everything a leader can, without being listed as one",
+        Roles.Team => "Sees what's for the team: its news, files, chats and roster",
+        _ => "Comes along, and sees what's for attendees and their families",
+    };
+
     public static string HeroNote(MinistryDetails ministry) => ministry.Summary.Length > 0 ? ministry.Summary : ministry.Meets;
 
     public static string JoinLine(MinistrySummary ministry) => ministry.TeamJoin switch
     {
         Joining.Open => "Open to join",
         Joining.Ask => "Ask to join",
-        _ => "Invite only",
+        _ => "",
     };
 
     public static string Yours(MinistryPage page)
@@ -96,6 +105,17 @@ public static class MinistryWords
             : gone.TotalDays < 14 ? "Last week"
             : at.ToLocalTime().ToString("d MMMM", CultureInfo.CurrentCulture);
     }
+
+    public static IReadOnlyList<DayRange> Ranges(IEnumerable<DaySpan> spans) =>
+        spans.Select(span => new DayRange(LifeGroupRounds.Day(span.From), LifeGroupRounds.Day(span.To))).ToList();
+
+    public static string Span(IReadOnlyList<DaySpan> spans) =>
+        spans.Count == 0 ? "" : $"{ShortDay(spans[0].From)} to {ShortDay(spans[^1].To)}";
+
+    private static string ShortDay(string isoDate) =>
+        DateOnly.TryParseExact(isoDate, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateOnly day)
+            ? day.ToString("d MMM", CultureInfo.CurrentCulture)
+            : isoDate;
 
     public static string Day(string isoDate) =>
         DateOnly.TryParseExact(isoDate, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateOnly day)

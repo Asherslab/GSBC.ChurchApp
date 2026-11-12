@@ -106,8 +106,16 @@ internal sealed class SampleMinistries(IServiceScopeFactory scopes, IHostEnviron
         MinistryRecord kidsLife = Add(kids.Id, "Kids Life", "Prep to Year 6, all year", "Sample group.", "", "Prep to Year 6", "#f89833", "smile",
             Joining.Invite, Joining.Open, inLifeGroups: true);
         kidsLife.Meets = "Hall";
-        db.Sessions.Add(new SessionRecord { GroupId = second.Id, Date = round.Sundays[1], Off = true, Note = "No class this week" });
-        db.Sessions.Add(new SessionRecord { GroupId = first.Id, Date = round.Sundays[2], Note = "Combined with Faith at Work, in Room 2" });
+        db.Posts.Add(new PostRecord
+        {
+            Id = Guid.CreateVersion7(), MinistryId = second.Id, Title = "No class this Sunday", Body = "Sample post. Join the 10:30 service instead.",
+            Audience = Audiences.Everyone, AuthorName = "Sample leader", PostedAt = now, Sunday = round.Sundays[1], NoClass = true,
+        });
+        db.Posts.Add(new PostRecord
+        {
+            Id = Guid.CreateVersion7(), MinistryId = first.Id, Title = "Combined with Faith at Work", Body = "Sample post. We meet in Room 2 this week.",
+            Audience = Audiences.Everyone, AuthorName = "Sample leader", PostedAt = now, Sunday = round.Sundays[2],
+        });
         return new SampleSet(calendars);
     }
 

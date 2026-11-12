@@ -1,6 +1,6 @@
 # Ministries
 
-Status: the owner's answers of 2026-11-11/12 built 2026-11-12 (*Wave 1: the owner's answers*, below); Stage 3 (rosters) built 2026-11-11, below; Stage 2 (ministries, team and attendees, joining, audiences, posts, files, calendars, Life Groups) built 2026-11-10, below; Stage 1 (People) built 2026-11-10, in [people.md](people.md); interviewed 2026-11-10 (below, supersedes the draft); draft 2026-10-30; not built yet (Home has sample *Ministries* and *Life Groups* tiles that open *coming soon*); areas separated into tabs 2026-10-31; who sees each module chosen per
+Status: wave 2, the screens, built 2026-11-12 (*Wave 2*, below); the owner's answers of 2026-11-11/12 built 2026-11-12 (*Wave 1: the owner's answers*, below); Stage 3 (rosters) built 2026-11-11, below; Stage 2 (ministries, team and attendees, joining, audiences, posts, files, calendars, Life Groups) built 2026-11-10, below; Stage 1 (People) built 2026-11-10, in [people.md](people.md); interviewed 2026-11-10 (below, supersedes the draft); draft 2026-10-30; not built yet (Home has sample *Ministries* and *Life Groups* tiles that open *coming soon*); areas separated into tabs 2026-10-31; who sees each module chosen per
 ministry 2026-10-31. Extends [SPEC.md](../../SPEC.md), where v1's "Groups" line ("ministries,
 each with a contact or 'I'm interested' button") was the placeholder. A POC is in the PWA spike
 (`spikes/app-poc`, More → Ministries and a Hub tile). Everything in it is sample data.
@@ -113,6 +113,73 @@ reminder.**
 **Open from the interview:** direct messages (who may message whom, whether DMs are auditable and by whom, whether
 they belong to a ministry); how long the church wants anything kept if "forever" changes; the shape of the
 auditors' coordination chat. (Blue card and training data from Safe Ministry Check: built 2026-11-10.)
+
+## Wave 2: the screens (2026-11-12)
+
+The UI for wave 1, and the owner's feedback #12–#56 on the ministry screens. **Where this disagrees with anything below,
+this wins.** Two choices went to the decision page (`.impeccable/mocks/ministries-wave2/`); the rest follows DESIGN.md's
+Pattern map.
+
+- **A Life Group's Calendar** (#56; owner: "'It's Sundays', plus a linked calendar from life groups, seems counter
+  intuitive. I'd drop the 'it's Sundays', and on life groups that have a 'round' it's active for, only show the events
+  during that round from linked calendars (calendars that are added or belong to a ministry/life group should show
+  all)"). *Its Sundays* is gone. A linked calendar on a group in a set shows its events **from the set's first Sunday to
+  its last** (`LifeGroupRounds.SpansOf`); an all-year group's, during every set it doesn't sit out (the breaks, as in
+  wave 1); its own and added calendars show everything. Old `/sundays` links still open Calendar.
+- **Telling a group about one Sunday** (owner's pick on the decision page: "Tell the group in News"). A News post can be
+  for one of a Life Group's Sundays, optionally *No class this Sunday* (`Post.Sunday`, `Post.NoClass`; the server takes
+  only the group's own Sundays). Coming up strikes that Sunday through and links the post under it. It replaces the
+  per-Sunday notes (`sessions`, dropped; the migration turns any into posts).
+- **Linked calendars** (#50): Unlink is in each row's ⋯ menu and asks once; pressing ⋯ never opens the calendar (a row's
+  menu sits beside its link, `ListRow Actions`). The same for its own calendars (Change, Remove) and documents (Change,
+  Delete). **Leaders link from the phone** (#54), choosing from the calendars for everyone in the phone's store.
+- **The role picker** (#13, #14): one role menu per person in their pane (admin) or sheet (phone): Attendee, Team, Admin,
+  Leader, with what each allows, and *Take … off* last (`Leading.SetRole`). The person stays chosen after a change.
+  *Add to the team* stays open after each add and says who was added (#29 B).
+- **Settings** (#12): groups (cards in the admin panel, inset groups on the phone): The details (saved with Cancel and
+  Save), Its tabs, Chats (who can start a chat), From the ministries under it, Where it sits, Ministries under it.
+  Archive and Delete moved to the ministry's ⋯ menu (top bar on the phone, pane head in the admin panel).
+- **Tab order** (#21; owner's pick on the decision page: drag with a live preview): Its tabs lists the parts in order,
+  each with its switch; drag a row by its handle, or use its ⋯ menu to move it up or down; the tab strip above follows.
+  About is always first. Changes apply at once (`ReorderList`, Platform.Ui).
+- **Invite only** (#22; owner: "Let's just not offer an ask to join or join button and call it a day"): no line in the
+  directory and no join button; Open and Ask to join stay.
+- **A parent's yes**: a parent's *Waiting for your yes* comes first on About; a young person's own ask says it waits for a
+  parent; a leader sees "no parent is linked yet" on the ask (`AskLine.NoParent`).
+- **Life Groups in the admin panel** sit on the shared Board (Being planned, Shown in the app, Now on, Finished in a
+  year), each set's actions in its ⋯ menu, with typed dates and times.
+
+## Wave 2: Rosters' screens (owner, 2026-11-12)
+
+Designed on the decision page (`.impeccable/mocks/rosters/wave2/`); the owner picked "A for training lines, A for swap rule,
+B for days away". **Where this disagrees with anything below, this wins.**
+
+- **Days away repeat, cover part of a day and skip weeks** (owner: "run of days, and repeating (with a time, e.g. some
+  people might only attend pm services) (with exceptions)"). A day away is a run of days, or **every week** on chosen days
+  from a start date until an end date or until further notice; either can be all day, mornings (until 12pm), evenings
+  (from 5pm) or between times; a repeating one can skip dates. One rule decides whether someone is away for a roster date
+  (`AwayRules` in Rosters.Contracts, used by the server's flags and the phone's): the date's day must be in the run, on one
+  of the weekdays, not skipped, and the event's time must overlap the times ("Away that day", or "Away at that time").
+  The editor is a **month** (`MonthDays`, Platform.Ui): shaded all day, the top half for mornings, the bottom half for
+  evenings, struck through when skipped; choosing a day adds days away there, opens the days away on it, or for a
+  repeating one says "not away this day" (or "away this day after all"). Repeating ones are listed above the month and
+  one-off ones below it.
+- **Leaders can change their team's days away** (owner: "leaders need to be able to edit/modify this"). Anyone who may
+  edit a ministry's roster (`ministries.roster.edit` on it) may set and remove days away for anyone on its team, as well as
+  the person, their parent and staff with *See and change anyone's days away*. The Roster tab's days away for a leader is
+  **The team's days away**, choosing whose; for everyone else it's theirs and their children's.
+- **A trainee is a line of their own** (owner: both leaders and the trainee notice). On the date, under the position,
+  indented, led by a "T": "Training, with Jo" once someone trained is on (aqua); alone it's amber with the flag, and the
+  position's *Put someone on* says "someone trained for Ben". The grid marks a trainee's cell "Training". The trainee's own
+  date says who they're training with, or that a leader puts someone trained on with them.
+- **The swap rule reads as what happens.** *How the roster works* is in groups (Answers; When someone asks the team for a
+  swap as three radio rows, `Segmented Rows`; Asking one person; What the team sees; Calendars it rosters from), with a
+  sentence ("So when someone can't do a date, they ask the team…") under the swap choices.
+- **One voice in the roster's settings** (#48: "Inconsistent language, use 'leaders' or otherwise, not yourself"): settings
+  talk about *leaders* and *they* (the team), never *you* or *yourself*; only the person asking for a swap is spoken to
+  ("You choose who on the team to ask").
+- **Delete in ⋯** (Pattern map): deleting a position, taking a date off the roster, taking someone off a date and deleting
+  days away are in the item's ⋯ menu and ask once.
 
 ## Wave 1: the owner's answers (2026-11-11/12, built 2026-11-12)
 

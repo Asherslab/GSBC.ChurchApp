@@ -13,6 +13,6 @@ public static class MinistriesAppExtensions
         modules.Add(new ClientModule("Ministries", typeof(MinistriesAppExtensions).Assembly,
             [new NavEntry("Ministries", "ministries", AppIcons.Ministries), new NavEntry("Life Groups", "life-groups", AppIcons.LifeGroups)],
             MinistriesFeeds.OnPhones, MinistriesFeeds.PrivateOnPhones));
-        return services.AddMinistriesOnPhone().AddSingleton(MinistryLinks.App);
+        return services.AddMinistriesOnPhone().AddSingleton(MinistryLinks.App).AddSingleton<ILinkableCalendars, StoredLinkableCalendars>();
     }
 }

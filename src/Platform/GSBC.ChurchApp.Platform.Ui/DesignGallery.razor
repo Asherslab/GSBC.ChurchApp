@@ -166,6 +166,11 @@
             @<ToggleChips TValue="string" Label="Calendars" Chips="CalendarChips" Toggled="chip => ToggleCalendar(chip.Value)" />)
         @Item("The same list two ways, or one small choice: Segmented", "Two to four options that fit on one line.",
             @<Segmented TValue="string" Label="Show as" Options="Views" @bind-Value="_view" />)
+        @Item("One rule of a few, each needing a sentence: Segmented Rows", "Radio rows in a settings group, set once and read often, like the roster's swap rule.",
+            @<Segmented TValue="string" Label="When someone asks the team for a swap" Rows="true" Options="SwapRules" @bind-Value="_swapRule" />)
+        @Item("Days on a month: MonthDays", "Whole days, mornings, evenings and skipped days at a glance; choosing a day opens what's on it.",
+            @<MonthDays Label="Days away" Month="@(_month ?? Today)" MonthChanged="month => _month = month" Marks="SampleMarks" Today="Today" Earliest="Today"
+                       Words="mark => mark.ToString()" Key="Shaded: away. Top half: mornings. Struck through: not away that day." />)
         @Item("Light or dark: SchemeChoice", "The same choice on the phone and in the Account menu.",
             @<SchemeChoice ShowLabel="true" />)
         @Item("On or off: ToggleRow", "A setting that changes straight away.",
@@ -253,7 +258,13 @@
                 <ListRow Title="New this week" Subtitle="Two notices" Icon="bell" IconTone="RowTone.Warm" Trailing="2" Href="gallery" />
                 <ListRow Title="Website" Subtitle="example.com" Icon="link" IconTone="RowTone.Quiet" Href="https://example.com" External="true" />
                 <ListRow Title="Coming later" Subtitle="Not in this version" Icon="lock" Disabled="true" />
+                <ListRow Title="Services" Subtitle="A row with its own ⋯ menu (Actions): the row opens it, the menu acts on it" Icon="link" IconTone="RowTone.Quiet" Href="gallery" Actions="RowActions" />
             </ListGroup>)
+        @Item("Putting things in order: ReorderList", "Drag a row by its handle, or use its ⋯ menu to move it up or down; the preview above follows as you drag.",
+            @<ReorderList TItem="string" Items="_order" Key="name => name" Name="name => name" Label="Tabs, in order" OnReordered="order => _order = order">
+                <Preview>@foreach (string name in context) { <span @key="name">@name</span> }</Preview>
+                <ItemTemplate><span class="gallery__note">@context</span></ItemTemplate>
+            </ReorderList>)
         @Item("A list under headings: GroupedList", "Sorted into groups, like people by first letter.",
             @<GroupedList TItem="SamplePerson" Items="People" GroupKey="person => person.Name[..1]">
                 <ItemTemplate><ListRow Title="@context.Name" Subtitle="@context.Email" /></ItemTemplate>
@@ -293,6 +304,8 @@
     <Section Title="Status" Lead="Where something is, and how much.">
         @Item("Steps a thing moves through: StagePipeline", "Done steps ticked, the current one solid. Press a step to move there.",
             @<StagePipeline TValue="string" Label="Where it is" Stages="Stages" @bind-Value="_stage" />)
+        @Item("Where something stands, for the person it belongs to: StagePipeline ReadOnly", "The same steps, not pressable, for someone who can see where it is but not move it.",
+            @<StagePipeline TValue="string" Label="Where yours is" Stages="Stages" Value="_stage" ReadOnly="true" />)
         @Item("A short state: Pill", "One word or two, never a sentence.",
             @<div class="gallery__row">
                 <Pill>New</Pill>
@@ -381,6 +394,22 @@
     private static readonly IReadOnlyList<TabOption<string>> Tabs = [new("about", "About"), new("news", "News", 2), new("people", "People"), new("settings", "Settings")];
     private static readonly IReadOnlyList<Crumb> Trail = [new("Library", "library", "folder"), new("Events", "events"), new("2026", "2026")];
     private static readonly IReadOnlyList<SegmentOption<string>> Views = [new("grid", "Grid"), new("list", "List")];
+    private static readonly IReadOnlyList<SegmentOption<string>> SwapRules =
+    [
+        new("off", "Nobody takes it", Detail: "They ask a leader instead"),
+        new("team", "Anyone on the team can take it", Detail: "Whoever takes it is on; leaders hear"),
+        new("approve", "Anyone can offer, and a leader says yes"),
+    ];
+    private string _swapRule = "team";
+    private DateOnly? _month;
+
+    private DayMark SampleMarks(DateOnly day) => day.DayOfWeek switch
+    {
+        DayOfWeek.Sunday when day.Day is > 21 and <= 28 => DayMark.Skipped,
+        DayOfWeek.Sunday => DayMark.Morning,
+        DayOfWeek.Saturday when day.Day is > 7 and <= 14 => DayMark.AllDay,
+        _ => DayMark.None,
+    };
     private static readonly IReadOnlyList<FieldOption> Services = [new("am", "Sunday 10:30am"), new("pm", "Sunday 6pm")];
     private static readonly IReadOnlyList<RoleChoice<string>> Roles =
     [
@@ -423,6 +452,7 @@
     private int _week;
     private bool _paged, _deleting, _popover, _tray, _editor = true, _explain, _anonymous = true, _viewing, _banner;
     private string _role = "team";
+    private IReadOnlyList<string> _order = ["News", "Calendar", "Chats", "Files"];
     private string _view = "grid";
     private string _name = "";
     private string _request = "";
@@ -479,6 +509,11 @@
         this.Item("Send a recovery link", () => Task.CompletedTask, "send"),
         this.Item("Open as a page", () => Task.CompletedTask, "maximize-2"),
         this.Item("Delete Jordan…", () => { _deleting = true; return Task.CompletedTask; }, "trash-2", danger: true, startsGroup: true),
+    ];
+
+    private IReadOnlyList<MenuItem> RowActions =>
+    [
+        this.Item("Unlink Services…", () => { _deleting = true; return Task.CompletedTask; }, "x", danger: true),
     ];
 
     private IReadOnlyList<MenuItem> NewItems =>

@@ -4,7 +4,7 @@
 
 <UnsavedGuard Changed="() => _chosen is not null" What="@($"moving {Page.Ministry.Name}")" Save="MoveBeforeLeavingAsync" />
 
-<Section Title="Where it sits" Lead="@Lead">
+<Section Title="Where it sits" Lead="@Lead" Grouped="true">
     <LiveData TValue="MinistryDirectory" Load="Reads.DirectoryAsync" Feeds="Reads.Feeds" Remember="ministries.directory" FailedTitle="Can't load the ministries right now">
         <div class="ministry-form">
             <SitsUnderPicker Directory="context.Value" UnderId="@(_chosen ?? Page.Ministry.ParentId)" UnderIdChanged="ChooseAsync" LeaveOut="@Page.Ministry.Id"

@@ -88,7 +88,12 @@ public sealed class AwayRecord
     public Guid Id { get; set; }
     public Guid PersonId { get; set; }
     public DateOnly From { get; set; }
-    public DateOnly To { get; set; }
+    public DateOnly? To { get; set; }
+    public bool Weekly { get; set; }
+    public List<int> Weekdays { get; set; } = [];
+    public TimeOnly? StartTime { get; set; }
+    public TimeOnly? EndTime { get; set; }
+    public List<DateOnly> Except { get; set; } = [];
     public string Note { get; set; } = "";
     public Guid MadeBy { get; set; }
     public DateTime MadeAt { get; set; }

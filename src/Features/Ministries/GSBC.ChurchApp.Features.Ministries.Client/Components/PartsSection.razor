@@ -1,28 +1,57 @@
 @inject IMinistryWrites Ministries
 
-<Section Title="What it uses" Lead="Turn off what this ministry doesn't use. Its tab and everything in it are hidden from everyone, leaders too, until you turn it back on. Nothing is deleted.">
-    @foreach (MinistryPart part in MinistryParts.All)
-    {
-        <ToggleRow @key="part.Key" Title="@part.Name" Description="@part.Does" Checked="@(!Off.Contains(part.Key))" Disabled="_busy" CheckedChanged="on => TurnAsync(part.Key, on)" />
-    }
-    @if (!Off.Contains(MinistryParts.Chats))
-    {
-        <Segmented TValue="string" Label="Who can start a chat" ShowLabel="true" Value="@StartsChats" ValueChanged="StartersAsync"
-                   Options="@([new SegmentOption<string>(ChatStarters.Leaders, "Leaders"), new SegmentOption<string>(ChatStarters.Team, "The team too")])"
-                   Hint="The team can start group chats for the team or people they choose. Channels and chats with attendees or parents stay with leaders." />
-    }
-    @foreach ((MinistryPart part, PartFromBelow below) in Gathering)
-    {
-        <ToggleRow @key="@($"{part.Key}-below")" Title="@below.Title" Description="@below.Does"
-                   Checked="@FromBelow.Contains(part.Key)" Disabled="_busy" CheckedChanged="on => FromBelowAsync(part.Key, on)" />
-    }
-    <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+<Section Title="Its tabs" Lead="Drag a tab by its handle, or use its ⋯ menu, to change the order people see. About is always first." Grouped="true">
+    <ChildContent>
+        <ReorderList TItem="MinistryPart" Items="Parts" Key="part => part.Key" Name="part => part.Name" Label="@($"{MinistryWords.Possessive(Page.Ministry.Name)} tabs, in order")"
+                     OnReordered="ReorderAsync" Disabled="_busy">
+            <Preview>
+                <span class="is-first">About</span>
+                @foreach (MinistryPart part in context.Where(part => !Off.Contains(part.Key)))
+                {
+                    <span @key="part.Key">@part.Name</span>
+                }
+            </Preview>
+            <ItemTemplate>
+                <ToggleRow Title="@context.Name" Description="@(Off.Contains(context.Key) ? "Hidden from everyone, leaders too, until you turn it back on. Nothing in it is deleted." : null)" Muted="@Off.Contains(context.Key)" Checked="@(!Off.Contains(context.Key))"
+                           Disabled="_busy" CheckedChanged="on => TurnAsync(context.Key, on)" />
+            </ItemTemplate>
+        </ReorderList>
+        <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+    </ChildContent>
+    <Foot>These change straight away.</Foot>
 </Section>
+
+@if (!Off.Contains(MinistryParts.Chats))
+{
+    <Section Title="Chats" Grouped="true">
+        <ChildContent>
+            <Segmented TValue="string" Label="Who can start a chat" ShowLabel="true" Value="@StartsChats" ValueChanged="StartersAsync"
+                       Options="@([new SegmentOption<string>(ChatStarters.Leaders, "Leaders"), new SegmentOption<string>(ChatStarters.Team, "The team too")])"
+                       Hint="The team can start group chats for the team or people they choose. Channels and chats with attendees or parents stay with leaders." />
+        </ChildContent>
+        <Foot>This changes straight away.</Foot>
+    </Section>
+}
+
+@if (Gathering.Any())
+{
+    <Section Title="From the ministries under it" Grouped="true">
+        <ChildContent>
+            @foreach ((MinistryPart part, PartFromBelow below) in Gathering)
+            {
+                <ToggleRow @key="@($"{part.Key}-below")" Title="@below.Title" Description="@below.Does"
+                           Checked="@FromBelow.Contains(part.Key)" Disabled="_busy" CheckedChanged="on => FromBelowAsync(part.Key, on)" />
+            }
+        </ChildContent>
+        <Foot>These change straight away.</Foot>
+    </Section>
+}
 
 @code {
     private List<string> _off = [];
     private List<string> _fromBelow = [];
     private string? _starters;
+    private List<string>? _order;
     private MinistryDetails? _seen;
     private bool _busy;
     private string? _problem;
@@ -53,7 +82,7 @@
         if (ReferenceEquals(_seen, Page.Ministry) || _busy)
             return;
         _seen = Page.Ministry;
-        (_off, _fromBelow, _starters) = ([.. Page.Ministry.PartsOff], [.. Page.Ministry.PartsFromBelow], null);
+        (_off, _fromBelow, _starters, _order) = ([.. Page.Ministry.PartsOff], [.. Page.Ministry.PartsFromBelow], null, null);
     }
 
     private string StartsChats => _starters ?? (ChatStarters.IsValid(Page.Ministry.ChatStarters) ? Page.Ministry.ChatStarters : ChatStarters.Leaders);
@@ -79,6 +108,27 @@
 
     private IEnumerable<(MinistryPart, PartFromBelow)> Gathering =>
         Page.SubMinistries.Count == 0 ? [] : MinistryParts.All.Where(part => part.FromBelow is not null && !Off.Contains(part.Key)).Select(part => (part, part.FromBelow!));
+
+    private IReadOnlyList<MinistryPart> Parts => (_order ?? Page.Ministry.PartsOrder).Select(MinistryParts.Of).ToList();
+
+    private async Task ReorderAsync(IReadOnlyList<MinistryPart> order)
+    {
+        List<string>? before = _order;
+        (_order, _busy, _problem) = ([.. order.Select(part => part.Key)], true, null);
+        try
+        {
+            await Ministries.SavePartsAsync(Page.Ministry.Id, Off, FromBelow, partsOrder: _order);
+            await OnChanged.InvokeAsync();
+        }
+        catch (RpcException exception)
+        {
+            (_order, _problem) = (before, MinistryLookups.Problem(exception));
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
 
     private Task TurnAsync(string part, bool on) =>
         SaveAsync(on ? Off.Where(off => off != part).ToList() : [.. Off, part], FromBelow);

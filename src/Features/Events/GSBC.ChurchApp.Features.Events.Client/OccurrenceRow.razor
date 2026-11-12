@@ -1,5 +1,5 @@
 <AgendaRow Time="@EventWords.TimeOf(Occurrence)" Title="@Occurrence.Fields.Title" Label="@Label" Subtitle="@Subtitle" Warn="@(Subtitle is not null && Subtitle == Needs)"
-           NotOn="@(Occurrence.NotOn ? EventWords.NotOnLine(Occurrence) : null)" Quiet="@Quiet" Past="@Past" Selected="Selected" Highlight="@(Highlight && !Quiet && !Occurrence.NotOn)"
+           NotOn="@(Occurrence.NotOn ? EventWords.NotOnLine(Occurrence) : NotOnInstead)" Quiet="@Quiet" Past="@Past" Selected="Selected" Highlight="@(Highlight && !Quiet && !Occurrence.NotOn)"
            Href="@(OnClick.HasDelegate ? null : EventsPlaces.Open(Occurrence))" OnClick="OnClick" TitleExtra="@Extra"
            TitleIcon="@(Occurrence.Kind == OccurrenceKind.OneOff ? null : "repeat")" TitleIconLabel="@(Occurrence.Kind == OccurrenceKind.OneOff ? null : $"Repeats {Occurrence.Repeats}")" />
 
@@ -14,6 +14,7 @@
     [Parameter] public bool Highlight { get; set; }
     [Parameter] public EventCallback OnClick { get; set; }
     [Parameter] public string? From { get; set; }
+    [Parameter] public string? NotOnInstead { get; set; }
 
     private bool Quiet => Occurrence.Kind == OccurrenceKind.Regular && !NewChange && !(ShowNeeds && Occurrence.Missing.Count > 0);
 

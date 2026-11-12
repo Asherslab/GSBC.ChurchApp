@@ -33,4 +33,12 @@ public sealed class PrayerRulesTests
         Assert.False(PrayerRules.ShowsNameOnTheWall(new RequestRecord { Name = "Sam Sample", ShowName = true }, staffShowName: false));
         Assert.True(PrayerRules.ShowsNameOnTheWall(new RequestRecord { Name = "Sam Sample", ShowName = true }, staffShowName: true));
     }
+
+    [Theory]
+    [InlineData("Sarah Kelly", "Sarah K.")]
+    [InlineData("  Mary Anne  van der berg ", "Mary B.")]
+    [InlineData("Sarah", "Sarah")]
+    [InlineData("", "")]
+    public void TheWallShowsAFirstNameAndTheInitialOfTheLastNeverTheWholeName(string name, string shown) =>
+        Assert.Equal(shown, PrayerRules.ShortName(name));
 }

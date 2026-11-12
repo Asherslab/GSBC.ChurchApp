@@ -58,6 +58,8 @@ public sealed class PostRecord
     public DateTime PostedAt { get; set; }
     public DateTime? EditedAt { get; set; }
     public DateTime? WholeChurchAskedAt { get; set; }
+    public DateOnly? Sunday { get; set; }
+    public bool NoClass { get; set; }
 }
 
 public sealed class FileRecord
@@ -93,10 +95,3 @@ public sealed class SitOutRecord
     public DateTime MarkedAt { get; set; }
 }
 
-public sealed class SessionRecord
-{
-    public Guid GroupId { get; set; }
-    public DateOnly Date { get; set; }
-    public bool Off { get; set; }
-    public string Note { get; set; } = "";
-}
