@@ -1,16 +1,16 @@
 using GSBC.ChurchApp.Features.Access.Admin;
-using GSBC.ChurchApp.Features.Analytics.Admin;
 using GSBC.ChurchApp.Features.Accounts.Admin;
+using GSBC.ChurchApp.Features.Analytics.Admin;
+using GSBC.ChurchApp.Features.Chats.Admin;
 using GSBC.ChurchApp.Features.Configuration.Admin;
-using GSBC.ChurchApp.Features.Media.Admin;
-using GSBC.ChurchApp.Features.Notifications.Admin;
 using GSBC.ChurchApp.Features.Events.Admin;
-using GSBC.ChurchApp.Features.Ministries.Admin;
 using GSBC.ChurchApp.Features.Feedback.Admin;
+using GSBC.ChurchApp.Features.Media.Admin;
+using GSBC.ChurchApp.Features.Ministries.Admin;
+using GSBC.ChurchApp.Features.Notifications.Admin;
+using GSBC.ChurchApp.Features.People.Admin;
 using GSBC.ChurchApp.Features.Prayer.Admin;
 using GSBC.ChurchApp.Features.Rosters.Admin;
-using GSBC.ChurchApp.Features.Chats.Admin;
-using GSBC.ChurchApp.Features.People.Admin;
 using GSBC.ChurchApp.Features.Sermons.Admin;
 using GSBC.ChurchApp.Features.Sermons.Import.Admin;
 using GSBC.ChurchApp.Hosts.Admin;
@@ -20,6 +20,7 @@ using GSBC.ChurchApp.Platform.Client.Modules;
 using GSBC.ChurchApp.Platform.Client.Online;
 using GSBC.ChurchApp.Platform.Client.Outbox;
 using GSBC.ChurchApp.Platform.Client.Transport;
+using GSBC.ChurchApp.Platform.Icons;
 using GSBC.ChurchApp.Platform.Ui;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
@@ -30,7 +31,7 @@ builder.RootComponents.Add<HeadOutlet>("head::after");
 
 ClientModules modules = new(typeof(Program).Assembly);
 modules.Add(new ClientModule("Home", typeof(Program).Assembly,
-    [new NavEntry("Home", "", "home"), new NavEntry("Places in the app", "places", "link", Area: NavAreas.TheApp, Summary: "Every page and thing in the app, with its link")]));
+    [new NavEntry("Home", "", AppIcons.Home), new NavEntry("Places in the app", "places", AppIcons.PlacesInTheApp, Area: NavAreas.TheApp, Summary: "Every page and thing in the app, with its link")]));
 
 builder.Services
     .AddSingleton(modules)

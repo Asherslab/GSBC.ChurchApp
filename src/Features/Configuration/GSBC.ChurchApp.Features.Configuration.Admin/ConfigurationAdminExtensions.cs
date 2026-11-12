@@ -1,10 +1,11 @@
-using GSBC.ChurchApp.Platform.Contracts.Destinations;
-using GSBC.ChurchApp.Platform.Client.Destinations;
-using GSBC.ChurchApp.Features.Configuration.Client.Components;
 using GSBC.ChurchApp.Features.Configuration.Client;
+using GSBC.ChurchApp.Features.Configuration.Client.Components;
+using GSBC.ChurchApp.Platform.Client.Destinations;
 using GSBC.ChurchApp.Platform.Client.Modules;
 using GSBC.ChurchApp.Platform.Client.Scopes;
 using GSBC.ChurchApp.Platform.Contracts.Configuration;
+using GSBC.ChurchApp.Platform.Contracts.Destinations;
+using GSBC.ChurchApp.Platform.Icons;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace GSBC.ChurchApp.Features.Configuration.Admin;
@@ -15,7 +16,7 @@ public static class ConfigurationAdminExtensions
     {
         modules.Add(new ClientModule("Configuration", typeof(ConfigurationAdminExtensions).Assembly,
             [
-                new NavEntry("App styling", "app-styling", "pencil", HubSurfaces.Edit, Area: NavAreas.TheApp, Summary: "Change the app's home screen, colours and fonts, then publish"),
+                new NavEntry("App styling", "app-styling", AppIcons.AppStyling, HubSurfaces.Edit, Area: NavAreas.TheApp, Summary: "Change the app's home screen, colours and fonts, then publish"),
             ]));
         return services.AddConfigurationClient().AddSingleton<ConfigurationClient>().AddSingleton<DraftsClient>().AddSingleton<DatedChanges>().AddSingleton<IOfficeWeekSource, DraftsOfficeWeek>().AddSingleton<IScopeNamer, DraftScopeNames>()
             .AddPlacePreview<HomePlacePreview>(place => place.Path == ShellDestinations.Home.Path)

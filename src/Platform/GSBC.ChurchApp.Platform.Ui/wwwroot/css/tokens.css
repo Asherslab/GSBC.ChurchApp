@@ -150,4 +150,9 @@
   --swatch-brand-1: #2a3d5e;
   --swatch-brand-2: #009c8f;
   --swatch-brand-3: #e7ae74;
+  --viewer-backdrop: rgb(8 12 22 / 0.97);
+  --viewer-ink: #ffffff;
+  --viewer-ink-2: rgb(255 255 255 / 0.78);
+  --viewer-control: rgb(255 255 255 / 0.12);
+  --viewer-control-hover: rgb(255 255 255 / 0.22);
 }
