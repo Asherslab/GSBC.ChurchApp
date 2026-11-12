@@ -82,8 +82,7 @@
   "quietFirst": {},
   "splitView": {
     "src/Features/Chats/GSBC.ChurchApp.Features.Chats.Admin/Pages/ChatsTabView.razor": 1,
-    "src/Features/Chats/GSBC.ChurchApp.Features.Chats.Admin/Pages/ReportsTab.razor": 1,
-    "src/Features/Ministries/GSBC.ChurchApp.Features.Ministries.Client/Components/PeopleArea.razor": 1
+    "src/Features/Chats/GSBC.ChurchApp.Features.Chats.Admin/Pages/ReportsTab.razor": 1
   },
   "deleteOutsideMenu": {
     "src/Features/Chats/GSBC.ChurchApp.Features.Chats.Admin/Pages/ChatsTabView.razor": 1,

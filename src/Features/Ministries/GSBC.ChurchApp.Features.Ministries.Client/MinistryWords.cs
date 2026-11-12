@@ -56,13 +56,21 @@ public static class MinistryWords
         _ => "Attends",
     };
 
+    public static string Allows(string role) => role switch
+    {
+        Roles.Leader => "Leads it and everything under it, and is listed as a leader",
+        Roles.Admin => "Can do everything a leader can, without being listed as one",
+        Roles.Team => "Sees what's for the team: its news, files, chats and roster",
+        _ => "Comes along, and sees what's for attendees and their families",
+    };
+
     public static string HeroNote(MinistryDetails ministry) => ministry.Summary.Length > 0 ? ministry.Summary : ministry.Meets;
 
     public static string JoinLine(MinistrySummary ministry) => ministry.TeamJoin switch
     {
         Joining.Open => "Open to join",
         Joining.Ask => "Ask to join",
-        _ => "Invite only",
+        _ => "",
     };
 
     public static string Yours(MinistryPage page)

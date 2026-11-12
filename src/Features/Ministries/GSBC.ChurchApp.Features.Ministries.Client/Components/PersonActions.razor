@@ -11,23 +11,27 @@
     {
         <PersonFinder Find="FindAsync" ActionText="Link as their parent" Label="Find their parent or guardian by name" Busy="@_busyId" AutoFocus="true"
                       Leave="member.Parents.Select(parent => parent.Id).Append(member.PersonId).ToList()" OnChosen="LinkAsync" />
-        <p class="hint">Their parent sees what @Page.Ministry.Name shares with families, and hears about @member.Name.Split(' ')[0].</p>
+        <p class="hint">Their parent sees what @Page.Ministry.Name shares with families, and hears about @First(member).</p>
     }
     else
     {
-        <ListGroup>
-            @if (member.Role == Roles.Attendee || member.Age is not null)
-            {
+        @if (Choices(member).Count > 1 || MayRemove(member))
+        {
+            <div class="field">
+                <span class="field__label">@($"Role in {Page.Ministry.Name}")</span>
+                <RoleMenu TValue="string" Label="@($"{member.Name}'s role in {Page.Ministry.Name}")" Roles="Choices(member)" Value="@Shown(member)" ValueChanged="SetRoleAsync"
+                          RemoveLabel="@(MayRemove(member) ? $"Take {First(member)} off {Page.Ministry.Name}" : null)" RemoveDetail="They stay in the church's app."
+                          OnRemove="@(MayRemove(member) ? EventCallback.Factory.Create(this, () => SetRoleAsync("")) : default)" Block="true" Disabled="_busy" />
+            </div>
+        }
+        @if (member.Role == Roles.Attendee || member.Age is not null)
+        {
+            <ListGroup>
                 <ListRow Title="@(member.NoParent ? "No parent linked" : $"Parents: {MinistryWords.Names(member.Parents.Select(parent => parent.Name).ToList())}")"
                          Subtitle="@(member.NoParent ? $"Nobody hears about {Page.Ministry.Name} for them yet" : "Link another parent or guardian")"
                          Icon="users" IconTone="@(member.NoParent ? RowTone.Warm : RowTone.Quiet)" OnClick="() => _linking = true" Chevron="true" />
-            }
-            @foreach ((string role, string words, bool add) in Changes(member))
-            {
-                <ListRow @key="@($"{role}{add}")" Title="@words" Icon="@(add ? "plus" : "minus")" IconTone="@(add ? RowTone.Accent : RowTone.Quiet)" Disabled="_busy"
-                         OnClick="() => ChangeAsync(role, add)" />
-            }
-        </ListGroup>
+            </ListGroup>
+        }
         <p class="hint">Only @Page.Ministry.Name's leaders and the church office see this.</p>
     }
     <Notice Tone="NoticeTone.Warning" Text="@_problem" />
@@ -38,6 +42,7 @@
     private bool _busy;
     private string? _busyId;
     private string? _problem;
+    private (string Person, string Was, string Now)? _chosen;
 
     [Parameter] public Member? Member { get; set; }
     [Parameter, EditorRequired] public required MinistryPage Page { get; set; }
@@ -49,28 +54,19 @@
         ? null
         : string.Join(" · ", new[] { member.Age is { } age ? $"{age}" : "", MinistryWords.Role(member.Role), member.CanSignIn ? "" : "no sign-in of their own" }.Where(part => part.Length > 0));
 
-    private IEnumerable<(string Role, string Words, bool Add)> Changes(Member member)
-    {
-        string first = member.Name.Split(' ')[0];
-        if (member.Role == Roles.Attendee)
-        {
-            if (MayGive.Contains(Roles.Team))
-                yield return (Roles.Team, "Add to the team as well", true);
-            if (MayGive.Contains(Roles.Attendee))
-                yield return (Roles.Attendee, $"{first} stops coming", false);
-            yield break;
-        }
-        if (member.Role != Roles.Leader && MayGive.Contains(Roles.Leader))
-            yield return (Roles.Leader, "Make a leader", true);
-        if (member.Role == Roles.Team && MayGive.Contains(Roles.Admin))
-            yield return (Roles.Admin, "Make an admin", true);
-        if (member.Role == Roles.Leader && MayGive.Contains(Roles.Leader))
-            yield return (Roles.Leader, "Stop leading, stay on the team", false);
-        if (member.Role == Roles.Admin && MayGive.Contains(Roles.Admin))
-            yield return (Roles.Admin, "Stop being an admin, stay on the team", false);
-        if (member.Role == Roles.Team && MayGive.Contains(Roles.Team))
-            yield return (Roles.Team, "Take off the team", false);
-    }
+    private static string First(Member member) => member.Name.Split(' ')[0];
+
+    private string Shown(Member member) =>
+        _chosen is { } chosen && chosen.Person == member.PersonId && chosen.Was == member.Role ? chosen.Now : member.Role;
+
+    private IReadOnlyList<RoleChoice<string>> Choices(Member member) =>
+        new[] { Roles.Attendee, Roles.Team, Roles.Admin, Roles.Leader }
+            .Where(role => role == Shown(member) || (MayGive.Contains(role) && MayGive.Contains(Shown(member))))
+            .Where(role => role != Roles.Attendee || Page.Ministry.AttendJoin != Joining.None || member.Role == Roles.Attendee)
+            .Select(role => new RoleChoice<string>(role, MinistryWords.Role(role), MinistryWords.Allows(role)))
+            .ToList();
+
+    private bool MayRemove(Member member) => MayGive.Contains(Shown(member));
 
     private async Task<IReadOnlyList<PersonChoice>> FindAsync(string query) =>
         (await Lookups.FindAsync(Page.Ministry.Id, query)).Select(person => new PersonChoice(person.Id, person.Name, person.Detail)).ToList();
@@ -80,14 +76,17 @@
         {
             _busyId = parent.Id;
             await Ministries.LinkParentAsync(Page.Ministry.Id, Member!.PersonId, parent.Id);
-            await OnClose.InvokeAsync();
+            _linking = false;
         });
 
-    private Task ChangeAsync(string role, bool add) =>
+    private Task SetRoleAsync(string role) =>
         RunAsync(async () =>
         {
-            await Ministries.ChangePersonAsync(Page.Ministry.Id, Member!.PersonId, role, add);
-            await OnClose.InvokeAsync();
+            Member member = Member!;
+            await Ministries.SetRoleAsync(Page.Ministry.Id, member.PersonId, role);
+            _chosen = (member.PersonId, member.Role, role);
+            if (role.Length == 0)
+                await OnClose.InvokeAsync();
         });
 
     private async Task RunAsync(Func<Task> work)

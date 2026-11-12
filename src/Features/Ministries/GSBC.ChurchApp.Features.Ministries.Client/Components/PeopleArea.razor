@@ -54,19 +54,20 @@
         </div>
         @if (Wide)
         {
-            <SplitView DetailLabel="@(_person?.Name ?? "Someone")" Detail="@(_person is null ? null : Panel(people))">
+            Member? chosen = Chosen(people);
+            <Workbench Class="workbench--stack" DetailLabel="@(chosen?.Name ?? "Someone")" Detail="@(chosen is null ? null : Panel(people, chosen))">
                 <DataTable TItem="Member" Label="@(showAttendees ? "Attendees" : "Team")" Items="shown" Key="member => member.PersonId + member.Role" Columns="Columns"
-                           Selected="_person" SelectedChanged="member => _person = member">
+                           Selected="chosen" SelectedChanged="Choose">
                     <Empty><EmptyState Icon="users" Title="@(showAttendees ? "No attendees yet" : "No one on the team yet")" /></Empty>
                 </DataTable>
-            </SplitView>
+            </Workbench>
         }
         else
         {
         <ListGroup>
             @foreach (Member member in shown)
             {
-                <ListRow @key="@($"{member.PersonId}{member.Role}")" Title="@member.Name" Chevron="@(member.LeadsFrom.Length == 0)" OnClick="() => _person = member">
+                <ListRow @key="@($"{member.PersonId}{member.Role}")" Title="@member.Name" Chevron="@(member.LeadsFrom.Length == 0)" OnClick="() => Choose(member)">
                     <Leading><Avatar Name="@member.Name" /></Leading>
                     <Below>
                         <span class="row__subtitle">
@@ -88,7 +89,7 @@
         <Notice Tone="NoticeTone.Warning" Text="@_problem" />
     </Section>
 
-    <PersonSheet @key="_person?.PersonId" Member="@(Wide ? null : _person)" Page="Page" MayGive="people.MayGive" OnClose="() => _person = null" OnChanged="ReloadAsync" />
+    <PersonSheet @key="_chosen?.PersonId" Member="@(Wide ? null : Chosen(people))" Page="Page" MayGive="people.MayGive" OnClose="() => _chosen = null" OnChanged="ReloadAsync" />
     <AddPersonSheet Open="_adding" OpenChanged="open => _adding = open" Page="Page" MayGive="people.MayGive" Role="@(showAttendees ? Roles.Attendee : Roles.Team)" OnAdded="ReloadAsync" />
 </LiveData>
 
@@ -96,7 +97,7 @@
     private LiveData<PeopleList>? _live;
     private string _list = Roles.Team;
     private string _query = "";
-    private Member? _person;
+    private (string PersonId, string Role)? _chosen;
     private bool _adding;
     private bool _busy;
     private string? _problem;
@@ -113,10 +114,20 @@
         new("Parents", member => @<text>@if (member.NoParent) { <Pill Tone="PillTone.Marker">No parent linked</Pill> } else { @MinistryWords.Names(member.Parents.Select(parent => parent.Name).ToList()) }</text>),
     ];
 
-    private RenderFragment Panel(PeopleList people) => @<div>
-        <h3 class="ministry-panel__title">@_person!.Name</h3>
-        <p class="hint">@PersonActions.Lead(_person)</p>
-        <PersonActions @key="_person.PersonId" Member="_person" Page="Page" MayGive="people.MayGive" OnClose="() => _person = null" OnChanged="ReloadAsync" />
+    private void Choose(Member? member) => _chosen = member is null ? null : (member.PersonId, member.Role);
+
+    private Member? Chosen(PeopleList people)
+    {
+        if (_chosen is not { } chosen)
+            return null;
+        List<Member> everyone = [.. people.Team, .. people.Attendees];
+        return everyone.FirstOrDefault(member => member.PersonId == chosen.PersonId && member.Role == chosen.Role)
+            ?? everyone.FirstOrDefault(member => member.PersonId == chosen.PersonId);
+    }
+
+    private RenderFragment Panel(PeopleList people, Member chosen) => @<div>
+        <PaneHead Title="@chosen.Name" Lead="@PersonActions.Lead(chosen)" OnClose="() => _chosen = null" />
+        <PersonActions @key="chosen.PersonId" Member="chosen" Page="Page" MayGive="people.MayGive" OnClose="() => _chosen = null" OnChanged="ReloadAsync" />
     </div>;
 
     private static string Line(Member member)

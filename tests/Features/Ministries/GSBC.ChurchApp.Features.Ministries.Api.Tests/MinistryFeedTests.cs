@@ -165,7 +165,7 @@ public sealed class MinistryFeedTests : IAsyncLifetime
         await using (AsyncServiceScope scope = _services.CreateAsyncScope())
         {
             MinistryLeadingService leading = scope.ServiceProvider.GetRequiredService<MinistryLeadingService>();
-            Post NoClassOn(string day) => new() { Title = "No class this Sunday", Audience = Audiences.Everyone, Sunday = day, NoClass = true };
+            Post NoClassOn(string day) => new() { Title = SundayPosts.NoClass, Audience = Audiences.Everyone, Sunday = day, NoClass = true };
 
             RpcException notItsSunday = await Assert.ThrowsAsync<RpcException>(async () =>
                 await leading.SavePostAsync(new PostSave { MinistryId = _band.Id.ToString(), Post = NoClassOn(ChurchDay(21).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)) }, Call(_leader)));

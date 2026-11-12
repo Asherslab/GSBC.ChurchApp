@@ -77,7 +77,7 @@
         <ListGroup>
             @foreach (MinistrySummary under in Page.SubMinistries)
             {
-                <ListRow @key="under.Id" Title="@under.Name" Subtitle="@MinistryWords.JoinLine(under)" Icon="@IconOf(under.Icon)" Chevron="true" Href="@Href(under.Id)" />
+                <ListRow @key="under.Id" Title="@under.Name" Subtitle="@(MinistryWords.JoinLine(under) is { Length: > 0 } join ? join : null)" Icon="@IconOf(under.Icon)" Chevron="true" Href="@Href(under.Id)" />
             }
         </ListGroup>
     </Section>
