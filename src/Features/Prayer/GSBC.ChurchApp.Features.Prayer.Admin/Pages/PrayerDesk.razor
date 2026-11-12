@@ -9,64 +9,30 @@
 
 <PageTitle>Prayer · Good Shepherd admin</PageTitle>
 
+<TitleBand Title="Prayer" Lead="Requests from the app. Only the pastoral team reads them, and the prayer wall shows only what you share." />
+
 <LiveData @ref="_live" TValue="Inbox" Feeds="DeskFeeds" Load="LoadAsync" FailedTitle="Can't load prayer requests right now">
-    <Workbench AsideLabel="Prayer requests" Class="prayer-desk" Showing="@(_selectedId is null && !InSettings ? WorkbenchPane.Aside : WorkbenchPane.Main)">
+    <Workbench AsideLabel="Find and show" FoldAside="true" Detail="@Detail(context.Value)" DetailLabel="The prayer request">
         <Aside>
-            <h1 class="prayer-desk__title">Prayer</h1>
-            <p class="prayer-desk__lead">Requests from the app. Only the pastoral team reads them, and the prayer wall shows only what you share.</p>
-            <FilterChips TValue="Tab" Label="Show" Options="Tabs(context.Value)" Value="TabFor(context.Value)" ValueChanged="ChooseTabAsync" />
             @if (!InSettings)
             {
                 <SearchField Label="Find a request" Placeholder="Words or a name" Value="@_query" ValueChanged="SearchAsync" />
-                @if (Shown(context.Value) is { Count: > 0 } shown)
-                {
-                    <div class="prayer-desk__list" role="listbox" aria-label="Prayer requests">
-                        @foreach (InboxLine line in shown)
-                        {
-                            <button type="button" role="option" aria-selected="@(line.Id == _selectedId)" class="prayer-pick @(line.Id == _selectedId ? "is-selected" : "")"
-                                    @onclick="() => SelectAsync(line.Id)">
-                                <strong>@PrayerWords.Excerpt(line.Text, 70)</strong>
-                                <span>@line.From · @ChurchDates.Ago(line.SentAt, Now)</span>
-                                <span class="prayer-pick__pills">
-                                    @if (line.Care == CareState.New && context.Value.MayRead)
-                                    {
-                                        <Pill>New</Pill>
-                                    }
-                                    @if (line.Wall == WallState.Waiting)
-                                    {
-                                        <Pill Tone="PillTone.Accent">Asks for the wall</Pill>
-                                    }
-                                    @if (line.Minor)
-                                    {
-                                        <Pill Tone="PillTone.Marker">Under 18</Pill>
-                                    }
-                                    @if (line.WantsContact)
-                                    {
-                                        <Pill Tone="PillTone.Quiet">Get in touch</Pill>
-                                    }
-                                </span>
-                            </button>
-                        }
-                    </div>
-                }
-                else
-                {
-                    <EmptyState Icon="@(_query.Length > 0 ? "search" : "check")" Title="@EmptyTitle(context.Value)" Body="@EmptyBody(context.Value)" />
-                }
             }
+            <FilterChips TValue="Tab" Label="Show" Rail="true" Options="Tabs(context.Value)" Value="TabFor(context.Value)" ValueChanged="ChooseTabAsync" />
         </Aside>
         <ChildContent>
             @if (InSettings)
             {
                 <PrayedForTimes />
             }
-            else if (_selectedId is { } id)
-            {
-                <PastoralRequest @key="id" Id="@id" OnGone="() => _selectedId = null" />
-            }
             else
             {
-                <EmptyState Icon="prayer" Title="Choose a request" Body="Its words, the notes the pastoral team keeps, and what the prayer wall shows open here." />
+                <DataTable TItem="InboxLine" Label="Prayer requests" Items="Shown(context.Value)" Columns="Columns(context.Value)" Key="line => line.Id"
+                           Selected="Selected(context.Value)" SelectedChanged="line => SelectAsync(line.Id)">
+                    <Empty>
+                        <EmptyState Icon="@(_query.Length > 0 ? "search" : "check")" Title="@EmptyTitle(context.Value)" Body="@EmptyBody(context.Value)" />
+                    </Empty>
+                </DataTable>
             }
         </ChildContent>
     </Workbench>
@@ -95,6 +61,39 @@
     [Parameter] public string? OpenId { get; set; }
 
     private DateTime Now => Clock.GetUtcNow().UtcDateTime;
+
+    private RenderFragment? Detail(Inbox inbox) => InSettings || _selectedId is not { } id
+        ? null
+        : @<PastoralRequest @key="id" Id="@id" OnGone="() => _selectedId = null" OnClose="CloseAsync" />;
+
+    private InboxLine? Selected(Inbox inbox) => inbox.Requests.FirstOrDefault(line => line.Id == _selectedId);
+
+    private IReadOnlyList<TableColumn<InboxLine>> Columns(Inbox inbox) =>
+    [
+        new("Request", line => @<div class="prayer-desk__cell">
+            <strong>@PrayerWords.Excerpt(line.Text, 70)</strong>
+            <span class="prayer-desk__pills">
+                @if (line.Care == CareState.New && inbox.MayRead)
+                {
+                    <Pill>New</Pill>
+                }
+                @if (line.Wall == WallState.Waiting)
+                {
+                    <Pill Tone="PillTone.Accent">Asks for the wall</Pill>
+                }
+                @if (line.Minor)
+                {
+                    <Pill Tone="PillTone.Marker">Under 18</Pill>
+                }
+                @if (line.WantsContact)
+                {
+                    <Pill Tone="PillTone.Quiet">Get in touch</Pill>
+                }
+            </span>
+        </div>),
+        new("From", line => @<span>@line.From</span>, line => line.From, "quiet nowrap"),
+        new("Sent", line => @<span>@ChurchDates.Ago(line.SentAt, Now)</span>, line => line.SentAt, "num"),
+    ];
 
     private bool InSettings => _tab == Tab.Settings;
 
@@ -165,6 +164,12 @@
         if (id == _selectedId || !await Unsaved.MayLeaveAsync())
             return;
         _selectedId = id;
+    }
+
+    private async Task CloseAsync()
+    {
+        if (await Unsaved.MayLeaveAsync())
+            _selectedId = null;
     }
 
     private async Task SearchAsync(string query)

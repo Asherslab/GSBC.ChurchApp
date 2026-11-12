@@ -17,89 +17,78 @@
         }
         else
         {
-            <Section First="true">
-                <div class="prayer-request__main">
-                    <p class="prayer-request__meta">
-                        <span>Sent @ChurchDates.Describe(item.SentAt, DateLineStyle.Short, withTime: true, Now)</span>
-                        <span>@From(item)</span>
-                        @if (item.Minor)
-                        {
-                            <Pill Tone="PillTone.Marker">Under 18</Pill>
-                        }
-                    </p>
-                    <p class="prayer-request__text">@item.Text</p>
+            <div class="prayer-band">
+                <p class="prayer-band__meta">
+                    <span>Sent @ChurchDates.Describe(item.SentAt, DateLineStyle.Short, withTime: true, Now)</span>
+                    <span>@From(item)</span>
                     @if (item.Minor)
                     {
-                        <Notice Tone="NoticeTone.Warning" Text="They're under 18. Take extra care with what's shared, and follow the church's child safety policy if anything in it worries you." />
+                        <Pill Tone="PillTone.Marker">Under 18</Pill>
                     }
-                    @if (item.Pending is { } pending)
-                    {
-                        <SaveStatus State="@(pending.Failed ? SaveState.Failed : SaveState.Waiting)" WaitingText="@($"{pending.What}. Waiting to send; it goes by itself when you're back online")"
-                                    FailedText="@($"Couldn't send: {pending.What.ToLowerInvariant()}")" Detail="@pending.Problem" Retry="() => Approvals.RetryAsync(Id)" />
-                    }
-                    @if (item.Care is { } care)
-                    {
-                        <div class="prayer-request__care">
-                            <Pill Tone="@(care.Care == CareState.New ? PillTone.Marker : PillTone.Accent)">@PrayerWords.Care(care.Care)</Pill>
-                            @if (care.Care == CareState.New)
-                            {
-                                <Button Icon="check" OnClick="() => Approvals.CareAsync(Id, CareState.FollowedUp)">Mark followed up</Button>
-                            }
-                            @if (care.Care != CareState.Answered)
-                            {
-                                <Button Variant="ButtonVariant.Quiet" OnClick="() => _answering = true">Mark answered</Button>
-                            }
-                        </div>
-                    }
-                </div>
+                </p>
+                @if (item.Care is { } care)
+                {
+                    <CareSteps Care="care.Care" AnsweredNote="@care.AnsweredNote" Move="(state, note) => Approvals.CareAsync(Id, state, note)" />
+                }
+                else if (item.Wall is { } asked)
+                {
+                    <p class="prayer-band__state">@PrayerWords.WallLine(asked.Wall)</p>
+                }
+                @if (item.Pending is { } pending)
+                {
+                    <SaveStatus State="@(pending.Failed ? SaveState.Failed : SaveState.Waiting)" WaitingText="@($"{pending.What}. Waiting to send; it goes by itself when you're back online")"
+                                FailedText="@($"Couldn't send: {pending.What.ToLowerInvariant()}")" Detail="@pending.Problem" Retry="() => Approvals.RetryAsync(Id)" />
+                }
+            </div>
+            <Section First="true">
+                <p class="prayer-request__text">@item.Text</p>
+                @if (item.Minor)
+                {
+                    <Notice Tone="NoticeTone.Warning" Text="They're under 18. Take extra care with what's shared, and follow the church's child safety policy if anything in it worries you." />
+                }
             </Section>
             @if (item.Wall is { } wall)
             {
-                <Section>
-                    <WallChoice Case="wall" Show="save => ShowAsync(save, wall)" OnKeepPrivate="() => Approvals.KeepPrivateAsync(Id, wall.Wall == WallState.Shown)" />
-                </Section>
+                <WallChoice Case="wall" Show="save => ShowAsync(save, wall)" OnKeepPrivate="() => Approvals.KeepPrivateAsync(Id, wall.Wall == WallState.Shown)" />
             }
             @if (item.Care is { } pastoral)
             {
-                <Section Title="Getting in touch">
-                    @if (pastoral.Contact.Length > 0)
-                    {
-                        <ListGroup>
-                            <ListRow Title="@pastoral.Contact" Subtitle="@(pastoral.WantsContact ? "They'd like someone to get in touch" : null)"
-                                     Icon="@(pastoral.Contact.Contains('@') ? "mail" : "phone")" Href="@ContactLink(pastoral.Contact)" External="true" />
-                        </ListGroup>
-                    }
-                    else
-                    {
-                        <p class="prayer-staff__more">@(pastoral.WantsContact ? "They'd like someone to get in touch. " : "")@(pastoral.SignedIn ? "They're in People in the admin panel." : "They didn't sign in or leave a way to reach them.")</p>
-                    }
+                <Section Grouped="true" Title="Getting in touch">
+                    <ChildContent>
+                        @if (pastoral.Contact.Length > 0)
+                        {
+                            <ListGroup>
+                                <ListRow Title="@pastoral.Contact" Subtitle="@(pastoral.WantsContact ? "They'd like someone to get in touch" : null)"
+                                         Icon="@(pastoral.Contact.Contains('@') ? "mail" : "phone")" Href="@ContactLink(pastoral.Contact)" External="true" />
+                            </ListGroup>
+                        }
+                        else
+                        {
+                            <p class="prayer-request__fact">@(pastoral.WantsContact ? "They'd like someone to get in touch. " : "")@(pastoral.SignedIn ? "They're in People in the admin panel." : "They didn't sign in or leave a way to reach them.")</p>
+                        }
+                    </ChildContent>
                 </Section>
-                <Section Title="Notes for the pastoral team" Lead="Only people who can read prayer requests see these. The person never does.">
-                    @foreach (CareNote note in pastoral.Notes)
-                    {
-                        <div class="prayer-note" @key="note.Id">
-                            <p>@note.Text</p>
-                            <span>@note.Author · @ChurchDates.Ago(note.At, Now)</span>
-                        </div>
-                    }
-                    <div class="prayer-staff__note">
+                <Section Grouped="true" Title="Notes for the pastoral team" Lead="Only people who can read prayer requests see these. The person never does.">
+                    <ChildContent>
+                        @foreach (CareNote note in pastoral.Notes)
+                        {
+                            <div class="prayer-note" @key="note.Id">
+                                <div class="prayer-note__body">
+                                    <p>@note.Text</p>
+                                    <span>@note.Author · @ChurchDates.Ago(note.At, Now)</span>
+                                </div>
+                            </div>
+                        }
                         <TextField Label="Add a note" Multiline="true" MaxLength="2000" @bind-Value="_note" />
-                        <SaveBar Label="Add the note" Blocked="@(_note.Trim().Length == 0 ? "Write the note to add it." : null)" OnSave="AddNoteAsync" />
-                    </div>
+                    </ChildContent>
+                    <Foot>
+                        <SaveBar Label="Add the note" New="true" Blocked="@(_note.Trim().Length == 0 ? "Write the note to add it." : null)" OnSave="AddNoteAsync" />
+                    </Foot>
                 </Section>
             }
         }
     </LiveData>
 </Page>
-
-<Sheet Open="_answering" OpenChanged="open => _answering = open" Title="Mark it answered" Lead="Anything to say? If it's on the prayer wall, the wall shows it under the request, and the person hears it was answered.">
-    <ChildContent>
-        <TextField Label="Words for the wall" Hint="Optional" Multiline="true" MaxLength="500" @bind-Value="_answeredNote" />
-    </ChildContent>
-    <Actions>
-        <SaveBar Block="true" Label="Mark it answered" OnSave="AnsweredAsync" />
-    </Actions>
-</Sheet>
 
 @code {
     private const ChangeKind Reload = ChangeKind.Reconnected | ChangeKind.Session | ChangeKind.Access | ChangeKind.Outbox;
@@ -107,14 +96,12 @@
     [Parameter] public string Id { get; set; } = "";
 
     private string _note = "";
-    private string _answeredNote = "";
-    private bool _answering;
 
     private DateTime Now => Clock.GetUtcNow().UtcDateTime;
 
     private static string From(StaffCase item) => item.Care is { } care
         ? care.SignedIn || care.From == PrayerWords.NoName ? care.From : $"{care.From}, not signed in"
-        : item.Wall is { FirstName.Length: > 0 } wall ? $"{wall.FirstName}, who'd like their first name shown" : "They asked for no name";
+        : item.Wall is { ShortName.Length: > 0 } wall ? $"{wall.ShortName}, who'd like their name shown" : "They asked for no name";
 
     private static string ContactLink(string contact) =>
         contact.Contains('@') ? $"mailto:{contact}" : $"tel:{new string(contact.Where(c => char.IsDigit(c) || c == '+').ToArray())}";
@@ -129,11 +116,5 @@
     {
         await Approvals.AddNoteAsync(Id, _note);
         _note = "";
-    }
-
-    private async Task AnsweredAsync()
-    {
-        await Approvals.CareAsync(Id, CareState.Answered, _answeredNote);
-        (_answering, _answeredNote) = (false, "");
     }
 }

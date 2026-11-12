@@ -1,0 +1,46 @@
+{
+  "title": "Prayer: a request's page on the phone",
+  "question": "You asked for the feedback tickets' progression on a request (#43) and for its middle part to be set apart in cards (#44). All three use the shared stage pipeline (New, Followed up, Answered) and the phone's grouped settings; they differ in how the page is ordered. The person's own request gets the same steps, read only, in whichever you pick. Lock one, steer it, or ask for another hand.",
+  "options": [
+    {
+      "id": "rows",
+      "kind": "assigned",
+      "kicker": "THE ROLL",
+      "label": "Short page, each part opens",
+      "thesis": "Their words, then the pipeline, then one inset group of rows: The prayer wall, Getting in touch, Notes for the pastoral team. Each row says where it stands; tapping opens that part as a sheet with its form and Save.",
+      "palette": ["#2a3d5e", "#f4efe7", "#00776d", "#e7ae74", "#ffffff"],
+      "materials": ["stage pipeline", "inset group rows", "sheet per part", "SaveBar in each sheet"],
+      "viewport": "Top bar, the sent line and Under 18 pill, their words, New / Followed up / Answered, then three rows that fit on one screen.",
+      "risk": "The wall's words are one tap away rather than on the page.",
+      "html": ".impeccable/mocks/prayer-request/rows.html",
+      "htmlFrame": "390x844"
+    },
+    {
+      "id": "band",
+      "kind": "dealt",
+      "label": "Status band, then cards",
+      "thesis": "A sand band at the top holds who sent it, when, and the pipeline, like a ticket's head. Their words follow, then each part is its own inset group on the page: The prayer wall (the form, Save), Getting in touch, Notes.",
+      "palette": ["#2a3d5e", "#f4efe7", "#00776d", "#e7ae74", "#ffffff"],
+      "materials": ["sand status band", "stage pipeline", "inset groups", "SaveBar under the wall group"],
+      "viewport": "Top bar, a sand band with Sent Wed 11 Nov · Sarah K. and the pipeline, their words, then The prayer wall group starting.",
+      "risk": "A long page when the wall form, contact and notes are all there.",
+      "html": ".impeccable/mocks/prayer-request/band.html",
+      "htmlFrame": "390x844"
+    },
+    {
+      "id": "wall-first",
+      "kind": "dealt",
+      "label": "What's waiting comes first",
+      "thesis": "While it waits for the wall, the wall decision leads: a preview card of how the wall would show it, with Edit, Put it on the wall and Not for the wall. The pipeline and the pastoral team's groups (Getting in touch, Notes) come under it.",
+      "palette": ["#2a3d5e", "#f4efe7", "#00776d", "#e7ae74", "#ffffff"],
+      "materials": ["wall preview card", "stage pipeline", "inset groups"],
+      "viewport": "Top bar, a white preview card (Sarah K. · their words · Pray) with the two wall actions, then Pastoral care with the pipeline.",
+      "risk": "The page's order changes with the request's state.",
+      "html": ".impeccable/mocks/prayer-request/wall-first.html",
+      "htmlFrame": "390x844"
+    }
+  ],
+  "reroll": true,
+  "steer": true,
+  "buildPath": { "value": "code" }
+}

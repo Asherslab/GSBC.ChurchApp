@@ -30,11 +30,11 @@
                 @if (_forWall)
                 {
                     <Segmented TValue="bool" Label="On the prayer wall, show" ShowLabel="true" Options="Names" @bind-Value="_showName"
-                               Hint="@(Access.SignedIn ? "Your full name stays with the pastoral team." : "Your first name comes from the name below.")" />
+                               Hint="@(Access.SignedIn ? PrayerWords.ShortNameHint + " Your full name stays with the pastoral team." : PrayerWords.ShortNameHint + " It comes from the name below.")" />
                 }
                 @if (!Access.SignedIn)
                 {
-                    <TextField Label="Your name" Hint="Optional. Only the pastoral team sees it, unless you show your first name on the wall."
+                    <TextField Label="Your name" Hint="Optional. Only the pastoral team sees it in full."
                                AutoComplete="name" AutoCapitalize="words" MaxLength="60" @bind-Value="_name" />
                 }
                 <ToggleRow Title="I'd like someone to get in touch" Description="Someone from the pastoral team will call or email you." @bind-Checked="_wantsContact" />
@@ -55,16 +55,16 @@
 @code {
     private static readonly IReadOnlyList<SegmentOption<bool>> Readers =
     [
-        new(false, "The pastoral team", Detail: "Nobody else sees it."),
         new(true, "The pastoral team and the prayer wall",
             Detail: "The pastoral team reads it first and may shorten it before it's shown. It stays up for 30 days, and you can take it down."),
+        new(false, "Only the pastoral team", Detail: "Nobody else sees it."),
     ];
 
-    private static readonly IReadOnlyList<SegmentOption<bool>> Names = [new(false, PrayerWords.NoName), new(true, "My first name")];
+    private static readonly IReadOnlyList<SegmentOption<bool>> Names = [new(true, "My name"), new(false, PrayerWords.NoName)];
 
     private string _text = "";
-    private bool _forWall;
-    private bool _showName;
+    private bool _forWall = true;
+    private bool _showName = true;
     private string _name = "";
     private bool _wantsContact;
     private string _contact = "";

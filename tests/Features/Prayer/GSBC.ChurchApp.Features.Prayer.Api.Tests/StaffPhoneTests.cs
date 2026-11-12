@@ -38,7 +38,7 @@ public sealed class StaffPhoneTests : PrayerHost
         WallCase approving = PrayerPayloads.Decode<WallCase>(Assert.Single(await LiveRowsAsync(PrayerFeeds.Approving)).Payload);
         CareCase care = PrayerPayloads.Decode<CareCase>(Assert.Single(await LiveRowsAsync(PrayerFeeds.Care)).Payload);
 
-        Assert.Equal("Sam", approving.FirstName);
+        Assert.Equal("Sam S.", approving.ShortName);
         Assert.Equal("0400 000 000", care.Contact);
         Assert.Equal("Sam Sample", care.From);
     }

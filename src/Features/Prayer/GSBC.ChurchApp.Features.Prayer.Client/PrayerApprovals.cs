@@ -44,7 +44,12 @@ public sealed class PrayerApprovals(ILocalFeeds feeds, IOutbox outbox, ILocalPre
 
     public Task CareAsync(string id, CareState care, string answeredNote = "") =>
         QueueAsync(id, "Care", new CareChange { Id = id, Care = care, AnsweredNote = answeredNote.Trim() },
-            care == CareState.Answered ? "Marking it answered" : "Marking it followed up");
+            care switch
+            {
+                CareState.Answered => "Marking it answered",
+                CareState.FollowedUp => "Marking it followed up",
+                _ => "Marking it new again",
+            });
 
     public Task AddNoteAsync(string id, string text) =>
         QueueAsync(id, "AddNote", new NoteSave { RequestId = id, Text = text.Trim() }, "Adding your note");

@@ -1,0 +1,48 @@
+<!doctype html><html lang="en-AU"><head><meta charset="utf-8"><title>Short page, each part opens</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--navy:#2a3d5e;--sand:#f4efe7;--sand2:#e9e1d4;--ink:#18233a;--ink2:#545e70;--ink3:#626a79;--aqua:#00776d;--marker:#e7ae74;--mink:#8a5422;--line:rgba(42,61,94,.12);--group:#f4efe7}
+*{box-sizing:border-box;margin:0;padding:0}
+body{width:390px;height:844px;overflow:hidden;font-family:Montserrat,-apple-system,sans-serif;color:var(--ink);background:#fff;font-size:16px;position:relative}
+.status{height:54px;background:var(--navy)}
+.top{height:50px;background:var(--navy);color:#fff;display:flex;align-items:center;padding:0 12px;font-size:16px}
+.top .back{color:#fff;opacity:.9;width:120px}.top b{flex:1;text-align:center;margin-right:120px;font-weight:700}
+.g{padding:0 20px}
+.meta{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px;color:var(--ink2);font-weight:600}
+.pill{font-size:12px;font-weight:700;border-radius:8px;padding:2px 8px;background:rgba(231,174,116,.3);color:var(--mink)}
+.words{font-size:18px;line-height:1.5;margin-top:10px}
+.pipe{display:flex;margin-top:14px}
+.pipe span{flex:1;height:44px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;background:var(--sand);color:var(--ink2);clip-path:polygon(0 0,calc(100% - 12px) 0,100% 50%,calc(100% - 12px) 100%,0 100%,12px 50%);margin-left:-7px}
+.pipe span:first-child{margin-left:0;clip-path:polygon(0 0,calc(100% - 12px) 0,100% 50%,calc(100% - 12px) 100%,0 100%);border-radius:9px 0 0 9px}
+.pipe span:last-child{clip-path:polygon(0 0,100% 0,100% 100%,0 100%,12px 50%);border-radius:0 9px 9px 0}
+.pipe .now{background:var(--aqua);color:#fff}.pipe .done{background:rgba(0,119,109,.18);color:var(--aqua)}
+.hint{font-size:13px;color:var(--ink3);margin-top:6px}
+.gh{font-size:14px;color:var(--ink2);font-weight:600;padding:0 16px;margin:0 20px 6px}
+.grp{margin:0 20px;background:#fff;border-radius:14px;padding:0 16px}
+.page-g{background:var(--group)}
+.row{display:flex;align-items:center;gap:12px;min-height:56px;padding:10px 0;border-top:1px solid var(--line)}
+.row:first-child{border-top:0}
+.row .ic{width:30px;height:30px;border-radius:9px;background:rgba(0,119,109,.12);flex:none}
+.row .ic.w{background:rgba(231,174,116,.3)}
+.row .b{flex:1;min-width:0}.row .t{font-size:15.5px;font-weight:600}.row .s{font-size:14px;color:var(--ink2);margin-top:2px}
+.row .chev{color:var(--ink3);font-size:20px}
+.field{display:block;margin-top:12px}.field .l{font-size:14px;font-weight:600;color:var(--ink2);display:block;margin-bottom:6px}
+.inp{background:var(--sand);border:1px solid rgba(98,106,121,.7);border-radius:12px;padding:12px 14px;font-size:16px;min-height:46px}
+.seg{display:flex;background:var(--sand);border-radius:12px;padding:3px;font-size:15px;font-weight:600;color:var(--ink2)}.seg span{flex:1;text-align:center;padding:9px}.seg .on{background:#fff;border-radius:9px;color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.14)}
+.btn{height:44px;border-radius:22px;background:var(--sand);font-size:15px;font-weight:600;padding:0 18px;display:inline-flex;align-items:center;justify-content:center}
+.btn.p{background:var(--navy);color:#fff}
+.bar{display:flex;justify-content:space-between;align-items:center;margin-top:14px;padding-bottom:14px}
+.tabs{position:absolute;bottom:0;left:0;right:0;height:84px;background:#fff;border-top:1px solid var(--line);display:flex;justify-content:space-around;padding-top:10px;font-size:12px;font-weight:600;color:var(--ink3)}
+.tabs .on{color:var(--aqua)}
+.foot{font-size:13px;color:var(--ink2);padding:6px 36px 0}
+</style>
+</head><body class="page-g"><div class="status"></div><div class="top"><span class="back">‹ To approve</span><b>Prayer request</b></div>
+<div class="g" style="padding-top:20px"><p class="meta">Sent Wed 11 Nov · 10:58pm · Jordan E. <span class="pill">Under 18</span></p>
+<p class="words">Please pray for my mum, who has surgery on Thursday, and for us as we look after Dad while she recovers.</p></div>
+<div class="g" style="margin-top:20px"><p class="gh" style="margin:0 0 6px;padding:0 16px">Pastoral care</p><div class="pipe"><span class="now">New</span><span>Followed up</span><span>Answered</span></div><p class="hint" style="padding:0 2px">Tap a step to move it there.</p></div>
+<div style="margin-top:22px"><div class="grp">
+<div class="row"><span class="ic w"></span><span class="b"><span class="t">The prayer wall</span><span class="s" style="display:block">Asks to be shown · as Jordan E.</span></span><span class="chev">›</span></div>
+<div class="row"><span class="ic"></span><span class="b"><span class="t">Getting in touch</span><span class="s" style="display:block">0400 000 000 · would like a call</span></span><span class="chev">›</span></div>
+<div class="row"><span class="ic"></span><span class="b"><span class="t">Notes for the pastoral team</span><span class="s" style="display:block">2 notes · latest Thu</span></span><span class="chev">›</span></div>
+</div><p class="foot">Only the pastoral team sees contact details and notes.</p></div>
+<div class="g" style="margin-top:22px"><div class="notice" style="background:rgba(231,174,116,.22);border-radius:12px;padding:12px 14px;font-size:14px;line-height:1.45;color:var(--ink)">They are under 18. Take extra care with what is shared.</div></div><nav class="tabs"><span>Home</span><span>Sermons</span><span>Calendar</span><span>Ministries</span><span class="on">More</span></nav></body></html>
