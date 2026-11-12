@@ -1,4 +1,4 @@
-<div class="workbench @(Narrow ? "workbench--narrow" : "") @(Aside is null ? "workbench--no-aside" : "") @(Detail is null ? "workbench--no-detail" : "") @Class" data-showing="@Showing.ToString().ToLowerInvariant()">
+<div class="workbench @(Narrow ? "workbench--narrow" : "") @(Aside is null ? "workbench--no-aside" : "") @(Detail is null ? "workbench--no-detail" : "") @(FoldAside ? "workbench--fold-aside" : "") @Class" data-showing="@Showing.ToString().ToLowerInvariant()">
     @if (Aside is not null)
     {
         <aside class="workbench__aside" aria-label="@AsideLabel">@Aside</aside>
@@ -17,6 +17,7 @@
     [Parameter] public string AsideLabel { get; set; } = "Filters";
     [Parameter] public string DetailLabel { get; set; } = "Details";
     [Parameter] public bool Narrow { get; set; }
+    [Parameter] public bool FoldAside { get; set; }
     [Parameter] public string? Class { get; set; }
     [Parameter] public WorkbenchPane Showing { get; set; } = WorkbenchPane.Main;
 }

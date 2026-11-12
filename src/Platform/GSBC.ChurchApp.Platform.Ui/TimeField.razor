@@ -9,7 +9,7 @@ else
     <div class="field date-field @(ShownProblem is null ? "" : "field--problem")" @onkeydown="OnKeyAsync">
         <label class="field__label" for="@_id">@Label</label>
         <div class="date-field__box">
-            <input id="@_id" class="field__input date-field__input" type="text" value="@_text" placeholder="@(Placeholder ?? "Type a time, like 7:30pm")"
+            <input id="@_id" class="field__input date-field__input" type="text" value="@_text" placeholder="@(Placeholder ?? "Like 7:30pm")"
                    required="@Required" disabled="@Disabled" autocomplete="off" aria-describedby="@DescribedBy" aria-invalid="@(ShownProblem is null ? null : "true")"
                    @oninput="Typed" @onchange="CommitAsync" />
             <button type="button" class="date-field__open" aria-label="Choose a time" aria-haspopup="listbox" aria-expanded="@(_open ? "true" : "false")" disabled="@Disabled"

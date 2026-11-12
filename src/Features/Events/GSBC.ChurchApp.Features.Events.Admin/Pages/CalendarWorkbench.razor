@@ -143,7 +143,7 @@
     private Task ReloadAsync() => _live?.ReloadAsync() ?? Task.CompletedTask;
 
     private RenderFragment Drawn(WorkbenchView view) =>
-        @<Workbench AsideLabel="Calendars" DetailLabel="@DetailLabel" Class="calendar-workbench" Showing="@Pane" Aside="Aside(view)" Detail="@(RegularSpans ? null : Detail(view))">
+        @<Workbench AsideLabel="Calendars" DetailLabel="@DetailLabel" Class="calendar-workbench" FoldAside="true" Showing="@Pane" Aside="Aside(view)" Detail="@(RegularSpans ? null : Detail(view))">
             @(_chosen is ChosenRegular regular ? Regular(regular) : Main(view))
         </Workbench>;
 

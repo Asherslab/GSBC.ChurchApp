@@ -246,8 +246,8 @@
         </dl>
     </ChildContent>
     <Actions>
-        <Button Variant="ButtonVariant.Quiet" OnClick="() => _confirming = false">Back to writing</Button>
         <Button Icon="send" Busy="_busy" OnClick="SendAsync">@(_later ? "Schedule it" : QuietUntil is null ? "Send it now" : "Send it")</Button>
+        <Button Variant="ButtonVariant.Quiet" OnClick="() => _confirming = false">Back to writing</Button>
     </Actions>
 </Sheet>
 

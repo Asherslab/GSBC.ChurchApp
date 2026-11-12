@@ -7,7 +7,7 @@
         BoardColumn<TColumn> column = Columns[index];
         List<TItem> items = Items.Where(item => Same(ColumnOf(item), column.Value)).ToList();
         string id = $"{_id}-{index}";
-        bool dropping = _dropping is { } target && Same(target, column.Value);
+        bool dropping = _dragging is not null && _dropping is { } target && Same(target, column.Value);
         if (column.Folds && !_unfolded.Contains(column.Value))
         {
             <button type="button" class="board__col board__col--folded @(dropping ? "is-dropping" : "")" role="listitem" aria-expanded="false"

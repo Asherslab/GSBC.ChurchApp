@@ -51,7 +51,8 @@ public sealed partial class DesignDriftRules
     [Fact]
     public void DialogsPutTheirMainActionFirst() =>
         AssertRatchet("quietFirst", Razor().Select(file => Full(file.Path)), text =>
-            ActionsBlock().Matches(text).Count(block => QuietBeforeMain(ButtonTag().Matches(block.Groups[1].Value).Select(tag => tag.Value).ToList())));
+            SheetBlock().Matches(text).SelectMany(sheet => ActionsBlock().Matches(sheet.Value))
+                .Count(block => block.Groups[1].Value.Split('{', '}').Any(branch => QuietBeforeMain(ButtonTag().Matches(branch).Select(tag => tag.Value).ToList()))));
 
     [Fact]
     public void ListsAndRecordsUseTheWorkbench() =>
@@ -164,6 +165,9 @@ public sealed partial class DesignDriftRules
 
     [GeneratedRegex(@"(?<![\w.-])[1-9]\d*(?:\.\d+)?px\b")]
     private static partial Regex LiteralLength();
+
+    [GeneratedRegex(@"<Sheet\b.*?</Sheet>", RegexOptions.Singleline)]
+    private static partial Regex SheetBlock();
 
     [GeneratedRegex(@"<Actions>(.*?)</Actions>", RegexOptions.Singleline)]
     private static partial Regex ActionsBlock();

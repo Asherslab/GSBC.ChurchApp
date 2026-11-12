@@ -24,7 +24,7 @@ public static partial class TypedDates
 
     public static string Iso(TimeOnly time) => time.ToString(TimeFormat, English);
 
-    public static string Show(DateOnly day) => day.ToString("ddd d MMM yyyy", English);
+    public static string Show(DateOnly day) => day.ToString("d MMM yyyy", English);
 
     public static string ShowInFull(DateOnly day) => day.ToString("dddd d MMMM yyyy", English);
 

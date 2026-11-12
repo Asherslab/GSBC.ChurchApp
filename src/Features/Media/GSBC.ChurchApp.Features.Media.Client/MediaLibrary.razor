@@ -152,8 +152,8 @@
                 </form>
             </ChildContent>
             <Actions>
-                <Button Variant="ButtonVariant.Quiet" OnClick="CloseSheet">Cancel</Button>
                 <Button Icon="check" Busy="_busy" Disabled="@(_name.Trim().Length == 0)" OnClick="SaveNameAsync">@(_sheet == FolderSheet.Create ? "Make folder" : "Rename")</Button>
+                <Button Variant="ButtonVariant.Quiet" OnClick="CloseSheet">Cancel</Button>
             </Actions>
         </Sheet>
 
@@ -165,8 +165,8 @@
         <Sheet Open="_sheet == FolderSheet.DeleteEmpty" OpenChanged="_ => CloseSheet()" Title="@($"Delete “{_sheetFolder?.Name}”?")" Lead="It's empty, so nothing else changes.">
             <ChildContent><Notice Tone="NoticeTone.Warning" Text="@_sheetProblem" /></ChildContent>
             <Actions>
-                <Button Variant="ButtonVariant.Quiet" OnClick="CloseSheet">Keep it</Button>
                 <Button Variant="ButtonVariant.Danger" Busy="_busy" OnClick="() => DeleteFolderAsync(false, null)">Delete folder</Button>
+                <Button Variant="ButtonVariant.Quiet" OnClick="CloseSheet">Keep it</Button>
             </Actions>
         </Sheet>
     </LiveData>

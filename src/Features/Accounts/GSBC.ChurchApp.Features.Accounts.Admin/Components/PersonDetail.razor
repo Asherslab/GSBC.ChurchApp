@@ -99,8 +99,8 @@ else if (Invitation is not null)
     <Sheet Open="_withdrawing" OpenChanged="open => _withdrawing = open" Title="@($"Remove {Person.DisplayName}?")"
            Lead="Their account is removed, with the roles, ministries and families they were given. They never hear about it. You can add them again.">
         <Actions>
-            <Button Variant="ButtonVariant.Quiet" OnClick="() => _withdrawing = false">Keep them</Button>
             <Button Variant="ButtonVariant.Danger" Busy="_busy" OnClick="WithdrawAsync">Remove them</Button>
+            <Button Variant="ButtonVariant.Quiet" OnClick="() => _withdrawing = false">Keep them</Button>
         </Actions>
     </Sheet>
 }
@@ -109,8 +109,8 @@ else
     <Sheet Open="_withdrawing" OpenChanged="open => _withdrawing = open" Title="@($"Withdraw {Person.DisplayName}'s invitation?")"
            Lead="The link in their email stops working and the account they haven't set up is removed. You can invite them again.">
         <Actions>
-            <Button Variant="ButtonVariant.Quiet" OnClick="() => _withdrawing = false">Keep it</Button>
             <Button Variant="ButtonVariant.Danger" Busy="_busy" OnClick="WithdrawAsync">Withdraw it</Button>
+            <Button Variant="ButtonVariant.Quiet" OnClick="() => _withdrawing = false">Keep it</Button>
         </Actions>
     </Sheet>
 }

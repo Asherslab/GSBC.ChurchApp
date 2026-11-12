@@ -12,7 +12,7 @@ else
     <div class="field date-field @(ShownProblem is null ? "" : "field--problem")" @onkeydown="OnFieldKeyAsync">
         <label class="field__label" for="@_id">@Label</label>
         <div class="date-field__box">
-            <input id="@_id" class="field__input date-field__input" type="text" inputmode="text" value="@_text" placeholder="@(Placeholder ?? "Type a date, like 15 Nov")"
+            <input id="@_id" class="field__input date-field__input" type="text" inputmode="text" value="@_text" placeholder="@(Placeholder ?? "Like 15 Nov")"
                    required="@Required" disabled="@Disabled" autocomplete="@(AutoComplete ?? "off")" aria-describedby="@DescribedBy" aria-invalid="@(ShownProblem is null ? null : "true")"
                    @oninput="Typed" @onchange="CommitAsync" />
             <button type="button" class="date-field__open" aria-label="Choose a date" aria-haspopup="dialog" aria-expanded="@(_open ? "true" : "false")" disabled="@Disabled"

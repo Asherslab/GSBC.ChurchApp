@@ -1,5 +1,6 @@
 ---
 title: The app looks and works the same way everywhere
+audience: everyone
 added: 2026-11-12
 icon: layout
 area: Everywhere

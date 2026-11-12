@@ -14,7 +14,7 @@
         }
         @ChildContent
         <span class="save-bar__gap"></span>
-        <Button Type="@(Submit ? "submit" : "button")" Variant="@(OnMasthead ? ButtonVariant.OnMasthead : ButtonVariant.Primary)" Busy="Busy" Disabled="@(Blocked is not null)" OnClick="@(Submit ? default : OnSave)" Class="save-bar__save">@Label</Button>
+        <Button Type="@(Submit ? "submit" : "button")" Block="Block" Variant="@(OnMasthead ? ButtonVariant.OnMasthead : ButtonVariant.Primary)" Busy="Busy" Disabled="@(Blocked is not null)" OnClick="@(Submit ? default : OnSave)" Class="save-bar__save">@Label</Button>
     </div>
 </div>
 
