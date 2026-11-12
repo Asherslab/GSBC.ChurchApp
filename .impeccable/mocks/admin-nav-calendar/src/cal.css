@@ -1,0 +1,24 @@
+@import url("../../design-system/kit.css");
+@import url("../../../../src/Features/Events/GSBC.ChurchApp.Features.Events.Client/wwwroot/css/events.css");
+
+.tab-gap { margin: var(--space-md) 0 var(--after-tabs, 20px); }
+.cards { display: grid; gap: var(--space-lg); }
+.cards .section--grouped { margin-top: 0; }
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-md); }
+.mini-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+.mini-row:last-child { border-bottom: 0; }
+.mini-row b { font-size: var(--text-label); }
+.mini-row span { color: var(--ink-2); font-size: var(--text-caption); }
+.grip { display: grid; place-items: center; width: 22px; height: 30px; margin-left: 2px; border-radius: 6px; color: var(--ink-3); cursor: grab; }
+.calendar-aside__calendar .grip { opacity: 0; }
+.calendar-aside__calendar:hover .grip, .calendar-aside__calendar.is-hover .grip, .is-arranging .grip { opacity: 1; }
+.is-lifted { position: relative; z-index: 2; background: var(--surface) !important; box-shadow: var(--lift), inset 0 0 0 2px var(--accent); transform: translateY(-6px) rotate(-0.6deg); }
+.drop-line { height: 3px; margin: 0 8px; border-radius: 2px; background: var(--accent); }
+.arrange-head { display: flex; align-items: center; justify-content: space-between; padding: 10px 4px 0 12px; border-top: 1px solid var(--line); }
+.arrange-head span { color: var(--ink-2); font-size: var(--text-caption); font-weight: 700; }
+.is-arranging .calendar-aside__calendars { border-top: 0; padding-top: 4px; }
+.moves { display: flex; gap: 2px; }
+.tip { margin: 6px 12px 0; color: var(--ink-3); font-size: var(--text-caption); line-height: 1.4; }
+.kbd { padding: 1px 6px; border-radius: 6px; background: var(--sand-strong, var(--fill-on-surface)); font-size: var(--text-pill); font-weight: 700; }
+.note-callout { position: absolute; max-width: 250px; padding: 10px 12px; border-radius: 12px; background: var(--ink); color: var(--page); font-size: var(--text-caption); line-height: 1.4; box-shadow: var(--lift); }
+.is-lifted .grip { opacity: 1 !important; }

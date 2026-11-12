@@ -130,7 +130,9 @@
 .calendar-main__title { margin: 0; font-size: var(--text-headline); font-weight: 700; letter-spacing: -0.02em; }
 .calendar-main__lead { margin: 6px 0 0; max-width: 72ch; color: var(--ink-2); font-size: var(--text-caption); line-height: 1.45; }
 .calendar-main__actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; min-width: 0; }
+.calendar-main__actions > * { flex: none; }
 .calendar-main__actions .segmented { min-width: 13rem; white-space: nowrap; }
+.calendar-main__actions .segmented button { padding: 0 var(--space-md); }
 .calendar-day { margin-top: 18px; }
 .calendar-day__head { display: flex; align-items: baseline; gap: 8px; margin: 0 0 4px; font-size: var(--text-label); font-weight: 700; }
 .calendar-day__head span { color: var(--ink-3); font-weight: 400; }

@@ -1,0 +1,34 @@
+{
+  "title": "The admin sidebar's areas",
+  "question": "People has become a catch-all. Which way should the sidebar's areas be split? (1 of 4 on this page)",
+  "options": [
+    {
+      "id": "rhythm", "kind": "assigned", "kicker": "THE ROLL", "label": "What you do most, first",
+      "thesis": "Seven areas in the order staff reach for them: Sundays, This week, Ministries & groups, Safety, People & access, The app, Technical.",
+      "palette": ["#2A3D5E", "#D5C9B7", "#E7AE74", "#009C8F"], "materials": ["the sidebar's own areas", "fold and remember"],
+      "viewport": "This week holds Calendar, Announcements, Weekly digest and Prayer; Safeguarding and Safe Ministry Check get their own Safety area; People and App review become People & access.",
+      "risk": "Seven areas is two more than today, so more to fold.",
+      "html": ".impeccable/mocks/admin-nav-calendar/groups-rhythm.html"
+    },
+    {
+      "id": "audience", "kind": "dealt", "label": "Who it is for",
+      "thesis": "Five areas named for who the work serves: Everyone at church, Groups & ministries, One person at a time, The app, Technical.",
+      "palette": ["#2A3D5E", "#D5C9B7", "#E7AE74", "#009C8F"], "materials": ["the sidebar's own areas", "fewer, bigger drawers"],
+      "viewport": "Everyone at church gathers sermons, the calendar, announcements and the digest; One person at a time holds People, Prayer, Safeguarding and Safe Ministry Check.",
+      "risk": "Everyone at church becomes the new big drawer (five pages).",
+      "html": ".impeccable/mocks/admin-nav-calendar/groups-audience.html"
+    },
+    {
+      "id": "activity", "kind": "dealt", "label": "What you are doing",
+      "thesis": "Seven areas, one kind of work each: Sundays & sermons, News & calendar, Ministries & groups, Chats & prayer, Safety & accounts, The app, Technical.",
+      "palette": ["#2A3D5E", "#D5C9B7", "#E7AE74", "#009C8F"], "materials": ["the sidebar's own areas", "small drawers by task"],
+      "viewport": "Weekly digest joins News & calendar; Chats sits with Prayer; People, Safeguarding, Safe Ministry Check and App review make Safety & accounts.",
+      "risk": "Chats & prayer is a pairing staff might not look for.",
+      "html": ".impeccable/mocks/admin-nav-calendar/groups-activity.html"
+    }
+  ],
+  "reroll": true,
+  "steer": true,
+  "buildPath": { "value": "code" },
+  "followup": true
+}

@@ -1,0 +1,22 @@
+{
+  "title": "Send feedback on the phone",
+  "question": "The page should stay small with the keyboard up. Which layout? (4 of 4; each drops the big header for the usual top bar)",
+  "options": [
+    { "id": "slim-bar", "label": "A slim bar over the keyboard",
+      "thesis": "Pictures as a small row of thumbnails with a + tile, the field, and one slim bar: What's sent with it at the left, Send at the right.",
+      "palette": ["#2A3D5E", "#F3EFE8", "#E7AE74", "#009C8F"], "materials": ["topbar", "a 56px foot bar"], "htmlFrame": "390x844",
+      "viewport": "Thumbnails and + at the top, Tell us about it under them, the bar sitting on the keyboard.",
+      "risk": "The bar still moves with the keyboard, as today's does.", "html": ".impeccable/mocks/admin-nav-calendar/fb-slim-bar.html" },
+    { "id": "in-page", "label": "Send at the end of the page",
+      "thesis": "No bar at all: the field first, the pictures row, then What's sent with it and Send at the bottom right of the form, scrolling with the page.",
+      "palette": ["#2A3D5E", "#F3EFE8", "#E7AE74", "#009C8F"], "materials": ["topbar", "Save bottom right, in the page"], "htmlFrame": "390x844",
+      "viewport": "Tell us about it first, pictures under it, Send right below; nothing pinned to the keyboard.",
+      "risk": "With a very long message, Send scrolls below the keyboard until you scroll.", "html": ".impeccable/mocks/admin-nav-calendar/fb-in-page.html" },
+    { "id": "composer", "label": "Like writing a message",
+      "thesis": "A message box docked on the keyboard: paperclip, the text, a round Send; chosen pictures as a strip above it.",
+      "palette": ["#2A3D5E", "#F3EFE8", "#E7AE74", "#009C8F"], "materials": ["topbar", "a Messages-style composer"], "htmlFrame": "390x844",
+      "viewport": "A short lead at the top, the composer and its picture strip on the keyboard.",
+      "risk": "A new pattern that no other form in the app uses.", "html": ".impeccable/mocks/admin-nav-calendar/fb-composer.html" }
+  ],
+  "steer": true
+}

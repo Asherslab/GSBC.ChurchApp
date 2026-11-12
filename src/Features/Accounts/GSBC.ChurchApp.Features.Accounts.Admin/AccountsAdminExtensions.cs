@@ -22,7 +22,7 @@ public static class AccountsAdminExtensions
     public static IServiceCollection AddAccountsAdmin(this IServiceCollection services, ClientModules modules)
     {
         modules.Add(new ClientModule("Accounts", typeof(AccountsAdminExtensions).Assembly,
-            [new NavEntry("People", "people", AppIcons.People, AccountsPermissions.View, Area: NavAreas.People, Summary: "Invite staff, send a recovery link, turn an account off"), new NavEntry("App review", "app-review", AppIcons.AppReview, AccountsPermissions.ReviewAccess, Area: NavAreas.Technical, Summary: "Sign-in codes for Apple's app reviewers"), new NavEntry("Account", "account", AppIcons.Account, Area: NavAreas.You)], PrivateFeeds: [AccountsFeeds.Pins]));
+            [new NavEntry("People", "people", AppIcons.People, AccountsPermissions.View, Area: NavAreas.PeopleAndAccess, Summary: "Invite staff, send a recovery link, turn an account off"), new NavEntry("App review", "app-review", AppIcons.AppReview, AccountsPermissions.ReviewAccess, Area: NavAreas.PeopleAndAccess, Summary: "Sign-in codes for Apple's app reviewers"), new NavEntry("Account", "account", AppIcons.Account, Area: NavAreas.You)], PrivateFeeds: [AccountsFeeds.Pins]));
         return services.AddAccountsClient().AddSingleton<AccountsOfficeClient>().AddSingleton<OnlineAccount>().AddSingleton<IAccountReads>(provider => provider.GetRequiredService<OnlineAccount>()).AddSingleton<IPeopleDirectory, AccountsPeopleDirectory>().AddSingleton<IOfficeWeekSource, InvitationsOfficeWeek>().AddSingleton<IPinnedPages, AccountPinnedPages>()
             .AddSingleton(new SidebarAction("Account", AppIcons.Account, Menu, Order: 1));
     }

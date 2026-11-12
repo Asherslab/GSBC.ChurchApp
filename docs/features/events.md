@@ -475,7 +475,7 @@ approved mocks (surface briefs `.impeccable/surfaces/tures-events-admin-pages-di
   (ticked, order, reworded fields, things not on the calendar) and the snapshot last sent.
 - **Rules** (`Digests`, pure): what's in it, grouping, the when lines, merging staff choices with the calendar, what goes
   to the app. `EventsPublisher.DigestRows` publishes the latest sent digest on every publish.
-- **The admin panel:** *Weekly digest* (`/digest`, in the sidebar under Sundays & sermons for holders of `events.digest`):
+- **The admin panel:** *Weekly digest* (`/digest`, in the sidebar under This week for holders of `events.digest`):
   `DigestDesk` and `DigestItemWords`, with the app's own `WhatsNextView` in a `PhoneFrame` and the email in a frame.
 - **The phone:** `WhatsNextPage` (`/whats-next`) over `WhatsNextView` (Events.Client), read from the feeds by
   `DigestReader`, through `LiveData` with `Remember`.

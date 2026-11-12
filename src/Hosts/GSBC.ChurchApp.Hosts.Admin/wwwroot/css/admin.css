@@ -467,7 +467,8 @@ input[type="checkbox"]:not([class]), input[type="radio"]:not([class]) { display:
     .person-roles__why { position: static; }
 }
 
-.popover.account-menu { position: fixed; left: var(--space-md); bottom: var(--space-4xl); z-index: 40; display: grid; gap: var(--space-2xs); width: 312px; padding: var(--space-md); border-radius: var(--radius); background: var(--surface); color: var(--ink); box-shadow: 0 0 0 1px var(--line), 0 18px 40px -12px var(--scrim); animation: fade 160ms var(--ease-out) both; }
+.admin-sidebar:has(.popover) { z-index: 45; }
+.popover.account-menu { position: fixed; left: var(--space-md); bottom: var(--space-4xl); z-index: 40; display: grid; gap: var(--space-2xs); width: min(312px, calc(100vw - 2 * var(--space-md))); max-height: calc(100dvh - var(--space-4xl) - var(--space-md)); overflow-y: auto; padding: var(--space-md); border-radius: var(--radius); background: var(--surface); color: var(--ink); box-shadow: 0 0 0 1px var(--line), 0 18px 40px -12px var(--scrim); animation: fade 160ms var(--ease-out) both; }
 .account-menu__who { display: grid; gap: var(--space-3xs); padding: var(--space-2xs) var(--space-xs) var(--space-md); margin-bottom: var(--space-xs); border-bottom: 1px solid var(--line); }
 .account-menu__who strong { font-size: var(--text-row); }
 .account-menu__who span { color: var(--ink-2); font-size: var(--text-caption); overflow-wrap: anywhere; }

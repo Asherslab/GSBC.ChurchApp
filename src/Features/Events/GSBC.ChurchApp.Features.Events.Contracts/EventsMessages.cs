@@ -580,6 +580,12 @@ public sealed class PlacesUsed
 }
 
 [ProtoContract]
+public sealed class CalendarOrder
+{
+    [ProtoMember(1)] public List<string> CalendarIds { get; set; } = [];
+}
+
+[ProtoContract]
 public sealed class CalendarToRemove
 {
     [ProtoMember(1)] public string CalendarId { get; set; } = "";

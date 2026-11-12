@@ -18,9 +18,9 @@ public static class PeopleAdminExtensions
     public static IServiceCollection AddPeopleAdmin(this IServiceCollection services, ClientModules modules)
     {
         modules.Add(new ClientModule("People", typeof(PeopleAdminExtensions).Assembly,
-            [new NavEntry("Safeguarding", "safeguarding", AppIcons.Safeguarding, PeoplePermissions.SafeguardingView, Area: NavAreas.People,
+            [new NavEntry("Safeguarding", "safeguarding", AppIcons.Safeguarding, PeoplePermissions.SafeguardingView, Area: NavAreas.Safety,
                 Summary: "Blue cards and training that have run out or are due, and young people without a parent"),
-             new NavEntry("Safe Ministry Check", "safe-ministry-check", AppIcons.SafeMinistryCheck, PeoplePermissions.SafeguardingView, Area: NavAreas.People,
+             new NavEntry("Safe Ministry Check", "safe-ministry-check", AppIcons.SafeMinistryCheck, PeoplePermissions.SafeguardingView, Area: NavAreas.Safety,
                 Summary: "Blue cards and training brought across from Safe Ministry Check, and records still to match")],
             [PeopleFeeds.Family, PeopleFeeds.Safeguarding], [PeopleFeeds.Mine]));
         services.AddSingleton(new PersonTab(FamilyTab, "Family", FamilyOrder, Family, PeoplePermissions.FamilyView));

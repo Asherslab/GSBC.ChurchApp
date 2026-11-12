@@ -546,10 +546,13 @@ icon, the permission that shows it, a one-line `Summary` for Home's *Your areas*
 (`NavArea`, from `NavAreas` in Platform.Client). The host adds nothing per feature; `ModuleNav` builds the sidebar from
 what the person's permissions allow.
 
-Areas are cut by the job staff are doing (owner, 2026-11-09): **Sundays & sermons** (Sermons, Weekly digest),
-**Calendar & news** (Calendar, Announcements), **The app** (App styling, Media, Places in the app, Insights), **People** (People, where roles are given
-too), **Technical** (App health, App review: developer-facing, owner 2026-11-09), and **You** (Account) at the foot. *Church life* (Ministries, Life
-Groups, prayer) joins `NavAreas` with its first page. A new area is a new `NavAreas` entry with its place in the order.
+Areas are cut by the job staff are doing, in the order staff reach for them: what they do most comes first (owner's
+pick on the decision page, 2026-11-12, after "People" had become a catch-all): **Sundays & sermons** (Sermons, Import
+from the website), **This week** (Announcements, Calendar, Prayer, Weekly digest), **Ministries & groups** (Chats, Life
+Groups, Ministries; Rosters joins it when it has a page), **Safety** (Safe Ministry Check, Safeguarding), **People &
+access** (People, where roles are given too, and App review), **The app** (App styling, Insights, Media, Places in the
+app), **Technical** (App health, Design gallery, Feedback), and **You** (Account) at the foot. A new area is a new
+`NavAreas` entry with its place in the order.
 
 How it behaves (owner's pick, 2026-11-09, "your pages pinned, then areas folded"):
 

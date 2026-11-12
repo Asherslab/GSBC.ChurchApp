@@ -1,0 +1,23 @@
+{
+  "title": "A calendar's own page",
+  "question": "Each calendar's settings become a tab on its page, as a ministry's do. Which tabs should a calendar have? (2 of 4)",
+  "options": [
+    { "id": "three", "label": "Events, Regular events, Settings",
+      "thesis": "Regular events becomes a tab of its own; Agenda and Month stay a switch inside Events.",
+      "palette": ["#2A3D5E", "#F3EFE8", "#E7AE74", "#009C8F"], "materials": ["TabStrip", "settings cards with Cancel and Save"],
+      "viewport": "The calendar's name and a one-line summary with its ⋯ menu (Remove this calendar), the three tabs, then Settings as cards: About this calendar (saves with Save), People on it, Calendar apps and copying.",
+      "risk": "One more tab than the minimum.", "html": ".impeccable/mocks/admin-nav-calendar/cal-tabs-three.html" },
+    { "id": "two", "label": "Events and Settings",
+      "thesis": "Only Settings is added; Agenda, Month and Regular events stay as today's switch.",
+      "palette": ["#2A3D5E", "#F3EFE8", "#E7AE74", "#009C8F"], "materials": ["TabStrip", "settings cards with Cancel and Save"],
+      "viewport": "The same Settings cards; the Events tab keeps the three-way switch beside New event.",
+      "risk": "The switch keeps mixing two ways of seeing dates with a different list (the Pattern map says tabs for different things).", "html": ".impeccable/mocks/admin-nav-calendar/cal-tabs-two.html" },
+    { "id": "people", "label": "Events, Regular events, People, Settings",
+      "thesis": "Like a ministry: who is on the calendar gets its own People tab too.",
+      "palette": ["#2A3D5E", "#F3EFE8", "#E7AE74", "#009C8F"], "materials": ["TabStrip", "settings cards with Cancel and Save"],
+      "viewport": "Four tabs; Settings holds only About this calendar and Calendar apps and copying.",
+      "risk": "A People tab with two or three names on it can feel empty.", "html": ".impeccable/mocks/admin-nav-calendar/cal-tabs-people.html" }
+  ],
+  "steer": true,
+  "followup": true
+}

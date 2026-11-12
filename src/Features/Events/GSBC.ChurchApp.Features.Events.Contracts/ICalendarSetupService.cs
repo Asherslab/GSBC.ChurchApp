@@ -11,6 +11,9 @@ public interface ICalendarSetupService
     ValueTask<CalendarSettings> SaveCalendarAsync(CalendarSettings request, CallContext context = default);
 
     [Requires(EventsPermissions.ManageNode)]
+    ValueTask<Done> OrderCalendarsAsync(CalendarOrder request, CallContext context = default);
+
+    [Requires(EventsPermissions.ManageNode)]
     ValueTask<CalendarRemoval> RemovalAsync(CalendarToRemove request, CallContext context = default);
 
     [Requires(EventsPermissions.ManageNode)]
