@@ -95,8 +95,8 @@
 
     private IReadOnlyList<MenuItem> EntryActions(OutboxEntry entry) =>
     [
-        new("Retry", () => Outbox.RetryAsync(entry.Id).AsTask(), "refresh"),
-        new("Discard…", () => { _discarding = entry; return Task.CompletedTask; }, "trash-2", Danger: true, StartsGroup: true),
+        this.Item("Retry", () => Outbox.RetryAsync(entry.Id).AsTask(), "refresh"),
+        this.Item("Discard…", () => { _discarding = entry; return Task.CompletedTask; }, "trash-2", danger: true, startsGroup: true),
     ];
 
     private async Task DiscardAsync()

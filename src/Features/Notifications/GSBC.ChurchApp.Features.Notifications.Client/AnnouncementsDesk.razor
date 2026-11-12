@@ -289,10 +289,10 @@
 
     private IReadOnlyList<MenuItem> ItemActions =>
     [
-        .. _editing.State == Scheduled && MaySend ? [new MenuItem("Don't send it", CancelAsync, "undo", "Back to being written", Disabled: _busy)] : Array.Empty<MenuItem>(),
-        .. _editing.State is Sent or Recalled ? [new MenuItem("Copy into a new announcement", CopyAsync, "copy", Disabled: _busy)] : Array.Empty<MenuItem>(),
-        .. _editing.State == Sent && MaySend ? [new MenuItem("Recall…", () => { _recalling = true; return Task.CompletedTask; }, "circle-off", "It leaves the app's notifications on every phone", Danger: true, StartsGroup: true)] : Array.Empty<MenuItem>(),
-        .. Editable && _editing.Id.Length > 0 ? [new MenuItem("Delete…", () => { _deleting = true; return Task.CompletedTask; }, "trash-2", Danger: true, StartsGroup: true)] : Array.Empty<MenuItem>(),
+        .. _editing.State == Scheduled && MaySend ? [this.Item("Don't send it", CancelAsync, "undo", "Back to being written", disabled: _busy)] : Array.Empty<MenuItem>(),
+        .. _editing.State is Sent or Recalled ? [this.Item("Copy into a new announcement", CopyAsync, "copy", disabled: _busy)] : Array.Empty<MenuItem>(),
+        .. _editing.State == Sent && MaySend ? [this.Item("Recall…", () => { _recalling = true; return Task.CompletedTask; }, "circle-off", "It leaves the app's notifications on every phone", danger: true, startsGroup: true)] : Array.Empty<MenuItem>(),
+        .. Editable && _editing.Id.Length > 0 ? [this.Item("Delete…", () => { _deleting = true; return Task.CompletedTask; }, "trash-2", danger: true, startsGroup: true)] : Array.Empty<MenuItem>(),
     ];
 
     private bool Ready => _editing.Title.Trim().Length > 0 && LinkProblem is null;

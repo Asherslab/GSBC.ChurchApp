@@ -7,7 +7,7 @@
 
 <div class="event-panel">
     <EventHead Title="@(_name.Length > 0 ? _name : "New calendar")" Compact="true"
-               Actions="@(Calendar is null ? null : [new MenuItem("Remove this calendar", AskToRemoveAsync, "trash-2", "Says first what goes with it", Danger: true)])" />
+               Actions="@(Calendar is null ? null : [this.Item("Remove this calendar", AskToRemoveAsync, "trash-2", "Says first what goes with it", danger: true)])" />
     <div class="event-body event-body--editing">
         <TextField Label="Name" Value="@_name" ValueChanged="value => _name = value" MaxLength="60" Required="true" />
         <TextField Label="Description" Value="@_description" ValueChanged="value => _description = value" MaxLength="160" Hint="One line under its name in Browse calendars." />

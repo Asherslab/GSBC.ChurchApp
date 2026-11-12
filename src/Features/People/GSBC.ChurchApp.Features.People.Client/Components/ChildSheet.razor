@@ -8,7 +8,7 @@
         {
             <div class="ui-tools">
                 <Menu Label="@($"More for {child.Name}")" Text="More" AlignStart="true" Small="true" Disabled="_busy"
-                      Items="@([new MenuItem($"{RemoveLabel(child)}…", () => { _confirming = true; return Task.CompletedTask; }, "user-x", Danger: true)])" />
+                      Items="@([this.Item($"{RemoveLabel(child)}…", () => { _confirming = true; return Task.CompletedTask; }, "user-x", danger: true)])" />
             </div>
             <Card Title="@(child.CanSignIn ? "A new sign-in for their phone" : "Sign in on their own phone")">
                 @if (_code is { } made)

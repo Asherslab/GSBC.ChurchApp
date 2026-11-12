@@ -205,11 +205,11 @@
     [Parameter] public bool Docked { get; set; }
     private IReadOnlyList<MenuItem> Actions(Ticket ticket) =>
     [
-        .. ticket.Line.Status == TicketStatus.NotDoing ? Array.Empty<MenuItem>() : [new MenuItem("Mark not doing", () => SetStatusAsync(ticket, TicketStatus.NotDoing), "circle-off", Disabled: _busy is not null)],
+        .. ticket.Line.Status == TicketStatus.NotDoing ? Array.Empty<MenuItem>() : [this.Item("Mark not doing", () => SetStatusAsync(ticket, TicketStatus.NotDoing), "circle-off", disabled: _busy is not null)],
         .. ticket.Browser is null && ticket.InstallId.Length > 0 && !ticket.Blocked && !_blocking
-            ? [new MenuItem("Block this phone…", () => { _blocking = true; return Task.CompletedTask; }, "ban")]
+            ? [this.Item("Block this phone…", () => { _blocking = true; return Task.CompletedTask; }, "ban")]
             : Array.Empty<MenuItem>(),
-        new("Delete this feedback…", () => { _deleting = true; return Task.CompletedTask; }, "trash-2", Danger: true, StartsGroup: true),
+        this.Item("Delete this feedback…", () => { _deleting = true; return Task.CompletedTask; }, "trash-2", danger: true, startsGroup: true),
     ];
 
     [Parameter] public EventCallback OnClose { get; set; }

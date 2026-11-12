@@ -19,9 +19,9 @@
 
     private IReadOnlyList<MenuItem> Items =>
     [
-        .. Roles.Select(role => new MenuItem(role.Name, () => ChooseAsync(role.Value), Detail: role.Allows, Checked: IsCurrent(role.Value))),
+        .. Roles.Select(role => this.Item(role.Name, () => ChooseAsync(role.Value), detail: role.Allows, @checked: IsCurrent(role.Value))),
         .. OnRemove.HasDelegate
-            ? [new MenuItem(RemoveLabel ?? "Remove", () => OnRemove.InvokeAsync(), Detail: RemoveDetail, Danger: true, StartsGroup: true)]
+            ? [this.Item(RemoveLabel ?? "Remove", () => OnRemove.InvokeAsync(), detail: RemoveDetail, danger: true, startsGroup: true)]
             : Array.Empty<MenuItem>(),
     ];
 

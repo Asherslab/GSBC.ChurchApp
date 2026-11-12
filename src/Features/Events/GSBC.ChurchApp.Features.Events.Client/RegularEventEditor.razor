@@ -303,8 +303,8 @@ else
         ? []
         :
         [
-            .. MustAsk && !draft.Asked && !draft.WasShown ? [new MenuItem("Ask to publish", AskAsync, "send", "The calendar's publishers are told")] : Array.Empty<MenuItem>(),
-            new("Delete the regular event", () => OpenAsync(EditorSheet.Delete), "trash-2", Danger: true, StartsGroup: true),
+            .. MustAsk && !draft.Asked && !draft.WasShown ? [this.Item("Ask to publish", AskAsync, "send", "The calendar's publishers are told")] : Array.Empty<MenuItem>(),
+            this.Item("Delete the regular event", () => OpenAsync(EditorSheet.Delete), "trash-2", danger: true, startsGroup: true),
         ];
 
     private string? _stored;

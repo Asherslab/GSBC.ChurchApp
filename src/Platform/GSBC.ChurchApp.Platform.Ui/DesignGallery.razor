@@ -464,15 +464,15 @@
 
     private IReadOnlyList<MenuItem> RecordActions =>
     [
-        new("Send a recovery link", () => Task.CompletedTask, "send"),
-        new("Open as a page", () => Task.CompletedTask, "maximize-2"),
-        new("Delete Jordan…", () => { _deleting = true; return Task.CompletedTask; }, "trash-2", Danger: true, StartsGroup: true),
+        this.Item("Send a recovery link", () => Task.CompletedTask, "send"),
+        this.Item("Open as a page", () => Task.CompletedTask, "maximize-2"),
+        this.Item("Delete Jordan…", () => { _deleting = true; return Task.CompletedTask; }, "trash-2", danger: true, startsGroup: true),
     ];
 
     private IReadOnlyList<MenuItem> NewItems =>
     [
-        new("An event", () => Task.CompletedTask, "calendar", "Once, or on some days"),
-        new("A regular event", () => Task.CompletedTask, "repeat", "Every week or month"),
+        this.Item("An event", () => Task.CompletedTask, "calendar", "Once, or on some days"),
+        this.Item("A regular event", () => Task.CompletedTask, "repeat", "Every week or month"),
     ];
 
     private RenderFragment Record => @<div class="gallery__record">

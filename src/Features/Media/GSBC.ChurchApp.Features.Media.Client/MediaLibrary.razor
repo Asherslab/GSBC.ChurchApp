@@ -222,9 +222,9 @@
 
     private IReadOnlyList<MenuItem> FolderActions(FolderInfo folder) =>
     [
-        new("Rename…", () => { StartRename(folder); return Task.CompletedTask; }, "pencil"),
-        new("Move to…", () => { StartMoveFolder(folder); return Task.CompletedTask; }, "folder-input"),
-        new("Delete folder…", () => { StartDelete(folder); return Task.CompletedTask; }, "trash-2", Danger: true, StartsGroup: true),
+        this.Item("Rename…", () => { StartRename(folder); return Task.CompletedTask; }, "pencil"),
+        this.Item("Move to…", () => { StartMoveFolder(folder); return Task.CompletedTask; }, "folder-input"),
+        this.Item("Delete folder…", () => { StartDelete(folder); return Task.CompletedTask; }, "trash-2", danger: true, startsGroup: true),
     ];
 
     private static readonly IReadOnlyList<SegmentOption<LibraryView>> ViewOptions =
@@ -338,8 +338,8 @@
 
     private IReadOnlyList<MenuItem> FileActions(FolderMap map, MediaItemInfo item) =>
     [
-        .. CanMoveFiles(map, item) ? [new MenuItem("Move to…", () => { StartMoveChosen(); return Task.CompletedTask; }, "folder-input")] : Array.Empty<MenuItem>(),
-        .. CanDelete(map, item) ? [new MenuItem("Delete…", () => { _confirming = true; return Task.CompletedTask; }, "trash-2", Danger: true, StartsGroup: true)] : Array.Empty<MenuItem>(),
+        .. CanMoveFiles(map, item) ? [this.Item("Move to…", () => { StartMoveChosen(); return Task.CompletedTask; }, "folder-input")] : Array.Empty<MenuItem>(),
+        .. CanDelete(map, item) ? [this.Item("Delete…", () => { _confirming = true; return Task.CompletedTask; }, "trash-2", danger: true, startsGroup: true)] : Array.Empty<MenuItem>(),
     ];
 
     private bool CanDelete(FolderMap map, MediaItemInfo item) =>

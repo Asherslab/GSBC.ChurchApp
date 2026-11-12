@@ -96,8 +96,8 @@
 
     private IReadOnlyList<MenuItem> SermonActions =>
     [
-        new(Detail.Hidden ? "Show in the app" : "Hide from the app", ToggleHiddenAsync, Detail.Hidden ? "eye" : "eye-off", Disabled: _busy),
-        .. Detail.Hidden ? [new MenuItem("Delete for good…", () => { _deleting = true; return Task.CompletedTask; }, "trash-2", Danger: true, StartsGroup: true, Disabled: _busy)] : Array.Empty<MenuItem>(),
+        this.Item(Detail.Hidden ? "Show in the app" : "Hide from the app", ToggleHiddenAsync, Detail.Hidden ? "eye" : "eye-off", disabled: _busy),
+        .. Detail.Hidden ? [this.Item("Delete for good…", () => { _deleting = true; return Task.CompletedTask; }, "trash-2", danger: true, startsGroup: true, disabled: _busy)] : Array.Empty<MenuItem>(),
     ];
 
     private bool Dirty =>

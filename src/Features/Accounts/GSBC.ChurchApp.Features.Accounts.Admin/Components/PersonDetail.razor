@@ -137,14 +137,14 @@ else
 
     private IReadOnlyList<MenuItem> Actions => Invitation switch
     {
-        { Held: true } => [new("Remove them…", Ask(() => _withdrawing = true), "user-x", "Takes away their account and anything they were given", Danger: true)],
-        not null => [new("Withdraw the invitation…", Ask(() => _withdrawing = true), "user-x", "The link stops working", Danger: true)],
+        { Held: true } => [this.Item("Remove them…", Ask(() => _withdrawing = true), "user-x", "Takes away their account and anything they were given", danger: true)],
+        not null => [this.Item("Withdraw the invitation…", Ask(() => _withdrawing = true), "user-x", "The link stops working", danger: true)],
         _ =>
         [
             Person.Disabled
-                ? new("Turn the account back on", ToggleAsync, "user-check", "They can sign in with their passkey again")
-                : new("Turn the account off", ToggleAsync, "user-x", "Signs them out everywhere; nothing they made is deleted", Danger: true),
-            new("Delete the account…", Ask(() => _deleting = true), "trash-2", "For good: they can't sign in with it again", Danger: true, StartsGroup: true),
+                ? this.Item("Turn the account back on", ToggleAsync, "user-check", "They can sign in with their passkey again")
+                : this.Item("Turn the account off", ToggleAsync, "user-x", "Signs them out everywhere; nothing they made is deleted", danger: true),
+            this.Item("Delete the account…", Ask(() => _deleting = true), "trash-2", "For good: they can't sign in with it again", danger: true, startsGroup: true),
         ],
     };
 

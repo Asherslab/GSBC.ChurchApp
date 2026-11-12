@@ -84,7 +84,7 @@
                     @if (linked && mayEdit)
                     {
                         <Menu Label="More for the Safe Ministry Check link" Small="true" Disabled="_busy"
-                              Items="@([new MenuItem("Unlink…", () => { _confirmingUnlink = true; return Task.CompletedTask; }, "unlink", "Clears their blue card and training here", Danger: true)])" />
+                              Items="@([this.Item("Unlink…", () => { _confirmingUnlink = true; return Task.CompletedTask; }, "unlink", "Clears their blue card and training here", danger: true)])" />
                     }
                 </Trailing>
                 <ChildContent>

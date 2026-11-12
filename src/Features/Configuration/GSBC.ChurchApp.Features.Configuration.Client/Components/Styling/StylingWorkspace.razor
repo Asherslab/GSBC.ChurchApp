@@ -618,12 +618,12 @@ else
 
     private IReadOnlyList<MenuItem> FormMenu => _form is null || _session is null ? [] :
     [
-        .. _session.PatchFor(_formId) is not null ? [new MenuItem("Undo changes to this", () => UndoAsync(_formId!), "undo")] : Array.Empty<MenuItem>(),
+        .. _session.PatchFor(_formId) is not null ? [this.Item("Undo changes to this", () => UndoAsync(_formId!), "undo")] : Array.Empty<MenuItem>(),
         .. IsHub && TileKind is not null
-            ? [new MenuItem("Make a copy", () => { CopyTile(); return Task.CompletedTask; }, "plus"), new MenuItem("Save to the library", () => { _savingTile = true; return Task.CompletedTask; }, "bookmark")]
+            ? [this.Item("Make a copy", () => { CopyTile(); return Task.CompletedTask; }, "plus"), this.Item("Save to the library", () => { _savingTile = true; return Task.CompletedTask; }, "bookmark")]
             : Array.Empty<MenuItem>(),
         .. !_form.IsNew || _session.LiveOf(FormArea, _formId) is not null
-            ? [new MenuItem(RemoveWords(_form), RemoveSelectedAsync, "trash-2", Danger: true, StartsGroup: true)]
+            ? [this.Item(RemoveWords(_form), RemoveSelectedAsync, "trash-2", danger: true, startsGroup: true)]
             : Array.Empty<MenuItem>(),
     ];
 

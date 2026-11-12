@@ -182,7 +182,7 @@
 
     private IReadOnlyList<MenuItem> RosterTools =>
     [
-        new("Positions", () => { _positions = true; return Task.CompletedTask; }, "list"),
-        new("How it works", () => { _settings = true; return Task.CompletedTask; }, AppIcons.Settings),
+        this.Item("Positions", () => { _positions = true; return Task.CompletedTask; }, "list"),
+        this.Item("How it works", () => { _settings = true; return Task.CompletedTask; }, AppIcons.Settings),
     ];
 }

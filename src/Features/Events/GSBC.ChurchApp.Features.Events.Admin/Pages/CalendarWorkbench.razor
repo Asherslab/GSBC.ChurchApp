@@ -303,8 +303,8 @@
                     <Button Variant="ButtonVariant.Quiet" Icon="calendar-plus" OnClick="() => Choose(new ShowingHere(into.Settings.Calendar))">From another calendar</Button>
                 }
                 <Menu Label="New event" Text="New event" Icon="plus" Variant="ButtonVariant.Primary"
-                      Items="@([new MenuItem("Once", () => NewOnce(into), "calendar", "One date, or a few days in a row like a camp"),
-                               new MenuItem("Regularly", () => NewRegular(into), "repeat", "Every week, every second week, monthly, or on dates you choose")])" />
+                      Items="@([this.Item("Once", () => NewOnce(into), "calendar", "One date, or a few days in a row like a camp"),
+                               this.Item("Regularly", () => NewRegular(into), "repeat", "Every week, every second week, monthly, or on dates you choose")])" />
             }
         </div>;
         if (view.Desk.Calendars.Count == 0)

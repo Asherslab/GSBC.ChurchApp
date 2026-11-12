@@ -63,7 +63,7 @@
             @if (_series is { } editing)
             {
                 <PaneHead Title="@(editing.Id.Length == 0 ? "A new series" : editing.Name)" Lead="@(editing.Id.Length == 0 ? "Fill in what you know; the rest can wait." : SermonText.Sermons(editing.Count))"
-                          Actions="@(editing.Id.Length == 0 ? null : [new MenuItem("Delete this series…", AskToDeleteSeriesAsync, "trash-2", "Says first where its sermons go", Danger: true, Disabled: _busy)])"
+                          Actions="@(editing.Id.Length == 0 ? null : [this.Item("Delete this series…", AskToDeleteSeriesAsync, "trash-2", "Says first where its sermons go", danger: true, disabled: _busy)])"
                           OnClose="() => OpenAsync(Close)" />
                 <TextField Label="Name" @bind-Value="_name" MaxLength="80" />
                 <TextField Label="About the series" Multiline="true" Hint="Optional: shown on the series in the app." @bind-Value="_description" MaxLength="600" />
@@ -91,7 +91,7 @@
             else if (_speaker is { } speaker)
             {
                 <PaneHead Title="@(speaker.Id.Length == 0 ? "A new speaker" : speaker.Name)" Lead="@(speaker.Id.Length == 0 ? "They can be chosen for any sermon once added." : SermonText.Sermons(speaker.Count))"
-                          Actions="@(speaker.Id.Length == 0 ? null : [new MenuItem("Delete this speaker…", () => { _deleting = true; return Task.CompletedTask; }, "trash-2", "Says first where their sermons go", Danger: true, Disabled: _busy)])"
+                          Actions="@(speaker.Id.Length == 0 ? null : [this.Item("Delete this speaker…", () => { _deleting = true; return Task.CompletedTask; }, "trash-2", "Says first where their sermons go", danger: true, disabled: _busy)])"
                           OnClose="() => OpenAsync(Close)" />
                 <TextField Label="Name" @bind-Value="_name" MaxLength="80" Hint="As it shows in the app, for example “Ps Jo Ellery”." />
                 <span class="field__label">Photo</span>

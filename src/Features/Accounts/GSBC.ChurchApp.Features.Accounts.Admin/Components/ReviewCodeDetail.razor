@@ -46,7 +46,7 @@
     private bool Working => ReviewCodeState.Order(Code) == 0;
 
     private IReadOnlyList<MenuItem> Actions => Working
-        ? [new("Turn the code off…", () => { _asking = true; return Task.CompletedTask; }, "circle-off", "Stops it working and signs reviewers out", Danger: true)]
+        ? [this.Item("Turn the code off…", () => { _asking = true; return Task.CompletedTask; }, "circle-off", "Stops it working and signs reviewers out", danger: true)]
         : [];
 
     [Parameter, EditorRequired] public required ReviewCodeInfo Code { get; set; }

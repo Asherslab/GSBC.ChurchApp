@@ -169,7 +169,7 @@ else
 
     private IReadOnlyList<MenuItem> DateActions(EventDraft draft) =>
     [
-        new(draft.NotOnThisDate ? "On again" : "Not on this date", () => SaveAsync(!draft.NotOnThisDate), "circle-off", Disabled: _saving),
+        this.Item(draft.NotOnThisDate ? "On again" : "Not on this date", () => SaveAsync(!draft.NotOnThisDate), "circle-off", disabled: _saving),
     ];
 
     private string? _stored;

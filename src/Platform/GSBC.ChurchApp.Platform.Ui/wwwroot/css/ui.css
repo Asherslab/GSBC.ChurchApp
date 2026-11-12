@@ -526,6 +526,7 @@ button.text-link:disabled { color: var(--ink-3); cursor: default; }
 .workbench__aside .search-field + *, .workbench__aside .filter-chips--rail + * { margin-top: var(--space-lg); }
 .workbench__aside .search-field { flex: none; width: 100%; max-width: none; min-width: 0; }
 .workbench__aside .copy-field__row { flex-direction: column; align-items: stretch; }
+.workbench__aside .copy-field__input { flex: none; }
 .workbench__main { container: list / inline-size; grid-area: main; min-width: 0; padding: var(--space-2xl) var(--space-3xl) var(--space-4xl); }
 .workbench__detail { grid-area: detail; position: sticky; top: 0; display: flex; flex-direction: column; min-width: 0; max-height: 100vh; max-height: 100dvh; overflow-y: auto; scrollbar-width: thin; padding: var(--space-2xl) var(--space-2xl) 0; border-left: 1px solid var(--line); background: var(--page); }
 .workbench__detail > :last-child:not(.save-bar, .editor-foot) { padding-bottom: var(--space-2xl); }

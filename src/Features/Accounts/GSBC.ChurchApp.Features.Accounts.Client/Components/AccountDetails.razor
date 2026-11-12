@@ -93,11 +93,11 @@
 
     private IReadOnlyList<MenuItem> AccountActions =>
     [
-        new("Delete my account…", () =>
+        this.Item("Delete my account…", () =>
         {
             _deleting = true;
             return Task.CompletedTask;
-        }, "trash-2", "For good. Signing out is enough to stop using it here.", Danger: true),
+        }, "trash-2", "For good. Signing out is enough to stop using it here.", danger: true),
     ];
 
     private Task SignOutAsync() => RunAsync(Accounts.SignOutAsync);
