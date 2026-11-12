@@ -4,7 +4,7 @@
     "src/Features/Chats/GSBC.ChurchApp.Features.Chats.Client/wwwroot/css/chats.css": 62,
     "src/Features/Configuration/GSBC.ChurchApp.Features.Configuration.Client/wwwroot/css/drafts.css": 113,
     "src/Features/Events/GSBC.ChurchApp.Features.Events.Client/wwwroot/css/events.css": 206,
-    "src/Features/Feedback/GSBC.ChurchApp.Features.Feedback.Client/wwwroot/css/feedback.css": 64,
+    "src/Features/Feedback/GSBC.ChurchApp.Features.Feedback.Client/wwwroot/css/feedback.css": 60,
     "src/Features/Media/GSBC.ChurchApp.Features.Media.Client/wwwroot/css/media.css": 51,
     "src/Features/Ministries/GSBC.ChurchApp.Features.Ministries.Client/wwwroot/css/ministries.css": 73,
     "src/Features/Notifications/GSBC.ChurchApp.Features.Notifications.Client/wwwroot/css/notifications.css": 27,
@@ -53,7 +53,7 @@
     "src/Features/Events/GSBC.ChurchApp.Features.Events.Client/RegularEventEditor.razor": 2,
     "src/Features/Events/GSBC.ChurchApp.Features.Events.Client/RepeatEditor.razor": 1,
     "src/Features/Events/GSBC.ChurchApp.Features.Events.Client/WaitingEventPage.razor": 1,
-    "src/Features/Feedback/GSBC.ChurchApp.Features.Feedback.Admin/Components/TicketView.razor": 4,
+    "src/Features/Feedback/GSBC.ChurchApp.Features.Feedback.Admin/Components/TicketView.razor": 1,
     "src/Features/Feedback/GSBC.ChurchApp.Features.Feedback.App/Pages/SendFeedbackPage.razor": 2,
     "src/Features/Feedback/GSBC.ChurchApp.Features.Feedback.Client/Components/AttachmentThumb.razor": 1,
     "src/Features/Media/GSBC.ChurchApp.Features.Media.Client/FolderTiles.razor": 1,
@@ -99,18 +99,15 @@
     "src/Features/Accounts/GSBC.ChurchApp.Features.Accounts.Client/Components/AccountDetails.razor": 1,
     "src/Features/Chats/GSBC.ChurchApp.Features.Chats.Admin/Pages/ChatsTabView.razor": 1,
     "src/Features/Chats/GSBC.ChurchApp.Features.Chats.Admin/Pages/ReportsTab.razor": 1,
-    "src/Features/Configuration/GSBC.ChurchApp.Features.Configuration.Client/Components/Styling/StylingWorkspace.razor": 1,
     "src/Features/Events/GSBC.ChurchApp.Features.Events.Admin/Components/BreakPanel.razor": 1,
     "src/Features/Events/GSBC.ChurchApp.Features.Events.Admin/Components/CalendarSettingsPanel.razor": 1,
     "src/Features/Events/GSBC.ChurchApp.Features.Events.Client/EventEditor.razor": 1,
     "src/Features/Events/GSBC.ChurchApp.Features.Events.Client/RegularEventEditor.razor": 2,
-    "src/Features/Media/GSBC.ChurchApp.Features.Media.Client/PictureVersions.razor": 1,
     "src/Features/Ministries/GSBC.ChurchApp.Features.Ministries.Client/Components/SettingsArea.razor": 1,
     "src/Features/Notifications/GSBC.ChurchApp.Features.Notifications.Client/AnnouncementsDesk.razor": 2,
     "src/Features/People/GSBC.ChurchApp.Features.People.Client/Components/ChildSheet.razor": 1,
     "src/Features/Rosters/GSBC.ChurchApp.Features.Rosters.Client/Components/YourDateRow.razor": 1,
     "src/Features/Sermons/GSBC.ChurchApp.Features.Sermons.Admin/Components/SermonCheck.razor": 1,
-    "src/Features/Sermons/GSBC.ChurchApp.Features.Sermons.Admin/Pages/SeriesAndSpeakers.razor": 2,
-    "src/Hosts/App/GSBC.ChurchApp.Hosts.App/Pages/Storage.razor": 1
+    "src/Features/Sermons/GSBC.ChurchApp.Features.Sermons.Admin/Pages/SeriesAndSpeakers.razor": 2
   }
 }

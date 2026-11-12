@@ -16,25 +16,21 @@
     <p class="panel-hint">@Note</p>
     @if (CanRemoveOriginal)
     {
-        <div class="picture-versions__remove @(_confirming ? "panel-confirm" : "")">
-            @if (_confirming)
+        <div class="picture-versions__remove">
+            @if (Item.HasLargeOriginal)
             {
-                <h4 class="panel-subtitle">Remove the original?</h4>
-                <p class="panel-lead">The smaller sizes stay, so everywhere it's used keeps showing it. That saves @MediaSizes.Weight(Original.Bytes). Upload the same file again later and you can put it back.</p>
-                <div class="panel-actions">
-                    <Button Variant="ButtonVariant.Danger" Busy="Busy" OnClick="RemoveAsync">Remove the original</Button>
-                    <Button Variant="ButtonVariant.Quiet" Disabled="Busy" OnClick="() => _confirming = false">Keep it</Button>
-                </div>
+                <p class="picture-versions__flag">Large original · @MediaSizes.Weight(Original.Bytes)</p>
             }
-            else
-            {
-                @if (Item.HasLargeOriginal)
-                {
-                    <p class="picture-versions__flag">Large original · @MediaSizes.Weight(Original.Bytes)</p>
-                }
-                <Button Variant="ButtonVariant.Quiet" Small="true" OnClick="() => _confirming = true">Remove the original to save space…</Button>
-            }
+            <Button Variant="ButtonVariant.Quiet" Small="true" OnClick="() => _confirming = true">Remove the original to save space…</Button>
         </div>
+        <Sheet Open="_confirming" OpenChanged="open => _confirming = open" Title="Remove the original?"
+               Lead="@($"The smaller sizes stay, so everywhere it's used keeps showing it. That saves {MediaSizes.Weight(Original.Bytes)}. Upload the same file again later and you can put it back.")">
+            <ChildContent><Notice Tone="NoticeTone.Warning" Text="@Problem" /></ChildContent>
+            <Actions>
+                <Button Variant="ButtonVariant.Danger" Busy="Busy" OnClick="RemoveAsync">Remove the original</Button>
+                <Button Variant="ButtonVariant.Quiet" Disabled="Busy" OnClick="() => _confirming = false">Keep it</Button>
+            </Actions>
+        </Sheet>
     }
     <Notice Tone="NoticeTone.Warning" Text="@Problem" />
 </section>
