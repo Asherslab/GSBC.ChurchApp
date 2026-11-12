@@ -1,5 +1,4 @@
 @page "/life-groups"
-@using System.Globalization
 @inject OnlineMinistries Ministries
 @inject TimeProvider Clock
 
@@ -63,7 +62,7 @@
             }
             <Button Small="true" Variant="ButtonVariant.Quiet" Icon="archive" Class="lg-all-year__archived" OnClick="() => _archivedOpen = true">Archived groups@(_archived > 0 ? $" ({_archived})" : "")</Button>
         </div>
-        <Board TItem="Round" TColumn="RoundStage" Label="Life Groups' Sundays, by where they are" Items="@(unfinished.Concat(finished).ToList())" ColumnOf="round => LifeGroupRounds.StageOf(round, today)"
+        <Board TItem="Round" TColumn="RoundStage" Label="Life Groups' Sundays, by where they are" Items="@([.. unfinished, .. finished])" ColumnOf="round => LifeGroupRounds.StageOf(round, today)"
                Columns="@Columns(stages, year)">
             <ColumnExtra Context="stage">
                 @if (stage == RoundStage.Finished && years.Count > 1)
@@ -342,20 +341,20 @@
 
     private IReadOnlyList<FieldOption> CalendarOptions =>
         [
-            new FieldOption("", "No calendar"),
+            new("", "No calendar"),
             .. _calendar.CalendarId.Length > 0 && _calendar.Choices.All(choice => choice.Id != _calendar.CalendarId) ? [new FieldOption(_calendar.CalendarId, _calendar.CalendarName)] : Array.Empty<FieldOption>(),
             .. _calendar.Choices.Select(choice => new FieldOption(choice.Id, choice.Name)),
         ];
 
     private IReadOnlyList<FieldOption> SitOutOptions(Round round) =>
         [
-            new FieldOption("", "Choose a group"),
+            new("", "Choose a group"),
             .. _page is null ? [] : AllYear(_page).Where(group => LifeGroupRounds.Runs(group.Id, "", round, _page.SittingOut)).Select(group => new FieldOption(group.Id, group.Name)),
         ];
 
     private IReadOnlyList<FieldOption> InsteadOptions(Round round) =>
         [
-            new FieldOption("", "Nowhere"),
+            new("", "Nowhere"),
             .. _page is null ? [] : _page.Groups.Where(group => group.Id != _sitOutGroup && LifeGroupRounds.Runs(group.Id, group.RoundId, round, _page.SittingOut))
                 .Select(group => new FieldOption(group.Id, group.Name)),
         ];

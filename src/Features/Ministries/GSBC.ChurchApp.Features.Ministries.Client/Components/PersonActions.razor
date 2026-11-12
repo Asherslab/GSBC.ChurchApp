@@ -10,7 +10,7 @@
     else if (_linking)
     {
         <PersonFinder Find="FindAsync" ActionText="Link as their parent" Label="Find their parent or guardian by name" Busy="@_busyId" AutoFocus="true"
-                      Leave="member.Parents.Select(parent => parent.Id).Append(member.PersonId).ToList()" OnChosen="LinkAsync" />
+                      Leave="[.. member.Parents.Select(parent => parent.Id), member.PersonId]" OnChosen="LinkAsync" />
         <p class="hint">Their parent sees what @Page.Ministry.Name shares with families, and hears about @First(member).</p>
     }
     else

@@ -20,7 +20,7 @@ public static class SundayPosts
             .Select(post => new DayNote(LifeGroupRounds.Day(post.Sunday), $"News: {post.Title}", Href(page.Ministry.Id, post.Id), post.NoClass ? NoClass : null))
             .ToList();
 
-    public static string Href(string ministryId, string postId) => $"{MinistriesPlaces.Of(ministryId, MinistriesPlaces.News)}#post-{postId}";
+    private static string Href(string ministryId, string postId) => $"{MinistriesPlaces.Of(ministryId, MinistriesPlaces.News)}#post-{postId}";
 
     public static string For(Post post) => post.Sunday.Length == 0 ? "" : $"For Sunday {MinistryWords.Day(post.Sunday)}";
 }
