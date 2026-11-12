@@ -92,7 +92,7 @@
                                     <Button Variant="ButtonVariant.Link" Class="chat-review__fold" OnClick="() => Open(fold)">@FoldWords(fold)</Button>
                                     break;
                                 case ReviewMessage shown:
-                                    <CheckedLine Found="shown.Found" Match="shown.Match" Faded="@(_filter.Narrows && !shown.Match)" Reported="@reported.Contains(shown.Found.Message.Id)" Words="@_filter.Words"
+                                    <CheckedLine @key="shown.Found.Message.Id" Reveal="@(shown.Found.Message.Id == _revealId)" Found="shown.Found" Match="shown.Match" Faded="@(_filter.Narrows && !shown.Match)" Reported="@reported.Contains(shown.Found.Message.Id)" Words="@_filter.Words"
                                                  Actions="@MessageActions(context.Value, shown.Found)" />
                                     break;
                             }
@@ -148,6 +148,7 @@
     private bool _allSenders;
     private DeskChat? _deleting;
     private string? _shownFor;
+    private string? _revealId;
     private ReviewFilter _filter = new();
     private readonly HashSet<string> _opened = [];
     private LiveData<Reports>? _reports;
@@ -163,7 +164,8 @@
 
     protected override void OnParametersSet()
     {
-        _check ??= Checks.Of(ChatId);
+        if (_check is null && Checks.Of(ChatId) is { } open)
+            Opened(open);
         if (_check is not null && Message is { Length: > 0 } message && message != _shownFor)
             OpenAround(_check, message);
     }
@@ -173,9 +175,10 @@
         (_busy, _problem) = (true, null);
         try
         {
-            _check = await Checks.CheckAsync(ChatId, _reason);
+            OpenCheck check = await Checks.CheckAsync(ChatId, _reason);
+            Opened(check);
             if (Message is { Length: > 0 } message)
-                OpenAround(_check, message);
+                OpenAround(check, message);
         }
         catch (RpcException exception)
         {
@@ -199,8 +202,15 @@
 
     private void Open(ReviewFold fold) => _opened.UnionWith(fold.Ids);
 
+    private void Opened(OpenCheck check)
+    {
+        _check = check;
+        _revealId = check.Chat.Messages.LastOrDefault()?.Message.Id;
+    }
+
     private void OpenAround(OpenCheck check, string messageId)
     {
+        _revealId = messageId;
         _shownFor = messageId;
         _filter = new ReviewFilter(Only: ReviewOnly.Reported);
         _opened.Clear();
