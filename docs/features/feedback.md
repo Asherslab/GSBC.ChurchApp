@@ -53,10 +53,24 @@ production app, not through TestFlight. Choices marked *Claude's default* are th
   up): a paperclip that picks screenshots and videos, the message field and a round Send. Chosen files show as small
   thumbnails above the field. The composer is the shared `Composer` (Platform.Ui), the same job as Chats' message bar.
 - **Recorded by itself:** app version and build, platform and OS version, the phone's model, whether it's a
-  development build, the environment (on the server), the page they came from before More (`RecentPages`), who is
+  development build, the environment (on the server), the page they came from and the last 8 pages opened
+  (`RecentPages`; see *The page it's about* below), the pages they took screenshots on in the last hour, who is
   signed in, the install, and **the phone's state** (sync state, online, signed in, every feed's rows, size and cursor,
   what's waiting in the outbox and why, time zone and language) as JSON. **A copy of the phone's local store**
   (`copyStore`, a SQLite backup) goes too, as an attachment only phone-data holders can open.
+- **The page it's about** (owner, 2026-11-12, after a report recorded `/help-improve`, a More page passed on the
+  way: "Record the page they were on before opening Send feedback (and where a screenshot was taken, if that can be
+  known)"). The ticket's page is **the last page opened outside the More tab** (More itself, its places as the tab bar
+  shows them then, and Send feedback); if none was opened since the app started, the last one that isn't More or
+  Send feedback (`FeedbackPages.Before`). The trail goes too, newest first, as the admin panel's does: the ticket shows
+  it as *Before* and `feedback.sh` as `before:`.
+- **Where screenshots were taken** (2026-11-12): on iOS the data layer passes on
+  `UIApplication.userDidTakeScreenshotNotification`, and the phone remembers the page shown and the time of the last 6
+  in memory (`ScreenshotPages`; never the server, gone when the app closes). A report sends those from the last hour;
+  the ticket shows *Screenshots: /calendar at 3:47pm*, `feedback.sh` `screenshots: /calendar at 15:47`, and the page's
+  *Sent with it* line names them. **Android records none:** its data layer is still a stub, and
+  `Activity.ScreenCaptureCallback` needs Android 14 and the `DETECT_SCREEN_CAPTURE` permission. The web build records
+  none.
 - **Through the outbox** (`IFeedbackService.Send`, `[AppInstallOrSignedIn]`): the phone makes the ticket's id, keeps
   the files on the phone, and sends the pictures, videos and the store copy with it, offline or not ([offline-and-caching.md](../architecture/offline-and-caching.md),
   *Files in the outbox*). The page says *Thanks, it's sent* or *Thanks, it's on its way* (waiting for a signal).
@@ -139,7 +153,7 @@ tools/feedback/feedback.sh --env dev --source admin            # only what came 
 ```
 
 Each ticket's line says where it came from; one from the admin panel prints its browser, window, page and the pages
-before it. A closed ticket says the day its files go.
+before it; one from the app prints its page, the pages before it and where screenshots were taken. A closed ticket says the day its files go.
 
 Statuses: `new`, `in-progress`, `fixed`, `resolved`, `not-doing`. The account needs Feedback Triage, and Feedback Triage
 with phone data to download the store copy. `--env local` reaches a station's backend on `localhost:5400`.
