@@ -340,6 +340,7 @@ code, .patterns { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-s
 
 @media (max-width: 760px) {
     .admin-main > .workbench > :is(.workbench__aside, .workbench__main, .workbench__detail) { padding-inline: var(--gutter); }
+    .admin-main > .workbench > .workbench__main > .data-table { margin-inline: calc(-1 * var(--gutter)); }
 }
 
 button:not([class]),
