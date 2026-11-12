@@ -52,6 +52,8 @@ internal sealed class FeedbackDesk(
             {
                 AppVersion = ticket.AppVersion, AppBuild = ticket.AppBuild, Platform = ticket.Platform, OsVersion = ticket.OsVersion, Model = ticket.Model,
                 DevelopmentBuild = ticket.DevelopmentBuild,
+                RecentPages = ticket.RecentPages.Split('\n', StringSplitOptions.RemoveEmptyEntries).ToList(),
+                Screenshots = FeedbackRules.ScreenshotsFrom(ticket.Screenshots),
             },
             Browser = ticket.Source == FeedbackSource.AdminPanel
                 ? new BrowserDetails

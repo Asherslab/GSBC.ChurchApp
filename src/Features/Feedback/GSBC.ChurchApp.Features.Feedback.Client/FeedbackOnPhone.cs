@@ -5,6 +5,8 @@ using GSBC.ChurchApp.Platform.Client.Outbox;
 using GSBC.ChurchApp.Platform.Client.Preferences;
 using GSBC.ChurchApp.Platform.Client.Uploads;
 using GSBC.ChurchApp.Platform.Contracts.Media;
+using GSBC.ChurchApp.Platform.Contracts.Configuration;
+using GSBC.ChurchApp.Platform.Ui.Tabs;
 
 namespace GSBC.ChurchApp.Features.Feedback.Client;
 
@@ -24,7 +26,7 @@ public sealed record FeedbackHere(int SentToday, int DailyLimit, LastSent? Last,
 
 public sealed class FeedbackOnPhone(
     IOutbox outbox, FileUploads uploads, ILocalPreferences preferences, IAccess access, NativeBridge bridge, PhoneState state, RecentPages recent,
-    TimeProvider time)
+    ScreenshotPages screenshots, PhoneTabs tabs, TimeProvider time)
 {
     private const string Method = "/gsbc.feedback.Feedback/Send";
     private const string SentKey = "feedback.sent";
@@ -48,9 +50,12 @@ public sealed class FeedbackOnPhone(
         return new FeedbackHere(sent.Sent.Count(entry => entry.At > since), HoldsTheRole ? FeedbackLimits.WithTheRoleADay : FeedbackLimits.PerPhoneADay, last, refused);
     }
 
+    public IReadOnlyList<ScreenshotTaken> Screenshots => screenshots.Recent();
+
     public async Task<string> SendAsync(string text, IReadOnlyList<MediaRef> picked)
     {
         string id = Guid.NewGuid().ToString();
+        IReadOnlyList<AppTab> shown = await tabs.CurrentAsync();
         FeedbackSend send = new()
         {
             Id = id,
@@ -60,8 +65,10 @@ public sealed class FeedbackOnPhone(
                 AppVersion = bridge.AppVersion ?? "", AppBuild = bridge.AppBuild ?? "", Platform = bridge.Platform ?? "web",
                 OsVersion = bridge.OsVersion ?? (bridge.OsMajor > 0 ? bridge.OsMajor.ToString() : ""), Model = bridge.Model ?? "",
                 DevelopmentBuild = bridge.IsDevelopmentBuild,
+                RecentPages = recent.Trail.ToList(),
+                Screenshots = screenshots.Recent().ToList(),
             },
-            Page = recent.Last,
+            Page = FeedbackPages.Before(recent.Recent, page => tabs.MoreIsOn(shown, page)),
             State = await state.DescribeAsync(),
         };
 

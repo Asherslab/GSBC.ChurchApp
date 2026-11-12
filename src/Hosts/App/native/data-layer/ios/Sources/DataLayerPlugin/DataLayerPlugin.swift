@@ -81,6 +81,12 @@ public class DataLayerPlugin: CAPPlugin, CAPBridgedPlugin {
                                                name: UIApplication.didBecomeActiveNotification, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(appEnteredBackground),
                                                name: UIApplication.didEnterBackgroundNotification, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(screenshotTaken),
+                                               name: UIApplication.userDidTakeScreenshotNotification, object: nil)
+    }
+
+    @objc private func screenshotTaken() {
+        notifyListeners("screenshotTaken", data: [:])
     }
 
     @objc private func appBecameActive() {

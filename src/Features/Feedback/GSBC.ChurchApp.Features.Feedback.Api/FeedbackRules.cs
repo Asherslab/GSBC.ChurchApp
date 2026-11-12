@@ -1,3 +1,4 @@
+using System.Globalization;
 using GSBC.ChurchApp.Features.Feedback.Api.Data;
 using GSBC.ChurchApp.Features.Feedback.Contracts;
 
@@ -24,7 +25,7 @@ internal static class FeedbackRules
     public const int LongestPage = 300;
     public const int LongestState = 64 * 1024;
     public const int LongestDetail = 80;
-    private const int MostRecentPages = 8;
+    private const int MostScreenshots = 6;
     public const int MostAttachments = FeedbackLimits.MostAttachments;
     public const int UploadAsksADay = 80;
     public const long LargestPicture = FeedbackLimits.LargestPicture;
@@ -52,7 +53,24 @@ internal static class FeedbackRules
         source == FeedbackSource.AdminPanel && sender is not { UsesTheAdminPanel: true, User: not null } ? SendVerdict.NotHere : MaySend(sender, sentInTheLastDay);
 
     public static string RecentPages(IEnumerable<string> pages) =>
-        string.Join('\n', pages.Select(page => Clip(page, LongestPage)).Where(page => page.Length > 0).Take(MostRecentPages));
+        string.Join('\n', pages.Select(page => Clip(page, LongestPage)).Where(page => page.Length > 0).Take(FeedbackPages.MostInATrail));
+
+    public static string Screenshots(IEnumerable<ScreenshotTaken> taken) =>
+        string.Join('\n', taken.Select(shot => (shot.At, Page: Clip(shot.Page.Replace('\n', ' '), LongestPage)))
+            .Where(shot => shot.Page.Length > 0)
+            .Take(MostScreenshots)
+            .Select(shot => $"{DateTime.SpecifyKind(shot.At, DateTimeKind.Utc).ToString("O", CultureInfo.InvariantCulture)} {shot.Page}"));
+
+    public static List<ScreenshotTaken> ScreenshotsFrom(string stored) =>
+        stored.Split('\n', StringSplitOptions.RemoveEmptyEntries)
+            .Select(line => line.Split(' ', 2))
+            .Where(parts => parts.Length == 2)
+            .Select(parts => new ScreenshotTaken
+            {
+                At = DateTime.Parse(parts[0], CultureInfo.InvariantCulture, DateTimeStyles.AdjustToUniversal | DateTimeStyles.AssumeUniversal),
+                Page = parts[1],
+            })
+            .ToList();
 
     public static bool IsClosed(TicketStatus status) => status is TicketStatus.Resolved or TicketStatus.NotDoing;
 

@@ -38,7 +38,7 @@ public sealed class FeedbackFromAdmin(ChannelBase channel, IDirectUploads upload
         BrowserDetails browser = new()
         {
             Browser = here.Browser, System = here.System, Window = here.Window, ColourScheme = here.ColourScheme, Version = Version, PageTitle = here.Title,
-            RecentPages = recent.Recent.ToList(),
+            RecentPages = recent.Trail.ToList(),
         };
         await _feedback.SendAsync(new FeedbackSend
         {

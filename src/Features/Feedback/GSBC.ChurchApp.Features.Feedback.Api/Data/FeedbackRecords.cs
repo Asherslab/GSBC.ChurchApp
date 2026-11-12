@@ -33,6 +33,7 @@ public sealed class TicketRecord
     public string ColourScheme { get; set; } = "";
     public string PageTitle { get; set; } = "";
     public string RecentPages { get; set; } = "";
+    public string Screenshots { get; set; } = "";
     public List<AttachmentRecord> Attachments { get; set; } = [];
     public List<NoteRecord> Notes { get; set; } = [];
     public List<StepRecord> Steps { get; set; } = [];

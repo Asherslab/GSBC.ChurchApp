@@ -28,6 +28,13 @@ public sealed class AdminPanelTests : FeedbackHost
         Assert.Null(ticket.Phone);
         Assert.Equal("", ticket.InstallId);
         Assert.Equal(["/media", "/"], ticket.Browser?.RecentPages);
+
+        Ticket fromAPhone = await WithAsync(provider => provider.GetRequiredService<FeedbackDesk>()
+            .TicketAsync(new TicketRef { Id = fromTheApp }, false, Cancel));
+        Assert.Null(fromAPhone.Browser);
+        Assert.Equal(["/feedback/send", "/more", "/calendar"], fromAPhone.Phone?.RecentPages);
+        ScreenshotTaken screenshot = Assert.Single(fromAPhone.Phone?.Screenshots ?? []);
+        Assert.Equal(("/calendar", ScreenshotAt, DateTimeKind.Utc), (screenshot.Page, screenshot.At, screenshot.At.Kind));
     }
 
     [Fact]

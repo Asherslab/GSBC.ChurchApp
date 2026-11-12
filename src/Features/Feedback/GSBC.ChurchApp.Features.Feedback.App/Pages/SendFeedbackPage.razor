@@ -112,8 +112,10 @@
                 parts.Add(PhoneModels.Name(model));
             if (Bridge.OsVersion is { Length: > 0 } os)
                 parts.Add($"{(Bridge.Platform == "android" ? "Android" : "iOS")} {os}");
-            parts.Add("the page you came from and this phone's state");
-            return string.Join(", ", parts) + ".";
+            parts.Add("the pages you came from");
+            if (Feedback.Screenshots.Select(shot => shot.Page).Distinct().ToList() is { Count: > 0 } screenshotted)
+                parts.Add($"where you took screenshots in the last hour ({string.Join(", ", screenshotted)})");
+            return string.Join(", ", parts) + " and this phone's state.";
         }
     }
 
