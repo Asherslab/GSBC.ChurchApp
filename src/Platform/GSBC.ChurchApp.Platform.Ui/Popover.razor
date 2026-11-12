@@ -1,0 +1,17 @@
+@if (Open)
+{
+    <button type="button" class="menu__away" aria-label="@($"Close {Label}")" tabindex="-1" @onclick="CloseAsync"></button>
+    <div class="popover @Class" role="dialog" aria-label="@Label" @onkeydown="KeyAsync">@ChildContent</div>
+}
+
+@code {
+    [Parameter, EditorRequired] public required string Label { get; set; }
+    [Parameter] public bool Open { get; set; }
+    [Parameter] public EventCallback<bool> OpenChanged { get; set; }
+    [Parameter] public string? Class { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    private Task CloseAsync() => OpenChanged.InvokeAsync(false);
+
+    private Task KeyAsync(KeyboardEventArgs key) => key.Key == "Escape" ? CloseAsync() : Task.CompletedTask;
+}

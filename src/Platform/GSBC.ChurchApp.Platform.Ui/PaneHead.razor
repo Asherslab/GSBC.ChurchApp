@@ -1,0 +1,39 @@
+<header class="pane-head @Class">
+    <div class="pane-head__text">
+        <h2 class="pane-head__title">@Title</h2>
+        @if (Lead is not null)
+        {
+            <p class="pane-head__lead">@Lead</p>
+        }
+        @ChildContent
+    </div>
+    @if (Tools is not null || Actions is { Count: > 0 } || OnOpen.HasDelegate || OnClose.HasDelegate)
+    {
+        <div class="pane-head__tools">
+            @Tools
+            @if (Actions is { Count: > 0 } actions)
+            {
+                <Menu Label="@($"More for {Title}")" Items="actions" />
+            }
+            @if (OnOpen.HasDelegate)
+            {
+                <Button Variant="ButtonVariant.Quiet" Icon="maximize-2" AriaLabel="Open as a page" Tooltip="Open as a page" OnClick="OnOpen" />
+            }
+            @if (OnClose.HasDelegate)
+            {
+                <Button Variant="ButtonVariant.Quiet" Icon="x" AriaLabel="Close" Tooltip="Close" OnClick="OnClose" />
+            }
+        </div>
+    }
+</header>
+
+@code {
+    [Parameter, EditorRequired] public required string Title { get; set; }
+    [Parameter] public string? Lead { get; set; }
+    [Parameter] public IReadOnlyList<MenuItem>? Actions { get; set; }
+    [Parameter] public RenderFragment? Tools { get; set; }
+    [Parameter] public EventCallback OnOpen { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter] public string? Class { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}

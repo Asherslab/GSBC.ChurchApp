@@ -22,10 +22,11 @@ else
     [Parameter] public string? Tooltip { get; set; }
     [Parameter] public bool? Expanded { get; set; }
     [Parameter] public EventCallback OnClick { get; set; }
+    [Parameter] public string? Class { get; set; }
     [Parameter] public RenderFragment? ChildContent { get; set; }
 
     private string Classes =>
-        $"btn btn--{Kebab(Variant)}{(Block ? " btn--block" : "")}{(Small ? " btn--small" : "")}{(ChildContent is null ? " btn--icon" : "")}";
+        $"btn btn--{Kebab(Variant)}{(Block ? " btn--block" : "")}{(Small ? " btn--small" : "")}{(ChildContent is null ? " btn--icon" : "")}{(Class is null ? "" : $" {Class}")}";
 
     private RenderFragment Body => @<text>
         @if (Busy)

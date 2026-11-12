@@ -1,5 +1,4 @@
 <div class="save-bar @(OnMasthead ? "save-bar--on-masthead" : "") @(Block ? "save-bar--block" : "") @Class">
-    <Button Type="@(Submit ? "submit" : "button")" Block="Block" Variant="@(OnMasthead ? ButtonVariant.OnMasthead : ButtonVariant.Primary)" Busy="Busy" Disabled="@(Blocked is not null)" OnClick="@(Submit ? default : OnSave)">@Label</Button>
     @if (Blocked is not null)
     {
         <p class="save-bar__why">@Blocked</p>
@@ -8,12 +7,22 @@
     {
         <SaveStatus State="state" SavedText="@SavedText" WaitingText="@WaitingText" FailedText="@FailedText" Detail="@Detail" Retry="Retry" />
     }
-    @ChildContent
+    <div class="save-bar__row">
+        @if (OnCancel.HasDelegate)
+        {
+            <Button Variant="@(OnMasthead ? ButtonVariant.OnMasthead : ButtonVariant.Quiet)" Disabled="Busy" OnClick="OnCancel">@CancelLabel</Button>
+        }
+        @ChildContent
+        <span class="save-bar__gap"></span>
+        <Button Type="@(Submit ? "submit" : "button")" Variant="@(OnMasthead ? ButtonVariant.OnMasthead : ButtonVariant.Primary)" Busy="Busy" Disabled="@(Blocked is not null)" OnClick="@(Submit ? default : OnSave)" Class="save-bar__save">@Label</Button>
+    </div>
 </div>
 
 @code {
     [Parameter, EditorRequired] public required string Label { get; set; }
     [Parameter] public EventCallback OnSave { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+    [Parameter] public string CancelLabel { get; set; } = "Cancel";
     [Parameter] public bool Busy { get; set; }
     [Parameter] public string? Blocked { get; set; }
     [Parameter] public SaveState? State { get; set; }

@@ -1,5 +1,8 @@
-<div class="workbench @(Narrow ? "workbench--narrow" : "") @(Detail is null ? "workbench--no-detail" : "") @Class" data-showing="@Showing.ToString().ToLowerInvariant()">
-    <aside class="workbench__aside" aria-label="@AsideLabel">@Aside</aside>
+<div class="workbench @(Narrow ? "workbench--narrow" : "") @(Aside is null ? "workbench--no-aside" : "") @(Detail is null ? "workbench--no-detail" : "") @Class" data-showing="@Showing.ToString().ToLowerInvariant()">
+    @if (Aside is not null)
+    {
+        <aside class="workbench__aside" aria-label="@AsideLabel">@Aside</aside>
+    }
     <section class="workbench__main">@ChildContent</section>
     @if (Detail is not null)
     {
@@ -11,7 +14,7 @@
     [Parameter] public RenderFragment? Aside { get; set; }
     [Parameter] public RenderFragment? ChildContent { get; set; }
     [Parameter] public RenderFragment? Detail { get; set; }
-    [Parameter] public string AsideLabel { get; set; } = "List";
+    [Parameter] public string AsideLabel { get; set; } = "Filters";
     [Parameter] public string DetailLabel { get; set; } = "Details";
     [Parameter] public bool Narrow { get; set; }
     [Parameter] public string? Class { get; set; }
