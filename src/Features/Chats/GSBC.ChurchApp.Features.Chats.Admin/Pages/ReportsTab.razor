@@ -1,9 +1,9 @@
 @inject OversightClient Oversight
 
-<UnsavedGuard Changed="() => _outcome.Trim().Length > 0" What="what was done" />
+<UnsavedGuard Changed="() => _pausing is not null && _pauseReason.Trim().Length > 0" What="why you're pausing them" />
 
 <LiveData @ref="_live" TValue="Reports" Load="Oversight.ReportsAsync" Feeds="[ChatsFeeds.Oversight]" FailedTitle="Can't load reports right now">
-    <SplitView Detail="@(Chosen(context.Value) is { } report ? Detail(report) : null)" DetailLabel="The report">
+    <Workbench Detail="@(Chosen(context.Value) is { } report ? Detail(report) : null)" DetailLabel="The report">
         <DataTable TItem="ReportLine" Label="Reports" Items="Shown(context.Value)" Columns="Columns" Key="report => report.Id"
                    Selected="Chosen(context.Value)" SelectedChanged="report => _chosen = report.Id" RowClass="RowClass" SortColumn="0" SortDescending="true">
             <Toolbar>
@@ -13,19 +13,31 @@
                 <EmptyState Icon="flag" Title="@(_handled ? "Nothing handled yet" : "No reports waiting")" Body="When someone reports a message in a chat you check, it shows here." />
             </Empty>
         </DataTable>
-    </SplitView>
+    </Workbench>
 </LiveData>
+
+<Sheet Open="_pausing is not null" OpenChanged="open => { if (!open) _pausing = null; }" Title="@($"Pause {_pausing?.MessageSender} from chats?")"
+       Lead="They lose every chat until someone lets them back in under Paused people. They aren't told who reported them. It's logged.">
+    <ChildContent>
+        <TextField Label="Why" Hint="Kept in the log." Value="@_pauseReason" ValueChanged="value => _pauseReason = value" MaxLength="ChatLimits.NoteLength" />
+        <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+    </ChildContent>
+    <Actions>
+        <Button Variant="ButtonVariant.Danger" Busy="_busy" Disabled="@(_pauseReason.Trim().Length == 0)" OnClick="PauseAsync">Pause @ChatText.First(_pausing?.MessageSender ?? "")</Button>
+        <Button Variant="ButtonVariant.Quiet" OnClick="() => _pausing = null">Keep them in</Button>
+    </Actions>
+</Sheet>
 
 @code {
     private LiveData<Reports>? _live;
     private string? _chosen;
     private bool _handled;
-    private string _outcome = "";
+    private ReportLine? _pausing;
+    private string _pauseReason = "";
     private string? _problem;
     private bool _busy;
 
     [Parameter, EditorRequired] public required Desk Desk { get; set; }
-    [Parameter] public EventCallback<string> OnRead { get; set; }
 
     private static readonly IReadOnlyList<TableColumn<ReportLine>> Columns =
     [
@@ -45,57 +57,29 @@
     private static IReadOnlyList<FilterOption<bool>> Filters(Reports reports) =>
         [new(false, "Waiting", reports.Open.Count), new(true, "Handled", reports.Handled.Count)];
 
+    private IReadOnlyList<MenuItem> Actions(ReportLine report) =>
+        Desk.Auditor && report.MessageSenderId.Length > 0
+            ? [this.Item($"Pause {ChatText.First(report.MessageSender)} from chats…", () => (_pausing, _pauseReason, _problem) = (report, "", null), "pause",
+                "They lose their chats until you let them back in.", danger: true)]
+            : [];
+
     private RenderFragment Detail(ReportLine report) =>
         @<div class="chat-report">
-            <LoggedNotice>Opening a report is part of the log when you read its chat.</LoggedNotice>
-            <h2 class="chat-report__title">@(report.To == ReportRoutes.Auditors ? "Reported to the safety team" : "Reported to the leaders")</h2>
-            <p>By @report.ReporterName, <DateLine At="report.At" Style="DateLineStyle.Short" WithTime="true" />@(report.Note.Length > 0 ? $": \"{report.Note}\"" : ".")</p>
-            <blockquote class="chat-callout"><strong>@report.MessageSender</strong>@report.MessageText</blockquote>
-            <div class="ui-after">
-                <Button Variant="ButtonVariant.Quiet" Icon="eye" OnClick="() => OnRead.InvokeAsync(report.ChatId)">Read the whole chat</Button>
-                @if (Desk.Auditor && report.MessageSenderId.Length > 0)
-                {
-                    <Button Variant="ButtonVariant.Danger" Icon="pause" Busy="_busy" OnClick="() => PauseAsync(report)">Pause @ChatText.First(report.MessageSender) from chats</Button>
-                }
-            </div>
-            @if (report.HandledAt is null)
-            {
-                <TextField Label="What was done" Hint="Kept with the report and in the log." Multiline="true" Value="@_outcome" ValueChanged="value => _outcome = value" MaxLength="ChatLimits.NoteLength" />
-                <Notice Tone="NoticeTone.Warning" Text="@_problem" />
-                <Button Busy="_busy" Disabled="@(_outcome.Trim().Length == 0)" OnClick="() => HandleAsync(report)">Mark as handled</Button>
-            }
-            else
-            {
-                <p class="quiet">Handled by @report.HandledBy, <DateLine At="report.HandledAt.Value" Style="DateLineStyle.Short" WithTime="true" />: @report.Outcome</p>
-            }
+            <PaneHead Title="@report.ChatName" Lead="@report.MinistryName" Actions="Actions(report)" OnClose="() => _chosen = null" />
+            <ReportPanel @key="report.Id" Report="report" ShowHref="@ChatChecks.PageOf(report.ChatId, report.MessageId)" ShowLabel="Read it in the chat" OnHandled="ReloadAsync" />
         </div>;
 
-    private async Task HandleAsync(ReportLine report)
-    {
-        (_busy, _problem) = (true, null);
-        try
-        {
-            await Oversight.HandleAsync(report.Id, _outcome);
-            _outcome = "";
-            if (_live is not null)
-                await _live.ReloadAsync();
-        }
-        catch (RpcException exception)
-        {
-            _problem = exception.Status.Detail;
-        }
-        finally
-        {
-            _busy = false;
-        }
-    }
+    private Task ReloadAsync() => _live?.ReloadAsync() ?? Task.CompletedTask;
 
-    private async Task PauseAsync(ReportLine report)
+    private async Task PauseAsync()
     {
+        if (_pausing is not { } report)
+            return;
         (_busy, _problem) = (true, null);
         try
         {
-            await Oversight.PauseAsync(report.MessageSenderId, true, $"Paused after a report in {report.ChatName}");
+            await Oversight.PauseAsync(report.MessageSenderId, true, _pauseReason);
+            _pausing = null;
         }
         catch (RpcException exception)
         {

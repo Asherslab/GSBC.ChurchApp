@@ -8,6 +8,10 @@
         </div>
     }
     <ChatsList MinistryId="@On.Id" />
+    @if (!On.MayManage && !On.MayStartChats)
+    {
+        <p class="hint">@(On.TeamMayStartChats ? $"{On.Name}'s leaders and team start chats here." : $"{On.Name}'s leaders start chats here.") Ask one of them if you'd like a chat for something.</p>
+    }
 </Section>
 @if (On.MayManage || On.MayStartChats)
 {

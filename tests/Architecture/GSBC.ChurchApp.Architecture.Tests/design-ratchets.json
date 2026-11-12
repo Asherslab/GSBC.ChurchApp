@@ -1,7 +1,6 @@
 {
   "spacing": {
     "src/Features/Analytics/GSBC.ChurchApp.Features.Analytics.Client/wwwroot/css/analytics.css": 10,
-    "src/Features/Chats/GSBC.ChurchApp.Features.Chats.Client/wwwroot/css/chats.css": 62,
     "src/Features/Configuration/GSBC.ChurchApp.Features.Configuration.Client/wwwroot/css/drafts.css": 113,
     "src/Features/Events/GSBC.ChurchApp.Features.Events.Client/wwwroot/css/events.css": 199,
     "src/Features/Feedback/GSBC.ChurchApp.Features.Feedback.Client/wwwroot/css/feedback.css": 59,
@@ -18,10 +17,6 @@
     "src/Platform/GSBC.ChurchApp.Platform.Ui/wwwroot/css/ui.css": 394
   },
   "buttons": {
-    "src/Features/Chats/GSBC.ChurchApp.Features.Chats.Client/Components/ChatAttachments.razor": 1,
-    "src/Features/Chats/GSBC.ChurchApp.Features.Chats.Client/Components/ChatComposer.razor": 6,
-    "src/Features/Chats/GSBC.ChurchApp.Features.Chats.Client/Components/ChatView.razor": 5,
-    "src/Features/Chats/GSBC.ChurchApp.Features.Chats.Client/Components/MessageActions.razor": 1,
     "src/Features/Configuration/GSBC.ChurchApp.Features.Configuration.Client/Components/Drafts/DraftListing.razor": 1,
     "src/Features/Configuration/GSBC.ChurchApp.Features.Configuration.Client/Components/Drafts/ThemeEditor.razor": 1,
     "src/Features/Configuration/GSBC.ChurchApp.Features.Configuration.Client/Components/Hub/AddTileSheet.razor": 1,
@@ -81,13 +76,9 @@
   },
   "quietFirst": {},
   "splitView": {
-    "src/Features/Chats/GSBC.ChurchApp.Features.Chats.Admin/Pages/ChatsTabView.razor": 1,
-    "src/Features/Chats/GSBC.ChurchApp.Features.Chats.Admin/Pages/ReportsTab.razor": 1,
     "src/Features/Ministries/GSBC.ChurchApp.Features.Ministries.Client/Components/PeopleArea.razor": 1
   },
   "deleteOutsideMenu": {
-    "src/Features/Chats/GSBC.ChurchApp.Features.Chats.Admin/Pages/ChatsTabView.razor": 1,
-    "src/Features/Chats/GSBC.ChurchApp.Features.Chats.Admin/Pages/ReportsTab.razor": 1,
     "src/Features/Ministries/GSBC.ChurchApp.Features.Ministries.Client/Components/SettingsArea.razor": 1,
     "src/Features/Rosters/GSBC.ChurchApp.Features.Rosters.Client/Components/YourDateRow.razor": 1
   }

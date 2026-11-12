@@ -1,0 +1,271 @@
+@page "/chats/check/{ChatId}"
+@inject OversightClient Oversight
+@inject ChatChecks Checks
+
+<UnsavedGuard Changed="() => (_check is null && _reason.Trim().Length > 0) || (_pausing is not null && _pauseReason.Trim().Length > 0)" What="what you wrote" />
+
+<LiveData TValue="Desk" Load="Oversight.DeskAsync" Feeds="[ChatsFeeds.Oversight]" FailedTitle="Can't load this chat right now">
+    @{ DeskChat? chat = context.Value.Chats.FirstOrDefault(found => found.Id == ChatId) ?? _check?.Chat.Chat; }
+    @if (chat is null)
+    {
+        <TitleBand Title="Chat" BackHref="chats/all" BackText="Chats" />
+        <EmptyState Icon="message-square" Title="This chat isn't here" Body="It may have been deleted, or it's in a ministry you don't check." />
+    }
+    else
+    {
+        <TitleBand Title="@chat.Name" BrowserTitle="@($"Checking {chat.Name}")" BackHref="chats/all" BackText="Chats" Lead="@ChatLead.Of(chat)">
+            <Actions>
+                @if (chat.OpenReports > 0)
+                {
+                    <Pill Tone="PillTone.Danger">@ChatLead.Count(chat.OpenReports, "report", "reports") waiting</Pill>
+                }
+            </Actions>
+        </TitleBand>
+        @if (_check is not { } check)
+        {
+            <div class="chat-review__why">
+                <LoggedNotice>Reading @chat.Name is logged with your name, the time and why. The leaders of @chat.MinistryName and the church's chat auditors can see the log.</LoggedNotice>
+                <TextField Label="Why are you reading this chat?" Hint="Kept in the log with your name and the time." Value="@_reason" ValueChanged="value => _reason = value" MaxLength="ChatLimits.NoteLength" />
+                <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+                <div class="ui-actions">
+                    <Button Icon="eye" Busy="_busy" Disabled="@(_reason.Trim().Length == 0)" OnClick="ReadAsync">Read this chat</Button>
+                </div>
+            </div>
+        }
+        else
+        {
+            <LiveData @ref="_reports" TValue="Reports" Context="reports" Load="Oversight.ReportsAsync" Feeds="[ChatsFeeds.Oversight]" FailedTitle="Can't load this chat's reports right now">
+            @{
+                List<ReportLine> mine = reports.Value.Open.Concat(reports.Value.Handled).Where(report => report.ChatId == ChatId).ToList();
+                IReadOnlySet<string> reported = mine.Select(report => report.MessageId).ToHashSet();
+                IReadOnlyList<ReviewLine> lines = ChatReview.Lines(check.Chat.Messages, _filter, reported, _opened, DayOf);
+                int matches = lines.OfType<ReviewMessage>().Count(line => line.Match);
+            }
+            <Workbench AsideLabel="Find in the chat">
+                <Aside>
+                    <SearchField Label="Find words in the chat" Placeholder="Find words" Value="@_filter.Words" ValueChanged="words => Narrow(_filter with { Words = words })" />
+                    <FilterChips TValue="string" Label="Who" Rail="true" Options="@Senders(check)" Value="_filter.Who" ValueChanged="who => Narrow(_filter with { Who = who })" />
+                    <div class="chat-review__when" role="group" aria-label="When">
+                        <p class="filter-chips__label">When</p>
+                        <DateField Label="From" Value="@Iso(_filter.From)" ValueChanged="day => Narrow(_filter with { From = TypedDates.Day(day) })" />
+                        <DateField Label="To" Value="@Iso(_filter.To)" ValueChanged="day => Narrow(_filter with { To = TypedDates.Day(day) })" />
+                    </div>
+                    <FilterChips TValue="string" Label="Only" Rail="true" Options="@Onlys(check, reported)" Value="_filter.Only" ValueChanged="only => Narrow(_filter with { Only = only })" />
+                </Aside>
+                <ChildContent>
+                    <LoggedNotice>You said: "@check.Reason". The leaders of @chat.MinistryName and the church's chat auditors can see the log.</LoggedNotice>
+                    @if (_filter.Narrows)
+                    {
+                        <div class="chat-review__count">
+                            <p><strong>@ChatLead.Count(matches, "message", "messages")</strong> @Describe(check, matches)</p>
+                            <Button Variant="ButtonVariant.Quiet" Small="true" OnClick="() => Narrow(new ReviewFilter())">Clear</Button>
+                        </div>
+                    }
+                    @if (check.Chat.Messages.Count == 0)
+                    {
+                        <EmptyState Icon="message-square" Title="No messages yet" Body="Nothing has been written in this chat." />
+                    }
+                    else if (_filter.Narrows && matches == 0)
+                    {
+                        <EmptyState Icon="search" Title="Nothing matches" Body="No message fits all of these. Clear one of them to see more." />
+                    }
+                    <div class="chat-review">
+                        @foreach (ReviewLine line in lines)
+                        {
+                            switch (line)
+                            {
+                                case ReviewDay day:
+                                    <h3 class="chat-review__day">@ChatLead.Day(day.Day)</h3>
+                                    break;
+                                case ReviewFold fold:
+                                    <Button Variant="ButtonVariant.Link" Class="chat-review__fold" OnClick="() => Open(fold)">@FoldWords(fold)</Button>
+                                    break;
+                                case ReviewMessage shown:
+                                    <CheckedLine Found="shown.Found" Match="shown.Match" Faded="@(_filter.Narrows && !shown.Match)" Reported="@reported.Contains(shown.Found.Message.Id)" Words="@_filter.Words"
+                                                 Actions="@MessageActions(context.Value, shown.Found)" />
+                                    break;
+                            }
+                        }
+                    </div>
+                </ChildContent>
+                <Detail>
+                    <PaneHead Title="Reports" Lead="@(mine.Count == 0 ? "None about this chat." : $"{mine.Count(report => report.HandledAt is null)} waiting · {mine.Count(report => report.HandledAt is not null)} handled")" />
+                    @foreach (ReportLine report in mine)
+                    {
+                        <ReportPanel @key="report.Id" Report="report" ShowHref="@ChatChecks.PageOf(ChatId, report.MessageId)" OnHandled="ReloadReportsAsync" />
+                    }
+                    <h3 class="chat-review__sub">Checks of this chat</h3>
+                    <ul class="chat-log">
+                        @foreach (LogLine logged in check.Chat.Checks)
+                        {
+                            <li><DateLine At="logged.At" Style="DateLineStyle.Short" WithTime="true" /> · @logged.ActorName: @logged.Words</li>
+                        }
+                    </ul>
+                </Detail>
+            </Workbench>
+            </LiveData>
+        }
+    }
+</LiveData>
+
+<Sheet Open="_pausing is not null" OpenChanged="open => { if (!open) _pausing = null; }" Title="@($"Pause {_pausing?.Message.SenderName} from chats?")"
+       Lead="They lose every chat until someone lets them back in on the Chats desk. They aren't told who asked. It's logged.">
+    <ChildContent>
+        <TextField Label="Why" Hint="Kept in the log." Value="@_pauseReason" ValueChanged="value => _pauseReason = value" MaxLength="ChatLimits.NoteLength" />
+        <Notice Tone="NoticeTone.Warning" Text="@_pauseProblem" />
+    </ChildContent>
+    <Actions>
+        <Button Variant="ButtonVariant.Danger" Busy="_busy" Disabled="@(_pauseReason.Trim().Length == 0)" OnClick="PauseAsync">Pause @ChatText.First(_pausing?.Message.SenderName ?? "")</Button>
+        <Button Variant="ButtonVariant.Quiet" OnClick="() => _pausing = null">Keep them in</Button>
+    </Actions>
+</Sheet>
+
+@code {
+    private OpenCheck? _check;
+    private string? _shownFor;
+    private ReviewFilter _filter = new();
+    private readonly HashSet<string> _opened = [];
+    private LiveData<Reports>? _reports;
+    private string _reason = "";
+    private string? _problem;
+    private bool _busy;
+    private CheckedMessage? _pausing;
+    private string _pauseReason = "";
+    private string? _pauseProblem;
+
+    [Parameter] public required string ChatId { get; set; }
+    [SupplyParameterFromQuery] public string? Message { get; set; }
+
+    protected override void OnParametersSet()
+    {
+        _check ??= Checks.Of(ChatId);
+        if (_check is not null && Message is { Length: > 0 } message && message != _shownFor)
+            OpenAround(_check, message);
+    }
+
+    private async Task ReadAsync()
+    {
+        (_busy, _problem) = (true, null);
+        try
+        {
+            _check = await Checks.CheckAsync(ChatId, _reason);
+            if (Message is { Length: > 0 } message)
+                OpenAround(_check, message);
+        }
+        catch (RpcException exception)
+        {
+            _problem = exception.Status.Detail;
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private static DateOnly DayOf(DateTime at) => DateOnly.FromDateTime(ChurchTime.ToChurch(at));
+
+    private static string Iso(DateOnly? day) => day?.ToString("yyyy-MM-dd") ?? "";
+
+    private void Narrow(ReviewFilter filter)
+    {
+        _filter = filter;
+        _opened.Clear();
+    }
+
+    private void Open(ReviewFold fold) => _opened.UnionWith(fold.Ids);
+
+    private void OpenAround(OpenCheck check, string messageId)
+    {
+        _shownFor = messageId;
+        _filter = new ReviewFilter(Only: ReviewOnly.Reported);
+        _opened.Clear();
+        int at = check.Chat.Messages.FindIndex(found => found.Message.Id == messageId);
+        if (at < 0)
+            return;
+        for (int near = Math.Max(0, at - 3); near <= Math.Min(check.Chat.Messages.Count - 1, at + 3); near++)
+            _opened.Add(check.Chat.Messages[near].Message.Id);
+    }
+
+    private static string FoldWords(ReviewFold fold)
+    {
+        string count = ChatLead.Count(fold.Ids.Count, "message", "messages");
+        string which = fold.Before ? $"{count} before these" : fold.After ? $"{count} after these" : count;
+        return $"{which} · Show";
+    }
+
+    private string Describe(OpenCheck check, int matches)
+    {
+        List<string> words = [];
+        if (_filter.Who.Length > 0)
+            words.Add($"from {check.Chat.Messages.First(found => found.Message.SenderId == _filter.Who).Message.SenderName}");
+        if (_filter.Words.Trim().Length > 0)
+            words.Add($"{(matches == 1 ? "says" : "say")} \"{_filter.Words.Trim()}\"");
+        if (_filter.Only == ReviewOnly.Files)
+            words.Add("with photos or files");
+        if (_filter.Only == ReviewOnly.Changed)
+            words.Add("edited or deleted");
+        if (_filter.Only == ReviewOnly.Reported)
+            words.Add("reported");
+        if (_filter.From is { } from)
+            words.Add($"from {ChatLead.Day(from)}");
+        if (_filter.To is { } to)
+            words.Add($"up to {ChatLead.Day(to)}");
+        return string.Join(", ", words);
+    }
+
+    private static IReadOnlyList<FilterOption<string>> Senders(OpenCheck check)
+    {
+        List<CheckedMessage> written = check.Chat.Messages.Where(found => found.Message.Kind != MessageKinds.Event).ToList();
+        return
+        [
+            new("", "Everyone", written.Count),
+            .. written.Where(found => found.Message.SenderId.Length > 0)
+                .GroupBy(found => found.Message.SenderId)
+                .OrderByDescending(group => group.Count())
+                .Select(group => new FilterOption<string>(group.Key, Sender(check, group.Key, group.First().Message.SenderName), group.Count())),
+        ];
+    }
+
+    private static string Sender(OpenCheck check, string id, string name)
+    {
+        ChatPerson? person = check.Chat.People.FirstOrDefault(found => found.Id == id);
+        return person?.Role == ChatRoles.Leader ? $"{name} · leader" : person?.Minor == true ? $"{name} · under 18" : name;
+    }
+
+    private static IReadOnlyList<FilterOption<string>> Onlys(OpenCheck check, IReadOnlySet<string> reported) =>
+    [
+        new(ReviewOnly.Everything, "Every message"),
+        new(ReviewOnly.Files, "Has photos or files", check.Chat.Messages.Count(found => ChatReview.Only(found, ReviewOnly.Files, reported)), "image"),
+        new(ReviewOnly.Changed, "Edited or deleted", check.Chat.Messages.Count(found => ChatReview.Only(found, ReviewOnly.Changed, reported)), "pencil"),
+        new(ReviewOnly.Reported, "Reported", check.Chat.Messages.Count(found => ChatReview.Only(found, ReviewOnly.Reported, reported)), "flag"),
+    ];
+
+    private IReadOnlyList<MenuItem> MessageActions(Desk desk, CheckedMessage found) =>
+        desk.Auditor && found.Message.SenderId.Length > 0
+            ? [this.Item($"Pause {ChatText.First(found.Message.SenderName)} from chats…", () => StartPause(found), "pause", "They lose their chats until you let them back in.", danger: true)]
+            : [];
+
+    private void StartPause(CheckedMessage found) => (_pausing, _pauseReason, _pauseProblem) = (found, "", null);
+
+    private async Task PauseAsync()
+    {
+        if (_pausing is null)
+            return;
+        (_busy, _pauseProblem) = (true, null);
+        try
+        {
+            await Oversight.PauseAsync(_pausing.Message.SenderId, true, _pauseReason);
+            _pausing = null;
+        }
+        catch (RpcException exception)
+        {
+            _pauseProblem = exception.Status.Detail;
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private Task ReloadReportsAsync() => _reports?.ReloadAsync() ?? Task.CompletedTask;
+}

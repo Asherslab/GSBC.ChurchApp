@@ -1,0 +1,42 @@
+{
+  "title": "Chats: a full page for checking a chat",
+  "question": "You asked (#49) for a full page for reviewing a chat, with search and tools, and said you're usually finding something: after a report or a worry, jump to a person, a word or a day, then read around it. All three keep the desk's first step (choose a chat, say why, then Open the chat) and give the page search, Who, When, Has photos or files and Edited or deleted, photos opening in the picture viewer, the chat's reports with Mark as handled, and Pause from a message's ⋯ menu. They differ in how the page is laid out. Lock one, steer it, or ask for another hand.",
+  "options": [
+    {
+      "id": "folded",
+      "kind": "assigned",
+      "kicker": "THE ROLL",
+      "label": "The chat, folded to what you're looking for",
+      "thesis": "Filters and search in the sand rail; the conversation in the middle, where everything that doesn't match folds into a quiet line (\"9 messages · Show\") you can open, so each match sits with the message before and after it; the chat's reports on the right with Mark as handled, and the log of checks under them.",
+      "palette": ["#2a3d5e", "#f4efe7", "#00776d", "#e7ae74", "#b4372f", "#ffffff"],
+      "materials": ["Workbench", "FilterChips Rail", "search field", "folded runs", "highlighted matches", "report pane", "PictureViewer"],
+      "viewport": "Production team chat, searching \"Sunday\" with Who: Jordan Lee. Three matches in context, folds between them, photos in one; on the right the waiting report and its Mark as handled box.",
+      "risk": "Reading the whole chat start to end means opening folds (or clearing the search); three columns at desk width.",
+      "html": ".impeccable/mocks/chats/review/folded.html"
+    },
+    {
+      "id": "results",
+      "kind": "dealt",
+      "label": "A table of matches, read in context beside it",
+      "thesis": "Filters in the rail; the matching messages as a sortable table (sent, from, message, photos or files); choosing one shows it on the right among the messages either side, with every version, its photos and its ⋯ menu (Pause the sender). Earlier and Later step through. Reports are a filter of their own.",
+      "palette": ["#2a3d5e", "#f4efe7", "#00776d", "#e7ae74", "#ffffff"],
+      "materials": ["Workbench", "FilterChips Rail", "DataTable", "context pane", "PaneHead ⋯", "PictureViewer"],
+      "viewport": "Same chat, Has photos or files on: a table of messages, Jordan's Sunday photos chosen; on the right it sits among its neighbours, the reported message just below it.",
+      "risk": "Reads like a log rather than a chat; reading a long stretch means stepping row by row.",
+      "html": ".impeccable/mocks/chats/review/results.html"
+    },
+    {
+      "id": "people",
+      "kind": "dealt",
+      "label": "Start from the people in it",
+      "thesis": "The rail lists everyone in the chat with how many messages each sent (leaders, young people and the parents who read marked), above search, When and the other filters. Pick people and the conversation shows only theirs, each with Show around it. A waiting report is pinned above the conversation with Mark as handled.",
+      "palette": ["#2a3d5e", "#f4efe7", "#00776d", "#e7ae74", "#b4372f", "#ffffff"],
+      "materials": ["Workbench", "people rail with counts", "search field", "pinned report", "filtered conversation", "PictureViewer"],
+      "viewport": "Same chat, Jordan Lee and Tom Becker chosen: the report pinned on top; below, only their messages, two days of them.",
+      "risk": "Searching by word comes second to people; a long people list pushes When and the other filters down.",
+      "html": ".impeccable/mocks/chats/review/people.html"
+    }
+  ],
+  "reroll": { "registers": ["safer", "bolder"] },
+  "canon": false
+}

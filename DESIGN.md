@@ -961,6 +961,9 @@ component is shown, live, in the gallery (`/gallery` on both).
 | Boards | `Board` + `BoardCard` | Sand columns with a count, a dashed sentence when empty, optional "Add one here", a folded column for what's put aside. |
 | Dates and times | `DateField`, `TimeField`, `DateTimeField` | Admin: type it ("15 Nov", "7:30pm"), or open the calendar or the list of times (every 15 minutes) from the button at the field's right end; what was understood reads back under it with a check. Phone: the native wheel. Never `Type="date"` or `Type="time"` in a feature. |
 | A picture, bigger | `PictureOpen` + `PictureViewer` | The whole window on near-black, arrows and a filmstrip, Download. Never squeeze a picture into a pane. |
+| A message and its reactions | `MessageBubble` + `BubbleReactions` | Reactions sit under the bubble as small counted chips (yours ringed in aqua); the same chips in a row, without counts, are the picker at the top of a message's sheet. A message's photos open in the picture viewer. |
+| An action inside a line of text | `Button Variant="Link"` | Aqua words with no fill, in the text's own size ("Couldn't send · Try again · Delete", "Seen by 4"). An action that stands alone is a real button. |
+| A page's top-bar actions (phone) | `Button Variant="Quiet"` icon, `Menu` | Icon buttons in the bar take the bar's colour. A cog opens the settings of what you're looking at; Delete and other actions on it go in the ⋯ `Menu` beside it. |
 | Icons | `AppIcons` (Platform.Contracts) | One icon per meaning, named for the thing (`AppIcons.Prayer`, `AppIcons.Settings`); a cog always means "the settings of what you're looking at". |
 | Light or dark | `SchemeChoice` | Phone: Appearance. Admin: the Account menu, which opens from the sidebar's Account row. |
 | Spacing | `--space-*`, `--section`, `--section-first`, `--stack`, `--gutter`, `--after-tabs` | No new raw pixel spacing. |
