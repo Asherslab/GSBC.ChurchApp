@@ -298,7 +298,7 @@ internal sealed class MinistriesService(
             Age = facts.GetValueOrDefault(ask.PersonId)?.Age, As = ask.As,
             AskedBy = ask.AskedBy == ask.PersonId ? "" : names.GetValueOrDefault(ask.AskedBy) ?? "", AskedById = ask.AskedBy.ToString(),
             Note = ask.Note, AskedAt = ask.AskedAt, MinistryId = ask.MinistryId.ToString(), MinistryName = tree.Find(ask.MinistryId)?.Name ?? "",
-            WaitingForParent = ask.WaitingForParent,
+            WaitingForParent = ask.WaitingForParent, NoParent = ask.WaitingForParent && facts.GetValueOrDefault(ask.PersonId) is { Parents.Count: 0 },
         }).ToList();
     }
 

@@ -252,6 +252,7 @@ public sealed class AskLine
     [ProtoMember(10)] public string MinistryName { get; set; } = "";
     [ProtoMember(11)] public string AskedById { get; set; } = "";
     [ProtoMember(12)] public bool WaitingForParent { get; set; }
+    [ProtoMember(13)] public bool NoParent { get; set; }
 }
 
 [ProtoContract]
