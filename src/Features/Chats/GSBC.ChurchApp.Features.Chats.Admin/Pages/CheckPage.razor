@@ -232,9 +232,9 @@
         if (_filter.Only == ReviewOnly.Reported)
             words.Add("reported");
         if (_filter.From is { } from)
-            words.Add($"since {ChatLead.Day(from)}");
+            words.Add($"since {ChatLead.ShortDay(from)}");
         if (_filter.To is { } to)
-            words.Add($"up to {ChatLead.Day(to)}");
+            words.Add($"up to {ChatLead.ShortDay(to)}");
         return string.Join(", ", words);
     }
 
