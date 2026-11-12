@@ -1,5 +1,4 @@
 using GSBC.ChurchApp.Features.Chats.Client;
-using GSBC.ChurchApp.Features.Chats.Client.Components;
 using GSBC.ChurchApp.Features.Chats.Contracts;
 using GSBC.ChurchApp.Platform.Client.Modules;
 using GSBC.ChurchApp.Platform.Icons;

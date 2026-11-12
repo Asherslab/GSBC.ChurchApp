@@ -87,7 +87,7 @@ public sealed class OnlineChats(ChannelBase channel, IDirectUploads uploads, Cli
 
     public async ValueTask RetryAsync(ChatLine line)
     {
-        if (_sending.FirstOrDefault(send => send.OutboxId == line.OutboxId) is { } send)
+        if (_sending.FirstOrDefault(pending => pending.OutboxId == line.OutboxId) is { } send)
             await DeliverAsync(send);
     }
 
