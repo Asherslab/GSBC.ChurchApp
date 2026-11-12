@@ -22,10 +22,11 @@ else
                 <div class="date-field__popover date-field__popover--times" role="listbox" aria-label="@($"Choose {Label.ToLowerInvariant()}")" data-keep-arrows>
                     @for (int index = 0; index < Times.Count; index++)
                     {
+                        int at = index;
                         TimeOnly time = Times[index];
                         bool chosen = time == Chosen;
                         <button type="button" role="option" class="date-field__time @(chosen ? "date-field__time--chosen" : "")" aria-selected="@(chosen ? "true" : "false")"
-                                disabled="@(!Allowed(time))" tabindex="@(index == _active ? 0 : -1)" @ref="_options[index]" @onclick="() => ChooseAsync(time)">
+                                disabled="@(!Allowed(time))" tabindex="@(index == _active ? 0 : -1)" @ref="_options[at]" @onclick="() => ChooseAsync(time)">
                             <span>@TypedDates.Show(time)</span>
                             @if (chosen)
                             {

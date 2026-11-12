@@ -40,12 +40,13 @@ else
                             <div class="date-field__week" role="row">
                                 @for (int column = 0; column < 7; column++)
                                 {
-                                    DateOnly day = FirstShown.AddDays(week * 7 + column);
+                                    int cell = week * 7 + column;
+                                    DateOnly day = FirstShown.AddDays(cell);
                                     bool chosen = day == Chosen;
                                     bool focused = day == _focus;
                                     <button type="button" role="gridcell" class="@DayClass(day)" aria-selected="@(chosen ? "true" : "false")"
                                             aria-current="@(day == Today ? "date" : null)" aria-label="@TypedDates.ShowInFull(day)" disabled="@(!Allowed(day))"
-                                            tabindex="@(focused ? 0 : -1)" @ref="_days[week * 7 + column]" @onclick="() => ChooseAsync(day)">
+                                            tabindex="@(focused ? 0 : -1)" @ref="_days[cell]" @onclick="() => ChooseAsync(day)">
                                         @day.Day
                                     </button>
                                 }
