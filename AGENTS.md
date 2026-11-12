@@ -158,6 +158,11 @@ interview or substitute your judgement for its decision round. "Lightly" or "qui
 
 # Components: reuse first, then generic
 
+**Start from the pattern map at the top of the body of [DESIGN.md](DESIGN.md)** (owner, 2026-11-12: "buttons placed in
+the same places"; "make a proper rule or something to catch these"). It names the one shared component and placement
+for each job, and every component is live in the gallery (`/gallery`). `DesignDriftRules` and `IconRules` hold it:
+their ratchets in `design-ratchets.json` only ever go down.
+
 Before writing any Blazor UI:
 
 1. **Look for an existing component that already does it, or nearly does.** Search the shared

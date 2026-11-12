@@ -847,6 +847,44 @@ components:
 
 # Design System: GSBC Church App
 
+## Pattern map: one way to do each job
+
+Read this before building any screen. Each job has one shared component and one placement, chosen by the owner on
+2026-11-12 (`.impeccable/mocks/design-system/`, brief in `.impeccable/surfaces/churchapp-platform-ui-wwwroot-css-ui-css-0c623f32.md`).
+The admin panel is designed for a desk and the app for a phone: they need not look alike, only do the same job with
+the same data. A small difference between pages is a parameter on the shared component, never a copy. Every
+component is shown, live, in the gallery (`/gallery` on both).
+
+| Job | Use | Where things go |
+|---|---|---|
+| A list and the record chosen from it (admin) | `Workbench` | Filters in a sand rail on the left only when the page has filters; the list in the middle; the record ruled off on the right, staying beside the list at every desktop width. The page's one add action sits in the `TitleBand`, top right. |
+| A record's heading | `PaneHead` | Title and a one-line lead; its ⋯ menu (`Actions`) holds Delete and every other action on the item; Open as a page and Close at the right. |
+| Saving | `SaveBar` (+ `UnsavedGuard`) | **Cancel bottom left, Save bottom right** of anything that saves, on both sides. The status line ("Saved", "You have changes that aren't saved") sits on its own line above, never between the buttons. A create form never says it has unsaved changes (`New`). |
+| Deleting | the item's ⋯ menu, then a `Sheet` | Delete is always an action on the item, never a red button in a foot or on the page. It asks once, saying what goes with it. Actions list the main (red) one first: the admin panel shows it at the right with Keep it at the far left; the phone stacks it on top. |
+| Adding | the record pane | New opens a blank record, already chosen, in the record pane beside the list; Cancel takes it away. On the phone it is a page with the same fields. |
+| A group of settings | `Section Grouped` (+ `Foot`) | A card on the admin panel (title and lead inside, a sand foot for its save bar or "These change straight away"); an inset group on the phone. A form that saves with a button and switches that change at once never share a group. |
+| Switching views | `TabStrip`, `Segmented`, `FilterChips` | Tabs (the underline) for different things; Segmented for the same list two ways; chips only to narrow down. Chips never switch views, and Segmented never picks a value that tabs should show. |
+| Tools for a list | the `Workbench` rail (admin); main button + `Menu` (phone) | Search and filters live in the rail. On the phone the main action is one wide button and the rest go in its ⋯ `Menu`, so nothing wraps alone. |
+| More actions | `Menu` | One ⋯ button; items say what they do, with a line under when it helps; Delete last and red. |
+| One role of several | `RoleMenu` | A button showing the role; its menu says what each role allows, with Remove in red last. Applies at once. Several roles at once stay a tick list (`RoleTick`). |
+| Steps something moves through | `StagePipeline` | Done steps ticked, the current one solid, the next waiting; press a step to move there. |
+| Boards | `Board` + `BoardCard` | Sand columns with a count, a dashed sentence when empty, optional "Add one here", a folded column for what's put aside. |
+| Dates and times | `DateField`, `TimeField`, `DateTimeField` | Admin: type it, or open the calendar or time list from the button at the field's right end. Phone: the native wheel. Never `Type="date"` or `Type="time"` in a feature. |
+| A picture, bigger | `PictureOpen` + `PictureViewer` | The whole window on near-black, arrows and a filmstrip, Download. Never squeeze a picture into a pane. |
+| Icons | `AppIcons` | One icon per meaning; a cog always means "the settings of what you're looking at". |
+| Light or dark | `SchemeChoice` | Phone: Appearance. Admin: the Account menu in the sidebar. |
+| Spacing | `--space-*`, `--section`, `--stack`, `--gutter` | No new raw pixel spacing. |
+
+**Rules for the workflow** (they apply to every station):
+
+- Start from this map and the gallery. If a job isn't here, it is a new pattern: build it once in Platform.Ui, add it
+  to the gallery and to this map in the same change, and run it past the owner on the decision page first.
+- The drift tests in `tests/Architecture/…/DesignDriftRules.cs` and `IconRules.cs` hold the map: every class used in
+  markup exists in a stylesheet; raw spacing, raw `<button>`, native date fields, quiet-first dialogs, `SplitView`
+  and red delete buttons outside a confirm can only go down (`design-ratchets.json`); every public component appears
+  in the gallery; one icon per meaning. When a count drops, lower its entry in the same change. Never raise one.
+- A screen still built the old way moves onto its component the next time anyone touches it.
+
 ## Overview
 
 **Creative North Star: "The Sunday Bulletin"**
@@ -857,7 +895,7 @@ Density is calm and generous: one column, a 20px gutter, list rows with hairline
 
 Light is the default scheme. An app-wide dark scheme (night navy ground, raised navy surfaces, bright aqua, orange progress) is chosen in Appearance or follows the system. A second palette, the 2026 yearly theme (the website's greens and a serif masthead), is a full alternate. Which one everyone sees is data, not a release: staff choose the year's theme under *The app's colours* on App styling (optionally for a run of dates), an event's colours go in a draft turned on between dates, and anyone who may make that choice can preview the other palette on their own phone first.
 
-The admin panel is the same bulletin carried to the church office's desk. A persistent navy sidebar takes the masthead's place, the work area stays white, and a compact title band replaces the phone masthead. It opens on the office week: the next seven days as a sand rail of white day columns carrying what is dated, then what needs you and the areas you look after. Areas are worked as hairline tables with the chosen record's detail ruled off beside them. The panel follows the computer's light or dark setting.
+The admin panel is the same bulletin carried to the church office's desk. A persistent navy sidebar takes the masthead's place, the work area stays white, and a compact title band replaces the phone masthead. It opens on the office week: the next seven days as a sand rail of white day columns carrying what is dated, then what needs you and the areas you look after. Areas are worked as hairline tables with the chosen record's detail ruled off beside them. The panel follows the computer's light or dark setting until someone picks Light or Dark in the Account menu.
 
 **Key Characteristics:**
 - Navy masthead on every tab root, with the mark's ring echo at 7% opacity.
