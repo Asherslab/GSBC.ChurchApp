@@ -23,10 +23,11 @@ in_use="$(docker ps -q --filter "volume=$from" --filter "volume=$to")"
 docker volume create "$to" >/dev/null
 docker run --rm -v "$from:/from:ro" -v "$to:/to" alpine sh -c 'rm -rf /to/* /to/..?* /to/.[!.]* 2>/dev/null; cp -a /from/. /to/'
 
-# A copy is a different database to the phones: a new sync origin makes them start their feeds again.
+# A copy is a different database to the phones: a new sync origin makes them start their feeds again, and it forgets
+# every phone's push registration so a worktree's backend never pushes to the owner's phone.
 data="$(docker run --rm -v "$to:/v:ro" alpine sh -c 'dirname "$(find /v -maxdepth 3 -name base -prune -o -name PG_VERSION -print | head -1)"')"
 major="$(docker run --rm -v "$to:/v:ro" alpine cat "$data/PG_VERSION")"
-echo "DO \$\$ BEGIN IF to_regclass('sync.origin') IS NOT NULL THEN UPDATE sync.origin SET id = gen_random_uuid(); END IF; END \$\$;" |
+echo "DO \$\$ BEGIN IF to_regclass('sync.origin') IS NOT NULL THEN UPDATE sync.origin SET id = gen_random_uuid(); END IF; IF to_regclass('notifications.devices') IS NOT NULL THEN DELETE FROM notifications.devices; END IF; END \$\$;" |
   docker run --rm -i --user postgres -v "$to:/var/lib/postgresql" "postgres:$major" \
     postgres --single -D "/var/lib/postgresql${data#/v}" churchapp >/dev/null
-echo "Copied the main checkout's database into this worktree's ($to), with its own sync origin."
+echo "Copied the main checkout's database into this worktree's ($to), with its own sync origin and no phones registered for push."
