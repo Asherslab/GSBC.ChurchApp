@@ -294,10 +294,17 @@
             @<RankedList Title="Most played sermons" Items="Ranked" Numbered="true" />)
         @Item("Writing a message: Composer", "A message box docked at the foot, with a paperclip and a round Send: Send feedback on the phone.",
             @<Composer Label="Sample message" Placeholder="Write something" @bind-Text="_composed" CanSend="@(_composed.Trim().Length > 0)" OnSend="() => _composed = string.Empty" />)
-        @Item("A chat message: MessageBubble", "Chats only.",
+        @Item("A chat message: MessageBubble and BubbleReactions", "Chats only. Reactions sit under the bubble; the same chips in a row are the picker in a message's sheet. A status under it uses a Link button.",
             @<div class="gallery__stack">
-                <MessageBubble Name="Jordan Example" Time="9:41am" FirstOfRun="true">Can someone bring the urn on Sunday?</MessageBubble>
-                <MessageBubble Mine="true" Time="9:43am" FirstOfRun="true">I'll bring it.</MessageBubble>
+                <MessageBubble Name="Jordan Example" Time="9:41am" FirstOfRun="true">
+                    <Reactions><BubbleReactions Reactions="_reactions" OnToggle="React" /></Reactions>
+                    <ChildContent>Can someone bring the urn on Sunday?</ChildContent>
+                </MessageBubble>
+                <MessageBubble Mine="true" Time="9:43am" FirstOfRun="true">
+                    <Status><Button Variant="ButtonVariant.Link" Small="true">Seen by 4</Button></Status>
+                    <ChildContent>I'll bring it.</ChildContent>
+                </MessageBubble>
+                <BubbleReactions Picker="true" Label="React" Reactions="_reactions" OnToggle="React" />
             </div>)
     </Section>
 
@@ -435,6 +442,11 @@
     private static readonly IReadOnlyList<TrendPoint> Trend = [new("Week 1", 180, "180"), new("Week 2", 196, "196"), new("Week 3", 202, "202"), new("Week 4", 214, "214")];
     private static readonly IReadOnlyList<(OfficeSpanKind Kind, string Label)> Legend = [(OfficeSpanKind.Everyone, "For everyone"), (OfficeSpanKind.Draft, "A draft")];
     private static readonly IReadOnlyList<MediaRef> NoPictures = [];
+
+    private IReadOnlyList<BubbleReaction> _reactions = [new("👍", 3, true), new("🙏", 1, false)];
+
+    private void React(BubbleReaction reaction) =>
+        _reactions = _reactions.Select(found => found.Emoji == reaction.Emoji ? found with { Yours = !found.Yours, Count = found.Count + (found.Yours ? -1 : 1) } : found).ToList();
     private static readonly string[] ColourRoles = ["masthead", "primary", "accent", "live", "marker", "sand", "ink", "ink-2", "danger"];
     private static readonly string[] SampleIcons = ["home", "calendar", "users-round", "contact", "messages-square", "settings", "heart", "trash-2"];
 

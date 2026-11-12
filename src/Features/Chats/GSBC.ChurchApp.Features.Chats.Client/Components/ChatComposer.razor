@@ -47,38 +47,42 @@ else if (!Card.YouMaySend && WritableChildren.Count == 0)
 }
 else
 {
-    <div class="chat-composer">
+    <Composer Label="Message" Placeholder="@Placeholder" MaxLength="ChatLimits.TextLength" Text="@_text" TextChanged="Typed"
+              CanSend="@(_text.Trim().Length > 0 || (_picked.Count > 0 && Editing is null))" SendIcon="@(Editing is null ? "send" : "check")"
+              SendLabel="@(Editing is null ? "Send" : "Save the change")" OnSend="SendAsync">
+        <Above>
         @if (Editing is not null)
         {
             <div class="chat-composer__context">
                 <Icon Name="pencil" Size="IconSize.Small" /><span>Editing your message. The church keeps the earlier version.</span>
-                <button type="button" class="icon-btn" aria-label="Stop editing" @onclick="StopAsync"><Icon Name="x" /></button>
+                <Button Variant="ButtonVariant.Quiet" Small="true" Icon="x" AriaLabel="Stop editing" Tooltip="Stop editing" OnClick="StopAsync" />
             </div>
         }
         else if (ReplyingTo is not null)
         {
             <div class="chat-composer__context">
                 <Icon Name="reply" Size="IconSize.Small" /><span class="chat-composer__quote"><strong>@ReplyingTo.SenderName</strong> · @ReplyingTo.Text</span>
-                <button type="button" class="icon-btn" aria-label="Stop replying" @onclick="StopAsync"><Icon Name="x" /></button>
+                <Button Variant="ButtonVariant.Quiet" Small="true" Icon="x" AriaLabel="Stop replying" Tooltip="Stop replying" OnClick="StopAsync" />
             </div>
         }
         @if (WritableChildren.Count > 0 && !Card.YouMaySend)
         {
             <div class="chat-composer__context">
-                @foreach (PersonRef child in WritableChildren)
-                {
-                    <button type="button" class="chat-for @(child.Id == _forChild ? "chat-for--on" : "")" @onclick="() => _forChild = child.Id">For @ChatText.First(child.Name)</button>
-                }
+                <FilterChips TValue="string" Label="Writing for" Options="@WritingFor" Value="_forChild" ValueChanged="value => _forChild = value" />
                 <span class="chat-composer__note">Others see it as written by you, for your child.</span>
             </div>
         }
         @if (Suggestions.Count > 0)
         {
-            <div class="chat-mentions" role="listbox" aria-label="People in this chat">
-                @foreach (ChatPerson person in Suggestions)
-                {
-                    <button type="button" role="option" class="chat-mentions__person" @onclick="() => Mention(person)"><Avatar Name="@person.Name" Size="24" />@person.Name</button>
-                }
+            <div class="chat-mentions" aria-label="People in this chat">
+                <ListGroup>
+                    @foreach (ChatPerson person in Suggestions)
+                    {
+                        <ListRow Title="@person.Name" OnClick="() => Mention(person)">
+                            <Leading><Avatar Name="@person.Name" Size="24" /></Leading>
+                        </ListRow>
+                    }
+                </ListGroup>
             </div>
         }
         @if (_picked.Count > 0)
@@ -95,23 +99,19 @@ else
                         {
                             <span class="chat-picked__file"><Icon Name="file" Size="IconSize.Small" />@media.FileName</span>
                         }
-                        <button type="button" class="chat-picked__remove" aria-label="@($"Don't send {media.FileName}")" @onclick="() => UnpickAsync(media)"><Icon Name="x" Size="IconSize.Small" /></button>
+                        <Button Variant="ButtonVariant.Quiet" Small="true" Icon="x" Class="chat-picked__remove" AriaLabel="@($"Don't send {media.FileName}")" OnClick="() => UnpickAsync(media)" />
                     </span>
                 }
             </div>
         }
-        <div class="chat-composer__bar">
+        </Above>
+        <Attach>
             @if (Editing is null && Store.CanAttach && _picked.Count < ChatLimits.AttachmentsPerMessage)
             {
-                <FilePick Label="Add a photo or file" ImagesOnly="false" Class="chat-composer__attach" OnPicked="Picked" />
+                <FilePick Label="Add a photo or file" ImagesOnly="false" Class="composer__attach" OnPicked="Picked" />
             }
-            <textarea class="chat-composer__field" rows="1" placeholder="@Placeholder" aria-label="Message" maxlength="@ChatLimits.TextLength"
-                      value="@_text" @oninput="Typed"></textarea>
-            <button type="button" class="chat-composer__send" aria-label="@(Editing is null ? "Send" : "Save the change")" disabled="@(_text.Trim().Length == 0 && (_picked.Count == 0 || Editing is not null))" @onclick="SendAsync">
-                <Icon Name="@(Editing is null ? "send" : "check")" />
-            </button>
-        </div>
-    </div>
+        </Attach>
+    </Composer>
 }
 
 @code {
@@ -127,6 +127,8 @@ else
     [Parameter] public EventCallback OnDone { get; set; }
 
     private ChatCard Card => Chat.Card;
+
+    private IReadOnlyList<FilterOption<string>> WritingFor => WritableChildren.Select(child => new FilterOption<string>(child.Id, $"For {ChatText.First(child.Name)}")).ToList();
 
     private List<PersonRef> WritableChildren => Card.Kind == ChatKinds.Channel
         ? []
@@ -177,9 +179,9 @@ else
             _forChild = WritableChildren.FirstOrDefault()?.Id ?? "";
     }
 
-    private void Typed(ChangeEventArgs change)
+    private void Typed(string text)
     {
-        _text = change.Value?.ToString() ?? "";
+        _text = text;
         if (Editing is null)
             Store.KeepDraft(Card.Id, _text);
     }

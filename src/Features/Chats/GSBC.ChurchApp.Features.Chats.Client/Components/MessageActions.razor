@@ -8,13 +8,7 @@
         bool mine = message.SenderId == Card.You;
         @if (Card.YouMaySend || Card.ForChildren.Count > 0)
         {
-            <div class="chat-react-row" role="group" aria-label="React">
-                @foreach (string emoji in Reactions)
-                {
-                    bool yours = message.Reactions.Any(reaction => reaction.Emoji == emoji && reaction.People.Contains(Card.You));
-                    <button type="button" class="chat-react-row__emoji @(yours ? "chat-react-row__emoji--on" : "")" aria-label="@emoji" @onclick="() => ReactAsync(message, emoji, !yours)">@emoji</button>
-                }
-            </div>
+            <BubbleReactions Picker="true" Label="React" Class="chat-react-row" Reactions="@Picks(message)" OnToggle="reaction => ReactAsync(message, reaction.Emoji, !reaction.Yours)" />
         }
         <ListGroup>
             @if (Card.YouMaySend || Card.ForChildren.Count > 0)
@@ -81,6 +75,9 @@
     }
 
     private static readonly string[] Reactions = ["👍", "❤️", "🙏", "😂", "🙌", "😮"];
+
+    private IReadOnlyList<BubbleReaction> Picks(ChatMessage message) =>
+        Reactions.Select(emoji => new BubbleReaction(emoji, 0, message.Reactions.Any(reaction => reaction.Emoji == emoji && reaction.People.Contains(Card.You)))).ToList();
     private Step _step = Step.Actions;
     private string _to = ReportRoutes.Leaders;
     private string _note = "";

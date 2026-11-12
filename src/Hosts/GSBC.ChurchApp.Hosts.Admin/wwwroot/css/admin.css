@@ -224,7 +224,7 @@ button.module-nav__link { width: 100%; border: 0; background: none; font-family:
 .title-band__title { margin: 0; font-size: var(--text-headline); font-weight: 700; letter-spacing: -0.02em; line-height: 1.15; text-wrap: balance; }
 .title-band__title:focus { outline: none; }
 .title-band__lead { margin: 0; max-width: 72ch; color: var(--ink-2); font-size: var(--text-caption); }
-.title-band__actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.title-band__actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 
 .admin-gate { display: grid; max-width: 1440px; padding: 48px 0; border-radius: var(--radius); background: var(--sand); }
 

@@ -2,12 +2,18 @@
 @inject TimeProvider Clock
 @inject Shell Shell
 @inject IServiceProvider Services
+@inject NavigationManager Navigation
+@using GSBC.ChurchApp.Platform.Icons
 
 <Page Title="@_title" BackHref="@BackHref" BackLabel="@BackLabel" TopBar="TopBarStyle.Solid">
     <Actions>
         @if (_card is not null)
         {
-            <button type="button" class="icon-btn" aria-label="People and settings" @onclick="() => _people = true"><Icon Name="users" /></button>
+            <Button Variant="ButtonVariant.Quiet" Icon="@AppIcons.Settings" AriaLabel="Chat settings" Tooltip="Chat settings" OnClick="() => _people = true" />
+            @if (_card.YouMayManage)
+            {
+                <Menu Label="@($"More for {_title}")" Items="ChatActions" />
+            }
         }
     </Actions>
     <ChildContent>
@@ -72,25 +78,13 @@
                                        Time="@TimeOf(message)" Dimmed="@(line.State != LineState.Sent || _editing?.Id == message.Id)" Removed="message.Deleted"
                                        Id="@($"m-{message.Id}")" OnLongPress="() => OpenActions(line)">
                             <Quote>
-                                @if (message.ReplyTo is { } quote && !message.Deleted)
+                                @if (message is { ReplyTo: { } quote, Deleted: false })
                                 {
                                     <span class="chat-quote"><strong>@quote.SenderName</strong><span>@quote.Snippet</span></span>
                                 }
                             </Quote>
                             <Reactions>
-                                @if (message.Reactions.Count > 0)
-                                {
-                                    <span class="chat-reactions">
-                                        @foreach (Reaction reaction in message.Reactions)
-                                        {
-                                            bool yours = reaction.People.Contains(card.You);
-                                            <button type="button" class="chat-reaction @(yours ? "chat-reaction--yours" : "")" disabled="@(!card.YouMaySend)"
-                                                    aria-label="@($"{reaction.Emoji} {reaction.People.Count}")" @onclick="() => Store.ReactAsync(message, reaction.Emoji, !yours)">
-                                                @reaction.Emoji <span>@reaction.People.Count</span>
-                                            </button>
-                                        }
-                                    </span>
-                                }
+                                <BubbleReactions Reactions="@ReactionsOf(card, message)" Disabled="!card.YouMaySend" OnToggle="reaction => Store.ReactAsync(message, reaction.Emoji, !reaction.Yours)" />
                             </Reactions>
                             <Status>
                                 @if (line.State == LineState.Sending)
@@ -100,12 +94,12 @@
                                 else if (line.State == LineState.Failed)
                                 {
                                     <span class="chat-status chat-status--failed"><Icon Name="alert" Size="IconSize.Small" />Couldn't send ·
-                                        <button type="button" class="text-link" @onclick="() => Store.RetryAsync(line)">Try again</button> ·
-                                        <button type="button" class="text-link" @onclick="() => Store.DiscardAsync(line)">Delete</button></span>
+                                        <Button Variant="ButtonVariant.Link" OnClick="() => Store.RetryAsync(line)">Try again</Button> ·
+                                        <Button Variant="ButtonVariant.Link" OnClick="() => Store.DiscardAsync(line)">Delete</Button></span>
                                 }
                                 else if (mine && ReferenceEquals(line, LastOfMine(chat)) && SeenBy(card, message) is > 0 and var seen)
                                 {
-                                    <button type="button" class="chat-status" @onclick="() => ShowSeen(message)"><Icon Name="check" Size="IconSize.Small" />Seen by @seen</button>
+                                    <Button Variant="ButtonVariant.Link" Icon="check" Class="chat-status" OnClick="() => ShowSeen(message)">Seen by @seen</Button>
                                 }
                             </Status>
                             <ChildContent>
@@ -115,7 +109,7 @@
                                 }
                                 else
                                 {
-                                    <ChatAttachments Attachments="message.Attachments" />
+                                    <ChatAttachments Attachments="message.Attachments" From="@(mine ? "You" : message.SenderName)" />
                                     @foreach ((string text, bool mention, bool you) in ChatMentions.Split(message, card))
                                     {
                                         if (mention)
@@ -137,6 +131,13 @@
         </div>
         <MessageActions Card="card" Line="_acting" OnClose="() => _acting = null" OnReply="Reply" OnEdit="Edit" />
         <ChatPeopleSheet Card="card" Open="_people" OpenChanged="open => _people = open" />
+        <Sheet Open="_deleting" OpenChanged="open => _deleting = open" Title="@($"Delete {ChatText.Title(card)}?")"
+               Lead="Everyone in it loses the chat. The church keeps its messages and the log, so staff can still check it.">
+            <Actions>
+                <Button Block="true" Variant="ButtonVariant.Danger" OnClick="() => DeleteAsync(card)">Delete the chat</Button>
+                <Button Block="true" Variant="ButtonVariant.Quiet" OnClick="() => _deleting = false">Keep it</Button>
+            </Actions>
+        </Sheet>
         <Sheet Open="_seen is not null" OpenChanged="open => { if (!open) _seen = null; }" Title="Seen by">
             @if (_seen is not null)
             {
@@ -163,6 +164,7 @@
     private string _title = "Chat";
     private readonly HashSet<string> _added = [];
     private bool _people;
+    private bool _deleting;
 
     private ChatCard? _card;
     private ChatLine? _acting;
@@ -173,7 +175,7 @@
     private async Task<OpenedChat> LoadAsync()
     {
         Conversation? chat = await Store.ChatAsync(ChatId);
-        if (chat is { Paused: false } && chat.Card.YourRole.Length > 0)
+        if (chat is { Paused: false, Card.YourRole.Length: > 0 })
             await Store.MarkReadAsync(chat.Card, chat.Card.LastSeq);
         if (chat is not null && (ChatText.Title(chat.Card) != _title || _card is null))
         {
@@ -188,7 +190,7 @@
     {
         if (line.Message.Deleted || line.State != LineState.Sent)
             return;
-        await Shell.HapticAsync(Haptic.Light);
+        await Shell.HapticAsync();
         _acting = line;
     }
 
@@ -220,6 +222,21 @@
 
     private void ShowSeen(ChatMessage message) => _seen = message;
 
+    private IReadOnlyList<MenuItem> ChatActions =>
+    [
+        this.Item("Delete the chat…", () => _deleting = true, "trash-2", "For everyone in it. The church keeps its messages.", danger: true),
+    ];
+
+    private async Task DeleteAsync(ChatCard card)
+    {
+        _deleting = false;
+        await Store.DeleteChatAsync(card);
+        Navigation.NavigateTo(ChatsDestinations.Chats.Path);
+    }
+
+    private static IReadOnlyList<BubbleReaction> ReactionsOf(ChatCard card, ChatMessage message) =>
+        message.Reactions.Select(reaction => new BubbleReaction(reaction.Emoji, reaction.People.Count, reaction.People.Contains(card.You))).ToList();
+
     private static string? NameOf(ChatMessage message, bool mine) =>
         mine ? null : message.ForName.Length > 0 ? $"{message.SenderName}, for {ChatText.First(message.ForName)}" : message.SenderName;
 
@@ -234,7 +251,7 @@
     }
 
     private static ChatLine? LastOfMine(Conversation chat) =>
-        chat.Lines.LastOrDefault(line => line.Message.SenderId == chat.Card.You && line.State == LineState.Sent && line.Message.Kind == MessageKinds.Text);
+        chat.Lines.LastOrDefault(line => line.Message.SenderId == chat.Card.You && line is { State: LineState.Sent, Message.Kind: MessageKinds.Text });
 
     private static int SeenBy(ChatCard card, ChatMessage message) =>
         card.People.Count(person => person.Id != card.You && person.State == ChatStates.Active && person.ReadSeq >= message.Seq);

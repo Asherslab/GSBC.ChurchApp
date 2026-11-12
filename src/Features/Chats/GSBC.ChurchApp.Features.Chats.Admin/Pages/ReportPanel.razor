@@ -1,0 +1,55 @@
+@inject OversightClient Oversight
+
+<UnsavedGuard Changed="() => _outcome.Trim().Length > 0" What="what was done about the report" />
+
+<section class="chat-report-card" aria-label="@Heading">
+    <h3 class="chat-report-card__title">@Heading</h3>
+    <p class="chat-report-card__by">By @Report.ReporterName, <DateLine At="Report.At" Style="DateLineStyle.Short" WithTime="true" />@(Report.Note.Length > 0 ? $": \"{Report.Note}\"" : ".")</p>
+    <blockquote class="chat-callout"><strong>@Report.MessageSender</strong>@Report.MessageText</blockquote>
+    @if (ShowHref is not null)
+    {
+        <Button Variant="ButtonVariant.Quiet" Small="true" Icon="eye" Href="@ShowHref">@ShowLabel</Button>
+    }
+    @if (Report.HandledAt is null)
+    {
+        <TextField Label="What was done" Hint="Kept with the report and in the log." Multiline="true" Value="@_outcome" ValueChanged="value => _outcome = value" MaxLength="ChatLimits.NoteLength" />
+        <SaveBar Label="Mark as handled" Busy="_busy" Blocked="@(_outcome.Trim().Length == 0 ? "Say what was done to close it." : _problem)" OnSave="HandleAsync"
+                 OnCancel="() => _outcome = string.Empty" />
+    }
+    else
+    {
+        <p class="chat-report-card__by">Handled by @Report.HandledBy, <DateLine At="Report.HandledAt.Value" Style="DateLineStyle.Short" WithTime="true" />: @Report.Outcome</p>
+    }
+</section>
+
+@code {
+    private string _outcome = "";
+    private string? _problem;
+    private bool _busy;
+
+    [Parameter, EditorRequired] public required ReportLine Report { get; set; }
+    [Parameter] public string? ShowHref { get; set; }
+    [Parameter] public string ShowLabel { get; set; } = "Show in the chat";
+    [Parameter] public EventCallback OnHandled { get; set; }
+
+    private string Heading => Report.To == ReportRoutes.Auditors ? "Reported to the safety team" : "Reported to the leaders";
+
+    private async Task HandleAsync()
+    {
+        (_busy, _problem) = (true, null);
+        try
+        {
+            await Oversight.HandleAsync(Report.Id, _outcome);
+            _outcome = "";
+            await OnHandled.InvokeAsync();
+        }
+        catch (RpcException exception)
+        {
+            _problem = exception.Status.Detail;
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+}

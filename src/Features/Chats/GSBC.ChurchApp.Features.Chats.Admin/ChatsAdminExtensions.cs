@@ -17,6 +17,7 @@ public static class ChatsAdminExtensions
             [ChatsFeeds.Oversight], []));
         return services
             .AddSingleton(provider => new OversightClient(provider.GetRequiredService<Grpc.Core.ChannelBase>()))
+            .AddSingleton<ChatChecks>()
             .AddSingleton(new MinistryPartView(ChatsParts.Key, On));
     }
 
