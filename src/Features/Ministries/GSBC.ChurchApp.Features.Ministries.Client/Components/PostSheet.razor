@@ -3,7 +3,7 @@
 
 <UnsavedGuard Changed="() => Open" Editing="Draft" State="() => Shape" What="this post" />
 
-<Sheet Open="Open" OpenChanged="OpenChanged" Title="@(Draft.Id.Length == 0 ? "New post" : "Change the post")" Lead="@($"In {Page.Ministry.Name}.")">
+<Sheet Open="Open" OpenChanged="OpenChanged" Title="@(Draft.Id.Length > 0 ? "Change the post" : AboutASunday ? "Tell the group about a Sunday" : "New post")" Lead="@($"In {Page.Ministry.Name}.")">
     <ChildContent>
         @if (AboutASunday)
         {
