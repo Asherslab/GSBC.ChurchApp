@@ -27,7 +27,7 @@ Montserrat, the shared tokens. Variants are parameters on one component, about t
   8. Delete: always asks once, saying what goes with it; Keep it left, red Delete right; red first in the phone's stack.
   9. Adding: the new record opens in the record pane beside the list.
   10. Role (one of several): a role menu, a button showing the role that opens a menu of roles with what each allows,
-      Remove in red. "Team" stays until the owner renames it.
+      Remove in red. The role stays "Team" (owner, 2026-11-12: "team is fine").
   11. Steps a thing moves through: the pipeline.
   12. Icons: one icon per kind of thing (r12 "things"), checked by a test.
   13. Admin date and time: type it in the field, or the button at its right opens a calendar or time popover. The
