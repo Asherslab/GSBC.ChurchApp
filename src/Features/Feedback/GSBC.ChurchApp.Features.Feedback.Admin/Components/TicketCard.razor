@@ -1,12 +1,7 @@
-<a class="feedback-card @(Open ? "is-open" : "") @(Ticket.Status is TicketStatus.Resolved or TicketStatus.NotDoing ? "is-closed" : "")" href="@FeedbackDestinations.Ticket(Ticket.Number).TrimStart('/')" draggable="true"
-   aria-current="@(Open ? "true" : null)" @onclick="OnOpen" @onclick:preventDefault @ondragstart="OnDrag">
-    @if (Ticket.Cover is { } cover)
-    {
-        <MediaImage Media="cover" Size="MediaSizeName.Thumbnail" Alt="" Class="feedback-card__cover" />
-    }
-    <span class="feedback-card__number">#@Ticket.Number · @Ticket.From</span>
-    <strong class="feedback-card__title">@FeedbackWords.Title(Ticket.Text)</strong>
-    <span class="feedback-card__labels">
+<BoardCard Title="@FeedbackWords.Title(Ticket.Text)" Href="@FeedbackDestinations.Ticket(Ticket.Number).TrimStart('/')" Open="Open"
+           Quiet="Ticket.Status is TicketStatus.Resolved or TicketStatus.NotDoing" OnOpen="OnOpen" Shot="Shot">
+    <Meta>#@Ticket.Number · @Ticket.From</Meta>
+    <Labels>
         @if (Ticket.Source == FeedbackSource.AdminPanel)
         {
             <span class="feedback-label feedback-label--admin">Admin panel</span>
@@ -38,12 +33,15 @@
         {
             <span class="feedback-label" title="@FeedbackWords.FilesGo(goes)">@FeedbackWords.FilesGoShort(goes)</span>
         }
-    </span>
-</a>
+    </Labels>
+</BoardCard>
 
 @code {
     [Parameter, EditorRequired] public required TicketLine Ticket { get; set; }
     [Parameter] public bool Open { get; set; }
     [Parameter] public EventCallback<MouseEventArgs> OnOpen { get; set; }
-    [Parameter] public EventCallback OnDrag { get; set; }
+
+    private RenderFragment? Shot => Ticket.Cover is { } cover
+        ? @<MediaImage Media="cover" Size="MediaSizeName.Thumbnail" Alt="" />
+        : null;
 }
