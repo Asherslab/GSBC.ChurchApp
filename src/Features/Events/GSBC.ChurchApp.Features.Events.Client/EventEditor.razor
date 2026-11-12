@@ -13,7 +13,7 @@
 }
 else
 {
-    <Page Title="@(Target.IsNew ? "New event" : "Editing")" OnBack="LeaveAsync" BackLabel="Cancel" TopBar="TopBarStyle.Solid">
+    <Page Title="@(Target.IsNew ? "New event" : "Editing")" OnBack="LeaveAsync" TopBar="TopBarStyle.Solid">
         <ChildContent><EditScope Edited="() => { }">@Body</EditScope></ChildContent>
     </Page>
 }

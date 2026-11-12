@@ -46,10 +46,8 @@
 
     @if (context.Value.Profile.DemoAccount)
     {
-        <Section Title="Signed in with a code">
-            <Card Title="This is a demo account">
-                It's for reviewing the app, so it signs in with a code instead of a passkey and has no personal data.
-            </Card>
+        <Section Title="Signed in with a code" Grouped="true">
+            <p class="hint">This is a demo account. It's for reviewing the app, so it signs in with a code instead of a passkey and has no personal data.</p>
         </Section>
     }
 
@@ -95,12 +93,11 @@
 
     private IReadOnlyList<MenuItem> AccountActions =>
     [
-        new("Sign out", SignOutAsync, "log-out", "On this device"),
         new("Delete my account…", () =>
         {
             _deleting = true;
             return Task.CompletedTask;
-        }, "trash-2", "For good. Signing out is enough to stop using it here.", Danger: true, StartsGroup: true),
+        }, "trash-2", "For good. Signing out is enough to stop using it here.", Danger: true),
     ];
 
     private Task SignOutAsync() => RunAsync(Accounts.SignOutAsync);

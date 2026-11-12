@@ -11,7 +11,7 @@
 }
 else
 {
-    <RegularEventEditor CalendarId="@CalendarId" RegularEventId="@RegularId" BackLabel="@(RegularId is null ? "Cancel" : "Back")" Closed="BackAsync"
+    <RegularEventEditor CalendarId="@CalendarId" RegularEventId="@RegularId" BackLabel="Back" Closed="BackAsync"
                         Saved="Opened" DatePicked="date => Navigation.NavigateTo(EventsPlaces.RegularDatePath(CalendarId, RegularId ?? string.Empty, date.Date))" />
 }
 

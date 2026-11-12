@@ -212,7 +212,7 @@
                 <ListRow Title="A range"><TrailingContent><DateLine At="UtcNow" Until="UtcNow.AddMinutes(90)" Style="DateLineStyle.TimeOnly" /></TrailingContent></ListRow>
             </ListGroup>)
         @Item("A week to pick a day from: WeekRail", "The phone's calendar and roster.",
-            @<WeekRail Days="Week" Today="Today" Here="_day" Label="Pick a day" Picked="day => _day = day" />)
+            @<div class="gallery__masthead"><WeekRail Days="Week" Today="Today" Here="_day" Label="Pick a day" Picked="day => _day = day" /></div>)
         @Item("What's on across days: DayRail", "The admin Home's week at a glance.",
             @<DayRail First="Now.Date" Today="Now.Date" Days="7" Spans="Spans" Heading="This week" Quiet="Nothing else on" Legend="Legend" />)
     </Section>

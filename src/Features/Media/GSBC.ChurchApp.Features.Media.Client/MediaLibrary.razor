@@ -212,7 +212,7 @@
     ];
 
     private RenderFragment Rail(MediaList list) => @<text>
-        <SearchField Label="Find a file in every folder" Placeholder="Find a picture or file" Value="@_query" ValueChanged="SearchAsync" Class="media-library__search" />
+        <SearchField Label="Find a file in every folder" Placeholder="Find a file" Value="@_query" ValueChanged="SearchAsync" Class="media-library__search" />
         <FilterChips TValue="Shelf" Label="Where" Options="ShelfOptions" Value="_shelf" ValueChanged="SwitchShelfAsync" Rail="true" />
         @if (ShowsFiles)
         {

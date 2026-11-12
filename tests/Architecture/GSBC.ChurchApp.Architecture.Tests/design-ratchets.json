@@ -15,7 +15,7 @@
     "src/Hosts/App/GSBC.ChurchApp.Hosts.App/wwwroot/css/app.css": 4,
     "src/Hosts/GSBC.ChurchApp.Hosts.Admin/wwwroot/css/admin.css": 137,
     "src/Platform/GSBC.ChurchApp.Platform.Ui/wwwroot/css/rich-text.css": 10,
-    "src/Platform/GSBC.ChurchApp.Platform.Ui/wwwroot/css/ui.css": 395
+    "src/Platform/GSBC.ChurchApp.Platform.Ui/wwwroot/css/ui.css": 394
   },
   "buttons": {
     "src/Features/Chats/GSBC.ChurchApp.Features.Chats.Client/Components/ChatAttachments.razor": 1,

@@ -90,7 +90,7 @@
     {
         _open = false;
         await Shell.HapticAsync();
-        await item.OnChoose();
+        await new EventCallback(item.OnChoose.Target as IHandleEvent, item.OnChoose).InvokeAsync();
     }
 
     private async Task OnKeyAsync(KeyboardEventArgs key)
