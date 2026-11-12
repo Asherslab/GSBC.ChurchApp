@@ -1,0 +1,31 @@
+@typeparam TValue
+
+<Menu Label="@Label" Items="Items" Text="@Current" Icon="@null" Chevron="true" Block="Block" Small="Small" AlignStart="true" Disabled="Disabled" Class="@($"role-menu {Class}")" />
+
+@code {
+    [Parameter, EditorRequired] public required string Label { get; set; }
+    [Parameter, EditorRequired] public required IReadOnlyList<RoleChoice<TValue>> Roles { get; set; }
+    [Parameter] public TValue Value { get; set; } = default!;
+    [Parameter] public EventCallback<TValue> ValueChanged { get; set; }
+    [Parameter] public string? RemoveLabel { get; set; }
+    [Parameter] public string? RemoveDetail { get; set; }
+    [Parameter] public EventCallback OnRemove { get; set; }
+    [Parameter] public bool Block { get; set; }
+    [Parameter] public bool Small { get; set; }
+    [Parameter] public bool Disabled { get; set; }
+    [Parameter] public string? Class { get; set; }
+
+    private string Current => Roles.FirstOrDefault(role => IsCurrent(role.Value))?.Name ?? "Choose a role";
+
+    private IReadOnlyList<MenuItem> Items =>
+    [
+        .. Roles.Select(role => this.Item(role.Name, () => ChooseAsync(role.Value), detail: role.Allows, @checked: IsCurrent(role.Value))),
+        .. OnRemove.HasDelegate
+            ? [this.Item(RemoveLabel ?? "Remove", () => OnRemove.InvokeAsync(), detail: RemoveDetail, danger: true, startsGroup: true)]
+            : Array.Empty<MenuItem>(),
+    ];
+
+    private bool IsCurrent(TValue value) => EqualityComparer<TValue>.Default.Equals(value, Value);
+
+    private Task ChooseAsync(TValue value) => IsCurrent(value) ? Task.CompletedTask : ValueChanged.InvokeAsync(value);
+}

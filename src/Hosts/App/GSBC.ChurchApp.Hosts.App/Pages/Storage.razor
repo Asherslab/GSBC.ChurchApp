@@ -51,8 +51,7 @@
                                 <TrailingContent>
                                     @if (entry.Failed)
                                     {
-                                        <Button Variant="ButtonVariant.Quiet" Small="true" OnClick="() => Outbox.RetryAsync(entry.Id).AsTask()">Retry</Button>
-                                        <Button Variant="ButtonVariant.Danger" Small="true" OnClick="() => Outbox.DiscardAsync(entry.Id).AsTask()">Discard</Button>
+                                        <Menu Label="@($"More for {(entry.FileName ?? entry.Method)}")" Items="EntryActions(entry)" Small="true" />
                                     }
                                 </TrailingContent>
                             </ListRow>
@@ -83,7 +82,30 @@
     </PullToRefresh>
 </Page>
 
+<Sheet Open="_discarding is not null" OpenChanged="open => { if (!open) _discarding = null; }" Title="Discard this change?"
+       Lead="It hasn't reached the church's server, so it's lost from this phone. This can't be undone.">
+    <Actions>
+        <Button Variant="ButtonVariant.Danger" OnClick="DiscardAsync">Discard it</Button>
+        <Button Variant="ButtonVariant.Quiet" OnClick="() => _discarding = null">Keep it</Button>
+    </Actions>
+</Sheet>
+
 @code {
+    private OutboxEntry? _discarding;
+
+    private IReadOnlyList<MenuItem> EntryActions(OutboxEntry entry) =>
+    [
+        this.Item("Retry", () => Outbox.RetryAsync(entry.Id).AsTask(), "refresh"),
+        this.Item("Discard…", () => { _discarding = entry; return Task.CompletedTask; }, "trash-2", danger: true, startsGroup: true),
+    ];
+
+    private async Task DiscardAsync()
+    {
+        if (_discarding is { } entry)
+            await Outbox.DiscardAsync(entry.Id);
+        _discarding = null;
+    }
+
     private StoreInfo _info = new(0, []);
     private IReadOnlyList<StoredRecord> _echo = [];
     private IReadOnlyList<OutboxEntry> _outbox = [];

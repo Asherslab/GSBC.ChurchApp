@@ -1,7 +1,8 @@
+using GSBC.ChurchApp.Features.Feedback.Admin.Components;
 using GSBC.ChurchApp.Features.Feedback.Client;
 using GSBC.ChurchApp.Features.Feedback.Contracts;
 using GSBC.ChurchApp.Platform.Client.Modules;
-using GSBC.ChurchApp.Features.Feedback.Admin.Components;
+using GSBC.ChurchApp.Platform.Icons;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -20,12 +21,12 @@ public static class FeedbackAdminExtensions
     public static IServiceCollection AddFeedbackAdmin(this IServiceCollection services, ClientModules modules)
     {
         modules.Add(new ClientModule("Feedback", typeof(FeedbackAdminExtensions).Assembly,
-            [new NavEntry("Feedback", FeedbackDestinations.Desk.TrimStart('/'), "message-square", FeedbackPermissions.Triage, Area: NavAreas.Technical,
+            [new NavEntry("Feedback", FeedbackDestinations.Desk.TrimStart('/'), AppIcons.Feedback, FeedbackPermissions.Triage, Area: NavAreas.Technical,
                 Summary: "Problems and ideas people send from the app, with their screenshots and videos")],
             [FeedbackFeeds.Desk], []));
         return services.AddSingleton<FeedbackDeskClient>()
             .AddSingleton<RecentPages>().AddSingleton<IClientStartupTask>(provider => provider.GetRequiredService<RecentPages>())
             .AddSingleton<FeedbackFromAdmin>()
-            .AddSingleton(new SidebarAction("Send feedback", "message-square", SendFeedback));
+            .AddSingleton(new SidebarAction("Send feedback", AppIcons.Feedback, SendFeedback));
     }
 }

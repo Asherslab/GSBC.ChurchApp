@@ -65,19 +65,19 @@
     private RenderFragment Drawn() => _draft is not { } draft ? @<text></text> : @<text>
         <TitleBand Title="Weekly digest" BackHref="@CalendarBack" BackText="Calendar"
                    Lead="What's next at Good Shepherd, made from the calendar: its one-off events, specials and breaks. Untick what you'd leave out, drag to reorder and reword anything for the digest. The calendar itself doesn't change." />
-        <SplitView DetailLabel="The chosen item and the preview">
+        <Workbench DetailLabel="The chosen item and the preview">
         <ChildContent>
             <SaveStatus State="_save" SavedText="@(draft.SavedAt is null ? "Saves as you change it" : "Saved")" Detail="@SentLine(draft)" Retry="SaveNowAsync" />
 
             <div class="digest-desk__choices">
-                <TextField Label="From" Type="date" Value="@draft.Start" ValueChanged="ChooseStartAsync" />
+                <DateField Label="From" Value="@draft.Start" ValueChanged="ChooseStartAsync" />
                 <div class="field digest-desk__length">
                     <span class="field__label" aria-hidden="true">How long</span>
                     <Segmented TValue="DigestRange" Label="How long" Options="RangeOptions" Value="draft.Range" ValueChanged="ChooseRangeAsync" />
                 </div>
                 @if (draft.Range == DigestRange.Custom)
                 {
-                    <TextField Label="To" Type="date" Value="@draft.End" Min="@draft.Start" ValueChanged="ChooseEndAsync" />
+                    <DateField Label="To" Value="@draft.End" Min="@draft.Start" ValueChanged="ChooseEndAsync" />
                 }
                 <p class="digest-desk__range">@RangeOf(draft)</p>
             </div>
@@ -190,7 +190,7 @@
                 }
             </div>
         </Detail>
-        </SplitView>
+        </Workbench>
     </text>;
 
     private DigestItem? Chosen(DigestDraft draft) => draft.Items.FirstOrDefault(item => item.Key == _selected);

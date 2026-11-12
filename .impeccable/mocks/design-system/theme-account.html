@@ -1,0 +1,14 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Admin light and dark: under Account</title>
+<link rel="stylesheet" href="kit.css"><script src="icons.js"></script><script src="kit.js"></script>
+<style></style></head>
+<body class="sk-admin" data-current="Home"><main><header class="title-band"><div class="title-band__text"><h1 class="title-band__title">Account</h1><p class="title-band__lead">Your name, how you sign in, and how the admin panel looks on this computer.</p></div></header>
+<div style="max-width:640px">
+<section class="section" style="padding:0;margin-top:8px"><div class="section__head"><h2 class="section__title">Your name</h2></div>
+<div style="display:flex;gap:10px;align-items:end"><label class="field" style="flex:1"><span class="field__label">Name</span><input class="field__input" value="Jordan Example"></label><button class="btn btn--quiet">Save name</button></div></section>
+<section class="section" style="padding:0"><div class="section__head"><h2 class="section__title">Appearance</h2></div>
+<div class="field"><span class="field__label">Light or dark</span><span class="field__hint">Automatic follows this computer's setting. It only changes the admin panel on this computer.</span>
+<div class="segmented" role="radiogroup" style="max-width:420px"><button class="segmented__option" role="radio" aria-checked="true"><i data-icon="sun-moon"></i>Automatic</button><button class="segmented__option" role="radio" aria-checked="false"><i data-icon="sun"></i>Light</button><button class="segmented__option" role="radio" aria-checked="false"><i data-icon="moon"></i>Dark</button></div></div></section>
+<section class="section" style="padding:0"><div class="section__head"><h2 class="section__title">Security</h2></div>
+<div class="list"><div class="row"><span class="row__icon"><i data-icon="key"></i></span><span class="row__body"><span class="row__title">Passkeys and signed-in devices</span><span class="row__subtitle">2 passkeys · 3 devices</span></span><i data-icon="chevron-right"></i></div></div></section></div></main>
+<script>document.addEventListener("DOMContentLoaded",()=>setTimeout(()=>{document.querySelectorAll(".module-nav__link").forEach(a=>{a.removeAttribute("aria-current"); if(a.textContent.trim()==="Account") a.setAttribute("aria-current","page");});fillIcons(document);},0));</script></body></html>

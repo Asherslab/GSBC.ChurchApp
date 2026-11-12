@@ -2,9 +2,9 @@
 @using GSBC.ChurchApp.Platform.Contracts.Media
 @inject IMediaFiles Files
 
-@if (_source is not null)
+@if (_source is not null && !_failed)
 {
-    <img src="@_source" alt="@(Alt ?? Media.AltText)" class="@Class" style="@Style" width="@NullIfZero(_shown.Width)" height="@NullIfZero(_shown.Height)" loading="lazy" />
+    <img src="@_source" alt="@(Alt ?? Media.AltText)" class="@Class" style="@Style" width="@NullIfZero(_shown.Width)" height="@NullIfZero(_shown.Height)" loading="lazy" @onerror="() => _failed = true" />
 }
 else
 {
@@ -13,6 +13,7 @@ else
 
 @code {
     private string? _source;
+    private bool _failed;
     private string? _resolvedKey;
     private MediaRef _shown = new();
 
@@ -31,6 +32,7 @@ else
         _shown = shown;
         _resolvedKey = shown.Key;
         _source = null;
+        _failed = false;
         _source = await Files.SourceOfAsync(shown);
     }
 

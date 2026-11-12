@@ -36,8 +36,8 @@
         <legend>Who sees it, and when</legend>
         <AudiencePicker Value="@Draft.Audience" ValueChanged="value => ChangeAsync(() => Draft.Audience = value)" />
         <div class="ui-pair">
-            <TextField Label="First day on the bar" Hint="Empty: from now" Type="date" Value="@Iso(Draft.ShowFrom)" ValueChanged="value => ChangeAsync(() => Draft.ShowFrom = FromIso(value))" />
-            <TextField Label="Last day on the bar" Hint="Empty: no end" Type="date" Value="@Iso(Draft.ShowUntil)" ValueChanged="value => ChangeAsync(() => Draft.ShowUntil = FromIso(value))" />
+            <DateField Label="First day on the bar" Hint="Empty: from now" Value="@Iso(Draft.ShowFrom)" ValueChanged="value => ChangeAsync(() => Draft.ShowFrom = FromIso(value))" />
+            <DateField Label="Last day on the bar" Hint="Empty: no end" Value="@Iso(Draft.ShowUntil)" ValueChanged="value => ChangeAsync(() => Draft.ShowUntil = FromIso(value))" />
         </div>
         <ToggleRow Title="On the bar" Description="Turn off to take it off the bar without losing its settings" Checked="!Draft.Hidden" CheckedChanged="shown => ChangeAsync(() => Draft.Hidden = !shown)" />
     </fieldset>

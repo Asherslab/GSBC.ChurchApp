@@ -19,8 +19,8 @@
         <Notice Tone="NoticeTone.Warning" Text="@Problem" />
     </ChildContent>
     <Actions>
-        <Button Variant="ButtonVariant.Quiet" OnClick="() => OnCancel.InvokeAsync()">Cancel</Button>
         <Button Icon="folder-input" Busy="Busy" Disabled="@(!_picked || Blocked?.Invoke(_target) == true || _target == Current)" OnClick="() => OnMove.InvokeAsync(_target)">@Action</Button>
+        <Button Variant="ButtonVariant.Quiet" OnClick="() => OnCancel.InvokeAsync()">Cancel</Button>
     </Actions>
 </Sheet>
 

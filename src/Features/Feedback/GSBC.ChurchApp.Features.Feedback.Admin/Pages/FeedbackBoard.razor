@@ -19,56 +19,14 @@
             }
             else
             {
-                <div class="feedback-desk__sources">
-                    <FilterChips TValue="SourceFilter" Label="Sent from" Options="Sources" Value="_source" ValueChanged="SourceAsync" />
-                </div>
-                <div class="feedback-board" role="list">
-                    @foreach (TicketStatus status in FeedbackWords.Board)
-                    {
-                        List<TicketLine> tickets = In(context.Value, status);
-                        <section class="feedback-col @(status == TicketStatus.Resolved ? "feedback-col--narrow" : "") @(_dropping == status ? "is-dropping" : "")"
-                                 role="listitem" aria-labelledby="col-@status"
-                                 @ondragover:preventDefault @ondragenter="() => _dropping = status" @ondrop="() => DropAsync(status)">
-                            <h2 class="feedback-col__head" id="col-@status">@FeedbackWords.Status(status)<span class="feedback-col__count">@tickets.Count</span></h2>
-                            @foreach (TicketLine ticket in tickets.Take(status == TicketStatus.Resolved ? ResolvedShown : int.MaxValue))
-                            {
-                                <TicketCard Ticket="ticket" Open="ticket.Number == _open" OnOpen="args => OpenAsync(args, ticket)" OnDrag="() => _dragging = ticket" />
-                            }
-                            @if (tickets.Count == 0)
-                            {
-                                <p class="feedback-col__empty">@(status == TicketStatus.New ? "Nothing new." : "Nothing here.")</p>
-                            }
-                            else if (status == TicketStatus.Resolved && tickets.Count > ResolvedShown)
-                            {
-                                <p class="feedback-col__empty">And @(tickets.Count - ResolvedShown) more. Find one by its number or words.</p>
-                            }
-                        </section>
-                    }
-                    @{ List<TicketLine> notDoing = In(context.Value, TicketStatus.NotDoing); }
-                    @if (_showNotDoing)
-                    {
-                        <section class="feedback-col feedback-col--narrow @(_dropping == TicketStatus.NotDoing ? "is-dropping" : "")" role="listitem" aria-labelledby="col-not-doing"
-                                 @ondragover:preventDefault @ondragenter="() => _dropping = TicketStatus.NotDoing" @ondrop="() => DropAsync(TicketStatus.NotDoing)">
-                            <h2 class="feedback-col__head" id="col-not-doing">
-                                <button type="button" class="feedback-col__fold" aria-expanded="true" @onclick="() => _showNotDoing = false">Not doing</button>
-                                <span class="feedback-col__count">@notDoing.Count</span>
-                            </h2>
-                            @foreach (TicketLine ticket in notDoing.Take(ResolvedShown))
-                            {
-                                <TicketCard Ticket="ticket" Open="ticket.Number == _open" OnOpen="args => OpenAsync(args, ticket)" OnDrag="() => _dragging = ticket" />
-                            }
-                        </section>
-                    }
-                    else
-                    {
-                        <button type="button" class="feedback-col feedback-col--folded @(_dropping == TicketStatus.NotDoing ? "is-dropping" : "")" aria-expanded="false"
-                                @onclick="() => _showNotDoing = true" @ondragover:preventDefault @ondragenter="() => _dropping = TicketStatus.NotDoing"
-                                @ondrop="() => DropAsync(TicketStatus.NotDoing)">
-                            <span>Not doing · @notDoing.Count</span>
-                        </button>
-                    }
-                </div>
-                <p class="feedback-desk__hint">Drag a card to another column to move it along, or open it and choose its status. ⌘-click or Ctrl-click a card to open it in a new tab.</p>
+                <FilterChips TValue="SourceFilter" Label="Sent from" Options="Sources" Value="_source" ValueChanged="SourceAsync" />
+                <Board TItem="TicketLine" TColumn="TicketStatus" Label="Feedback by status" Columns="Columns" Items="Ordered(context.Value)" ColumnOf="ticket => ticket.Status"
+                       OnMove="MoveAsync" Compact="_open is not null" Class="feedback-desk__board">
+                    <Card Context="ticket">
+                        <TicketCard Ticket="ticket" Open="ticket.Number == _open" OnOpen="args => OpenAsync(args, ticket)" />
+                    </Card>
+                </Board>
+                <p class="feedback-desk__hint">Drag a card to another column to move it along (or press Alt and an arrow key), or open it and choose its status. ⌘-click or Ctrl-click a card to open it in a new tab.</p>
             }
         </div>
         @if (_open is { } number)
@@ -100,14 +58,21 @@
     private DeskView _view = DeskView.Board;
     private string _query = "";
     private int? _open;
-    private bool _showNotDoing;
-    private TicketLine? _dragging;
-    private TicketStatus? _dropping;
+
+    private static readonly IReadOnlyList<BoardColumn<TicketStatus>> Columns =
+    [
+        .. FeedbackWords.Board.Select(status => status == TicketStatus.Resolved
+            ? new BoardColumn<TicketStatus>(status, FeedbackWords.Status(status), Narrow: true, Shown: ResolvedShown, More: More)
+            : new BoardColumn<TicketStatus>(status, FeedbackWords.Status(status), status == TicketStatus.New ? "Nothing new." : "Nothing here.")),
+        new(TicketStatus.NotDoing, FeedbackWords.Status(TicketStatus.NotDoing), Narrow: true, Folds: true, Shown: ResolvedShown, More: More),
+    ];
 
     private Task<DeskList> LoadAsync() => Desk.ListAsync(DeskFilter.Everything, _query, _source);
 
-    private static List<TicketLine> In(DeskList list, TicketStatus status) =>
-        list.Tickets.Where(ticket => ticket.Status == status).OrderByDescending(ticket => FeedbackWords.IsClosed(status) ? ticket.ChangedAt : ticket.SentAt).ToList();
+    private static string More(int count) => $"And {count} more. Find one by its number or words.";
+
+    private static List<TicketLine> Ordered(DeskList list) =>
+        list.Tickets.OrderByDescending(ticket => FeedbackWords.IsClosed(ticket.Status) ? ticket.ChangedAt : ticket.SentAt).ToList();
 
     private static string Lead(DeskList list)
     {
@@ -147,14 +112,10 @@
             _open = null;
     }
 
-    private async Task DropAsync(TicketStatus status)
+    private async Task MoveAsync(BoardMove<TicketLine, TicketStatus> move)
     {
-        TicketLine? moving = _dragging;
-        (_dragging, _dropping) = (null, null);
-        if (moving is null || moving.Status == status)
-            return;
-        moving.Status = status;
-        await Desk.SetStatusAsync(moving.Id, status);
+        move.Item.Status = move.To;
+        await Desk.SetStatusAsync(move.Item.Id, move.To);
         if (_live is not null)
             await _live.ReloadAsync();
     }

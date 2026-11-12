@@ -3,12 +3,13 @@
 <UnsavedGuard Changed="() => Changed" What="this break" Save="SaveBeforeLeavingAsync" />
 
 <div class="event-panel">
-    <EventHead Day="@EventDates.Parse(_start)" Title="@(_name.Length > 0 ? _name : "New break")" When="@When" Compact="true" />
+    <EventHead Day="@EventDates.Parse(_start)" Title="@(_name.Length > 0 ? _name : "New break")" When="@When" Compact="true"
+               Actions="@(Break is null ? null : [this.Item("Delete this break", () => { _deleting = true; return Task.CompletedTask; }, "trash-2", danger: true)])" />
     <div class="event-body event-body--editing">
         <TextField Label="Name" Value="@_name" ValueChanged="value => _name = value" MaxLength="60" Required="true" Placeholder="Christmas break" Hint="Shown on the dates that aren't on." />
         <div class="ui-pair">
-            <TextField Label="From" Type="date" Value="@_start" ValueChanged="value => _start = value" />
-            <TextField Label="To" Type="date" Value="@_end" Min="@_start" ValueChanged="value => _end = value" />
+            <DateField Label="From" Value="@_start" ValueChanged="value => _start = value" />
+            <DateField Label="To" Value="@_end" Min="@_start" ValueChanged="value => _end = value" />
         </div>
         @if (Break is { UsedBy.Count: > 0 } used)
         {
@@ -27,13 +28,8 @@
     </div>
     <div class="editor-foot editor-foot--panel">
         <div class="editor-foot__actions">
-            <SaveBar Block="true" Label="@(Break is null ? "Add the break" : "Save")" Busy="_saving" OnSave="SaveAsync" Blocked="@Blocked" State="SaveBar.For(Changed, _saved)" />
-            <Button Variant="ButtonVariant.Quiet" OnClick="Closed">Close</Button>
+            <SaveBar New="@(Break is null)" OnCancel="Closed" Label="@(Break is null ? "Add the break" : "Save")" Busy="_saving" OnSave="SaveAsync" Blocked="@Blocked" State="SaveBar.For(Changed, _saved)" />
         </div>
-        @if (Break is not null)
-        {
-            <button type="button" class="editor-foot__delete" @onclick="() => _deleting = true">Delete this break</button>
-        }
     </div>
 </div>
 

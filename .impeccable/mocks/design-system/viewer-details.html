@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Picture viewer: with details</title>
+<link rel="stylesheet" href="kit.css"><script src="icons.js"></script><script src="kit.js"></script>
+<style>
+body { background: var(--sand); padding: 28px 32px; min-height: 100vh; display: grid; grid-template-columns: minmax(0, 1fr) 330px; gap: 32px; align-items: start; }
+.label { margin-bottom: 10px; font-size: var(--text-caption); font-weight: 600; color: var(--ink-2); }
+.win { position: relative; height: 760px; border-radius: 12px; overflow: hidden; background: var(--page); box-shadow: 0 0 0 1px var(--line), var(--lift); }
+.win__bar { height: 30px; background: var(--fill-on-surface); display: flex; align-items: center; gap: 6px; padding: 0 12px; }
+.win__bar i { width: 10px; height: 10px; border-radius: 50%; background: var(--line); }
+.win__under { position: absolute; inset: 30px 0 0 0; display: grid; grid-template-columns: 200px 1fr 380px; }
+.win__under .sb { background: var(--masthead); }
+.win__under .dock { border-left: 1px solid var(--line); padding: 20px; }
+.win__under .dock h3 { font-size: var(--text-title); }
+.win__under .dock p { color: var(--ink-2); font-size: var(--text-caption); margin-top: 6px; }
+.phone { position: relative; width: 330px; height: 714px; border-radius: 40px; overflow: hidden; box-shadow: 0 0 0 8px var(--device-bezel), var(--lift); background: var(--page); }
+.shot { position: relative; width: 100%; height: 100%; background: var(--page); border-radius: 18px; overflow: hidden; }
+.shot__top { height: 16%; background: var(--masthead); }
+.shot__mast { position: absolute; top: 7%; left: 8%; color: var(--on-masthead); display: grid; }
+.shot__mast b { font-size: 1.2em; } .shot__mast span { color: var(--masthead-note); font-size: 0.7em; font-weight: 600; }
+.shot__rows { padding: 6% 8%; display: grid; gap: 14px; }
+.shot__rows div { display: flex; gap: 10px; align-items: center; } .shot__rows i { width: 24px; height: 24px; border-radius: 7px; background: var(--sand); } .shot__rows b { height: 10px; border-radius: 5px; background: var(--line); }
+.shot__flag { position: absolute; left: 8%; right: 8%; bottom: 10%; padding: 10px; border-radius: 10px; background: color-mix(in srgb, var(--danger) 12%, var(--page)); color: var(--danger); font-size: 0.7em; font-weight: 700; }
+.photo { display: block; width: 100%; height: 100%; }
+.thumbs { display: flex; gap: 8px; justify-content: center; }
+.thumbs span { width: 46px; height: 64px; border-radius: 8px; overflow: hidden; opacity: 1; box-shadow: 0 0 0 1px var(--line); }
+.thumbs span.on { box-shadow: 0 0 0 3px var(--marker); }
+.thumbs .shot { border-radius: 0; font-size: 6px; }
+.vbtn { display: inline-grid; place-items: center; width: 44px; height: 44px; border: 0; border-radius: 50%; background: rgb(255 255 255 / 0.12); color: #fff; }
+.vtext { color: rgb(255 255 255 / 0.86); font-size: var(--text-caption); font-weight: 600; }
+
+.lb { position: absolute; inset: 30px 0 0 0; display: grid; grid-template-columns: 1fr 340px; }
+.lb__stage { background: rgb(8 12 22 / 0.97); display: grid; grid-template-rows: auto 1fr auto; padding: 14px 18px 18px; }
+.lb__stage .row2 { display: flex; justify-content: flex-end; gap: 8px; }
+.lb__stage .mid { display: grid; grid-template-columns: 56px 1fr 56px; align-items: center; justify-items: center; min-height: 0; padding: 10px 0; }
+.lb__stage .pic { height: 100%; max-height: 540px; aspect-ratio: 9/19.5; border-radius: 22px; overflow: hidden; font-size: 15px; }
+.lb__side { background: var(--surface); padding: 22px 22px; display: flex; flex-direction: column; gap: 4px; }
+.lb__side h3 { font-size: var(--text-title); letter-spacing: -0.015em; }
+.lb__side .side-facts { margin-top: 14px; }
+.side-facts .facts { grid-template-columns: 1fr; }
+.lb__side .acts { margin-top: auto; display: flex; gap: 8px; flex-wrap: wrap; }
+.pphone { position: absolute; inset: 0; background: #000; display: grid; grid-template-rows: auto 1fr; padding-top: 54px; }
+.pphone__top { display: flex; align-items: center; justify-content: space-between; padding: 0 14px; color: #fff; }
+.pphone__pic { align-self: center; aspect-ratio: 4/3; overflow: hidden; margin-bottom: 220px; }
+.psheet { position: absolute; left: 0; right: 0; bottom: 0; padding: 10px 20px 30px; border-radius: 22px 22px 0 0; background: var(--page); }
+.psheet .grab { width: 38px; height: 5px; border-radius: 3px; background: var(--line); margin: 0 auto 12px; }
+.psheet h3 { font-size: var(--text-title); } .psheet p { color: var(--ink-2); font-size: var(--text-caption); margin-top: 4px; }
+.psheet .acts { display: flex; gap: 8px; margin-top: 14px; }
+</style></head><body><div><p class="label">Admin panel: a feedback ticket's screenshot, opened</p><div class="win"><div class="win__bar"><i></i><i></i><i></i></div><div class="win__under"><div class="sb"></div><div></div><div class="dock"><h3>#23 Can't put Sam on the roster</h3><p>From Jordan Example · Wed 11 Nov</p></div></div>
+<div class="lb"><div class="lb__stage"><div class="row2" style="height:44px"></div>
+<div class="mid"><button class="vbtn"><i data-icon="chevron-left"></i></button><div class="pic"><div class="shot" data-preview-scheme="light"><div class="shot__top"></div><div class="shot__mast"><b>Roster</b><span>Production · this Sunday</span></div>
+<div class="shot__rows"><div><i></i><b style="width:60%"></b></div><div><i></i><b style="width:44%"></b></div><div><i></i><b style="width:70%"></b></div><div><i></i><b style="width:52%"></b></div><div><i></i><b style="width:38%"></b></div></div>
+<div class="shot__flag">Can't put Sam on</div></div></div><button class="vbtn"><i data-icon="chevron-right"></i></button></div>
+<div class="thumbs"><span><div class="shot" data-preview-scheme="light"><div class="shot__top"></div><div class="shot__mast"><b>Roster</b><span>Production · this Sunday</span></div>
+<div class="shot__rows"><div><i></i><b style="width:60%"></b></div><div><i></i><b style="width:44%"></b></div><div><i></i><b style="width:70%"></b></div><div><i></i><b style="width:52%"></b></div><div><i></i><b style="width:38%"></b></div></div>
+<div class="shot__flag">Can't put Sam on</div></div></span><span class="on"><div class="shot" data-preview-scheme="light"><div class="shot__top"></div><div class="shot__mast"><b>Roster</b><span>Production · this Sunday</span></div>
+<div class="shot__rows"><div><i></i><b style="width:60%"></b></div><div><i></i><b style="width:44%"></b></div><div><i></i><b style="width:70%"></b></div><div><i></i><b style="width:52%"></b></div><div><i></i><b style="width:38%"></b></div></div>
+<div class="shot__flag">Can't put Sam on</div></div></span><span><div class="shot" data-preview-scheme="light"><div class="shot__top"></div><div class="shot__mast"><b>Roster</b><span>Production · this Sunday</span></div>
+<div class="shot__rows"><div><i></i><b style="width:60%"></b></div><div><i></i><b style="width:44%"></b></div><div><i></i><b style="width:70%"></b></div><div><i></i><b style="width:52%"></b></div><div><i></i><b style="width:38%"></b></div></div>
+<div class="shot__flag">Can't put Sam on</div></div></span></div></div>
+<aside class="lb__side"><div style="display:flex;align-items:flex-start;gap:8px"><div style="flex:1"><h3>Screenshot 2 of 3</h3><p class="hint" style="margin-top:4px">With #23 Can't put Sam on the roster</p></div><button class="icon-btn" title="Close (Esc)" style="color:var(--ink-2)"><i data-icon="x"></i></button></div>
+<div class="side-facts"><div class="facts"><div class="fact fact--plain"><span class="fact__label">From</span><span class="fact__text">Jordan Example</span></div><div class="fact fact--plain"><span class="fact__label">Sent</span><span class="fact__text">Wed 11 Nov, 9:41 pm</span></div><div class="fact fact--plain"><span class="fact__label">Phone</span><span class="fact__text">iPhone 15 · light mode</span></div><div class="fact fact--plain"><span class="fact__label">Page</span><span class="fact__text">Production → Roster</span></div></div></div><div class="acts"><button class="btn btn--quiet btn--small"><i data-icon="download"></i>Download</button><button class="btn btn--quiet btn--small">Back to the ticket</button></div></aside></div></div></div>
+<div><p class="label">Phone: a photo in a chat, opened</p><div class="phone"><div class="pphone"><div class="pphone__top"><button class="vbtn"><i data-icon="x"></i></button><span class="vtext">1 of 2</span><span style="width:44px"></span></div><div class="pphone__pic"><svg data-preview-scheme="light" class="photo" viewBox="0 0 400 300" preserveAspectRatio="xMidYMid slice" aria-label="Sample photo"><rect width="400" height="300" fill="var(--sand-strong)"/><circle cx="300" cy="80" r="34" fill="var(--marker)"/><path d="M0 230 Q90 150 180 210 T400 190 V300 H0Z" fill="var(--accent)" opacity=".75"/><path d="M0 260 Q120 200 240 250 T400 240 V300 H0Z" fill="var(--masthead)"/></svg></div>
+<div class="psheet"><div class="grab"></div><h3>From Robin Sample</h3><p>Production team · today, 8:12 am</p><div class="acts"><button class="btn btn--quiet btn--small"><i data-icon="download"></i>Save</button><button class="btn btn--quiet btn--small">Show in the chat</button></div></div></div></div></div></body></html>

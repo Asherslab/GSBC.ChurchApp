@@ -10,7 +10,7 @@
         <HubTile Look="@(Look with { Icon = "" })" Layout="@(Span.Rows > 1 ? TileShape.Poster : Span.Columns > 1 ? TileShape.Row : TileShape.Square)" Title="@VerseText" Lines="VerseLines" Class="hub-tile--verse" PlacementId="@Entry.Placement?.Id" />
         break;
     case WaitingTiles.Layouts.Theme:
-        <HubTile Look="Look" Title="Almighty God" Lines="ThemeLines" Class="hub-tile--theme" PlacementId="@Entry.Placement?.Id" />
+        <HubTile Look="Look" Title="Almighty God" Lines="ThemeLines" PlacementId="@Entry.Placement?.Id" />
         break;
     case var _ when Span is { Columns: 1, Rows: 1 }:
         <HubTile Look="Look" Title="@ShortSunday" Lines="[Look.Title]" PlacementId="@Entry.Placement?.Id" />

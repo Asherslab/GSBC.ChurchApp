@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>List and detail: a pane that can open as a page</title>
+<link rel="stylesheet" href="kit.css"><script src="icons.js"></script><script src="kit.js"></script>
+<style>
+.ld { display: grid; grid-template-columns: minmax(0, 1fr) 440px; gap: 0; margin: 0 -40px -64px; border-top: 1px solid var(--line); min-height: calc(100vh - 150px); }
+.ld__list { padding: 16px 32px 32px 40px; min-width: 0; }
+.ld__pane { position: sticky; top: 0; align-self: start; height: calc(100vh - 150px); overflow: auto; border-left: 1px solid var(--line); padding: 20px 28px 24px; display: flex; flex-direction: column; }
+.ld__head { display: flex; align-items: flex-start; gap: 10px; }
+.ld__head h2 { flex: 1; font-size: var(--text-title-lg); letter-spacing: -0.02em; line-height: 1.2; }
+.ld__head p { color: var(--ink-2); font-size: var(--text-caption); margin-top: 4px; }
+.ld__tools { display: flex; gap: 2px; margin-top: -6px; }
+.ld__tools .icon-btn { color: var(--ink-2); }
+.toolbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
+.toolbar .search-field { flex: 1 1 260px; max-width: 360px; }
+.toolbar .filter-chips { flex-wrap: nowrap; }
+.data-table__row[aria-selected="true"] td { background: var(--selected-fill); }
+.pane-section { margin-top: 22px; }
+.pane-section h3 { font-size: var(--text-label); font-weight: 700; color: var(--ink); margin-bottom: 8px; }
+.pane-foot { margin-top: auto; padding-top: 16px; border-top: 1px solid var(--line); display: flex; gap: 8px; align-items: center; }
+.pane-foot .grow { flex: 1; }
+.btn--danger-quiet { background: none; color: var(--danger); padding: 0 6px; }
+.callout-hint { margin-top: 10px; color: var(--ink-3); font-size: var(--text-caption); display: flex; gap: 6px; align-items: center; }
+</style></head>
+<body class="sk-admin" data-current="People">
+<main>
+  <header class="title-band"><div class="title-band__text"><h1 class="title-band__title">People</h1><p class="title-band__lead">Everyone with an account. Choose someone to see them here; open them as a page when there's a lot to do.</p></div>
+    <div class="title-band__actions"><button class="btn btn--primary"><i data-icon="plus"></i>Add someone</button></div></header>
+  <div class="ld">
+    <div class="ld__list">
+      <div class="toolbar">
+        <label class="search-field"><i data-icon="search"></i><input class="search-field__input" placeholder="Find someone by name or email"></label>
+        <div class="filter-chips"><button class="filter-chip filter-chip--on">Everyone<span class="filter-chip__count">22</span></button><button class="filter-chip">Not invited yet<span class="filter-chip__count">13</span></button><button class="filter-chip">No passkey yet<span class="filter-chip__count">6</span></button></div>
+      </div>
+      <div class="data-table"><div class="data-table__scroll"><table class="data-table__table">
+        <thead><tr><th>Name</th><th>Email</th><th>Account</th><th class="num">Joined</th></tr></thead>
+        <tbody>
+          <tr class="data-table__row"><td><span class="cell-strong">Alex Sample</span></td><td><span class="quiet">alex@example.com</span></td><td><span class="pill pill--quiet">Not invited yet</span></td><td class="num">Wed 11 Nov</td></tr>
+          <tr class="data-table__row" aria-selected="true"><td><span class="cell-strong">Jordan Example</span></td><td><span class="quiet">jordan@example.com</span></td><td><span class="quiet">Ready</span></td><td class="num">Sun 1 Nov</td></tr>
+          <tr class="data-table__row"><td><span class="cell-strong">Robin Sample</span></td><td><span class="quiet">robin@example.com</span></td><td><span class="pill">No passkey yet</span></td><td class="num">Mon 2 Nov</td></tr>
+          <tr class="data-table__row"><td><span class="cell-strong">Sam Example</span></td><td><span class="quiet">sam@example.com</span></td><td><span class="quiet">Ready</span></td><td class="num">Fri 30 Oct</td></tr>
+          <tr class="data-table__row"><td><span class="cell-strong">Taylor Sample</span></td><td><span class="quiet">taylor@example.com</span></td><td><span class="pill pill--quiet">Not invited yet</span></td><td class="num">Thu 29 Oct</td></tr>
+          <tr class="data-table__row"><td><span class="cell-strong">Casey Example</span></td><td><span class="quiet">casey@example.com</span></td><td><span class="quiet">Ready</span></td><td class="num">Tue 27 Oct</td></tr>
+        </tbody></table></div></div>
+    </div>
+    <aside class="ld__pane">
+      <div class="ld__head"><div style="flex:1"><h2>Jordan Example</h2><p>jordan@example.com · joined Sun 1 Nov</p></div>
+        <div class="ld__tools"><button class="icon-btn" title="Open as a page"><i data-icon="maximize-2"></i></button><button class="icon-btn" title="Close"><i data-icon="x"></i></button></div></div>
+      <div class="pane-section"><h3>Roles</h3>
+        <div class="list"><div class="row"><div class="row__body"><div class="row__title">Leader</div><div class="row__subtitle">Impact Kids</div></div></div><div class="row"><div class="row__body"><div class="row__title">Member</div><div class="row__subtitle">Production</div></div></div></div></div>
+      <div class="pane-section"><h3>Family</h3><p class="hint">Looks after 2 children. Linked to 1 parent.</p></div>
+      <div class="pane-section"><h3>Account</h3><p class="hint">Signed in on 2 phones. Last seen today.</p></div>
+      <p class="callout-hint"><i data-icon="maximize-2"></i>Lots to do? Open Jordan as a page: the same tabs, full width, with its own search.</p>
+      <div class="pane-foot"><button class="btn btn--quiet">Send a recovery link</button><span class="grow"></span><button class="btn btn--danger-quiet">Turn off…</button></div>
+    </aside>
+  </div>
+</main>
+</body></html>

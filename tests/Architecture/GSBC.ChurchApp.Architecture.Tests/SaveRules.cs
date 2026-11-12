@@ -9,7 +9,7 @@ public sealed partial class SaveRules
         ["src/Features/Configuration/GSBC.ChurchApp.Features.Configuration.Client/Components/Drafts/ForEveryoneSheet.razor"] = "a one-step choice of how a draft goes out",
         ["src/Features/Accounts/GSBC.ChurchApp.Features.Accounts.Admin/Pages/People.razor"] = "a list with a search and filters",
         ["src/Features/Events/GSBC.ChurchApp.Features.Events.Client/TellPeopleSheet.razor"] = "send or skip, after the event is already saved",
-        ["src/Hosts/App/GSBC.ChurchApp.Hosts.App/Pages/Gallery.razor"] = "the component gallery, which keeps nothing",
+        ["src/Platform/GSBC.ChurchApp.Platform.Ui/DesignGallery.razor"] = "the component gallery, which keeps nothing",
     };
 
     [Fact]

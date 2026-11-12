@@ -1,3 +1,4 @@
+@using GSBC.ChurchApp.Platform.Icons
 @inject IRosterReads Reads
 @inject RosterWrites Writes
 @inject TimeProvider Clock
@@ -81,8 +82,7 @@
                 {
                     <div class="roster-tools">
                         <Button Icon="plus" OnClick="() => _adding = true">Add a date</Button>
-                        <Button Variant="ButtonVariant.Quiet" Icon="list" OnClick="() => _positions = true">Positions</Button>
-                        <Button Variant="ButtonVariant.Quiet" Icon="sliders" OnClick="() => _settings = true">How it works</Button>
+                        <Menu Label="More for the roster" Items="RosterTools" />
                     </div>
                 }
                 @if (view.MayEdit && view.Positions.Count == 0)
@@ -179,4 +179,10 @@
         if (_live is not null)
             await _live.ReloadAsync();
     }
+
+    private IReadOnlyList<MenuItem> RosterTools =>
+    [
+        this.Item("Positions", () => { _positions = true; return Task.CompletedTask; }, "list"),
+        this.Item("How it works", () => { _settings = true; return Task.CompletedTask; }, AppIcons.Settings),
+    ];
 }

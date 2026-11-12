@@ -1,0 +1,130 @@
+@implements IDisposable
+@inject Shell Shell
+
+<div class="menu @(Block ? "menu--block" : "") @Class" @onkeydown="OnKeyAsync">
+    @if (Text is null)
+    {
+        <Button Variant="Variant" Small="Small" Icon="@Icon" AriaLabel="@Label" Tooltip="@Label" Expanded="_open" Disabled="Disabled" OnClick="ToggleAsync" />
+    }
+    else
+    {
+        <Button Variant="Variant" Small="Small" Block="Block" Icon="@Icon" AriaLabel="@(Chevron ? $"{Label}: {Text}" : null)" Expanded="_open" Disabled="Disabled" OnClick="ToggleAsync">
+            <span class="menu__text-label">@Text</span>
+            @if (Chevron)
+            {
+                <GSBC.ChurchApp.Platform.Ui.Icon Name="chevron-down" Size="IconSize.Small" Class="menu__chevron" />
+            }
+        </Button>
+    }
+    @if (_open)
+    {
+        <button type="button" class="menu__away" tabindex="-1" aria-label="Close the menu" @onclick="Close"></button>
+        <div class="menu__panel @(AlignStart ? "menu__panel--start" : "")" role="menu" aria-label="@Label">
+            @for (int index = 0; index < Items.Count; index++)
+            {
+                MenuItem item = Items[index];
+                int at = index;
+                @if (item.StartsGroup && index > 0)
+                {
+                    <div class="menu__rule" role="separator"></div>
+                }
+                <button type="button" role="@(item.Checked ? "menuitemradio" : "menuitem")" aria-checked="@(item.Checked ? "true" : null)" disabled="@item.Disabled"
+                        class="menu__item @(item.Danger ? "menu__item--danger" : "")" tabindex="@(at == _active ? 0 : -1)" @ref="_items[at]" @onclick="() => ChooseAsync(item)">
+                    <span class="menu__lead">
+                        @if (item.Checked)
+                        {
+                            <GSBC.ChurchApp.Platform.Ui.Icon Name="check" Size="IconSize.Small" />
+                        }
+                        else if (item.Icon is not null)
+                        {
+                            <GSBC.ChurchApp.Platform.Ui.Icon Name="@item.Icon" Size="IconSize.Small" />
+                        }
+                    </span>
+                    <span class="menu__text">
+                        <span class="menu__label">@item.Label</span>
+                        @if (item.Detail is not null)
+                        {
+                            <span class="menu__detail">@item.Detail</span>
+                        }
+                    </span>
+                </button>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    private readonly Dictionary<int, ElementReference> _items = [];
+    private bool _open;
+    private bool _focusPending;
+    private int _active;
+
+    [Parameter, EditorRequired] public required string Label { get; set; }
+    [Parameter, EditorRequired] public required IReadOnlyList<MenuItem> Items { get; set; }
+    [Parameter] public string? Text { get; set; }
+    [Parameter] public string? Icon { get; set; } = "ellipsis";
+    [Parameter] public ButtonVariant Variant { get; set; } = ButtonVariant.Quiet;
+    [Parameter] public bool Small { get; set; }
+    [Parameter] public bool AlignStart { get; set; }
+    [Parameter] public bool Block { get; set; }
+    [Parameter] public bool Chevron { get; set; }
+    [Parameter] public bool Disabled { get; set; }
+    [Parameter] public string? Class { get; set; }
+
+    private Task ToggleAsync()
+    {
+        if (_open)
+        {
+            Close();
+            return Task.CompletedTask;
+        }
+        _open = true;
+        _active = Math.Max(0, Items.ToList().FindIndex(item => item.Checked));
+        _focusPending = true;
+        return Task.CompletedTask;
+    }
+
+    private void Close() => _open = false;
+
+    private async Task ChooseAsync(MenuItem item)
+    {
+        _open = false;
+        await Shell.HapticAsync();
+        await item.OnChoose.InvokeAsync();
+    }
+
+    private async Task OnKeyAsync(KeyboardEventArgs key)
+    {
+        if (!_open)
+            return;
+        int? next = key.Key switch
+        {
+            "Escape" => -1,
+            "ArrowDown" => (_active + 1) % Items.Count,
+            "ArrowUp" => (_active - 1 + Items.Count) % Items.Count,
+            "Home" => 0,
+            "End" => Items.Count - 1,
+            _ => null,
+        };
+        if (next is -1)
+        {
+            Close();
+            return;
+        }
+        if (next is { } at)
+        {
+            _active = at;
+            await _items[at].FocusAsync();
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!_focusPending || !_items.TryGetValue(_active, out ElementReference item))
+            return;
+        _focusPending = false;
+        await item.FocusAsync();
+    }
+
+    public void Dispose() => _items.Clear();
+}

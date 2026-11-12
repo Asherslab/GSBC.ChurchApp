@@ -1,0 +1,107 @@
+@typeparam TItem
+@typeparam TColumn
+
+<div class="board @(Compact ? "board--compact" : "") @Class" role="list" aria-label="@Label">
+    @for (int index = 0; index < Columns.Count; index++)
+    {
+        BoardColumn<TColumn> column = Columns[index];
+        List<TItem> items = Items.Where(item => Same(ColumnOf(item), column.Value)).ToList();
+        string id = $"{_id}-{index}";
+        bool dropping = _dragging is not null && _dropping is { } target && Same(target, column.Value);
+        if (column.Folds && !_unfolded.Contains(column.Value))
+        {
+            <button type="button" class="board__col board__col--folded @(dropping ? "is-dropping" : "")" role="listitem" aria-expanded="false"
+                    @onclick="() => Unfold(column.Value)" @ondragover:preventDefault="Moves" @ondragenter="() => Enter(column.Value)" @ondrop="() => DropAsync(column.Value)">
+                <span>@column.Title · @items.Count</span>
+            </button>
+            continue;
+        }
+        <section class="board__col @(column.Narrow ? "board__col--narrow" : "") @(dropping ? "is-dropping" : "")" role="listitem" aria-labelledby="@id"
+                 @ondragover:preventDefault="Moves" @ondragenter="() => Enter(column.Value)" @ondrop="() => DropAsync(column.Value)">
+            <h2 class="board__head" id="@id">
+                @if (column.Folds)
+                {
+                    <button type="button" class="board__fold" aria-expanded="true" @onclick="() => Fold(column.Value)">@column.Title</button>
+                }
+                else
+                {
+                    <span>@column.Title</span>
+                }
+                <span class="board__count">@items.Count</span>
+            </h2>
+            @ColumnExtra?.Invoke(column.Value)
+            @foreach (TItem item in items.Take(column.Shown ?? int.MaxValue))
+            {
+                <div class="board__slot" @key="item" draggable="@(Moves ? "true" : "false")" aria-keyshortcuts="@(Moves ? "Alt+ArrowLeft Alt+ArrowRight" : null)"
+                     @ondragstart="() => _dragging = item" @onkeydown="args => KeyAsync(args, item, column.Value)">
+                    @Card(item)
+                </div>
+            }
+            @if (items.Count == 0)
+            {
+                <p class="board__empty">@column.Empty</p>
+            }
+            else if (column is { Shown: { } shown, More: { } more } && items.Count > shown)
+            {
+                <p class="board__more">@more(items.Count - shown)</p>
+            }
+            @if (column.Addable && OnAdd.HasDelegate)
+            {
+                <button type="button" class="board__add" @onclick="() => OnAdd.InvokeAsync(column.Value)"><Icon Name="plus" Size="IconSize.Small" />@AddLabel</button>
+            }
+        </section>
+    }
+</div>
+
+@code {
+    private readonly string _id = $"board-{Guid.NewGuid():N}"[..14];
+    private readonly HashSet<TColumn> _unfolded = [];
+    private TItem? _dragging;
+    private TColumn? _dropping;
+
+    [Parameter, EditorRequired] public required string Label { get; set; }
+    [Parameter, EditorRequired] public required IReadOnlyList<BoardColumn<TColumn>> Columns { get; set; }
+    [Parameter, EditorRequired] public required IReadOnlyList<TItem> Items { get; set; }
+    [Parameter, EditorRequired] public required Func<TItem, TColumn> ColumnOf { get; set; }
+    [Parameter, EditorRequired] public required RenderFragment<TItem> Card { get; set; }
+    [Parameter] public RenderFragment<TColumn>? ColumnExtra { get; set; }
+    [Parameter] public EventCallback<BoardMove<TItem, TColumn>> OnMove { get; set; }
+    [Parameter] public EventCallback<TColumn> OnAdd { get; set; }
+    [Parameter] public string AddLabel { get; set; } = "Add one here";
+    [Parameter] public bool Compact { get; set; }
+    [Parameter] public string? Class { get; set; }
+
+    private bool Moves => OnMove.HasDelegate;
+
+    private static bool Same(TColumn a, TColumn b) => EqualityComparer<TColumn>.Default.Equals(a, b);
+
+    private void Unfold(TColumn column) => _unfolded.Add(column);
+
+    private void Fold(TColumn column) => _unfolded.Remove(column);
+
+    private void Enter(TColumn column)
+    {
+        if (Moves && _dragging is not null)
+            _dropping = column;
+    }
+
+    private async Task DropAsync(TColumn column)
+    {
+        TItem? moving = _dragging;
+        (_dragging, _dropping) = (default, default);
+        if (moving is not null)
+            await MoveAsync(moving, column);
+    }
+
+    private async Task KeyAsync(KeyboardEventArgs args, TItem item, TColumn from)
+    {
+        if (!Moves || !args.AltKey || args.Key is not ("ArrowLeft" or "ArrowRight"))
+            return;
+        int at = Columns.ToList().FindIndex(column => Same(column.Value, from)) + (args.Key == "ArrowRight" ? 1 : -1);
+        if (at >= 0 && at < Columns.Count)
+            await MoveAsync(item, Columns[at].Value);
+    }
+
+    private Task MoveAsync(TItem item, TColumn to) =>
+        Same(ColumnOf(item), to) ? Task.CompletedTask : OnMove.InvokeAsync(new BoardMove<TItem, TColumn>(item, to));
+}

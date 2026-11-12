@@ -11,6 +11,8 @@
   --tile-soft-ink: 78%;
   --tile-warm-go: var(--marker-ink);
   --device-bezel: #000000;
+  --group-ground: var(--sand);
+  --group: var(--page);
   --selected-fill: var(--sand);
   --fill-on-surface: var(--sand);
   --field: var(--sand);
@@ -67,9 +69,22 @@
   --text-pill: 0.7059rem;
   --text-micro: 0.6471rem;
 
-  --gutter: 20px;
+  --space-3xs: 2px;
+  --space-2xs: 4px;
+  --space-xs: 6px;
+  --space-sm: 8px;
+  --space-md: 12px;
+  --space-lg: 16px;
+  --space-xl: 20px;
+  --space-2xl: 24px;
+  --space-3xl: 32px;
+  --space-4xl: 48px;
+
+  --gutter: var(--space-xl);
   --section: 30px;
+  --section-first: 22px;
   --stack: 14px;
+  --after-tabs: var(--space-xl);
   --touch: 44px;
   --row: 56px;
   --radius-inner: 9px;
@@ -99,6 +114,8 @@
   --tile-warm-base: var(--on-marker);
   --tile-soft-ink: 92%;
   --tile-warm-go: var(--ink);
+  --group-ground: var(--page);
+  --group: var(--surface);
   --selected-fill: var(--segment-on);
   --fill-on-surface: var(--sand-strong);
   --field: #2d374d;
@@ -133,4 +150,9 @@
   --swatch-brand-1: #2a3d5e;
   --swatch-brand-2: #009c8f;
   --swatch-brand-3: #e7ae74;
+  --viewer-backdrop: rgb(8 12 22 / 0.97);
+  --viewer-ink: #ffffff;
+  --viewer-ink-2: rgb(255 255 255 / 0.78);
+  --viewer-control: rgb(255 255 255 / 0.12);
+  --viewer-control-hover: rgb(255 255 255 / 0.22);
 }

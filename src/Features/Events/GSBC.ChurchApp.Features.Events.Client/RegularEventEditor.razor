@@ -10,7 +10,7 @@
 
 @if (InPanel)
 {
-    <div class="regular-page regular-page--panel"><EditScope Edited="() => { }">@Body</EditScope></div>
+    <div class="regular-page"><EditScope Edited="() => { }">@Body</EditScope></div>
 }
 else
 {
@@ -231,22 +231,13 @@ else
         else
         {
             <div class="regular-head">
-                @if (InPanel)
-                {
-                    <div class="regular-head__actions">
-                        <span class="regular-head__state">@ShowingWords(draft)</span>
-                        @if (_kept.By.Length == 0 && MustAsk && !draft.IsNew && !draft.Asked && !draft.WasShown)
-                        {
-                            <Button Variant="ButtonVariant.GhostOnMasthead" Small="true" Icon="send" OnClick="AskAsync">Ask to publish</Button>
-                        }
-                        @if (_kept.By.Length == 0)
-                        {
-                            @SaveButton(draft, onMasthead: true)
-                        }
-                    </div>
-                }
-                <EventHead Label="@(Fields.Label.Length > 0 ? Fields.Label : CalendarName)" Title="@(Fields.Title.Length > 0 ? Fields.Title : "New regular event")" Compact="InPanel">
+                <EventHead Label="@(Fields.Label.Length > 0 ? Fields.Label : CalendarName)" Title="@(Fields.Title.Length > 0 ? Fields.Title : "New regular event")" Compact="InPanel"
+                           Actions="@(_kept.By.Length > 0 ? null : RegularActions(draft))">
                     <p class="event-head__when regular-head__pattern"><Icon Name="repeat" Size="IconSize.Small" />@Pattern(draft)</p>
+                    @if (InPanel)
+                    {
+                        <p class="event-head__label">@ShowingWords(draft)</p>
+                    }
                 </EventHead>
                 <DateStrip Dates="_dates" Today="Today" Selected="@SelectedDate" Picked="PickAsync" Hint="@(_kept.By.Length > 0 ? "Choose a date to see it" : "Choose a date to change only that date")"
                            Empty="@(draft.IsNew ? "Its dates show here once it's added." : "It has no more dates. Change how it repeats to carry it on.")" />
@@ -291,35 +282,30 @@ else
                     {
                         @Organisers(regularEventId)
                     }
-                    @if (InPanel && !draft.IsNew)
-                    {
-                        <button type="button" class="editor-foot__delete" @onclick="() => OpenAsync(EditorSheet.Delete)">Delete the regular event</button>
-                    }
                 </section>
             </div>
-            @if (!InPanel)
-            {
-                <div class="editor-foot">
+            <div class="editor-foot @(InPanel ? "editor-foot--panel" : "")">
+                @if (!InPanel)
+                {
                     <Notice Tone="NoticeTone.Warning" Text="@_problem" />
-                    <div class="editor-foot__actions">@SaveButton(draft, onMasthead: false)</div>
-                    @if (MustAsk && !draft.IsNew && !draft.Asked && !draft.WasShown)
-                    {
-                        <Button Variant="ButtonVariant.Quiet" Small="true" Icon="send" OnClick="AskAsync">Ask to publish</Button>
-                    }
-                    @if (!draft.IsNew)
-                    {
-                        <button type="button" class="editor-foot__delete" @onclick="() => OpenAsync(EditorSheet.Delete)">Delete the regular event</button>
-                    }
+                }
+                <div class="editor-foot__actions">
+                    <SaveBar Block="!InPanel" New="draft.IsNew" Label="@(draft.IsNew ? "Add the regular event" : "Save every date")" Busy="_saving" OnCancel="LeaveAsync"
+                             Blocked="@(Fields.Title.Trim().Length == 0 ? $"Give it a title to {(draft.IsNew ? "add" : "save")} it." : null)" State="SaveLine" SavedText="@SavedWords"
+                             WaitingText="@EditWaiting.WaitingWords" FailedText="@EditWaiting.FailedWords" Detail="@Waiting?.Problem" Retry="() => Editing.RetryAsync(ItemKey)"
+                             OnSave="() => SaveAsync(keepOwnConfirmed: false)" />
                 </div>
-            }
+            </div>
         }
     </text>;
 
-    private RenderFragment SaveButton(EventDraft draft, bool onMasthead) =>
-        @<SaveBar Block="@(!onMasthead)" OnMasthead="onMasthead" Label="@(draft.IsNew ? "Add the regular event" : "Save every date")" Busy="_saving"
-                  Blocked="@(Fields.Title.Trim().Length == 0 ? $"Give it a title to {(draft.IsNew ? "add" : "save")} it." : null)" State="SaveLine" SavedText="@SavedWords"
-                  WaitingText="@EditWaiting.WaitingWords" FailedText="@EditWaiting.FailedWords" Detail="@Waiting?.Problem" Retry="() => Editing.RetryAsync(ItemKey)"
-                  OnSave="() => SaveAsync(keepOwnConfirmed: false)" />;
+    private IReadOnlyList<MenuItem> RegularActions(EventDraft draft) => draft.IsNew
+        ? []
+        :
+        [
+            .. MustAsk && !draft.Asked && !draft.WasShown ? [this.Item("Ask to publish", AskAsync, "send", "The calendar's publishers are told")] : Array.Empty<MenuItem>(),
+            this.Item("Delete the regular event", () => OpenAsync(EditorSheet.Delete), "trash-2", danger: true, startsGroup: true),
+        ];
 
     private string? _stored;
     private bool _leaving;

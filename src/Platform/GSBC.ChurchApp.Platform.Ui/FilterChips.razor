@@ -1,11 +1,19 @@
 @typeparam TValue
 
-<div class="filter-chips" role="group" aria-label="@Label">
+<div class="filter-chips @(Rail ? "filter-chips--rail" : "")" role="group" aria-label="@Label">
+    @if (Rail && ShowLabel)
+    {
+        <p class="filter-chips__label" aria-hidden="true">@Label</p>
+    }
     @foreach (FilterOption<TValue> option in Options)
     {
         bool on = EqualityComparer<TValue>.Default.Equals(option.Value, Value);
         <button type="button" class="filter-chip @(on ? "filter-chip--on" : "")" aria-pressed="@(on ? "true" : "false")" @onclick="() => ValueChanged.InvokeAsync(option.Value)">
-            @option.Label
+            @if (option.Icon is not null)
+            {
+                <Icon Name="@option.Icon" Size="IconSize.Small" />
+            }
+            <span class="filter-chip__label">@option.Label</span>
             @if (option.Count is { } count)
             {
                 <span class="filter-chip__count">@count</span>
@@ -19,4 +27,6 @@
     [Parameter, EditorRequired] public required IReadOnlyList<FilterOption<TValue>> Options { get; set; }
     [Parameter] public TValue Value { get; set; } = default!;
     [Parameter] public EventCallback<TValue> ValueChanged { get; set; }
+    [Parameter] public bool Rail { get; set; }
+    [Parameter] public bool ShowLabel { get; set; } = true;
 }

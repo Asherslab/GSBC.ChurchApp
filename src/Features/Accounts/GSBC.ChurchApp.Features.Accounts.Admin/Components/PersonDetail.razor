@@ -3,6 +3,12 @@
 @inject AccountsOfficeClient Office
 @inject TimeProvider Clock
 
+<Can Permission="AccountsPermissions.Manage">
+    <div class="ui-tools">
+        <Menu Label="@($"More for {Person.DisplayName}'s account")" Text="More" Items="Actions" Disabled="_busy" />
+    </div>
+</Can>
+
 <dl class="facts">
     <dt>Account</dt>
     <dd><PersonState Person="Person" Invitation="Invitation" /></dd>
@@ -32,9 +38,8 @@
         <Can Permission="AccountsPermissions.Manage">
             <div class="panel-actions">
                 <Button Icon="send" Busy="_busy" OnClick="ResendAsync">Send the invitation</Button>
-                <Button Variant="ButtonVariant.Danger" Busy="_busy" OnClick="() => _withdrawing = true">Remove them</Button>
             </div>
-            <p class="panel-hint">The invitation is an email with a link that works for 7 days. Removing them takes away their account and anything they were given.</p>
+            <p class="panel-hint">The invitation is an email with a link that works for 7 days. Removing them, under More, takes away their account and anything they were given.</p>
         </Can>
     </section>
 }
@@ -57,9 +62,8 @@ else if (Invitation is not null)
             <Notice Text="@_sent" />
             <div class="panel-actions">
                 <Button Variant="ButtonVariant.Quiet" Icon="send" Busy="_busy" OnClick="ResendAsync">Send it again</Button>
-                <Button Variant="ButtonVariant.Danger" Busy="_busy" OnClick="() => _withdrawing = true">Withdraw the invitation</Button>
             </div>
-            <p class="panel-hint">Sending it again makes a new link that works for 7 days. Withdrawing stops the link and removes the account they haven't set up.</p>
+            <p class="panel-hint">Sending it again makes a new link that works for 7 days. Withdrawing it, under More, stops the link and removes the account they haven't set up.</p>
         </Can>
     </section>
 }
@@ -77,18 +81,6 @@ else if (Invitation is not null)
             }
             <Button Variant="ButtonVariant.Quiet" Icon="link" Busy="_busy" OnClick="IssueAsync">@(_link is null ? "Make a recovery link" : "Make a new link")</Button>
         </section>
-
-        <section class="panel-section" aria-labelledby="switch-@Person.Id">
-            <h3 class="panel-subtitle" id="switch-@Person.Id">@(Person.Disabled ? "Turned off" : "Turn the account off")</h3>
-            <p class="panel-lead">@(Person.Disabled ? "They can't sign in. Turning it back on lets them use their passkey again." : "They're signed out everywhere and can't sign in until it's turned back on. Nothing they made is deleted.")</p>
-            <Button Variant="@(Person.Disabled ? ButtonVariant.Quiet : ButtonVariant.Danger)" Busy="_busy" OnClick="ToggleAsync">@(Person.Disabled ? "Turn it back on" : "Turn the account off")</Button>
-        </section>
-
-        <section class="panel-section" aria-labelledby="delete-@Person.Id">
-            <h3 class="panel-subtitle" id="delete-@Person.Id">Delete the account</h3>
-            <p class="panel-lead">For good: they can't sign in with it again. Turning it off is the way to pause it.</p>
-            <Button Variant="ButtonVariant.Danger" Busy="_busy" OnClick="() => _deleting = true">Delete the account…</Button>
-        </section>
     }
 </Can>
 
@@ -99,8 +91,8 @@ else if (Invitation is not null)
     <Sheet Open="_withdrawing" OpenChanged="open => _withdrawing = open" Title="@($"Remove {Person.DisplayName}?")"
            Lead="Their account is removed, with the roles, ministries and families they were given. They never hear about it. You can add them again.">
         <Actions>
-            <Button Variant="ButtonVariant.Quiet" OnClick="() => _withdrawing = false">Keep them</Button>
             <Button Variant="ButtonVariant.Danger" Busy="_busy" OnClick="WithdrawAsync">Remove them</Button>
+            <Button Variant="ButtonVariant.Quiet" OnClick="() => _withdrawing = false">Keep them</Button>
         </Actions>
     </Sheet>
 }
@@ -109,8 +101,8 @@ else
     <Sheet Open="_withdrawing" OpenChanged="open => _withdrawing = open" Title="@($"Withdraw {Person.DisplayName}'s invitation?")"
            Lead="The link in their email stops working and the account they haven't set up is removed. You can invite them again.">
         <Actions>
-            <Button Variant="ButtonVariant.Quiet" OnClick="() => _withdrawing = false">Keep it</Button>
             <Button Variant="ButtonVariant.Danger" Busy="_busy" OnClick="WithdrawAsync">Withdraw it</Button>
+            <Button Variant="ButtonVariant.Quiet" OnClick="() => _withdrawing = false">Keep it</Button>
         </Actions>
     </Sheet>
 }
@@ -142,6 +134,25 @@ else
     private string? _sent;
     private bool _withdrawing;
     private bool _deleting;
+
+    private IReadOnlyList<MenuItem> Actions => Invitation switch
+    {
+        { Held: true } => [this.Item("Remove them…", Ask(() => _withdrawing = true), "user-x", "Takes away their account and anything they were given", danger: true)],
+        not null => [this.Item("Withdraw the invitation…", Ask(() => _withdrawing = true), "user-x", "The link stops working", danger: true)],
+        _ =>
+        [
+            Person.Disabled
+                ? this.Item("Turn the account back on", ToggleAsync, "user-check", "They can sign in with their passkey again")
+                : this.Item("Turn the account off", ToggleAsync, "user-x", "Signs them out everywhere; nothing they made is deleted", danger: true),
+            this.Item("Delete the account…", Ask(() => _deleting = true), "trash-2", "For good: they can't sign in with it again", danger: true, startsGroup: true),
+        ],
+    };
+
+    private static Func<Task> Ask(Action open) => () =>
+    {
+        open();
+        return Task.CompletedTask;
+    };
 
     private bool InvitationExpired => Invitation is { } invitation && invitation.ExpiresAt <= Clock.GetUtcNow().UtcDateTime;
 

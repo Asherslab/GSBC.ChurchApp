@@ -15,13 +15,16 @@
     </Actions>
 </TitleBand>
 
-<SplitView Detail="@Detail" DetailLabel="Add someone">
-    <LiveData @ref="_live" TValue="PeopleView" Feeds="[AccountsFeeds.People]" Load="LoadAsync" FailedTitle="Can't load people right now">
+<LiveData @ref="_live" TValue="PeopleView" Feeds="[AccountsFeeds.People]" Load="LoadAsync" FailedTitle="Can't load people right now">
+    <Workbench Detail="@Detail" DetailLabel="Add someone" FoldAside="true" AsideLabel="Find and show">
+        <Aside>
+            <SearchField Label="Find someone" Placeholder="Name or email" Value="@_query" ValueChanged="SearchAsync" />
+            <FilterChips TValue="PeopleFilter" Label="Show" Rail="true" Options="Filters(context.Value)" @bind-Value="_filter" />
+        </Aside>
+        <ChildContent>
         <DataTable TItem="PersonInfo" Label="People" Items="Shown(context.Value)" Columns="Columns" Key="person => person.Id"
                    SelectedChanged="Open" SortColumn="0">
             <Toolbar>
-                <SearchField Label="Find someone" Placeholder="Find someone by name or email" Value="@_query" ValueChanged="SearchAsync" />
-                <FilterChips TValue="PeopleFilter" Label="Show" Options="Filters(context.Value)" @bind-Value="_filter" />
                 @if (_filter == PeopleFilter.NotInvitedYet && context.Value.NotInvitedYet.Count > 0 && Access.Can(AccountsPermissions.Manage))
                 {
                     <Button Icon="send" OnClick="() => AskToSendAll(context.Value.NotInvitedYet.Count)">Send @Invitations(context.Value.NotInvitedYet.Count)…</Button>
@@ -42,8 +45,9 @@
                 }
             </Empty>
         </DataTable>
-    </LiveData>
-</SplitView>
+        </ChildContent>
+    </Workbench>
+</LiveData>
 
 <Sheet Open="_sendingAll" OpenChanged="open => _sendingAll = open" Title="@($"Send {Invitations(_waiting)}?")">
     <ChildContent>

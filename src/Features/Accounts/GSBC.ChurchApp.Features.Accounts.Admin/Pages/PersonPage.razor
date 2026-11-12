@@ -35,7 +35,7 @@
         <TabStrip TValue="string" Label="@($"About {person.DisplayName}")" Options="Tabs.Select(tab => new TabOption<string>(tab.Slug, tab.Title)).ToList()"
                   Value="@Shown.Slug" ValueChanged="ShowTab" />
 
-        <div class="person-page__tab" role="tabpanel">
+        <div role="tabpanel">
             @if (Shown.Slug == AccountTab)
             {
                 <div class="person-page__account">

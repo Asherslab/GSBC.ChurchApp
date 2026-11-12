@@ -46,7 +46,7 @@
         @if (Current?.At is { } at)
         {
             <div class="ui-after">
-                <TextField Label="Date and time" Type="datetime-local" Value="@Local(at)" ValueChanged="SetDateAsync" />
+                <DateTimeField Label="Date and time" Value="@Local(at)" ValueChanged="SetDateAsync" />
             </div>
         }
     </Section>

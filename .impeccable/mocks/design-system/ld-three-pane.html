@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>List and detail: filters, list and record</title>
+<link rel="stylesheet" href="kit.css"><script src="icons.js"></script><script src="kit.js"></script>
+<style>
+.admin-main { padding: 0 !important; }
+.wb { display: grid; grid-template-columns: 240px minmax(0, 1fr) 400px; min-height: 100vh; }
+.wb__rail { background: var(--sand); padding: 24px 18px 32px; display: grid; align-content: start; gap: 18px; }
+.wb__rail h1 { font-size: var(--text-title-lg); letter-spacing: -0.02em; }
+.wb__rail p { color: var(--ink-2); font-size: var(--text-caption); margin-top: 4px; }
+.rail-group h2 { font-size: var(--text-pill); font-weight: 700; color: var(--ink-3); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+.rail-item { display: flex; align-items: center; gap: 8px; min-height: 36px; padding: 0 10px; border-radius: var(--radius-inner); font-size: var(--text-label); font-weight: 600; color: var(--ink-2); }
+.rail-item .n { margin-left: auto; color: var(--ink-3); font-variant-numeric: tabular-nums; font-weight: 600; }
+.rail-item.on { background: var(--segment-on); color: var(--ink); box-shadow: var(--segment-shadow); }
+.wb__list { padding: 24px 24px 32px; min-width: 0; }
+.wb__list .head { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+.wb__list .head h2 { flex: 1; font-size: var(--text-title); }
+.wb__list .search-field { margin-bottom: 12px; }
+.data-table__row[aria-selected="true"] td { background: var(--selected-fill); }
+.wb__rec { border-left: 1px solid var(--line); padding: 24px 24px; display: flex; flex-direction: column; }
+.rec-head { display: flex; align-items: flex-start; gap: 10px; }
+.rec-head h2 { font-size: var(--text-title-lg); letter-spacing: -0.02em; line-height: 1.2; }
+.rec-head p { color: var(--ink-2); font-size: var(--text-caption); margin-top: 4px; }
+.rec-head .tools { margin-left: auto; margin-top: -6px; display: flex; }
+.rec-head .icon-btn { color: var(--ink-2); }
+.pane-section { margin-top: 22px; }
+.pane-section h3 { font-size: var(--text-label); font-weight: 700; margin-bottom: 8px; }
+.rec-foot { margin-top: auto; padding-top: 16px; border-top: 1px solid var(--line); display: flex; gap: 8px; align-items: center; }
+.rec-foot .grow { flex: 1; }
+.btn--danger-quiet { background: none; color: var(--danger); padding: 0 6px; }
+</style></head>
+<body class="sk-admin" data-current="People">
+<main>
+  <div class="wb">
+    <aside class="wb__rail">
+      <div><h1>People</h1><p>Everyone with an account.</p></div>
+      <button class="btn btn--primary"><i data-icon="plus"></i>Add someone</button>
+      <div class="rail-group"><h2>Show</h2>
+        <div class="rail-item on">Everyone<span class="n">22</span></div>
+        <div class="rail-item">Not invited yet<span class="n">13</span></div>
+        <div class="rail-item">No passkey yet<span class="n">6</span></div>
+        <div class="rail-item">Email not confirmed<span class="n">2</span></div>
+        <div class="rail-item">Turned off<span class="n">0</span></div></div>
+      <div class="rail-group"><h2>In a ministry</h2>
+        <div class="rail-item">Impact Kids<span class="n">9</span></div>
+        <div class="rail-item">Production<span class="n">5</span></div>
+        <div class="rail-item">Music<span class="n">23</span></div></div>
+    </aside>
+    <section class="wb__list">
+      <div class="head"><h2>Everyone</h2></div>
+      <label class="search-field"><i data-icon="search"></i><input class="search-field__input" placeholder="Find someone by name or email"></label>
+      <div class="data-table"><div class="data-table__scroll"><table class="data-table__table">
+        <thead><tr><th>Name</th><th>Account</th><th class="num">Joined</th></tr></thead>
+        <tbody>
+          <tr class="data-table__row"><td><span class="cell-strong">Alex Sample</span></td><td><span class="pill pill--quiet">Not invited yet</span></td><td class="num">Wed 11 Nov</td></tr>
+          <tr class="data-table__row" aria-selected="true"><td><span class="cell-strong">Jordan Example</span></td><td><span class="quiet">Ready</span></td><td class="num">Sun 1 Nov</td></tr>
+          <tr class="data-table__row"><td><span class="cell-strong">Robin Sample</span></td><td><span class="pill">No passkey yet</span></td><td class="num">Mon 2 Nov</td></tr>
+          <tr class="data-table__row"><td><span class="cell-strong">Sam Example</span></td><td><span class="quiet">Ready</span></td><td class="num">Fri 30 Oct</td></tr>
+          <tr class="data-table__row"><td><span class="cell-strong">Taylor Sample</span></td><td><span class="pill pill--quiet">Not invited yet</span></td><td class="num">Thu 29 Oct</td></tr>
+          <tr class="data-table__row"><td><span class="cell-strong">Casey Example</span></td><td><span class="quiet">Ready</span></td><td class="num">Tue 27 Oct</td></tr>
+        </tbody></table></div></div>
+    </section>
+    <aside class="wb__rec">
+      <div class="rec-head"><div><h2>Jordan Example</h2><p>jordan@example.com · joined Sun 1 Nov</p></div><div class="tools"><button class="icon-btn" title="Open as a page"><i data-icon="maximize-2"></i></button></div></div>
+      <div class="pane-section"><h3>Roles</h3>
+        <div class="list"><div class="row"><span class="row__body"><span class="row__title">Leader</span><span class="row__subtitle">Impact Kids</span></span></div><div class="row"><span class="row__body"><span class="row__title">Member</span><span class="row__subtitle">Production</span></span></div></div></div>
+      <div class="pane-section"><h3>Family</h3><p class="hint" style="margin-top:0">Looks after 2 children. Linked to 1 parent.</p></div>
+      <div class="pane-section"><h3>Account</h3><p class="hint" style="margin-top:0">Signed in on 2 phones. Last seen today.</p></div>
+      <div class="rec-foot"><button class="btn btn--quiet">Send a recovery link</button><span class="grow"></span><button class="btn btn--danger-quiet">Turn off…</button></div>
+    </aside>
+  </div>
+</main>
+</body></html>

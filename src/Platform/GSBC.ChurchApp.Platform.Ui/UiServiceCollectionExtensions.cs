@@ -10,11 +10,11 @@ namespace GSBC.ChurchApp.Platform.Ui;
 
 public static class UiServiceCollectionExtensions
 {
-    public static IServiceCollection AddPlatformUi(this IServiceCollection services)
+    public static IServiceCollection AddPlatformUi(this IServiceCollection services, bool desktop = false)
     {
         services.TryAddSingleton(TimeProvider.System);
         services.AddDestinations(ShellDestinations.All);
-        return services.AddSingleton<Shell>().AddSingleton<UnsavedChanges>().AddSingleton<SidebarPins>().AddSingleton<Appearance>().AddSingleton<LinkOpener>().AddSingleton<SurfaceViews>()
+        return services.AddSingleton(new UiHost(desktop)).AddSingleton<Shell>().AddSingleton<UnsavedChanges>().AddSingleton<SidebarPins>().AddSingleton<Appearance>().AddSingleton<LinkOpener>().AddSingleton<SurfaceViews>()
             .AddSurfaceView<LinkTileView>(HubSurfaces.LinkTile.Surface)
             .AddHubTile<WordsTileView>(HubSurfaces.PlainTile);
     }

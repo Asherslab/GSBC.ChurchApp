@@ -17,7 +17,7 @@
     }
     <div class="people-tab">
         <div>
-            <div class="people-tab__group">
+            <Section Title="@($"About {Person.FirstName}")" Grouped="true">
                 <ListGroup>
                     <ListRow Title="@BornTitle(family)" Subtitle="@BornLine(family, today)" Icon="calendar" IconTone="RowTone.Quiet">
                         <TrailingContent>
@@ -30,22 +30,22 @@
                 </ListGroup>
                 @if (_changingBirthDate)
                 {
-                    <div class="people-inline">
-                        <TextField Label="Birth date" Type="date" Value="@_born" ValueChanged="value => _born = value" Max="@($"{today:yyyy-MM-dd}")" />
-                        <Button Variant="ButtonVariant.Quiet" OnClick="() => _changingBirthDate = false">Cancel</Button>
+                    <div class="ui-after">
+                        <DateField Label="Birth date" Value="@_born" ValueChanged="value => _born = value" Max="@($"{today:yyyy-MM-dd}")" />
+                    </div>
+                    <SaveBar Class="ui-after" Label="Save" Busy="_busy" OnSave="() => SaveBirthDateAsync(PeopleWords.ParseDay(_born))" OnCancel="() => _changingBirthDate = false"
+                             Blocked="@(PeopleWords.ParseDay(_born) is null ? "Give a birth date to save it." : null)">
                         @if (family.BirthDate is not null)
                         {
                             <Button Variant="ButtonVariant.Quiet" Disabled="_busy" OnClick="() => SaveBirthDateAsync(null)">Clear it</Button>
                         }
-                        <Button Busy="_busy" Disabled="@(PeopleWords.ParseDay(_born) is null)" OnClick="() => SaveBirthDateAsync(PeopleWords.ParseDay(_born))">Save</Button>
-                    </div>
+                    </SaveBar>
                 }
-            </div>
+            </Section>
 
             @if (minor && family.Parents.Count > 0)
             {
-                <div class="people-tab__group">
-                    <h2 class="people-tab__head">How ministries reach @Person.FirstName</h2>
+                <Section Title="@($"How ministries reach {Person.FirstName}")" Grouped="true">
                     @if (family.CanSignIn && mayEdit)
                     {
                         <Segmented TValue="string" Label="@($"How ministries reach {Person.FirstName}")" Options="ReachOptions"
@@ -53,13 +53,12 @@
                                    ValueChanged="reach => RunAsync(() => People.SetReachAsync(family.Id, reach).AsTask())" />
                     }
                     <p class="hint">@ReachLine(family, minor)</p>
-                </div>
+                </Section>
             }
 
             @if (family.AskedOfThem.Count > 0 || theirAsks.Count > 0)
             {
-                <div class="people-tab__group">
-                    <h2 class="people-tab__head">Waiting</h2>
+                <Section Title="Waiting" Grouped="true">
                     <ListGroup>
                         @foreach (LinkAsk ask in family.AskedOfThem)
                         {
@@ -87,13 +86,12 @@
                             </ListRow>
                         }
                     </ListGroup>
-                </div>
+                </Section>
             }
 
             @if (!minor || family.Children.Count > 0)
             {
-                <div class="people-tab__group">
-                    <h2 class="people-tab__head">Children @Person.FirstName looks after · @family.Children.Count</h2>
+                <Section Title="@($"Children {Person.FirstName} looks after · {family.Children.Count}")" Grouped="true">
                     <ListGroup>
                         @foreach (PersonCard child in family.Children)
                         {
@@ -122,7 +120,7 @@
                                           Leave="Leave(family)" Busy="@_busyFor" OnChosen="person => LinkAsync(family.Id, person.Id)" />
                             <div class="people-inline">
                                 <TextField Label="Or add a child who isn't in the app" Placeholder="Their name" Value="@_childName" ValueChanged="value => _childName = value" />
-                                <TextField Label="Birth date" Type="date" Value="@_childBorn" ValueChanged="value => _childBorn = value" Max="@($"{today:yyyy-MM-dd}")" />
+                                <DateField Label="Birth date" Value="@_childBorn" ValueChanged="value => _childBorn = value" Max="@($"{today:yyyy-MM-dd}")" />
                                 <Button Variant="ButtonVariant.Quiet" Busy="_busy" Disabled="@(_childName.Trim().Length == 0 || PeopleWords.ParseDay(_childBorn) is null)" OnClick="() => AddChildAsync(family.Id)">Add</Button>
                             </div>
                             <div class="ui-actions ui-after">
@@ -130,13 +128,12 @@
                             </div>
                         </div>
                     }
-                </div>
+                </Section>
             }
 
             @if (minor || family.Parents.Count > 0 || office)
             {
-                <div class="people-tab__group">
-                    <h2 class="people-tab__head">@Person.FirstName's parents and guardians</h2>
+                <Section Title="@($"{Person.FirstName}'s parents and guardians")" Grouped="true">
                     <ListGroup>
                         @foreach (PersonCard parent in family.Parents)
                         {
@@ -172,7 +169,7 @@
                             </div>
                         </div>
                     }
-                </div>
+                </Section>
             }
 
             @if (_message is not null)

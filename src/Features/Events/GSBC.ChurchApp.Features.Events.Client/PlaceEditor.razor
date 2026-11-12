@@ -1,4 +1,4 @@
-<div class="field place-editor">
+<div class="field">
     <SearchPicker TItem="EventPlace" Label="Where" Items="Used" Text="place => place.Name.Length > 0 ? place.Name : place.Address" Detail="place => place.Name.Length > 0 ? place.Address : string.Empty"
                   Value="Chosen" ValueChanged="PickAsync" NoneText="@(Missing ? EventFieldKeys.Missing(EventFieldKeys.Place) : "No place")"
                   Placeholder="Find a place used before, or type a new one" CreateText="@(text => $"A new place: “{text}”")" OnCreate="CreateAsync"

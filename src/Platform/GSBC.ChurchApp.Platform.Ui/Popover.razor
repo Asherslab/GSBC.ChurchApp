@@ -1,0 +1,31 @@
+@if (Open)
+{
+    <button type="button" class="menu__away" aria-label="@($"Close {Label}")" tabindex="-1" @onclick="CloseAsync"></button>
+    <div class="popover @Class" role="dialog" aria-label="@Label" tabindex="-1" @ref="_panel" @onkeydown="KeyAsync">@ChildContent</div>
+}
+
+@code {
+    private ElementReference _panel;
+    private bool _focused;
+
+    [Parameter, EditorRequired] public required string Label { get; set; }
+    [Parameter] public bool Open { get; set; }
+    [Parameter] public EventCallback<bool> OpenChanged { get; set; }
+    [Parameter] public string? Class { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (Open && !_focused)
+        {
+            _focused = true;
+            await _panel.FocusAsync();
+        }
+        else if (!Open)
+            _focused = false;
+    }
+
+    private Task CloseAsync() => OpenChanged.InvokeAsync(false);
+
+    private Task KeyAsync(KeyboardEventArgs key) => key.Key == "Escape" ? CloseAsync() : Task.CompletedTask;
+}

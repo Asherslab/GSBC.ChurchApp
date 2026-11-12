@@ -13,7 +13,7 @@
 }
 else
 {
-    <Page Title="@(Target.IsNew ? "New event" : "Editing")" OnBack="LeaveAsync" BackLabel="Cancel" TopBar="TopBarStyle.Solid">
+    <Page Title="@(Target.IsNew ? "New event" : "Editing")" OnBack="LeaveAsync" TopBar="TopBarStyle.Solid">
         <ChildContent><EditScope Edited="() => { }">@Body</EditScope></ChildContent>
     </Page>
 }
@@ -142,7 +142,7 @@ else
         else
         {
             <EventHead Day="draft.ShownDay" Label="@(Fields.Label.Length > 0 ? Fields.Label : CalendarName)" Title="@(Fields.Title.Length > 0 ? Fields.Title : "New event")" When="@draft.WhenLine"
-                       Compact="InPanel" />
+                       Compact="InPanel" Actions="ItemActions(draft)" />
             <div class="event-body event-body--editing">
                 @if (_asked)
                 {
@@ -154,11 +154,11 @@ else
                 }
                 <TitleFields Fields="Fields" CalendarName="@CalendarName" />
                 <div class="ui-pair">
-                    <TextField Label="Date" Type="date" Value="@EventDates.Format(draft.StartDate)" ValueChanged="value => draft.StartDate = EventDates.Parse(value) ?? draft.StartDate" />
-                    <TextField Label="Until (for several days)" Type="date" Value="@(draft.EndDate is { } end ? EventDates.Format(end) : "")" Min="@EventDates.Format(draft.StartDate)"
+                    <DateField Label="Date" Value="@EventDates.Format(draft.StartDate)" ValueChanged="value => draft.StartDate = EventDates.Parse(value) ?? draft.StartDate" />
+                    <DateField Label="Until (for several days)" Value="@(draft.EndDate is { } end ? EventDates.Format(end) : "")" Min="@EventDates.Format(draft.StartDate)"
                                ValueChanged="value => draft.EndDate = EventDates.Parse(value)" />
                 </div>
-                <TimesEditor Timed="draft.Every" />
+                <TimesEditor Timed="draft.Every" SameDay="@(draft.EndDate is null || draft.EndDate == draft.StartDate)" />
                 @if (draft.NotOnThisDate)
                 {
                     <p class="event-off"><Icon Name="circle-off" Size="IconSize.Small" />Not on this date</p>
@@ -170,26 +170,23 @@ else
             <div class="editor-foot @(InPanel ? "editor-foot--panel" : "")">
                 <Notice Tone="NoticeTone.Warning" Text="@_problem" />
                 <div class="editor-foot__actions">
-                    <SaveBar Block="true" Label="@SaveLabel(draft)" Busy="_saving" OnSave="SaveAsync" Blocked="@(Fields.Title.Trim().Length == 0 ? $"Give it a title to {(draft.IsNew ? "add" : "save")} it." : null)" State="SaveLine" SavedText="@SavedWords"
+                    <SaveBar Block="!InPanel" New="draft.IsNew" Label="@SaveLabel(draft)" Busy="_saving" OnSave="SaveAsync" OnCancel="LeaveAsync" Blocked="@(Fields.Title.Trim().Length == 0 ? $"Give it a title to {(draft.IsNew ? "add" : "save")} it." : null)" State="SaveLine" SavedText="@SavedWords"
                              WaitingText="@EditWaiting.WaitingWords" FailedText="@EditWaiting.FailedWords" Detail="@Waiting?.Problem" Retry="() => Editing.RetryAsync(ItemKey)" />
-                    @if (!draft.IsNew)
-                    {
-                        <Button Variant="ButtonVariant.Quiet" Busy="_saving" OnClick="NotOnAsync">@(draft.NotOnThisDate ? "On again" : "Not on this date")</Button>
-                    }
                 </div>
-                @if (MustAsk && !draft.IsNew && !draft.Asked && !draft.WasShown)
-                {
-                    <Button Variant="ButtonVariant.Quiet" Small="true" Icon="send" OnClick="AskAsync">Ask to publish</Button>
-                }
-                @if (!draft.IsNew)
-                {
-                    <button type="button" class="editor-foot__delete" @onclick="() => OpenAsync(EditorSheet.Delete)">Delete this event</button>
-                }
             </div>
         }
     </text>;
 
-    private IReadOnlyList<FieldOption> CalendarOptions => Editable.Select(calendar => new FieldOption(calendar.Settings.Calendar.Id, calendar.Settings.Calendar.Name)).ToList();
+    private IReadOnlyList<MenuItem> ItemActions(EventDraft draft) => draft.IsNew
+        ? []
+        :
+        [
+            this.Item(draft.NotOnThisDate ? "On again" : "Not on this date", NotOnAsync, "circle-off", disabled: _saving),
+            .. MustAsk && !draft.Asked && !draft.WasShown ? [this.Item("Ask to publish", AskAsync, "send", "The calendar's publishers are told")] : Array.Empty<MenuItem>(),
+            this.Item("Delete this event", () => OpenAsync(EditorSheet.Delete), "trash-2", danger: true, startsGroup: true),
+        ];
+
+    private IReadOnlyList<FieldOption> CalendarOptions =>Editable.Select(calendar => new FieldOption(calendar.Settings.Calendar.Id, calendar.Settings.Calendar.Name)).ToList();
 
 
     private string? _stored;

@@ -6,7 +6,11 @@
     <ChildContent>
         @if (Child is { } child)
         {
-            <Card Title="@(child.CanSignIn ? "A new sign-in for their phone" : "Sign in on their own phone")" Class="people-code">
+            <div class="ui-tools">
+                <Menu Label="@($"More for {child.Name}")" Text="More" AlignStart="true" Small="true" Disabled="_busy"
+                      Items="@([this.Item($"{RemoveLabel(child)}…", () => { _confirming = true; return Task.CompletedTask; }, "user-x", danger: true)])" />
+            </div>
+            <Card Title="@(child.CanSignIn ? "A new sign-in for their phone" : "Sign in on their own phone")">
                 @if (_code is { } made)
                 {
                     <div class="people-code__shown">
@@ -40,11 +44,12 @@
                     <TextField Label="Name" Value="@(_name ?? child.Name)" ValueChanged="value => _name = value" AutoComplete="off" />
                 }
                 <div class="ui-after">
-                    <TextField Label="Birth date" Type="date" Value="@(_born ?? PeopleWords.FieldDay(child.BirthDate))" ValueChanged="value => _born = value" />
+                    <DateField Label="Birth date" Value="@(_born ?? PeopleWords.FieldDay(child.BirthDate))" ValueChanged="value => _born = value" />
                 </div>
-                <div class="ui-actions ui-after">
-                    <Button Small="true" Variant="ButtonVariant.Quiet" Busy="_busy" Disabled="@(_name is null && _born is null)" OnClick="SaveAsync">Save details</Button>
-                </div>
+                @if (_name is not null || _born is not null)
+                {
+                    <SaveBar Class="ui-after" Label="Save details" Busy="_busy" OnSave="SaveAsync" OnCancel="() => (_name, _born) = (null, null)" State="SaveState.Unsaved" />
+                }
             </Section>
 
             <Section Title="Another parent" Lead="@($"Ask someone else who looks after {child.Name} to link to them too. They say yes on their Account page.")">
@@ -66,21 +71,6 @@
                 </div>
             </Section>
 
-            <Section>
-                @if (_confirming)
-                {
-                    <Notice Tone="NoticeTone.Warning" Text="@RemoveWarning(child)" />
-                    <div class="ui-actions ui-after">
-                        <Button Small="true" Variant="ButtonVariant.Quiet" OnClick="() => _confirming = false">Keep</Button>
-                        <Button Small="true" Variant="ButtonVariant.Danger" Busy="_busy" OnClick="() => RemoveAsync(child)">@RemoveLabel(child)</Button>
-                    </div>
-                }
-                else
-                {
-                    <Button Small="true" Variant="ButtonVariant.Quiet" OnClick="() => _confirming = true">@RemoveLabel(child)…</Button>
-                }
-            </Section>
-
             @if (_message is not null)
             {
                 <Notice Tone="NoticeTone.Warning" Text="@_message" />
@@ -91,6 +81,16 @@
         <Button Block="true" OnClick="CloseAsync">Done</Button>
     </Actions>
 </Sheet>
+
+@if (Child is { } removing)
+{
+    <Sheet Open="_confirming" OpenChanged="open => _confirming = open" Title="@($"{RemoveLabel(removing)}?")" Lead="@RemoveWarning(removing)">
+        <Actions>
+            <Button Block="true" Variant="ButtonVariant.Danger" Busy="_busy" OnClick="() => RemoveAsync(removing)">@RemoveLabel(removing)</Button>
+            <Button Block="true" Variant="ButtonVariant.Quiet" OnClick="() => _confirming = false">Keep</Button>
+        </Actions>
+    </Sheet>
+}
 
 @code {
     [Parameter] public PersonCard? Child { get; set; }

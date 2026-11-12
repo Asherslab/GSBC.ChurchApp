@@ -1,0 +1,53 @@
+@using Grpc.Core
+@inject AccountsClient Accounts
+@inject IAccountReads Reads
+@inject NavigationManager Navigation
+
+<Popover Label="the account menu" Open="Open" OpenChanged="OpenChanged" Class="account-menu">
+    <LiveData TValue="MyAccount" Feeds="Reads.Feeds" Load="Reads.MineAsync" FailedTitle="Can't reach the church's server">
+        <div class="account-menu__who">
+            <strong>@context.Value.Profile.DisplayName</strong>
+            <span>@context.Value.Profile.Email</span>
+        </div>
+    </LiveData>
+    <SchemeChoice ShowLabel="true" Class="account-menu__scheme" />
+    <div class="menu__rule" role="separator"></div>
+    <MenuButton Icon="user" OnClick="OpenAccountAsync">Your account</MenuButton>
+    <MenuButton Icon="log-out" Disabled="_signingOut" OnClick="SignOutAsync">@(_signingOut ? "Signing out…" : "Sign out")</MenuButton>
+    <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+</Popover>
+
+@code {
+    private bool _signingOut;
+    private string? _problem;
+
+    [Parameter] public bool Open { get; set; }
+    [Parameter] public EventCallback<bool> OpenChanged { get; set; }
+
+    private Task CloseAsync() => OpenChanged.InvokeAsync(false);
+
+    private async Task OpenAccountAsync()
+    {
+        await CloseAsync();
+        Navigation.NavigateTo("account");
+    }
+
+    private async Task SignOutAsync()
+    {
+        _signingOut = true;
+        _problem = null;
+        try
+        {
+            await Accounts.SignOutAsync();
+            await CloseAsync();
+        }
+        catch (RpcException)
+        {
+            _problem = "Couldn't sign out. Check the connection and try again.";
+        }
+        finally
+        {
+            _signingOut = false;
+        }
+    }
+}

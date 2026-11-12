@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Admin date field: Type it</title>
+<link rel="stylesheet" href="kit.css"><script src="icons.js"></script><script src="kit.js"></script>
+<style>
+.cols { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 40px; align-items: start; max-width: 1120px; }
+.card { border-radius: var(--radius); background: var(--surface); box-shadow: inset 0 0 0 1px var(--line); padding: 22px 24px 24px; }
+.card h2 { font-size: var(--text-title); letter-spacing: -0.015em; }
+.card .lead { color: var(--ink-2); font-size: var(--text-caption); margin-top: 4px; }
+.fields { display: grid; gap: 16px; margin-top: 18px; }
+.pair { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.trio { display: grid; grid-template-columns: 1.4fr 1fr 1fr; gap: 14px; }
+.df { position: relative; }
+.df__box { display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 0 14px; border-radius: var(--radius-field); background: var(--field); box-shadow: inset 0 0 0 1px var(--field-edge); color: var(--ink); font-size: var(--text-body); cursor: pointer; }
+.df__box .icon { color: var(--ink-3); }
+.df__box .v { flex: 1; font-variant-numeric: tabular-nums; }
+.df__box.is-open { box-shadow: inset 0 0 0 2px var(--accent); }
+.df__box .ph { color: var(--ink-2); }
+.pop { position: absolute; z-index: 5; top: calc(100% + 6px); left: 0; width: 320px; padding: 14px; border-radius: var(--radius); background: var(--surface); box-shadow: 0 0 0 1px var(--line), 0 18px 40px -12px var(--scrim); }
+.pop__head { display: flex; align-items: center; gap: 4px; margin-bottom: 8px; }
+.pop__head b { flex: 1; font-size: var(--text-label); }
+.pop__head .icon-btn { width: 36px; height: 36px; color: var(--ink-2); }
+.cal { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; text-align: center; font-variant-numeric: tabular-nums; }
+.cal span { display: grid; place-items: center; height: 36px; border-radius: var(--radius-inner); font-size: var(--text-caption); font-weight: 600; color: var(--ink); }
+.cal .wd { height: 24px; font-size: var(--text-micro); color: var(--ink-3); letter-spacing: 0.04em; }
+.cal .wd.sun { color: var(--accent); }
+.cal .out { color: var(--ink-3); font-weight: 400; }
+.cal .sun-d { color: var(--accent); }
+.cal .today { box-shadow: inset 0 0 0 2px var(--primary); }
+.cal .on { background: var(--primary); color: var(--on-primary); }
+.cal .in { background: var(--selected-fill); border-radius: 0; }
+.cal .start { background: var(--primary); color: var(--on-primary); border-radius: var(--radius-inner) 0 0 var(--radius-inner); }
+.cal .end { background: var(--primary); color: var(--on-primary); border-radius: 0 var(--radius-inner) var(--radius-inner) 0; }
+.quick { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--line); }
+.times { position: absolute; z-index: 5; top: calc(100% + 6px); left: 0; width: 100%; max-height: 220px; overflow: hidden; padding: 6px; border-radius: var(--radius); background: var(--surface); box-shadow: 0 0 0 1px var(--line), 0 18px 40px -12px var(--scrim); }
+.times span { display: flex; align-items: center; min-height: 36px; padding: 0 10px; border-radius: var(--radius-inner); font-variant-numeric: tabular-nums; font-size: var(--text-row); }
+.times span.on { background: var(--selected-fill); font-weight: 600; }
+.times span .icon { margin-left: auto; color: var(--accent); }
+.readback { margin-top: 6px; font-size: var(--text-caption); color: var(--ink-2); display: flex; gap: 6px; align-items: center; }
+.readback .icon { color: var(--accent); }
+.readback.problem { color: var(--danger); font-weight: 600; }
+.readback.problem .icon { color: var(--danger); }
+.state-label { margin: 22px 0 8px; font-size: var(--text-caption); font-weight: 600; color: var(--ink-3); }
+.sel { display: flex; align-items: center; gap: 8px; min-height: 48px; padding: 0 12px 0 14px; border-radius: var(--radius-field); background: var(--field); box-shadow: inset 0 0 0 1px var(--field-edge); font-variant-numeric: tabular-nums; }
+.sel span { flex: 1; }
+.sel .icon { color: var(--ink-3); }
+.segmented { margin: 0; }
+.foot { display: flex; gap: 10px; margin-top: 22px; }
+.fields { grid-template-columns: minmax(0, 1fr); }
+.fields > *, .sel, .df { min-width: 0; }
+.trio { grid-template-columns: 1.7fr 1fr 1fr; }
+.df__box .v { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.quick .filter-chip { min-height: 32px; }
+</style></head>
+<body class="sk-admin" data-current="Calendar">
+<main>
+  <header class="title-band"><div class="title-band__text"><h1 class="title-band__title">Type it</h1><p class="title-band__lead">Type a date or time the way you would say it; the field reads it back in full underneath, and says plainly when it can't be right.</p></div></header>
+  <div class="cols">
+    <section class="card"><h2>Family games night</h2><p class="lead">A one-off event on the church calendar.</p>
+      <div class="fields"><label class="field"><span class="field__label">Title</span><input class="field__input" value="Family games night"></label>
+<div class="trio"><div class="field"><span class="field__label">Day</span><div class="df"><div class="df__box is-open"><span class="v">next sun</span><i data-icon="calendar"></i></div></div><p class="readback"><i data-icon="check"></i>Sunday 15 November 2026</p></div>
+<div class="field"><span class="field__label">Starts</span><div class="df"><div class="df__box"><span class="v">6pm</span></div></div><p class="readback"><i data-icon="check"></i>6:00 pm</p></div>
+<div class="field"><span class="field__label">Ends</span><div class="df"><div class="df__box"><span class="v">830</span></div></div><p class="readback"><i data-icon="check"></i>8:30 pm</p></div></div>
+<p class="hint" style="margin-top:0">Type it the way you'd say it: 15/11, 15 Nov, next Sunday, tomorrow. The calendar button opens a month to click when you'd rather look.</p></div>
+      <div class="foot"><button class="btn btn--primary">Save</button><button class="btn btn--quiet">Cancel</button></div></section>
+    <section class="card"><h2>Weekly digest: which days</h2><p class="lead">Choose the days the next digest covers.</p>
+      <div class="fields"><div class="pair"><div class="field"><span class="field__label">From</span><div class="df"><div class="df__box"><span class="v">9/11</span><i data-icon="calendar"></i></div></div><p class="readback"><i data-icon="check"></i>Monday 9 November</p></div>
+<div class="field"><span class="field__label">To</span><div class="df"><div class="df__box is-open"><span class="v">8/11</span><i data-icon="calendar"></i></div></div><p class="readback problem"><i data-icon="alert"></i>That's before Monday 9 November</p></div></div>
+<p class="state-label">The calendar button, opened</p>
+<div class="df" style="max-width:320px"><div class="pop" style="position:static"><div class="pop__head"><button class="icon-btn"><i data-icon="chevron-left"></i></button><b>November 2026</b><button class="icon-btn"><i data-icon="chevron-right"></i></button></div><div class="cal"><span class="wd">M</span><span class="wd">T</span><span class="wd">W</span><span class="wd">T</span><span class="wd">F</span><span class="wd">S</span><span class="wd sun">S</span><span class="out">26</span><span class="out">27</span><span class="out">28</span><span class="out">29</span><span class="out">30</span><span class="out">31</span><span class="sun-d">1</span><span class="">2</span><span class="">3</span><span class="">4</span><span class="">5</span><span class="">6</span><span class="">7</span><span class="sun-d">8</span><span class="start">9</span><span class="in">10</span><span class="in">11</span><span class="in">12</span><span class="in">13</span><span class="in">14</span><span class="in">15</span><span class="in">16</span><span class="in">17</span><span class="in">18</span><span class="in">19</span><span class="in">20</span><span class="in">21</span><span class="end">22</span><span class="">23</span><span class="">24</span><span class="">25</span><span class="">26</span><span class="">27</span><span class="">28</span><span class="sun-d">29</span><span class="">30</span><span class="out">1</span><span class="out">2</span><span class="out">3</span><span class="out">4</span><span class="out">5</span><span class="out">6</span></div></div></div></div></section>
+  </div>
+</main></body></html>

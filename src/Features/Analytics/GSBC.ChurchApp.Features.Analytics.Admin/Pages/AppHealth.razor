@@ -11,7 +11,7 @@
 </TitleBand>
 
 <LiveData @ref="_live" TValue="HealthOverview" Load="LoadAsync" FailedTitle="Can't load app health right now">
-    <SplitView Detail="@Detail()" DetailLabel="Error">
+    <Workbench Detail="@Detail()" DetailLabel="Error">
         <Section First="true" Title="Errors" Lead="Grouped by kind: the same error from many phones is one line. Nothing in them identifies a person.">
             <DataTable TItem="ErrorKindSummary" Label="Errors" Items="context.Value.Kinds" Columns="KindColumns" Key="kind => kind.Id.ToString()"
                        Selected="Chosen(context.Value)" SelectedChanged="Choose" SortColumn="4" SortDescending="true">
@@ -28,7 +28,7 @@
                 </Empty>
             </DataTable>
         </Section>
-    </SplitView>
+    </Workbench>
 </LiveData>
 
 @code {
@@ -53,8 +53,10 @@
     private ErrorKindSummary? Chosen(HealthOverview overview) => overview.Kinds.FirstOrDefault(kind => kind.Id == Id);
 
     private RenderFragment? Detail() => Id is { } id
-        ? @<ErrorKindPanel @key="id" Id="id" />
+        ? @<ErrorKindPanel @key="id" Id="id" OnClose="CloseKind" />
         : null;
+
+    private void CloseKind() => Navigation.NavigateTo("health", new NavigationOptions { ReplaceHistoryEntry = true });
 
     private void Choose(ErrorKindSummary kind) => Navigation.NavigateTo($"health/{kind.Id}", new NavigationOptions { ReplaceHistoryEntry = true });
 

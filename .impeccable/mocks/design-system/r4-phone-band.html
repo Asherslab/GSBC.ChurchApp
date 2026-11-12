@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Phone sections: flat with a band</title>
+<link rel="stylesheet" href="kit.css"><script src="icons.js"></script><script src="kit.js"></script>
+<style>
+.req-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; color: var(--ink-2); font-size: var(--text-caption); font-weight: 600; }
+.req-text { margin-top: 10px; font-size: var(--text-lead); line-height: 1.5; }
+.req-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.wall-actions { display: grid; gap: 10px; }
+.wall-lead { color: var(--ink-2); font-size: var(--text-caption); }
+.stack { display: grid; gap: var(--stack); }
+.band { margin-top: var(--section); padding: 14px var(--gutter); background: var(--sand); }
+.band h2 { font-size: var(--text-title); letter-spacing: -0.015em; }
+.band p { color: var(--ink-2); font-size: var(--text-caption); margin-top: 2px; }
+.band-body { padding: 18px var(--gutter) 0; }
+.band-body + .section { margin-top: var(--section); }
+</style></head>
+<body class="sk-phone" data-tab="Prayer">
+<div class="sk-screen"><div class="page-scroll"><header class="topbar topbar--solid"><div class="topbar__start"><button class="icon-btn icon-btn--back"><i data-icon="chevron-left" data-size="md"></i>To approve</button></div><div class="topbar__title">A prayer request</div><div class="topbar__end"></div></header><div class="page"><section class="section section--first"><p class="req-meta">Sent Wed 11 Nov · Jordan Example <span class="pill">New</span></p>
+<p class="req-text">Please pray for my mum, who has surgery on Thursday, and for the family as we look after Dad while she recovers.</p>
+<div class="req-actions"><button class="btn btn--quiet btn--small"><i data-icon="check"></i>Mark followed up</button><button class="btn btn--quiet btn--small">Mark answered</button></div></section><div class="band"><h2>The prayer wall</h2><p>Jordan asked for it to go on the wall.</p></div><div class="band-body stack"><label class="field"><span class="field__label">Words for the wall</span><textarea class="field__input field__input--multiline" style="min-height:88px">Please pray for Jordan's mum, who has surgery on Thursday.</textarea></label>
+<div class="field"><span class="field__label">Name on the wall</span><div class="segmented" role="radiogroup"><button class="segmented__option" role="radio" aria-checked="true">First name</button><button class="segmented__option" role="radio" aria-checked="false">No name</button></div></div>
+<label class="field"><span class="field__label">Shows until</span><input class="field__input" value="Sun 22 Nov"></label><div class="wall-actions"><button class="btn btn--primary btn--block">Put it on the wall</button><button class="btn btn--quiet btn--block">Not for the wall</button></div></div><div class="band"><h2>Notes for the pastoral team</h2></div><section class="section" style="margin-top:0"><div class="list"><div class="row row--reading"><span class="row__body"><span class="row__title">Sam Example · Thu</span><span class="row__subtitle">Called Jordan; meals are organised for next week.</span></span></div></div></section></div></div></div>
+</body></html>

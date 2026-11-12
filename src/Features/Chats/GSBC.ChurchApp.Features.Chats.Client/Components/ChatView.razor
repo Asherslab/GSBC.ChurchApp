@@ -105,7 +105,7 @@
                                 }
                                 else if (mine && ReferenceEquals(line, LastOfMine(chat)) && SeenBy(card, message) is > 0 and var seen)
                                 {
-                                    <button type="button" class="chat-status chat-status--seen" @onclick="() => ShowSeen(message)"><Icon Name="check" Size="IconSize.Small" />Seen by @seen</button>
+                                    <button type="button" class="chat-status" @onclick="() => ShowSeen(message)"><Icon Name="check" Size="IconSize.Small" />Seen by @seen</button>
                                 }
                             </Status>
                             <ChildContent>

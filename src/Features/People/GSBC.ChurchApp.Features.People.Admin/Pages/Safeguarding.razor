@@ -10,10 +10,12 @@
 <SafeMinistryCheckLine />
 
 <LiveData TValue="IReadOnlyList<FlaggedPerson>" Feeds="[PeopleFeeds.Safeguarding, PeopleFeeds.Family]" Load="Office.GetFlaggedAsync" FailedTitle="Can't load who's flagged right now">
+    <Workbench AsideLabel="Show">
+    <Aside>
+        <FilterChips TValue="string" Label="Show" Rail="true" Options="Filters(context.Value)" @bind-Value="_filter" />
+    </Aside>
+    <ChildContent>
     <DataTable TItem="FlaggedPerson" Label="Who's flagged" Items="Shown(context.Value)" Columns="Columns(ChurchTime.Today(Clock))" Key="Key" SelectedChanged="Open">
-        <Toolbar>
-            <FilterChips TValue="string" Label="Show" Options="Filters(context.Value)" @bind-Value="_filter" />
-        </Toolbar>
         <Empty>
             @if (context.Value.Count == 0)
             {
@@ -25,6 +27,8 @@
             }
         </Empty>
     </DataTable>
+    </ChildContent>
+    </Workbench>
 </LiveData>
 
 @code {

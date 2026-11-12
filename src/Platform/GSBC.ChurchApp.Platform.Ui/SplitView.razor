@@ -1,12 +1,4 @@
-<div class="split-view @(Detail is null ? "split-view--single" : "")">
-    <div class="split-view__list">@ChildContent</div>
-    @if (Detail is not null)
-    {
-        <aside class="split-view__detail" aria-label="@DetailLabel">
-            <div class="split-view__panel">@Detail</div>
-        </aside>
-    }
-</div>
+<Workbench Detail="Detail" DetailLabel="@DetailLabel" Class="workbench--stack">@ChildContent</Workbench>
 
 @code {
     [Parameter] public RenderFragment? ChildContent { get; set; }

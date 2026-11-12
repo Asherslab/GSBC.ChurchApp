@@ -1,0 +1,23 @@
+@implements IDisposable
+@inject Appearance Appearance
+
+<Segmented TValue="ColourScheme" Label="Light or dark" ShowLabel="ShowLabel" Hint="@Hint" Options="Schemes" Value="Appearance.Scheme" ValueChanged="Appearance.SetSchemeAsync" Class="@Class" />
+
+@code {
+    private static readonly IReadOnlyList<SegmentOption<ColourScheme>> Schemes =
+    [
+        new(ColourScheme.Automatic, "Automatic", "sun-moon"),
+        new(ColourScheme.Light, "Light", "sun"),
+        new(ColourScheme.Dark, "Dark", "moon"),
+    ];
+
+    [Parameter] public bool ShowLabel { get; set; }
+    [Parameter] public string? Hint { get; set; }
+    [Parameter] public string? Class { get; set; }
+
+    protected override void OnInitialized() => Appearance.Changed += OnChanged;
+
+    private void OnChanged() => InvokeAsync(StateHasChanged);
+
+    public void Dispose() => Appearance.Changed -= OnChanged;
+}

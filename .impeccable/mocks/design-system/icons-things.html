@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Icons: Pictures of the thing</title>
+<link rel="stylesheet" href="kit.css"><script src="icons.js"></script>
+<script>window.SK_ICONS = {"Ministries": "users-round", "People": "contact", "Chats": "messages-square", "Feedback": "message-square-warning", "Safeguarding": "shield-check", "App health": "heart-pulse", "Insights": "chart-line", "Safe Ministry Check": "badge-check", "Announcements": "megaphone", "Weekly digest": "newspaper", "App styling": "paintbrush", "Places in the app": "map", "Send feedback": "message-square-warning"};</script><script src="kit.js"></script>
+<style>
+.grid { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 40px; align-items: start; }
+.ico { display: inline-grid; place-items: center; width: 40px; height: 40px; border-radius: var(--radius-tile); background: var(--sand); color: var(--primary); }
+.ico.old { background: none; color: var(--ink-3); }
+.data-table__table td { vertical-align: middle; }
+.phone { width: 360px; border-radius: 28px; overflow: hidden; background: var(--page); box-shadow: 0 0 0 1px var(--line), var(--lift); }
+.phone .topbar { position: static; background: var(--masthead); min-height: 52px; padding: 0 6px; }
+.phone .topbar__title { opacity: 1; transform: none; }
+.phone .section { margin-top: 18px; }
+.phone + .phone { margin-top: 20px; }
+.admin-sidebar__nav { scrollbar-width: none; }
+.cap { margin: 0 0 10px; color: var(--ink-2); font-size: var(--text-caption); font-weight: 600; }
+.chat-line { padding: 14px 20px 20px; color: var(--ink-2); font-size: var(--text-caption); }
+</style></head>
+<body class="sk-admin" data-current="Ministries">
+<main>
+  <header class="title-band"><div class="title-band__text"><h1 class="title-band__title">Pictures of the thing</h1><p class="title-band__lead">Each page gets a picture of what it holds: a team for Ministries, a name card for a person, a newspaper for the digest. No two pages share a picture, and a cog always means "the settings of what you're looking at".</p></div></header>
+  <div class="grid">
+    <div class="data-table"><div class="data-table__scroll"><table class="data-table__table">
+      <thead><tr><th>Page or meaning</th><th>Today</th><th>New</th></tr></thead><tbody><tr><td><span class="cell-strong">Ministries</span></td><td><span class="ico old"><i data-icon="users" data-size="md"></i></span></td><td><span class="ico new"><i data-icon="users-round" data-size="md"></i></span></td></tr><tr><td><span class="cell-strong">People</span></td><td><span class="ico old"><i data-icon="users" data-size="md"></i></span></td><td><span class="ico new"><i data-icon="contact" data-size="md"></i></span></td></tr><tr><td><span class="cell-strong">Chats</span></td><td><span class="ico old"><i data-icon="message-square" data-size="md"></i></span></td><td><span class="ico new"><i data-icon="messages-square" data-size="md"></i></span></td></tr><tr><td><span class="cell-strong">Feedback</span></td><td><span class="ico old"><i data-icon="message-square" data-size="md"></i></span></td><td><span class="ico new"><i data-icon="message-square-warning" data-size="md"></i></span></td></tr><tr><td><span class="cell-strong">Safeguarding</span></td><td><span class="ico old"><i data-icon="shield-check" data-size="md"></i></span></td><td><span class="ico new"><i data-icon="shield-check" data-size="md"></i></span></td></tr><tr><td><span class="cell-strong">App health</span></td><td><span class="ico old"><i data-icon="shield-check" data-size="md"></i></span></td><td><span class="ico new"><i data-icon="heart-pulse" data-size="md"></i></span></td></tr><tr><td><span class="cell-strong">Insights</span></td><td><span class="ico old"><i data-icon="sparkles" data-size="md"></i></span></td><td><span class="ico new"><i data-icon="chart-line" data-size="md"></i></span></td></tr><tr><td><span class="cell-strong">Safe Ministry Check</span></td><td><span class="ico old"><i data-icon="refresh" data-size="md"></i></span></td><td><span class="ico new"><i data-icon="badge-check" data-size="md"></i></span></td></tr><tr><td><span class="cell-strong">Announcements</span></td><td><span class="ico old"><i data-icon="send" data-size="md"></i></span></td><td><span class="ico new"><i data-icon="megaphone" data-size="md"></i></span></td></tr><tr><td><span class="cell-strong">Weekly digest</span></td><td><span class="ico old"><i data-icon="megaphone" data-size="md"></i></span></td><td><span class="ico new"><i data-icon="newspaper" data-size="md"></i></span></td></tr><tr><td><span class="cell-strong">App styling</span></td><td><span class="ico old"><i data-icon="pencil" data-size="md"></i></span></td><td><span class="ico new"><i data-icon="paintbrush" data-size="md"></i></span></td></tr><tr><td><span class="cell-strong">Places in the app</span></td><td><span class="ico old"><i data-icon="link" data-size="md"></i></span></td><td><span class="ico new"><i data-icon="map" data-size="md"></i></span></td></tr><tr><td><span class="cell-strong">What's new</span></td><td><span class="ico old"><i data-icon="sparkles" data-size="md"></i></span></td><td><span class="ico new"><i data-icon="gift" data-size="md"></i></span></td></tr><tr><td><span class="cell-strong">Settings of this thing</span></td><td><span class="ico old"><i data-icon="users" data-size="md"></i></span></td><td><span class="ico new"><i data-icon="settings" data-size="md"></i></span></td></tr></tbody></table></div></div>
+    <div>
+      <p class="cap">On the phone: More, and a chat's top bar</p>
+      <div class="phone">
+        <header class="topbar"><div class="topbar__start"></div><div class="topbar__title">More</div><div class="topbar__end"></div></header>
+        <section class="section section--first"><div class="list">
+          <div class="row"><span class="row__icon"><i data-icon="users-round"></i></span><span class="row__body"><span class="row__title">Ministries</span></span><i data-icon="chevron-right"></i></div>
+          <div class="row"><span class="row__icon"><i data-icon="gift"></i></span><span class="row__body"><span class="row__title">What's new</span></span><i data-icon="chevron-right"></i></div>
+          <div class="row"><span class="row__icon"><i data-icon="message-square-warning"></i></span><span class="row__body"><span class="row__title">Send feedback</span></span><i data-icon="chevron-right"></i></div>
+          <div class="row"><span class="row__icon"><i data-icon="lightbulb"></i></span><span class="row__body"><span class="row__title">Help improve the app</span></span><i data-icon="chevron-right"></i></div>
+        </div></section>
+        <div style="height:16px"></div>
+      </div>
+      <div class="phone">
+        <header class="topbar"><div class="topbar__start"><button class="icon-btn icon-btn--back"><i data-icon="chevron-left" data-size="md"></i>Chats</button></div><div class="topbar__title">Production team</div><div class="topbar__end"><button class="icon-btn" aria-label="Chat settings"><i data-icon="settings" data-size="md"></i></button></div></header>
+        <p class="chat-line">The cog opens the chat's settings: who's in it, mute, leave.</p>
+      </div>
+    </div>
+  </div>
+</main>
+<script>document.addEventListener("DOMContentLoaded",()=>setTimeout(()=>document.querySelectorAll(".module-nav__area-pages").forEach(p=>{p.hidden=false;p.parentElement.classList.add("module-nav__area--open");}),0));</script>
+</body></html>

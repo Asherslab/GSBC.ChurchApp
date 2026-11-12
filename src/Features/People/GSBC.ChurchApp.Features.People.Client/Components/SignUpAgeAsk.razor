@@ -4,7 +4,7 @@
 @if (!Answers.Adult)
 {
     <div class="ui-after">
-        <TextField Label="Your birth date" Type="date" Value="@Answers.Born" ValueChanged="born => ChangeAsync(() => Answers.Born = born)"
+        <DateField Label="Your birth date" Value="@Answers.Born" ValueChanged="born => ChangeAsync(() => Answers.Born = born)"
                    Max="@($"{Answers.Today:yyyy-MM-dd}")" AutoComplete="bday" Hint="@PeopleWords.WhoSees" />
     </div>
     @if (Answers.Minor)

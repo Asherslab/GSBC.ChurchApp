@@ -3,6 +3,7 @@
 @inject IMediaFiles Files
 @inject IJSRuntime Js
 @inject TimeProvider Clock
+@inject NavigationManager Navigation
 
 <UnsavedGuard Changed="() => _note.Trim().Length > 0 || _blockReason.Trim().Length > 0" What="@(_blockReason.Trim().Length > 0 ? "why you're blocking this phone" : "your note")" />
 
@@ -14,19 +15,15 @@
     <article class="ticket @(Docked ? "ticket--docked" : "ticket--page")" aria-label="@($"Feedback #{line.Number}")">
         @if (Docked)
         {
-            <header class="ticket__head">
-                <p class="ticket__meta">#@line.Number · @ChurchDates.Ago(line.SentAt, Now)</p>
-                <div class="ticket__head-actions">
-                    <a class="text-link" href="@FeedbackDestinations.Ticket(line.Number).TrimStart('/')" target="_blank" rel="noopener">Open as a page<Icon Name="external-link" Size="IconSize.Small" /></a>
-                    <Button Variant="ButtonVariant.Quiet" Small="true" Icon="x" AriaLabel="Close this feedback" OnClick="OnClose" />
-                </div>
-                <h2 class="ticket__title" id="ticket-title-@line.Number">@FeedbackWords.Title(line.Text)</h2>
-            </header>
+            <PaneHead Title="@FeedbackWords.Title(line.Text)" Lead="@($"#{line.Number} · {ChurchDates.Ago(line.SentAt, Now)}")" Actions="Actions(ticket)"
+                      OnOpen="() => Navigation.NavigateTo(FeedbackDestinations.Ticket(line.Number).TrimStart('/'))" OnClose="OnClose" />
         }
         else
         {
             <TitleBand Title="@FeedbackWords.Title(line.Text)" Lead="@($"#{line.Number} · {line.From} · {ChurchDates.Ago(line.SentAt, Now)}")"
-                       BackHref="feedback" BackText="Feedback" BrowserTitle="@($"Feedback #{line.Number}")" />
+                       BackHref="feedback" BackText="Feedback" BrowserTitle="@($"Feedback #{line.Number}")">
+                <Actions><Menu Label="@($"More for #{line.Number}")" Items="Actions(ticket)" /></Actions>
+            </TitleBand>
         }
 
         <div class="ticket__status">
@@ -35,10 +32,6 @@
                 @if (line.Status == TicketStatus.NotDoing)
                 {
                     <Pill Tone="PillTone.Quiet">Not doing</Pill>
-                }
-                else
-                {
-                    <button type="button" class="ticket__quiet-action" disabled="@(_busy is not null)" @onclick="() => SetStatusAsync(ticket, TicketStatus.NotDoing)">Mark not doing</button>
                 }
                 <span class="ticket__hint">@(FeedbackWords.IsClosed(line.Status)
                     ? $"Closed {ChurchDates.Ago(ticket.ClosedAt ?? line.ChangedAt, Now)}. {(line.FilesGoAt is { } goes ? FeedbackWords.FilesGo(goes) + " " : "")}Deleted entirely 180 days after it closed."
@@ -54,11 +47,22 @@
                         @foreach (MediaRef media in ticket.Attachments)
                         {
                             <figure class="ticket__picture">
-                                <MediaPreview Media="media" Size="MediaSizeName.Original" Class="ticket__media" />
+                                @if (media.IsImage)
+                                {
+                                    int shown = Screenshots(ticket).IndexOf(media);
+                                    <PictureOpen Label="@($"Open screenshot {shown + 1} bigger")" OnOpen="() => OpenScreenshot(shown)">
+                                        <MediaPreview Media="media" Size="MediaSizeName.Original" Class="ticket__media" />
+                                    </PictureOpen>
+                                }
+                                else
+                                {
+                                    <MediaPreview Media="media" Size="MediaSizeName.Original" Class="ticket__media" />
+                                }
                                 <figcaption>@(media.IsVideo ? "Video" : "Screenshot") · @FeedbackWords.Size(media.Bytes)</figcaption>
                             </figure>
                         }
                     </div>
+                    <PictureViewer @bind-Open="_viewing" @bind-Index="_viewingAt" Pictures="Screenshots(ticket)" Noun="Screenshot" About="@($"#{line.Number} {FeedbackWords.Title(line.Text)}")" />
                 }
                 else if (line.AttachmentsDeleted)
                 {
@@ -143,14 +147,8 @@
                         @if (_blocking)
                         {
                             <TextField Label="Why block it?" Hint="Only people who look after feedback see this." MaxLength="300" @bind-Value="_blockReason" />
-                            <div class="ticket__actions">
-                                <SaveBar Label="Block this phone" Busy="@(_busy == "block")" Blocked="@(_blockReason.Trim().Length == 0 ? "Say why to block it." : null)" OnSave="() => BlockAsync(ticket)" />
-                                <Button Variant="ButtonVariant.Quiet" Small="true" OnClick="() => (_blocking, _blockReason) = (false, string.Empty)">Cancel</Button>
-                            </div>
-                        }
-                        else
-                        {
-                            <button type="button" class="ticket__danger-link" @onclick="() => _blocking = true">Block this phone</button>
+                            <SaveBar Label="Block this phone" Busy="@(_busy == "block")" Blocked="@(_blockReason.Trim().Length == 0 ? "Say why to block it." : null)" OnSave="() => BlockAsync(ticket)"
+                                     OnCancel="() => (_blocking, _blockReason) = (false, string.Empty)" />
                         }
                     }
                 }
@@ -174,7 +172,6 @@
                     </details>
                 }
 
-                <button type="button" class="ticket__danger-link" @onclick="() => _deleting = true">Delete this feedback</button>
             </aside>
         </div>
     </article>
@@ -199,11 +196,22 @@
     private string _blockReason = "";
     private bool _blocking;
     private bool _deleting;
+    private bool _viewing;
+    private int _viewingAt;
     private string? _busy;
     private string? _problem;
 
     [Parameter, EditorRequired] public int Number { get; set; }
     [Parameter] public bool Docked { get; set; }
+    private IReadOnlyList<MenuItem> Actions(Ticket ticket) =>
+    [
+        .. ticket.Line.Status == TicketStatus.NotDoing ? Array.Empty<MenuItem>() : [this.Item("Mark not doing", () => SetStatusAsync(ticket, TicketStatus.NotDoing), "circle-off", disabled: _busy is not null)],
+        .. ticket.Browser is null && ticket.InstallId.Length > 0 && !ticket.Blocked && !_blocking
+            ? [this.Item("Block this phone…", () => { _blocking = true; return Task.CompletedTask; }, "ban")]
+            : Array.Empty<MenuItem>(),
+        this.Item("Delete this feedback…", () => { _deleting = true; return Task.CompletedTask; }, "trash-2", danger: true, startsGroup: true),
+    ];
+
     [Parameter] public EventCallback OnClose { get; set; }
     [Parameter] public EventCallback OnGone { get; set; }
 
@@ -267,6 +275,10 @@
             await OnGone.InvokeAsync();
         }
     }
+
+    private static List<MediaRef> Screenshots(Ticket ticket) => ticket.Attachments.Where(media => media.IsImage).ToList();
+
+    private void OpenScreenshot(int index) => (_viewingAt, _viewing) = (index, true);
 
     private Task DownloadAsync(MediaRef data) => DoAsync("data", async () =>
     {

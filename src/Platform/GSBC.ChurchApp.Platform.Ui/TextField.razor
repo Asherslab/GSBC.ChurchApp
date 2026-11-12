@@ -6,7 +6,7 @@
     }
     else
     {
-        <input id="@_id" class="field__input" type="@Type" value="@Value" placeholder="@Placeholder" maxlength="@MaxLength" required="@Required" disabled="@Disabled" autocomplete="@AutoComplete" autocapitalize="@AutoCapitalize" min="@Min" max="@Max" aria-describedby="@DescribedBy" aria-invalid="@(Problem is null ? null : "true")" @oninput="ChangeAsync" />
+        <input id="@_id" class="field__input" type="@Type" value="@Value" placeholder="@Placeholder" maxlength="@MaxLength" required="@Required" disabled="@Disabled" autocomplete="@AutoComplete" autocapitalize="@AutoCapitalize" min="@Min" max="@Max" autofocus="@AutoFocus" aria-describedby="@DescribedBy" aria-invalid="@(Problem is null ? null : "true")" @oninput="ChangeAsync" />
     }
     @if (Hint is not null)
     {
@@ -37,6 +37,7 @@
     [Parameter] public string? AutoCapitalize { get; set; }
     [Parameter] public string? Min { get; set; }
     [Parameter] public string? Max { get; set; }
+    [Parameter] public bool AutoFocus { get; set; }
 
     private string? DescribedBy =>
         string.Join(' ', new[] { Hint is null ? null : $"{_id}-hint", Problem is null ? null : $"{_id}-problem" }.OfType<string>()) is { Length: > 0 } ids ? ids : null;

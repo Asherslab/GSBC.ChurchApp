@@ -20,12 +20,12 @@
                 if (chat.WaitingForYou)
                 {
                     <ListRow Title="@($"{card.Name} wants {Names(card.AwaitingYourConsent)}")" Subtitle="@($"{card.MinistryName} · read why and say yes or not now")"
-                             Icon="users" IconTone="RowTone.Warm" Unread="true" Chevron="true" Href="@ChatsDestinations.Chat(card.Id)" Class="chat-row chat-row--waiting" />
+                             Icon="users" IconTone="RowTone.Warm" Unread="true" Chevron="true" Href="@ChatsDestinations.Chat(card.Id)" Class="chat-row--waiting" />
                 }
                 else
                 {
                     <ListRow Title="@ChatText.Title(card)" Subtitle="@Subtitle(card)" Icon="@ChatText.Icon(card)" IconTone="ChatText.Tone(card)"
-                             Unread="@(chat.Unread > 0 && !card.Muted)" Href="@ChatsDestinations.Chat(card.Id)" Class="chat-row">
+                             Unread="@(chat.Unread > 0 && !card.Muted)" Href="@ChatsDestinations.Chat(card.Id)">
                         <TrailingContent>
                             <span class="chat-row__end">
                                 <span class="chat-row__time">@ChatText.When(card.LastAt ?? card.CreatedAt, Clock.GetUtcNow().UtcDateTime)</span>

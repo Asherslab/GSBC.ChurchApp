@@ -1,6 +1,6 @@
 @using GSBC.ChurchApp.Platform.Contracts.Media
 
-<Masthead Title="What's next" Note="@(Digest.Header is null ? null : Digest.Range)" Class="masthead--whats-next">
+<Masthead Title="What's next" Note="@(Digest.Header is null ? null : Digest.Range)">
     @if (Digest.Header is not null && Weeks.Count > 0)
     {
         <p class="whats-next__lead">@Digest.Lead(Today)</p>

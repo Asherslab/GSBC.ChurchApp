@@ -7,7 +7,7 @@
 <UnsavedGuard Changed="() => Started" What="this upload" />
 
 <div class="sermon-upload">
-    <h2>Upload a sermon</h2>
+    <PaneHead Title="Upload a sermon" Lead="The audio, then its details. It's on phones and the website once added." OnClose="Cancelled" />
     <label class="sermon-upload__drop @(_file is null ? "" : "has-file")">
         <Icon Name="music" />
         @if (_file is { } file)
@@ -30,7 +30,7 @@
                           ValueChanged="ChooseSpeaker" Pending="@(_speakerId == NewOne ? $"{_newSpeaker} (new)" : null)" Placeholder="Who preached?"
                           CreateText="@(name => $"Add “{name}” as a new speaker")" OnCreate="NewSpeaker" />
         </div>
-        <div class="sermon-check__field"><TextField Label="Day" Type="date" @bind-Value="_day" /></div>
+        <div class="sermon-check__field"><DateField Label="Day" @bind-Value="_day" /></div>
         <div class="sermon-check__field">
             <SearchPicker TItem="SeriesDetail" Label="Series" Items="Series" Text="SeriesName" Value="SeriesOf(_seriesId)" NoneText="Not in a series"
                           ValueChanged="ChooseSeries" Pending="@(_seriesId == NewOne ? $"{_newSeries} (new)" : null)" Placeholder="Find a series"
@@ -66,9 +66,7 @@
     }
     <Notice Tone="NoticeTone.Warning" Text="@_problem" />
     <div class="panel-actions">
-        <SaveBar Label="Add to the app" Busy="_busy" OnSave="UploadAsync" Blocked="@Blocked">
-            <Button Variant="ButtonVariant.Quiet" Disabled="_busy" OnClick="Cancelled">Cancel</Button>
-        </SaveBar>
+        <SaveBar Label="Add to the app" Busy="_busy" OnSave="UploadAsync" OnCancel="Cancelled" Blocked="@Blocked" />
     </div>
     <p class="hint">It's on everyone's phone as soon as it's added. Staff can tidy the details afterwards.</p>
     @if (_choosing)

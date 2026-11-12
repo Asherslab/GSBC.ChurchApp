@@ -101,16 +101,6 @@
   max-width: 1280px;
 }
 
-.people-tab__group { margin-bottom: 28px; }
-
-.people-tab__head {
-  margin: 0 0 6px;
-  color: var(--ink-3);
-  font-size: var(--text-pill);
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
 
 .people-tab__panel {
   position: sticky;
@@ -158,8 +148,6 @@
   margin-top: 8px;
 }
 
-:is(.people-record, .facts) + .people-tab__head { margin-top: 26px; }
-.people-tab__head.ui-after { margin-top: 22px; }
 
 .people-inline {
   display: flex;

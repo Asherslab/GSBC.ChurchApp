@@ -94,7 +94,7 @@
                 </div>
                 @action.Sheet(new SidebarSheet(open, EventCallback.Factory.Create<bool>(this, isOpen => _opened = isOpen ? action : null)))
             }
-            @foreach (NavEntry entry in Plan.Foot)
+            @foreach (NavEntry entry in Plan.Foot.Where(entry => PermittedActions.All(action => action.Title != entry.Title)))
             {
                 @Link(entry, marksHere: true)
             }
@@ -121,7 +121,7 @@
     private IReadOnlyList<NavEntry> Permitted => SidebarPlan.InOrder(Modules.Navigation.Where(entry => entry.Requires is null || Access.CanSomewhere(entry.Requires)));
 
     private IReadOnlyList<SidebarAction> PermittedActions =>
-        Actions.Where(action => action.Requires is { } permission ? Access.CanSomewhere(permission) : HasAnAdminArea).ToList();
+        Actions.Where(action => action.Requires is { } permission ? Access.CanSomewhere(permission) : HasAnAdminArea).OrderBy(action => action.Order).ToList();
 
     private bool HasAnAdminArea => Permitted.Any(entry => entry.Requires is not null);
 

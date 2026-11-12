@@ -18,7 +18,7 @@
             <ListGroup>
                 @foreach (ReleaseNote note in version)
                 {
-                    <ListRow Reading="true" Title="@note.Title" Subtitle="@note.Summary" Icon="@(note.Icon ?? "sparkles")"
+                    <ListRow Reading="true" Title="@note.Title" Subtitle="@note.Summary" Icon="@(note.Icon ?? AppIcons.WhatsNew)"
                              IconTone="@(note.Highlight ? RowTone.Warm : RowTone.Primary)">
                         <TitleExtra>
                             @if (WhatsNew.ForStaff && note.StaffOnly)

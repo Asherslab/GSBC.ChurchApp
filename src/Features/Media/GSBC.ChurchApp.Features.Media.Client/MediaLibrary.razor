@@ -11,47 +11,33 @@
 <LiveData @ref="_treeLive" TValue="FolderMap" Feeds="[MediaFeeds.Library]" Load="LoadTreeAsync" FailedTitle="Can't load the library right now" Context="tree">
     @{ FolderMap map = tree.Value; }
     <LiveData @ref="_live" TValue="MediaList" Feeds="[MediaFeeds.Library]" Load="LoadAsync" FailedTitle="Can't load the library right now">
-        <div class="media-library__bar media-library__bar--top">
-            <Segmented TValue="Shelf" Label="Which files" Options="ShelfOptions" Value="_shelf" ValueChanged="SwitchShelfAsync" />
-            @if (ShowsFiles)
-            {
-                <div class="media-library__tools">
-                    <FilterChips TValue="MediaFilter" Label="Show" Options="Filters(context.Value.Counts)" Value="_filter" ValueChanged="FilterAsync" />
-                    <Segmented TValue="LibraryView" Label="Show as" Options="ViewOptions" @bind-Value="_view" />
-                </div>
-            }
-        </div>
-        <div class="media-library__head">
-            @if (Searching)
-            {
-                <div class="media-library__path">
+        <Workbench AsideLabel="Find and filter" FoldAside="true" Aside="Rail(context.Value)" Detail="@Detail(map)" DetailLabel="@(_uploading ? "Upload" : "File")">
+            <div class="media-library__head">
+                @if (Searching)
+                {
                     <p class="media-library__results">Results for “@_query” in every folder</p>
-                    <Button Variant="ButtonVariant.Quiet" Small="true" Icon="x" OnClick="() => OnClearSearch.InvokeAsync()">Clear search</Button>
-                </div>
-            }
-            else
-            {
-                <div class="media-library__path">
+                    <Button Variant="ButtonVariant.Quiet" Small="true" Icon="x" OnClick="() => SearchAsync(string.Empty)">Clear search</Button>
+                }
+                else
+                {
                     <Breadcrumbs Label="Where you are" Trail="Trail(map)" OnOpen="crumb => OpenAsync(crumb.Key)" CanDrop="crumb => CanDropOn(map, crumb.Key)" OnDrop="crumb => DropAsync(crumb.Key)" />
                     @if (map.Find(_folderId) is { IsSystem: false } here && CanOrganise)
                     {
-                        <div class="media-library__folder-actions">
-                            <Button Variant="ButtonVariant.Quiet" Small="true" Icon="pencil" OnClick="() => StartRename(here)">Rename…</Button>
-                            <Button Variant="ButtonVariant.Quiet" Small="true" Icon="folder-input" OnClick="() => StartMoveFolder(here)">Move to…</Button>
-                            <Button Variant="ButtonVariant.Danger" Small="true" OnClick="() => StartDelete(here)">Delete folder…</Button>
-                        </div>
+                        <Menu Label="@($"More for “{here.Name}”")" Items="FolderActions(here)" Small="true" />
                     }
-                </div>
-                @if (_shelf == Shelf.App)
-                {
-                    <p class="media-library__system-note">
-                        <Icon Name="lock" Size="IconSize.Small" />
-                        @(SystemRoot(map)?.Caption is { Length: > 0 } caption ? caption : "Files people share through the app, in folders the app makes for them.") @(SystemRoot(map) is { UnusedDeletable: true } ? "They stay where the app put them: they can't be moved or renamed here." : "They stay where the app put them: they can't be moved, renamed or deleted here.")
-                    </p>
                 }
+                @if (ShowsFiles)
+                {
+                    <Segmented TValue="LibraryView" Label="Show as" Options="ViewOptions" @bind-Value="_view" Class="media-library__view" />
+                }
+            </div>
+            @if (!Searching && _shelf == Shelf.App)
+            {
+                <p class="media-library__system-note">
+                    <Icon Name="lock" Size="IconSize.Small" />
+                    @(SystemRoot(map)?.Caption is { Length: > 0 } caption ? caption : "Files people share through the app, in folders the app makes for them.") @(SystemRoot(map) is { UnusedDeletable: true } ? "They stay where the app put them: they can't be moved or renamed here." : "They stay where the app put them: they can't be moved, renamed or deleted here.")
+                </p>
             }
-        </div>
-        <SplitView Detail="@Detail(map)" DetailLabel="@(_uploading ? "Upload" : "File")">
             <div class="media-library @(_dragItems.Count + _dragFolders.Count > 0 ? "media-library--dragging" : "")">
 
                 @if (!Searching)
@@ -131,7 +117,7 @@
                     <EmptyState Icon="lock" Title="Nothing made by the app yet" Body="When people share pictures or files in the app, such as in a group chat, they're kept here in folders the app makes." />
                 }
             </div>
-        </SplitView>
+        </Workbench>
 
         <SelectionTray Label="Chosen files" Count="@(_chosen.Count > 1 ? _chosen.Count : 0)" One="file" Many="files" OnClear="ClearChosen">
             @if (CanOrganise && _shelf == Shelf.Library)
@@ -148,12 +134,12 @@
                Lead="@(_sheet == FolderSheet.Create ? $"In {map.PathName(_folderId)}." : null)">
             <ChildContent>
                 <form class="panel-form" @onsubmit="SaveNameAsync" @onsubmit:preventDefault="true">
-                    <TextField Label="Name" @bind-Value="_name" MaxLength="80" Problem="@_sheetProblem" />
+                    <TextField Label="Name" @bind-Value="_name" MaxLength="80" Problem="@_sheetProblem" AutoFocus="true" />
                 </form>
             </ChildContent>
             <Actions>
-                <Button Variant="ButtonVariant.Quiet" OnClick="CloseSheet">Cancel</Button>
                 <Button Icon="check" Busy="_busy" Disabled="@(_name.Trim().Length == 0)" OnClick="SaveNameAsync">@(_sheet == FolderSheet.Create ? "Make folder" : "Rename")</Button>
+                <Button Variant="ButtonVariant.Quiet" OnClick="CloseSheet">Cancel</Button>
             </Actions>
         </Sheet>
 
@@ -162,11 +148,20 @@
                      Current="@_sheetFolder?.Id" Suggested="@_sheetFolder?.ParentId" Blocked="target => target is not null && _sheetFolder is not null && map.IsWithin(target, _sheetFolder.Id)"
                      Busy="_busy" Problem="@_sheetProblem" OnMove="target => DeleteFolderAsync(true, target)" OnCancel="CloseSheet" />
 
+        <Sheet Open="_confirming && Single is not null" OpenChanged="open => _confirming = open" Title="@($"Delete “{(Single?.Media is { } chosen ? NameOf(chosen) : "")}”?")"
+               Lead="It isn't used anywhere, so nothing in the app changes. This can't be undone.">
+            <ChildContent><Notice Tone="NoticeTone.Warning" Text="@_error" /></ChildContent>
+            <Actions>
+                <Button Variant="ButtonVariant.Danger" Busy="_busy" OnClick="DeleteAsync">Delete it</Button>
+                <Button Variant="ButtonVariant.Quiet" OnClick="() => _confirming = false">Keep it</Button>
+            </Actions>
+        </Sheet>
+
         <Sheet Open="_sheet == FolderSheet.DeleteEmpty" OpenChanged="_ => CloseSheet()" Title="@($"Delete “{_sheetFolder?.Name}”?")" Lead="It's empty, so nothing else changes.">
             <ChildContent><Notice Tone="NoticeTone.Warning" Text="@_sheetProblem" /></ChildContent>
             <Actions>
-                <Button Variant="ButtonVariant.Quiet" OnClick="CloseSheet">Keep it</Button>
                 <Button Variant="ButtonVariant.Danger" Busy="_busy" OnClick="() => DeleteFolderAsync(false, null)">Delete folder</Button>
+                <Button Variant="ButtonVariant.Quiet" OnClick="CloseSheet">Keep it</Button>
             </Actions>
         </Sheet>
     </LiveData>
@@ -210,10 +205,26 @@
     private List<string> _dragItems = [];
     private List<string> _dragFolders = [];
 
-    private static readonly IReadOnlyList<SegmentOption<Shelf>> ShelfOptions =
+    private static readonly IReadOnlyList<FilterOption<Shelf>> ShelfOptions =
     [
-        new(Shelf.Library, "Library", "image"),
-        new(Shelf.App, "Made by the app", "lock"),
+        new(Shelf.Library, "Library", Icon: "images"),
+        new(Shelf.App, "Made by the app", Icon: "smartphone"),
+    ];
+
+    private RenderFragment Rail(MediaList list) => @<text>
+        <SearchField Label="Find a file in every folder" Placeholder="Find a file" Value="@_query" ValueChanged="SearchAsync" Class="media-library__search" />
+        <FilterChips TValue="Shelf" Label="Where" Options="ShelfOptions" Value="_shelf" ValueChanged="SwitchShelfAsync" Rail="true" />
+        @if (ShowsFiles)
+        {
+            <FilterChips TValue="MediaFilter" Label="What" Options="Filters(list.Counts)" Value="_filter" ValueChanged="FilterAsync" Rail="true" />
+        }
+    </text>;
+
+    private IReadOnlyList<MenuItem> FolderActions(FolderInfo folder) =>
+    [
+        this.Item("Rename…", () => { StartRename(folder); return Task.CompletedTask; }, "pencil"),
+        this.Item("Move to…", () => { StartMoveFolder(folder); return Task.CompletedTask; }, "folder-input"),
+        this.Item("Delete folder…", () => { StartDelete(folder); return Task.CompletedTask; }, "trash-2", danger: true, startsGroup: true),
     ];
 
     private static readonly IReadOnlyList<SegmentOption<LibraryView>> ViewOptions =
@@ -221,15 +232,6 @@
         new(LibraryView.Grid, "Grid", "grid"),
         new(LibraryView.List, "List", "list"),
     ];
-
-    [Parameter] public string Query { get; set; } = "";
-    [Parameter] public EventCallback OnClearSearch { get; set; }
-
-    protected override async Task OnParametersSetAsync()
-    {
-        if (Query.Trim() != _query)
-            await SearchAsync(Query);
-    }
 
     private bool CanOrganise => Access.Can(MediaPermissions.Organise);
 
@@ -275,12 +277,11 @@
 
     private RenderFragment? Detail(FolderMap map) => _uploading
         ? @<text>
-              <h2 class="panel-title">Upload</h2>
-              <p class="panel-lead">Pictures (JPEG, PNG, WebP) or a PDF. It goes into @(_shelf == Shelf.Library && _folderId is not null && !Searching ? map.PathName(_folderId) : "the Library").</p>
+              <PaneHead Title="Upload" Lead="@($"Pictures (JPEG, PNG, WebP) or a PDF. It goes into {(_shelf == Shelf.Library && _folderId is not null && !Searching ? map.PathName(_folderId) : "the Library")}.")" OnClose="() => _uploading = false" />
               <MediaUpload FolderId="@(_shelf == Shelf.Library && !Searching ? _folderId : null)" OnUploaded="UploadedAsync" />
-              <div class="panel-actions"><Button Variant="ButtonVariant.Quiet" OnClick="() => _uploading = false">Close</Button></div>
           </text>
         : Single is not { Media: { } media } selected ? null : @<text>
+              <PaneHead Title="@NameOf(media)" Lead="@(media.AltText.Length > 0 ? media.AltText : null)" Actions="FileActions(map, selected)" OnClose="ClearChosen" />
               @if (media.IsImage)
               {
                   <MediaImage @key="media.Id" Media="media" Class="media-preview" />
@@ -288,11 +289,6 @@
               else if (IsAudio(media) && media.Url is { } audio)
               {
                   <AudioPreview @key="media.Id" Item="new AudioItem(media.Id, audio, NameOf(media), string.Empty, string.Empty, null, 0)" />
-              }
-              <h2 class="panel-title media-detail__title">@NameOf(media)</h2>
-              @if (media.AltText.Length > 0)
-              {
-                  <p class="panel-lead">@media.AltText</p>
               }
               <dl class="facts">
                   <dt>Folder</dt>
@@ -323,46 +319,31 @@
                   <PictureVersions Item="selected" Original="original" CanRemoveOriginal="CanRemoveOriginal(selected)" Busy="_busy" Problem="@_versionsProblem"
                                    OnRemoveOriginal="RemoveOriginalAsync" />
               }
-              <div class="panel-actions">
-                  @if (CanMoveFiles(map, selected))
-                  {
-                      <Button Icon="folder-input" OnClick="StartMoveChosen">Move to…</Button>
-                  }
-                  @if (media.Url is not null && selected.PrivateTo is null)
-                  {
+              @if (media.Url is not null && selected.PrivateTo is null)
+              {
+                  <div class="panel-actions">
                       <a class="btn btn--quiet" href="@media.Url" target="_blank" rel="noopener"><Icon Name="external-link" Size="IconSize.Small" />Open</a>
-                  }
-              </div>
+                  </div>
+              }
               @if (map.Find(selected.FolderId) is { IsSystem: true, UnusedDeletable: false })
               {
                   <p class="panel-hint">The app keeps this file where it put it.</p>
               }
-              else if (selected.Uses == 0)
-              {
-                  <Can Permission="MediaPermissions.Delete">
-                      <section class="panel-section @(_confirming ? "panel-confirm" : "")" aria-label="Delete">
-                          @if (_confirming)
-                          {
-                              <h3 class="panel-subtitle">Delete it for good?</h3>
-                              <p class="panel-lead">It isn't used anywhere, so nothing in the app changes.</p>
-                              <div class="panel-actions">
-                                  <Button Variant="ButtonVariant.Danger" Busy="_busy" OnClick="DeleteAsync">Delete</Button>
-                                  <Button Variant="ButtonVariant.Quiet" OnClick="() => _confirming = false">Keep it</Button>
-                              </div>
-                          }
-                          else
-                          {
-                              <Button Variant="ButtonVariant.Danger" Small="true" OnClick="() => _confirming = true">Delete…</Button>
-                          }
-                      </section>
-                  </Can>
-              }
-              else
+              else if (selected.Uses > 0)
               {
                   <p class="panel-hint">It can be deleted once nothing uses it.</p>
               }
               <Notice Tone="NoticeTone.Warning" Text="@_error" />
           </text>;
+
+    private IReadOnlyList<MenuItem> FileActions(FolderMap map, MediaItemInfo item) =>
+    [
+        .. CanMoveFiles(map, item) ? [this.Item("Move to…", () => { StartMoveChosen(); return Task.CompletedTask; }, "folder-input")] : Array.Empty<MenuItem>(),
+        .. CanDelete(map, item) ? [this.Item("Delete…", () => { _confirming = true; return Task.CompletedTask; }, "trash-2", danger: true, startsGroup: true)] : Array.Empty<MenuItem>(),
+    ];
+
+    private bool CanDelete(FolderMap map, MediaItemInfo item) =>
+        Access.Can(MediaPermissions.Delete) && item.Uses == 0 && map.Find(item.FolderId) is not { IsSystem: true, UnusedDeletable: false };
 
     private IReadOnlyList<TableColumn<MediaItemInfo>> Columns(FolderMap map) =>
     [
@@ -461,7 +442,6 @@
     private async Task RevealAsync(MediaItemInfo item)
     {
         _shelf = _map.Find(item.FolderId) is { IsSystem: true } ? Shelf.App : Shelf.Library;
-        await OnClearSearch.InvokeAsync();
         _query = "";
         await OpenFolderAsync(item.FolderId);
         _chosen.Add(item.Media!.Id);
