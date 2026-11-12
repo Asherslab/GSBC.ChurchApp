@@ -141,7 +141,6 @@
 .chat-desk__title { font-size: var(--text-title-lg); font-weight: 700; letter-spacing: -0.02em; line-height: 1.2; }
 .chat-desk__list-head .search-field { width: auto; max-width: none; margin: var(--space-md) var(--space-lg) var(--space-xs); }
 .chat-desk__list .list-group { border-radius: 0; background: none; box-shadow: none; }
-.chat-desk__list .row--current { background: var(--selected-fill); }
 .chat-desk__list .row--unread .row__title { padding-left: 0; }
 .chat-desk__list .row--unread .row__unread { display: none; }
 .chat-desk__list .row__trail > .icon { display: none; }
