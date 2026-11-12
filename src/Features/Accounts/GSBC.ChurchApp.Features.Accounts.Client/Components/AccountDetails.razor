@@ -3,6 +3,7 @@
 @inject IAccountReads Reads
 @inject ClientSignals Signals
 @inject IEnumerable<AccountSection> Sections
+@inject IEnumerable<AccountYouPart> YouParts
 
 <UnsavedGuard Changed="() => _name is not null || _code.Trim().Length > 0" What="@(_name is not null ? "your name" : "the code from the email")" Save="@(_name is not null ? SaveNameBeforeLeavingAsync : null)" />
 
@@ -34,6 +35,13 @@
                 <Button Variant="ButtonVariant.Quiet" Busy="_busy" OnClick="ResendAsync">Send a new code</Button>
                 <Button Busy="_busy" Disabled="@(_code.Trim().Length == 0)" OnClick="ConfirmAsync">Confirm</Button>
             </div>
+        }
+        @if (!context.Value.Profile.DemoAccount)
+        {
+            @foreach (AccountYouPart part in YouParts.OrderBy(part => part.Order))
+            {
+                <ErrorBoundary @key="part.Key">@part.Content</ErrorBoundary>
+            }
         }
         </ChildContent>
     </Section>

@@ -21,7 +21,14 @@
                         <span class="bubble__name-note"> · @NameNote</span>
                     }</span>
             }
-            @Quote
+            @if (Quote is not null && OnQuote.HasDelegate)
+            {
+                <button type="button" class="bubble__quote" aria-label="@QuoteLabel" @onclick="OnQuote">@Quote</button>
+            }
+            else
+            {
+                @Quote
+            }
             <span class="bubble__body">@ChildContent</span>
             <span class="bubble__time">@Time</span>
         </div>
@@ -48,6 +55,8 @@
     [Parameter] public RenderFragment? Status { get; set; }
     [Parameter] public RenderFragment? ChildContent { get; set; }
     [Parameter] public EventCallback OnLongPress { get; set; }
+    [Parameter] public EventCallback OnQuote { get; set; }
+    [Parameter] public string QuoteLabel { get; set; } = "Go to the message this replies to";
 
     private string AriaLabel => Mine ? $"You, {Time}" : $"{Name}, {Time}";
 

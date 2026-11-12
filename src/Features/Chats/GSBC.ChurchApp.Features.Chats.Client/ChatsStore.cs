@@ -41,7 +41,7 @@ public sealed class ChatsStore(ILocalFeeds feeds, IOutbox outbox, ILocalPreferen
     private const string Service = "/gsbc.chats.Chats/";
     private const string PendingKey = "chats.pending";
     private const int MostChats = 200;
-    private const int MostMessages = 400;
+    public const int MostMessages = 400;
     private readonly Dictionary<string, long> _markedRead = [];
     private readonly Dictionary<string, string> _drafts = [];
 
@@ -61,7 +61,7 @@ public sealed class ChatsStore(ILocalFeeds feeds, IOutbox outbox, ILocalPreferen
         return new ChatsHome(chats, rows.Any(row => row.GroupKey == "status"));
     }
 
-    public async Task<Conversation?> ChatAsync(string chatId)
+    public async Task<Conversation?> ChatAsync(string chatId, int most = MostMessages)
     {
         if (!feeds.IsAvailable)
             return null;
@@ -69,7 +69,7 @@ public sealed class ChatsStore(ILocalFeeds feeds, IOutbox outbox, ILocalPreferen
         if (home.Chats.FirstOrDefault(chat => chat.Card.Id == chatId)?.Card is not { } card)
             return null;
 
-        List<ChatMessage> messages = (await feeds.ReadPageAsync(new FeedPageQuery(ChatsFeeds.Messages, Descending: true, Limit: MostMessages, GroupKey: chatId)))
+        List<ChatMessage> messages = (await feeds.ReadPageAsync(new FeedPageQuery(ChatsFeeds.Messages, Descending: true, Limit: most, GroupKey: chatId)))
             .Select(row => Decode<ChatMessage>(row.Payload))
             .OrderBy(message => message.Seq)
             .ToList();

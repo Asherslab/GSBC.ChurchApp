@@ -1333,6 +1333,12 @@ button.text-link:disabled { color: var(--ink-3); cursor: default; }
 .bubble-row--first:not(.bubble-row--mine) .bubble { border-bottom-left-radius: 6px; }
 .bubble-row--mine .bubble { background: var(--primary); color: var(--on-primary); }
 .bubble-row--mine.bubble-row--first .bubble { border-bottom-right-radius: 6px; }
+.bubble__quote { display: grid; padding: 0; border: 0; border-radius: var(--radius-tile); background: none; color: inherit; font: inherit; text-align: start; cursor: pointer; -webkit-tap-highlight-color: transparent; transition: transform 120ms ease-out; }
+.bubble__quote:active { transform: scale(0.98); }
+.bubble__quote:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.bubble-row.is-pointed-out .bubble { animation: bubble-pointed-out 1.6s cubic-bezier(0.16, 1, 0.3, 1); }
+@keyframes bubble-pointed-out { 0%, 35% { box-shadow: 0 0 0 4px color-mix(in srgb, var(--marker) 70%, transparent); } 100% { box-shadow: 0 0 0 4px transparent; } }
+@media (prefers-reduced-motion: reduce) { .bubble-row.is-pointed-out .bubble { animation-duration: 2.4s; } .bubble__quote { transition: none; } }
 .bubble__name { font-size: var(--text-caption); font-weight: 600; color: var(--ink-2); }
 .bubble__name-note { font-weight: 400; color: var(--ink-3); }
 .bubble__body { white-space: pre-wrap; }
@@ -1616,6 +1622,7 @@ span.stage-pipeline__stage { pointer-events: none; }
 
 .month-days { display: grid; gap: var(--space-sm); }
 .month-days__bar { display: flex; align-items: center; justify-content: space-between; gap: var(--space-sm); }
+.month-days__bar .btn:disabled:not([aria-busy="true"]) { box-shadow: none; color: var(--ink-3); opacity: 0.5; }
 .month-days__title { font-size: var(--text-row); font-weight: 700; }
 .month-days__grid { display: grid; gap: var(--space-2xs); }
 .month-days__week { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: var(--space-2xs); }

@@ -1,0 +1,7 @@
+@page "/account/away"
+@inject IRosterReads Reads
+
+<Page Title="Days away" BackHref="account" BackLabel="Back">
+    <Masthead Title="Days away" Note="Leaders of your teams see these. They can still put you on; it's flagged." />
+    <DaysAway Paged="true" First="true" Load="Reads.AwayAsync" Feeds="Reads.Feeds" Remember="rosters.away" />
+</Page>

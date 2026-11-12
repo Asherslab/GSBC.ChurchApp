@@ -17,6 +17,7 @@ public static class RostersClientExtensions
         services
             .AddRostersClient()
             .AddSingleton<IRosterReads, StoredRosters>()
+            .AddSingleton<AwayOnItsOwnPage>()
             .AddSingleton(new AccountSection("rosters-away", AfterFamily, builder =>
             {
                 builder.OpenComponent<YourDaysAway>(0);
