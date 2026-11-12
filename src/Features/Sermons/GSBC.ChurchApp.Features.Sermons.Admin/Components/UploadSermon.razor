@@ -8,20 +8,11 @@
 
 <div class="sermon-upload">
     <PaneHead Title="Upload a sermon" Lead="The audio, then its details. It's on phones and the website once added." OnClose="Cancelled" />
-    <label class="sermon-upload__drop @(_file is null ? "" : "has-file")">
-        <Icon Name="music" />
-        @if (_file is { } file)
-        {
-            <span class="sermon-upload__name">@file.Name</span>
-            <span class="sermon-upload__hint">@SermonText.Join($"{file.Size / 1024d / 1024d:0.#} MB", file.Duration > 0 ? SermonText.Length(file.Duration) : null, "choose another")</span>
-        }
-        else
-        {
-            <span class="sermon-upload__name">Choose the sermon's audio</span>
-            <span class="sermon-upload__hint">An mp3 or m4a, up to 300 MB</span>
-        }
+    <DropBox Icon="music" Chosen="_file is not null" Busy="_busy"
+             Prompt="@(_file is { } file ? file.Name : "Drop the sermon's audio here")"
+             Hint="@(_file is { } chosen ? SermonText.Join($"{chosen.Size / 1024d / 1024d:0.#} MB", chosen.Duration > 0 ? SermonText.Length(chosen.Duration) : null, "drop or click to choose another") : "An mp3 or m4a, up to 300 MB. Or click to choose it.")">
         <input @ref="_input" type="file" accept=".mp3,.m4a,audio/mpeg,audio/mp4,audio/x-m4a" class="visually-hidden" disabled="@_busy" @onchange="ChosenAsync" />
-    </label>
+    </DropBox>
 
     <div class="sermon-check__fields">
         <div class="sermon-check__field sermon-check__field--wide"><TextField Label="Title" @bind-Value="_title" MaxLength="160" Required="true" /></div>
