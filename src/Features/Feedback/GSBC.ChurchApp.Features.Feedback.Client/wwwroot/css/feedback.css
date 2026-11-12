@@ -39,10 +39,6 @@
 .feedback-label--admin { background: color-mix(in srgb, var(--primary) 12%, transparent); color: var(--primary); }
 
 .ticket { display: grid; gap: 18px; }
-.ticket__head { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px 12px; align-items: center; }
-.ticket__meta { grid-column: 1; grid-row: 1; min-width: 0; overflow: hidden; font-size: var(--text-caption); color: var(--ink-3); font-variant-numeric: tabular-nums; white-space: nowrap; text-overflow: ellipsis; }
-.ticket__head-actions { grid-column: 2; grid-row: 1; display: flex; align-items: center; gap: 4px; }
-.ticket__title { grid-column: 1 / -1; font-size: var(--text-title); font-weight: 700; letter-spacing: -0.015em; line-height: 1.25; text-wrap: balance; overflow-wrap: anywhere; }
 .ticket__facts { display: grid; grid-template-columns: 5.5rem minmax(0, 1fr); margin: 0; font-size: var(--text-caption); }
 .ticket__facts dt, .ticket__facts dd { margin: 0; padding: 8px 0; border-top: 1px solid var(--line); }
 .ticket__facts dt { font-weight: 600; color: var(--ink-3); }
@@ -51,8 +47,6 @@
 .ticket--page .ticket__status { max-width: 760px; }
 .ticket__status-line { display: grid; justify-items: start; gap: 6px; }
 .feedback-label--clip { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.ticket__quiet-action { min-height: 32px; padding: 0; border: 0; background: none; font: inherit; font-size: var(--text-caption); font-weight: 600; color: var(--ink-2); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
-.ticket__quiet-action:hover { color: var(--ink); }
 .ticket__hint { font-size: var(--text-caption); color: var(--ink-3); max-width: 60ch; }
 .ticket__body { display: grid; gap: 24px; }
 .ticket--page .ticket__body { grid-template-columns: minmax(0, 1fr) minmax(280px, 360px); gap: 40px; max-width: 1320px; }
@@ -68,8 +62,6 @@
 .ticket__words { font-size: var(--text-body); line-height: 1.55; color: var(--ink); white-space: pre-wrap; overflow-wrap: anywhere; max-width: 68ch; }
 .ticket__timeline { display: grid; gap: 12px; }
 .ticket__note { font-size: var(--text-caption); color: var(--ink-2); }
-.ticket__actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
-.ticket__danger-link { justify-self: start; min-height: var(--touch); padding: 0; border: 0; background: none; font: inherit; font-size: var(--text-caption); font-weight: 600; color: var(--danger); cursor: pointer; }
 .ticket__state summary { min-height: var(--touch); display: flex; align-items: center; gap: 4px; font-size: var(--text-caption); font-weight: 600; color: var(--accent); cursor: pointer; list-style: none; }
 .ticket__state summary::-webkit-details-marker { display: none; }
 .ticket__state summary .icon { transition: transform 200ms ease-out; }
@@ -121,9 +113,7 @@
 .feedback-send__drop strong { color: var(--ink); font-size: var(--text-label); font-weight: 700; }
 .feedback-send__drop kbd { padding: 1px 6px; border-radius: var(--radius-tile); background: var(--sand); font: inherit; font-weight: 700; font-variant-numeric: tabular-nums; }
 .feedback-send.is-dropping .feedback-send__drop { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, var(--page)); }
-.feedback-send__actions { display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: flex-start; gap: 8px; }
-.feedback-send__actions .save-bar { display: contents; }
-.feedback-send__actions .save-bar__why { flex-basis: 100%; text-align: right; }
+.feedback-send__save { width: 100%; }
 .feedback-send__thanks { display: flex; align-items: center; gap: 8px; margin: 4px 0 0; padding: 8px 10px; border-radius: var(--radius-inner); background: var(--masthead-chip); color: var(--on-masthead); font-size: var(--text-caption); font-weight: 600; animation: fade 200ms var(--ease-out) both; }
 dialog.is-capturing { visibility: hidden; }
 @media (min-width: 720px) {

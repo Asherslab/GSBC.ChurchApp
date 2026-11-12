@@ -73,6 +73,7 @@
         </LiveData>
     }
     <div class="media-choice__foot">
+        <Button Variant="ButtonVariant.Quiet" OnClick="() => OnCancel.InvokeAsync()">Cancel</Button>
         <span class="media-choice__chosen">
             <span>@(_selected is null ? "Nothing chosen yet" : NameOf(_selected))</span>
             @if (_selected is { IsImage: true } picture)
@@ -80,7 +81,6 @@
                 <MediaShownAt Media="picture" Size="Size" />
             }
         </span>
-        <Button Variant="ButtonVariant.Quiet" OnClick="() => OnCancel.InvokeAsync()">Cancel</Button>
         <Button Icon="check" Disabled="_selected is null" OnClick="() => OnPick.InvokeAsync(_selected!)">Choose</Button>
     </div>
 </div>

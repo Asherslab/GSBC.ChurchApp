@@ -413,13 +413,9 @@ else
         if (_form is not null && !IsHub && !IsTabs)
         {
             <button type="button" class="draft-pane__back" @onclick="Deselect"><Icon Name="chevron-left" Size="IconSize.Small" /> @area.Title</button>
-            <div class="detail-pane__head">
-                <h3>@FormTitle</h3>
-                <span>@_form.Surface.Description</span>
-            </div>
+            <PaneHead Title="@FormTitle" Lead="@_form.Surface.Description" Actions="FormMenu" />
             @ChangedWhileEditing
             <PlacementForm Draft="_form" Changed="FormChangedAsync" MoreChoices="CustomThemes" Scheme="_preview.Scheme" SchemeChanged="SetScheme" />
-            <div class="ui-actions tile-settings__actions">@FormActions</div>
             return;
         }
         if (_form is null)
@@ -561,13 +557,9 @@ else
         }
         else if (_form is not null)
         {
-            <div class="detail-pane__head">
-                <h3>@FormTitle</h3>
-                <span>@_form.Surface.Description</span>
-            </div>
+            <PaneHead Title="@FormTitle" Lead="@_form.Surface.Description" Actions="FormMenu" />
             @ChangedWhileEditing
             <PlacementForm Draft="_form" Changed="FormChangedAsync" />
-            <div class="ui-actions">@FormActions</div>
         }
         else
         {
@@ -585,10 +577,7 @@ else
         }
         else
         {
-            <div class="detail-pane__head">
-                <h3>The tab bar</h3>
-                <span>Home first, up to three tabs you choose, then More. Click a tab on the phone to change what it opens, its word and its icon, or add one.</span>
-            </div>
+            <PaneHead Title="The tab bar" Lead="Home first, up to three tabs you choose, then More. Click a tab on the phone to change what it opens, its word and its icon, or add one." />
             <p class="detail-pane__hint">A place that isn't a tab is still in the app: it's listed in More, and reached from Home's tiles, links and notifications.</p>
         }
     };
@@ -621,23 +610,22 @@ else
 
     private RenderFragment FormActions => __builder =>
     {
-        if (_form is not null && _session is not null)
+        if (FormMenu.Count > 0)
         {
-            if (_session.PatchFor(_formId) is not null)
-            {
-                <Button Variant="ButtonVariant.Quiet" Small="true" Icon="undo" OnClick="() => UndoAsync(_formId!)">Undo changes to this</Button>
-            }
-            if (IsHub && TileKind is not null)
-            {
-                <Button Variant="ButtonVariant.Quiet" Small="true" Icon="plus" OnClick="CopyTile">Make a copy</Button>
-                <Button Variant="ButtonVariant.Quiet" Small="true" Icon="bookmark" OnClick="() => _savingTile = true">Save to the library</Button>
-            }
-            if (!_form.IsNew || _session.LiveOf(FormArea, _formId) is not null)
-            {
-                <Button Variant="ButtonVariant.Danger" Small="true" OnClick="RemoveSelectedAsync">@RemoveWords(_form)</Button>
-            }
+            <Menu Label="@($"More for {FormTitle}")" Items="FormMenu" Text="More" Small="true" AlignStart="true" />
         }
     };
+
+    private IReadOnlyList<MenuItem> FormMenu => _form is null || _session is null ? [] :
+    [
+        .. _session.PatchFor(_formId) is not null ? [new MenuItem("Undo changes to this", () => UndoAsync(_formId!), "undo")] : Array.Empty<MenuItem>(),
+        .. IsHub && TileKind is not null
+            ? [new MenuItem("Make a copy", () => { CopyTile(); return Task.CompletedTask; }, "plus"), new MenuItem("Save to the library", () => { _savingTile = true; return Task.CompletedTask; }, "bookmark")]
+            : Array.Empty<MenuItem>(),
+        .. !_form.IsNew || _session.LiveOf(FormArea, _formId) is not null
+            ? [new MenuItem(RemoveWords(_form), RemoveSelectedAsync, "trash-2", Danger: true, StartsGroup: true)]
+            : Array.Empty<MenuItem>(),
+    ];
 
     private bool IsAppearance => _area.Area == AppearanceSurfaces.Area.Key;
 
