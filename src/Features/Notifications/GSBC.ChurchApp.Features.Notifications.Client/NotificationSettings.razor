@@ -26,7 +26,7 @@ else if (Push.Permission != PushRegistration.Granted)
 <LiveData TValue="IReadOnlyList<KindChoice>" Load="Preferences.LoadAsync" Feeds="NotificationPreferences.Feeds">
     @foreach (IGrouping<string, KindChoice> area in context.Value.GroupBy(choice => choice.Kind.Area))
     {
-        <Section Title="@area.Key">
+        <Section Title="@area.Key" Grouped="true">
             <ListGroup>
                 @foreach (KindChoice choice in area)
                 {
