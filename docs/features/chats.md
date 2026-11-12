@@ -20,7 +20,8 @@ for the owner to redirect.
 - **A ministry's people changing reaches its chats at once** (2026-11-12): Chats handles Platform's
   `IMinistryPeopleChanged` as well as watching grants.
 - **Where:** *Chats* (`/chats`: every chat you're in, newest first, a parent's yes waiting on top), a ministry's
-  **Chats tab**, a Hub tile, and in the admin panel the **Chats desk**. Deep links: `/chats/{id}`;
+  **Chats tab**, a Hub tile, and in the admin panel **Chats** (your own chats on a computer) and **Chat safety** (the
+  checking desk). Deep links: `/chats/{id}`, the same in the app and the admin panel;
   `/ministries/{id}/chats`.
 - **In a chat:** reply (quoted), react (six quick reactions), mention with `@`, read receipts ("Seen by 4" under your
   last message, tap for who), edit and delete your own messages ("edited", "You deleted this message"), report,
@@ -68,7 +69,7 @@ All of it is plain code in `ChatMembership.Decide`, unit tested (`ChatMembership
   for Tom"), never in a channel.
 - **Two adults with a current blue card** (`ISafeguardingStandings`, answered by People from Safe Ministry Check and hand-entered
   cards): a chat with young people and fewer than two such adults (parents reading don't count) is **flagged** to its
-  leaders and on the desk, never blocked.
+  leaders and under Chat safety, never blocked.
 - **Checking:** a ministry's leaders check every chat in their ministry and those under it (`chats.check`); the
   **Chat auditor** role (global, sensitive; `chats.audit` and `chats.check`) checks any chat. Checking happens in the
   admin panel, asks *why*, and is **logged** with who, when and the reason; the log is kept forever and shown to the
@@ -76,7 +77,7 @@ All of it is plain code in `ChatMembership.Decide`, unit tested (`ChatMembership
   including what a deleted message said.
 - **Reporting:** from a message, to the ministry's leaders or to "the church's safety team" (the auditors; *Claude's
   pick of words*). A message from a leader goes to the auditors. Leaders get an ordinary notification that opens the
-  chat; auditors get an **urgent** one (skips quiet hours) and handle it on the desk: read it in context, pause the
+  chat; auditors get an **urgent** one (skips quiet hours) and handle it under Chat safety: read it in context, pause the
   sender, say what was done. The reporter isn't named to the person reported.
 - **Pausing:** an auditor pauses someone with a reason (the hidden *Chats paused* role). **A paused person loses their
   chats** until let back in (*Claude's pick*, stricter than the sketch's "can still read"): nothing new reaches their
@@ -114,8 +115,8 @@ a person, a word, a day, then reading around it), named the filters, and wanted 
 from the page. They picked the **folded** layout on the decision page (`.impeccable/mocks/chats/review/`, brief in
 `.impeccable/surfaces/chats-gsbc-churchapp-features-chats-admin-81ff7e36.md`).
 
-- **The desk asks why first.** Choosing a chat on the Chats desk shows its record with *Why are you reading this
-  chat?* and **Open the chat**, which runs the check (logged as before) and opens `/chats/check/{id}`. Opening that
+- **The desk asks why first.** Choosing a chat under Chat safety shows its record with *Why are you reading this
+  chat?* and **Open the chat**, which runs the check (logged as before) and opens `/chat-safety/check/{id}`. Opening that
   address directly, or *Read it in the chat* from a report, asks why on the page. A check stays open for the rest of
   the session (*Open the chat again*), so moving around doesn't log it twice.
 - **The page** (a `Workbench`): the rail has search, **Who** (everyone who wrote, with counts; leaders and under-18s
@@ -146,6 +147,65 @@ from the page. They picked the **folded** layout on the decision page (`.impecca
   chat reads 400 more from the phone's store until it finds it. A deleted original reads "This message was deleted.";
   one that isn't on the phone says so under the quote.
 
+## Chats on a computer: the admin panel's Chats (owner, #74, 2026-11-13)
+
+The owner: "I want a proper fully functional chat interface on desktop … I can already see that I would likely want and
+use that frequently. The current chat tab on admin section should be renamed so as to not confuse. I'd rather not
+navigate to chats through ministries in admin, a nicely laid out dedicated chat panel would be better."
+
+- **Two places, two names.** *Chats* (`/chats`, in the sidebar under Home, with a count of chats that have something
+  new) is your own chats. *Chat safety* (`/chat-safety`, in the Safety area, for those who may check chats) is the old
+  Chats desk: reports, checking a chat with its reason and log, paused people. Old desk links (`/chats/reports`,
+  `/chats/check/{id}` …) go to Chat safety.
+- **The same chats and rules as your phone, by construction.** The admin panel has no store, so two gRPC methods read
+  your own rows from the Sync feeds the phone pulls (`Chats.Mine`, `Chats.Messages`, `ChatReads`): the newest version of
+  each of *your* chat cards and messages, never anyone else's, nothing deleted, nothing while you're paused or waiting
+  for a parent. Writes go to the same `gsbc.chats.Chats` methods the phone's outbox sends to, so who may post, start,
+  change, delete or report is decided exactly where it is for the phone. Being an Owner or a Chat auditor adds nothing:
+  reading a chat you're not in is still only a check under Chat safety, with its reason and log.
+- **One set of components.** The phone's `ChatsList`, `ChatView`, `ChatComposer`, `MessageActions`, `ChatPeople` and
+  `NewChatSheet` work in both, through `IChats` (Chats.Client): `ChatsStore` on the phone (the store and the outbox),
+  `OnlineChats` in the admin panel (`[AdminOnly]`, direct gRPC). A message shows *Sending* until the server has it, and
+  *Couldn't send · Try again · Delete* if it fails, as on the phone. Pictures are uploaded when they're added (the
+  admin panel's direct upload, filed under the chat as the phone's are), then sent with the message.
+- **Live.** The panel names the chats feeds, so a new message, a reaction or someone joining reloads it within a second
+  or two; the sidebar's count follows the same feeds (`INavCounts`, Platform.Client: a page's own count in the
+  sidebar, beside the office week's tasks).
+- **The keyboard.** In the admin panel's message box Enter sends and Shift and Enter starts a new line (the shared
+  `Composer`'s `EnterSends`; the phone keeps Enter for a new line), Escape stops replying or editing, and pictures
+  paste or drop onto the conversation.
+- **A ministry's Chats tab** in the admin panel lists that ministry's chats you're in, opening each in Chats, with *New
+  chat* for whoever may start one (the phone's tab, unchanged); those who may check its chats get a link to Chat safety.
+
+### Defaults (owner to review)
+
+Chosen tonight on the owner's "use best option this time"; the decision page (`.impeccable/mocks/desktop-chats/`, sketches
+beside `payload.json`) has the alternatives.
+
+1. **Layout: three panes** (the list, the conversation, the chat's settings and people). Alternatives on the page: a
+   column of your ministries first, then that ministry's chats (one more click, mostly empty for people in two or three
+   ministries); several chats open side by side (narrow columns, a new way of working the phone doesn't have). Under
+   1360px wide the settings pane folds away and the cog brings it back; at phone width one pane shows at a time.
+2. **Name and place:** *Chats* at the top of the sidebar beside Home (it's personal and used often, not one area's
+   tool); the desk renamed *Chat safety* and moved to the Safety area beside Safeguarding. Alternatives: *Chat checks*;
+   leaving the desk in Ministries & groups.
+3. **Starting a chat** stays in a ministry's Chats tab (the panel's list says so). Alternative: a *New chat* button on
+   the panel asking which ministry first (needs the server to say where you may start one).
+4. **Delete the chat** is in the settings pane's ⋯, matching the phone's "Delete under the settings cog" (#64).
+5. **Drafts** are kept per chat while the panel is open, as on the phone; not across devices (below).
+
+## Not built yet: Chats on a computer
+
+- **Desktop notifications** (the browser's own pop-ups while the admin panel is open in another tab, or the tab's title
+  showing a count). They need the browser's permission and a choice about which messages deserve one; the sidebar count
+  and the in-app inbox cover it for now.
+- **Drafts across devices** (start a message on the phone, finish it on the computer). Drafts live on each device; sharing
+  them means storing unsent words on the server, which the church may not want for chats with young people.
+- **A *New chat* button on the panel**, and choosing people by hand (below).
+- **Hover actions on a message** (react, reply, ⋯ without right-clicking). Today a right-click or a long press opens the
+  message's actions.
+- **Typing indicators and presence** ("Sam is typing", who's here now).
+
 ## Deleting
 
 - **A chat:** its leaders delete it (app or desk). Everyone loses it; the church keeps its messages and log.
@@ -163,7 +223,8 @@ From the decision page, each built:
 4. **Starting a chat:** one sheet; the first message (the why) is required.
 5. **A parent's yes:** in the chat, where the composer would be.
 6. **Reporting:** a sheet choosing leaders or the safety team; handling is in the admin panel.
-7. **Admin:** one Chats desk with Reports, Chats, Paused people and Checks log; reading a chat asks why.
+7. **Admin:** one desk, *Chat safety* since 2026-11-13, with Reports, Chats, Paused people and Checks log; reading a chat
+   asks why.
 8. **Asking to join:** the Join sheet gains the editable first message; leaders add from the chat.
 
 Also picked: a grant held everywhere isn't membership; leaders of the ministries above are in the ministry's audience
