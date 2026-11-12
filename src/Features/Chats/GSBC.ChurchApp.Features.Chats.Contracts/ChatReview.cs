@@ -24,6 +24,7 @@ public sealed record ReviewFold(IReadOnlyList<string> Ids, bool Before, bool Aft
 public static class ChatReview
 {
     private const int Around = 1;
+    public const int Recent = 30;
 
     public static bool Matches(CheckedMessage found, ReviewFilter filter, IReadOnlySet<string> reported, Func<DateTime, DateOnly> dayOf)
     {
@@ -53,7 +54,7 @@ public static class ChatReview
         bool[] shown = new bool[messages.Count];
         for (int at = 0; at < messages.Count; at++)
         {
-            if (!filter.Narrows || opened.Contains(messages[at].Message.Id))
+            if (!filter.Narrows && at >= messages.Count - Recent || opened.Contains(messages[at].Message.Id))
                 shown[at] = true;
             if (!match[at])
                 continue;

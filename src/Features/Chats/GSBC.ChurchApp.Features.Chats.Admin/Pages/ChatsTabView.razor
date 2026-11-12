@@ -4,10 +4,10 @@
 
 <UnsavedGuard Changed="() => _reason.Trim().Length > 0" What="why you're reading the chat" />
 
-<Workbench Detail="@(Chosen is { } chat ? Detail(chat) : null)" DetailLabel="The chat">
+<Workbench Detail="@(Chosen is { } chosen ? Detail(chosen) : null)" DetailLabel="The chat">
     <DataTable TItem="DeskChat" Label="Chats" Items="Desk.Chats" Columns="Columns" Key="chat => chat.Id" Selected="Chosen" SelectedChanged="Choose" RowClass="RowClass">
         <Toolbar>
-            @if (Desk.Ministries.Any(ministry => ministry.MayManage && ministry.ChatsOn))
+            @if (Desk.Ministries.Any(ministry => ministry is { MayManage: true, ChatsOn: true }))
             {
                 <Button Icon="plus" OnClick="() => _starting = true">New chat</Button>
             }

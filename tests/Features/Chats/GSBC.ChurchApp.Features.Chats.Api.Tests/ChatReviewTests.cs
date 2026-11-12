@@ -21,6 +21,17 @@ public sealed class ChatReviewTests
     }
 
     [Fact]
+    public void ALongChatOpensOnItsNewestMessagesWithTheEarlierOnesFolded()
+    {
+        List<CheckedMessage> chat = Enumerable.Range(1, ChatReview.Recent + 10).Select(number => Message($"m{number}", "Fine")).ToList();
+
+        IReadOnlyList<ReviewLine> lines = ChatReview.Lines(chat, new ReviewFilter(), NoneReported, NoneOpened, DayOf);
+
+        Assert.Equal(10, Assert.IsType<ReviewFold>(lines[0]).Ids.Count);
+        Assert.Equal($"m{ChatReview.Recent + 10}", lines.OfType<ReviewMessage>().Last().Found.Message.Id);
+    }
+
+    [Fact]
     public void AnOpenedFoldStaysOpenWhileTheSearchStays()
     {
         List<CheckedMessage> chat = Enumerable.Range(1, 5).Select(number => Message($"m{number}", number == 5 ? "Sunday" : "Fine")).ToList();

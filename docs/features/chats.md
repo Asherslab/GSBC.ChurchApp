@@ -106,6 +106,38 @@ The app reads chats only from its local store and writes only through the outbox
 - **Notifications:** each message notifies everyone in the chat but the sender, unless they muted it; a mention
   notifies even when muted (*Claude's pick*). Message notifications are per ministry in Notification settings.
 
+## Checking a chat: its own page (owner, 2026-11-12)
+
+The owner (#49): "Feels like this will get unwieldy *fast*. maybe open a full page for the review and give some tools
+like search and such." In the interview they said a check is usually **finding something** (after a report or a worry:
+a person, a word, a day, then reading around it), named the filters, and wanted to handle reports and pause a sender
+from the page. They picked the **folded** layout on the decision page (`.impeccable/mocks/chats/review/`, brief in
+`.impeccable/surfaces/chats-gsbc-churchapp-features-chats-admin-81ff7e36.md`).
+
+- **The desk asks why first.** Choosing a chat on the Chats desk shows its record with *Why are you reading this
+  chat?* and **Open the chat**, which runs the check (logged as before) and opens `/chats/check/{id}`. Opening that
+  address directly, or *Read it in the chat* from a report, asks why on the page. A check stays open for the rest of
+  the session (*Open the chat again*), so moving around doesn't log it twice.
+- **The page** (a `Workbench`): the rail has search, **Who** (everyone who wrote, with counts; leaders and under-18s
+  marked), **When** (from and to), and **Only** (photos or files, edited or deleted, reported). Anything that narrows
+  folds the rest into a "N messages · Show" line, so each match sits with the message before and after it
+  (`ChatReview`, Contracts, tested); words are marked where they're found, including what a deleted message said and
+  earlier versions. Photos open in the picture viewer. Coming from a report folds to the reported messages.
+- **Beside it:** the chat's reports (mark handled, with what was done) and every check of the chat.
+- **Pausing** is in a message's ⋯ menu (auditors only) and in the report's ⋯ on the desk; it asks why and is logged.
+- **Deleting a chat** is in the record's ⋯ menu on the desk and the chat's ⋯ in the app, and asks once.
+
+## In the app (owner's feedback, 2026-11-12)
+
+- **Photos open bigger** (#36): a message's photos and videos open in the shared picture viewer; swipe between them,
+  swipe down or ✕ to close. Other files still open through their private link.
+- **The cog** (#47): a chat's top-right icon is the settings cog (mute, who's in it); leaders delete the chat from the
+  ⋯ beside it.
+- **Who can start a chat** is explained in a ministry's Chats tab to someone who can't ("Production's leaders start
+  chats here", or "leaders and team" when the ministry lets the team start them).
+- Reactions use the shared `BubbleReactions`; the composer's controls are shared buttons. Once the shared `Composer`
+  (Admin navigation station) is merged, the composer's bar moves onto it.
+
 ## Deleting
 
 - **A chat:** its leaders delete it (app or desk). Everyone loses it; the church keeps its messages and log.

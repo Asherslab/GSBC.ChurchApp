@@ -18,7 +18,7 @@
 .bubble-row--mine .chat-quote { background: color-mix(in srgb, var(--on-primary) 14%, transparent); }
 .bubble-row--mine .chat-quote span { color: color-mix(in srgb, var(--on-primary) 80%, transparent); }
 .chat-mention { font-weight: 600; color: var(--accent); }
-.chat-mention--you { padding: 0 var(--space-3xs); border-radius: 4px; background: color-mix(in srgb, var(--accent) 14%, transparent); }
+.chat-mention--you { padding: 0 var(--space-3xs); border-radius: var(--radius-inner); background: color-mix(in srgb, var(--accent) 14%, transparent); }
 .bubble-row--mine .chat-mention { color: var(--on-primary); text-decoration: underline; }
 
 
@@ -59,8 +59,8 @@
 .chat-report { display: grid; gap: var(--stack); }
 .chat-flag { color: var(--marker-ink); font-weight: 600; }
 .row--urgent { background: color-mix(in srgb, var(--danger) 8%, transparent); }
-.chat-log { margin: 0; padding-left: var(--space-lg); font-size: var(--text-caption); color: var(--ink-2); }
-.chat-log li + li { margin-top: var(--space-2xs); }
+.chat-log { margin: 0; padding: 0; list-style: none; font-size: var(--text-caption); color: var(--ink-2); }
+.chat-log li { padding: var(--space-xs) 0; border-top: 1px solid var(--line); }
 
 .chat-report-card { display: grid; gap: var(--space-sm); justify-items: start; padding: var(--space-md) var(--space-lg); border-radius: var(--radius-tile); box-shadow: inset 0 0 0 1px var(--line); }
 .chat-report-card > .field, .chat-report-card > .save-bar, .chat-report-card > .chat-callout { justify-self: stretch; }
@@ -85,7 +85,12 @@
 .chat-checked__message { display: grid; gap: var(--space-xs); justify-items: start; padding: var(--space-sm) var(--space-md); border-radius: var(--radius-tile); background: var(--sand); scroll-margin-top: var(--space-4xl); }
 .chat-checked__message > * { justify-self: stretch; }
 .chat-checked__message--around { background: none; box-shadow: inset 0 0 0 1px var(--line); color: var(--ink-2); }
-.chat-checked__message--match { box-shadow: inset 0 0 0 1.5px var(--accent); }
+.chat-checked__message .pill--quiet { background: var(--page); }
+.chat-checked__message--around .pill--quiet { background: var(--sand); }
+.chat-review__who { display: grid; justify-items: start; gap: var(--space-2xs); }
+.chat-review__who > .filter-chips { justify-self: stretch; }
+.workbench__aside .chat-review__who + * { margin-top: var(--space-lg); }
+.chat-review__more.btn { font-size: var(--text-caption); }
 .chat-checked__message--reported { box-shadow: inset 0 0 0 2px var(--danger); }
 .chat-checked__head { display: flex; flex-wrap: wrap; gap: var(--space-sm); align-items: center; font-size: var(--text-caption); color: var(--ink-2); }
 .chat-checked__head strong { color: var(--ink); }
@@ -93,7 +98,7 @@
 .chat-checked__quote { margin: 0; font-size: var(--text-caption); color: var(--ink-3); }
 .chat-checked__text { margin: 0; white-space: pre-wrap; }
 .chat-checked__text mark { padding: 0 var(--space-3xs); border-radius: var(--radius-inner); background: color-mix(in srgb, var(--marker) 45%, transparent); color: inherit; }
-.chat-checked__versions, .chat-checked__reactions { margin: 0; font-size: var(--text-caption); color: var(--ink-2); }
+.chat-checked__versions { margin: 0; font-size: var(--text-caption); color: var(--ink-2); }
 .chat-checked__event { display: flex; gap: var(--space-xs); justify-content: center; align-items: center; margin: 0; font-size: var(--text-caption); color: var(--ink-2); }
 .chat-checked__event .icon { color: var(--accent); }
 
@@ -116,3 +121,13 @@
 .chat-composer__bar + .notice { margin-top: var(--space-xs); }
 .chat-checked__message .chat-photo-open.picture-open { width: auto; max-width: min(220px, 100%); }
 .chat-checked__message .chat-photo { width: auto; max-width: 100%; max-height: 220px; object-fit: cover; }
+@media (max-width: 1360px) {
+  .chat-review-bench .workbench__aside { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-md) var(--space-xl); align-items: start; }
+  .chat-review-bench .workbench__aside > .search-field { grid-column: 1 / -1; }
+  .chat-review-bench .workbench__aside > * + *, .workbench__aside .chat-review__when + * { margin-top: 0; }
+  .chat-review-bench .workbench__aside .chat-review__who + * { margin-top: 0; }
+  .chat-review-bench .chat-review__who .filter-chips--rail { max-height: 15rem; overflow-y: auto; scrollbar-width: thin; }
+}
+@media (max-width: 900px) {
+  .chat-review-bench .workbench__aside { grid-template-columns: minmax(0, 1fr); }
+}

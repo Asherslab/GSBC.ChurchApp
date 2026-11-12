@@ -57,10 +57,7 @@ else
                 </ol>
             </details>
         }
-        @if (message.Reactions.Count > 0)
-        {
-            <p class="chat-checked__reactions">@string.Join("  ", message.Reactions.Select(reaction => $"{reaction.Emoji} {reaction.People.Count}"))</p>
-        }
+        <BubbleReactions Reactions="@message.Reactions.Select(reaction => new BubbleReaction(reaction.Emoji, reaction.People.Count, false)).ToList()" Disabled="true" />
     </article>
 }
 

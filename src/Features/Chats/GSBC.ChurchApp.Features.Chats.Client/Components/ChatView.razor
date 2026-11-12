@@ -78,7 +78,7 @@
                                        Time="@TimeOf(message)" Dimmed="@(line.State != LineState.Sent || _editing?.Id == message.Id)" Removed="message.Deleted"
                                        Id="@($"m-{message.Id}")" OnLongPress="() => OpenActions(line)">
                             <Quote>
-                                @if (message.ReplyTo is { } quote && !message.Deleted)
+                                @if (message is { ReplyTo: { } quote, Deleted: false })
                                 {
                                     <span class="chat-quote"><strong>@quote.SenderName</strong><span>@quote.Snippet</span></span>
                                 }
@@ -175,7 +175,7 @@
     private async Task<OpenedChat> LoadAsync()
     {
         Conversation? chat = await Store.ChatAsync(ChatId);
-        if (chat is { Paused: false } && chat.Card.YourRole.Length > 0)
+        if (chat is { Paused: false, Card.YourRole.Length: > 0 })
             await Store.MarkReadAsync(chat.Card, chat.Card.LastSeq);
         if (chat is not null && (ChatText.Title(chat.Card) != _title || _card is null))
         {
@@ -190,7 +190,7 @@
     {
         if (line.Message.Deleted || line.State != LineState.Sent)
             return;
-        await Shell.HapticAsync(Haptic.Light);
+        await Shell.HapticAsync();
         _acting = line;
     }
 
@@ -251,7 +251,7 @@
     }
 
     private static ChatLine? LastOfMine(Conversation chat) =>
-        chat.Lines.LastOrDefault(line => line.Message.SenderId == chat.Card.You && line.State == LineState.Sent && line.Message.Kind == MessageKinds.Text);
+        chat.Lines.LastOrDefault(line => line.Message.SenderId == chat.Card.You && line is { State: LineState.Sent, Message.Kind: MessageKinds.Text });
 
     private static int SeenBy(ChatCard card, ChatMessage message) =>
         card.People.Count(person => person.Id != card.You && person.State == ChatStates.Active && person.ReadSeq >= message.Seq);

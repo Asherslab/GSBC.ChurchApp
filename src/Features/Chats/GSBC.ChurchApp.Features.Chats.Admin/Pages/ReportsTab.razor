@@ -3,9 +3,9 @@
 <UnsavedGuard Changed="() => _pausing is not null && _pauseReason.Trim().Length > 0" What="why you're pausing them" />
 
 <LiveData @ref="_live" TValue="Reports" Load="Oversight.ReportsAsync" Feeds="[ChatsFeeds.Oversight]" FailedTitle="Can't load reports right now">
-    <Workbench Detail="@(Chosen(context.Value) is { } report ? Detail(report) : null)" DetailLabel="The report">
-        <DataTable TItem="ReportLine" Label="Reports" Items="Shown(context.Value)" Columns="Columns" Key="report => report.Id"
-                   Selected="Chosen(context.Value)" SelectedChanged="report => _chosen = report.Id" RowClass="RowClass" SortColumn="0" SortDescending="true">
+    <Workbench Detail="@(Chosen(context.Value) is { } chosen ? Detail(chosen) : null)" DetailLabel="The report">
+        <DataTable TItem="ReportLine" Label="Reports" Items="Shown(context.Value)" Columns="Columns" Key="line => line.Id"
+                   Selected="Chosen(context.Value)" SelectedChanged="line => _chosen = line.Id" RowClass="RowClass" SortColumn="0" SortDescending="true">
             <Toolbar>
                 <FilterChips TValue="bool" Label="Show" Options="Filters(context.Value)" Value="_handled" ValueChanged="value => _handled = value" />
             </Toolbar>
@@ -52,7 +52,7 @@
 
     private ReportLine? Chosen(Reports reports) => reports.Open.Concat(reports.Handled).FirstOrDefault(report => report.Id == _chosen);
 
-    private static string? RowClass(ReportLine report) => report.To == ReportRoutes.Auditors && report.HandledAt is null ? "row--urgent" : null;
+    private static string? RowClass(ReportLine report) => report is { To: ReportRoutes.Auditors, HandledAt: null } ? "row--urgent" : null;
 
     private static IReadOnlyList<FilterOption<bool>> Filters(Reports reports) =>
         [new(false, "Waiting", reports.Open.Count), new(true, "Handled", reports.Handled.Count)];

@@ -1,6 +1,7 @@
 @page "/chats/check/{ChatId}"
 @inject OversightClient Oversight
 @inject ChatChecks Checks
+@inject NavigationManager Navigation
 
 <UnsavedGuard Changed="() => (_check is null && _reason.Trim().Length > 0) || (_pausing is not null && _pauseReason.Trim().Length > 0)" What="what you wrote" />
 
@@ -18,6 +19,10 @@
                 @if (chat.OpenReports > 0)
                 {
                     <Pill Tone="PillTone.Danger">@ChatLead.Count(chat.OpenReports, "report", "reports") waiting</Pill>
+                }
+                @if (chat.MayManage)
+                {
+                    <Menu Label="@($"More for {chat.Name}")" Items="@ChatActions(chat)" />
                 }
             </Actions>
         </TitleBand>
@@ -41,10 +46,16 @@
                 IReadOnlyList<ReviewLine> lines = ChatReview.Lines(check.Chat.Messages, _filter, reported, _opened, DayOf);
                 int matches = lines.OfType<ReviewMessage>().Count(line => line.Match);
             }
-            <Workbench AsideLabel="Find in the chat">
+            <Workbench AsideLabel="Find in the chat" Class="chat-review-bench">
                 <Aside>
                     <SearchField Label="Find words in the chat" Placeholder="Find words" Value="@_filter.Words" ValueChanged="words => Narrow(_filter with { Words = words })" />
+                    <div class="chat-review__who">
                     <FilterChips TValue="string" Label="Who" Rail="true" Options="@Senders(check)" Value="_filter.Who" ValueChanged="who => Narrow(_filter with { Who = who })" />
+                    @if (!_allSenders && SenderCount(check) > FewSenders)
+                    {
+                        <Button Variant="ButtonVariant.Link" Class="chat-review__more" OnClick="() => _allSenders = true">@ChatLead.Count(SenderCount(check) - FewSenders, "more person", "more people")</Button>
+                    }
+                    </div>
                     <div class="chat-review__when" role="group" aria-label="When">
                         <p class="filter-chips__label">When</p>
                         <DateField Label="From" Value="@Iso(_filter.From)" ValueChanged="day => Narrow(_filter with { From = TypedDates.Day(day) })" />
@@ -108,6 +119,17 @@
     }
 </LiveData>
 
+<Sheet Open="_deleting is not null" OpenChanged="open => { if (!open) _deleting = null; }" Title="@($"Delete {_deleting?.Name}?")"
+       Lead="Everyone in it loses the chat. The church keeps its messages and the log, so auditors can still check it.">
+    <ChildContent>
+        <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+    </ChildContent>
+    <Actions>
+        <Button Variant="ButtonVariant.Danger" Busy="_busy" OnClick="DeleteAsync">Delete the chat</Button>
+        <Button Variant="ButtonVariant.Quiet" OnClick="() => _deleting = null">Keep it</Button>
+    </Actions>
+</Sheet>
+
 <Sheet Open="_pausing is not null" OpenChanged="open => { if (!open) _pausing = null; }" Title="@($"Pause {_pausing?.Message.SenderName} from chats?")"
        Lead="They lose every chat until someone lets them back in on the Chats desk. They aren't told who asked. It's logged.">
     <ChildContent>
@@ -121,7 +143,10 @@
 </Sheet>
 
 @code {
+    private const int FewSenders = 6;
     private OpenCheck? _check;
+    private bool _allSenders;
+    private DeskChat? _deleting;
     private string? _shownFor;
     private ReviewFilter _filter = new();
     private readonly HashSet<string> _opened = [];
@@ -207,23 +232,49 @@
         if (_filter.Only == ReviewOnly.Reported)
             words.Add("reported");
         if (_filter.From is { } from)
-            words.Add($"from {ChatLead.Day(from)}");
+            words.Add($"since {ChatLead.Day(from)}");
         if (_filter.To is { } to)
             words.Add($"up to {ChatLead.Day(to)}");
         return string.Join(", ", words);
     }
 
-    private static IReadOnlyList<FilterOption<string>> Senders(OpenCheck check)
+    private IReadOnlyList<FilterOption<string>> Senders(OpenCheck check)
     {
         List<CheckedMessage> written = check.Chat.Messages.Where(found => found.Message.Kind != MessageKinds.Event).ToList();
-        return
-        [
-            new("", "Everyone", written.Count),
-            .. written.Where(found => found.Message.SenderId.Length > 0)
-                .GroupBy(found => found.Message.SenderId)
-                .OrderByDescending(group => group.Count())
-                .Select(group => new FilterOption<string>(group.Key, Sender(check, group.Key, group.First().Message.SenderName), group.Count())),
-        ];
+        List<FilterOption<string>> senders = written.Where(found => found.Message.SenderId.Length > 0)
+            .GroupBy(found => found.Message.SenderId)
+            .OrderByDescending(group => group.Count())
+            .Select(group => new FilterOption<string>(group.Key, Sender(check, group.Key, group.First().Message.SenderName), group.Count()))
+            .ToList();
+        IEnumerable<FilterOption<string>> shown = _allSenders ? senders : senders.Take(FewSenders).Concat(senders.Skip(FewSenders).Where(sender => sender.Value == _filter.Who));
+        return [new("", "Everyone", written.Count), .. shown];
+    }
+
+    private static int SenderCount(OpenCheck check) =>
+        check.Chat.Messages.Where(found => found.Message.SenderId.Length > 0 && found.Message.Kind != MessageKinds.Event).Select(found => found.Message.SenderId).Distinct().Count();
+
+    private IReadOnlyList<MenuItem> ChatActions(DeskChat chat) =>
+        [this.Item("Delete the chat…", () => (_deleting, _problem) = (chat, null), "trash-2", "For everyone in it. The church keeps its messages.", danger: true)];
+
+    private async Task DeleteAsync()
+    {
+        if (_deleting is not { } chat)
+            return;
+        (_busy, _problem) = (true, null);
+        try
+        {
+            await Oversight.DeleteAsync(chat.Id);
+            _deleting = null;
+            Navigation.NavigateTo("chats/all");
+        }
+        catch (RpcException exception)
+        {
+            _problem = exception.Status.Detail;
+        }
+        finally
+        {
+            _busy = false;
+        }
     }
 
     private static string Sender(OpenCheck check, string id, string name)
