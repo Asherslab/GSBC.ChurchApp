@@ -11,7 +11,7 @@
             <OccurrenceRow @key="occurrence.Id" Occurrence="occurrence" Calendar="Diary.Calendar(occurrence.CalendarId)" NowUtc="NowUtc" Highlight="true" NewChange="IsNewChange(occurrence)" From="@FromOf?.Invoke(occurrence)" NotOnInstead="@note?.NotOn" />
             @if (note is not null)
             {
-                <a class="week-day__note" href="@note.Href" @key="@($"{occurrence.Id}-note")">
+                <a class="week-day__note" href="@note.Href" aria-label="@($"{note.Title}, a post in News")" @key="@($"{occurrence.Id}-note")">
                     <Icon Name="megaphone" Size="IconSize.Small" />
                     <span>@note.Title</span>
                     <Icon Name="chevron-right" Size="IconSize.Small" />

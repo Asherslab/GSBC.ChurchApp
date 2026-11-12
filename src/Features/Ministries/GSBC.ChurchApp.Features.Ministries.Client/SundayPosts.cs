@@ -17,8 +17,10 @@ public static class SundayPosts
 
     public static IReadOnlyList<DayNote> Notes(MinistryPage page) =>
         page.Posts.Where(post => post.Sunday.Length > 0 && post.From.Length == 0)
-            .Select(post => new DayNote(LifeGroupRounds.Day(post.Sunday), $"News: {post.Title}", Href(page.Ministry.Id, post.Id), post.NoClass ? NoClass : null))
+            .Select(post => new DayNote(LifeGroupRounds.Day(post.Sunday), LinkText(post), Href(page.Ministry.Id, post.Id), post.NoClass ? NoClass : null))
             .ToList();
+
+    private static string LinkText(Post post) => post.NoClass && post.Title == NoClass ? "Read why in News" : post.Title;
 
     private static string Href(string ministryId, string postId) => $"{MinistriesPlaces.Of(ministryId, MinistriesPlaces.News)}#post-{postId}";
 

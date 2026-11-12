@@ -1,6 +1,6 @@
 @inject IMinistryWrites Ministries
 
-<Section Title="Its tabs" Lead="Drag a tab by its handle to change the order people see; About is always first. Turning one off hides it and everything in it from everyone, leaders too, until you turn it back on. Nothing is deleted." Grouped="true">
+<Section Title="Its tabs" Lead="Drag a tab by its handle, or use its ⋯ menu, to change the order people see. About is always first." Grouped="true">
     <ChildContent>
         <ReorderList TItem="MinistryPart" Items="Parts" Key="part => part.Key" Name="part => part.Name" Label="@($"{MinistryWords.Possessive(Page.Ministry.Name)} tabs, in order")"
                      OnReordered="ReorderAsync" Disabled="_busy">
@@ -12,7 +12,7 @@
                 }
             </Preview>
             <ItemTemplate>
-                <ToggleRow Title="@context.Name" Description="@(Off.Contains(context.Key) ? "Off: hidden from everyone" : context.Does)" Checked="@(!Off.Contains(context.Key))"
+                <ToggleRow Title="@context.Name" Description="@(Off.Contains(context.Key) ? "Hidden from everyone, leaders too, until you turn it back on. Nothing in it is deleted." : null)" Muted="@Off.Contains(context.Key)" Checked="@(!Off.Contains(context.Key))"
                            Disabled="_busy" CheckedChanged="on => TurnAsync(context.Key, on)" />
             </ItemTemplate>
         </ReorderList>

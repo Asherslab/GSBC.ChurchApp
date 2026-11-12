@@ -51,6 +51,10 @@ Builds on the Pattern map; no new world. One decision round, two questions, both
 - **A ministry's tab order** (#21): **drag with a live preview** (picked over arrows on each row and an order sheet):
   `ReorderList` with the tab strip previewed above, each row's ⋯ menu for Move up and Move down, the on/off switch in
   the same row; changes straight away.
+- FORM (wave 2): the Calendar tab's round was a surface roll (operate) that dealt the strip, the per-Sunday ⋯ and News;
+  the owner locked News, card 3 of 3 dealt (seed:9c24a3ced9afc0d8). The tab-order question followed on the same page.
+- Finish review (2026-11-12): struck-through no-class Sunday, post links aligned under the title in plain words, ⋯ menus
+  open upward near the bottom, the sticky tab strip clears the phone's top inset, compact tab rows with the off one muted.
 - Settled by the Pattern map without a question: settings in groups (#12), the role menu in the person's pane or sheet
   with the add sheet staying open (#13, #14, #29, as chosen in the design-system round), Archive and Delete in the
   ministry's ⋯ menu, Workbench for the admin People tab.
