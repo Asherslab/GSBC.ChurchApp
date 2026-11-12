@@ -1,0 +1,16 @@
+@using GSBC.ChurchApp.Platform.Icons
+@inject IRosterReads Reads
+@inject TimeProvider Clock
+
+<LiveData TValue="AwayList" Load="Reads.AwayAsync" Feeds="Reads.Feeds" Remember="rosters.away">
+    <ChildContent>
+        @Row(RosterLines.NextAwayLine(context.Value.People.Where(person => person.PersonId == context.Value.YourId).SelectMany(person => person.Spans), ChurchTime.Today(Clock)))
+    </ChildContent>
+    <Loading>@Row(null)</Loading>
+    <Failed>@Row(null)</Failed>
+</LiveData>
+
+@code {
+    private static RenderFragment Row(string? line) =>
+        @<ListRow Title="Your days away" Subtitle="@line" Icon="@AppIcons.DaysAway" IconTone="RowTone.Warm" Href="@AwayPlaces.Yours" Chevron="true" />;
+}

@@ -1,11 +1,11 @@
 @page "/people/{Id}"
 @using GSBC.ChurchApp.Platform.Client.Access
 @using GSBC.ChurchApp.Platform.Client.Modules
-@inject AccountsClient Accounts
 @inject AccountsOfficeClient Office
 @inject IAccess Access
 @inject NavigationManager Navigation
 @inject IEnumerable<PersonTab> ContributedTabs
+@inject IEnumerable<PersonFact> ContributedFacts
 
 <LiveData @ref="_live" TValue="PersonView" Feeds="[AccountsFeeds.People]" Load="LoadAsync" FailedTitle="Can't load this person right now">
     @if (context.Value.Person is not { } person)
@@ -17,7 +17,7 @@
     {
         <TitleBand Title="@person.DisplayName" BackHref="people" BackText="People">
             <LeadContent>
-                <p class="person-page__lead">
+                <div class="person-page__lead">
                     @if (person.Email.Length > 0)
                     {
                         <span>@person.Email</span>
@@ -28,7 +28,11 @@
                         <span>@(person.HasPasskey ? "Has a passkey" : "No passkey yet")</span>
                         <span>Joined <DateLine At="person.CreatedAt" Style="DateLineStyle.Short" /></span>
                     }
-                </p>
+                    @foreach (PersonFact fact in Facts)
+                    {
+                        <span @key="fact.Key">@fact.Content(new PersonOnPage(person.Id, person.DisplayName))</span>
+                    }
+                </div>
             </LeadContent>
         </TitleBand>
 
@@ -70,6 +74,9 @@
             .Concat(Access.Can(AccountsPermissions.Manage) ? [new PersonTab(ActivityTab, "Activity", 5, NoContent)] : [])
             .OrderBy(tab => tab.Order)
             .ToList();
+
+    private IEnumerable<PersonFact> Facts =>
+        ContributedFacts.Where(fact => fact.Requires is null || Access.Can(fact.Requires)).OrderBy(fact => fact.Order);
 
     private PersonTab Shown => Tabs.FirstOrDefault(tab => tab.Slug == Tab) ?? Tabs[0];
 

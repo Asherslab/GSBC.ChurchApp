@@ -7,7 +7,7 @@
     <ChildContent>
         <TextField Label="Their name" Value="@_name" ValueChanged="value => _name = value" AutoComplete="off" />
         <div class="ui-after">
-            <DateField Label="Birth date" Shortcuts="false" Value="@_born" ValueChanged="value => _born = value" Max="@($"{ChurchTime.Today(Clock):yyyy-MM-dd}")" Hint="@PeopleWords.WhoSees" />
+            <DateField Label="Birth date" Shortcuts="false" Placeholder="Like 4 Mar 2011" Value="@_born" ValueChanged="value => _born = value" Max="@($"{ChurchTime.Today(Clock):yyyy-MM-dd}")" Hint="@PeopleWords.WhoSees" />
         </div>
         <Notice Tone="NoticeTone.Warning" Text="@_message" />
     </ChildContent>

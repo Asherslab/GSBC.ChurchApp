@@ -7,6 +7,7 @@ public static class AppIcons
     public const string ImportFromTheWebsite = "globe";
     public const string WeeklyDigest = "newspaper";
     public const string Calendar = "calendar";
+    public const string DaysAway = "calendar-x";
     public const string Announcements = "megaphone";
     public const string AppStyling = "paintbrush";
     public const string Insights = "chart-line";

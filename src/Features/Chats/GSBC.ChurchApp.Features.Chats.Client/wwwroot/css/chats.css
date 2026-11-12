@@ -171,3 +171,5 @@
   .chat-desk--beside-toggled .chat-frame { display: none; }
   .chat-desk--beside-toggled .chat-frame__beside { border-left: 0; }
 }
+.chat-quote .chat-quote__note { display: block; color: var(--ink-2); font-style: italic; }
+.bubble-row--mine .chat-quote .chat-quote__note { color: color-mix(in srgb, var(--on-primary) 80%, transparent); }

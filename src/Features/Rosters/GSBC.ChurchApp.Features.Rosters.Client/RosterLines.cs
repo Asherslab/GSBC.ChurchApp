@@ -239,6 +239,34 @@ public static class RosterLines
         ({ } from, { } until) => $"{ChurchDates.Time(DateOnly.MinValue.ToDateTime(from))} to {ChurchDates.Time(DateOnly.MinValue.ToDateTime(until))}",
     };
 
+    private static DateOnly? NextAway(IEnumerable<AwaySpan> spans, DateOnly today)
+    {
+        List<AwaySpan> current = spans.Where(span => AwayRules.Current(span, today)).ToList();
+        for (DateOnly day = today; day < today.AddDays(DaysAhead); day = day.AddDays(1))
+        {
+            if (current.Any(span => AwayRules.OnDay(span, day)))
+                return day;
+        }
+        return null;
+    }
+
+    public static string NextAwayLine(IEnumerable<AwaySpan> spans, DateOnly today) =>
+        NextAway(spans, today) is { } day ? $"Next away {day.ToString("ddd d MMM", CultureInfo.InvariantCulture)}" : "None coming up";
+
+    public static string TeamAwayLine(IEnumerable<AwayOf> people, DateOnly today)
+    {
+        int away = people.Count(person => NextAway(person.Spans, today) is { } day && day < today.AddDays(TeamWindowDays));
+        return away switch
+        {
+            0 => "Nobody away in the next four weeks",
+            1 => "1 person away in the next four weeks",
+            _ => $"{away} people away in the next four weeks",
+        };
+    }
+
+    private const int DaysAhead = 366;
+    private const int TeamWindowDays = 28;
+
     public static DayMark MarkOn(IEnumerable<AwaySpan> spans, DateOnly day)
     {
         List<AwaySpan> all = spans.ToList();

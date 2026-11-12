@@ -29,13 +29,13 @@ public sealed class OnlineChats(ChannelBase channel, IDirectUploads uploads, Cli
         return ChatsHome.Of(mine.Chats, mine.Paused, _markedRead);
     }
 
-    public async Task<Conversation?> ChatAsync(string chatId)
+    public async Task<Conversation?> ChatAsync(string chatId, int most = ChatsStore.MostMessages)
     {
         ChatsHome home = await HomeAsync();
         if (home.Chats.FirstOrDefault(chat => chat.Card.Id == chatId)?.Card is not { } card)
             return null;
 
-        ChatMessages page = await _chats.MessagesAsync(new MessagesRequest { ChatId = chatId });
+        ChatMessages page = await _chats.MessagesAsync(new MessagesRequest { ChatId = chatId, Limit = most });
         List<ChatLine> lines = page.Messages.Select(message => new ChatLine(message, LineState.Sent)).ToList();
         HashSet<string> arrived = PendingLines.Arrived(page.Messages, card);
         _sending.RemoveAll(send => arrived.Contains(send.Message.ClientId));

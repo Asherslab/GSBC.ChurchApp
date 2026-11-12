@@ -1,0 +1,31 @@
+@page "/ministries/{MinistryId}/away"
+@inject IRosterReads Reads
+
+<Page Title="The team's days away" BackHref="@AwayPlaces.Roster(MinistryId)" BackLabel="Roster">
+    <LiveData TValue="RosterView" Load="() => Reads.RosterAsync(MinistryId)" Feeds="Reads.Feeds" Remember="@($"rosters.{MinistryId}")" FailedTitle="Can't show the team's days away right now">
+        <ChildContent>
+            <Masthead Title="The team's days away" Note="@($"{context.Value.MinistryName}'s leaders can change anyone's days away, and anyone away is flagged when they're put on.")" />
+            @if (TeamAway.Shown(context.Value))
+            {
+                <DaysAway @key="MinistryId" Paged="true" First="true" Load="() => TeamAway.LoadAsync(Reads, context.Value)" Feeds="Reads.Feeds" People="TeamAway.People(context.Value)"
+                          YourId="@context.Value.YourId" Remember="@($"rosters.away.{MinistryId}")" />
+            }
+            else
+            {
+                <Section First="true">
+                    <EmptyState Icon="users" Title="Only the team's leaders see this" Body="Your own days away are under Days away in your Account." />
+                </Section>
+            }
+        </ChildContent>
+        <Failed>
+            <Masthead Title="The team's days away" />
+            <Section First="true">
+                <EmptyState Icon="calendar" Title="The roster isn't on your phone yet" Body="It shows here as soon as your phone has it." />
+            </Section>
+        </Failed>
+    </LiveData>
+</Page>
+
+@code {
+    [Parameter] public string MinistryId { get; set; } = "";
+}

@@ -18,7 +18,7 @@
         }
     </Beside>
     <ChildContent>
-<LiveData TValue="OpenedChat" Load="LoadAsync" Feeds="ChatsStore.Feeds" ReloadOn="ChangeKind.Reconnected | ChangeKind.Session | ChangeKind.Access | ChangeKind.Outbox">
+<LiveData @ref="_live" TValue="OpenedChat" Load="LoadAsync" Feeds="ChatsStore.Feeds" ReloadOn="ChangeKind.Reconnected | ChangeKind.Session | ChangeKind.Access | ChangeKind.Outbox">
     @if (context.Value.Chat is not { } chat)
     {
         <EmptyState Icon="message-square" Title="This chat isn't here" Body="It may have been deleted, or you may not be in it any more." />
@@ -77,11 +77,17 @@
                         bool mine = message.SenderId == card.You;
                         <MessageBubble Mine="mine" FirstOfRun="first" Name="@NameOf(message, mine)" NameNote="@RoleNote(card, message)"
                                        Time="@TimeOf(message)" Dimmed="@(line.State != LineState.Sent || _editing?.Id == message.Id)" Removed="message.Deleted"
-                                       Id="@($"m-{message.Id}")" OnLongPress="() => OpenActions(line)">
+                                       Id="@($"m-{message.Id}")" OnLongPress="() => OpenActions(line)"
+                                       OnQuote="@(message.ReplyTo is { } replied ? EventCallback.Factory.Create(this, () => GoToAsync(chat, replied)) : default)">
                             <Quote>
                                 @if (message is { ReplyTo: { } quote, Deleted: false })
                                 {
-                                    <span class="chat-quote"><strong>@quote.SenderName</strong><span>@quote.Snippet</span></span>
+                                    <span class="chat-quote"><strong>@quote.SenderName</strong><span>@QuoteText(chat, quote)</span>
+                                        @if (_notHere.Contains(quote.MessageId))
+                                        {
+                                            <span class="chat-quote__note">@(InPanel ? "It's no longer in this chat, so it can't be shown." : "It isn't on your phone, so it can't be shown.")</span>
+                                        }
+                                    </span>
                                 }
                             </Quote>
                             <Reactions>
@@ -172,6 +178,11 @@
     private bool _people;
     private bool _deleting;
 
+    private LiveData<OpenedChat>? _live;
+    private int _most = ChatsStore.MostMessages;
+    private readonly HashSet<string> _notHere = [];
+    private string? _pointOut;
+    private Conversation? _shown;
     private ChatCard? _card;
     private ChatLine? _acting;
     private ChatMessage? _editing;
@@ -180,7 +191,7 @@
 
     private async Task<OpenedChat> LoadAsync()
     {
-        Conversation? chat = await Store.ChatAsync(ChatId);
+        Conversation? chat = _shown = await Store.ChatAsync(ChatId, _most);
         if (chat is { Paused: false, Card.YourRole.Length: > 0 })
             await Store.MarkReadAsync(chat.Card, chat.Card.LastSeq);
         if (chat is not null && (ChatText.Title(chat.Card) != _title || _card is null || InPanel))
@@ -191,6 +202,35 @@
         }
         return new OpenedChat(chat);
     }
+
+    private async Task GoToAsync(Conversation chat, Quote quote)
+    {
+        while (!Holds(chat, quote) && chat.Lines.Count(line => line.State == LineState.Sent) >= _most && _live is not null)
+        {
+            _most += ChatsStore.MostMessages;
+            await _live.ReloadAsync();
+            if (_shown is not { } more)
+                return;
+            chat = more;
+        }
+        if (Holds(chat, quote))
+            _pointOut = $"m-{quote.MessageId}";
+        else
+            _notHere.Add(quote.MessageId);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_pointOut is not { } id)
+            return;
+        _pointOut = null;
+        await Shell.PointOutAsync(id);
+    }
+
+    private static bool Holds(Conversation chat, Quote quote) => chat.Lines.Any(line => line.Message.Id == quote.MessageId);
+
+    private static string QuoteText(Conversation chat, Quote quote) =>
+        chat.Lines.FirstOrDefault(line => line.Message.Id == quote.MessageId)?.Message.Deleted == true ? ChatCopy.DeletedMessage : quote.Snippet;
 
     private async Task OpenActions(ChatLine line)
     {

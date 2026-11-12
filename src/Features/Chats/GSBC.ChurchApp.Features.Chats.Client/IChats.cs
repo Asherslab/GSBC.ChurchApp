@@ -12,7 +12,7 @@ public interface IChats
 
     Task<ChatsHome> HomeAsync();
 
-    Task<Conversation?> ChatAsync(string chatId);
+    Task<Conversation?> ChatAsync(string chatId, int most = ChatsStore.MostMessages);
 
     Task<MediaRef> UploadAsync(ChatCard card, ChosenFile file);
 

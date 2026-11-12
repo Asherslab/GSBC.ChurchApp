@@ -453,6 +453,7 @@ input[type="checkbox"]:not([class]), input[type="radio"]:not([class]) { display:
 .open-card__body { max-width: 52ch; margin: 0; color: var(--ink-2); }
 
 .person-page__lead { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 16px; margin: 0; color: var(--ink-2); font-size: var(--text-caption); }
+.person-born { display: inline-flex; align-items: baseline; gap: var(--space-xs); }
 .person-page__account { max-width: 640px; }
 
 .person-roles { display: grid; grid-template-columns: minmax(0, 1fr) minmax(300px, 400px); align-items: start; gap: 40px; max-width: 1280px; }

@@ -8,6 +8,7 @@ namespace GSBC.ChurchApp.Features.Chats.Api;
 internal sealed class ChatReads(ChatsDbContext db)
 {
     public const int MostMessages = 400;
+    private const int MostAtOnce = 10_000;
 
     public async Task<MyChats> MineAsync(Guid me, CancellationToken cancellationToken)
     {
@@ -21,7 +22,7 @@ internal sealed class ChatReads(ChatsDbContext db)
 
     public async Task<ChatMessages> MessagesAsync(Guid me, MessagesRequest request, CancellationToken cancellationToken)
     {
-        int limit = request.Limit is > 0 and <= MostMessages ? request.Limit : MostMessages;
+        int limit = request.Limit > 0 ? Math.Min(request.Limit, MostAtOnce) : MostMessages;
         IQueryable<FeedChangeRecord> rows = Current(ChatsFeeds.Messages, me).Where(row => row.GroupKey == request.ChatId);
         if (request.BeforeSeq > 0)
         {

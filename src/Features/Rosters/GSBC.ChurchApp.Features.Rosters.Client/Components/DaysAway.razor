@@ -13,7 +13,7 @@
         }
         @if (who is not null)
         {
-            <Section First="First" Title="@Title" Lead="@(people.Count > 1 && People is null ? "Leaders of every team you or your children are on see these, and can change them. They can still put you on; it's flagged." : Lead)">
+            <Section First="First" Title="@(Paged ? null : Title)" Lead="@(people.Count > 1 && People is null ? "Leaders of every team you or your children are on see these, and can change them. They can still put you on; it's flagged." : Paged ? null : Lead)">
                 @if (people.Count > 1 && people.Count <= MostSegments)
                 {
                     <Segmented TValue="string" Label="Whose days away" Value="@who.Id" ValueChanged="id => _who = id" Class="away-who"
@@ -24,24 +24,32 @@
                     <SelectField Label="Whose days away" Value="@who.Id" ValueChanged="id => _who = id"
                                  Options="@(people.Select(person => new FieldOption(person.Id, person.Name)).ToList())" />
                 }
-                <ListGroup>
-                    @foreach (AwaySpan rule in spans.Where(span => span.Weekly))
+                @if (Paged)
+                {
+                    <Segmented TValue="string" Label="Show days away" Value="@_view" ValueChanged="view => _view = view" Options="Views" Class="away-view" />
+                    @if (_view == ListView)
                     {
-                        <ListRow @key="rule.Id" Title="@RosterLines.Span(rule)" Subtitle="@Line(RosterLines.SpanDetail(rule, today), rule.Note)" Icon="repeat" IconTone="RowTone.Warm"
-                                 Chevron="true" OnClick="() => Edit(who, rule)" />
+                        @if (spans.Count == 0)
+                        {
+                            <p class="hint away-none">@($"No days away coming up for {(who.Id == yourId ? "you" : RosterLines.First(who.Name))}.")</p>
+                        }
+                        @Rules(who, spans, today)
+                        @OneOffs(who, spans)
                     }
-                </ListGroup>
-                <MonthDays Label="@($"Days {(who.Id == yourId ? "you're" : $"{RosterLines.First(who.Name)} is")} away")" Month="@(_month ?? today)" MonthChanged="month => _month = month"
-                           Marks="day => RosterLines.MarkOn(spans, day)" Words="RosterLines.MarkWords" Today="today" Earliest="today"
-                           OnPick="day => Pick(who, spans, day)" Class="away-month"
-                           Key="@(spans.Count == 0 ? $"Choose a day to say {(who.Id == yourId ? "you're" : $"{RosterLines.First(who.Name)} is")} away." : "Shaded: away. Top half: mornings; bottom half: evenings. Struck through: not away that time. Choose a day to change it.")" />
-                <ListGroup>
-                    @foreach (AwaySpan span in spans.Where(span => !span.Weekly))
+                    else
                     {
-                        <ListRow @key="span.Id" Title="@RosterLines.Span(span)" Subtitle="@span.Note" Icon="circle-off" IconTone="RowTone.Quiet" Chevron="true" OnClick="() => Edit(who, span)" />
+                        @Month(who, spans, today, yourId)
+                        <ListGroup>
+                            <ListRow Title="Add days away" Icon="plus" IconTone="RowTone.Accent" OnClick="() => Add(who, null)" />
+                        </ListGroup>
                     }
-                    <ListRow Title="Add days away" Icon="plus" IconTone="RowTone.Accent" OnClick="() => Add(who, null)" />
-                </ListGroup>
+                }
+                else
+                {
+                    @Rules(who, spans, today)
+                    @Month(who, spans, today, yourId)
+                    @OneOffs(who, spans)
+                }
                 <Notice Tone="NoticeTone.Warning" Text="@_problem" />
             </Section>
             <AwaySheet @key="_editing" Open="_editing is not null" OpenChanged="ClosedAsync" People="people" YourId="@yourId" Who="_editingWho" Span="_span" Day="_day" />
@@ -83,6 +91,37 @@
     [Parameter] public string Lead { get; set; } = "Leaders of every team you're on see these, and can change them. They can still put you on; it's flagged.";
     [Parameter] public string? Remember { get; set; }
     [Parameter] public bool First { get; set; }
+
+    private const string MonthView = "month";
+    private const string ListView = "list";
+    private static readonly IReadOnlyList<SegmentOption<string>> Views = [new(MonthView, "Month"), new(ListView, "List")];
+    private string _view = MonthView;
+
+    [Parameter] public bool Paged { get; set; }
+
+    private RenderFragment Rules(PersonLine who, IReadOnlyList<AwaySpan> spans, DateOnly today) =>
+        @<ListGroup>
+            @foreach (AwaySpan rule in spans.Where(span => span.Weekly))
+            {
+                <ListRow @key="rule.Id" Title="@RosterLines.Span(rule)" Subtitle="@Line(RosterLines.SpanDetail(rule, today), rule.Note)" Icon="repeat" IconTone="RowTone.Warm"
+                         Chevron="true" OnClick="() => Edit(who, rule)" />
+            }
+        </ListGroup>;
+
+    private RenderFragment Month(PersonLine who, IReadOnlyList<AwaySpan> spans, DateOnly today, string yourId) =>
+        @<MonthDays Label="@($"Days {(who.Id == yourId ? "you're" : $"{RosterLines.First(who.Name)} is")} away")" Month="@(_month ?? today)" MonthChanged="month => _month = month"
+                    Marks="day => RosterLines.MarkOn(spans, day)" Words="RosterLines.MarkWords" Today="today" Earliest="today"
+                    OnPick="day => Pick(who, spans, day)" Class="away-month"
+                    Key="@(spans.Count == 0 ? $"Choose a day to say {(who.Id == yourId ? "you're" : $"{RosterLines.First(who.Name)} is")} away." : "Shaded: away. Top half: mornings; bottom half: evenings. Struck through: not away that time. Choose a day to change it.")" />;
+
+    private RenderFragment OneOffs(PersonLine who, IReadOnlyList<AwaySpan> spans) =>
+        @<ListGroup>
+            @foreach (AwaySpan span in spans.Where(span => !span.Weekly).OrderBy(span => span.From))
+            {
+                <ListRow @key="span.Id" Title="@RosterLines.Span(span)" Subtitle="@(span.Note.Length > 0 ? span.Note : span.StartTime.Length + span.EndTime.Length == 0 ? "All day" : null)" Icon="circle-off" IconTone="RowTone.Quiet" Chevron="true" OnClick="() => Edit(who, span)" />
+            }
+            <ListRow Title="Add days away" Icon="plus" IconTone="RowTone.Accent" OnClick="() => Add(who, null)" />
+        </ListGroup>;
 
     private static string Line(params string[] parts) => string.Join(" · ", parts.Where(part => part.Length > 0));
 
