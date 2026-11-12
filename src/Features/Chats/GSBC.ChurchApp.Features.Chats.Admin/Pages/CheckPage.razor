@@ -80,7 +80,7 @@
                     {
                         <EmptyState Icon="search" Title="Nothing matches" Body="No message fits all of these. Clear one of them to see more." />
                     }
-                    <div class="chat-review__scroll">
+                    <div class="chat-review__scroll @(_filter.Narrows ? "chat-review__scroll--from-top" : "")">
                         <div class="chat-review">
                             @foreach (ReviewLine line in lines)
                             {
