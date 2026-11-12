@@ -16,6 +16,7 @@
             }
             <AudioPreview Item="SermonPlayer.Item(Detail.Sermon)" />
         </div>
+        <Menu Label="@($"More for {Detail.Sermon.Title}")" Items="SermonActions" Class="sermon-check__menu" />
     </div>
 
     <div class="sermon-check__fields">
@@ -52,29 +53,15 @@
 
     <Notice Tone="NoticeTone.Warning" Text="@_problem" />
 
-    <div class="panel-actions">
-        @if (Detail.CheckedAt is null && !Detail.Hidden)
-        {
-            <Button Icon="check" Busy="_busy" OnClick="() => SaveAsync(check: true)">@(Dirty ? "Save · looks right · next" : "Looks right · next")</Button>
-        }
-        else if (Dirty)
-        {
-            <Button Icon="check" Busy="_busy" OnClick="() => SaveAsync(check: false)">Save</Button>
-        }
-        @if (Dirty)
-        {
-            <Button Variant="ButtonVariant.Quiet" Disabled="_busy" OnClick="Reset">Undo changes</Button>
-        }
-        @if (SaveBar.For(Dirty, _saved) is { } state)
-        {
-            <SaveStatus State="state" />
-        }
-        <Button Variant="ButtonVariant.Quiet" Icon="@(Detail.Hidden ? "eye" : "eye-off")" Disabled="_busy" OnClick="ToggleHiddenAsync">@(Detail.Hidden ? "Show in the app" : "Hide from the app")</Button>
-        @if (Detail.Hidden)
-        {
-            <Button Variant="ButtonVariant.Danger" Disabled="_busy" OnClick="() => _deleting = true">Delete for good…</Button>
-        }
-    </div>
+    @if (NeedsCheck || Dirty)
+    {
+        <SaveBar Label="@(NeedsCheck ? (Dirty ? "Save · looks right · next" : "Looks right · next") : "Save")" Busy="_busy" OnSave="() => SaveAsync(check: NeedsCheck)"
+                 OnCancel="@(Dirty ? EventCallback.Factory.Create(this, Reset) : default)" CancelLabel="Undo changes" State="SaveBar.For(Dirty, _saved)" />
+    }
+    else if (_saved)
+    {
+        <SaveStatus State="SaveState.Saved" />
+    }
 </div>
 
 <Sheet Open="_deleting" OpenChanged="open => _deleting = open" Title="@($"Delete “{Detail.Sermon.Title}” for good?")"
@@ -104,6 +91,14 @@
     [Parameter] public EventCallback Deleted { get; set; }
 
     protected override void OnInitialized() => Reset();
+
+    private bool NeedsCheck => Detail.CheckedAt is null && !Detail.Hidden;
+
+    private IReadOnlyList<MenuItem> SermonActions =>
+    [
+        new(Detail.Hidden ? "Show in the app" : "Hide from the app", ToggleHiddenAsync, Detail.Hidden ? "eye" : "eye-off", Disabled: _busy),
+        .. Detail.Hidden ? [new MenuItem("Delete for good…", () => { _deleting = true; return Task.CompletedTask; }, "trash-2", Danger: true, StartsGroup: true, Disabled: _busy)] : Array.Empty<MenuItem>(),
+    ];
 
     private bool Dirty =>
         _title.Trim() != Detail.Sermon.Title || _speakerId != Detail.Sermon.SpeakerId || _seriesId != (Detail.Sermon.SeriesId ?? "")

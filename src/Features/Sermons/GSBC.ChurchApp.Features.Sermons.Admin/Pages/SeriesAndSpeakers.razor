@@ -5,64 +5,66 @@
 <UnsavedGuard Changed="() => Changed" What="@(_speaker is null ? "this series" : "this speaker")" Save="SaveBeforeLeavingAsync" />
 
 <TitleBand Title="Series and speakers" BackHref="sermons" BackText="Sermons"
-           Lead="Name a series, give it a picture and a line about it; keep the list of speakers, with their names and photos." />
+           Lead="Name a series, give it a picture and a line about it; keep the list of speakers, with their names and photos.">
+    <Actions>
+        <Can Permission="SermonsPermissions.Edit">
+            <Button Icon="plus" OnClick="() => OpenAsync(_tab == Tab.Series ? NewSeries : NewSpeaker)">@(_tab == Tab.Series ? "New series" : "New speaker")</Button>
+        </Can>
+    </Actions>
+</TitleBand>
 
 <LiveData @ref="_live" TValue="Lists" Feeds="ListFeeds" Load="LoadAsync" FailedTitle="Can't load series and speakers right now">
-    <div class="series-desk">
-        <section aria-label="Series">
-            <div class="series-desk__head">
-                <h2>Series</h2>
-                <Can Permission="SermonsPermissions.Edit">
-                    <Button Variant="ButtonVariant.Quiet" Small="true" Icon="plus" OnClick="() => OpenAsync(NewSeries)">New series</Button>
-                </Can>
-            </div>
-            <SearchField Label="Find a series" Placeholder="Find a series" Value="@_seriesQuery" ValueChanged="query => _seriesQuery = query" />
-            <div class="series-desk__list">
-                @foreach (SeriesDetail series in Matching(context.Value.Series, _seriesQuery, one => one.Name))
-                {
-                    <button type="button" class="sermon-pick @(_series?.Id == series.Id && _series.Id.Length > 0 ? "is-selected" : "")" @onclick="() => OpenAsync(() => EditSeries(series))">
-                        <MediaCover Media="series.Artwork" Size="MediaSizeName.Thumbnail" FallbackTitle="@series.Name" Class="sermon-pick__thumb" />
-                        <span class="sermon-pick__words">
-                            <strong>@series.Name</strong>
-                            <span>@SermonText.Join(SermonText.Sermons(series.Count), series.LastAt is { } last ? SermonText.Month(last) : null)</span>
-                        </span>
-                    </button>
-                }
-                @if (_seriesQuery.Length > 0 && !Matching(context.Value.Series, _seriesQuery, one => one.Name).Any())
-                {
-                    <p class="series-desk__none">No series called “@_seriesQuery”.</p>
-                }
-            </div>
-        </section>
-        <section aria-label="Speakers">
-            <div class="series-desk__head">
-                <h2>Speakers</h2>
-                <Can Permission="SermonsPermissions.Edit">
-                    <Button Variant="ButtonVariant.Quiet" Small="true" Icon="plus" OnClick="() => OpenAsync(NewSpeaker)">New speaker</Button>
-                </Can>
-            </div>
-            <SearchField Label="Find a speaker" Placeholder="Find a speaker" Value="@_speakerQuery" ValueChanged="query => _speakerQuery = query" />
-            <div class="series-desk__list">
-                @foreach (SpeakerDetail speaker in Matching(context.Value.Speakers, _speakerQuery, SpeakerName))
-                {
-                    <button type="button" class="sermon-pick @(_speaker?.Id == speaker.Id && _speaker.Id.Length > 0 ? "is-selected" : "")" @onclick="() => OpenAsync(() => EditSpeaker(speaker))">
-                        <Avatar Name="@speaker.Name" Photo="speaker.Photo" Size="40" />
-                        <span class="sermon-pick__words">
-                            <strong>@speaker.Name</strong>
-                            <span>@SermonText.Sermons(speaker.Count)</span>
-                        </span>
-                    </button>
-                }
-                @if (_speakerQuery.Length > 0 && !Matching(context.Value.Speakers, _speakerQuery, SpeakerName).Any())
-                {
-                    <p class="series-desk__none">No speaker called “@_speakerQuery”.</p>
-                }
-            </div>
-        </section>
-        <section class="series-desk__edit" aria-label="Edit">
+    <Workbench Class="series-desk" DetailLabel="@(_speaker is null ? "The series" : "The speaker")">
+        <ChildContent>
+            <TabStrip TValue="Tab" Label="Series or speakers" Options="Tabs" Value="_tab" ValueChanged="tab => _tab = tab" />
+            @if (_tab == Tab.Series)
+            {
+                <SearchField Label="Find a series" Placeholder="Find a series" Value="@_seriesQuery" ValueChanged="query => _seriesQuery = query" />
+                <div class="series-desk__list">
+                    @foreach (SeriesDetail series in Matching(context.Value.Series, _seriesQuery, one => one.Name))
+                    {
+                        <button type="button" class="sermon-pick @(_series?.Id == series.Id && _series.Id.Length > 0 ? "is-selected" : "")" @onclick="() => OpenAsync(() => EditSeries(series))">
+                            <MediaCover Media="series.Artwork" Size="MediaSizeName.Thumbnail" FallbackTitle="@series.Name" Class="sermon-pick__thumb" />
+                            <span class="sermon-pick__words">
+                                <strong>@series.Name</strong>
+                                <span>@SermonText.Join(SermonText.Sermons(series.Count), series.LastAt is { } last ? SermonText.Month(last) : null)</span>
+                            </span>
+                        </button>
+                    }
+                    @if (_seriesQuery.Length > 0 && !Matching(context.Value.Series, _seriesQuery, one => one.Name).Any())
+                    {
+                        <p class="series-desk__none">No series called “@_seriesQuery”.</p>
+                    }
+                </div>
+            }
+            else
+            {
+                <SearchField Label="Find a speaker" Placeholder="Find a speaker" Value="@_speakerQuery" ValueChanged="query => _speakerQuery = query" />
+                <div class="series-desk__list">
+                    @foreach (SpeakerDetail speaker in Matching(context.Value.Speakers, _speakerQuery, SpeakerName))
+                    {
+                        <button type="button" class="sermon-pick @(_speaker?.Id == speaker.Id && _speaker.Id.Length > 0 ? "is-selected" : "")" @onclick="() => OpenAsync(() => EditSpeaker(speaker))">
+                            <Avatar Name="@speaker.Name" Photo="speaker.Photo" Size="40" />
+                            <span class="sermon-pick__words">
+                                <strong>@speaker.Name</strong>
+                                <span>@SermonText.Sermons(speaker.Count)</span>
+                            </span>
+                        </button>
+                    }
+                    @if (_speakerQuery.Length > 0 && !Matching(context.Value.Speakers, _speakerQuery, SpeakerName).Any())
+                    {
+                        <p class="series-desk__none">No speaker called “@_speakerQuery”.</p>
+                    }
+                </div>
+            }
+        </ChildContent>
+        <Detail>
+            <div class="series-desk__edit">
             @if (_series is { } editing)
             {
-                <h2>@(editing.Id.Length == 0 ? "A new series" : editing.Name)</h2>
+                <PaneHead Title="@(editing.Id.Length == 0 ? "A new series" : editing.Name)" Lead="@(editing.Id.Length == 0 ? "Fill in what you know; the rest can wait." : SermonText.Sermons(editing.Count))"
+                          Actions="@(editing.Id.Length == 0 ? null : [new MenuItem("Delete this series…", AskToDeleteSeriesAsync, "trash-2", "Says first where its sermons go", Danger: true, Disabled: _busy)])"
+                          OnClose="() => OpenAsync(Close)" />
                 <TextField Label="Name" @bind-Value="_name" MaxLength="80" />
                 <TextField Label="About the series" Multiline="true" Hint="Optional: shown on the series in the app." @bind-Value="_description" MaxLength="600" />
                 <span class="field__label">Picture</span>
@@ -83,22 +85,14 @@
                     }
                 </div>
                 <Notice Tone="NoticeTone.Warning" Text="@_problem" />
-                <div class="panel-actions">
-                    <SaveBar New="@(editing.Id.Length == 0)" Label="@(editing.Id.Length == 0 ? "Add the series" : "Save")" Busy="_busy" OnSave="SaveSeriesAsync" State="SaveBar.For(Changed, _saved)"
-                             Blocked="@(_name.Trim().Length == 0 ? $"Give it a name to {(editing.Id.Length == 0 ? "add" : "save")} it." : null)">
-                        <Button Variant="ButtonVariant.Quiet" Disabled="_busy" OnClick="() => OpenAsync(Close)">Cancel</Button>
-                    </SaveBar>
-                </div>
-                @if (editing.Id.Length > 0)
-                {
-                    <div class="series-desk__delete">
-                        <Button Variant="ButtonVariant.Danger" Small="true" Disabled="_busy" OnClick="AskToDeleteSeriesAsync">Delete this series…</Button>
-                    </div>
-                }
+                <SaveBar New="@(editing.Id.Length == 0)" Label="@(editing.Id.Length == 0 ? "Add the series" : "Save")" Busy="_busy" OnSave="SaveSeriesAsync" OnCancel="() => OpenAsync(Close)"
+                         State="SaveBar.For(Changed, _saved)" Blocked="@(_name.Trim().Length == 0 ? $"Give it a name to {(editing.Id.Length == 0 ? "add" : "save")} it." : null)" />
             }
             else if (_speaker is { } speaker)
             {
-                <h2>@(speaker.Id.Length == 0 ? "A new speaker" : speaker.Name)</h2>
+                <PaneHead Title="@(speaker.Id.Length == 0 ? "A new speaker" : speaker.Name)" Lead="@(speaker.Id.Length == 0 ? "They can be chosen for any sermon once added." : SermonText.Sermons(speaker.Count))"
+                          Actions="@(speaker.Id.Length == 0 ? null : [new MenuItem("Delete this speaker…", () => { _deleting = true; return Task.CompletedTask; }, "trash-2", "Says first where their sermons go", Danger: true, Disabled: _busy)])"
+                          OnClose="() => OpenAsync(Close)" />
                 <TextField Label="Name" @bind-Value="_name" MaxLength="80" Hint="As it shows in the app, for example “Ps Jo Ellery”." />
                 <span class="field__label">Photo</span>
                 <div class="series-desk__photo">
@@ -118,29 +112,20 @@
                     </span>
                 </div>
                 <Notice Tone="NoticeTone.Warning" Text="@_problem" />
-                <div class="panel-actions">
-                    <SaveBar New="@(speaker.Id.Length == 0)" Label="@(speaker.Id.Length == 0 ? "Add the speaker" : "Save")" Busy="_busy" OnSave="SaveSpeakerAsync" State="SaveBar.For(Changed, _saved)"
-                             Blocked="@(_name.Trim().Length == 0 ? $"Give them a name to {(speaker.Id.Length == 0 ? "add" : "save")} them." : null)">
-                        <Button Variant="ButtonVariant.Quiet" Disabled="_busy" OnClick="() => OpenAsync(Close)">Cancel</Button>
-                    </SaveBar>
-                </div>
-                @if (speaker.Id.Length > 0)
-                {
-                    <div class="series-desk__delete">
-                        <Button Variant="ButtonVariant.Danger" Small="true" Disabled="_busy" OnClick="() => _deleting = true">Delete this speaker…</Button>
-                    </div>
-                }
+                <SaveBar New="@(speaker.Id.Length == 0)" Label="@(speaker.Id.Length == 0 ? "Add the speaker" : "Save")" Busy="_busy" OnSave="SaveSpeakerAsync" OnCancel="() => OpenAsync(Close)"
+                         State="SaveBar.For(Changed, _saved)" Blocked="@(_name.Trim().Length == 0 ? $"Give them a name to {(speaker.Id.Length == 0 ? "add" : "save")} them." : null)" />
             }
             else
             {
                 <EmptyState Icon="layers" Title="Choose a series or a speaker" Body="Changes show on everyone's phone as soon as they're saved." />
             }
+            </div>
             @if (_choosing)
             {
                 <MediaChooser ImagesOnly="true" Size="@(_speaker is null ? SeriesSize : MediaSizeName.Thumbnail)" OnChosen="Chose" OnCancel="() => _choosing = false" />
             }
-        </section>
-    </div>
+        </Detail>
+    </Workbench>
     <Sheet Open="_deleting" OpenChanged="open => { if (!open) StopDeleting(); }" Title="@DeleteTitle">
         <ChildContent>
             @if (_speaker is { Id.Length: > 0 } doomedSpeaker)
@@ -184,7 +169,10 @@
 
     private sealed record Lists(IReadOnlyList<SeriesDetail> Series, IReadOnlyList<SpeakerDetail> Speakers);
 
+    private enum Tab { Series, Speakers }
+
     private LiveData<Lists>? _live;
+    private Tab _tab = Tab.Series;
     private SeriesDetail? _series;
     private SpeakerDetail? _speaker;
     private string _name = "", _description = "", _seriesQuery = "", _speakerQuery = "";
@@ -205,6 +193,8 @@
 
     private static IEnumerable<T> Matching<T>(IEnumerable<T> items, string query, Func<T, string> text) =>
         query.Trim() is { Length: > 0 } wanted ? items.Where(item => text(item).Contains(wanted, StringComparison.CurrentCultureIgnoreCase)) : items;
+
+    private static readonly IReadOnlyList<TabOption<Tab>> Tabs = [new(Tab.Series, "Series"), new(Tab.Speakers, "Speakers")];
 
     private static string SpeakerName(SpeakerDetail speaker) => speaker.Name;
 
