@@ -38,6 +38,8 @@
         <p class="ministry-about">@Page.Ministry.About</p>
     </Section>
 }
+@if (Page.Ministry.Meets.Length > 0 || Page.Ministry.WhoFor.Length > 0 || Page.Leaders.Count > 0)
+{
 <Section First="@(Page.Ministry.About.Length == 0 && Page.SittingOut.Count == 0 && Page.You.ForYourYes.Count == 0)">
     <ListGroup>
         @if (Page.Ministry.Meets.Length > 0)
@@ -54,6 +56,7 @@
         }
     </ListGroup>
 </Section>
+}
 
 @if (Page.You.Asked.Count > 0)
 {

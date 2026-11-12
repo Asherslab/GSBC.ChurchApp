@@ -16,11 +16,9 @@
                 <TextField Label="Who it's for" @bind-Value="Details.WhoFor" MaxLength="140" />
             </div>
             <JoiningFields TeamJoin="@Details.TeamJoin" TeamJoinChanged="value => Details.TeamJoin = value"
-                           AttendJoin="@Details.AttendJoin" AttendJoinChanged="value => Details.AttendJoin = value" />
-            @if (!MinistryLogic.IsHidden(Details))
-            {
-                <LifeGroupsFields Shows="Details.ShowsInLifeGroups" ShowsChanged="value => Details.ShowsInLifeGroups = value" RoundId="@Details.RoundId" RoundIdChanged="value => Details.RoundId = value" />
-            }
+                           AttendJoin="@Details.AttendJoin" AttendJoinChanged="value => Details.AttendJoin = value" Hidden="MinistryLogic.IsHidden(Details)" />
+            <LifeGroupsFields Shows="Details.ShowsInLifeGroups" ShowsChanged="value => Details.ShowsInLifeGroups = value" RoundId="@Details.RoundId" RoundIdChanged="value => Details.RoundId = value"
+                              Blocked="@(MinistryLogic.IsHidden(Details) ? "A hidden ministry isn't listed in Life Groups, which everyone sees" : null)" />
             <HiddenFields Ministry="Details" HiddenChanged="value => Details.Hidden = value" />
             <Notice Tone="NoticeTone.Warning" Text="@_problem" />
         </div>

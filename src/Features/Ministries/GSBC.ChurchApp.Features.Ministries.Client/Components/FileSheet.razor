@@ -104,7 +104,7 @@
     private object Shape => (Draft.Title, Draft.Url, Draft.Note, Draft.Audience, _picked?.Url, _chosen?.File.Name);
 
     private IReadOnlyList<SegmentOption<string>> Audiences =>
-        Page.You.MayPostFor.Select(audience => new SegmentOption<string>(audience, MinistryWords.Short(audience))).ToList();
+        Page.You.MayPostFor.Select(audience => new SegmentOption<string>(audience, MinistryWords.Short(audience, Page.Ministry))).ToList();
 
     public static FileItem DraftOf(FileItem? file, MinistryPage page, bool document = false) => new()
     {

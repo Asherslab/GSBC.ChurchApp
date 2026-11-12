@@ -149,7 +149,11 @@ files or calendars anywhere: not the list of ministries, search (destinations), 
   everyone in Calendar.
 - **Default (owner to review): Life Groups are never hidden.** The owner said Life Groups are for choosing side by side,
   so a ministry shown in Life Groups can't be hidden, a hidden ministry (or one under it) can't be shown in Life Groups,
-  and a Life Group can't move under a hidden ministry. The Settings form offers only the one that applies.
+  and a Life Group can't move under a hidden ministry. In Settings both switches stay, and the one that can't apply is
+  greyed with the reason ("A Life Group is listed for everyone, so it can't be hidden").
+- **Joining** keeps its choices, but only people who can already see a hidden ministry can join or ask, so Settings
+  says so under them, and its line in the list of ministries says "Hidden" with no join line. The post, file and
+  calendar sheets call the everyone choice "Everyone who sees it" in a hidden ministry.
 - **Chats don't change.** A ministry's chats are only ever for its own people, so a hidden ministry's chats work as
   before; chat auditors still see them.
 - **Posting for everyone** in a hidden ministry reaches everyone who can see it; the post sheet says so ("Accounts is

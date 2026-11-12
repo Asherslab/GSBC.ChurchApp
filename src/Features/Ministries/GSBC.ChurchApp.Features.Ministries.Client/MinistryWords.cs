@@ -39,6 +39,12 @@ public static class MinistryWords
 
     public static string HiddenBecause(string above) => $"Hidden, because {above} is. Only its own people and staff see it.";
 
+    public static string Short(string audience, MinistryDetails ministry) =>
+        audience == Audiences.Everyone && MinistryLogic.IsHidden(ministry) ? "Everyone who sees it" : Short(audience);
+
+    public static string PostFor(string audience, MinistryDetails ministry) =>
+        audience == Audiences.Everyone && MinistryLogic.IsHidden(ministry) ? "Post for everyone who sees it" : PostFor(audience);
+
     public static string PostFor(string audience) => audience switch
     {
         Audiences.Team => "Post for the team",
