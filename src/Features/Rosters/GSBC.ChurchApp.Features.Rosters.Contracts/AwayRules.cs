@@ -9,7 +9,7 @@ public static class AwayRules
     public const string DayFormat = "yyyy-MM-dd";
     public const string TimeFormat = "HH:mm";
 
-    public static bool AllDay(AwaySpan span) => span.StartTime.Length == 0 && span.EndTime.Length == 0;
+    private static bool AllDay(AwaySpan span) => span.StartTime.Length == 0 && span.EndTime.Length == 0;
 
     public static bool Lasting(AwaySpan span) => span.Weekly && span.To.Length == 0;
 

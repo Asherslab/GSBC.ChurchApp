@@ -5,6 +5,12 @@
 {
     <Sheet Open="true" OpenChanged="open => Close(open)" Title="@(_picking is { } picking ? $"{picking.Name} · {RosterLines.When(date)}" : $"{RosterLines.When(date)} · {date.Title}")"
            Lead="@(_picking is null ? Lead(date) : $"{date.Title}. Flags never stop you putting someone on.")">
+        <Tools>
+            @if (_picking is null && View.MayEdit && !View.Archived)
+            {
+                <Menu Label="More for this date" Items="@DateMenu(date)" />
+            }
+        </Tools>
         <ChildContent>
             <Notice Tone="NoticeTone.Warning" Text="@_problem" />
             @if (_picking is { } picked)
@@ -29,12 +35,6 @@
             }
             else
             {
-                @if (View.MayEdit && !View.Archived)
-                {
-                    <div class="away-more">
-                        <Menu Label="More for this date" Items="@DateMenu(date)" />
-                    </div>
-                }
                 @foreach (Position position in View.Positions)
                 {
                     IReadOnlyList<Assignment> on = RosterLines.In(date, position);

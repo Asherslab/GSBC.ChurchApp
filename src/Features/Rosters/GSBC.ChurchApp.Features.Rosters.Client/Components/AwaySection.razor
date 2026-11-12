@@ -3,7 +3,7 @@
 @if (View.MayEdit && !View.Archived && View.Team.Count > 0)
 {
     <DaysAway @key="View.MinistryId" Load="TeamAsync" Feeds="Reads.Feeds" People="TeamPeople" YourId="@View.YourId" Remember="@($"rosters.away.{View.MinistryId}")"
-              Title="The team's days away" Lead="You and other leaders can change anyone's on the team. Everyone's are flagged when you put them on." />
+              Title="The team's days away" Lead="Leaders can change anyone's days away. Anyone away is flagged when they're put on." />
 }
 else if (View.You.Count > 0)
 {

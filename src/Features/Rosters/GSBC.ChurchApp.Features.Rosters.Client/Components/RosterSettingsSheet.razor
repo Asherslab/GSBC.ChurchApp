@@ -1,6 +1,7 @@
 @using System.Globalization
 @inject RosterWrites Writes
 @inject IRosterReads Reads
+@inject TimeProvider Clock
 
 <UnsavedGuard Changed="() => Open && Changed" What="how the roster works" Save="SaveAsync" />
 
@@ -14,19 +15,19 @@
             }
             <SelectField Label="Reminder before each date" Value="@Number(_draft.RemindDaysBefore)" ValueChanged="value => _draft.RemindDaysBefore = Parse(value)" Options="Reminders" />
         </Section>
-        <Section Grouped="true" Title="When someone asks the team for a swap" Foot="@SwapFoot">
+        <Section Grouped="true" Title="When someone asks the team for a swap">
             <Segmented TValue="string" Label="When someone asks the team for a swap" Rows="true" Value="@_draft.OpenSwaps" ValueChanged="value => _draft.OpenSwaps = value"
                        Options="@([.. OpenSwaps.All.Select(value => new SegmentOption<string>(value, RosterLines.OpenSwapsWords(value), Detail: RosterLines.OpenSwapsDetail(value)))])" />
         </Section>
         <Section Grouped="true" Title="Asking one person">
             <ToggleRow Title="@RosterLines.WaysWords(SwapWays.Direct)" Description="They choose who on the team to ask, and that person says yes or can't" @bind-Checked="_draft.DirectSwaps" />
         </Section>
-        <p class="roster-say">@RosterLines.SwapSentence(_draft)</p>
+        <p class="roster-say" aria-live="polite">@RosterLines.SwapSentence(_draft, Example.Who, Example.When)</p>
         <Section Grouped="true" Title="What the team sees">
             <Segmented TValue="string" Label="What the team sees" Rows="true" Value="@_draft.WhoSees" ValueChanged="value => _draft.WhoSees = value"
                        Options="@([.. new[] { WhoSees.Everything, WhoSees.WithYou, WhoSees.Yours }.Select(value => new SegmentOption<string>(value, RosterLines.WhoSeesWords(value)))])" />
         </Section>
-        <Section Grouped="true" Title="Calendars it rosters from" Lead="Add a date starts on these calendars' events. Every calendar is still there.">
+        <Section Grouped="true" Title="Calendars it rosters from" Lead="Add a date suggests events from these calendars first; every other calendar is still there.">
             @if (Open)
             {
                 <LiveData TValue="IReadOnlyList<EventChoice>" Load="() => Reads.EventChoicesAsync(View.MinistryId)" Feeds="Reads.Feeds">
@@ -66,7 +67,9 @@
     [Parameter] public EventCallback<bool> OpenChanged { get; set; }
     [Parameter, EditorRequired] public required RosterView View { get; set; }
 
-    private RenderFragment SwapFoot => @<text>Leaders hear of every swap.</text>;
+    private (string Who, string When) Example =>
+        (View.Team.Where(member => !member.Leads).Select(member => RosterLines.First(member.Name)).FirstOrDefault() ?? "someone",
+         View.Dates.Where(date => !date.NotOn && date.StartsAt > Clock.GetUtcNow().UtcDateTime).Select(date => ChurchTime.ToChurch(date.StartsAt).ToString("ddd d MMM", CultureInfo.InvariantCulture)).FirstOrDefault() ?? "a date");
 
     private bool Changed =>
         (_draft.Replies, _draft.WhoSees, _draft.RemindDaysBefore, _draft.NudgeAfterDays, _draft.OpenSwaps, _draft.DirectSwaps, string.Join(",", _draft.Calendars.Order()))

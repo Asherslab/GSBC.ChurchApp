@@ -133,10 +133,13 @@ public static class RosterLines
             needs.Add("a blue card");
         if (position.NeedsTraining)
             needs.Add("Safe Ministry training");
-        if (position.NeedsTrained)
-            needs.Add("being trained for it");
         string people = position.Needed == 1 ? "1 person" : $"{position.Needed} people";
-        return needs.Count == 0 ? people : $"{people} · needs {string.Join(", ", needs)}";
+        return string.Join(" · ", ((string[])
+        [
+            people,
+            needs.Count == 0 ? "" : $"needs {string.Join(" and ", needs)}",
+            position.NeedsTrained ? "trained, or with someone trained" : "",
+        ]).Where(part => part.Length > 0));
     }
 
     public static string WaysWords(string way) => way switch
@@ -168,13 +171,19 @@ public static class RosterLines
         _ => "Whoever takes it is on straight away",
     };
 
-    public static string SwapSentence(RosterSettings settings) => (settings.OpenSwaps != OpenSwaps.Off, settings.DirectSwaps) switch
+    public static string SwapSentence(RosterSettings settings, string who, string when)
     {
-        (false, false) => "So when someone can't do a date, they tell a leader, who finds someone else.",
-        (true, false) => $"So when someone can't do a date, they ask the team{(settings.OpenSwaps == OpenSwaps.Approve ? ", and a leader says yes to an offer" : "")}. They stay on until it's taken.",
-        (false, true) => "So when someone can't do a date, they ask someone on the team they choose. They stay on until it's taken.",
-        (true, true) => $"So when someone can't do a date, they ask the whole team or someone they choose{(settings.OpenSwaps == OpenSwaps.Approve ? "; a leader says yes to an offer from the team" : "")}. They stay on until it's taken.",
-    };
+        string opening = $"So when {who} can't do {when},";
+        bool team = settings.OpenSwaps != OpenSwaps.Off;
+        string leader = settings.OpenSwaps == OpenSwaps.Approve ? " A leader says yes to whoever offers." : "";
+        return (team, settings.DirectSwaps) switch
+        {
+            (false, false) => $"{opening} they tell a leader, who finds someone else.",
+            (true, false) => $"{opening} they ask the team, and stay on until it's taken.{leader} Leaders hear.",
+            (false, true) => $"{opening} they ask someone on the team they choose, and stay on until it's taken. Leaders hear.",
+            (true, true) => $"{opening} they ask the whole team or someone they choose, and stay on until it's taken.{leader} Leaders hear.",
+        };
+    }
 
     public static IReadOnlyList<string> WaysOpenTo(RosterSettings settings) =>
         [.. settings.OpenSwaps != OpenSwaps.Off ? [SwapWays.Open] : Array.Empty<string>(), .. settings.DirectSwaps ? [SwapWays.Direct] : Array.Empty<string>()];
@@ -220,7 +229,7 @@ public static class RosterLines
         return Capital(string.Join(", ", parts));
     }
 
-    public static string TimesWords(AwaySpan span) => (AwayRules.Time(span.StartTime), AwayRules.Time(span.EndTime)) switch
+    private static string TimesWords(AwaySpan span) => (AwayRules.Time(span.StartTime), AwayRules.Time(span.EndTime)) switch
     {
         (null, null) => "",
         (null, { } until) when until == MorningsEnd => "mornings",
@@ -241,7 +250,7 @@ public static class RosterLines
         return all.Any(span => AwayRules.Skips(span, day)) ? DayMark.Skipped : DayMark.None;
     }
 
-    public static DayMark MarkOf(AwaySpan span) => (AwayRules.Time(span.StartTime), AwayRules.Time(span.EndTime)) switch
+    private static DayMark MarkOf(AwaySpan span) => (AwayRules.Time(span.StartTime), AwayRules.Time(span.EndTime)) switch
     {
         (null, null) => DayMark.AllDay,
         (null, { } until) when until <= MorningsEnd => DayMark.Morning,
@@ -259,8 +268,8 @@ public static class RosterLines
         _ => "",
     };
 
-    public static readonly TimeOnly MorningsEnd = new(12, 0);
-    public static readonly TimeOnly EveningsStart = new(17, 0);
+    private static readonly TimeOnly MorningsEnd = new(12, 0);
+    private static readonly TimeOnly EveningsStart = new(17, 0);
 
     private static string WeekdaysWords(IReadOnlyCollection<int> weekdays) =>
         weekdays.Count == 7 ? "day"

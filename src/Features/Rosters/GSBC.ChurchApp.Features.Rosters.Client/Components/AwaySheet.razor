@@ -6,13 +6,13 @@
 
 <Sheet Open="Open" OpenChanged="OpenChanged" Title="@(Span is null ? "Days away" : RosterLines.Span(Span))"
        Lead="@(Who is { } who && who.Id != YourId ? $"For {who.Name}. Leaders of their teams see these." : "Leaders of every team you're on see these.")">
-    <ChildContent>
+    <Tools>
         @if (Span is not null)
         {
-            <div class="away-more">
-                <Menu Label="More for these days away" Items="More" />
-            </div>
+            <Menu Label="More for these days away" Items="More" />
         }
+    </Tools>
+    <ChildContent>
         @if (Span is null && People.Count > 1 && People.Count <= 3)
         {
             <Segmented TValue="string" Label="Who's away" ShowLabel="true" Value="@WhoId" ValueChanged="id => _who = id"

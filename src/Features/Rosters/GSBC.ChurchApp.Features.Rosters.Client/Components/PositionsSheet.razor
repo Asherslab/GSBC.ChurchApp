@@ -4,15 +4,15 @@
 
 <Sheet Open="Open" OpenChanged="CloseAsync" Title="@(_editing is null ? "Positions" : _editing.Id.Length == 0 ? "A new position" : _editing.Name)"
        Lead="@(_editing is null ? "The jobs people do on each date. What a position needs is flagged when someone is put on, but never stops them." : null)">
+    <Tools>
+        @if (_editing is { Id.Length: > 0 } editing)
+        {
+            <Menu Label="@($"More for {editing.Name}")" Items="@([this.Item("Delete the position…", () => _deleting = true, "trash-2", "Everyone on it on dates to come comes off", danger: true)])" />
+        }
+    </Tools>
     <ChildContent>
         @if (_editing is { } position)
         {
-            @if (position.Id.Length > 0)
-            {
-                <div class="away-more">
-                    <Menu Label="@($"More for {position.Name}")" Items="@([this.Item("Delete the position…", () => _deleting = true, "trash-2", "Everyone on it on dates to come comes off", danger: true)])" />
-                </div>
-            }
             <TextField Label="Name" @bind-Value="position.Name" MaxLength="60" Required="true" />
             <SelectField Label="How many people on each date" Value="@position.Needed.ToString(System.Globalization.CultureInfo.InvariantCulture)"
                          ValueChanged="value => position.Needed = int.Parse(value, System.Globalization.CultureInfo.InvariantCulture)" Options="Counts" />

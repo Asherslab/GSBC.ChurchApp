@@ -95,6 +95,7 @@
 }
 
 .roster-grid {
+  contain: inline-size;
   overflow-x: auto;
   scrollbar-width: none;
   margin: 0 calc(-1 * var(--gutter));
@@ -194,8 +195,6 @@
 .away-who { margin-bottom: var(--stack); max-width: 22rem; }
 
 .away-month { max-width: 30rem; margin: var(--stack) 0; }
-
-.away-more { display: flex; justify-content: flex-end; }
 
 .away-times { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-md); }
 
