@@ -138,6 +138,11 @@ from the page. They picked the **folded** layout on the decision page (`.impecca
 - Reactions use the shared `BubbleReactions`; the message box is the shared `Composer`
   (2026-11-12): reply or edit context, *Writing for* chips, mentions and picked files in its `Above`, the paperclip in
   `Attach`, and Send turning to a check while editing. Send feedback on the phone uses the same component.
+- **A reply's quote goes to the original** (#67, owner: "Tapping on the reply box should take me to the original
+  message"). The quote is a button (`MessageBubble`'s `OnQuote`); tapping it scrolls the original to the middle and rings
+  it in marker for a moment (`Shell.PointOutAsync`). If the original is older than the 400 messages a chat shows, the
+  chat reads 400 more from the phone's store until it finds it. A deleted original reads "This message was deleted.";
+  one that isn't on the phone says so under the quote.
 
 ## Deleting
 

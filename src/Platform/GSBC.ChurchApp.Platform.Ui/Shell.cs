@@ -69,6 +69,8 @@ public sealed class Shell(IJSRuntime js) : IDisposable
 
     internal ValueTask RevealAsync(string elementId) => js.InvokeVoidAsync("gsbcShell.reveal", elementId);
 
+    public ValueTask PointOutAsync(string elementId) => js.InvokeVoidAsync("gsbcShell.pointOut", elementId);
+
     internal ValueTask RevealTabAsync(ElementReference strip) => js.InvokeVoidAsync("gsbcShell.revealTab", strip);
 
     internal ValueTask RestoreFocusAsync() => js.InvokeVoidAsync("gsbcShell.restoreFocus");

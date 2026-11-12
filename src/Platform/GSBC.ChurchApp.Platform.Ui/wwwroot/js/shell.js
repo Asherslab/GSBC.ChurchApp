@@ -197,6 +197,16 @@ window.gsbcShell = (() => {
       document.getElementById(id)?.scrollIntoView({ block: 'nearest' });
     },
 
+    pointOut(id) {
+      const element = document.getElementById(id);
+      if (!element) return;
+      element.scrollIntoView({ block: 'center', behavior: reducedMotion.matches ? 'auto' : 'smooth' });
+      element.classList.remove('is-pointed-out');
+      void element.offsetWidth;
+      element.classList.add('is-pointed-out');
+      element.addEventListener('animationend', () => element.classList.remove('is-pointed-out'), { once: true });
+    },
+
     revealTab(strip) {
       const tab = strip?.querySelector('[aria-current="page"], [aria-selected="true"]');
       if (!tab || strip.scrollWidth <= strip.clientWidth) return;
