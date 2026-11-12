@@ -26,8 +26,10 @@ export function canCapture() {
   return !!navigator.mediaDevices?.getDisplayMedia;
 }
 
-const settle = 600;
+const settle = 300;
 const starting = 3000;
+const longestWait = 2500;
+const framesToSkip = 3;
 
 function sized(video) {
   return new Promise((resolve) => {
@@ -43,38 +45,50 @@ function sized(video) {
   });
 }
 
-function frameOrTimeout(video) {
+function frameDrawnAfter(video, hiddenAt) {
   return new Promise((resolve) => {
-    const done = setTimeout(resolve, settle);
-    const next = () => {
-      clearTimeout(done);
-      resolve();
+    const giveUp = setTimeout(resolve, longestWait);
+    if (!video.requestVideoFrameCallback) {
+      clearTimeout(giveUp);
+      setTimeout(resolve, settle);
+      return;
+    }
+    let frames = 0;
+    const next = (now, frame) => {
+      frames += 1;
+      const drawnAt = frame.captureTime ?? frame.presentationTime ?? now;
+      if (frames >= framesToSkip && drawnAt - hiddenAt >= settle) {
+        clearTimeout(giveUp);
+        resolve();
+        return;
+      }
+      video.requestVideoFrameCallback(next);
     };
-    if (video.requestVideoFrameCallback) video.requestVideoFrameCallback(next);
-    else requestAnimationFrame(() => requestAnimationFrame(next));
+    video.requestVideoFrameCallback(next);
   });
 }
 
 export async function capture(input, layer, name) {
   if (!canCapture()) return 'unsupported';
+  const dialog = layer.closest('dialog') ?? layer;
+  dialog.classList.add('is-capturing');
+  const hiddenAt = performance.now();
   let stream;
   try {
     stream = await navigator.mediaDevices.getDisplayMedia({
       video: { displaySurface: 'browser' }, audio: false, preferCurrentTab: true, selfBrowserSurface: 'include', surfaceSwitching: 'exclude',
     });
   } catch {
+    dialog.classList.remove('is-capturing');
     return 'refused';
   }
-  const dialog = layer.closest('dialog') ?? layer;
-  dialog.classList.add('is-capturing');
   try {
     const video = document.createElement('video');
     video.muted = true;
     video.srcObject = stream;
     video.play().catch(() => {});
     await sized(video);
-    await frameOrTimeout(video);
-    await frameOrTimeout(video);
+    await frameDrawnAfter(video, hiddenAt);
     if (!video.videoWidth) return 'failed';
     const canvas = document.createElement('canvas');
     canvas.width = video.videoWidth;
