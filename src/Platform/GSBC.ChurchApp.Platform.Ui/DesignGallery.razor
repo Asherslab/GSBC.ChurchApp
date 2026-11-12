@@ -206,10 +206,10 @@
             @<DateTimeField Label="Shows until" @bind-Value="_dateTime" />)
         @Item("Saying a date: DateLine", "Always through DateLine, so every date reads the same.",
             @<ListGroup>
-                <ListRow Title="Long"><TrailingContent><DateLine At="Now" /></TrailingContent></ListRow>
-                <ListRow Title="Short, with time"><TrailingContent><DateLine At="Now" Style="DateLineStyle.Short" WithTime="true" /></TrailingContent></ListRow>
-                <ListRow Title="Relative"><TrailingContent><DateLine At="Now.AddDays(1)" Style="DateLineStyle.Relative" WithTime="true" /></TrailingContent></ListRow>
-                <ListRow Title="A range"><TrailingContent><DateLine At="Now" Until="Now.AddMinutes(90)" Style="DateLineStyle.TimeOnly" /></TrailingContent></ListRow>
+                <ListRow Title="Long"><TrailingContent><DateLine At="UtcNow" /></TrailingContent></ListRow>
+                <ListRow Title="Short, with time"><TrailingContent><DateLine At="UtcNow" Style="DateLineStyle.Short" WithTime="true" /></TrailingContent></ListRow>
+                <ListRow Title="Relative"><TrailingContent><DateLine At="UtcNow.AddDays(1)" Style="DateLineStyle.Relative" WithTime="true" /></TrailingContent></ListRow>
+                <ListRow Title="A range"><TrailingContent><DateLine At="UtcNow" Until="UtcNow.AddMinutes(90)" Style="DateLineStyle.TimeOnly" /></TrailingContent></ListRow>
             </ListGroup>)
         @Item("A week to pick a day from: WeekRail", "The phone's calendar and roster.",
             @<WeekRail Days="Week" Today="Today" Here="_day" Label="Pick a day" Picked="day => _day = day" />)
@@ -436,6 +436,7 @@
     ];
 
     private DateTime Now => Clock.GetLocalNow().DateTime;
+    private DateTime UtcNow => Clock.GetUtcNow().UtcDateTime;
     private DateOnly Today => DateOnly.FromDateTime(Now);
 
     private IReadOnlyList<RailDay> Week => Enumerable.Range(0, 7).Select(offset => new RailDay(Today.AddDays(offset), offset % 3 == 0)).ToList();

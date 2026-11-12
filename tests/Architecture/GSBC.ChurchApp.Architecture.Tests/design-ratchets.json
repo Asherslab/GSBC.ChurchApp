@@ -113,7 +113,6 @@
     "src/Features/Rosters/GSBC.ChurchApp.Features.Rosters.Client/Components/YourDateRow.razor": 1,
     "src/Features/Sermons/GSBC.ChurchApp.Features.Sermons.Admin/Components/SermonCheck.razor": 1,
     "src/Features/Sermons/GSBC.ChurchApp.Features.Sermons.Admin/Pages/SeriesAndSpeakers.razor": 2,
-    "src/Hosts/App/GSBC.ChurchApp.Hosts.App/Pages/Gallery.razor": 1,
     "src/Hosts/App/GSBC.ChurchApp.Hosts.App/Pages/Storage.razor": 1
   }
 }
