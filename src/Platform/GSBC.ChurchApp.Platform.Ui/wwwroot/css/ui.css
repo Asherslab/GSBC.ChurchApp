@@ -137,6 +137,7 @@ h1:focus { outline: none; }
 .section__group > .list:first-child { border-top: 0; }
 .section__group > .hint:first-child { margin-top: 0; }
 .section__group > .list:last-child > :last-child { border-bottom: 0; }
+.section__group > .toggle-row:last-child, .section__group > :last-child > .toggle-row:last-child { border-bottom: 0; }
 .section__foot { margin: var(--space-sm) var(--space-lg) 0; color: var(--ink-2); font-size: var(--text-caption); line-height: 1.45; }
 .section__foot .btn--quiet { background: var(--group); }
 .page:has(> .section--grouped) { background: var(--group-ground); }

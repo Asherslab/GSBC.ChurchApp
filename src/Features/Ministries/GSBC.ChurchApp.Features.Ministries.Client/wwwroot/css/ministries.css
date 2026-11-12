@@ -206,7 +206,7 @@ button.ministry-item { cursor: pointer; }
 .ministry-tree__name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 @media (max-width: 900px) {
-  .ministry-desk { grid-template-columns: 1fr; }
+  .ministry-desk { grid-template-columns: minmax(0, 1fr); }
   .ministry-tree { position: static; }
 }
 
