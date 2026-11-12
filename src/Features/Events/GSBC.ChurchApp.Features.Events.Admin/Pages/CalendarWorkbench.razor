@@ -45,7 +45,6 @@
     private Middle _middle = Middle.All;
     private string? _calendarKey;
     private View _view;
-    private bool _newMenu;
     private DateOnly? _monthFirst;
     private DateOnly? _monthDay;
     private int _weeks = FirstWeeks;
@@ -303,16 +302,9 @@
                 {
                     <Button Variant="ButtonVariant.Quiet" Icon="calendar-plus" OnClick="() => Choose(new ShowingHere(into.Settings.Calendar))">From another calendar</Button>
                 }
-                <div class="new-event-menu" @onkeydown="CloseMenuOnEscape">
-                    <Button Icon="plus" Expanded="_newMenu" OnClick="() => _newMenu = !_newMenu">New event</Button>
-                    @if (_newMenu)
-                    {
-                        <button type="button" class="new-event-menu__away" aria-label="Close" tabindex="-1" @onclick="() => _newMenu = false"></button>
-                        <div class="new-event-menu__panel">
-                            <OnceOrRegularly Once="() => NewOnce(into)" Regularly="() => NewRegular(into)" />
-                        </div>
-                    }
-                </div>
+                <Menu Label="New event" Text="New event" Icon="plus" Variant="ButtonVariant.Primary"
+                      Items="@([new MenuItem("Once", () => NewOnce(into), "calendar", "One date, or a few days in a row like a camp"),
+                               new MenuItem("Regularly", () => NewRegular(into), "repeat", "Every week, every second week, monthly, or on dates you choose")])" />
             }
         </div>;
         if (view.Desk.Calendars.Count == 0)
@@ -542,15 +534,8 @@
 
     private async Task Choose(Chosen? chosen)
     {
-        _newMenu = false;
         if (await Unsaved.MayLeaveAsync())
             _chosen = chosen;
-    }
-
-    private void CloseMenuOnEscape(KeyboardEventArgs key)
-    {
-        if (key.Key == "Escape")
-            _newMenu = false;
     }
 
     private Task NewOnce(DeskCalendar into) => Choose(new NewEvent(into.Settings.Calendar.Id, ShowingMonth ? _monthDay : null));
@@ -630,7 +615,6 @@
     private async Task ShowViewAsync(View view)
     {
         _view = view;
-        _newMenu = false;
         await ReloadAsync();
     }
 

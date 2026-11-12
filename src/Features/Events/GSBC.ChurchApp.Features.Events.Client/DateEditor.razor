@@ -114,7 +114,8 @@ else
         else
         {
             <EventHead Day="Date" Label="@(OnDate.Fields.Label.Length > 0 ? OnDate.Fields.Label : CalendarName)" Title="@(OnDate.Fields.Title.Length > 0 ? OnDate.Fields.Title : draft.Every.Fields.Title)"
-                       When="@(draft.NotOnThisDate ? "Not on this date" : EventWords.Join(EventDates.Times(OnDate.StartMinute, OnDate.EndMinute), "this date only"))" Compact="InPanel" />
+                       When="@(draft.NotOnThisDate ? "Not on this date" : EventWords.Join(EventDates.Times(OnDate.StartMinute, OnDate.EndMinute), "this date only"))" Compact="InPanel"
+                       Actions="@(_kept.By.Length > 0 ? null : DateActions(draft))" />
             <div class="date-of">
                 <Icon Name="repeat" Size="IconSize.Small" />
                 <p>
@@ -159,14 +160,17 @@ else
             <div class="editor-foot @(InPanel ? "editor-foot--panel" : "")">
                 <Notice Tone="NoticeTone.Warning" Text="@_problem" />
                 <div class="editor-foot__actions">
-                    <SaveBar Block="true" Label="Save this date" Busy="_saving" OnSave="() => SaveAsync(draft.NotOnThisDate)" Blocked="@(OnDate.Fields.Title.Trim().Length == 0 ? "Give it a title to save it." : null)" State="SaveLine" SavedText="@SavedWords"
-                             WaitingText="@EditWaiting.WaitingWords" FailedText="@EditWaiting.FailedWords" Detail="@Waiting?.Problem" Retry="() => Editing.RetryAsync(ItemKey)">
-                        <Button Variant="ButtonVariant.Quiet" Busy="_saving" OnClick="() => SaveAsync(!draft.NotOnThisDate)">@(draft.NotOnThisDate ? "On again" : "Not on this date")</Button>
-                    </SaveBar>
+                    <SaveBar Block="!InPanel" Label="Save this date" Busy="_saving" OnSave="() => SaveAsync(draft.NotOnThisDate)" OnCancel="LeaveAsync" Blocked="@(OnDate.Fields.Title.Trim().Length == 0 ? "Give it a title to save it." : null)" State="SaveLine" SavedText="@SavedWords"
+                             WaitingText="@EditWaiting.WaitingWords" FailedText="@EditWaiting.FailedWords" Detail="@Waiting?.Problem" Retry="() => Editing.RetryAsync(ItemKey)" />
                 </div>
             </div>
         }
     </text>;
+
+    private IReadOnlyList<MenuItem> DateActions(EventDraft draft) =>
+    [
+        new(draft.NotOnThisDate ? "On again" : "Not on this date", () => SaveAsync(!draft.NotOnThisDate), "circle-off", Disabled: _saving),
+    ];
 
     private string? _stored;
     private string? _savedWords;
