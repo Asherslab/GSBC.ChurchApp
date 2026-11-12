@@ -32,6 +32,8 @@ public static partial class TypedDates
 
     public static string Month(DateOnly firstOfMonth) => firstOfMonth.ToString("MMMM yyyy", English);
 
+    public static string ShortMonth(int month) => new DateOnly(2000, month, 1).ToString("MMM", English);
+
     public static DateOnly ThisSunday(DateOnly today) => today.AddDays(((int)DayOfWeek.Sunday - (int)today.DayOfWeek + 7) % 7);
 
     public static bool TryParseDay(string? text, DateOnly today, out DateOnly day)

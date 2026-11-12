@@ -73,6 +73,29 @@ public sealed partial class DesignDriftRules
         Assert.Contains("overflow-wrap: normal", Rule(admin, ".module-nav__title"), StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void OnlyAComposerRidesTheKeyboard()
+    {
+        string ui = Comment().Replace(File.ReadAllText(Full(SharedComponents + "wwwroot/css/ui.css")), "");
+        HashSet<string> staysDown = DefinedClass().Matches(KeyboardStaysDown().Match(ui).Groups[1].Value)
+            .Select(match => match.Groups[1].Value)
+            .ToHashSet(StringComparer.Ordinal);
+
+        List<string> riding = Stylesheets()
+            .SelectMany(path => CssRule().Matches(Comment().Replace(File.ReadAllText(path), ""))
+                .Where(rule => StickyPosition().IsMatch(rule.Groups[2].Value) && BottomOffset().IsMatch(rule.Groups[2].Value))
+                .SelectMany(rule => rule.Groups[1].Value.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries))
+                .Select(selector => (Path: Relative(path), Selector: selector, Docked: DockedClass(selector))))
+            .Where(rule => rule.Docked is null || !staysDown.Contains(rule.Docked))
+            .Select(rule => $"{rule.Path}: {rule.Selector} is docked at the foot; give it a class and add that to ui.css's `.keyboard-open :is(…) {{ position: static; }}`")
+            .ToList();
+
+        Assert.True(riding.Count == 0, string.Join(Environment.NewLine, riding));
+    }
+
+    private static string? DockedClass(string selector) =>
+        DefinedClass().Matches(selector).LastOrDefault()?.Groups[1].Value.Split("--")[0];
+
     private static bool QuietBeforeMain(List<string> buttons)
     {
         int firstQuiet = buttons.FindIndex(button => button.Contains("ButtonVariant.Quiet", StringComparison.Ordinal));
@@ -157,7 +180,7 @@ public sealed partial class DesignDriftRules
     [GeneratedRegex(@"@\((?>[^()]+|\((?<depth>)|\)(?<-depth>))*\)(?(depth)(?!))|@[A-Za-z_][\w.]*")]
     private static partial Regex RazorExpression();
 
-    [GeneratedRegex(@"^[a-z][a-z0-9]*(?:[-_]{1,2}[a-z0-9]+)*$")]
+    [GeneratedRegex("^[a-z][a-z0-9]*(?:[-_]{1,2}[a-z0-9]+)*$")]
     private static partial Regex PlainClass();
 
     [GeneratedRegex(@"(?:^|[{;\s])(?:margin|padding)(?:-[a-z-]+)?\s*:\s*([^;}]+)|(?:^|[{;\s])(?:row-|column-)?gap\s*:\s*([^;}]+)", RegexOptions.Multiline)]
@@ -166,10 +189,22 @@ public sealed partial class DesignDriftRules
     [GeneratedRegex(@"(?<![\w.-])[1-9]\d*(?:\.\d+)?px\b")]
     private static partial Regex LiteralLength();
 
+    [GeneratedRegex(@"\.keyboard-open :is\(([^)]*)\) \{ position: static; \}")]
+    private static partial Regex KeyboardStaysDown();
+
+    [GeneratedRegex(@"([^{}]+)\{([^{}]*)\}")]
+    private static partial Regex CssRule();
+
+    [GeneratedRegex(@"position\s*:\s*sticky")]
+    private static partial Regex StickyPosition();
+
+    [GeneratedRegex(@"(?:^|[;\s])bottom\s*:")]
+    private static partial Regex BottomOffset();
+
     [GeneratedRegex(@"<Sheet\b.*?</Sheet>", RegexOptions.Singleline)]
     private static partial Regex SheetBlock();
 
-    [GeneratedRegex(@"<Actions>(.*?)</Actions>", RegexOptions.Singleline)]
+    [GeneratedRegex("<Actions>(.*?)</Actions>", RegexOptions.Singleline)]
     private static partial Regex ActionsBlock();
 
     [GeneratedRegex(@"<Button\b[^>]*>")]
@@ -178,7 +213,7 @@ public sealed partial class DesignDriftRules
     [GeneratedRegex(@"<SplitView\b")]
     private static partial Regex SplitViewTag();
 
-    [GeneratedRegex(@"editor-foot__delete")]
+    [GeneratedRegex("editor-foot__delete")]
     private static partial Regex DeleteInFoot();
 
     [GeneratedRegex(@"<Button\b[^>]*ButtonVariant\.Danger")]
