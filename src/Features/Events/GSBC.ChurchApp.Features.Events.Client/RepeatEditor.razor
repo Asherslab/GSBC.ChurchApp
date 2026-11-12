@@ -34,15 +34,15 @@
                         <Button Variant="ButtonVariant.Quiet" Small="true" Icon="x" AriaLabel="@($"Remove {date}")" OnClick="() => Draft.Pattern.Dates.Remove(date)">Remove</Button>
                     </div>
                 }
-                <TextField Label="Add a date" Type="date" Value="" ValueChanged="AddDate" />
+                <DateField Label="Add a date" Value="" ValueChanged="AddDate" />
             </div>
             break;
     }
     @if (Draft.Pattern.Repeats != Repeats.OnDates)
     {
         <div class="ui-pair">
-            <TextField Label="Starting" Type="date" Value="@Draft.Pattern.StartDate" ValueChanged="value => Draft.Pattern.StartDate = value" />
-            <TextField Label="Until (optional)" Type="date" Value="@Draft.Pattern.EndDate" Min="@Draft.Pattern.StartDate" ValueChanged="value => Draft.Pattern.EndDate = value" />
+            <DateField Label="Starting" Value="@Draft.Pattern.StartDate" ValueChanged="value => Draft.Pattern.StartDate = value" />
+            <DateField Label="Until (optional)" Value="@Draft.Pattern.EndDate" Min="@Draft.Pattern.StartDate" ValueChanged="value => Draft.Pattern.EndDate = value" />
         </div>
     }
 }
@@ -66,8 +66,8 @@
         <div class="editor-list__item">
             <TextField Label="Break" Value="@own.Name" ValueChanged="value => own.Name = value" Placeholder="Camp weekend" MaxLength="60" />
             <div class="ui-pair">
-                <TextField Label="From" Type="date" Value="@own.StartDate" ValueChanged="value => own.StartDate = value" />
-                <TextField Label="To" Type="date" Value="@own.EndDate" Min="@own.StartDate" ValueChanged="value => own.EndDate = value" />
+                <DateField Label="From" Value="@own.StartDate" ValueChanged="value => own.StartDate = value" />
+                <DateField Label="To" Value="@own.EndDate" Min="@own.StartDate" ValueChanged="value => own.EndDate = value" />
             </div>
             <Button Variant="ButtonVariant.Quiet" Small="true" Icon="x" OnClick="() => Draft.OwnBreaks.Remove(own)">Remove this break</Button>
         </div>

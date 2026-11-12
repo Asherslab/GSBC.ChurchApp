@@ -19,7 +19,7 @@
         <TextField Label="@Setting.Label" Type="number" Min="@number.Minimum.ToString()" Max="@number.Maximum.ToString()" Value="@Value" ValueChanged="SetAsync" Hint="@Help" Problem="@Problem" />
         break;
     case DateSetting:
-        <TextField Label="@Setting.Label" Type="date" Value="@Value" ValueChanged="SetAsync" Hint="@Help" Problem="@Problem" />
+        <DateField Label="@Setting.Label" Value="@Value" ValueChanged="SetAsync" Hint="@Help" Problem="@Problem" />
         break;
     case MediaSetting media:
         <PictureField Label="@Setting.Label" Value="@(media.TryParse(Value, out MediaRef? chosen) ? chosen : null)" ValueChanged="picture => SetAsync(media.Format(picture))"

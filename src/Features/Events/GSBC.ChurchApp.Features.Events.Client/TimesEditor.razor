@@ -4,13 +4,14 @@
 @if (Timed.StartMinute is { } start)
 {
     <div class="ui-pair">
-        <TextField Label="Starts" Type="time" Value="@Clock24(start)" ValueChanged="value => Timed.StartMinute = Minutes(value) ?? start" />
-        <TextField Label="Ends" Type="time" Value="@(Timed.EndMinute is { } end ? Clock24(end) : "")" ValueChanged="value => Timed.EndMinute = Minutes(value)" />
+        <TimeField Label="Starts" Value="@Clock24(start)" ValueChanged="value => Timed.StartMinute = Minutes(value) ?? start" />
+        <TimeField Label="Ends" Value="@(Timed.EndMinute is { } end ? Clock24(end) : "")" Min="@(SameDay ? Clock24(start) : null)" ValueChanged="value => Timed.EndMinute = Minutes(value)" />
     </div>
 }
 
 @code {
     [Parameter, EditorRequired] public required TimedFields Timed { get; set; }
+    [Parameter] public bool SameDay { get; set; } = true;
 
     private void AllDay(bool allDay)
     {

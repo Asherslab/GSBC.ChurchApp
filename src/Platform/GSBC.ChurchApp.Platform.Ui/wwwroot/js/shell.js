@@ -25,6 +25,11 @@ window.gsbcShell = (() => {
     topbar.classList.toggle('is-solid', !!masthead && (masthead.getBoundingClientRect().bottom < bottom + mastheadLead || (!!title && title.top < bottom)));
   }, { capture: true, passive: true });
 
+  const movingKeys = new Set(['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'PageUp', 'PageDown', 'Home', 'End']);
+  document.addEventListener('keydown', (event) => {
+    if (movingKeys.has(event.key) && event.target instanceof Element && event.target.closest('[data-keep-arrows]')) event.preventDefault();
+  });
+
   const edgeSwipe = () => {
     const edge = 24;
     let start = null;

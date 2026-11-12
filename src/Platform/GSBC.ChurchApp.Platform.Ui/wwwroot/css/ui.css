@@ -1328,5 +1328,47 @@ button.text-link:disabled { color: var(--ink-3); cursor: default; }
 .menu__lead { display: grid; place-items: center; width: 18px; height: 1.3em; flex: none; color: var(--accent); }
 .menu__item--danger .menu__lead { color: var(--danger); }
 .menu__text { display: grid; gap: var(--space-3xs); min-width: 0; line-height: 1.3; }
+.menu__label { overflow-wrap: break-word; }
 .menu__detail { color: var(--ink-2); font-size: var(--text-caption); font-weight: 400; line-height: 1.35; }
 .menu__rule { height: 1px; margin: var(--space-xs) var(--space-2xs); background: var(--line); }
+
+.date-field { align-content: start; min-width: 0; }
+.date-field__box { position: relative; }
+.date-field__input { padding-right: calc(var(--touch) + var(--space-2xs)); font-variant-numeric: tabular-nums; text-overflow: ellipsis; }
+.date-field__open { position: absolute; top: 50%; right: var(--space-2xs); display: grid; place-items: center; width: 40px; height: 40px; padding: 0; border: 0; border-radius: var(--radius-inner); background: none; color: var(--ink-2); cursor: pointer; transform: translateY(-50%); transition: background-color 160ms var(--ease-out), color 160ms var(--ease-out); }
+.date-field__open:hover, .date-field__open[aria-expanded="true"] { background: var(--selected-fill); color: var(--ink); }
+.date-field__open:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.date-field__open:disabled { color: var(--ink-3); cursor: default; background: none; }
+.date-field__away { position: fixed; inset: 0; z-index: 30; padding: 0; border: 0; background: none; cursor: default; }
+.date-field__popover { position: absolute; z-index: 31; top: calc(100% + var(--space-xs)); left: 0; width: 344px; max-width: calc(100vw - var(--space-3xl)); padding: var(--space-md); border-radius: var(--radius); background: var(--surface); box-shadow: 0 0 0 1px var(--line), 0 18px 40px -12px var(--scrim); animation: date-field-in 160ms var(--ease-out) both; }
+.date-field__popover--times { width: 100%; min-width: 180px; max-height: 260px; overflow-y: auto; padding: var(--space-xs); scrollbar-width: thin; }
+@keyframes date-field-in { from { opacity: 0; transform: translateY(-4px); } }
+@media (prefers-reduced-motion: reduce) { .date-field__popover { animation: none; } }
+.date-field__month { display: flex; align-items: center; gap: var(--space-2xs); margin-bottom: var(--space-sm); }
+.date-field__month-name { flex: 1; font-size: var(--text-label); font-weight: 700; text-align: center; }
+.date-field__step { display: grid; place-items: center; width: 36px; height: 36px; padding: 0; border: 0; border-radius: var(--radius-inner); background: none; color: var(--ink-2); cursor: pointer; }
+.date-field__step:hover { background: var(--selected-fill); color: var(--ink); }
+.date-field__step:focus-visible, .date-field__day:focus-visible, .date-field__time:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.date-field__grid { display: grid; gap: var(--space-3xs); }
+.date-field__week { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: var(--space-3xs); }
+.date-field__weekday { display: grid; place-items: center; height: 24px; color: var(--ink-3); font-size: var(--text-micro); font-weight: 700; letter-spacing: 0.04em; }
+.date-field__weekday--sunday { color: var(--accent); }
+.date-field__day { display: grid; place-items: center; height: 36px; padding: 0; border: 0; border-radius: var(--radius-inner); background: none; color: var(--ink); font: inherit; font-size: var(--text-caption); font-weight: 600; font-variant-numeric: tabular-nums; cursor: pointer; }
+.date-field__day:hover { background: var(--selected-fill); }
+.date-field__day--outside { color: var(--ink-3); font-weight: 400; }
+.date-field__day--sunday { color: var(--accent); }
+.date-field__day--today { box-shadow: inset 0 0 0 2px var(--primary); }
+.date-field__day--chosen, .date-field__day--chosen:hover { background: var(--primary); color: var(--on-primary); }
+.date-field__day:disabled { color: var(--ink-3); opacity: 0.45; cursor: default; background: none; }
+.date-field__quick { display: flex; flex-wrap: wrap; gap: var(--space-xs); margin-top: var(--space-md); padding-top: var(--space-md); border-top: 1px solid var(--line); }
+.date-field__quick .filter-chip:disabled { opacity: 0.5; cursor: default; }
+.date-field__time { display: flex; align-items: center; width: 100%; min-height: 36px; padding: 0 var(--space-md); border: 0; border-radius: var(--radius-inner); background: none; color: var(--ink); font: inherit; font-size: var(--text-row); font-variant-numeric: tabular-nums; text-align: left; cursor: pointer; }
+.date-field__time:hover { background: var(--selected-fill); }
+.date-field__time--chosen { background: var(--selected-fill); font-weight: 600; }
+.date-field__time .icon { margin-left: auto; color: var(--accent); }
+.date-field__time:disabled { color: var(--ink-3); cursor: default; background: none; }
+.date-field__readback { display: flex; align-items: center; gap: var(--space-xs); color: var(--ink-2); font-size: var(--text-caption); }
+.date-field__readback .icon { color: var(--accent); }
+.date-time-field { display: grid; gap: var(--space-xs); min-width: 0; margin: 0; padding: 0; border: 0; }
+.date-time-field > legend { margin-bottom: var(--space-xs); padding: 0; }
+.date-time-field .ui-pair .field__label { font-weight: 400; }

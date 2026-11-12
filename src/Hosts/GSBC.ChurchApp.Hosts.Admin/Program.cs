@@ -35,7 +35,7 @@ modules.Add(new ClientModule("Home", typeof(Program).Assembly,
 builder.Services
     .AddSingleton(modules)
     .AddPlatformClient()
-    .AddPlatformUi()
+    .AddPlatformUi(desktop: true)
     .AddGrpcWebTransport(new Uri(builder.HostEnvironment.BaseAddress))
     .AddSingleton<DestinationSearching>()
     .AddSingleton<IWrites, DirectWrites>()

@@ -11,7 +11,7 @@
         <Segmented TValue="Showing" Label="Shown in the app" Options="Showings" Value="Draft.Showing" ValueChanged="showing => Draft.Showing = showing" />
         @if (Draft.Showing == Showing.ShownFrom)
         {
-            <TextField Label="Show from" Type="date" Value="@(Draft.ShowFrom is { } from ? EventDates.Format(ChurchTime.DayOf(from)) : "")" ValueChanged="ShowFromChanged" />
+            <DateField Label="Show from" Value="@(Draft.ShowFrom is { } from ? EventDates.Format(ChurchTime.DayOf(from)) : "")" ValueChanged="ShowFromChanged" />
         }
     }
 </div>

@@ -1,0 +1,208 @@
+@inject UiHost Host
+
+@if (!Host.Desktop)
+{
+    <TextField Label="@Label" Type="time" Value="@Value" ValueChanged="ValueChanged" Min="@Min" Max="@Max" Hint="@Hint" Problem="@Problem" Required="Required" Disabled="Disabled" />
+}
+else
+{
+    <div class="field date-field @(ShownProblem is null ? "" : "field--problem")" @onkeydown="OnKeyAsync">
+        <label class="field__label" for="@_id">@Label</label>
+        <div class="date-field__box">
+            <input id="@_id" class="field__input date-field__input" type="text" value="@_text" placeholder="@(Placeholder ?? "Type a time, like 7:30pm")"
+                   required="@Required" disabled="@Disabled" autocomplete="off" aria-describedby="@DescribedBy" aria-invalid="@(ShownProblem is null ? null : "true")"
+                   @oninput="Typed" @onchange="CommitAsync" />
+            <button type="button" class="date-field__open" aria-label="Choose a time" aria-haspopup="listbox" aria-expanded="@(_open ? "true" : "false")" disabled="@Disabled"
+                    @onclick="Toggle">
+                <Icon Name="clock" Size="IconSize.Small" />
+            </button>
+            @if (_open)
+            {
+                <button type="button" class="date-field__away" tabindex="-1" aria-label="Close the times" @onclick="Close"></button>
+                <div class="date-field__popover date-field__popover--times" role="listbox" aria-label="@($"Choose {Label.ToLowerInvariant()}")" data-keep-arrows>
+                    @for (int index = 0; index < Times.Count; index++)
+                    {
+                        TimeOnly time = Times[index];
+                        bool chosen = time == Chosen;
+                        <button type="button" role="option" class="date-field__time @(chosen ? "date-field__time--chosen" : "")" aria-selected="@(chosen ? "true" : "false")"
+                                disabled="@(!Allowed(time))" tabindex="@(index == _active ? 0 : -1)" @ref="_options[index]" @onclick="() => ChooseAsync(time)">
+                            <span>@TypedDates.Show(time)</span>
+                            @if (chosen)
+                            {
+                                <Icon Name="check" Size="IconSize.Small" />
+                            }
+                        </button>
+                    }
+                </div>
+            }
+        </div>
+        @if (Readback is { } readback)
+        {
+            <span class="date-field__readback" id="@(_id)-readback"><Icon Name="check" Size="IconSize.Small" />@readback</span>
+        }
+        @if (Hint is not null)
+        {
+            <span class="field__hint" id="@(_id)-hint">@Hint</span>
+        }
+        @if (ShownProblem is not null)
+        {
+            <span class="field__problem" id="@(_id)-problem">@ShownProblem</span>
+        }
+    </div>
+}
+
+@code {
+    private const int Step = 15;
+    private static int _fields;
+    private readonly string _id = $"time-field-{Interlocked.Increment(ref _fields)}";
+    private readonly Dictionary<int, ElementReference> _options = [];
+    private string _text = "";
+    private string? _shownValue;
+    private string? _typingProblem;
+    private bool _open;
+    private bool _focusPending;
+    private int _active;
+
+    [Parameter, EditorRequired] public required string Label { get; set; }
+    [Parameter] public string Value { get; set; } = "";
+    [Parameter] public EventCallback<string> ValueChanged { get; set; }
+    [Parameter] public string? Min { get; set; }
+    [Parameter] public string? Max { get; set; }
+    [Parameter] public string? Placeholder { get; set; }
+    [Parameter] public string? Hint { get; set; }
+    [Parameter] public string? Problem { get; set; }
+    [Parameter] public bool Required { get; set; }
+    [Parameter] public bool Disabled { get; set; }
+
+    private TimeOnly? Chosen => TypedDates.Time(Value);
+    private string? ShownProblem => Problem ?? _typingProblem;
+
+    private string? Readback =>
+        _typingProblem is null && TypedDates.TryParseTime(_text, out TimeOnly time) && TypedDates.Show(time) != _text ? TypedDates.Show(time) : null;
+
+    private List<TimeOnly> Times
+    {
+        get
+        {
+            List<TimeOnly> times = Enumerable.Range(0, 24 * 60 / Step).Select(index => new TimeOnly(0, 0).AddMinutes(index * Step)).ToList();
+            if (Chosen is { } chosen && !times.Contains(chosen))
+                times.Add(chosen);
+            return times.Order().ToList();
+        }
+    }
+
+    private string? DescribedBy =>
+        string.Join(' ', new[] { Readback is null ? null : $"{_id}-readback", Hint is null ? null : $"{_id}-hint", ShownProblem is null ? null : $"{_id}-problem" }.OfType<string>()) is { Length: > 0 } ids ? ids : null;
+
+    protected override void OnParametersSet()
+    {
+        if (_shownValue == Value)
+            return;
+        _shownValue = Value;
+        _typingProblem = null;
+        _text = Chosen is { } time ? TypedDates.Show(time) : Value;
+    }
+
+    private void Typed(ChangeEventArgs change)
+    {
+        _text = change.Value?.ToString() ?? "";
+        _typingProblem = null;
+    }
+
+    private async Task CommitAsync()
+    {
+        if (_text.Trim().Length == 0)
+        {
+            await SetAsync(null);
+            return;
+        }
+        if (!TypedDates.TryParseTime(_text, out TimeOnly time))
+        {
+            _typingProblem = "Type a time like 7:30pm or 19:30.";
+            return;
+        }
+        if (OutOfRange(time) is { } problem)
+        {
+            _typingProblem = problem;
+            return;
+        }
+        await SetAsync(time);
+    }
+
+    private async Task SetAsync(TimeOnly? time)
+    {
+        string value = time is { } chosen ? TypedDates.Iso(chosen) : "";
+        _typingProblem = null;
+        _shownValue = value;
+        _text = time is { } shown ? TypedDates.Show(shown) : "";
+        if (value != Value)
+            await ValueChanged.InvokeAsync(value);
+    }
+
+    private string? OutOfRange(TimeOnly time) =>
+        TypedDates.Time(Min) is { } min && time < min ? $"That's before {TypedDates.Show(min)}."
+        : TypedDates.Time(Max) is { } max && time > max ? $"That's after {TypedDates.Show(max)}."
+        : null;
+
+    private bool Allowed(TimeOnly time) => OutOfRange(time) is null;
+
+    private void Toggle()
+    {
+        if (_open)
+        {
+            Close();
+            return;
+        }
+        List<TimeOnly> times = Times;
+        TimeOnly around = TypedDates.TryParseTime(_text, out TimeOnly typed) ? typed : Chosen ?? new TimeOnly(9, 0);
+        _active = Math.Max(0, times.FindLastIndex(time => time <= around));
+        _open = true;
+        _focusPending = true;
+    }
+
+    private void Close() => _open = false;
+
+    private async Task ChooseAsync(TimeOnly time)
+    {
+        if (!Allowed(time))
+            return;
+        _open = false;
+        await SetAsync(time);
+    }
+
+    private async Task OnKeyAsync(KeyboardEventArgs key)
+    {
+        if (!_open)
+            return;
+        int last = Times.Count - 1;
+        int? next = key.Key switch
+        {
+            "Escape" => -1,
+            "ArrowDown" => Math.Min(_active + 1, last),
+            "ArrowUp" => Math.Max(_active - 1, 0),
+            "PageDown" => Math.Min(_active + 4, last),
+            "PageUp" => Math.Max(_active - 4, 0),
+            "Home" => 0,
+            "End" => last,
+            _ => null,
+        };
+        if (next is -1)
+        {
+            Close();
+            return;
+        }
+        if (next is { } at && _options.TryGetValue(at, out ElementReference option))
+        {
+            _active = at;
+            await option.FocusAsync();
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!_open || !_focusPending || !_options.TryGetValue(_active, out ElementReference option))
+            return;
+        _focusPending = false;
+        await option.FocusAsync();
+    }
+}

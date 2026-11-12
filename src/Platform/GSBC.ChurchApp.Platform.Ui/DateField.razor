@@ -1,0 +1,257 @@
+@using GSBC.ChurchApp.Platform.Common
+@inject UiHost Host
+@inject TimeProvider Clock
+
+@if (!Host.Desktop)
+{
+    <TextField Label="@Label" Type="date" Value="@Value" ValueChanged="ValueChanged" Min="@Min" Max="@Max" Hint="@Hint" Problem="@Problem"
+               Required="Required" Disabled="Disabled" AutoComplete="@AutoComplete" />
+}
+else
+{
+    <div class="field date-field @(ShownProblem is null ? "" : "field--problem")" @onkeydown="OnFieldKeyAsync">
+        <label class="field__label" for="@_id">@Label</label>
+        <div class="date-field__box">
+            <input id="@_id" class="field__input date-field__input" type="text" inputmode="text" value="@_text" placeholder="@(Placeholder ?? "Type a date, like 15 Nov")"
+                   required="@Required" disabled="@Disabled" autocomplete="@(AutoComplete ?? "off")" aria-describedby="@DescribedBy" aria-invalid="@(ShownProblem is null ? null : "true")"
+                   @oninput="Typed" @onchange="CommitAsync" />
+            <button type="button" class="date-field__open" aria-label="Choose a date" aria-haspopup="dialog" aria-expanded="@(_open ? "true" : "false")" disabled="@Disabled"
+                    @onclick="ToggleAsync">
+                <Icon Name="calendar" Size="IconSize.Small" />
+            </button>
+            @if (_open)
+            {
+                <button type="button" class="date-field__away" tabindex="-1" aria-label="Close the calendar" @onclick="Close"></button>
+                <div class="date-field__popover" role="dialog" aria-label="@($"Choose {Label.ToLowerInvariant()}")">
+                    <div class="date-field__month">
+                        <button type="button" class="date-field__step" aria-label="Previous month" @onclick="() => Turn(-1)"><Icon Name="chevron-left" Size="IconSize.Small" /></button>
+                        <span class="date-field__month-name" aria-live="polite">@TypedDates.Month(_month)</span>
+                        <button type="button" class="date-field__step" aria-label="Next month" @onclick="() => Turn(1)"><Icon Name="chevron-right" Size="IconSize.Small" /></button>
+                    </div>
+                    <div class="date-field__grid" role="grid" aria-label="@TypedDates.Month(_month)" data-keep-arrows @onkeydown="OnGridKeyAsync">
+                        <div class="date-field__week" role="row">
+                            @for (int column = 0; column < Weekdays.Length; column++)
+                            {
+                                <span class="date-field__weekday @(column == Weekdays.Length - 1 ? "date-field__weekday--sunday" : "")" role="columnheader">@Weekdays[column]</span>
+                            }
+                        </div>
+                        @for (int week = 0; week < 6; week++)
+                        {
+                            <div class="date-field__week" role="row">
+                                @for (int column = 0; column < 7; column++)
+                                {
+                                    DateOnly day = FirstShown.AddDays(week * 7 + column);
+                                    bool chosen = day == Chosen;
+                                    bool focused = day == _focus;
+                                    <button type="button" role="gridcell" class="@DayClass(day)" aria-selected="@(chosen ? "true" : "false")"
+                                            aria-current="@(day == Today ? "date" : null)" aria-label="@TypedDates.ShowInFull(day)" disabled="@(!Allowed(day))"
+                                            tabindex="@(focused ? 0 : -1)" @ref="_days[week * 7 + column]" @onclick="() => ChooseAsync(day)">
+                                        @day.Day
+                                    </button>
+                                }
+                            </div>
+                        }
+                    </div>
+                    <div class="date-field__quick">
+                        @foreach ((string label, DateOnly day) in Quick)
+                        {
+                            <button type="button" class="filter-chip" disabled="@(!Allowed(day))" @onclick="() => ChooseAsync(day)">@label</button>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+        @if (Readback is { } readback)
+        {
+            <span class="date-field__readback" id="@(_id)-readback"><Icon Name="check" Size="IconSize.Small" />@readback</span>
+        }
+        @if (Hint is not null)
+        {
+            <span class="field__hint" id="@(_id)-hint">@Hint</span>
+        }
+        @if (ShownProblem is not null)
+        {
+            <span class="field__problem" id="@(_id)-problem">@ShownProblem</span>
+        }
+    </div>
+}
+
+@code {
+    private static readonly string[] Weekdays = ["M", "T", "W", "T", "F", "S", "S"];
+    private static int _fields;
+    private readonly string _id = $"date-field-{Interlocked.Increment(ref _fields)}";
+    private readonly ElementReference[] _days = new ElementReference[42];
+    private string _text = "";
+    private string? _shownValue;
+    private string? _typingProblem;
+    private bool _open;
+    private bool _focusPending;
+    private DateOnly _month;
+    private DateOnly _focus;
+
+    [Parameter, EditorRequired] public required string Label { get; set; }
+    [Parameter] public string Value { get; set; } = "";
+    [Parameter] public EventCallback<string> ValueChanged { get; set; }
+    [Parameter] public string? Min { get; set; }
+    [Parameter] public string? Max { get; set; }
+    [Parameter] public string? Placeholder { get; set; }
+    [Parameter] public string? Hint { get; set; }
+    [Parameter] public string? Problem { get; set; }
+    [Parameter] public bool Required { get; set; }
+    [Parameter] public bool Disabled { get; set; }
+    [Parameter] public string? AutoComplete { get; set; }
+
+    private DateOnly Today => ChurchTime.Today(Clock);
+    private DateOnly? Chosen => TypedDates.Day(Value);
+    private DateOnly FirstShown => _month.AddDays(-(((int)_month.DayOfWeek + 6) % 7));
+    private string? ShownProblem => Problem ?? _typingProblem;
+
+    private string? Readback =>
+        _typingProblem is null && TypedDates.TryParseDay(_text, Today, out DateOnly day) && TypedDates.Show(day) != _text ? TypedDates.ShowInFull(day) : null;
+
+    private IEnumerable<(string Label, DateOnly Day)> Quick
+    {
+        get
+        {
+            DateOnly sunday = TypedDates.ThisSunday(Today);
+            yield return ("Today", Today);
+            yield return (sunday == Today ? "Next Sunday" : "This Sunday", sunday == Today ? sunday.AddDays(7) : sunday);
+            if (sunday != Today)
+                yield return ("Next Sunday", sunday.AddDays(7));
+        }
+    }
+
+    private string? DescribedBy =>
+        string.Join(' ', new[] { Readback is null ? null : $"{_id}-readback", Hint is null ? null : $"{_id}-hint", ShownProblem is null ? null : $"{_id}-problem" }.OfType<string>()) is { Length: > 0 } ids ? ids : null;
+
+    protected override void OnParametersSet()
+    {
+        if (_shownValue == Value)
+            return;
+        _shownValue = Value;
+        _typingProblem = null;
+        _text = Chosen is { } day ? TypedDates.Show(day) : Value;
+    }
+
+    private void Typed(ChangeEventArgs change)
+    {
+        _text = change.Value?.ToString() ?? "";
+        _typingProblem = null;
+    }
+
+    private async Task CommitAsync()
+    {
+        if (_text.Trim().Length == 0)
+        {
+            await SetAsync(null);
+            return;
+        }
+        if (!TypedDates.TryParseDay(_text, Today, out DateOnly day))
+        {
+            _typingProblem = "Type a date like 15 Nov, 15/11/2026 or next Sunday.";
+            return;
+        }
+        if (OutOfRange(day) is { } problem)
+        {
+            _typingProblem = problem;
+            return;
+        }
+        await SetAsync(day);
+    }
+
+    private async Task SetAsync(DateOnly? day)
+    {
+        string value = day is { } chosen ? TypedDates.Iso(chosen) : "";
+        _typingProblem = null;
+        _shownValue = value;
+        _text = day is { } shown ? TypedDates.Show(shown) : "";
+        if (value != Value)
+            await ValueChanged.InvokeAsync(value);
+    }
+
+    private string? OutOfRange(DateOnly day) =>
+        TypedDates.Day(Min) is { } min && day < min ? $"That's before {TypedDates.Show(min)}."
+        : TypedDates.Day(Max) is { } max && day > max ? $"That's after {TypedDates.Show(max)}."
+        : null;
+
+    private bool Allowed(DateOnly day) => OutOfRange(day) is null;
+
+    private string DayClass(DateOnly day) => string.Join(' ', new[]
+    {
+        "date-field__day",
+        day.Month == _month.Month ? null : "date-field__day--outside",
+        day.DayOfWeek == DayOfWeek.Sunday ? "date-field__day--sunday" : null,
+        day == Today ? "date-field__day--today" : null,
+        day == Chosen ? "date-field__day--chosen" : null,
+    }.OfType<string>());
+
+    private Task ToggleAsync()
+    {
+        if (_open)
+        {
+            Close();
+            return Task.CompletedTask;
+        }
+        DateOnly start = TypedDates.TryParseDay(_text, Today, out DateOnly typed) ? typed : Chosen ?? Today;
+        _focus = start;
+        _month = new DateOnly(start.Year, start.Month, 1);
+        _open = true;
+        _focusPending = true;
+        return Task.CompletedTask;
+    }
+
+    private void Close() => _open = false;
+
+    private void Turn(int months)
+    {
+        _month = _month.AddMonths(months);
+        _focus = new DateOnly(_month.Year, _month.Month, Math.Min(_focus.Day, DateTime.DaysInMonth(_month.Year, _month.Month)));
+    }
+
+    private async Task ChooseAsync(DateOnly day)
+    {
+        if (!Allowed(day))
+            return;
+        _open = false;
+        await SetAsync(day);
+    }
+
+    private Task OnFieldKeyAsync(KeyboardEventArgs key)
+    {
+        if (key.Key == "Escape" && _open)
+            Close();
+        return Task.CompletedTask;
+    }
+
+    private Task OnGridKeyAsync(KeyboardEventArgs key)
+    {
+        DateOnly? next = key.Key switch
+        {
+            "ArrowLeft" => _focus.AddDays(-1),
+            "ArrowRight" => _focus.AddDays(1),
+            "ArrowUp" => _focus.AddDays(-7),
+            "ArrowDown" => _focus.AddDays(7),
+            "PageUp" => _focus.AddMonths(-1),
+            "PageDown" => _focus.AddMonths(1),
+            "Home" => _focus.AddDays(-(((int)_focus.DayOfWeek + 6) % 7)),
+            "End" => _focus.AddDays(6 - (((int)_focus.DayOfWeek + 6) % 7)),
+            _ => null,
+        };
+        if (next is not { } day)
+            return Task.CompletedTask;
+        _focus = day;
+        _month = new DateOnly(day.Year, day.Month, 1);
+        _focusPending = true;
+        return Task.CompletedTask;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!_open || !_focusPending)
+            return;
+        _focusPending = false;
+        int index = _focus.DayNumber - FirstShown.DayNumber;
+        if (index is >= 0 and < 42)
+            await _days[index].FocusAsync();
+    }
+}

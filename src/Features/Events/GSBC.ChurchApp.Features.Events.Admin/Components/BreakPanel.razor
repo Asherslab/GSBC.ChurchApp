@@ -7,8 +7,8 @@
     <div class="event-body event-body--editing">
         <TextField Label="Name" Value="@_name" ValueChanged="value => _name = value" MaxLength="60" Required="true" Placeholder="Christmas break" Hint="Shown on the dates that aren't on." />
         <div class="ui-pair">
-            <TextField Label="From" Type="date" Value="@_start" ValueChanged="value => _start = value" />
-            <TextField Label="To" Type="date" Value="@_end" Min="@_start" ValueChanged="value => _end = value" />
+            <DateField Label="From" Value="@_start" ValueChanged="value => _start = value" />
+            <DateField Label="To" Value="@_end" Min="@_start" ValueChanged="value => _end = value" />
         </div>
         @if (Break is { UsedBy.Count: > 0 } used)
         {

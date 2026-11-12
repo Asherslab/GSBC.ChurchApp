@@ -30,7 +30,7 @@
                           ValueChanged="ChooseSpeaker" Pending="@(_speakerId == NewOne ? $"{_newSpeaker} (new)" : null)" Placeholder="Who preached?"
                           CreateText="@(name => $"Add “{name}” as a new speaker")" OnCreate="NewSpeaker" />
         </div>
-        <div class="sermon-check__field"><TextField Label="Day" Type="date" @bind-Value="_day" /></div>
+        <div class="sermon-check__field"><DateField Label="Day" @bind-Value="_day" /></div>
         <div class="sermon-check__field">
             <SearchPicker TItem="SeriesDetail" Label="Series" Items="Series" Text="SeriesName" Value="SeriesOf(_seriesId)" NoneText="Not in a series"
                           ValueChanged="ChooseSeries" Pending="@(_seriesId == NewOne ? $"{_newSeries} (new)" : null)" Placeholder="Find a series"

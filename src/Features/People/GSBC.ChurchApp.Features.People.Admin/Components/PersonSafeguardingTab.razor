@@ -45,8 +45,8 @@
                 <div class="people-record">
                     <TextField Label="Number" Value="@_draft.CardNumber" ValueChanged="value => Edit(() => _draft.CardNumber = value)" MaxLength="30" Disabled="!mayEdit" Placeholder="For example 1234567/2" />
                     <SelectField Label="Status" Options="Statuses" Value="@_draft.CardStatus" ValueChanged="value => Edit(() => _draft.CardStatus = value)" Disabled="!mayEdit" />
-                    <TextField Label="Expires" Type="date" Value="@PeopleWords.FieldDay(_draft.CardExpires)" ValueChanged="value => Edit(() => _draft.CardExpires = Day(value))" Disabled="!mayEdit" />
-                    <TextField Label="Checked by the office" Type="date" Value="@PeopleWords.FieldDay(_draft.CardChecked)" ValueChanged="value => Edit(() => _draft.CardChecked = Day(value))" Disabled="!mayEdit"
+                    <DateField Label="Expires" Value="@PeopleWords.FieldDay(_draft.CardExpires)" ValueChanged="value => Edit(() => _draft.CardExpires = Day(value))" Disabled="!mayEdit" />
+                    <DateField Label="Checked by the office" Value="@PeopleWords.FieldDay(_draft.CardChecked)" ValueChanged="value => Edit(() => _draft.CardChecked = Day(value))" Disabled="!mayEdit"
                                Max="@($"{today:yyyy-MM-dd}")" Hint="When someone last looked it up" />
                 </div>
             }
@@ -63,8 +63,8 @@
             else
             {
                 <div class="people-record">
-                    <TextField Label="Done" Type="date" Value="@PeopleWords.FieldDay(_draft.TrainingDone)" ValueChanged="value => Edit(() => _draft.TrainingDone = Day(value))" Disabled="!mayEdit" Max="@($"{today:yyyy-MM-dd}")" />
-                    <TextField Label="Due again" Type="date" Value="@PeopleWords.FieldDay(_draft.TrainingDue)" ValueChanged="value => Edit(() => _draft.TrainingDue = Day(value))" Disabled="!mayEdit"
+                    <DateField Label="Done" Value="@PeopleWords.FieldDay(_draft.TrainingDone)" ValueChanged="value => Edit(() => _draft.TrainingDone = Day(value))" Disabled="!mayEdit" Max="@($"{today:yyyy-MM-dd}")" />
+                    <DateField Label="Due again" Value="@PeopleWords.FieldDay(_draft.TrainingDue)" ValueChanged="value => Edit(() => _draft.TrainingDue = Day(value))" Disabled="!mayEdit"
                                Hint="Leave it empty for a year after it was done" />
                 </div>
 
