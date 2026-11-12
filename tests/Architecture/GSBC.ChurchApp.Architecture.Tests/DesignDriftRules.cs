@@ -49,12 +49,33 @@ public sealed partial class DesignDriftRules
             text => NativeDateInput().Count(text));
 
     [Fact]
+    public void DialogsPutTheirMainActionFirst() =>
+        AssertRatchet("quietFirst", Razor().Select(file => Full(file.Path)), text =>
+            ActionsBlock().Matches(text).Count(block => QuietBeforeMain(ButtonTag().Matches(block.Groups[1].Value).Select(tag => tag.Value).ToList())));
+
+    [Fact]
+    public void ListsAndRecordsUseTheWorkbench() =>
+        AssertRatchet("splitView", Razor().Where(file => !file.Path.StartsWith(SharedComponents, StringComparison.Ordinal)).Select(file => Full(file.Path)),
+            text => SplitViewTag().Count(text));
+
+    [Fact]
+    public void DeleteIsAnActionOnTheItem() =>
+        AssertRatchet("deleteOutsideMenu", Razor().Where(file => !file.Path.StartsWith(SharedComponents, StringComparison.Ordinal)).Select(file => Full(file.Path)),
+            text => DeleteInFoot().Count(text) + DangerButton().Count(ActionsBlock().Replace(text, "")));
+
+    [Fact]
     public void TheSidebarKeepsItsWidthWhenAScrollbarAppears()
     {
         string admin = File.ReadAllText(Full(AdminStylesheet));
 
         Assert.Contains("scrollbar-gutter: stable", Rule(admin, ".admin-sidebar"), StringComparison.Ordinal);
-        Assert.DoesNotContain("overflow-wrap: anywhere", Rule(admin, ".module-nav__title"), StringComparison.Ordinal);
+        Assert.Contains("overflow-wrap: normal", Rule(admin, ".module-nav__title"), StringComparison.Ordinal);
+    }
+
+    private static bool QuietBeforeMain(List<string> buttons)
+    {
+        int firstQuiet = buttons.FindIndex(button => button.Contains("ButtonVariant.Quiet", StringComparison.Ordinal));
+        return firstQuiet >= 0 && buttons.Skip(firstQuiet).Any(button => !button.Contains("ButtonVariant.Quiet", StringComparison.Ordinal));
     }
 
     private static string Rule(string css, string selector)
@@ -143,6 +164,21 @@ public sealed partial class DesignDriftRules
 
     [GeneratedRegex(@"(?<![\w.-])[1-9]\d*(?:\.\d+)?px\b")]
     private static partial Regex LiteralLength();
+
+    [GeneratedRegex(@"<Actions>(.*?)</Actions>", RegexOptions.Singleline)]
+    private static partial Regex ActionsBlock();
+
+    [GeneratedRegex(@"<Button\b[^>]*>")]
+    private static partial Regex ButtonTag();
+
+    [GeneratedRegex(@"<SplitView\b")]
+    private static partial Regex SplitViewTag();
+
+    [GeneratedRegex(@"editor-foot__delete")]
+    private static partial Regex DeleteInFoot();
+
+    [GeneratedRegex(@"<Button\b[^>]*ButtonVariant\.Danger")]
+    private static partial Regex DangerButton();
 
     [GeneratedRegex(@"<button\b")]
     private static partial Regex RawButton();

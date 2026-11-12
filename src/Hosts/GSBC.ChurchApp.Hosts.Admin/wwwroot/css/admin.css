@@ -152,7 +152,7 @@ button.module-nav__link { width: 100%; border: 0; background: none; font-family:
     transition: transform 240ms var(--ease-out);
 }
 .module-nav__link.active::before { transform: scaleY(1); }
-.module-nav__title { min-width: 0; padding: 8px 0; line-height: 1.3; overflow-wrap: break-word; }
+.module-nav__title { min-width: 0; padding: 8px 0; line-height: 1.3; overflow-wrap: normal; }
 
 .module-nav__pin {
     position: absolute;
@@ -171,6 +171,8 @@ button.module-nav__link { width: 100%; border: 0; background: none; font-family:
     transition: opacity 120ms var(--ease-out), background-color 160ms var(--ease-out), color 160ms var(--ease-out);
 }
 .module-nav__row:is(:hover, :focus-within) .module-nav__pin { opacity: 1; }
+.module-nav__link > .module-nav__count { position: absolute; top: 50%; right: var(--space-sm); translate: 0 -50%; transition: opacity 160ms var(--ease-out); }
+.module-nav__row:has(.module-nav__pin):is(:hover, :focus-within) .module-nav__link > .module-nav__count { opacity: 0; }
 @media (hover: none) {
     .module-nav__pin { opacity: 1; }
     .module-nav__pin--on { color: var(--on-masthead); }
