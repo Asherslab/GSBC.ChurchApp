@@ -12,7 +12,7 @@
     <TextField Label="Name" @bind-Value="_name" AutoComplete="off" Required="true" Hint="Shown in the app while signed in, such as App Review" />
     <TextField Label="Email" Type="email" @bind-Value="_email" AutoComplete="off" Required="true" Hint="Goes in App Store Connect's user name field" />
     <Notice Tone="NoticeTone.Warning" Text="@_problem" />
-    <SaveBar Class="panel-actions" Submit="true" Label="Make the demo account" Busy="_busy" Blocked="@(_name.Trim().Length == 0 || _email.Trim().Length == 0 ? "Give it a name and an email to make it." : null)"
+    <SaveBar Class="ui-after" Submit="true" Label="Make the demo account" Busy="_busy" Blocked="@(_name.Trim().Length == 0 || _email.Trim().Length == 0 ? "Give it a name and an email to make it." : null)"
              State="SaveBar.For(Changed, _made is not null)" SavedText="@(_made ?? "")" OnCancel="CloseAsync">
         @if (_made is not null)
         {

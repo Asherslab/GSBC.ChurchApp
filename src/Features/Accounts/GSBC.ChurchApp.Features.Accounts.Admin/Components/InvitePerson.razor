@@ -11,7 +11,7 @@
     <TextField Label="Name" @bind-Value="_name" AutoComplete="off" Required="true" />
     <TextField Label="Email" Type="email" @bind-Value="_email" AutoComplete="off" Required="true" />
     <Notice Tone="NoticeTone.Warning" Text="@_problem" />
-    <SaveBar Class="panel-actions" Submit="true" New="true" Label="Send the invitation" Busy="_busy" Blocked="@(Incomplete ? "Give their name and email to add them." : null)"
+    <SaveBar Class="ui-after" Submit="true" New="true" Label="Send the invitation" Busy="_busy" Blocked="@(Incomplete ? "Give their name and email to add them." : null)"
              State="SaveBar.For(Changed, _done is not null)" SavedText="@(_done ?? "")" OnCancel="CloseAsync">
         <Button Variant="ButtonVariant.Quiet" Icon="plus" Busy="_busy" Disabled="@Incomplete" OnClick="AddAsync">Add without inviting</Button>
     </SaveBar>

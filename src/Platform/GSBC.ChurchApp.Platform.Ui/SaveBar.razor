@@ -12,7 +12,10 @@
         {
             <Button Variant="@(OnMasthead ? ButtonVariant.OnMasthead : ButtonVariant.Quiet)" Disabled="Busy" OnClick="OnCancel">@CancelLabel</Button>
         }
-        @ChildContent
+        @if (ChildContent is not null)
+        {
+            <span class="save-bar__more">@ChildContent</span>
+        }
         <span class="save-bar__gap"></span>
         <Button Type="@(Submit ? "submit" : "button")" Block="Block" Variant="@(OnMasthead ? ButtonVariant.OnMasthead : ButtonVariant.Primary)" Busy="Busy" Disabled="@(Blocked is not null)" OnClick="@(Submit ? default : OnSave)" Class="save-bar__save">@Label</Button>
     </div>
