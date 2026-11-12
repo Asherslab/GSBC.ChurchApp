@@ -152,6 +152,13 @@ interview or substitute your judgement for its decision round. "Lightly" or "qui
   `.impeccable/mocks/<feature>/` → **wait for the owner's pick in the browser page** (never re-ask in chat, never ASCII
   previews) → the surface brief with its direction contract → build, reading `craft-floor.md` just before UI edits →
   `impeccable detect` → the `impeccable-finish-reviewer` agent, fixing what it finds → the documenter for DESIGN.md.
+- **Every sketch on the decision page is one self-contained HTML file:** styles, fonts, icons and pictures inlined
+  (`<style>`, `data:` URLs). The page serves each sketch alone at `/sketch/<n>`, so anything linked by a relative path
+  (`<link href="sketch.css">`, `<img src="art/x.svg">`) never loads and the owner sees an unstyled sketch (happened
+  several times by 2026-11-12). It also serves only a sketch **written after** the round was started or last updated:
+  one written before stays on "sketching" forever. Generate shared styles into each file with a small script, and run
+  `tools/dev/check-sketches.sh <payload.json>` straight after every `serve-question --start` or `--update`: it fails on
+  anything linked and marks each sketch as just written.
 - **Changes to an existing screen:** the matching command (`layout`, `polish`, `clarify`, `adapt`, `harden`, …) with
   its reference, `craft-floor.md` before editing, then `impeccable detect` and a look at the rendered result at the
   sizes it ships at. A choice with more than one reasonable look goes to the decision page.
