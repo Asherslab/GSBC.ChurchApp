@@ -1,0 +1,141 @@
+@using GSBC.ChurchApp.Platform.Client.Media
+@using GSBC.ChurchApp.Platform.Contracts.Media
+@inject Shell Shell
+@inject IMediaFiles Files
+
+@if (Open && Pictures.Count > 0)
+{
+    <dialog class="picture-viewer" @ref="_layer" aria-label="@Heading">
+        <div class="picture-viewer__frame" tabindex="-1" @ref="_frame" @onkeydown="KeyAsync"
+             @ontouchstart="TouchStart" @ontouchend="TouchEndAsync">
+            <div class="picture-viewer__top">
+                <p class="picture-viewer__title">@Heading</p>
+                @if (_download is not null)
+                {
+                    <a class="picture-viewer__button" href="@_download" download="@Shown.FileName" target="_blank" rel="noopener" aria-label="Download" title="Download">
+                        <Icon Name="download" />
+                    </a>
+                }
+                <button type="button" class="picture-viewer__button" aria-label="Close" title="Close (Esc)" autofocus @onclick="CloseAsync">
+                    <Icon Name="x" />
+                </button>
+            </div>
+            <div class="picture-viewer__stage">
+                @if (Several)
+                {
+                    <button type="button" class="picture-viewer__button picture-viewer__step" aria-label="The one before" disabled="@(Index == 0)" @onclick="() => GoAsync(Index - 1)">
+                        <Icon Name="chevron-left" />
+                    </button>
+                }
+                <div class="picture-viewer__picture" aria-live="polite">
+                    <MediaPreview @key="Shown.Key" Media="Shown" Size="MediaSizeName.Original" Class="picture-viewer__media" />
+                </div>
+                @if (Several)
+                {
+                    <button type="button" class="picture-viewer__button picture-viewer__step" aria-label="The next one" disabled="@(Index == Pictures.Count - 1)" @onclick="() => GoAsync(Index + 1)">
+                        <Icon Name="chevron-right" />
+                    </button>
+                }
+            </div>
+            @if (Several)
+            {
+                <div class="picture-viewer__strip" role="group" aria-label="All of them">
+                    @for (int at = 0; at < Pictures.Count; at++)
+                    {
+                        int choice = at;
+                        <button type="button" class="picture-viewer__thumb" aria-label="@($"{Noun} {choice + 1}")" aria-current="@(choice == Index ? "true" : null)" @onclick="() => GoAsync(choice)">
+                            <MediaPreview Media="Pictures[choice]" Size="MediaSizeName.Thumbnail" Controls="false" Class="picture-viewer__thumb-media" />
+                        </button>
+                    }
+                </div>
+            }
+        </div>
+    </dialog>
+}
+
+@code {
+    private const double SwipeDistance = 50;
+    private ElementReference _layer;
+    private ElementReference _frame;
+    private bool _shown;
+    private string? _download;
+    private string? _downloadFor;
+    private (double X, double Y)? _touch;
+
+    [Parameter] public bool Open { get; set; }
+    [Parameter] public EventCallback<bool> OpenChanged { get; set; }
+    [Parameter, EditorRequired] public required IReadOnlyList<MediaRef> Pictures { get; set; }
+    [Parameter] public int Index { get; set; }
+    [Parameter] public EventCallback<int> IndexChanged { get; set; }
+    [Parameter] public string Noun { get; set; } = "Picture";
+    [Parameter] public string? About { get; set; }
+
+    private MediaRef Shown => Pictures[Math.Clamp(Index, 0, Pictures.Count - 1)];
+
+    private bool Several => Pictures.Count > 1;
+
+    private string Heading
+    {
+        get
+        {
+            string which = Several ? $"{Noun} {Index + 1} of {Pictures.Count}" : Noun;
+            return About is null ? which : $"{which} · {About}";
+        }
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (!Open || Pictures.Count == 0 || Shown.Key == _downloadFor)
+            return;
+        _downloadFor = Shown.Key;
+        _download = null;
+        _download = await Files.SourceOfAsync(Shown.At(MediaSizeName.Original));
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (Open && Pictures.Count > 0 && !_shown)
+        {
+            _shown = true;
+            await Shell.ShowModalAsync(_layer);
+            await Shell.FocusFirstAsync(_frame);
+        }
+        else if (!Open && _shown)
+        {
+            _shown = false;
+            await Shell.RestoreFocusAsync();
+        }
+    }
+
+    private Task CloseAsync() => OpenChanged.InvokeAsync(false);
+
+    private Task GoAsync(int index) =>
+        index < 0 || index >= Pictures.Count || index == Index ? Task.CompletedTask : IndexChanged.InvokeAsync(index);
+
+    private Task KeyAsync(KeyboardEventArgs key) => key.Key switch
+    {
+        "Escape" => CloseAsync(),
+        "ArrowLeft" => GoAsync(Index - 1),
+        "ArrowRight" => GoAsync(Index + 1),
+        "Home" => GoAsync(0),
+        "End" => GoAsync(Pictures.Count - 1),
+        _ => Task.CompletedTask,
+    };
+
+    private void TouchStart(TouchEventArgs touch) =>
+        _touch = touch.Touches.Length == 1 ? (touch.Touches[0].ClientX, touch.Touches[0].ClientY) : null;
+
+    private Task TouchEndAsync(TouchEventArgs touch)
+    {
+        if (_touch is not { } start || touch.ChangedTouches.Length == 0)
+            return Task.CompletedTask;
+        _touch = null;
+        double across = touch.ChangedTouches[0].ClientX - start.X;
+        double down = touch.ChangedTouches[0].ClientY - start.Y;
+        if (down > SwipeDistance * 2 && down > Math.Abs(across))
+            return CloseAsync();
+        if (Math.Abs(across) < SwipeDistance || Math.Abs(across) < Math.Abs(down))
+            return Task.CompletedTask;
+        return GoAsync(across < 0 ? Index + 1 : Index - 1);
+    }
+}

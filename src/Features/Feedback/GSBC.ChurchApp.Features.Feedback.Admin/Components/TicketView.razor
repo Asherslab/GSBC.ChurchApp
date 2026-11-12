@@ -54,11 +54,22 @@
                         @foreach (MediaRef media in ticket.Attachments)
                         {
                             <figure class="ticket__picture">
-                                <MediaPreview Media="media" Size="MediaSizeName.Original" Class="ticket__media" />
+                                @if (media.IsImage)
+                                {
+                                    int shown = Screenshots(ticket).IndexOf(media);
+                                    <PictureOpen Label="@($"Open screenshot {shown + 1} bigger")" OnOpen="() => OpenScreenshot(shown)">
+                                        <MediaPreview Media="media" Size="MediaSizeName.Original" Class="ticket__media" />
+                                    </PictureOpen>
+                                }
+                                else
+                                {
+                                    <MediaPreview Media="media" Size="MediaSizeName.Original" Class="ticket__media" />
+                                }
                                 <figcaption>@(media.IsVideo ? "Video" : "Screenshot") · @FeedbackWords.Size(media.Bytes)</figcaption>
                             </figure>
                         }
                     </div>
+                    <PictureViewer @bind-Open="_viewing" @bind-Index="_viewingAt" Pictures="Screenshots(ticket)" Noun="Screenshot" About="@($"#{line.Number} {FeedbackWords.Title(line.Text)}")" />
                 }
                 else if (line.AttachmentsDeleted)
                 {
@@ -199,6 +210,8 @@
     private string _blockReason = "";
     private bool _blocking;
     private bool _deleting;
+    private bool _viewing;
+    private int _viewingAt;
     private string? _busy;
     private string? _problem;
 
@@ -267,6 +280,10 @@
             await OnGone.InvokeAsync();
         }
     }
+
+    private static List<MediaRef> Screenshots(Ticket ticket) => ticket.Attachments.Where(media => media.IsImage).ToList();
+
+    private void OpenScreenshot(int index) => (_viewingAt, _viewing) = (index, true);
 
     private Task DownloadAsync(MediaRef data) => DoAsync("data", async () =>
     {
