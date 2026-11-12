@@ -277,6 +277,7 @@ button.module-nav__link { width: 100%; border: 0; background: none; font-family:
 .choice input:disabled + span { color: var(--ink-3); }
 .grouped-list .choice { margin: 0; }
 code, .patterns { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: var(--text-caption); }
+.data-table__table code.patterns { display: block; max-width: 34ch; overflow-wrap: anywhere; }
 
 
 .access-place { margin-top: 18px; }
@@ -449,7 +450,7 @@ input[type="checkbox"]:not([class]), input[type="radio"]:not([class]) { display:
 .person-roles__main { display: grid; gap: 12px; min-width: 0; }
 .person-roles__features { columns: 2 280px; column-gap: 32px; }
 .person-roles__feature { margin: 0 0 20px; break-inside: avoid; }
-.person-roles__head { margin: 0 0 2px; padding: 0 8px; color: var(--ink-3); font-size: var(--text-pill); font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; }
+.person-roles__head { margin: 0 0 var(--space-2xs); padding: 0 var(--space-sm); color: var(--ink); font-size: var(--text-label); font-weight: 700; }
 .person-roles__feature .role-tick { border-bottom: 1px solid var(--line); border-radius: 0; }
 .person-roles__one { padding-top: 18px; border-top: 1px solid var(--line); }
 .person-roles__things { display: grid; margin: 0; padding: 0; list-style: none; }
