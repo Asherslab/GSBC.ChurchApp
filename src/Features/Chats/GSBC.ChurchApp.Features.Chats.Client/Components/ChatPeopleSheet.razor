@@ -1,50 +1,9 @@
-@inject ChatsStore Store
-
 <Sheet Open="Open" OpenChanged="OpenChanged" Title="@ChatText.Title(Card)" Lead="@ChatText.Who(Card)">
-    <ChildContent>
-        <ToggleRow Title="Mute" Description="No notifications from this chat, unless someone mentions you. It still shows in your chats." Checked="Card.Muted"
-                   CheckedChanged="muted => Store.MuteAsync(Card, muted)" />
-        <ListGroup>
-            @foreach (ChatPerson person in Card.People.OrderBy(Order).ThenBy(person => person.Name))
-            {
-                <ListRow Title="@(person.Id == Card.You ? $"{person.Name} (you)" : person.Name)" Subtitle="@About(person)">
-                    <Leading><Avatar Name="@person.Name" Size="32" /></Leading>
-                </ListRow>
-            }
-        </ListGroup>
-        @if (Card.ParentsCanRead)
-        {
-            <p class="hint">Parents of the young people here can read this chat, and can write for their child.</p>
-        }
-        <p class="hint">@ChatCopy.StaffCanCheck</p>
-    </ChildContent>
+    <ChatPeople Card="Card" />
 </Sheet>
 
 @code {
     [Parameter, EditorRequired] public required ChatCard Card { get; set; }
     [Parameter] public bool Open { get; set; }
     [Parameter] public EventCallback<bool> OpenChanged { get; set; }
-
-    private static int Order(ChatPerson person) => person.Role switch
-    {
-        ChatRoles.Leader => 0,
-        ChatRoles.Member => 1,
-        _ => 2,
-    };
-
-    private string About(ChatPerson person)
-    {
-        List<string> words = [];
-        if (person.Role == ChatRoles.Leader)
-            words.Add("Leader");
-        if (person.Role == ChatRoles.ParentReader)
-            words.Add("Parent, can read");
-        if (person.ParentOf.Count > 0)
-            words.Add($"Parent of {string.Join(" and ", person.ParentOf.Select(child => ChatText.First(Card.People.FirstOrDefault(other => other.Id == child)?.Name ?? "a young person")))}");
-        if (person.State == ChatStates.AwaitingConsent)
-            words.Add("Waiting for a parent's yes");
-        if (Card.YouMayManage && person.BlueCard)
-            words.Add("Current blue card");
-        return string.Join(" · ", words);
-    }
 }

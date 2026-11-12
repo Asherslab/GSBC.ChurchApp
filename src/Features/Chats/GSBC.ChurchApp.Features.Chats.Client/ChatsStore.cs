@@ -5,6 +5,7 @@ using GSBC.ChurchApp.Platform.Client.Outbox;
 using GSBC.ChurchApp.Platform.Client.Preferences;
 using GSBC.ChurchApp.Platform.Client.Uploads;
 using GSBC.ChurchApp.Platform.Contracts.Media;
+using GSBC.ChurchApp.Platform.Ui.Content;
 
 namespace GSBC.ChurchApp.Features.Chats.Client;
 
@@ -16,6 +17,13 @@ public sealed record ChatSummary(ChatCard Card, long Unread)
 public sealed record ChatsHome(IReadOnlyList<ChatSummary> Chats, bool Paused)
 {
     public static readonly ChatsHome Empty = new([], false);
+
+    public static ChatsHome Of(IEnumerable<ChatCard> cards, bool paused, IReadOnlyDictionary<string, long> markedRead) =>
+        new(cards
+            .Select(card => new ChatSummary(card, Math.Max(0, card.LastSeq - Math.Max(card.ReadSeq, markedRead.GetValueOrDefault(card.Id)))))
+            .OrderByDescending(chat => chat.WaitingForYou)
+            .ThenByDescending(chat => chat.Card.LastAt ?? chat.Card.CreatedAt)
+            .ToList(), paused);
 
     public long Unread => Chats.Where(chat => !chat.Card.Muted).Sum(chat => chat.Unread);
 
@@ -35,7 +43,21 @@ public sealed record Conversation(ChatCard Card, IReadOnlyList<ChatLine> Lines, 
 
 public sealed record OpenedChat(Conversation? Chat);
 
-public sealed class ChatsStore(ILocalFeeds feeds, IOutbox outbox, ILocalPreferences preferences, FileUploads uploads, TimeProvider time)
+public static class PendingLines
+{
+    public static ChatMessage Draft(PendingSend send, ChatCard card) => new()
+    {
+        Id = send.Message.ClientId, ChatId = send.Message.ChatId, Kind = MessageKinds.Text, SenderId = card.You, SenderName = "You",
+        ForName = card.ForChildren.FirstOrDefault(child => child.Id == send.Message.ForPersonId)?.Name ?? "", SentAt = send.At,
+        Text = send.Message.Text, ClientId = send.Message.ClientId, Mentions = send.Message.Mentions, Attachments = send.Waiting,
+        ReplyTo = send.Message.ReplyToId.Length == 0 ? null : new Quote { MessageId = send.Message.ReplyToId, SenderName = send.ReplyName, Snippet = send.ReplySnippet },
+    };
+
+    public static HashSet<string> Arrived(IEnumerable<ChatMessage> messages, ChatCard card) =>
+        messages.Where(message => message.SenderId == card.You).Select(message => message.ClientId).ToHashSet();
+}
+
+public sealed class ChatsStore(ILocalFeeds feeds, IOutbox outbox, ILocalPreferences preferences, FileUploads uploads, TimeProvider time) : IChats
 {
     public const string Remembered = "chats.home";
     private const string Service = "/gsbc.chats.Chats/";
@@ -52,13 +74,7 @@ public sealed class ChatsStore(ILocalFeeds feeds, IOutbox outbox, ILocalPreferen
         if (!feeds.IsAvailable)
             return ChatsHome.Empty;
         IReadOnlyList<StoredRecord> rows = await feeds.ReadPageAsync(new FeedPageQuery(ChatsFeeds.Chats, Descending: true, Limit: MostChats));
-        List<ChatSummary> chats = rows.Where(row => row.GroupKey == "chat")
-            .Select(row => Decode<ChatCard>(row.Payload))
-            .Select(card => new ChatSummary(card, Math.Max(0, card.LastSeq - Math.Max(card.ReadSeq, _markedRead.GetValueOrDefault(card.Id)))))
-            .OrderByDescending(chat => chat.WaitingForYou)
-            .ThenByDescending(chat => chat.Card.LastAt ?? chat.Card.CreatedAt)
-            .ToList();
-        return new ChatsHome(chats, rows.Any(row => row.GroupKey == "status"));
+        return ChatsHome.Of(rows.Where(row => row.GroupKey == "chat").Select(row => Decode<ChatCard>(row.Payload)), rows.Any(row => row.GroupKey == "status"), _markedRead);
     }
 
     public async Task<Conversation?> ChatAsync(string chatId)
@@ -76,19 +92,25 @@ public sealed class ChatsStore(ILocalFeeds feeds, IOutbox outbox, ILocalPreferen
         List<ChatLine> lines = messages.Select(message => new ChatLine(message, LineState.Sent)).ToList();
 
         PendingSends pending = await PendingAsync();
-        HashSet<string> arrived = messages.Where(message => message.SenderId == card.You).Select(message => message.ClientId).ToHashSet();
+        HashSet<string> arrived = PendingLines.Arrived(messages, card);
         if (pending.Sends.RemoveAll(send => arrived.Contains(send.Message.ClientId)) > 0)
             await SaveAsync(pending);
         Dictionary<string, OutboxEntry> entries = (await outbox.ListAsync()).ToDictionary(entry => entry.Id);
         foreach (PendingSend send in pending.Sends.Where(send => send.Message.ChatId == chatId).OrderBy(send => send.At))
         {
             bool failed = entries.GetValueOrDefault(send.OutboxId)?.Failed == true;
-            lines.Add(new ChatLine(Draft(send, card), failed ? LineState.Failed : LineState.Sending, send.OutboxId));
+            lines.Add(new ChatLine(PendingLines.Draft(send, card), failed ? LineState.Failed : LineState.Sending, send.OutboxId));
         }
         return new Conversation(card, lines, home.Paused);
     }
 
     public bool CanAttach => uploads.CanQueue;
+
+    public bool UploadsDirectly => false;
+
+    public Task<MediaRef> UploadAsync(ChatCard card, ChosenFile file) => throw new NotSupportedException("The phone keeps files for the outbox.");
+
+    public ValueTask ForgetAsync(MediaRef media) => uploads.ForgetAsync(media);
 
     public async Task SendAsync(ChatCard card, string text, ChatMessage? replyTo, IReadOnlyCollection<string> mentions, string forPersonId,
         IReadOnlyList<MediaRef> picked)
@@ -174,14 +196,6 @@ public sealed class ChatsStore(ILocalFeeds feeds, IOutbox outbox, ILocalPreferen
 
     private async Task EnqueueAsync<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] T>(string method, T request) where T : class =>
         await outbox.EnqueueAsync(Service + method, request, ChatsContractsModel.Instance);
-
-    private static ChatMessage Draft(PendingSend send, ChatCard card) => new()
-    {
-        Id = send.Message.ClientId, ChatId = send.Message.ChatId, Kind = MessageKinds.Text, SenderId = card.You, SenderName = "You",
-        ForName = card.ForChildren.FirstOrDefault(child => child.Id == send.Message.ForPersonId)?.Name ?? "", SentAt = send.At,
-        Text = send.Message.Text, ClientId = send.Message.ClientId, Mentions = send.Message.Mentions, Attachments = send.Waiting,
-        ReplyTo = send.Message.ReplyToId.Length == 0 ? null : new Quote { MessageId = send.Message.ReplyToId, SenderName = send.ReplyName, Snippet = send.ReplySnippet },
-    };
 
     private async Task<PendingSends> PendingAsync() =>
         await preferences.GetAsync(PendingKey) is { Length: > 0 } stored

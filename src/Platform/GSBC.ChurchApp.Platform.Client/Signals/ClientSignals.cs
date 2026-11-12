@@ -44,6 +44,8 @@ public sealed class ClientSignals : IDisposable
             _feeds?.Follow(feeds);
     }
 
+    public void ChangedHere(IReadOnlyCollection<string> feeds) => Raise(ChangeKind.Feeds, feeds.ToHashSet());
+
     public void Dispose()
     {
         if (_feeds is not null)

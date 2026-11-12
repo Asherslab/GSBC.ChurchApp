@@ -1,21 +1,27 @@
-@inject ChatsStore Store
+@inject IChats Store
 @inject TimeProvider Clock
 @inject Shell Shell
 @inject IServiceProvider Services
 @inject NavigationManager Navigation
 @using GSBC.ChurchApp.Platform.Icons
 
-<Page Title="@_title" BackHref="@BackHref" BackLabel="@BackLabel" TopBar="TopBarStyle.Solid">
+<ChatFrame Title="@_title" Lead="@(InPanel && _card is not null ? ChatText.Who(_card) : null)" BackHref="@BackHref" BackLabel="@BackLabel" InPanel="InPanel">
     <Actions>
         @if (_card is not null)
         {
-            <Button Variant="ButtonVariant.Quiet" Icon="@AppIcons.Settings" AriaLabel="Chat settings" Tooltip="Chat settings" OnClick="() => _people = true" />
+            <Button Variant="ButtonVariant.Quiet" Icon="@AppIcons.Settings" AriaLabel="@SettingsLabel" Tooltip="@SettingsLabel" OnClick="OpenSettings" />
             @if (_card.YouMayManage)
             {
                 <Menu Label="@($"More for {_title}")" Items="ChatActions" />
             }
         }
     </Actions>
+    <Beside>
+        @if (InPanel && _card is not null)
+        {
+            <ChatPeople Card="_card" />
+        }
+    </Beside>
     <ChildContent>
 <LiveData TValue="OpenedChat" Load="LoadAsync" Feeds="ChatsStore.Feeds" ReloadOn="ChangeKind.Reconnected | ChangeKind.Session | ChangeKind.Access | ChangeKind.Outbox">
     @if (context.Value.Chat is not { } chat)
@@ -127,10 +133,13 @@
                     }
                 </div>
             </div>
-            <ChatComposer Chat="chat" Editing="_editing" ReplyingTo="_replyingTo" OnDone="Done" />
+            <ChatComposer Chat="chat" Editing="_editing" ReplyingTo="_replyingTo" OnDone="Done" EnterSends="InPanel" DropOn="@(InPanel ? ".chat" : null)" />
         </div>
         <MessageActions Card="card" Line="_acting" OnClose="() => _acting = null" OnReply="Reply" OnEdit="Edit" />
-        <ChatPeopleSheet Card="card" Open="_people" OpenChanged="open => _people = open" />
+        @if (!InPanel)
+        {
+            <ChatPeopleSheet Card="card" Open="_people" OpenChanged="open => _people = open" />
+        }
         <Sheet Open="_deleting" OpenChanged="open => _deleting = open" Title="@($"Delete {ChatText.Title(card)}?")"
                Lead="Everyone in it loses the chat. The church keeps its messages and the log, so staff can still check it.">
             <Actions>
@@ -154,12 +163,15 @@
     }
 </LiveData>
     </ChildContent>
-</Page>
+</ChatFrame>
 
 @code {
     [Parameter, EditorRequired] public required string ChatId { get; set; }
     [Parameter] public string BackHref { get; set; } = "chats";
     [Parameter] public string BackLabel { get; set; } = "Chats";
+    [Parameter] public bool InPanel { get; set; }
+    [Parameter] public bool SettingsOpen { get; set; }
+    [Parameter] public EventCallback OnSettings { get; set; }
 
     private string _title = "Chat";
     private readonly HashSet<string> _added = [];
@@ -177,7 +189,7 @@
         Conversation? chat = await Store.ChatAsync(ChatId);
         if (chat is { Paused: false, Card.YourRole.Length: > 0 })
             await Store.MarkReadAsync(chat.Card, chat.Card.LastSeq);
-        if (chat is not null && (ChatText.Title(chat.Card) != _title || _card is null))
+        if (chat is not null && (ChatText.Title(chat.Card) != _title || _card is null || InPanel))
         {
             _title = ChatText.Title(chat.Card);
             _card = chat.Card;
@@ -222,6 +234,16 @@
 
     private void ShowSeen(ChatMessage message) => _seen = message;
 
+    private string SettingsLabel => InPanel && SettingsOpen ? "Hide the chat's settings" : "Chat settings";
+
+    private async Task OpenSettings()
+    {
+        if (OnSettings.HasDelegate)
+            await OnSettings.InvokeAsync();
+        else
+            _people = true;
+    }
+
     private IReadOnlyList<MenuItem> ChatActions =>
     [
         this.Item("Delete the chat…", () => _deleting = true, "trash-2", "For everyone in it. The church keeps its messages.", danger: true),
@@ -231,7 +253,7 @@
     {
         _deleting = false;
         await Store.DeleteChatAsync(card);
-        Navigation.NavigateTo(ChatsDestinations.Chats.Path);
+        Navigation.NavigateTo(InPanel ? "chats" : ChatsDestinations.Chats.Path);
     }
 
     private static IReadOnlyList<BubbleReaction> ReactionsOf(ChatCard card, ChatMessage message) =>
