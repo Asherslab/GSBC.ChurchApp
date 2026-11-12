@@ -39,3 +39,20 @@ seed: none (unavailable); admin 3 of 7 ("tree beside the ministry"), seed: none 
 page by page"), seed: none (unavailable).
 
 FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, DESIGN.md, and every shipping raster carrying its provenance
+
+## Wave 2 (2026-11-12): the owner's picks on `.impeccable/mocks/ministries-wave2/`
+
+Builds on the Pattern map; no new world. One decision round, two questions, both answered in the browser:
+
+- **A Life Group's Calendar tab** (#56): *Its Sundays* goes. A change to one of its Sundays is a **News post for that
+  Sunday** ("Tell the group in News", picked over a ⋯ menu on each Sunday and a strip of date tiles), optionally
+  *No class this Sunday*; Coming up strikes the Sunday through and links the post under it. Linked calendars show their
+  events while the group's set runs; each row's ⋯ menu holds Unlink, asking once (#50). Leaders link from the phone (#54).
+- **A ministry's tab order** (#21): **drag with a live preview** (picked over arrows on each row and an order sheet):
+  `ReorderList` with the tab strip previewed above, each row's ⋯ menu for Move up and Move down, the on/off switch in
+  the same row; changes straight away.
+- Settled by the Pattern map without a question: settings in groups (#12), the role menu in the person's pane or sheet
+  with the add sheet staying open (#13, #14, #29, as chosen in the design-system round), Archive and Delete in the
+  ministry's ⋯ menu, Workbench for the admin People tab.
+
+FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, DESIGN.md, and every shipping raster carrying its provenance

@@ -111,7 +111,7 @@
         new("Name", member => @<b>@member.Name</b>, member => member.Name),
         new("Role", member => @<text>@(member.LeadsFrom.Length > 0 ? $"Leads {member.LeadsFrom}" : MinistryWords.Role(member.Role))</text>, member => member.Role),
         new("Age", member => @<text>@member.Age</text>, member => member.Age, "num"),
-        new("Parents", member => @<text>@if (member.NoParent) { <Pill Tone="PillTone.Marker">No parent linked</Pill> } else { @MinistryWords.Names(member.Parents.Select(parent => parent.Name).ToList()) }</text>),
+        new("Parents", member => @<text>@if (member.NoParent) { <Pill Tone="PillTone.Marker">No parent linked</Pill> } else { @MinistryWords.Names(member.Parents.Select(parent => parent.Name).ToList()) }</text>, Class: "optional"),
     ];
 
     private void Choose(Member? member) => _chosen = member is null ? null : (member.PersonId, member.Role);

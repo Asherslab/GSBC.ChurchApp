@@ -232,23 +232,13 @@ button.ministry-item { cursor: pointer; }
 .lg-chip b { font-weight: 600; white-space: nowrap; }
 .lg-chip span { font-weight: 500; color: var(--marker-ink); white-space: nowrap; }
 .lg-chip--off { background: color-mix(in srgb, var(--marker) 14%, var(--surface)); box-shadow: inset 0 0 0 1px var(--marker); }
-.lg-chip--add { background: transparent; color: var(--accent); }
 
-.lg-board { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px; align-items: start; }
-@media (max-width: 1180px) { .lg-board { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@media (max-width: 640px) { .lg-board { grid-template-columns: 1fr; } }
-.lg-col { display: grid; gap: 12px; align-content: start; }
-.lg-col__head { display: flex; justify-content: space-between; align-items: baseline; margin: 0; font-size: var(--text-label); font-weight: 700; color: var(--ink-2); }
-.lg-col__count { font-variant-numeric: tabular-nums; color: var(--ink-3); }
-.lg-col__empty { margin: 0; padding: 18px 16px; border: 1px dashed color-mix(in srgb, var(--ink-3) 45%, transparent); border-radius: var(--radius); color: var(--ink-2); font-size: var(--text-caption); text-align: center; }
 
 .lg-card { padding: 14px 16px; border-radius: var(--radius); background: var(--surface); box-shadow: inset 0 0 0 1px var(--line); }
 .lg-card--next { outline: 2px solid var(--marker); outline-offset: 2px; }
 .lg-card--nowon { box-shadow: inset 0 0 0 1.5px var(--accent); }
-.lg-card__title { display: inline-flex; align-items: center; gap: 6px; margin: 0; padding: 0; border: 0; background: none; color: var(--ink); font: inherit; font-size: var(--text-row); font-weight: 700; letter-spacing: -0.01em; text-align: left; }
-button.lg-card__title { cursor: pointer; }
-button.lg-card__title .icon { color: var(--ink-3); }
-button.lg-card__title:hover { text-decoration: underline; text-underline-offset: 3px; }
+.lg-card__head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-sm); }
+.lg-card__title { margin: 0; color: var(--ink); font-size: var(--text-row); font-weight: 700; letter-spacing: -0.01em; }
 .lg-card__needs { margin: 8px 0 0; font-size: var(--text-caption); font-weight: 600; color: var(--marker-ink); }
 .lg-card__facts { margin: 2px 0 0; font-size: var(--text-caption); color: var(--ink-2); }
 .lg-card__actions { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; margin-top: 10px; }
@@ -259,13 +249,4 @@ button.lg-card__title:hover { text-decoration: underline; text-underline-offset:
 .lg-groups a:hover { text-decoration: underline; text-underline-offset: 3px; }
 .lg-missing { margin-left: 6px; font-weight: 600; color: var(--marker-ink); }
 .lg-missing::before { content: "· "; }
-.lg-card .lg-groups__off button, .lg-card .lg-groups__off span { display: inline-flex; align-items: center; gap: 6px; min-height: 0; padding: 0; border: 0; border-radius: 0; background: none; font: inherit; font-weight: 600; color: var(--ink-2); text-align: left; cursor: pointer; }
-.lg-groups__off span { cursor: default; }
 
-.lg-card--finished { padding-top: 6px; padding-bottom: 6px; }
-.lg-finished + .lg-finished { border-top: 1px solid var(--line); }
-.lg-finished { padding: 2px 0 8px; }
-.lg-finished__line { display: flex; align-items: center; gap: 6px; width: 100%; min-height: 40px; padding: 0; border: 0; background: none; font: inherit; font-size: var(--text-caption); color: var(--ink-2); text-align: left; cursor: pointer; }
-.lg-finished__line b { color: var(--ink); font-weight: 700; }
-.lg-finished__line span { margin-left: auto; font-variant-numeric: tabular-nums; }
-.lg-finished .lg-groups { margin: 0 0 8px 22px; }

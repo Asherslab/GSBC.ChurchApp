@@ -208,7 +208,7 @@ button.row:active, a.row:active { background: var(--line); }
 .row-with-menu--navigates > .row { padding-right: 0; }
 .row-with-menu--navigates > .row > .row__trail::before { content: ""; order: 1; width: calc(var(--space-3xl) + var(--space-2xs)); }
 .row-with-menu--navigates > .row > .row__trail > .icon:last-child { order: 2; }
-.row-with-menu__menu { position: absolute; top: 50%; right: 0; translate: 0 -50%; }
+.row-with-menu > .row-with-menu__menu { position: absolute; top: 50%; right: 0; translate: 0 -50%; }
 .row-with-menu--navigates > .row-with-menu__menu { right: var(--space-2xl); }
 .row--reading { align-items: flex-start; padding: 22px 0; }
 .row--reading .row__icon { margin-top: -6px; }

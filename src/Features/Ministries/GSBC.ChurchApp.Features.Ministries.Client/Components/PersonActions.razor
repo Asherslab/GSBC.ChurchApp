@@ -32,7 +32,7 @@
                          Icon="users" IconTone="@(member.NoParent ? RowTone.Warm : RowTone.Quiet)" OnClick="() => _linking = true" Chevron="true" />
             </ListGroup>
         }
-        <p class="hint">Only @Page.Ministry.Name's leaders and the church office see this.</p>
+        <p class="hint">Only @MinistryWords.Possessive(Page.Ministry.Name) leaders and the church office see this.</p>
     }
     <Notice Tone="NoticeTone.Warning" Text="@_problem" />
 }
