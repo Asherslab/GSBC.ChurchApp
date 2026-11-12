@@ -12,7 +12,7 @@
     "src/Features/Prayer/GSBC.ChurchApp.Features.Prayer.Client/wwwroot/css/prayer.css": 50,
     "src/Features/Rosters/GSBC.ChurchApp.Features.Rosters.Client/wwwroot/css/rosters.css": 19,
     "src/Features/Sermons/GSBC.ChurchApp.Features.Sermons.Client/wwwroot/css/sermons.css": 77,
-    "src/Hosts/App/GSBC.ChurchApp.Hosts.App/wwwroot/css/app.css": 12,
+    "src/Hosts/App/GSBC.ChurchApp.Hosts.App/wwwroot/css/app.css": 4,
     "src/Hosts/GSBC.ChurchApp.Hosts.Admin/wwwroot/css/admin.css": 139,
     "src/Platform/GSBC.ChurchApp.Platform.Ui/wwwroot/css/rich-text.css": 10,
     "src/Platform/GSBC.ChurchApp.Platform.Ui/wwwroot/css/ui.css": 399
@@ -73,7 +73,6 @@
     "src/Features/Sermons/GSBC.ChurchApp.Features.Sermons.App/Pages/SermonPage.razor": 2,
     "src/Features/Sermons/GSBC.ChurchApp.Features.Sermons.Client/LatestSermonTile.razor": 1,
     "src/Features/Sermons/GSBC.ChurchApp.Features.Sermons.Client/SermonDownload.razor": 4,
-    "src/Hosts/App/GSBC.ChurchApp.Hosts.App/Pages/Gallery.razor": 1,
     "src/Hosts/GSBC.ChurchApp.Hosts.Admin/Layout/MainLayout.razor": 1,
     "src/Hosts/GSBC.ChurchApp.Hosts.Website/Components/Parts/SermonsBar.razor": 1,
     "src/Hosts/GSBC.ChurchApp.Hosts.Website/Components/Parts/ShareButton.razor": 1
