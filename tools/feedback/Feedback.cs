@@ -244,6 +244,10 @@ static void PrintTicket(Ticket ticket, string folder, IReadOnlyList<string> save
         Console.WriteLine($"  app:      {phone.AppVersion} ({phone.AppBuild}), {ticket.Environment}{(phone.DevelopmentBuild ? ", a development build" : "")}");
         Console.WriteLine($"  phone:    {PhoneModels.Name(phone.Model)} ({phone.Model}), {phone.Platform} {phone.OsVersion}");
         Console.WriteLine($"  page:     {(ticket.Page.Length > 0 ? ticket.Page : "(not known)")}");
+        if (phone.RecentPages.Count > 0)
+            Console.WriteLine($"  before:   {string.Join(" ← ", phone.RecentPages)}");
+        if (phone.Screenshots.Count > 0)
+            Console.WriteLine($"  screenshots: {string.Join(", ", phone.Screenshots.Select(shot => $"{shot.Page} at {DateTime.SpecifyKind(shot.At, DateTimeKind.Utc).ToLocalTime():HH:mm}"))}");
         Console.WriteLine($"  phone id: {(ticket.InstallId.Length > 0 ? $"{ticket.InstallId}, {ticket.FromThisPhone} sent{(ticket.Blocked ? $", blocked: {ticket.BlockedBecause}" : "")}" : "(not a verified phone)")}");
     }
     Console.WriteLine();

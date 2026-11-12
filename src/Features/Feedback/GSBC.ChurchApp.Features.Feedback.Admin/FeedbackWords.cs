@@ -1,6 +1,7 @@
 using System.Globalization;
 using GSBC.ChurchApp.Features.Feedback.Contracts;
 using GSBC.ChurchApp.Platform.Common;
+using GSBC.ChurchApp.Platform.Ui;
 
 namespace GSBC.ChurchApp.Features.Feedback.Admin;
 
@@ -43,6 +44,9 @@ internal static class FeedbackWords
         "web" => "A browser",
         _ => "",
     };
+
+    public static string Screenshots(IEnumerable<ScreenshotTaken> taken) =>
+        string.Join(", ", taken.Select(shot => $"{shot.Page} at {ChurchDates.Time(ChurchTime.ToChurch(shot.At))}"));
 
     public static string Size(long bytes) => bytes >= 1024 * 1024 ? $"{bytes / (1024.0 * 1024):0.#} MB" : $"{Math.Max(1, bytes / 1024)} KB";
 }
