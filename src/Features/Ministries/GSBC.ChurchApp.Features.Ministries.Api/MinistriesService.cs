@@ -73,6 +73,7 @@ internal sealed class MinistriesService(
             Calendars = await views.CalendarsAsync(tree, ministry.Id, grants, me is not null, cancellationToken),
             You = await YouAsync(me, tree, ministry, grants, cancellationToken),
         };
+        List<DaySpan>? within = null;
         if (ministry.ShowsInLifeGroups)
         {
             page.Sessions = (await db.Sessions.AsNoTracking().Where(session => session.GroupId == ministry.Id).OrderBy(session => session.Date).ToListAsync(cancellationToken))
@@ -86,9 +87,11 @@ internal sealed class MinistriesService(
             page.SittingOut = sitOuts.Where(sitOut => rounds.TryGetValue(sitOut.RoundId, out RoundRecord? set) && set.Sundays.Count > 0 && set.Sundays.Max() >= today)
                 .OrderBy(sitOut => rounds[sitOut.RoundId].Sundays.Min())
                 .Select(sitOut => MinistryViews.SittingOut(sitOut, rounds[sitOut.RoundId], tree)).ToList();
-            page.Sundays = MinistryViews.SundaysOf(ministry, await db.Rounds.AsNoTracking().ToListAsync(cancellationToken), sitOuts);
+            List<RoundRecord> all = await db.Rounds.AsNoTracking().ToListAsync(cancellationToken);
+            page.Sundays = MinistryViews.SundaysOf(ministry, all, sitOuts);
+            within = MinistryViews.SpansOf(ministry, all, sitOuts);
         }
-        page.Calendars.AddRange(await views.LinkedAsync(ministry, ministry.ShowsInLifeGroups ? page.Sundays : null, cancellationToken));
+        page.Calendars.AddRange(await views.LinkedAsync(ministry, within, cancellationToken));
         return page;
     }
 

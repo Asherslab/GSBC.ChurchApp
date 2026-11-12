@@ -20,6 +20,7 @@ namespace GSBC.ChurchApp.Features.Ministries.Contracts;
 [ProtoSerializable(typeof(Post))]
 [ProtoSerializable(typeof(FileItem))]
 [ProtoSerializable(typeof(CalendarLine))]
+[ProtoSerializable(typeof(DaySpan))]
 [ProtoSerializable(typeof(CalendarLinkSave))]
 [ProtoSerializable(typeof(LinkableCalendars))]
 [ProtoSerializable(typeof(JoinRequest))]

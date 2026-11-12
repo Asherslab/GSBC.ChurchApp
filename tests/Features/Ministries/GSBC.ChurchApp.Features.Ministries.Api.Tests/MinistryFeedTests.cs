@@ -136,7 +136,7 @@ public sealed class MinistryFeedTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task ALifeGroupsLinkedCalendarReachesEveryPhoneFilteredToItsSundaysAsTheServerShowsIt()
+    public async Task ALifeGroupsLinkedCalendarReachesEveryPhoneFilteredToItsSetsDatesAsTheServerShowsIt()
     {
         MinistryCalendar services = new(Guid.CreateVersion7(), Guid.Empty, "Services", "services", Audience.Everyone, Hidden: false);
         _calendars.ForEveryone.Add(services);
@@ -151,8 +151,9 @@ public sealed class MinistryFeedTests : IAsyncLifetime
         {
             MinistryPage server = await ServerPageAsync(person, _band.Id);
             CalendarLine linked = Assert.Single(server.Calendars, calendar => calendar.Linked);
-            Assert.True(linked.OnItsDays);
-            Assert.Equal([ChurchDay(7).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture), ChurchDay(14).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)], linked.Days);
+            Assert.True(linked.OnlyWithin);
+            DaySpan within = Assert.Single(linked.Within);
+            Assert.Equal((ChurchDay(7).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture), ChurchDay(14).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)), (within.From, within.To));
             Assert.Equal(Bytes(server), Bytes(await (await PhoneOfAsync(person)).Ministries.MinistryAsync(_band.Id.ToString())));
         }
     }

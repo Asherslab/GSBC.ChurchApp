@@ -1,5 +1,6 @@
 using System.Globalization;
 using GSBC.ChurchApp.Features.Ministries.Contracts;
+using GSBC.ChurchApp.Platform.Client.Modules;
 
 namespace GSBC.ChurchApp.Features.Ministries.Client;
 
@@ -96,6 +97,17 @@ public static class MinistryWords
             : gone.TotalDays < 14 ? "Last week"
             : at.ToLocalTime().ToString("d MMMM", CultureInfo.CurrentCulture);
     }
+
+    public static IReadOnlyList<DayRange> Ranges(IEnumerable<DaySpan> spans) =>
+        spans.Select(span => new DayRange(LifeGroupRounds.Day(span.From), LifeGroupRounds.Day(span.To))).ToList();
+
+    public static string Span(IReadOnlyList<DaySpan> spans) =>
+        spans.Count == 0 ? "" : $"{ShortDay(spans[0].From)} to {ShortDay(spans[^1].To)}";
+
+    private static string ShortDay(string isoDate) =>
+        DateOnly.TryParseExact(isoDate, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateOnly day)
+            ? day.ToString("d MMM", CultureInfo.CurrentCulture)
+            : isoDate;
 
     public static string Day(string isoDate) =>
         DateOnly.TryParseExact(isoDate, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateOnly day)

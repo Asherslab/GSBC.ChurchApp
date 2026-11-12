@@ -27,7 +27,7 @@
 {
     <Section First="@(!Tools)" Title="Coming up" Lead="@(FromBelow.Count > 0 ? $"From {Page.Ministry.Name} and the ministries under it." : null)">
         @view.ComingUp(Page.Calendars.Select(calendar => new CalendarInSet(calendar.Id, calendar.From.Length > 0 ? calendar.From : Page.Ministry.Name,
-            calendar.OnItsDays ? calendar.Days.ToHashSet() : null)).ToList())
+            calendar.OnlyWithin ? MinistryWords.Ranges(calendar.Within) : null)).ToList())
     </Section>
 }
 

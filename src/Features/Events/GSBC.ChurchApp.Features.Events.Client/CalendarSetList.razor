@@ -52,11 +52,11 @@
     }
 
     private IReadOnlyList<EventOccurrence> Next(IEnumerable<EventOccurrence> occurrences) =>
-        occurrences.Where(occurrence => occurrence.EndsAt >= Now && OnItsDays(occurrence)).Take(Shown).ToList();
+        occurrences.Where(occurrence => occurrence.EndsAt >= Now && WithinItsDays(occurrence)).Take(Shown).ToList();
 
-    private bool OnItsDays(EventOccurrence occurrence) =>
-        Calendars.FirstOrDefault(calendar => calendar.Id == occurrence.CalendarId)?.Days is not { } days
-        || days.Contains(EventWords.DayOf(occurrence).ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture));
+    private bool WithinItsDays(EventOccurrence occurrence) =>
+        Calendars.FirstOrDefault(calendar => calendar.Id == occurrence.CalendarId)?.Within is not { } within
+        || within.Any(range => range.Holds(EventWords.DayOf(occurrence)));
 
     private sealed record ComingUpInSet(Diary Diary, IReadOnlyList<EventOccurrence> Occurrences);
 }

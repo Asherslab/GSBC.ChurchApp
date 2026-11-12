@@ -190,8 +190,15 @@ public sealed class CalendarLine
     [ProtoMember(5)] public string MinistryId { get; set; } = "";
     [ProtoMember(6)] public string From { get; set; } = "";
     [ProtoMember(7)] public bool Linked { get; set; }
-    [ProtoMember(8)] public List<string> Days { get; set; } = [];
-    [ProtoMember(9)] public bool OnItsDays { get; set; }
+    [ProtoMember(10)] public List<DaySpan> Within { get; set; } = [];
+    [ProtoMember(11)] public bool OnlyWithin { get; set; }
+}
+
+[ProtoContract]
+public sealed class DaySpan
+{
+    [ProtoMember(1)] public string From { get; set; } = "";
+    [ProtoMember(2)] public string To { get; set; } = "";
 }
 
 [ProtoContract]
