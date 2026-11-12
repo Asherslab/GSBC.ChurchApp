@@ -1,0 +1,60 @@
+@implements IAsyncDisposable
+@inject IJSRuntime JS
+
+<label class="drop-box @(Busy ? "drop-box--busy" : "") @(Chosen ? "drop-box--chosen" : "") @Class" @ref="_box">
+    @if (Icon is not null)
+    {
+        <Icon Name="@Icon" />
+    }
+    @if (Words is not null)
+    {
+        @Words
+    }
+    else
+    {
+        <strong class="drop-box__prompt">@Prompt</strong>
+        @if (Hint is not null)
+        {
+            <span class="drop-box__hint">@Hint</span>
+        }
+    }
+    @ChildContent
+</label>
+
+@code {
+    private ElementReference _box;
+    private IJSObjectReference? _listening;
+
+    [Parameter] public string Prompt { get; set; } = "";
+    [Parameter] public string? Hint { get; set; }
+    [Parameter] public string? Icon { get; set; }
+    [Parameter] public RenderFragment? Words { get; set; }
+    [Parameter, EditorRequired] public required RenderFragment ChildContent { get; set; }
+    [Parameter] public bool Busy { get; set; }
+    [Parameter] public bool Chosen { get; set; }
+    [Parameter] public bool TakesPaste { get; set; }
+    [Parameter] public string? DropOn { get; set; }
+    [Parameter] public string? Class { get; set; }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+            return;
+        await using IJSObjectReference module = await JS.InvokeAsync<IJSObjectReference>("import", "./_content/GSBC.ChurchApp.Platform.Ui/js/file-pick.js");
+        _listening = await module.InvokeAsync<IJSObjectReference>("listenWithin", _box, DropOn, TakesPaste);
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_listening is null)
+            return;
+        try
+        {
+            await _listening.InvokeVoidAsync("dispose");
+            await _listening.DisposeAsync();
+        }
+        catch (JSDisconnectedException)
+        {
+        }
+    }
+}

@@ -1,0 +1,17 @@
+{
+  "title": "Settings pages on a wide screen",
+  "question": "A ministry's Settings (and your Account page) is a narrow column with the right side empty. Which way for every settings page in the admin panel?",
+  "options": [
+    { "id": "wide", "kind": "grounded", "label": "A: Cards all the way across",
+      "thesis": "The cards fill the pane to its right edge; short fields pair up two to a line so a field never runs a metre long.",
+      "palette": ["#141d31", "#1d2840", "#2ec4b6", "#e7ae74"], "materials": ["the settings group card", "two-up fields"],
+      "viewport": "Kids Ministries' Settings: The details card spans the pane, Name beside In a line, About full width, then the switches card.",
+      "risk": "Long lines of text and switches far from their labels on a very wide window.", "html": ".impeccable/mocks/settings-width/wide.html" },
+    { "id": "centred", "kind": "grounded", "label": "B: The column centred",
+      "thesis": "The cards keep their 820px reading width and sit in the middle of the pane, with equal space either side.",
+      "palette": ["#141d31", "#1d2840", "#2ec4b6", "#e7ae74"], "materials": ["the settings group card", "a centred column"],
+      "viewport": "Kids Ministries' Settings: the same cards as today, centred under the tabs.",
+      "risk": "The tabs start at the left while the cards start further in.", "html": ".impeccable/mocks/settings-width/centred.html" }
+  ],
+  "steer": true
+}

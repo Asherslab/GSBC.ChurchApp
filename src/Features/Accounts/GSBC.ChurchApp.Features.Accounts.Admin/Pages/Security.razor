@@ -1,20 +1,17 @@
 @page "/account/security"
-@inject AccountsClient Accounts
 @inject OnlineAccount Online
 
 <LiveData TValue="CurrentSession" Load="() => Online.GetCurrentSessionAsync().AsTask()" FailedTitle="Can't reach the church's server">
     @if (context.Value.SignedIn)
     {
         <TitleBand Title="Security" Lead="Your passkeys, and the devices and tools you're signed in on." BackHref="@AccountsDestinations.Account.Route" BackText="Account" />
-        <div class="account-column">
-            <AccountSecurity>
-                <AfterSessions Context="reload">
-                    <Can Permission="AccountsPermissions.ConnectTool">
-                        <ConnectTool OnConnected="reload" />
-                    </Can>
-                </AfterSessions>
-            </AccountSecurity>
-        </div>
+        <AccountSecurity>
+            <AfterSessions Context="reload">
+                <Can Permission="AccountsPermissions.ConnectTool">
+                    <ConnectTool OnConnected="reload" />
+                </Can>
+            </AfterSessions>
+        </AccountSecurity>
     }
     else
     {

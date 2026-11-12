@@ -4,7 +4,7 @@
 @inject IAccess Access
 @inject TimeProvider Clock
 
-<UnsavedGuard Changed="() => Changed" What="their family details" />
+<UnsavedGuard Changed="() => Changed" What="the child you were adding" />
 
 <LiveData @ref="_live" TValue="PersonFamily" Feeds="[PeopleFeeds.Family]" Load="() => Office.GetPersonAsync(Person.Id).AsTask()" FailedTitle="Can't load this family right now">
     @{
@@ -17,32 +17,6 @@
     }
     <div class="people-tab">
         <div>
-            <Section Title="@($"About {Person.FirstName}")" Grouped="true">
-                <ListGroup>
-                    <ListRow Title="@BornTitle(family)" Subtitle="@BornLine(family, today)" Icon="calendar" IconTone="RowTone.Quiet">
-                        <TrailingContent>
-                            @if (mayEdit && !_changingBirthDate)
-                            {
-                                <Button Small="true" Variant="ButtonVariant.Quiet" OnClick="() => StartBirthDate(family)">Change</Button>
-                            }
-                        </TrailingContent>
-                    </ListRow>
-                </ListGroup>
-                @if (_changingBirthDate)
-                {
-                    <div class="ui-after">
-                        <DateField Label="Birth date" Value="@_born" ValueChanged="value => _born = value" Max="@($"{today:yyyy-MM-dd}")" />
-                    </div>
-                    <SaveBar Class="ui-after" Label="Save" Busy="_busy" OnSave="() => SaveBirthDateAsync(PeopleWords.ParseDay(_born))" OnCancel="() => _changingBirthDate = false"
-                             Blocked="@(PeopleWords.ParseDay(_born) is null ? "Give a birth date to save it." : null)">
-                        @if (family.BirthDate is not null)
-                        {
-                            <Button Variant="ButtonVariant.Quiet" Disabled="_busy" OnClick="() => SaveBirthDateAsync(null)">Clear it</Button>
-                        }
-                    </SaveBar>
-                }
-            </Section>
-
             @if (minor && family.Parents.Count > 0)
             {
                 <Section Title="@($"How ministries reach {Person.FirstName}")" Grouped="true">
@@ -120,7 +94,7 @@
                                           Leave="Leave(family)" Busy="@_busyFor" OnChosen="person => LinkAsync(family.Id, person.Id)" />
                             <div class="people-inline">
                                 <TextField Label="Or add a child who isn't in the app" Placeholder="Their name" Value="@_childName" ValueChanged="value => _childName = value" />
-                                <DateField Label="Birth date" Value="@_childBorn" ValueChanged="value => _childBorn = value" Max="@($"{today:yyyy-MM-dd}")" />
+                                <DateField Label="Birth date" Shortcuts="false" Placeholder="Like 4 Mar 2011" Value="@_childBorn" ValueChanged="value => _childBorn = value" Max="@($"{today:yyyy-MM-dd}")" />
                                 <Button Variant="ButtonVariant.Quiet" Busy="_busy" Disabled="@(_childName.Trim().Length == 0 || PeopleWords.ParseDay(_childBorn) is null)" OnClick="() => AddChildAsync(family.Id)">Add</Button>
                             </div>
                             <div class="ui-actions ui-after">
@@ -197,11 +171,11 @@
 
     private LiveData<PersonFamily>? _live;
     private Linking _linking;
-    private bool _busy, _changingBirthDate;
+    private bool _busy;
     private string? _busyFor, _message;
-    private string _born = "", _bornWas = "", _childName = "", _childBorn = "";
+    private string _childName = "", _childBorn = "";
 
-    private bool Changed => (_changingBirthDate && _born != _bornWas) || _childName.Trim().Length > 0 || _childBorn.Length > 0;
+    private bool Changed => _childName.Trim().Length > 0 || _childBorn.Length > 0;
 
     [Parameter, EditorRequired] public required PersonOnPage Person { get; set; }
 
@@ -218,16 +192,6 @@
         Reach.ThroughParents => "Roster requests and messages go to their parents, who can answer for them. The family chose this.",
         Reach.Both => "Roster requests and messages reach them and their parents; either can answer.",
         _ => "Roster requests and messages reach them directly; their parents still see their details.",
-    };
-
-    private static string BornTitle(PersonFamily family) => family.BirthDate is { } born ? $"Born {born:d MMMM yyyy}" : "No birth date";
-
-    private static string BornLine(PersonFamily family, DateOnly today) => family.BirthDate switch
-    {
-        { } born when Ages.IsMinor(WireDates.FromWire(born), today) => $"{PeopleWords.Age(born, today)} · under 18",
-        { } born => $"{PeopleWords.Age(born, today)} · an adult",
-        null when family.SaysAdult => "They've said they're 18 or older",
-        null => "They haven't said yet",
     };
 
     private static string CardLine(PersonCard card, DateOnly today) => $"{PeopleWords.ChildLine(card, today)} · {LinkedLine(card)}";
@@ -250,18 +214,6 @@
 
     private async Task<IReadOnlyList<PersonChoice>> FindAsync(string query) =>
         (await Directory.SearchAsync(query)).Where(person => !person.Disabled).Select(person => new PersonChoice(person.Id, person.Name, person.Email)).ToList();
-
-    private void StartBirthDate(PersonFamily family)
-    {
-        _born = _bornWas = PeopleWords.FieldDay(family.BirthDate);
-        _changingBirthDate = true;
-    }
-
-    private Task SaveBirthDateAsync(DateOnly? born) => RunAsync(async () =>
-    {
-        await People.SetBirthDateAsync(Person.Id, born);
-        _changingBirthDate = false;
-    });
 
     private async Task LinkAsync(string parentId, string childId)
     {

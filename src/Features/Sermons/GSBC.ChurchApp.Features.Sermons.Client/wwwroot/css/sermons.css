@@ -102,12 +102,6 @@
 
 .sermon-upload { display: grid; gap: 18px; }
 .sermon-upload h2 { margin: 0; font-size: var(--text-title, 1.1765rem); font-weight: 700; }
-.sermon-upload__drop { display: grid; justify-items: center; gap: 6px; padding: 26px 20px; border: 1.5px dashed color-mix(in srgb, var(--ink-3) 45%, transparent); border-radius: var(--radius); background: var(--fill-on-surface); text-align: center; cursor: pointer; }
-.sermon-upload__drop:hover, .sermon-upload__drop:focus-within { border-color: var(--accent); }
-.sermon-upload__drop.has-file { border-style: solid; border-color: var(--line); }
-.sermon-upload__drop .icon { color: var(--accent); }
-.sermon-upload__name { font-size: var(--text-row); font-weight: 600; }
-.sermon-upload__hint { color: var(--ink-2); font-size: var(--text-caption); }
 .sermon-upload__art { display: flex; align-items: center; gap: 14px; }
 .sermon-upload__art .media-cover { width: 200px; border-radius: var(--radius-field); }
 .sermon-upload__progress { display: grid; gap: 6px; color: var(--ink-2); font-size: var(--text-caption); font-variant-numeric: tabular-nums; }

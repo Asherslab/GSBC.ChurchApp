@@ -226,6 +226,14 @@ B for days away". **Where this disagrees with anything below, this wins.**
   edit a ministry's roster (`ministries.roster.edit` on it) may set and remove days away for anyone on its team, as well as
   the person, their parent and staff with *See and change anyone's days away*. The Roster tab's days away for a leader is
   **The team's days away**, choosing whose; for everyone else it's theirs and their children's.
+- **Days away are their own page** (owner, #68, 2026-11-12: "This and submitting them should be a page, not just at the
+  bottom of rosters"). On the phone the Roster tab ends with a *Days away* group: *Your days away* with when you're next
+  away, and for leaders *The team's days away* with how many are away in the next four weeks (the owner chose a second
+  row over one team page). They open `/account/away` (it belongs with Account, so More stays lit) and `/ministries/{id}/away`, which hold the same `DaysAway` editor with
+  `Month | List` at the top (the owner picked "Month or list" on the decision page,
+  `.impeccable/mocks/days-away/b-month-or-list.html`): Month is `MonthDays` to tap, List the repeating rules and one-off
+  days; *Add days away* ends both. Account's *Rosters* group has the same *Your days away* row. The admin panel keeps
+  the editor inline (a person's Days away tab and the roster), since a desk has the room.
 - **A trainee is a line of their own** (owner: both leaders and the trainee notice). On the date, under the position,
   indented, led by a "T": "Training, with Jo" once someone trained is on (aqua); alone it's amber with the flag, and the
   position's *Put someone on* says "someone trained for Ben". The grid marks a trainee's cell "Training". The trainee's own

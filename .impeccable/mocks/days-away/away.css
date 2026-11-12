@@ -1,0 +1,6 @@
+.away-month { margin-top: var(--space-sm); }
+.away-dock { position: absolute; left: 0; right: 0; bottom: 83px; z-index: 30; padding: 12px var(--gutter); background: var(--page); border-top: 1px solid var(--line); }
+.away-dock-space { height: 80px; }
+.away-view { max-width: 22rem; }
+.away-sundays { gap: var(--space-xs); }
+.away-sundays .sk-date { min-width: 0; flex: 1; }

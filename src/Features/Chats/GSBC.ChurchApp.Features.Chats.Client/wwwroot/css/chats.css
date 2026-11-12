@@ -128,3 +128,5 @@
 @media (max-width: 900px) {
   .chat-review-bench .workbench__aside { grid-template-columns: minmax(0, 1fr); }
 }
+.chat-quote .chat-quote__note { display: block; color: var(--ink-2); font-style: italic; }
+.bubble-row--mine .chat-quote .chat-quote__note { color: color-mix(in srgb, var(--on-primary) 80%, transparent); }

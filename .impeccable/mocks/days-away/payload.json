@@ -1,0 +1,46 @@
+{
+  "title": "Days away: its own page",
+  "question": "#68: \"This and submitting them should be a page, not just at the bottom of rosters.\" Days away becomes its own page. The roster tab gets a short row under the roster, \"Your days away\" with when you're next away, and leaders get a second row, \"The team's days away\", that opens the same page for the whole team. Account opens the same page. The month editor stays as it is. How should the page itself be laid out?",
+  "options": [
+    {
+      "id": "next-docked",
+      "kind": "assigned",
+      "kicker": "THE ROLL",
+      "label": "Next away first, Add docked at the foot",
+      "thesis": "The page opens on what's coming: your next days away and repeating ones as rows, then the month. A wide Add days away button stays docked at the foot, always in reach, the way the chat's message box is.",
+      "palette": ["#2a3d5e", "#f4efe7", "#008176", "#e7ae74"],
+      "materials": ["masthead", "hairline rows", "MonthDays", "docked primary button"],
+      "viewport": "Masthead Days away; Next away (Sat 21 to Mon 23 Nov, Sunday evenings); the November month; Add days away docked above the tab bar.",
+      "risk": "The docked button takes a strip of the screen on a small phone.",
+      "html": ".impeccable/mocks/days-away/a-next-docked.html",
+      "htmlFrame": "390x844"
+    },
+    {
+      "id": "month-or-list",
+      "kind": "dealt",
+      "label": "Month or list",
+      "thesis": "A Month | List switch at the top. Month is the calendar you tap to mark a day; List is every day away and repeating rule as rows. Add days away ends both.",
+      "palette": ["#2a3d5e", "#f4efe7", "#008176", "#e7ae74"],
+      "materials": ["Segmented", "MonthDays", "hairline rows", "accent add row"],
+      "viewport": "Masthead; Month | List; the November month with its key; Add days away as an accent row under it.",
+      "risk": "On a phone, Add days away sits below the month, often under the fold.",
+      "html": ".impeccable/mocks/days-away/b-month-or-list.html",
+      "htmlFrame": "390x844"
+    },
+    {
+      "id": "sundays-strip",
+      "kind": "dealt",
+      "label": "Your Sundays, then the month",
+      "thesis": "Most rosters are Sundays, so the page opens on the next five Sundays as tiles: tap one to say you're away. Repeating rules and other days follow as rows with Add days away, then the month for anything else.",
+      "palette": ["#2a3d5e", "#f4efe7", "#008176", "#e7ae74"],
+      "materials": ["Sunday tiles", "hairline rows", "accent add row", "MonthDays"],
+      "viewport": "Masthead; Your Sundays (15 evening, 22 away, 29, 6, 13 free); Other days with the rule, the trip and Add days away; the month starting below.",
+      "risk": "Teams that serve midweek get less from the Sunday strip; it's a new tile pattern to add to the shared library.",
+      "html": ".impeccable/mocks/days-away/c-sundays-strip.html",
+      "htmlFrame": "390x844"
+    }
+  ],
+  "reroll": true,
+  "steer": true,
+  "buildPath": { "value": "code" }
+}

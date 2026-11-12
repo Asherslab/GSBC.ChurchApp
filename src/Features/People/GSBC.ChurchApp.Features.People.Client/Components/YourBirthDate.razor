@@ -1,0 +1,26 @@
+@inject PeopleClient People
+
+<LiveData @ref="_live" TValue="PersonFamily" Feeds="[PeopleFeeds.Me]" Load="People.GetMineAsync">
+    <ChildContent>
+        @if (context.Value.BirthDate is { } born)
+        {
+            <div class="ui-after">
+                <ListGroup>
+                    <ListRow Title="@($"Born {born:d MMMM yyyy}")" Subtitle="@PeopleWords.WhoSees" Icon="calendar" IconTone="RowTone.Quiet" />
+                </ListGroup>
+            </div>
+        }
+        else if (!context.Value.SaysAdult)
+        {
+            <BirthDateAsk OnSaved="ReloadAsync" />
+        }
+    </ChildContent>
+    <Loading />
+    <Failed />
+</LiveData>
+
+@code {
+    private LiveData<PersonFamily>? _live;
+
+    private Task ReloadAsync() => _live?.ReloadAsync() ?? Task.CompletedTask;
+}

@@ -70,9 +70,6 @@ window.gsbcShell = (() => {
   const keepFieldInView = () => {
     const field = document.activeElement;
     if (!(field instanceof HTMLElement) || !field.matches(typing)) return;
-    const scroller = field.closest('.sheet, .page-scroll');
-    const foot = scroller?.querySelector('.editor-foot');
-    scroller?.style.setProperty('--foot', `${foot && !foot.contains(field) ? foot.offsetHeight : 0}px`);
     field.scrollIntoView({ block: 'nearest' });
   };
 
@@ -195,6 +192,16 @@ window.gsbcShell = (() => {
 
     reveal(id) {
       document.getElementById(id)?.scrollIntoView({ block: 'nearest' });
+    },
+
+    pointOut(id) {
+      const element = document.getElementById(id);
+      if (!element) return;
+      element.scrollIntoView({ block: 'center', behavior: reducedMotion.matches ? 'auto' : 'smooth' });
+      element.classList.remove('is-pointed-out');
+      void element.offsetWidth;
+      element.classList.add('is-pointed-out');
+      element.addEventListener('animationend', () => element.classList.remove('is-pointed-out'), { once: true });
     },
 
     revealTab(strip) {

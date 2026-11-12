@@ -2,11 +2,9 @@
 
 @if (_drawing is null)
 {
-    <label class="icon-upload">
-        <Icon Name="plus" Size="IconSize.Small" />
-        <span>Upload your own icon (SVG)</span>
+    <DropBox Prompt="Upload your own icon" Hint="Drop an SVG here, or click to choose one">
         <input @ref="_input" type="file" accept=".svg,image/svg+xml" class="visually-hidden" @onchange="ReadAsync" />
-    </label>
+    </DropBox>
     @if (_problem is not null)
     {
         <Notice Tone="NoticeTone.Warning" Text="@_problem" />

@@ -3,21 +3,16 @@
 @inject Shell Shell
 @inject IServiceProvider Services
 @inject NavigationManager Navigation
-@using GSBC.ChurchApp.Platform.Icons
 
 <Page Title="@_title" BackHref="@BackHref" BackLabel="@BackLabel" TopBar="TopBarStyle.Solid">
     <Actions>
         @if (_card is not null)
         {
             <Button Variant="ButtonVariant.Quiet" Icon="@AppIcons.Settings" AriaLabel="Chat settings" Tooltip="Chat settings" OnClick="() => _people = true" />
-            @if (_card.YouMayManage)
-            {
-                <Menu Label="@($"More for {_title}")" Items="ChatActions" />
-            }
         }
     </Actions>
     <ChildContent>
-<LiveData TValue="OpenedChat" Load="LoadAsync" Feeds="ChatsStore.Feeds" ReloadOn="ChangeKind.Reconnected | ChangeKind.Session | ChangeKind.Access | ChangeKind.Outbox">
+<LiveData @ref="_live" TValue="OpenedChat" Load="LoadAsync" Feeds="ChatsStore.Feeds" ReloadOn="ChangeKind.Reconnected | ChangeKind.Session | ChangeKind.Access | ChangeKind.Outbox">
     @if (context.Value.Chat is not { } chat)
     {
         <EmptyState Icon="message-square" Title="This chat isn't here" Body="It may have been deleted, or you may not be in it any more." />
@@ -76,11 +71,17 @@
                         bool mine = message.SenderId == card.You;
                         <MessageBubble Mine="mine" FirstOfRun="first" Name="@NameOf(message, mine)" NameNote="@RoleNote(card, message)"
                                        Time="@TimeOf(message)" Dimmed="@(line.State != LineState.Sent || _editing?.Id == message.Id)" Removed="message.Deleted"
-                                       Id="@($"m-{message.Id}")" OnLongPress="() => OpenActions(line)">
+                                       Id="@($"m-{message.Id}")" OnLongPress="() => OpenActions(line)"
+                                       OnQuote="@(message.ReplyTo is { } replied ? EventCallback.Factory.Create(this, () => GoToAsync(chat, replied)) : default)">
                             <Quote>
                                 @if (message is { ReplyTo: { } quote, Deleted: false })
                                 {
-                                    <span class="chat-quote"><strong>@quote.SenderName</strong><span>@quote.Snippet</span></span>
+                                    <span class="chat-quote"><strong>@quote.SenderName</strong><span>@QuoteText(chat, quote)</span>
+                                        @if (_notHere.Contains(quote.MessageId))
+                                        {
+                                            <span class="chat-quote__note">It isn't on your phone, so it can't be shown.</span>
+                                        }
+                                    </span>
                                 }
                             </Quote>
                             <Reactions>
@@ -130,7 +131,7 @@
             <ChatComposer Chat="chat" Editing="_editing" ReplyingTo="_replyingTo" OnDone="Done" />
         </div>
         <MessageActions Card="card" Line="_acting" OnClose="() => _acting = null" OnReply="Reply" OnEdit="Edit" />
-        <ChatPeopleSheet Card="card" Open="_people" OpenChanged="open => _people = open" />
+        <ChatPeopleSheet Card="card" Open="_people" OpenChanged="open => _people = open" OnDelete="AskToDelete" />
         <Sheet Open="_deleting" OpenChanged="open => _deleting = open" Title="@($"Delete {ChatText.Title(card)}?")"
                Lead="Everyone in it loses the chat. The church keeps its messages and the log, so staff can still check it.">
             <Actions>
@@ -166,6 +167,11 @@
     private bool _people;
     private bool _deleting;
 
+    private LiveData<OpenedChat>? _live;
+    private int _most = ChatsStore.MostMessages;
+    private readonly HashSet<string> _notHere = [];
+    private string? _pointOut;
+    private Conversation? _shown;
     private ChatCard? _card;
     private ChatLine? _acting;
     private ChatMessage? _editing;
@@ -174,7 +180,7 @@
 
     private async Task<OpenedChat> LoadAsync()
     {
-        Conversation? chat = await Store.ChatAsync(ChatId);
+        Conversation? chat = _shown = await Store.ChatAsync(ChatId, _most);
         if (chat is { Paused: false, Card.YourRole.Length: > 0 })
             await Store.MarkReadAsync(chat.Card, chat.Card.LastSeq);
         if (chat is not null && (ChatText.Title(chat.Card) != _title || _card is null))
@@ -185,6 +191,35 @@
         }
         return new OpenedChat(chat);
     }
+
+    private async Task GoToAsync(Conversation chat, Quote quote)
+    {
+        while (!Holds(chat, quote) && chat.Lines.Count(line => line.State == LineState.Sent) >= _most && _live is not null)
+        {
+            _most += ChatsStore.MostMessages;
+            await _live.ReloadAsync();
+            if (_shown is not { } more)
+                return;
+            chat = more;
+        }
+        if (Holds(chat, quote))
+            _pointOut = $"m-{quote.MessageId}";
+        else
+            _notHere.Add(quote.MessageId);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_pointOut is not { } id)
+            return;
+        _pointOut = null;
+        await Shell.PointOutAsync(id);
+    }
+
+    private static bool Holds(Conversation chat, Quote quote) => chat.Lines.Any(line => line.Message.Id == quote.MessageId);
+
+    private static string QuoteText(Conversation chat, Quote quote) =>
+        chat.Lines.FirstOrDefault(line => line.Message.Id == quote.MessageId)?.Message.Deleted == true ? ChatCopy.DeletedMessage : quote.Snippet;
 
     private async Task OpenActions(ChatLine line)
     {
@@ -222,10 +257,11 @@
 
     private void ShowSeen(ChatMessage message) => _seen = message;
 
-    private IReadOnlyList<MenuItem> ChatActions =>
-    [
-        this.Item("Delete the chat…", () => _deleting = true, "trash-2", "For everyone in it. The church keeps its messages.", danger: true),
-    ];
+    private void AskToDelete()
+    {
+        _people = false;
+        _deleting = true;
+    }
 
     private async Task DeleteAsync(ChatCard card)
     {

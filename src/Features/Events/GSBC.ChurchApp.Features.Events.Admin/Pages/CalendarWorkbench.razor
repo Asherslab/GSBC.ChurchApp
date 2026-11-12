@@ -245,7 +245,7 @@
                     }
                 </ItemTemplate>
             </ReorderList>
-            @if (desk.CanManage && desk.Calendars.Count > 1)
+            @if (desk is { CanManage: true, Calendars.Count: > 1 })
             {
                 <p class="calendar-aside__tip">Drag a calendar by its handle to change the order everyone sees. With the keyboard: Alt ↑ or Alt ↓ on its handle.</p>
             }
@@ -707,8 +707,8 @@
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
             _problem = CalendarEditing.Problem(exception);
+            await ReloadAsync();
         }
-        await ReloadAsync();
     }
 
     private async Task ToggleAsync(string calendarId, bool on)

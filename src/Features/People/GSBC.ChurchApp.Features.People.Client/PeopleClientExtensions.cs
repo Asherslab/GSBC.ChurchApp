@@ -12,7 +12,14 @@ public static class PeopleClientExtensions
     public static IServiceCollection AddPeopleClient(this IServiceCollection services) =>
         services.AddSingleton<PeopleClient>()
             .AddSingleton(new AccountSection("people", AfterYou, Family))
+            .AddSingleton(new AccountYouPart("born", 0, BirthDate))
             .AddSingleton<ISignUpQuestion, SignUpAge>();
+
+    private static readonly RenderFragment BirthDate = builder =>
+    {
+        builder.OpenComponent<YourBirthDate>(0);
+        builder.CloseComponent();
+    };
 
     private static readonly RenderFragment Family = builder =>
     {
