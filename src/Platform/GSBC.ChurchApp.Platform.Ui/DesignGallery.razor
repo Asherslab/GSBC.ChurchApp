@@ -33,7 +33,7 @@
             @<div class="gallery__frame gallery__frame--tall">
                 <Workbench Detail="@(_chosen is null ? null : Record)" DetailLabel="The chosen person">
                     <Aside>
-                        <FilterChips TValue="string" Label="Show" Options="PeopleFilters" @bind-Value="_filter" />
+                        <FilterChips TValue="string" Label="Show" Rail="true" Options="PeopleFilters" @bind-Value="_filter" />
                     </Aside>
                     <ChildContent>
                         <SearchField Label="Find someone" Placeholder="Find someone by name" @bind-Value="_query" />

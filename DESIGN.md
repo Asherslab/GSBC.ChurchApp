@@ -864,7 +864,7 @@ component is shown, live, in the gallery (`/gallery` on both).
 | Adding | the record pane | New opens a blank record, already chosen, in the record pane beside the list; Cancel takes it away. On the phone it is a page with the same fields. |
 | A group of settings | `Section Grouped` (+ `Foot`) | A card on the admin panel (title and lead inside, a sand foot for its save bar or "These change straight away"); an inset group on the phone. A form that saves with a button and switches that change at once never share a group. |
 | Switching views | `TabStrip`, `Segmented`, `FilterChips` | Tabs (the underline) for different things; Segmented for the same list two ways; chips only to narrow down. Chips never switch views, and Segmented never picks a value that tabs should show. |
-| Tools for a list | the `Workbench` rail (admin); main button + `Menu` (phone) | Search and filters live in the rail. On the phone the main action is one wide button and the rest go in its ⋯ `Menu`, so nothing wraps alone. |
+| Tools for a list | the `Workbench` rail with `FilterChips Rail` (admin); main button + `Menu` (phone) | Search and filter groups live in the rail (`FilterChips Rail`, one per group, with counts). On the phone the main action is one wide button and the rest go in its ⋯ `Menu`, so nothing wraps alone. |
 | More actions | `Menu` | One ⋯ button; items say what they do, with a line under when it helps; Delete last and red. |
 | One role of several | `RoleMenu` | A button showing the role; its menu says what each role allows, with Remove in red last. Applies at once. Several roles at once stay a tick list (`RoleTick`). |
 | Steps something moves through | `StagePipeline` | Done steps ticked, the current one solid, the next waiting; press a step to move there. |
