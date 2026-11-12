@@ -1,5 +1,4 @@
 @inject ChatsStore Store
-@inject NavigationManager Navigation
 
 <Sheet Open="Open" OpenChanged="OpenChanged" Title="@ChatText.Title(Card)" Lead="@ChatText.Who(Card)">
     <ChildContent>
@@ -19,26 +18,9 @@
         }
         <p class="hint">@ChatCopy.StaffCanCheck</p>
     </ChildContent>
-    <Actions>
-        @if (Card.YouMayManage)
-        {
-            @if (_deleting)
-            {
-                <p class="hint">Everyone loses the chat. The church keeps its messages and the log.</p>
-                <Button Block="true" Variant="ButtonVariant.Danger" OnClick="DeleteAsync">Delete the chat</Button>
-                <Button Block="true" Variant="ButtonVariant.Quiet" OnClick="() => _deleting = false">Keep it</Button>
-            }
-            else
-            {
-                <Button Block="true" Variant="ButtonVariant.Quiet" Icon="trash" OnClick="() => _deleting = true">Delete the chat</Button>
-            }
-        }
-    </Actions>
 </Sheet>
 
 @code {
-    private bool _deleting;
-
     [Parameter, EditorRequired] public required ChatCard Card { get; set; }
     [Parameter] public bool Open { get; set; }
     [Parameter] public EventCallback<bool> OpenChanged { get; set; }
@@ -64,13 +46,5 @@
         if (Card.YouMayManage && person.BlueCard)
             words.Add("Current blue card");
         return string.Join(" · ", words);
-    }
-
-    private async Task DeleteAsync()
-    {
-        await Store.DeleteChatAsync(Card);
-        _deleting = false;
-        await OpenChanged.InvokeAsync(false);
-        Navigation.NavigateTo(ChatsDestinations.Chats.Path);
     }
 }

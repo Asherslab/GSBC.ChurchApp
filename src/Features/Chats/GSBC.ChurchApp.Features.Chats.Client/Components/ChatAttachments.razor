@@ -8,16 +8,19 @@
     <span class="chat-files">
         @foreach (Attachment attachment in Attachments)
         {
-            if (attachment.Media is { } media && attachment.ContentType.StartsWith("image/", StringComparison.Ordinal))
+            if (Viewable(attachment) is { } media)
             {
-                <MediaImage Media="media" Alt="@(attachment.Name.Length > 0 ? attachment.Name : "Photo")" Class="chat-photo" />
+                int at = Pictures.IndexOf(media);
+                <PictureOpen Label="@($"Open {Noun(media).ToLowerInvariant()} {at + 1} bigger")" OnOpen="() => View(at)" Class="chat-photo-open">
+                    <MediaPreview Media="media" Controls="false" Alt="@(attachment.Name.Length > 0 ? attachment.Name : "Photo")" Class="chat-photo" />
+                </PictureOpen>
             }
             else
             {
-                <button type="button" class="chat-file" disabled="@(attachment.MediaId.Length == 0)" @onclick="() => OpenAsync(attachment)">
+                <Button Variant="ButtonVariant.Quiet" Class="chat-file" Disabled="@(attachment.MediaId.Length == 0)" OnClick="() => OpenAsync(attachment)">
                     <span class="chat-file__tile"><Icon Name="file" /></span>
                     <span><strong>@attachment.Name</strong><span class="chat-file__about">@About(attachment)</span></span>
-                </button>
+                </Button>
             }
         }
         @if (_problem is not null)
@@ -25,14 +28,30 @@
             <span class="chat-file__problem">@_problem</span>
         }
     </span>
+    @if (Pictures.Count > 0)
+    {
+        <PictureViewer @bind-Open="_viewing" @bind-Index="_viewingAt" Pictures="Pictures" Noun="@Noun(Pictures[Math.Clamp(_viewingAt, 0, Pictures.Count - 1)])" About="@From" />
+    }
 }
 
 @code {
     private string? _problem;
+    private bool _viewing;
+    private int _viewingAt;
 
     [Parameter, EditorRequired] public required IReadOnlyList<Attachment> Attachments { get; set; }
+    [Parameter] public string? From { get; set; }
+
+    private List<MediaRef> Pictures => Attachments.Select(Viewable).OfType<MediaRef>().ToList();
 
     private IPrivateMediaLinks? Links => Services.GetService(typeof(IPrivateMediaLinks)) as IPrivateMediaLinks;
+
+    private static MediaRef? Viewable(Attachment attachment) =>
+        attachment.Media is { } media && (media.IsImage || media.IsVideo) ? media : null;
+
+    private static string Noun(MediaRef media) => media.IsVideo ? "Video" : "Photo";
+
+    private void View(int at) => (_viewingAt, _viewing) = (at, true);
 
     private static string About(Attachment attachment)
     {

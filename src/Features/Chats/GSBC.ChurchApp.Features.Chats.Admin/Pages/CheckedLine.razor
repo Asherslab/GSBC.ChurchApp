@@ -1,0 +1,80 @@
+@{ ChatMessage message = Found.Message; }
+@if (message.Kind == MessageKinds.Event)
+{
+    <p class="chat-checked__event" id="m-@message.Id"><Icon Name="check" Size="IconSize.Small" />@message.Text</p>
+}
+else
+{
+    <article class="chat-checked__message @(Match ? "chat-checked__message--match" : Faded ? "chat-checked__message--around" : "") @(Reported ? "chat-checked__message--reported" : "")" id="m-@message.Id">
+        <header class="chat-checked__head">
+            <strong>@message.SenderName@(message.ForName.Length > 0 ? $", for {message.ForName}" : "")</strong>
+            <DateLine At="message.SentAt" Style="DateLineStyle.Short" WithTime="true" />
+            @if (Reported)
+            {
+                <Pill Tone="PillTone.Danger">Reported</Pill>
+            }
+            @if (message.Deleted)
+            {
+                <Pill Tone="PillTone.Danger">Deleted</Pill>
+            }
+            else if (message.EditedAt is not null)
+            {
+                <Pill Tone="PillTone.Quiet">Edited</Pill>
+            }
+            @if (Actions.Count > 0)
+            {
+                <Menu Label="@($"More for {message.SenderName}'s message")" Items="Actions" Small="true" Class="chat-checked__menu" />
+            }
+        </header>
+        @if (message.ReplyTo is { } quote)
+        {
+            <p class="chat-checked__quote">Replying to @quote.SenderName: @quote.Snippet</p>
+        }
+        @if (Said.Length > 0)
+        {
+            <p class="chat-checked__text">@foreach ((string text, bool found) in ChatReview.Marks(Said, Words))
+                {
+                    if (found)
+                    {
+                        <mark>@text</mark>
+                    }
+                    else
+                    {
+                        @text
+                    }
+                }</p>
+        }
+        <ChatAttachments Attachments="message.Attachments" From="@message.SenderName" />
+        @if (Found.Versions.Count > 1)
+        {
+            <details class="chat-checked__versions">
+                <summary>Every version (@Found.Versions.Count)</summary>
+                <ol>
+                    @foreach (MessageVersion version in Found.Versions)
+                    {
+                        <li><span class="quiet">@VersionWords(version)</span> @version.Text</li>
+                    }
+                </ol>
+            </details>
+        }
+        <BubbleReactions Reactions="@message.Reactions.Select(reaction => new BubbleReaction(reaction.Emoji, reaction.People.Count, false)).ToList()" Disabled="true" />
+    </article>
+}
+
+@code {
+    [Parameter, EditorRequired] public required CheckedMessage Found { get; set; }
+    [Parameter] public bool Match { get; set; }
+    [Parameter] public bool Faded { get; set; }
+    [Parameter] public bool Reported { get; set; }
+    [Parameter] public string Words { get; set; } = "";
+    [Parameter] public IReadOnlyList<MenuItem> Actions { get; set; } = [];
+
+    private string Said => Found.Message.Deleted ? Found.DeletedText : Found.Message.Text;
+
+    private static string VersionWords(MessageVersion version) => version.Action switch
+    {
+        "sent" => $"Sent by {version.ByName}, {ChurchDates.Time(ChurchTime.ToChurch(version.At))}:",
+        "edited" => $"Edited, {ChurchDates.Time(ChurchTime.ToChurch(version.At))}:",
+        _ => $"Deleted by {version.ByName}, {ChurchDates.Time(ChurchTime.ToChurch(version.At))}. It said:",
+    };
+}

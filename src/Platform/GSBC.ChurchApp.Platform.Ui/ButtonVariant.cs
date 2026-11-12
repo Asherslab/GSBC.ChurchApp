@@ -9,4 +9,5 @@ public enum ButtonVariant
     Live,
     Danger,
     Tinted,
+    Link,
 }
