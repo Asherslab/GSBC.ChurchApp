@@ -9,7 +9,7 @@ public static partial class TypedDates
     public const string TimeFormat = "HH:mm";
 
     private static readonly CultureInfo English = CultureInfo.InvariantCulture;
-    private static readonly CultureInfo Australian = CultureInfo.GetCultureInfo("en-AU");
+    private static readonly string[] DayFirst = ["d/M/yyyy", "d-M-yyyy", "d.M.yyyy", "d MMMM yyyy", "d MMM yyyy", "dddd d MMMM yyyy", "ddd d MMM yyyy", "dddd, d MMMM yyyy"];
 
     private static readonly string[] Months = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
     private static readonly string[] Weekdays = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
@@ -72,7 +72,7 @@ public static partial class TypedDates
         if (MonthThenDay().Match(typed) is { Success: true } american && MonthIndex(american.Groups["month"].Value) is { } monthFirst)
             return Make(american.Groups["year"].Value, monthFirst, american.Groups["day"].Value, today, out day);
 
-        return DateOnly.TryParse(typed, Australian, DateTimeStyles.None, out day);
+        return DateOnly.TryParseExact(typed, DayFirst, English, DateTimeStyles.AllowWhiteSpaces, out day);
     }
 
     public static bool TryParseTime(string? text, out TimeOnly time)

@@ -27,8 +27,7 @@
     </div>
     <div class="editor-foot editor-foot--panel">
         <div class="editor-foot__actions">
-            <SaveBar Block="true" New="@(Break is null)" Label="@(Break is null ? "Add the break" : "Save")" Busy="_saving" OnSave="SaveAsync" Blocked="@Blocked" State="SaveBar.For(Changed, _saved)" />
-            <Button Variant="ButtonVariant.Quiet" OnClick="Closed">Close</Button>
+            <SaveBar New="@(Break is null)" OnCancel="Closed" Label="@(Break is null ? "Add the break" : "Save")" Busy="_saving" OnSave="SaveAsync" Blocked="@Blocked" State="SaveBar.For(Changed, _saved)" />
         </div>
         @if (Break is not null)
         {

@@ -29,7 +29,7 @@
                     <Button Variant="ButtonVariant.GhostOnMasthead" Icon="calendar">Remind me</Button>
                 </div>
             </Masthead>)
-        @Item("List and record: Workbench", "Filters in the rail only when the page needs them; the record sits beside the list, with its ⋯ menu and Cancel and Save at its foot.",
+        @Item("List and record: Workbench", "Filters in the rail only when the page needs them; the record sits beside the list, with its More menu and Cancel and Save at its foot.",
             @<div class="gallery__frame gallery__frame--tall">
                 <Workbench Detail="@(_chosen is null ? null : Record)" DetailLabel="The chosen person">
                     <Aside>
@@ -44,7 +44,7 @@
                     </ChildContent>
                 </Workbench>
             </div>)
-        @Item("The heading of a record: PaneHead", "Title, one line under it, and the record's own actions in ⋯ (Delete is always there, last and red).",
+        @Item("The heading of a record: PaneHead", "Title, one line under it, and the record's own actions in its More menu (Delete is always there, last and red).",
             @<PaneHead Title="Jordan Example" Lead="jordan@example.com · joined Sun 1 Nov" Actions="RecordActions" OnClose="() => { }" OnOpen="() => { }" />)
         @Item("Settings in groups: Section, Grouped", "A card on the admin panel, an inset group on the phone. A Foot says what the group does or holds its Save.",
             @<Section Title="The details" Lead="What people see on the ministry's page." Grouped="true">
@@ -105,7 +105,7 @@
             </div>)
         @Item("Asking before a delete: Sheet", "Says what goes with it. The red action is listed first and Keep it last, so the phone stacks red on top and the admin panel puts Keep it at the left.",
             @<Button Variant="ButtonVariant.Danger" Icon="trash-2" OnClick="() => _deleting = true">Delete Easter 2027…</Button>)
-        @Item("More actions for a thing: Menu", "The ⋯ button. Delete is last, after a rule, in red.",
+        @Item("More actions for a thing: Menu", "The More button (three dots). Delete is last, after a rule, in red.",
             @<div class="gallery__row">
                 <Menu Label="More for Jordan Example" Items="RecordActions" AlignStart="true" />
                 <Menu Label="New" Text="New" Icon="plus" Variant="ButtonVariant.Primary" Items="NewItems" AlignStart="true" Chevron="true" />
