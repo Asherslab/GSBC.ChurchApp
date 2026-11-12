@@ -108,11 +108,11 @@ else
             {
                 @if (Store.UploadsDirectly)
                 {
-                    <FilePick Label="Add a photo or file" ImagesOnly="false" Class="composer__attach" Multiple="true" Limit="@Room" TakesPaste="true" DropOn="@DropOn" OnChosen="ChoseAsync" />
+                    <FilePick Label="Add a photo or file" ImagesOnly="false" Icon="@AppIcons.Attach" Class="composer__attach" Multiple="true" Limit="@Room" TakesPaste="true" DropOn="@DropOn" OnChosen="ChoseAsync" />
                 }
                 else
                 {
-                    <FilePick Label="Add a photo or file" ImagesOnly="false" Class="composer__attach" OnPicked="Picked" />
+                    <FilePick Label="Add a photo or file" ImagesOnly="false" Icon="@AppIcons.Attach" Class="composer__attach" OnPicked="Picked" />
                 }
             }
         </Attach>

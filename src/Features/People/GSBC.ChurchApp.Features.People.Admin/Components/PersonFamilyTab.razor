@@ -31,7 +31,7 @@
                 @if (_changingBirthDate)
                 {
                     <div class="ui-after">
-                        <DateField Label="Birth date" Value="@_born" ValueChanged="value => _born = value" Max="@($"{today:yyyy-MM-dd}")" />
+                        <DateField Label="Birth date" Shortcuts="false" Value="@_born" ValueChanged="value => _born = value" Max="@($"{today:yyyy-MM-dd}")" />
                     </div>
                     <SaveBar Class="ui-after" Label="Save" Busy="_busy" OnSave="() => SaveBirthDateAsync(PeopleWords.ParseDay(_born))" OnCancel="() => _changingBirthDate = false"
                              Blocked="@(PeopleWords.ParseDay(_born) is null ? "Give a birth date to save it." : null)">
@@ -120,7 +120,7 @@
                                           Leave="Leave(family)" Busy="@_busyFor" OnChosen="person => LinkAsync(family.Id, person.Id)" />
                             <div class="people-inline">
                                 <TextField Label="Or add a child who isn't in the app" Placeholder="Their name" Value="@_childName" ValueChanged="value => _childName = value" />
-                                <DateField Label="Birth date" Value="@_childBorn" ValueChanged="value => _childBorn = value" Max="@($"{today:yyyy-MM-dd}")" />
+                                <DateField Label="Birth date" Shortcuts="false" Value="@_childBorn" ValueChanged="value => _childBorn = value" Max="@($"{today:yyyy-MM-dd}")" />
                                 <Button Variant="ButtonVariant.Quiet" Busy="_busy" Disabled="@(_childName.Trim().Length == 0 || PeopleWords.ParseDay(_childBorn) is null)" OnClick="() => AddChildAsync(family.Id)">Add</Button>
                             </div>
                             <div class="ui-actions ui-after">

@@ -36,4 +36,5 @@ public static class AppIcons
     public const string WhatsNew = "gift";
     public const string HelpImproveTheApp = "lightbulb";
     public const string Settings = "settings";
+    public const string Attach = "paperclip";
 }

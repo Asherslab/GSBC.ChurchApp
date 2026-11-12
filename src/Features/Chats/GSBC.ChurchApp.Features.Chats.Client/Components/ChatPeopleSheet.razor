@@ -1,9 +1,18 @@
 <Sheet Open="Open" OpenChanged="OpenChanged" Title="@ChatText.Title(Card)" Lead="@ChatText.Who(Card)">
-    <ChatPeople Card="Card" />
+    <ChildContent>
+        <ChatPeople Card="Card" />
+    </ChildContent>
+    <Actions>
+        @if (Card.YouMayManage)
+        {
+            <Button Block="true" Variant="ButtonVariant.Danger" Icon="trash-2" OnClick="OnDelete">Delete the chat…</Button>
+        }
+    </Actions>
 </Sheet>
 
 @code {
     [Parameter, EditorRequired] public required ChatCard Card { get; set; }
     [Parameter] public bool Open { get; set; }
     [Parameter] public EventCallback<bool> OpenChanged { get; set; }
+    [Parameter] public EventCallback OnDelete { get; set; }
 }

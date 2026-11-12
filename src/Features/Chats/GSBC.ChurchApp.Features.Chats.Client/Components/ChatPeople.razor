@@ -1,5 +1,9 @@
 @inject IChats Store
 
+@if (OnDelete.HasDelegate)
+{
+    <PaneHead Title="Chat settings" Lead="@ChatText.Who(Card)" Actions="@(Card.YouMayManage ? ChatActions : null)" />
+}
 <Section Title="Notifications" Grouped="true" First="true">
     <ToggleRow Title="Mute" Description="No notifications from this chat, unless someone mentions you. It still shows in your chats." Checked="Card.Muted"
                CheckedChanged="muted => Store.MuteAsync(Card, muted)" />
@@ -22,6 +26,12 @@
 
 @code {
     [Parameter, EditorRequired] public required ChatCard Card { get; set; }
+    [Parameter] public EventCallback OnDelete { get; set; }
+
+    private IReadOnlyList<MenuItem> ChatActions =>
+    [
+        this.Item("Delete the chat…", () => OnDelete.InvokeAsync(), "trash-2", "For everyone in it. The church keeps its messages.", danger: true),
+    ];
 
     private static int Order(ChatPerson person) => person.Role switch
     {

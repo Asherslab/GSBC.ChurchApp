@@ -114,22 +114,22 @@
 .calendar-aside__title { margin: 0 4px; font-size: var(--text-title-lg); font-weight: 700; letter-spacing: -0.02em; }
 .calendar-aside__group { display: grid; gap: 2px; }
 .calendar-aside__group--foot { margin-top: 6px; padding-top: 12px; border-top: 1px solid var(--line); }
-.calendar-aside__item { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 40px; padding: 0 12px; border: 0; border-radius: var(--radius-tile); background: none; color: var(--ink); font: inherit; font-size: var(--text-label); font-weight: 600; text-align: left; cursor: pointer; transition: background 140ms var(--ease-out); }
+.calendar-aside__item { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 40px; padding: 0 var(--space-md) 0 var(--space-xl); border: 0; border-radius: var(--radius-tile); background: none; color: var(--ink); font: inherit; font-size: var(--text-label); font-weight: 600; text-align: left; cursor: pointer; transition: background 140ms var(--ease-out); }
 .calendar-aside__item:hover { background: color-mix(in srgb, var(--segment-on) 60%, transparent); }
 .calendar-aside__item[aria-current="true"] { background: var(--segment-on); }
 .calendar-aside__quiet-count { color: var(--ink-3); font-size: var(--text-caption); font-weight: 600; font-variant-numeric: tabular-nums; }
 .calendar-aside__calendars { display: grid; gap: 2px; margin: 0; padding: 10px 0 0; border-top: 1px solid var(--line); list-style: none; }
 .calendar-aside__calendars .reorder__body { display: flex; align-items: center; gap: var(--space-xs); align-self: stretch; }
-.calendar-aside__calendars .reorder__grip { position: absolute; left: calc(-1 * var(--space-md)); width: var(--space-md); outline-offset: -2px; }
+.calendar-aside__calendars .reorder__grip { position: absolute; left: var(--space-3xs); width: var(--space-lg); overflow: hidden; outline-offset: -2px; }
 .calendar-aside__calendar { display: flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 4px 0 0; border-radius: var(--radius-tile); transition: background 140ms var(--ease-out); }
 .calendar-aside__calendar:has(.calendar-aside__name--pick:hover) { background: color-mix(in srgb, var(--segment-on) 60%, transparent); }
 .calendar-aside__calendar.is-chosen { background: var(--segment-on); }
-.calendar-aside__name { display: flex; flex: 1; align-self: stretch; align-items: center; min-width: 0; padding-left: 12px; font-size: var(--text-label); font-weight: 600; }
+.calendar-aside__name { display: flex; flex: 1; align-self: stretch; align-items: center; min-width: 0; padding-left: var(--space-xl); font-size: var(--text-label); font-weight: 600; }
 .calendar-aside__name > span { display: grid; min-width: 0; }
 .calendar-aside__name--pick { border: 0; border-radius: var(--radius-tile); background: none; color: var(--ink); font: inherit; font-size: var(--text-label); font-weight: 600; text-align: left; cursor: pointer; }
 .calendar-aside__name small { color: var(--ink-3); font-size: var(--text-pill); font-weight: 600; }
-.calendar-aside__tip { margin: 0 var(--space-md); color: var(--ink-3); font-size: var(--text-caption); line-height: 1.4; }
-.calendar-aside__add { display: flex; align-items: center; gap: 6px; min-height: 40px; padding: 0 12px; border: 0; background: none; color: var(--accent); font: inherit; font-size: var(--text-label); font-weight: 600; cursor: pointer; }
+.calendar-aside__tip { margin: 0 var(--space-md) 0 var(--space-xl); color: var(--ink-3); font-size: var(--text-caption); line-height: 1.4; }
+.calendar-aside__add { display: flex; align-items: center; gap: 6px; min-height: 40px; padding: 0 var(--space-md) 0 var(--space-xl); border: 0; background: none; color: var(--accent); font: inherit; font-size: var(--text-label); font-weight: 600; cursor: pointer; }
 
 .calendar-main__head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px 20px; margin-bottom: 8px; }
 .calendar-main__title { margin: 0; font-size: var(--text-headline); font-weight: 700; letter-spacing: -0.02em; }

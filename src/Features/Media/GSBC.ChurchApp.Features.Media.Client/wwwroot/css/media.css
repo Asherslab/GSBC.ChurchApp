@@ -7,13 +7,6 @@
 .media-detail__title { overflow-wrap: anywhere; }
 .media-more { display: flex; justify-content: center; padding: 16px 0; }
 .media-upload { display: grid; gap: 14px; }
-.media-upload__drop { display: grid; justify-items: center; gap: 4px; padding: 28px 16px; border: 1.5px dashed color-mix(in srgb, var(--ink-3) 45%, transparent); border-radius: var(--radius); background: var(--fill-on-surface); color: var(--ink-2); text-align: center; cursor: pointer; transition: border-color 160ms var(--ease-out); }
-.media-upload__drop:hover, .media-upload__drop:focus-within { border-color: var(--accent); }
-.media-upload__drop .icon { color: var(--accent); }
-.media-upload__label { color: var(--ink); font-weight: 600; }
-.media-upload__hint { font-size: var(--text-caption); overflow-wrap: anywhere; }
-.media-upload__drop--busy { color: var(--ink-3); cursor: progress; }
-.media-upload__drop--busy .icon { color: var(--ink-3); }
 .media-upload__match { display: grid; gap: 12px; padding: 16px; border-radius: var(--radius); background: var(--fill-on-surface); }
 .media-upload__match:focus { outline: none; }
 .media-upload__match .btn--quiet { background: var(--surface); }

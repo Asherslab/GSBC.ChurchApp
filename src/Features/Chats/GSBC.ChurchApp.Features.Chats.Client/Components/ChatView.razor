@@ -3,23 +3,18 @@
 @inject Shell Shell
 @inject IServiceProvider Services
 @inject NavigationManager Navigation
-@using GSBC.ChurchApp.Platform.Icons
 
 <ChatFrame Title="@_title" Lead="@(InPanel && _card is not null ? ChatText.Who(_card) : null)" BackHref="@BackHref" BackLabel="@BackLabel" InPanel="InPanel">
     <Actions>
         @if (_card is not null)
         {
-            <Button Variant="ButtonVariant.Quiet" Icon="@AppIcons.Settings" AriaLabel="@SettingsLabel" Tooltip="@SettingsLabel" OnClick="OpenSettings" />
-            @if (_card.YouMayManage)
-            {
-                <Menu Label="@($"More for {_title}")" Items="ChatActions" />
-            }
+            <Button Variant="ButtonVariant.Quiet" Icon="@AppIcons.Settings" AriaLabel="Chat settings" Tooltip="Chat settings" OnClick="OpenSettings" />
         }
     </Actions>
     <Beside>
         @if (InPanel && _card is not null)
         {
-            <ChatPeople Card="_card" />
+            <ChatPeople Card="_card" OnDelete="AskToDelete" />
         }
     </Beside>
     <ChildContent>
@@ -138,7 +133,7 @@
         <MessageActions Card="card" Line="_acting" OnClose="() => _acting = null" OnReply="Reply" OnEdit="Edit" />
         @if (!InPanel)
         {
-            <ChatPeopleSheet Card="card" Open="_people" OpenChanged="open => _people = open" />
+            <ChatPeopleSheet Card="card" Open="_people" OpenChanged="open => _people = open" OnDelete="AskToDelete" />
         }
         <Sheet Open="_deleting" OpenChanged="open => _deleting = open" Title="@($"Delete {ChatText.Title(card)}?")"
                Lead="Everyone in it loses the chat. The church keeps its messages and the log, so staff can still check it.">
@@ -170,7 +165,6 @@
     [Parameter] public string BackHref { get; set; } = "chats";
     [Parameter] public string BackLabel { get; set; } = "Chats";
     [Parameter] public bool InPanel { get; set; }
-    [Parameter] public bool SettingsOpen { get; set; }
     [Parameter] public EventCallback OnSettings { get; set; }
 
     private string _title = "Chat";
@@ -234,8 +228,6 @@
 
     private void ShowSeen(ChatMessage message) => _seen = message;
 
-    private string SettingsLabel => InPanel && SettingsOpen ? "Hide the chat's settings" : "Chat settings";
-
     private async Task OpenSettings()
     {
         if (OnSettings.HasDelegate)
@@ -244,10 +236,11 @@
             _people = true;
     }
 
-    private IReadOnlyList<MenuItem> ChatActions =>
-    [
-        this.Item("Delete the chat…", () => _deleting = true, "trash-2", "For everyone in it. The church keeps its messages.", danger: true),
-    ];
+    private void AskToDelete()
+    {
+        _people = false;
+        _deleting = true;
+    }
 
     private async Task DeleteAsync(ChatCard card)
     {

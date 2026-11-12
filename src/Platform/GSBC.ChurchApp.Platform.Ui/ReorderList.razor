@@ -7,9 +7,9 @@
     <div class="reorder__preview" aria-hidden="true">@Preview(Shown)</div>
 }
 <div class="reorder @(Quiet ? "reorder--quiet" : "") @Class" role="list" aria-label="@Label" @ref="_list">
-    @for (int index = 0; index < Items.Count; index++)
+    @for (int index = 0; index < Ordered.Count; index++)
     {
-        TItem item = Items[index];
+        TItem item = Ordered[index];
         int at = index;
         <div class="reorder__row @RowClass?.Invoke(item)" role="listitem" data-reorder-row @key="Key(item)">
             @if (!Quiet)
@@ -44,6 +44,8 @@
     private DotNetObjectReference<ReorderReceiver>? _receiver;
     private (int From, int To)? _previewing;
     private string? _announced;
+    private IReadOnlyList<TItem>? _held;
+    private IReadOnlyList<TItem>? _heldOver;
 
     [Parameter, EditorRequired] public required IReadOnlyList<TItem> Items { get; set; }
     [Parameter, EditorRequired] public required Func<TItem, string> Key { get; set; }
@@ -58,17 +60,19 @@
     [Parameter] public Func<TItem, string?>? RowClass { get; set; }
     [Parameter] public string? Class { get; set; }
 
-    private IReadOnlyList<TItem> Shown => _previewing is { } moving ? Moved(moving.From, moving.To) : Items;
+    private IReadOnlyList<TItem> Ordered => _held is not null && ReferenceEquals(_heldOver, Items) ? _held : Items;
+
+    private IReadOnlyList<TItem> Shown => _previewing is { } moving ? Moved(moving.From, moving.To) : Ordered;
 
     private IReadOnlyList<MenuItem> Moves(int at) =>
     [
         this.Item("Move up", () => MoveAsync(at, at - 1), "chevron-up", disabled: at == 0),
-        this.Item("Move down", () => MoveAsync(at, at + 1), "chevron-down", disabled: at == Items.Count - 1),
+        this.Item("Move down", () => MoveAsync(at, at + 1), "chevron-down", disabled: at == Ordered.Count - 1),
     ];
 
     private IReadOnlyList<TItem> Moved(int from, int to)
     {
-        List<TItem> order = [.. Items];
+        List<TItem> order = [.. Ordered];
         TItem moving = order[from];
         order.RemoveAt(from);
         order.Insert(Math.Clamp(to, 0, order.Count), moving);
@@ -78,10 +82,13 @@
     private async Task MoveAsync(int from, int to)
     {
         _previewing = null;
-        if (from == to || to < 0 || to >= Items.Count)
+        if (from == to || to < 0 || to >= Ordered.Count)
             return;
         IReadOnlyList<TItem> order = Moved(from, to);
-        _announced = $"Moved {Name(Items[from])} to {to + 1} of {Items.Count}.";
+        _announced = $"Moved {Name(Ordered[from])} to {to + 1} of {Ordered.Count}.";
+        _held = order;
+        _heldOver = Items;
+        StateHasChanged();
         await OnReordered.InvokeAsync(order);
     }
 

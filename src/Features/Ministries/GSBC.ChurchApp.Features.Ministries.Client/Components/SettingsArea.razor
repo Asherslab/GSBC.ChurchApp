@@ -6,11 +6,15 @@
 <Section First="true" Title="The details" Lead="What people see about it, how they join, and where it shows." Grouped="true">
     <ChildContent>
         <div class="ministry-form">
-            <TextField Label="Name" @bind-Value="Details.Name" MaxLength="60" Required="true" />
-            <TextField Label="In a line" @bind-Value="Details.Summary" MaxLength="140" />
+            <div class="ui-pair ui-pair--wide">
+                <TextField Label="Name" @bind-Value="Details.Name" MaxLength="60" Required="true" />
+                <TextField Label="In a line" @bind-Value="Details.Summary" MaxLength="140" />
+            </div>
             <TextField Label="About" @bind-Value="Details.About" Multiline="true" MaxLength="4000" Hint="What it is and what happens there, for someone who's never been." />
-            <TextField Label="When and where it meets" @bind-Value="Details.Meets" MaxLength="140" />
-            <TextField Label="Who it's for" @bind-Value="Details.WhoFor" MaxLength="140" />
+            <div class="ui-pair ui-pair--wide">
+                <TextField Label="When and where it meets" @bind-Value="Details.Meets" MaxLength="140" />
+                <TextField Label="Who it's for" @bind-Value="Details.WhoFor" MaxLength="140" />
+            </div>
             <JoiningFields TeamJoin="@Details.TeamJoin" TeamJoinChanged="value => Details.TeamJoin = value"
                            AttendJoin="@Details.AttendJoin" AttendJoinChanged="value => Details.AttendJoin = value" />
             <LifeGroupsFields Shows="Details.ShowsInLifeGroups" ShowsChanged="value => Details.ShowsInLifeGroups = value" RoundId="@Details.RoundId" RoundIdChanged="value => Details.RoundId = value" />
