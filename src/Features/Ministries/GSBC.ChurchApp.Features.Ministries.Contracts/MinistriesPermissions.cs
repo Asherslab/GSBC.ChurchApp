@@ -7,6 +7,7 @@ public static class MinistriesPermissions
     public const string TeamViewNode = "ministries.team.view";
     public const string AttendeesViewNode = "ministries.attendees.view";
     public const string ParentsViewNode = "ministries.parents.view";
+    public const string SeeHiddenNode = "ministries.hidden.view";
     public const string PostNode = "ministries.posts.write";
     public const string PeopleNode = "ministries.people.manage";
     public const string SettingsNode = "ministries.settings.edit";
@@ -30,6 +31,9 @@ public static class MinistriesPermissions
     public static readonly Permission ParentsView =
         new(ParentsViewNode, ScopeKind.Ministry, "See what a ministry shares with its attendees' parents", area: "Ministries");
 
+    public static readonly Permission SeeHidden =
+        new(SeeHiddenNode, ScopeKind.Ministry, "See a hidden ministry, and what it shares with everyone who can see it", area: "Ministries");
+
     public static readonly Permission Post =
         new(PostNode, ScopeKind.Ministry, "Post news and add files and links to a ministry", area: "Ministries");
 
@@ -45,5 +49,5 @@ public static class MinistriesPermissions
     public static readonly Permission PlanLifeGroups =
         new(PlanLifeGroupsNode, ScopeKind.Global, "Plan the Life Groups: their Sundays, their time and when they show in the app", area: "Ministries");
 
-    public static readonly IReadOnlyList<Permission> All = [TeamView, AttendeesView, ParentsView, Post, People, Settings, Create, PlanLifeGroups];
+    public static readonly IReadOnlyList<Permission> All = [TeamView, AttendeesView, ParentsView, SeeHidden, Post, People, Settings, Create, PlanLifeGroups];
 }

@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Security.Claims;
+using System.Text;
 using Grpc.Core;
 using GSBC.ChurchApp.Features.Ministries.Api.Data;
 using GSBC.ChurchApp.Features.Ministries.Client;
@@ -253,6 +254,97 @@ public sealed class MinistryFeedTests : IAsyncLifetime
         Assert.Equal(new[] { _youth.Id, _band.Id }.Order(), (await MinistryPeopleChanges.SinceAsync(sync, before, Cancel)).Ministries.Order());
     }
 
+    [Fact]
+    public async Task AHiddenMinistryAndEverythingInItReachOnlyThePhonesOfItsOwnPeople()
+    {
+        MinistryRecord office = Ministry("Church office", null);
+        office.Hidden = true;
+        MinistryRecord accounts = Ministry("Accounts", office.Id);
+        Guid bookkeeper = _people.Add("Bea");
+        _roles.Give(Roles.Team, bookkeeper, accounts.Id);
+        _grants[bookkeeper] = Grants((accounts.Id, TeamNodes));
+        await AddAsync([office, accounts], Post(office, "Office hours over Christmas", Audiences.Everyone, 3), Post(accounts, "Receipts due Friday", Audiences.Team, 4));
+
+        foreach (Guid outsider in new[] { _visitor, _bandMember, _leader })
+        {
+            Phone phone = await PhoneOfAsync(outsider);
+            Assert.DoesNotContain(phone.Stored.Values.SelectMany(rows => rows.Values), row => Mentions(row, office) || Mentions(row, accounts));
+            Assert.DoesNotContain((await phone.Ministries.DirectoryAsync()).Ministries, ministry => ministry.Id == office.Id.ToString() || ministry.Id == accounts.Id.ToString());
+            await Assert.ThrowsAsync<MinistryNotHereException>(() => phone.Ministries.MinistryAsync(office.Id.ToString()));
+            RpcException refused = await Assert.ThrowsAsync<RpcException>(() => ServerPageAsync(outsider, accounts.Id));
+            Assert.Equal(StatusCode.NotFound, refused.StatusCode);
+            Assert.Equal(Bytes(await ServerDirectoryAsync(outsider)), Bytes(await phone.Ministries.DirectoryAsync()));
+        }
+
+        Phone bea = await PhoneOfAsync(bookkeeper);
+        Assert.All((await bea.Ministries.DirectoryAsync()).Ministries.Where(ministry => ministry.Id == office.Id.ToString() || ministry.Id == accounts.Id.ToString()),
+            ministry => Assert.True(ministry.Hidden));
+        Assert.Equal(["Office hours over Christmas", "Receipts due Friday"], bea.Posts().Select(post => post.Title).Where(title => title != "Welcome, everyone").Distinct().Order());
+        Assert.Equal(Bytes(await ServerDirectoryAsync(bookkeeper)), Bytes(await bea.Ministries.DirectoryAsync()));
+        foreach (MinistryRecord ministry in new[] { office, accounts })
+            Assert.Equal(Bytes(await ServerPageAsync(bookkeeper, ministry.Id)), Bytes(await bea.Ministries.MinistryAsync(ministry.Id.ToString())));
+    }
+
+    [Fact]
+    public async Task NobodyOutsideAHiddenMinistryCanAskToJoinIt()
+    {
+        MinistryRecord office = Ministry("Church office", null);
+        office.Hidden = true;
+        await AddAsync([office]);
+
+        await using AsyncServiceScope scope = _services.CreateAsyncScope();
+        RpcException refused = await Assert.ThrowsAsync<RpcException>(async () => await scope.ServiceProvider.GetRequiredService<MinistriesService>()
+            .JoinAsync(new JoinRequest { MinistryId = office.Id.ToString(), As = Places.Team }, Call(_visitor)));
+        Assert.Equal(StatusCode.NotFound, refused.StatusCode);
+        Assert.Empty(await scope.ServiceProvider.GetRequiredService<MinistriesDbContext>().Asks.ToListAsync(Cancel));
+    }
+
+    [Fact]
+    public async Task HidingAMinistryTakesItsCalendarForEveryoneToItsOwnPeopleAndShowingItGivesItBack()
+    {
+        MinistryRecord prayer = Ministry("Prayer team", null);
+        await AddAsync([prayer]);
+        Scope at = Scope.Of(ScopeKind.Ministry, prayer.Id.ToString());
+        MinistryCalendar dates = new(Guid.CreateVersion7(), prayer.Id, "Prayer nights", "prayer-nights", Audience.Everyone, Hidden: false);
+        MinistryCalendar team = new(Guid.CreateVersion7(), prayer.Id, "Prayer team", "prayer-team", Audience.HoldingAt(MinistriesPermissions.TeamViewNode, at), Hidden: false);
+        _calendars.Owned.AddRange([dates, team]);
+
+        await SaveHiddenAsync(prayer, hidden: true);
+        Assert.Equal(Audience.HoldingAt(MinistriesPermissions.SeeHiddenNode, at), _calendars.Owned.Single(calendar => calendar.Id == dates.Id).Audience);
+        Assert.Equal(team.Audience, _calendars.Owned.Single(calendar => calendar.Id == team.Id).Audience);
+        Assert.DoesNotContain((await PhoneOfAsync(_visitor)).Stored.Values.SelectMany(rows => rows.Values), row => Mentions(row, prayer));
+
+        await SaveHiddenAsync(prayer, hidden: false);
+        Assert.Equal(Audience.Everyone, _calendars.Owned.Single(calendar => calendar.Id == dates.Id).Audience);
+        Assert.Contains((await PhoneOfAsync(_visitor)).Stored[MinistriesFeeds.Directory].Values, row => Mentions(row, prayer));
+    }
+
+    private static readonly IReadOnlyList<string> TeamNodes =
+        [MinistriesPermissions.TeamViewNode, MinistriesPermissions.AttendeesViewNode, MinistriesPermissions.ParentsViewNode, MinistriesPermissions.SeeHiddenNode];
+
+    private static bool Mentions(FeedChangeRecord row, MinistryRecord ministry) =>
+        row.RecordId.Contains(ministry.Id.ToString(), StringComparison.Ordinal) || row.GroupKey == ministry.Id.ToString()
+        || Encoding.UTF8.GetString(row.Payload ?? []).Contains(ministry.Name, StringComparison.Ordinal);
+
+    private async Task AddAsync(IEnumerable<MinistryRecord> ministries, params PostRecord[] posts)
+    {
+        await using AsyncServiceScope scope = _services.CreateAsyncScope();
+        MinistriesDbContext db = scope.ServiceProvider.GetRequiredService<MinistriesDbContext>();
+        db.Ministries.AddRange(ministries);
+        db.Posts.AddRange(posts);
+        await db.SaveChangesAsync(Cancel);
+        await scope.ServiceProvider.GetRequiredService<MinistriesPublisher>().PublishAsync(Cancel);
+    }
+
+    private async Task SaveHiddenAsync(MinistryRecord ministry, bool hidden)
+    {
+        await using AsyncServiceScope scope = _services.CreateAsyncScope();
+        MinistryDetails details = MinistryViews.Details(ministry);
+        details.Hidden = hidden;
+        await scope.ServiceProvider.GetRequiredService<MinistryLeadingService>().SaveMinistryAsync(new MinistrySave { MinistryId = details.Id, Details = details }, Call(_leader));
+        await scope.ServiceProvider.GetRequiredService<MinistriesPublisher>().PublishAsync(Cancel);
+    }
+
     private async Task<Phone> PhoneOfAsync(Guid person)
     {
         ClaimsPrincipal user = User(person);
@@ -475,19 +567,26 @@ public sealed class MinistryFeedTests : IAsyncLifetime
     {
         public List<MinistryCalendar> ForEveryone { get; } = [];
 
+        public List<MinistryCalendar> Owned { get; } = [];
+
         public ValueTask<IReadOnlyList<MinistryCalendar>> ForEveryoneAsync(CancellationToken cancellationToken) => ValueTask.FromResult<IReadOnlyList<MinistryCalendar>>(ForEveryone);
 
-        public ValueTask<IReadOnlyList<MinistryCalendar>> OfAsync(Guid ministryId, CancellationToken cancellationToken) => ValueTask.FromResult<IReadOnlyList<MinistryCalendar>>([]);
+        public ValueTask<IReadOnlyList<MinistryCalendar>> OfAsync(Guid ministryId, CancellationToken cancellationToken) =>
+            ValueTask.FromResult<IReadOnlyList<MinistryCalendar>>(Owned.Where(calendar => calendar.MinistryId == ministryId).ToList());
 
         public ValueTask<IReadOnlyList<MinistryCalendar>> OfAsync(IReadOnlyCollection<Guid> ministryIds, CancellationToken cancellationToken) =>
-            ValueTask.FromResult<IReadOnlyList<MinistryCalendar>>([]);
+            ValueTask.FromResult<IReadOnlyList<MinistryCalendar>>(Owned.Where(calendar => ministryIds.Contains(calendar.MinistryId)).ToList());
 
         public ValueTask ShowAsync(Guid ministryId, bool shown, Audience whileHidden, CancellationToken cancellationToken) => throw new NotSupportedException();
 
         public ValueTask<MinistryCalendar> CreateAsync(Guid ministryId, string name, Audience audience, CancellationToken cancellationToken) => throw new NotSupportedException();
 
-        public ValueTask<MinistryCalendar> ChangeAsync(Guid ministryId, Guid calendarId, string name, Audience audience, CancellationToken cancellationToken) =>
-            throw new NotSupportedException();
+        public ValueTask<MinistryCalendar> ChangeAsync(Guid ministryId, Guid calendarId, string name, Audience audience, CancellationToken cancellationToken)
+        {
+            int at = Owned.FindIndex(calendar => calendar.Id == calendarId && calendar.MinistryId == ministryId);
+            Owned[at] = Owned[at] with { Name = name, Audience = audience };
+            return ValueTask.FromResult(Owned[at]);
+        }
 
         public ValueTask<MinistryCalendarRemoval> WhatGoesAsync(Guid ministryId, Guid calendarId, CancellationToken cancellationToken) => throw new NotSupportedException();
 

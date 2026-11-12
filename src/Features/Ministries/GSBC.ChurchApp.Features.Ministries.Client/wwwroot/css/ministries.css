@@ -203,6 +203,7 @@ button.ministry-item { cursor: pointer; }
 
 .ministry-tree__item:hover { background: color-mix(in srgb, var(--sand) 60%, transparent); }
 .ministry-tree__item--on { background: var(--selected-fill); }
+.ministry-tree__hidden { display: inline-flex; color: var(--ink-3); }
 .ministry-tree__name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 @media (max-width: 900px) {

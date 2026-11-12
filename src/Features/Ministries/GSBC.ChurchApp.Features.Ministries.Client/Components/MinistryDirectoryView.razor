@@ -59,6 +59,8 @@
     private static string Line(MinistrySummary ministry, int hidden)
     {
         List<string> parts = [];
+        if (ministry.Hidden)
+            parts.Add("Hidden");
         if (ministry.ShowsInLifeGroups)
             parts.Add("Life Group");
         if (ministry.Summary.Length > 0)

@@ -8,6 +8,7 @@ using GSBC.ChurchApp.Platform.Common;
 using GSBC.ChurchApp.Platform.Api.Calendars;
 using GSBC.ChurchApp.Platform.Api.Notifications;
 using GSBC.ChurchApp.Platform.Api.People;
+using GSBC.ChurchApp.Platform.Contracts.Configuration;
 using GSBC.ChurchApp.Platform.Permissions;
 using Microsoft.EntityFrameworkCore;
 using ProtoBuf.Grpc;
@@ -288,10 +289,16 @@ internal sealed class MinistryLeadingService(
         MinistryRecord ministry = await db.Ministries.SingleAsync(found => found.Id == id, cancellationToken);
         MinistryDetails wanted = request.Details;
         await CheckAsync(wanted, cancellationToken);
+        if (MinistryRules.WhyNotHide(tree, id, ministry.ParentId, wanted) is { } hiding)
+            throw Refused(hiding);
         Apply(ministry, wanted);
+        foreach (Guid below in tree.Below(id).Select(below => below.Id))
+            changes.Touch(below);
         changes.Touch(ministry.Id);
         await db.SaveChangesAsync(cancellationToken);
-        return MinistryViews.Details(ministry);
+        MinistryTree after = await views.TreeAsync(cancellationToken);
+        await AimCalendarsAsync(tree, after, tree.SeenFrom(id), cancellationToken);
+        return MinistryViews.Details(ministry, after);
     }
 
     public async ValueTask<MinistryDetails> SavePartsAsync(PartsSave request, CallContext context = default)
@@ -415,21 +422,26 @@ internal sealed class MinistryLeadingService(
         CancellationToken cancellationToken = context.CancellationToken;
         MinistryTree tree = await views.TreeAsync(cancellationToken);
         (MinistryRecord ministry, MinistryRecord? under) = await MayMoveAsync(SignedIn(context), tree, request, cancellationToken);
-        return MinistryViews.Details(await mover.MoveAsync(tree, ministry, under, cancellationToken));
+        MinistryRecord moved = await mover.MoveAsync(tree, ministry, under, cancellationToken);
+        MinistryTree after = await views.TreeAsync(cancellationToken);
+        await AimCalendarsAsync(tree, after, tree.SeenFrom(ministry.Id), cancellationToken);
+        return MinistryViews.Details(moved, after);
     }
 
     public async ValueTask<CalendarLine> SaveCalendarAsync(CalendarSave request, CallContext context = default)
     {
         CancellationToken cancellationToken = context.CancellationToken;
-        MinistryRecord ministry = Existing(await views.TreeAsync(cancellationToken), request.MinistryId);
+        MinistryTree tree = await views.TreeAsync(cancellationToken);
+        MinistryRecord ministry = Existing(tree, request.MinistryId);
         TurnedOn(ministry, MinistryParts.Calendar);
         CalendarLine wanted = request.Calendar;
+        Audience audience = MinistryViews.CalendarAudience(wanted.Audience, ministry.Id, tree.IsHidden(ministry.Id));
         if (!MinistryLogic.PostableAudiences(ministry.AttendJoin).Contains(wanted.Audience))
             throw Invalid("Choose who the calendar is for.");
         string name = wanted.Name.Trim().Length > 0 ? wanted.Name : CalendarName(ministry, wanted.Audience);
         MinistryCalendar saved = wanted.Id.Length > 0
-            ? await calendars.ChangeAsync(ministry.Id, ParseId(wanted.Id), name, MinistryViews.CalendarAudience(wanted.Audience, ministry.Id), cancellationToken)
-            : await calendars.CreateAsync(ministry.Id, name, MinistryViews.CalendarAudience(wanted.Audience, ministry.Id), cancellationToken);
+            ? await calendars.ChangeAsync(ministry.Id, ParseId(wanted.Id), name, audience, cancellationToken)
+            : await calendars.CreateAsync(ministry.Id, name, audience, cancellationToken);
         changes.Touch(ministry.Id);
         await db.SaveChangesAsync(cancellationToken);
         return MinistryViews.Calendar(saved);
@@ -603,6 +615,9 @@ internal sealed class MinistryLeadingService(
         if (chosenId is { } already && await db.Ministries.AsNoTracking().SingleOrDefaultAsync(found => found.Id == already, cancellationToken) is { } added)
             return MinistryViews.Details(added);
         await CheckAsync(wanted, cancellationToken);
+        MinistryTree tree = await views.TreeAsync(cancellationToken);
+        if (MinistryRules.WhyNotHide(tree, Guid.Empty, parentId, wanted) is { } hiding)
+            throw Refused(hiding);
         DateTime now = Now;
         MinistryRecord ministry = new()
         {
@@ -637,8 +652,20 @@ internal sealed class MinistryLeadingService(
         ministry.TeamJoin = wanted.TeamJoin;
         ministry.AttendJoin = wanted.AttendJoin;
         ministry.ShowsInLifeGroups = wanted.ShowsInLifeGroups;
+        ministry.Hidden = wanted.Hidden;
         ministry.RoundId = wanted.ShowsInLifeGroups && Guid.TryParse(wanted.RoundId, out Guid round) ? round : null;
         ministry.UpdatedAt = Now;
+    }
+
+    private async Task AimCalendarsAsync(MinistryTree before, MinistryTree after, IEnumerable<Guid> ministries, CancellationToken cancellationToken)
+    {
+        foreach (Guid id in ministries.Where(id => before.IsHidden(id) != after.IsHidden(id)))
+        {
+            bool hidden = after.IsHidden(id);
+            foreach (MinistryCalendar calendar in await calendars.OfAsync(id, cancellationToken))
+                if (calendar.Audience == (hidden ? Audience.Everyone : MinistryViews.SeesHidden(id)))
+                    await calendars.ChangeAsync(id, calendar.Id, calendar.Name, hidden ? MinistryViews.SeesHidden(id) : Audience.Everyone, cancellationToken);
+        }
     }
 
     private static void TurnedOn(MinistryRecord ministry, string part)

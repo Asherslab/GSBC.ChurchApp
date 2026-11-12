@@ -21,6 +21,7 @@ public sealed class MinistryRecord
     public List<string> PartsOrder { get; set; } = [];
     public List<Guid> LinkedCalendars { get; set; } = [];
     public string ChatStarters { get; set; } = Contracts.ChatStarters.Leaders;
+    public bool Hidden { get; set; }
     public DateTime? ArchivedAt { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }

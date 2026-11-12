@@ -37,6 +37,10 @@
                             aria-current="@(ministry.Id == Id ? "page" : null)" @onclick="() => Navigation.NavigateTo(Href(ministry.Id, Area ?? string.Empty))">
                         <Icon Name="@AboutArea.IconOf(ministry.Icon)" Size="IconSize.Small" />
                         <span class="ministry-tree__name">@ministry.Name</span>
+                        @if (ministry.Hidden)
+                        {
+                            <span class="ministry-tree__hidden" title="Hidden from everyone else"><Icon Name="@AppIcons.Hidden" Size="IconSize.Small" /><span class="visually-hidden">Hidden</span></span>
+                        }
                         @if (ministry.Waiting > 0)
                         {
                             <span class="tab-strip__count" aria-label="@($"{ministry.Waiting} asking to join")">@ministry.Waiting</span>

@@ -27,6 +27,7 @@ public static class AppIcons
     public const string Storage = "database";
     public const string DesignGallery = "palette";
     public const string Previews = "eye";
+    public const string Hidden = "eye-off";
     public const string Notifications = "bell";
     public const string More = "more";
     public const string SundayBulletin = "bulletin";

@@ -62,6 +62,20 @@ internal static class MinistryRules
             return "A ministry can't sit under itself or under a ministry that's under it.";
         if (!mayAddUnder(under))
             return under is null ? "Only staff make a ministry top-level." : $"You can't add ministries under {under.Name}.";
+        if (under is not null && tree.IsHidden(under.Id) && tree.SeenFrom(ministry.Id).Any(id => tree.Find(id)!.ShowsInLifeGroups))
+            return $"{under.Name} is hidden, and Life Groups are shown to everyone, so a Life Group can't sit under it.";
+        return null;
+    }
+
+    public static string? WhyNotHide(MinistryTree tree, Guid id, Guid? parentId, MinistryDetails wanted)
+    {
+        bool hiddenAbove = parentId is { } parent && tree.IsHidden(parent);
+        if (wanted.ShowsInLifeGroups && (wanted.Hidden || hiddenAbove))
+            return hiddenAbove
+                ? $"{tree.Find(parentId!.Value)?.Name} is hidden, and Life Groups are shown to everyone, so this can't show in Life Groups."
+                : "Life Groups are shown to everyone, so a Life Group can't be hidden.";
+        if (wanted.Hidden && tree.Below(id).Any(below => below.ShowsInLifeGroups))
+            return "A Life Group sits under it, and Life Groups are shown to everyone, so it can't be hidden.";
         return null;
     }
 }

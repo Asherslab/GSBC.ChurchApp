@@ -1,0 +1,46 @@
+{
+  "title": "Hidden ministries: where a leader hides one",
+  "question": "#73: \"some don't need to be in public eye to clutter things. E.g. church staff 'ministry', accounting, etc.\" A hidden ministry leaves the list of ministries, search, Home and joining for everyone but its own people (team, attendees and their parents, the leaders above it) and staff. The ministries under it follow. Its people see a Hidden pill on the masthead; the admin tree marks it with the eye-off icon. Where should a leader turn it on? (Owner asleep 2026-11-13: the station built THE ROLL; pick another and it changes.)",
+  "options": [
+    {
+      "id": "details",
+      "kind": "assigned",
+      "kicker": "THE ROLL",
+      "label": "A switch in The details, saved with Save",
+      "thesis": "The details already says 'what people see about it, how they join, and where it shows', and Show in Life Groups sits there as a switch saved with Save. Hidden from everyone else goes beside it, with a sand sentence naming exactly who still sees it.",
+      "palette": ["#2a3d5e", "#f4efe7", "#008176", "#ffffff"],
+      "materials": ["inset group", "toggle row", "sand note", "Cancel and Save"],
+      "viewport": "Settings tab: The details with Show in Life Groups off and Hidden from everyone else on, the who-still-sees-it note, then Cancel and Save the details.",
+      "risk": "The details is a long form; the switch sits near its end.",
+      "html": ".impeccable/mocks/hidden-ministries/a-in-the-details.html",
+      "htmlFrame": "390x844"
+    },
+    {
+      "id": "group",
+      "kind": "dealt",
+      "label": "Its own group, Who sees it, changes straight away",
+      "thesis": "A Who sees it group of two radio rows, Everyone and Only its people, each saying what follows. It changes at once, like Its tabs, and its foot says so.",
+      "palette": ["#2a3d5e", "#f4efe7", "#008176", "#ffffff"],
+      "materials": ["Segmented Rows", "detail lines", "\"This changes straight away\" foot"],
+      "viewport": "Settings tab: The details, then Who sees it with Only its people chosen, then Its tabs.",
+      "risk": "One tap changes who sees a whole ministry, with no Save to stop a slip.",
+      "html": ".impeccable/mocks/hidden-ministries/b-own-group.html",
+      "htmlFrame": "390x844"
+    },
+    {
+      "id": "menu",
+      "kind": "dealt",
+      "label": "In the ministry's ⋯ menu, asking once",
+      "thesis": "Hide it from everyone else… sits in the ministry's ⋯ menu beside Archive, and asks once in a sheet that says what changes and who still sees it. Show it to everyone again is the same item afterwards.",
+      "palette": ["#2a3d5e", "#f4efe7", "#008176", "#e7ae74"],
+      "materials": ["⋯ menu item", "confirm sheet", "sand note"],
+      "viewport": "The Hide Accounts? sheet open over Settings, Hide it over Keep it shown.",
+      "risk": "A setting tucked in a menu is harder to find, and whether it's hidden isn't visible in Settings.",
+      "html": ".impeccable/mocks/hidden-ministries/c-item-menu.html",
+      "htmlFrame": "390x844"
+    }
+  ],
+  "reroll": true,
+  "steer": true,
+  "buildPath": { "value": "code" }
+}

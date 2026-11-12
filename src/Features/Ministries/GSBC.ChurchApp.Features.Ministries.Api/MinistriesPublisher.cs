@@ -39,7 +39,7 @@ internal sealed class MinistriesPublisher(
         {
             db.FeedChanges.Add(new FeedChangeRecord { Feed = feed, RecordId = recordId, Version = version, Deleted = true });
             if (SignalsPeople(feed))
-                peopleChanged.Add(recordId);
+                peopleChanged.Add(MinistryOf(recordId));
         }
         foreach (((string, string) key, Row row) in wanted)
         {
@@ -51,7 +51,7 @@ internal sealed class MinistriesPublisher(
                 Feed = row.Feed, RecordId = row.RecordId, Version = version, Payload = row.Payload, ScopeId = row.Audience, GroupKey = row.GroupKey,
             });
             if (SignalsPeople(row.Feed))
-                peopleChanged.Add(row.RecordId);
+                peopleChanged.Add(MinistryOf(row.RecordId));
         }
         if (peopleChanged.Count > 0)
         {
@@ -64,7 +64,9 @@ internal sealed class MinistriesPublisher(
         await transaction.CommitAsync(cancellationToken);
     }
 
-    private static bool SignalsPeople(string feed) => feed is MinistriesFeeds.People or MinistriesFeeds.Directory;
+    private static bool SignalsPeople(string feed) => feed is MinistriesFeeds.People or MinistriesFeeds.Directory or MinistriesFeeds.PrivateDirectory;
+
+    private static string MinistryOf(string recordId) => recordId.Split('@')[0];
 
     public async Task<IReadOnlyList<Row>> RowsAsync(CancellationToken cancellationToken)
     {
@@ -88,11 +90,10 @@ internal sealed class MinistriesPublisher(
         List<Row> rows = [];
         foreach (MinistryRecord ministry in tree.All)
         {
-            rows.Add(Public(MinistriesFeeds.Directory, ministry.Id, new MinistryCard
-            {
-                Ministry = MinistryViews.Details(ministry),
-                Leaders = Leaders(tree, ministry, holdings, names),
-            }));
+            MinistryCard card = new() { Ministry = MinistryViews.Details(ministry, tree), Leaders = Leaders(tree, ministry, holdings, names) };
+            rows.AddRange(tree.IsHidden(ministry.Id)
+                ? ForSeers(MinistriesFeeds.PrivateDirectory, ministry.Id.ToString(), ministry.Id, tree, card)
+                : [Public(MinistriesFeeds.Directory, ministry.Id, card)]);
             PeopleList list = MinistryPeopleLists.Build(ministry, tree, holdings, facts, names,
                 askLines.Where(ask => ask.MinistryId == ministry.Id.ToString()).ToList(), []);
             rows.Add(Encoded(MinistriesFeeds.People, ministry.Id.ToString(), new MinistryPeople { MinistryId = ministry.Id.ToString(), People = list },
@@ -106,14 +107,16 @@ internal sealed class MinistriesPublisher(
         IReadOnlyList<MinistryCalendar> forEveryone = tree.All.Any(ministry => ministry.LinkedCalendars.Count > 0) ? await calendars.ForEveryoneAsync(cancellationToken) : [];
         foreach (MinistryRecord ministry in tree.All.Where(ministry => MinistryViews.IsOn(ministry, MinistryParts.Calendar)))
             foreach (MinistryCalendar linked in forEveryone.Where(calendar => ministry.LinkedCalendars.Contains(calendar.Id)))
-                rows.Add(Encoded(MinistriesFeeds.Calendars, $"{linked.Id}@{ministry.Id}", MinistryViews.Linked(linked, ministry.Id, null)) with { GroupKey = ministry.Id.ToString() });
+                rows.AddRange(Everyone(MinistriesFeeds.Calendars, MinistriesFeeds.PrivateCalendars, $"{linked.Id}@{ministry.Id}", ministry.Id, tree,
+                    MinistryViews.Linked(linked, ministry.Id, null)));
         foreach (MinistryCalendar calendar in shownCalendars.Where(calendar => !calendar.Hidden))
-            rows.Add(Encoded(calendar.Audience == Audience.Everyone ? MinistriesFeeds.Calendars : MinistriesFeeds.PrivateCalendars, calendar.Id.ToString(),
-                    MinistryViews.Calendar(calendar), calendar.Audience == Audience.Everyone ? null : calendar.Audience.Text) with { GroupKey = calendar.MinistryId.ToString() });
+            rows.AddRange(calendar.Audience == Audience.Everyone
+                ? Everyone(MinistriesFeeds.Calendars, MinistriesFeeds.PrivateCalendars, calendar.Id.ToString(), calendar.MinistryId, tree, MinistryViews.Calendar(calendar))
+                : [Encoded(MinistriesFeeds.PrivateCalendars, calendar.Id.ToString(), MinistryViews.Calendar(calendar), calendar.Audience.Text) with { GroupKey = calendar.MinistryId.ToString() }]);
 
         rows.AddRange(rounds.Select(round => Public(MinistriesFeeds.Rounds, round.Id, MinistryViews.Round(round))));
 
-        rows.AddRange(sitOuts.Select(sitOut => Encoded(MinistriesFeeds.SittingOut, $"{sitOut.GroupId}@{sitOut.RoundId}",
+        rows.AddRange(sitOuts.Where(sitOut => !tree.IsHidden(sitOut.GroupId)).Select(sitOut => Encoded(MinistriesFeeds.SittingOut, $"{sitOut.GroupId}@{sitOut.RoundId}",
             MinistryViews.SittingOut(sitOut, roundsById.GetValueOrDefault(sitOut.RoundId), tree))));
         rows.Add(Encoded(MinistriesFeeds.LifeGroups, LifeGroupsRow,
             new LifeGroupsCalendar { CalendarName = (await kept.WhereAsync(LifeGroupSundays.Keeper, cancellationToken))?.Name ?? "" }));
@@ -171,7 +174,8 @@ internal sealed class MinistriesPublisher(
         string group = ministryId.ToString();
         if (audience == Audiences.Everyone)
         {
-            yield return Public(publicFeed, id, item) with { GroupKey = group };
+            foreach (Row row in Everyone(publicFeed, privateFeed, id.ToString(), ministryId, tree, item))
+                yield return row;
             yield break;
         }
         if (Audiences.NodeOf(audience) is not { } node)
@@ -184,6 +188,14 @@ internal sealed class MinistriesPublisher(
         foreach (Guid place in new[] { ministryId }.Concat(tree.Below(ministryId).Select(below => below.Id)))
             yield return Encoded(privateFeed, place == ministryId ? id.ToString() : $"{id}@{place}", item, At(node, place).Text) with { GroupKey = group };
     }
+
+    private static IEnumerable<Row> Everyone<T>(string publicFeed, string privateFeed, string recordId, Guid ministryId, MinistryTree tree, T item) =>
+        (tree.IsHidden(ministryId) ? ForSeers(privateFeed, recordId, ministryId, tree, item) : [Encoded(publicFeed, recordId, item)])
+        .Select(row => row with { GroupKey = ministryId.ToString() });
+
+    private static IEnumerable<Row> ForSeers<T>(string feed, string recordId, Guid ministryId, MinistryTree tree, T item) =>
+        tree.SeenFrom(ministryId).Select(place =>
+            Encoded(feed, place == ministryId ? recordId : $"{recordId}@{place}", item, At(MinistriesPermissions.SeeHiddenNode, place).Text));
 
     private static Audience At(string node, Guid ministryId) => Audience.HoldingAt(node, Scope.Of(ScopeKind.Ministry, ministryId.ToString()));
 

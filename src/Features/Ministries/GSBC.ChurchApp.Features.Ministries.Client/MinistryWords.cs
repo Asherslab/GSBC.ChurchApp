@@ -24,13 +24,20 @@ public static class MinistryWords
         _ => "Everyone",
     };
 
-    public static string WhoReads(string audience, string ministry) => audience switch
+    public static string WhoReads(string audience, MinistryDetails ministry) => audience switch
     {
-        Audiences.Team => $"Only the {ministry} team sees this.",
-        Audiences.Attendees => $"Attendees of {ministry}, their parents and the team see this.",
-        Audiences.Parents => $"Only parents of attendees of {ministry}, and the team, see this.",
+        Audiences.Team => $"Only the {ministry.Name} team sees this.",
+        Audiences.Attendees => $"Attendees of {ministry.Name}, their parents and the team see this.",
+        Audiences.Parents => $"Only parents of attendees of {ministry.Name}, and the team, see this.",
+        _ when MinistryLogic.IsHidden(ministry) => $"{ministry.Name} is hidden, so only its own people, the leaders above it and staff see this.",
         _ => "Anyone with the app sees this, including visitors.",
     };
+
+    public static string WhoSeesHidden(string ministry) =>
+        $"Only its team, its attendees and their parents, the leaders above it and staff who look after ministries see {ministry}. "
+        + "It isn't in the list of ministries, search or Home for anyone else, and nobody else can ask to join. The ministries under it are hidden too.";
+
+    public static string HiddenBecause(string above) => $"Hidden, because {above} is. Only its own people and staff see it.";
 
     public static string PostFor(string audience) => audience switch
     {

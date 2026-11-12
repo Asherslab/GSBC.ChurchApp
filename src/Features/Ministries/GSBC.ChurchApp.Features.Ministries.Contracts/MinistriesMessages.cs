@@ -52,6 +52,7 @@ public sealed class MinistrySummary
     [ProtoMember(16)] public string Latest { get; set; } = "";
     [ProtoMember(17)] public int Waiting { get; set; }
     [ProtoMember(18)] public bool MayAddUnder { get; set; }
+    [ProtoMember(20)] public bool Hidden { get; set; }
 }
 
 [ProtoContract]
@@ -84,6 +85,8 @@ public sealed class MinistryDetails
     [ProtoMember(21)] public bool New { get; set; }
     [ProtoMember(22)] public List<string> PartsOrder { get; set; } = [];
     [ProtoMember(23)] public string ChatStarters { get; set; } = "";
+    [ProtoMember(24)] public bool Hidden { get; set; }
+    [ProtoMember(25)] public string HiddenBy { get; set; } = "";
 }
 
 [ProtoContract]
@@ -507,6 +510,8 @@ public sealed class MovePreview
     [ProtoMember(6)] public List<LeadChange> Lose { get; set; } = [];
     [ProtoMember(7)] public List<string> Leaves { get; set; } = [];
     [ProtoMember(8)] public List<string> Joins { get; set; } = [];
+    [ProtoMember(9)] public string HiddenBy { get; set; } = "";
+    [ProtoMember(10)] public bool ShownAgain { get; set; }
 }
 
 [ProtoContract]

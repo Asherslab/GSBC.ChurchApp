@@ -52,7 +52,7 @@
         }
         <TextField Label="A line about it (optional)" @bind-Value="Draft.Note" MaxLength="200" />
         <Segmented TValue="string" Label="Who it's for" ShowLabel="true" Stacked="true" Options="Audiences" Value="Draft.Audience" ValueChanged="value => Draft.Audience = value" />
-        <p class="ministry-who">@MinistryWords.WhoReads(Draft.Audience, Page.Ministry.Name)</p>
+        <p class="ministry-who">@MinistryWords.WhoReads(Draft.Audience, Page.Ministry)</p>
         <Notice Tone="NoticeTone.Warning" Text="@_problem" />
     </ChildContent>
     <Actions>
