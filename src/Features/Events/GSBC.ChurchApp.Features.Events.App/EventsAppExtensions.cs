@@ -1,6 +1,7 @@
 using GSBC.ChurchApp.Features.Events.Client;
 using GSBC.ChurchApp.Features.Events.Contracts;
 using GSBC.ChurchApp.Platform.Client.Modules;
+using GSBC.ChurchApp.Platform.Icons;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace GSBC.ChurchApp.Features.Events.App;
@@ -10,7 +11,7 @@ public static class EventsAppExtensions
     public static IServiceCollection AddEventsApp(this IServiceCollection services, ClientModules modules)
     {
         modules.Add(new ClientModule("Events", typeof(EventsAppExtensions).Assembly,
-            [new NavEntry("Calendar", EventsDestinations.Week.Route, "calendar",
+            [new NavEntry("Calendar", EventsDestinations.Week.Route, AppIcons.Calendar,
                 AlsoUnder: [EventsDestinations.Event.PathPrefix, EventsDestinations.Calendar.PathPrefix, EventsDestinations.WhatsNext.Path.TrimStart('/')])],
             EventsClientExtensions.Feeds,
             EventsClientExtensions.PrivateFeeds));

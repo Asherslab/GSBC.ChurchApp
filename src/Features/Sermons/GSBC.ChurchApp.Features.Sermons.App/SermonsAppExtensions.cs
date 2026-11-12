@@ -1,6 +1,7 @@
 using GSBC.ChurchApp.Features.Sermons.Client;
 using GSBC.ChurchApp.Features.Sermons.Contracts;
 using GSBC.ChurchApp.Platform.Client.Modules;
+using GSBC.ChurchApp.Platform.Icons;
 using GSBC.ChurchApp.Platform.Ui.Tabs;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -13,7 +14,7 @@ public static class SermonsAppExtensions
     public static IServiceCollection AddSermonsApp(this IServiceCollection services, ClientModules modules)
     {
         modules.Add(new ClientModule("Sermons", typeof(SermonsAppExtensions).Assembly,
-            [new NavEntry("Sermons", Route, "sermons",
+            [new NavEntry("Sermons", Route, AppIcons.Sermons,
                 AlsoUnder: [SermonsDestinations.Sermon.PathPrefix, SermonsDestinations.Series.PathPrefix, SermonsDestinations.Speaker.PathPrefix])],
             SermonCatalogue.Feeds,
             [.. Listening.Feeds, SermonsFeeds.Follows]));

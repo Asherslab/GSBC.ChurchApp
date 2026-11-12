@@ -8,7 +8,7 @@
 {
     <PagedSheet Open="true" OpenChanged="Closed" Count="highlights.Count" ItemName="Highlight" Label="What's new">
         <Cover Context="page">
-            <SheetHeading Icon="@(highlights[page].Icon ?? "sparkles")" Title="@highlights[page].Title" Note="@ReleaseNoteLabels.NewIn(highlights[page], WhatsNew.ForStaff, Bridge.AppVersion)" />
+            <SheetHeading Icon="@(highlights[page].Icon ?? AppIcons.WhatsNew)" Title="@highlights[page].Title" Note="@ReleaseNoteLabels.NewIn(highlights[page], WhatsNew.ForStaff, Bridge.AppVersion)" />
         </Cover>
         <Page Context="page">
             @if (highlights[page].ImageUrl is { } image)
