@@ -1,0 +1,503 @@
+@using GSBC.ChurchApp.Platform.Client.People
+@using GSBC.ChurchApp.Platform.Contracts.Media
+@inject TimeProvider Clock
+@inject UiHost Host
+
+<div class="gallery">
+    <p class="gallery__intro">Every shared building block, live, with sample names. Each says when to use it; DESIGN.md's pattern map says the same. @(Host.Desktop ? "The phone shows this page too, drawn for the phone." : "The admin panel shows this page too, drawn for a desk.")</p>
+
+    <Section First="true" Title="Colours and type" Lead="The tokens every component draws with. Light or dark is under Choosing.">
+        <div class="gallery__palette">
+            @foreach (string role in ColourRoles)
+            {
+                <span class="gallery__swatch"><i style="background: var(--@role)"></i>@role</span>
+            }
+        </div>
+        <div class="gallery__type">
+            <span class="gallery__headline">Headline for a sermon or event</span>
+            <span class="gallery__title-lg">Title large, for sheets and records</span>
+            <p class="gallery__prose">Body prose sits in ink 2 at a reading measure, for the welcome letter and descriptions. It follows the phone's text size setting all the way through.</p>
+            <span class="gallery__note">Caption for details and hints</span>
+        </div>
+    </Section>
+
+    <Section Title="Pages and panes" Lead="Where things sit on a page, the same on every page.">
+        @Item("Phone page heading: Masthead", "The navy band at the top of a phone page that leads with a title.",
+            @<Masthead Title="Sunday at Good Shepherd" Note="10:30am · the main service">
+                <div class="gallery__row">
+                    <Button Variant="ButtonVariant.OnMasthead" Icon="headphones">Listen</Button>
+                    <Button Variant="ButtonVariant.GhostOnMasthead" Icon="calendar">Remind me</Button>
+                </div>
+            </Masthead>)
+        @Item("List and record: Workbench", "Filters in the rail only when the page needs them; the record sits beside the list, with its ⋯ menu and Cancel and Save at its foot.",
+            @<div class="gallery__frame gallery__frame--tall">
+                <Workbench Detail="@(_chosen is null ? null : Record)" DetailLabel="The chosen person">
+                    <Aside>
+                        <FilterChips TValue="string" Label="Show" Options="PeopleFilters" @bind-Value="_filter" />
+                    </Aside>
+                    <ChildContent>
+                        <SearchField Label="Find someone" Placeholder="Find someone by name" @bind-Value="_query" />
+                        <DataTable TItem="SamplePerson" Label="People" Items="ShownPeople" Columns="PeopleColumns" Key="person => person.Name"
+                                   Selected="_chosen" SelectedChanged="person => _chosen = person">
+                            <Empty><EmptyState Icon="users" Title="No one matches" Body="Try part of their name." /></Empty>
+                        </DataTable>
+                    </ChildContent>
+                </Workbench>
+            </div>)
+        @Item("The heading of a record: PaneHead", "Title, one line under it, and the record's own actions in ⋯ (Delete is always there, last and red).",
+            @<PaneHead Title="Jordan Example" Lead="jordan@example.com · joined Sun 1 Nov" Actions="RecordActions" OnClose="() => { }" OnOpen="() => { }" />)
+        @Item("Settings in groups: Section, Grouped", "A card on the admin panel, an inset group on the phone. A Foot says what the group does or holds its Save.",
+            @<Section Title="The details" Lead="What people see on the ministry's page." Grouped="true">
+                <ChildContent>
+                    <TextField Label="Name" @bind-Value="_ministryName" />
+                </ChildContent>
+                <Foot>
+                    <SaveBar Label="Save the details" OnSave="() => _ministryName = _ministryName.Trim()" OnCancel="() => _ministryName = SampleMinistry" State="@(_ministryName == SampleMinistry ? null : SaveState.Unsaved)" />
+                </Foot>
+            </Section>)
+        @Item("A plain section: Section", "A heading and what's under it, on a phone page or an admin page that isn't settings.",
+            @<Section Title="This week" LinkHref="gallery" LinkText="See all">
+                <p class="gallery__note">Three things on, and one needs a picture.</p>
+            </Section>)
+        @Item("Different lists or parts of one thing: TabStrip", "Each tab is a different list. There is always room under it.",
+            @<TabStrip TValue="string" Label="Parts of the ministry" Options="Tabs" @bind-Value="_tab" />)
+        @Item("Where you are in folders: Breadcrumbs", "Media and anything else kept in folders.",
+            @<Breadcrumbs Label="Where you are" Trail="Trail" OnOpen="crumb => _crumb = crumb.Label" />)
+        @Item("Something to read or open on the phone: Card", "One card, never cards inside cards.",
+            @<div class="gallery__stack">
+                <Card Title="Your challenge this week">Read Job 33 and pray for one person by name each morning.</Card>
+                <Card Tone="CardTone.Masthead" Title="Almighty God" Href="gallery"><span>Job 33:4 · the 2026 theme</span></Card>
+                <Card Tone="CardTone.Raised" Title="Family games night" Href="gallery">
+                    <Media><span class="gallery__cover"><BrandMark Decorative="true" /></span></Media>
+                    <ChildContent><span>Fri 20 Nov · the hall</span></ChildContent>
+                </Card>
+            </div>)
+        @Item("Short facts about a record: FactList", "When, where and who, one line each.",
+            @<FactList>
+                <Fact Label="When" Text="Sundays, 10:30am" Icon="clock" />
+                <Fact Label="Where" Text="The main hall" Icon="map-pin" />
+                <Fact Label="Who" Text="Everyone" Icon="users" />
+            </FactList>)
+        @Item("Steps you swipe through on the phone: SwipePages", "One week, day or step at a time.",
+            @<SwipePages CanGoBack="true" CanGoOn="true" Stepped="step => _week += step">
+                <div class="gallery__swipe">Week @(_week + context)</div>
+            </SwipePages>)
+        @Item("A few pages to step through: PagedSheet", "What's new and other short tours.",
+            @<Button Variant="ButtonVariant.Quiet" OnClick="() => _paged = true">Show a tour</Button>)
+    </Section>
+
+    <Section Title="Saving and deleting" Lead="Cancel at the bottom left of anything that saves, Save at the bottom right. Delete is an action on the thing, and always asks once.">
+        @Item("A form that saves with a button: SaveBar", "Its status sits on its own line above the buttons.",
+            @<div class="gallery__stack">
+                <SaveBar Label="Save" OnCancel="() => { }" State="SaveState.Unsaved" />
+                <SaveBar Label="Add the speaker" OnCancel="() => { }" Blocked="Give them a name to add them." />
+                <SaveBar Label="Save" OnCancel="() => { }" State="SaveState.Saved" />
+                <SaveBar Label="Save" OnCancel="() => { }" State="SaveState.Waiting" WaitingText="Waiting to send. It goes when you're online." />
+                <SaveBar Label="Save" OnCancel="() => { }" State="SaveState.Failed" Detail="The server said no." Retry="() => { }" />
+                <SaveBar Label="Add the event" New="true" OnCancel="() => { }" State="SaveState.Unsaved" />
+                <div class="gallery__phone-width"><SaveBar Label="Save this date" Block="true" OnCancel="() => { }" State="SaveState.Unsaved" /></div>
+            </div>)
+        @Item("A form that saves by itself: SaveStatus", "No button; the line says what happened.",
+            @<div class="gallery__stack">
+                <SaveStatus State="SaveState.Saving" />
+                <SaveStatus State="SaveState.Saved" />
+                <SaveStatus State="SaveState.Failed" Retry="() => { }" />
+            </div>)
+        @Item("Asking before a delete: Sheet", "Says what goes with it. The red action is listed first and Keep it last, so the phone stacks red on top and the admin panel puts Keep it at the left.",
+            @<Button Variant="ButtonVariant.Danger" Icon="trash-2" OnClick="() => _deleting = true">Delete Easter 2027…</Button>)
+        @Item("More actions for a thing: Menu", "The ⋯ button. Delete is last, after a rule, in red.",
+            @<div class="gallery__row">
+                <Menu Label="More for Jordan Example" Items="RecordActions" AlignStart="true" />
+                <Menu Label="New" Text="New" Icon="plus" Variant="ButtonVariant.Primary" Items="NewItems" AlignStart="true" Chevron="true" />
+            </div>)
+        @Item("A small panel anchored to a control: Popover with MenuButton", "Like the Account menu: a few choices and a line about who you are.",
+            @<div class="gallery__anchor">
+                <Button Variant="ButtonVariant.Quiet" Icon="user" OnClick="() => _popover = !_popover">Alex Sample</Button>
+                <Popover Label="Alex's menu" @bind-Open="_popover" Class="gallery__popover">
+                    <MenuButton Icon="user" OnClick="() => _popover = false">Your account</MenuButton>
+                    <MenuButton Icon="log-out" OnClick="() => _popover = false">Sign out</MenuButton>
+                    <MenuButton Icon="trash-2" Danger="true" OnClick="() => _popover = false">Delete my account…</MenuButton>
+                </Popover>
+            </div>)
+        @Item("Several chosen at once: SelectionTray", "Appears at the foot when you've ticked things in a list.",
+            @<div class="gallery__stack">
+                <ToggleRow Title="Choose three pictures" Checked="_tray" CheckedChanged="value => _tray = value" />
+                @if (_tray)
+                {
+                    <SelectionTray Label="Chosen pictures" Count="3" One="picture" Many="pictures" OnClear="() => _tray = false">
+                        <Button Variant="ButtonVariant.Quiet" Small="true" Icon="folder">Move</Button>
+                    </SelectionTray>
+                }
+            </div>)
+    </Section>
+
+    <Section Title="Choosing" Lead="One control per kind of choice.">
+        @Item("Buttons: Button", "One primary action per place; Quiet for the rest; Danger only for a delete; Tinted to start something.",
+            @<div class="gallery__stack">
+                <div class="gallery__row">
+                    <Button Icon="plus">Add someone</Button>
+                    <Button Variant="ButtonVariant.Quiet">Not now</Button>
+                    <Button Variant="ButtonVariant.Tinted" Icon="camera">Capture this page</Button>
+                    <Button Variant="ButtonVariant.Live" Icon="headphones">Watch live</Button>
+                    <Button Variant="ButtonVariant.Danger">Delete</Button>
+                    <Button Busy="true">Saving</Button>
+                    <Button Disabled="true">Unavailable</Button>
+                    <Button Variant="ButtonVariant.Quiet" Icon="share" AriaLabel="Share" Tooltip="Share" />
+                    <Button Small="true" Variant="ButtonVariant.Quiet">Small</Button>
+                </div>
+                <div class="gallery__phone-width"><Button Block="true" Icon="heart">Give online</Button></div>
+            </div>)
+        @Item("One role of several: RoleMenu", "The button shows the role now; the menu says what each allows, with Remove in red. A change applies at once.",
+            @<RoleMenu TValue="string" Label="Role in Production" Roles="Roles" @bind-Value="_role" RemoveLabel="Remove from Production" RemoveDetail="They stay in the church's app." OnRemove="() => _role = Roles[0].Value" />)
+        @Item("Several roles at once: RoleTick and RoleGives", "Tick each role; the info button says what it gives.",
+            @<div class="gallery__stack">
+                <div class="gallery__row">
+                    <RoleTick Name="Calendar Editor" @bind-Checked="_editor" Chosen="_explain" OnExplain="() => _explain = !_explain" />
+                    <RoleTick Name="Owner" Refusal="Only an Owner can make an Owner." />
+                </div>
+                @if (_explain)
+                {
+                    <RoleGives Role="EditorRole" Who="Jordan" />
+                }
+            </div>)
+        @Item("Narrowing a list: FilterChips", "Chips never switch between views.",
+            @<FilterChips TValue="string" Label="Show" Options="PeopleFilters" @bind-Value="_filter" />)
+        @Item("Turning things on and off in a list: ToggleChips", "Several at once, like which calendars show.",
+            @<ToggleChips TValue="string" Label="Calendars" Chips="CalendarChips" Toggled="chip => ToggleCalendar(chip.Value)" />)
+        @Item("The same list two ways, or one small choice: Segmented", "Two to four options that fit on one line.",
+            @<Segmented TValue="string" Label="Show as" Options="Views" @bind-Value="_view" />)
+        @Item("Light or dark: SchemeChoice", "The same choice on the phone and in the Account menu.",
+            @<SchemeChoice ShowLabel="true" />)
+        @Item("On or off: ToggleRow", "A setting that changes straight away.",
+            @<div>
+                <ToggleRow Title="Hide my name" Description="The pastoral team sees it as anonymous" @bind-Checked="_anonymous" />
+                <ToggleRow Title="Notify me" Description="Not available yet" Disabled="true" />
+            </div>)
+        @Item("Typing: TextField", "Labels above; a hint under; a problem says how to fix it.",
+            @<div class="gallery__stack">
+                <TextField Label="Your name" @bind-Value="_name" Placeholder="First name is fine" />
+                <TextField Label="Prayer request" @bind-Value="_request" Multiline="true" MaxLength="500" Hint="Only the pastoral team sees this." />
+                <TextField Label="Link" Value="http://example" Problem="A link starts with https://." />
+            </div>)
+        @Item("One of a short fixed list: SelectField", "When the options are few and known.",
+            @<SelectField Label="Service" Options="Services" @bind-Value="_service" />)
+        @Item("Finding in a list: SearchField", "Above or in the rail of the list it narrows.",
+            @<SearchField Label="Find a sermon" Placeholder="Find a sermon" @bind-Value="_query" />)
+        @Item("One of many, found by typing: SearchPicker", "Speakers, places, anything with more than a handful.",
+            @<SearchPicker TItem="SamplePerson" Label="Speaker" Items="People" Text="person => person.Name" Detail="person => person.Email" @bind-Value="_speaker" NoneText="No speaker" />)
+        @Item("Several of many, found by typing: ChipPicker", "Each choice becomes a chip you can take away.",
+            @<ChipPicker TItem="SamplePerson" Label="Leaders" Items="People" Text="person => person.Name" @bind-Chosen="_leaders" Placeholder="Add a leader" />)
+        @Item("A code from an email or a card: CodeField", "One box per character.",
+            @<CodeField Label="Code from the email" Length="6" @bind-Value="_code" />)
+        @Item("A colour: ColourField", "App styling only.",
+            @<ColourField Label="Accent" @bind-Value="_colour" WorkedOut="#00776d" OnReset="() => _colour = null" />)
+        @Item("Something to copy: CopyField", "A link or code to paste somewhere else.",
+            @<CopyField Label="Link for calendar apps" Value="https://example.com/calendars/services.ics" Hint="Anyone can subscribe with this." />)
+        @Item("A link inside words: TextLink", "Never a button dressed as a link.",
+            @<p class="gallery__note">Read it on <TextLink Href="gallery">the church's website</TextLink>.</p>)
+    </Section>
+
+    <Section Title="Dates" Lead="The admin panel types or picks from a calendar; the phone uses its own wheel.">
+        @Item("A day: DateField", "Type it (\"15 Nov\") or open the calendar at the right.",
+            @<DateField Label="Date" @bind-Value="_date" />)
+        @Item("A time: TimeField", "Type it (\"7:30pm\") or pick from the list at the right.",
+            @<TimeField Label="Starts" @bind-Value="_time" />)
+        @Item("A day and a time: DateTimeField", "One label over both.",
+            @<DateTimeField Label="Shows until" @bind-Value="_dateTime" />)
+        @Item("Saying a date: DateLine", "Always through DateLine, so every date reads the same.",
+            @<ListGroup>
+                <ListRow Title="Long"><TrailingContent><DateLine At="Now" /></TrailingContent></ListRow>
+                <ListRow Title="Short, with time"><TrailingContent><DateLine At="Now" Style="DateLineStyle.Short" WithTime="true" /></TrailingContent></ListRow>
+                <ListRow Title="Relative"><TrailingContent><DateLine At="Now.AddDays(1)" Style="DateLineStyle.Relative" WithTime="true" /></TrailingContent></ListRow>
+                <ListRow Title="A range"><TrailingContent><DateLine At="Now" Until="Now.AddMinutes(90)" Style="DateLineStyle.TimeOnly" /></TrailingContent></ListRow>
+            </ListGroup>)
+        @Item("A week to pick a day from: WeekRail", "The phone's calendar and roster.",
+            @<WeekRail Days="Week" Today="Today" Here="_day" Label="Pick a day" Picked="day => _day = day" />)
+        @Item("What's on across days: DayRail", "The admin Home's week at a glance.",
+            @<DayRail First="Now.Date" Today="Now.Date" Days="7" Spans="Spans" Heading="This week" Quiet="Nothing else on" Legend="Legend" />)
+    </Section>
+
+    <Section Title="Pictures" Lead="A picture opens in the viewer; it's never squeezed into a pane.">
+        @Item("Opening a picture bigger: PictureOpen and PictureViewer", "Wrap the small picture in PictureOpen; the viewer fills the window. The gallery has no stored pictures, so the viewer stays closed here.",
+            @<div>
+                <PictureOpen Label="Open the picture bigger" OnOpen="() => _viewing = true"><span class="gallery__thumb"><BrandMark Decorative="true" /></span></PictureOpen>
+                <PictureViewer @bind-Open="_viewing" Pictures="NoPictures" Noun="Picture" />
+            </div>)
+        @Item("A person: Avatar", "Their photo, or their initials.",
+            @<div class="gallery__row">
+                <Avatar Name="Alex Sample" />
+                <Avatar Name="Jordan Example" Size="48" />
+            </div>)
+        @Item("Icons: Icon", "One icon per meaning, from AppIcons. A cog always means the settings of what you're looking at.",
+            @<div class="gallery__row">
+                @foreach (string name in SampleIcons)
+                {
+                    <span class="gallery__icon"><Icon Name="@name" />@name</span>
+                }
+            </div>)
+        @Item("A drawing from the church: SvgIcon and BrandMark", "Uploaded drawings and the church's mark.",
+            @<div class="gallery__row">
+                <span class="gallery__icon"><SvgIcon Drawing="@Drawing" />An uploaded drawing</span>
+                <span class="gallery__mark"><BrandMark Decorative="true" /></span>
+            </div>)
+        @Item("A video: VideoEmbed", "A YouTube video, played from the church's own host.",
+            @<VideoEmbed YouTubeId="fco2rSN9lUo" Title="Anchored In Hope" />)
+        @Item("A theme's colours: ThemeSwatches", "Choosing a palette in App styling.",
+            @<ThemeSwatches Palette="brand" />)
+    </Section>
+
+    <Section Title="Lists and boards" Lead="Rows for lists, a table when there are columns to compare, a board when things move through stages.">
+        @Item("Rows: ListGroup and ListRow", "Title, one line under it, and where it goes.",
+            @<ListGroup>
+                <ListRow Title="Bulletin" Subtitle="Sunday's welcome, sermons and notices" Icon="book-open" Href="gallery" />
+                <ListRow Title="New this week" Subtitle="Two notices" Icon="bell" IconTone="RowTone.Warm" Trailing="2" Href="gallery" />
+                <ListRow Title="Website" Subtitle="example.com" Icon="link" IconTone="RowTone.Quiet" Href="https://example.com" External="true" />
+                <ListRow Title="Coming later" Subtitle="Not in this version" Icon="lock" Disabled="true" />
+            </ListGroup>)
+        @Item("A list under headings: GroupedList", "Sorted into groups, like people by first letter.",
+            @<GroupedList TItem="SamplePerson" Items="People" GroupKey="person => person.Name[..1]">
+                <ItemTemplate><ListRow Title="@context.Name" Subtitle="@context.Email" /></ItemTemplate>
+            </GroupedList>)
+        @Item("Something on at a time: AgendaRow", "The calendar's agenda and Home's week.",
+            @<div>
+                <AgendaRow Time="9am" Title="Life Groups" Subtitle="The church lounge" />
+                <AgendaRow Time="10:30am" Label="Anniversary" Title="Anniversary Sunday Service" Highlight="true" />
+                <AgendaRow Time="6pm" Title="Evening service" NotOn="Not on this week" Quiet="true" />
+            </div>)
+        @Item("A table to compare: DataTable", "Sortable columns; in the Workbench above, choosing a row opens it beside the list.",
+            @<DataTable TItem="SamplePerson" Label="Sample table" Items="People" Columns="PeopleColumns" Key="person => person.Name" />)
+        @Item("Things moving through stages: Board and BoardCard", "Drag a card, or press Alt and an arrow key. Folded columns open when you press them.",
+            @<Board TItem="SampleTicket" TColumn="string" Label="Sample board" Columns="BoardColumns" Items="_tickets" ColumnOf="ticket => ticket.Stage" OnMove="Move">
+                <Card Context="ticket">
+                    <BoardCard Title="@ticket.Title" Href="gallery" Open="ticket.Number == _openTicket" OnOpen="() => _openTicket = ticket.Number" Meta="MetaOf(ticket)">
+                        <Labels><Pill Tone="PillTone.Quiet">@ticket.Label</Pill></Labels>
+                    </BoardCard>
+                </Card>
+            </Board>)
+        @Item("A ranked list: RankedList", "Insights: the most of something.",
+            @<RankedList Title="Most played sermons" Items="Ranked" Numbered="true" />)
+        @Item("A chat message: MessageBubble", "Chats only.",
+            @<div class="gallery__stack">
+                <MessageBubble Name="Jordan Example" Time="9:41am" FirstOfRun="true">Can someone bring the urn on Sunday?</MessageBubble>
+                <MessageBubble Mine="true" Time="9:43am" FirstOfRun="true">I'll bring it.</MessageBubble>
+            </div>)
+    </Section>
+
+    <Section Title="Status" Lead="Where something is, and how much.">
+        @Item("Steps a thing moves through: StagePipeline", "Done steps ticked, the current one solid. Press a step to move there.",
+            @<StagePipeline TValue="string" Label="Where it is" Stages="Stages" @bind-Value="_stage" />)
+        @Item("A short state: Pill", "One word or two, never a sentence.",
+            @<div class="gallery__row">
+                <Pill>New</Pill>
+                <Pill Tone="PillTone.Accent">The app</Pill>
+                <Pill Tone="PillTone.Masthead">Draft</Pill>
+                <Pill Tone="PillTone.Quiet">Not invited yet</Pill>
+                <Pill Tone="PillTone.Danger" Icon="circle-off">Turned off</Pill>
+            </div>)
+        @Item("How far along: ProgressTrack", "Uploads and imports.",
+            @<ProgressTrack Fraction="0.6" Label="Uploading 3 of 5" />)
+        @Item("A number that matters: StatTile and TrendLine", "Insights: the number, what it means, and how it's moving.",
+            @<div class="gallery__stack">
+                <div class="gallery__row">
+                    <StatTile Value="214" Label="People this week" Change="Up 12 on last week" />
+                    <StatTile Value="38" Label="Sermons played" Quiet="true" />
+                </div>
+                <TrendLine Label="People each week" Points="Trend" SeriesName="This year" PeriodName="week" />
+            </div>)
+        @Item("Loading: Skeleton", "The shape of what's coming, never a spinner on its own.",
+            @<div class="gallery__stack">
+                <Skeleton Count="2" />
+                <Skeleton Shape="SkeletonShape.Lines" Count="3" />
+            </div>)
+        @Item("A notification as people see it: LockScreenProof", "Before sending an announcement.",
+            @<LockScreenProof Title="Family games night" Body="This Friday in the hall, 6pm. Bring a plate to share." />)
+    </Section>
+
+    <Section Title="Feedback to people" Lead="Say what happened and what to do next.">
+        @Item("A message on the page: Notice", "Info for good news, Warning when something needs them.",
+            @<div class="gallery__stack">
+                <Notice Text="Saved. Phones show it within a few seconds." />
+                <Notice Tone="NoticeTone.Warning" Text="Someone else changed this. Here's the latest." />
+            </div>)
+        @Item("Nothing here yet: EmptyState", "What would be here, and how to add the first one.",
+            @<EmptyState Icon="calendar" Title="Nothing on this week" Body="Events staff add appear here and in the calendar.">
+                <Button Variant="ButtonVariant.Quiet" Icon="plus">New event</Button>
+            </EmptyState>)
+        @Item("Previewing as someone else: PreviewBanner", "Pinned to the foot while App styling shows a draft.",
+            @<div class="gallery__stack">
+                <ToggleRow Title="Show the preview banner" Checked="_banner" CheckedChanged="value => _banner = value" />
+                @if (_banner)
+                {
+                    <PreviewBanner Title="Previewing the Easter draft" Detail="Only you see this" OnExit="() => _banner = false" OnHide="() => _banner = false" />
+                }
+            </div>)
+    </Section>
+</div>
+
+<Sheet Open="_deleting" OpenChanged="open => _deleting = open" Title="Delete Easter 2027?" Lead="Its 6 sermons stay in the app and on the website, without a series. This can't be undone.">
+    <Actions>
+        <Button Block="true" Variant="ButtonVariant.Danger" OnClick="() => _deleting = false">Delete the series</Button>
+        <Button Block="true" Variant="ButtonVariant.Quiet" OnClick="() => _deleting = false">Keep it</Button>
+    </Actions>
+</Sheet>
+
+<PagedSheet @bind-Open="_paged" Count="3" Label="A short tour" ItemName="page">
+    <Cover>
+        <SheetHeading Icon="gift" Title="@($"Page {context + 1} of 3")" Note="What's new uses this." />
+    </Cover>
+    <Page>
+        <p class="gallery__note">Each page says one thing and shows where to find it.</p>
+    </Page>
+</PagedSheet>
+
+@code {
+    private const string SampleMinistry = "Kids Ministries";
+    private const string Drawing = """<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M8 12h8"/></svg>""";
+
+    private static readonly IReadOnlyList<SamplePerson> People =
+    [
+        new("Alex Sample", "alex@example.com", "Not invited yet", "Wed 11 Nov"),
+        new("Casey Example", "casey@example.com", "Ready", "Tue 27 Oct"),
+        new("Jordan Example", "jordan@example.com", "Ready", "Sun 1 Nov"),
+        new("Robin Sample", "robin@example.com", "No passkey yet", "Mon 2 Nov"),
+        new("Sam Example", "sam@example.com", "Ready", "Fri 30 Oct"),
+        new("Taylor Sample", "taylor@example.com", "Not invited yet", "Thu 29 Oct"),
+    ];
+
+    private static readonly IReadOnlyList<FilterOption<string>> PeopleFilters =
+    [
+        new("everyone", "Everyone", 6),
+        new("Not invited yet", "Not invited yet", 2),
+        new("No passkey yet", "No passkey yet", 1),
+    ];
+
+    private static readonly IReadOnlyList<TabOption<string>> Tabs = [new("about", "About"), new("news", "News", 2), new("people", "People"), new("settings", "Settings")];
+    private static readonly IReadOnlyList<Crumb> Trail = [new("Library", "library", "folder"), new("Events", "events"), new("2026", "2026")];
+    private static readonly IReadOnlyList<SegmentOption<string>> Views = [new("grid", "Grid"), new("list", "List")];
+    private static readonly IReadOnlyList<FieldOption> Services = [new("am", "Sunday 10:30am"), new("pm", "Sunday 6pm")];
+    private static readonly IReadOnlyList<RoleChoice<string>> Roles =
+    [
+        new("team", "Team", "On the team: sees its news, files, chats and roster."),
+        new("admin", "Admin", "Also changes the roster, posts news and adds people."),
+        new("leader", "Leader", "Also changes its settings and answers join requests."),
+    ];
+
+    private static readonly PlaceRoleView EditorRole = new("editor", "Calendar Editor", "Adds and changes events on a calendar.",
+        [new AbilityGroup("Calendar", ["Add events", "Change events", "Ask to publish"])], null);
+
+    private static readonly IReadOnlyList<SegmentOption<string>> Stages = [new("new", "New"), new("followed", "Followed up"), new("answered", "Answered")];
+    private static readonly IReadOnlyList<BoardColumn<string>> BoardColumns =
+    [
+        new("New", "New", Addable: true),
+        new("Looking at it", "Looking at it"),
+        new("Doing it", "Doing it", "Drag a card here when someone starts on it."),
+        new("Done", "Done"),
+        new("Not doing", "Not doing", Narrow: true, Folds: true),
+    ];
+
+    private static readonly IReadOnlyList<RankedItem> Ranked = [new("Anchored in hope", "48 plays"), new("The God who speaks", "31 plays"), new("Psalm 23", "22 plays")];
+    private static readonly IReadOnlyList<TrendPoint> Trend = [new("Week 1", 180, "180"), new("Week 2", 196, "196"), new("Week 3", 202, "202"), new("Week 4", 214, "214")];
+    private static readonly IReadOnlyList<(OfficeSpanKind Kind, string Label)> Legend = [(OfficeSpanKind.Everyone, "For everyone"), (OfficeSpanKind.Draft, "A draft")];
+    private static readonly IReadOnlyList<MediaRef> NoPictures = [];
+    private static readonly string[] ColourRoles = ["masthead", "primary", "accent", "live", "marker", "sand", "ink", "ink-2", "danger"];
+    private static readonly string[] SampleIcons = ["home", "calendar", "users-round", "contact", "messages-square", "settings", "heart", "trash-2"];
+
+    private SamplePerson? _chosen;
+    private string _filter = "everyone";
+    private string _query = "";
+    private string _ministryName = SampleMinistry;
+    private string _tab = "about";
+    private string? _crumb;
+    private int _week;
+    private bool _paged, _deleting, _popover, _tray, _editor = true, _explain, _anonymous = true, _viewing, _banner;
+    private string _role = "team";
+    private string _view = "grid";
+    private string _name = "";
+    private string _request = "";
+    private string _service = "am";
+    private SamplePerson? _speaker;
+    private IReadOnlyList<SamplePerson> _leaders = [];
+    private string _code = "";
+    private string? _colour;
+    private string _date = "";
+    private string _time = "";
+    private string _dateTime = "";
+    private DateOnly? _day;
+    private string _stage = "followed";
+    private int? _openTicket;
+    private readonly HashSet<string> _hidden = [];
+    private List<SampleTicket> _tickets =
+    [
+        new(48, "Alex Sample", "Inconsistent words in the roster settings", "Wording", "New"),
+        new(47, "Alex Sample", "Chat settings should be a cog", "Icons", "New"),
+        new(41, "Jordan Example", "Text sits right under the top bar", "Spacing", "Looking at it"),
+        new(28, "Robin Sample", "Our own date picker in the admin panel", "Dates", "Done"),
+        new(12, "Sam Example", "A dark mode for printing", "Idea", "Not doing"),
+    ];
+
+    private DateTime Now => Clock.GetLocalNow().DateTime;
+    private DateOnly Today => DateOnly.FromDateTime(Now);
+
+    private IReadOnlyList<RailDay> Week => Enumerable.Range(0, 7).Select(offset => new RailDay(Today.AddDays(offset), offset % 3 == 0)).ToList();
+
+    private IReadOnlyList<OfficeSpan> Spans =>
+    [
+        new("Family games night", Now.Date.AddDays(2).AddHours(18), Now.Date.AddDays(2).AddHours(21), null, OfficeSpanKind.Everyone),
+        new("Easter draft", Now.Date.AddDays(1), Now.Date.AddDays(4), null, OfficeSpanKind.Draft),
+    ];
+
+    private IReadOnlyList<ToggleChip<string>> CalendarChips =>
+        new[] { "Services", "Impact Kids", "Life Groups" }.Select(name => new ToggleChip<string>(name, name, !_hidden.Contains(name))).ToList();
+
+    private IEnumerable<SamplePerson> ShownPeople => People
+        .Where(person => _filter == "everyone" || person.Account == _filter)
+        .Where(person => person.Name.Contains(_query, StringComparison.OrdinalIgnoreCase));
+
+    private IReadOnlyList<TableColumn<SamplePerson>> PeopleColumns =>
+    [
+        new("Name", person => @<span class="cell-strong">@person.Name</span>, person => person.Name),
+        new("Email", person => @<span class="quiet">@person.Email</span>, Class: "optional"),
+        new("Account", person => @<span class="quiet">@person.Account</span>),
+        new("Joined", person => @<span>@person.Joined</span>, Class: "num"),
+    ];
+
+    private IReadOnlyList<MenuItem> RecordActions =>
+    [
+        new("Send a recovery link", () => Task.CompletedTask, "send"),
+        new("Open as a page", () => Task.CompletedTask, "maximize-2"),
+        new("Delete Jordan…", () => { _deleting = true; return Task.CompletedTask; }, "trash-2", Danger: true, StartsGroup: true),
+    ];
+
+    private IReadOnlyList<MenuItem> NewItems =>
+    [
+        new("An event", () => Task.CompletedTask, "calendar", "Once, or on some days"),
+        new("A regular event", () => Task.CompletedTask, "repeat", "Every week or month"),
+    ];
+
+    private RenderFragment Record => @<div class="gallery__record">
+        <PaneHead Title="@_chosen!.Name" Lead="@($"{_chosen.Email} · joined {_chosen.Joined}")" Actions="RecordActions" OnClose="() => _chosen = null" />
+        <TextField Label="Name" Value="@_chosen.Name" />
+        <SaveBar Label="Save" OnCancel="() => _chosen = null" OnSave="() => _chosen = null" />
+    </div>;
+
+    private static RenderFragment Item(string title, string when, RenderFragment sample) => @<div class="gallery__item">
+        <h3 class="gallery__title">@title</h3>
+        <p class="gallery__when">@when</p>
+        <div class="gallery__sample">@sample</div>
+    </div>;
+
+    private static RenderFragment MetaOf(SampleTicket ticket) => @<text>#@ticket.Number · @ticket.From</text>;
+
+    private void ToggleCalendar(string name)
+    {
+        if (!_hidden.Remove(name))
+            _hidden.Add(name);
+    }
+
+    private void Move(BoardMove<SampleTicket, string> move) =>
+        _tickets = _tickets.Select(ticket => ticket == move.Item ? ticket with { Stage = move.To } : ticket).ToList();
+
+    private sealed record SamplePerson(string Name, string Email, string Account, string Joined);
+
+    private sealed record SampleTicket(int Number, string From, string Title, string Label, string Stage);
+}

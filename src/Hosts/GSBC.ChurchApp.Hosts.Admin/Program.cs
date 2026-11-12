@@ -5,6 +5,7 @@ using GSBC.ChurchApp.Features.Chats.Admin;
 using GSBC.ChurchApp.Features.Configuration.Admin;
 using GSBC.ChurchApp.Features.Events.Admin;
 using GSBC.ChurchApp.Features.Feedback.Admin;
+using GSBC.ChurchApp.Features.Feedback.Contracts;
 using GSBC.ChurchApp.Features.Media.Admin;
 using GSBC.ChurchApp.Features.Ministries.Admin;
 using GSBC.ChurchApp.Features.Notifications.Admin;
@@ -31,7 +32,8 @@ builder.RootComponents.Add<HeadOutlet>("head::after");
 
 ClientModules modules = new(typeof(Program).Assembly);
 modules.Add(new ClientModule("Home", typeof(Program).Assembly,
-    [new NavEntry("Home", "", AppIcons.Home), new NavEntry("Places in the app", "places", AppIcons.PlacesInTheApp, Area: NavAreas.TheApp, Summary: "Every page and thing in the app, with its link")]));
+    [new NavEntry("Home", "", AppIcons.Home), new NavEntry("Places in the app", "places", AppIcons.PlacesInTheApp, Area: NavAreas.TheApp, Summary: "Every page and thing in the app, with its link"),
+     new NavEntry("Design gallery", "gallery", AppIcons.DesignGallery, FeedbackPermissions.Send, Area: NavAreas.Technical, Summary: "Every shared building block, live, and when to use it")]));
 
 builder.Services
     .AddSingleton(modules)

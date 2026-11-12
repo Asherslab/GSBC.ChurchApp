@@ -5,6 +5,7 @@ using GSBC.ChurchApp.Features.Chats.App;
 using GSBC.ChurchApp.Features.Configuration.App;
 using GSBC.ChurchApp.Features.Events.App;
 using GSBC.ChurchApp.Features.Feedback.App;
+using GSBC.ChurchApp.Features.Feedback.Contracts;
 using GSBC.ChurchApp.Features.Media.Client;
 using GSBC.ChurchApp.Features.Ministries.App;
 using GSBC.ChurchApp.Features.Notifications.App;
@@ -50,6 +51,7 @@ builder.Services
     .AddEventsApp(modules);
 modules.Add(new ClientModule("Settings", typeof(Program).Assembly,
     [new NavEntry("Appearance", "appearance", AppIcons.Appearance), new NavEntry("Storage", "storage", AppIcons.Storage)]));
+modules.Add(new ClientModule("Design", typeof(Program).Assembly, [new NavEntry("Design gallery", "gallery", AppIcons.DesignGallery, FeedbackPermissions.Send)]));
 builder.Services.AddReleaseNotesApp(modules);
 builder.Services.AddAnalyticsApp(modules);
 builder.Services.AddFeedbackApp(modules);
@@ -57,7 +59,7 @@ builder.Services.AddFeedbackApp(modules);
 WebAssemblyHost host = builder.Build();
 NativeBridge bridge = await host.Services.InitialiseNativeAsync();
 if (bridge.IsDevelopmentBuild)
-    modules.Add(new ClientModule("Development", typeof(Program).Assembly, [new NavEntry("Design gallery", "gallery", AppIcons.DesignGallery)], [DevelopmentFeeds.Echo]));
+    modules.Add(new ClientModule("Development", typeof(Program).Assembly, [], [DevelopmentFeeds.Echo]));
 await host.Services.StartNativeDataLayerAsync(modules);
 await host.Services.RunClientStartupTasksAsync();
 await host.RunAsync();
