@@ -857,7 +857,7 @@ component is shown, live, in the gallery (`/gallery` on both).
 
 | Job | Use | Where things go |
 |---|---|---|
-| A list and the record chosen from it (admin) | `Workbench` | Filters in a sand rail on the left only when the page has filters; the list in the middle; the record ruled off on the right, staying beside the list at every desktop width. The page's one add action sits in the `TitleBand`, top right. |
+| A list and the record chosen from it (admin) | `Workbench` | Filters in a sand rail on the left only when the page has filters (with `FoldAside`, the rail steps aside while a record is open in a narrow window); the list in the middle; the record ruled off on the right, staying beside the list at every desktop width. The page's one add action sits in the `TitleBand`, top right. |
 | A record's heading | `PaneHead` | Title and a one-line lead; its ⋯ menu (`Actions`) holds Delete and every other action on the item; Open as a page and Close at the right. |
 | Saving | `SaveBar` (+ `UnsavedGuard`) | **Cancel bottom left, Save bottom right** of anything that saves, on both sides. The status line ("Saved", "You have changes that aren't saved") sits on its own line above, never between the buttons. A create form never says it has unsaved changes (`New`). |
 | Deleting | the item's ⋯ menu, then a `Sheet` | Delete is always an action on the item, never a red button in a foot or on the page. It asks once, saying what goes with it. Actions list the main (red) one first: the admin panel shows it at the right with Keep it at the far left; the phone stacks it on top. |

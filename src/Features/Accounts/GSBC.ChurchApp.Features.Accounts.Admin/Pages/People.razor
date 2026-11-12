@@ -16,7 +16,7 @@
 </TitleBand>
 
 <LiveData @ref="_live" TValue="PeopleView" Feeds="[AccountsFeeds.People]" Load="LoadAsync" FailedTitle="Can't load people right now">
-    <Workbench Detail="@Detail" DetailLabel="Add someone" AsideLabel="Find and show">
+    <Workbench Detail="@Detail" DetailLabel="Add someone" FoldAside="true" AsideLabel="Find and show">
         <Aside>
             <SearchField Label="Find someone" Placeholder="Name or email" Value="@_query" ValueChanged="SearchAsync" />
             <FilterChips TValue="PeopleFilter" Label="Show" Rail="true" Options="Filters(context.Value)" @bind-Value="_filter" />

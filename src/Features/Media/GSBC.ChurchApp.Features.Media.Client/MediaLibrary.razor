@@ -11,7 +11,7 @@
 <LiveData @ref="_treeLive" TValue="FolderMap" Feeds="[MediaFeeds.Library]" Load="LoadTreeAsync" FailedTitle="Can't load the library right now" Context="tree">
     @{ FolderMap map = tree.Value; }
     <LiveData @ref="_live" TValue="MediaList" Feeds="[MediaFeeds.Library]" Load="LoadAsync" FailedTitle="Can't load the library right now">
-        <Workbench AsideLabel="Find and filter" Aside="Rail(context.Value)" Detail="@Detail(map)" DetailLabel="@(_uploading ? "Upload" : "File")">
+        <Workbench AsideLabel="Find and filter" FoldAside="true" Aside="Rail(context.Value)" Detail="@Detail(map)" DetailLabel="@(_uploading ? "Upload" : "File")">
             <div class="media-library__head">
                 @if (Searching)
                 {
