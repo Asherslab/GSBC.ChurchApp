@@ -11,9 +11,9 @@ public static class MinistriesAdminExtensions
     public static IServiceCollection AddMinistriesAdmin(this IServiceCollection services, ClientModules modules)
     {
         modules.Add(new ClientModule("Ministries", typeof(MinistriesAdminExtensions).Assembly,
-            [new NavEntry("Ministries", "ministries", AppIcons.Ministries, MinistriesPermissions.People, Area: NavAreas.People,
+            [new NavEntry("Ministries", "ministries", AppIcons.Ministries, MinistriesPermissions.People, Area: NavAreas.MinistriesAndGroups,
                 Summary: "Each ministry's people, news, calendars, files and the ministries under it, for its leaders and for staff"),
-             new NavEntry("Life Groups", "life-groups", AppIcons.LifeGroups, MinistriesPermissions.Settings, Area: NavAreas.People,
+             new NavEntry("Life Groups", "life-groups", AppIcons.LifeGroups, MinistriesPermissions.Settings, Area: NavAreas.MinistriesAndGroups,
                 Summary: "The Sunday classes: what's on now, what's next, and the all-year groups")],
             [MinistriesFeeds.Ministries], []));
         return services

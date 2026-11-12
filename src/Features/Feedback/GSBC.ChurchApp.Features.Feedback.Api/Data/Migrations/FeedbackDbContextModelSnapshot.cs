@@ -18,7 +18,7 @@ namespace GSBC.ChurchApp.Features.Feedback.Api.Data.Migrations
 #pragma warning disable 612, 618
             modelBuilder
                 .HasDefaultSchema("feedback")
-                .HasAnnotation("ProductVersion", "10.0.14")
+                .HasAnnotation("ProductVersion", "10.0.15")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -268,6 +268,11 @@ namespace GSBC.ChurchApp.Features.Feedback.Api.Data.Migrations
                         .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("recent_pages");
+
+                    b.Property<string>("Screenshots")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("screenshots");
 
                     b.Property<string>("SenderName")
                         .IsRequired()

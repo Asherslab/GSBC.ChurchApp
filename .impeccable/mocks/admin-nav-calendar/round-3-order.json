@@ -1,0 +1,18 @@
+{
+  "title": "Putting calendars in order",
+  "question": "Calendar Managers set one order for the church's calendars: on the left here, in Browse calendars and on the phone. How should they move them? (3 of 4)",
+  "options": [
+    { "id": "drag", "label": "Drag by a handle",
+      "thesis": "A handle appears on hover or focus; drag a calendar into place, or press Alt ↑ / Alt ↓. It saves straight away.",
+      "palette": ["#2A3D5E", "#F3EFE8", "#E7AE74", "#009C8F"], "materials": ["a new shared Reorder list", "drag lift and a drop line"],
+      "viewport": "The calendar list as today, a grip at each row's left on hover, the moving one lifted with an aqua line where it will land.",
+      "risk": "Nothing on screen says it can be dragged until you hover.", "html": ".impeccable/mocks/admin-nav-calendar/order-drag.html" },
+    { "id": "arrange", "label": "Arrange, then Done",
+      "thesis": "An Arrange button turns the list into ordering: handles and up and down arrows on every row, switches hidden, Done to finish.",
+      "palette": ["#2A3D5E", "#F3EFE8", "#E7AE74", "#009C8F"], "materials": ["a new shared Reorder list", "an arranging mode"],
+      "viewport": "The list's head reads 'Order on phones and here' with Done; each calendar has a handle and arrows.",
+      "risk": "One more click before you can move anything.", "html": ".impeccable/mocks/admin-nav-calendar/order-arrange.html" }
+  ],
+  "steer": true,
+  "followup": true
+}

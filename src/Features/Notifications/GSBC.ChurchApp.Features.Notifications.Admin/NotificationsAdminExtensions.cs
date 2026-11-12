@@ -13,7 +13,7 @@ public static class NotificationsAdminExtensions
     public static IServiceCollection AddNotificationsAdmin(this IServiceCollection services, ClientModules modules)
     {
         modules.Add(new ClientModule("Notifications", typeof(NotificationsAdminExtensions).Assembly,
-            [new NavEntry("Announcements", "announcements", AppIcons.Announcements, NotificationsPermissions.Write, Area: NavAreas.CalendarAndNews,
+            [new NavEntry("Announcements", "announcements", AppIcons.Announcements, NotificationsPermissions.Write, Area: NavAreas.ThisWeek,
                 Summary: "Tell the church something, on everyone's phone")]));
         return services.AddDestinations(NotificationsDestinations.All).AddHubTile<InboxTile>(NotificationsTiles.Inbox)
             .AddSingleton(provider => new AnnouncementsClient(provider.GetRequiredService<Grpc.Core.ChannelBase>())).AddSingleton<IOfficeWeekSource, AnnouncementsOfficeWeek>()

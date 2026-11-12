@@ -6,19 +6,32 @@
 {
     <div class="reorder__preview" aria-hidden="true">@Preview(Shown)</div>
 }
-<div class="reorder" role="list" aria-label="@Label" @ref="_list">
+<div class="reorder @(Quiet ? "reorder--quiet" : "") @Class" role="list" aria-label="@Label" @ref="_list">
     @for (int index = 0; index < Items.Count; index++)
     {
         TItem item = Items[index];
         int at = index;
-        <div class="reorder__row" role="listitem" data-reorder-row @key="Key(item)">
-            <span class="reorder__grip" data-reorder-grip aria-hidden="true"><Icon Name="grip" Size="IconSize.Small" /></span>
+        <div class="reorder__row @RowClass?.Invoke(item)" role="listitem" data-reorder-row @key="Key(item)">
+            @if (!Quiet)
+            {
+                <span class="reorder__grip" data-reorder-grip aria-hidden="true"><Icon Name="grip" Size="IconSize.Small" /></span>
+            }
+            else if (!Disabled)
+            {
+                <button type="button" class="reorder__grip" data-reorder-grip aria-label="@($"Move {Name(item)}")" aria-keyshortcuts="Alt+ArrowUp Alt+ArrowDown"
+                        title="Drag to move, or press Alt and an arrow key" @onkeydown="key => KeyAsync(key, at)">
+                    <Icon Name="grip" Size="IconSize.Small" />
+                </button>
+            }
             <div class="reorder__body">@ItemTemplate(item)</div>
             @if (Trailing is not null)
             {
                 <div class="reorder__trail">@Trailing(item)</div>
             }
-            <Menu Label="@($"Move {Name(item)}")" Items="Moves(at)" Small="true" Disabled="Disabled" />
+            @if (!Quiet)
+            {
+                <Menu Label="@($"Move {Name(item)}")" Items="Moves(at)" Small="true" Disabled="Disabled" />
+            }
         </div>
     }
 </div>
@@ -41,6 +54,9 @@
     [Parameter] public RenderFragment<IReadOnlyList<TItem>>? Preview { get; set; }
     [Parameter] public EventCallback<IReadOnlyList<TItem>> OnReordered { get; set; }
     [Parameter] public bool Disabled { get; set; }
+    [Parameter] public bool Quiet { get; set; }
+    [Parameter] public Func<TItem, string?>? RowClass { get; set; }
+    [Parameter] public string? Class { get; set; }
 
     private IReadOnlyList<TItem> Shown => _previewing is { } moving ? Moved(moving.From, moving.To) : Items;
 
@@ -68,6 +84,9 @@
         _announced = $"Moved {Name(Items[from])} to {to + 1} of {Items.Count}.";
         await OnReordered.InvokeAsync(order);
     }
+
+    private Task KeyAsync(KeyboardEventArgs key, int at) =>
+        key is { AltKey: true, Key: "ArrowUp" or "ArrowDown" } ? MoveAsync(at, at + (key.Key == "ArrowDown" ? 1 : -1)) : Task.CompletedTask;
 
     private Task PreviewAsync(int from, int to) => InvokeAsync(() =>
     {

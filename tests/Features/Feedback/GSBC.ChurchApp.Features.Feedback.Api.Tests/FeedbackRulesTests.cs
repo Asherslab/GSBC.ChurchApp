@@ -30,6 +30,16 @@ public sealed class FeedbackRulesTests
     }
 
     [Fact]
+    public void ThePageFeedbackIsAboutIsTheLastOneOutsideTheMoreTabOrFailingThatTheLastOneThatIsntMoreOrFeedback()
+    {
+        HashSet<string> inTheMoreTab = ["/more", "/help-improve", "/feedback/send"];
+
+        Assert.Equal("/calendar", FeedbackPages.Before(["/feedback/send", "/more", "/help-improve", "/more", "/calendar", "/"], inTheMoreTab.Contains));
+        Assert.Equal("/help-improve", FeedbackPages.Before(["/feedback/send", "/more", "/help-improve", "/more"], inTheMoreTab.Contains));
+        Assert.Equal("", FeedbackPages.Before(["/feedback/send", "/more"], inTheMoreTab.Contains));
+    }
+
+    [Fact]
     public void OnThePhoneTheAdminPanelCountsForNothing()
     {
         Assert.Equal(SendVerdict.NotHere, FeedbackRules.MaySendFrom(FeedbackSource.App, new Sender(null, Person, false, false), 0));

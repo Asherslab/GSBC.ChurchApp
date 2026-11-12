@@ -12,7 +12,7 @@ public static class ChatsAdminExtensions
     public static IServiceCollection AddChatsAdmin(this IServiceCollection services, ClientModules modules)
     {
         modules.Add(new ClientModule("Chats", typeof(ChatsAdminExtensions).Assembly,
-            [new NavEntry("Chats", "chats", AppIcons.Chats, ChatsPermissions.Check, Area: NavAreas.People,
+            [new NavEntry("Chats", "chats", AppIcons.Chats, ChatsPermissions.Check, Area: NavAreas.MinistriesAndGroups,
                 Summary: "Reports about messages, checking a ministry's chats (every check is logged), and people paused from chats")],
             [ChatsFeeds.Oversight], []));
         return services

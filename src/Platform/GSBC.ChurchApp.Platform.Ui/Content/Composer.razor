@@ -1,0 +1,30 @@
+<div class="composer @Class">
+    @Above
+    <div class="composer__bar">
+        @Attach
+        <textarea class="composer__field" rows="@Rows" placeholder="@Placeholder" aria-label="@Label" maxlength="@MaxLength" autocapitalize="sentences"
+                  value="@Text" @oninput="TypedAsync"></textarea>
+        <Button Icon="@SendIcon" AriaLabel="@SendLabel" Tooltip="@SendLabel" Disabled="@(!CanSend)" Busy="Busy" Class="composer__send" OnClick="OnSend" />
+    </div>
+    @Below
+</div>
+
+@code {
+    [Parameter, EditorRequired] public required string Label { get; set; }
+    [Parameter] public string Text { get; set; } = "";
+    [Parameter] public EventCallback<string> TextChanged { get; set; }
+    [Parameter] public string? Placeholder { get; set; }
+    [Parameter] public int MaxLength { get; set; } = 4000;
+    [Parameter] public int Rows { get; set; } = 1;
+    [Parameter] public bool CanSend { get; set; }
+    [Parameter] public bool Busy { get; set; }
+    [Parameter] public string SendLabel { get; set; } = "Send";
+    [Parameter] public string SendIcon { get; set; } = "send";
+    [Parameter] public EventCallback OnSend { get; set; }
+    [Parameter] public RenderFragment? Attach { get; set; }
+    [Parameter] public RenderFragment? Above { get; set; }
+    [Parameter] public RenderFragment? Below { get; set; }
+    [Parameter] public string? Class { get; set; }
+
+    private Task TypedAsync(ChangeEventArgs change) => TextChanged.InvokeAsync(change.Value?.ToString() ?? "");
+}

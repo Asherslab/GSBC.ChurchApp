@@ -1,8 +1,22 @@
 @using Grpc.Core
 @using GSBC.ChurchApp.Platform.Client.People
 
-<Sheet Open="Open" OpenChanged="OpenChanged" Title="@Title" Lead="@Lead" Wide="true">
-    <ChildContent>
+@if (Inline)
+{
+    <div class="people-sheet--inline">@Body</div>
+}
+else
+{
+    <Sheet Open="Open" OpenChanged="OpenChanged" Title="@Title" Lead="@Lead" Wide="true">
+        <ChildContent>@Body</ChildContent>
+        <Actions>
+            <Button Block="true" Variant="ButtonVariant.Quiet" OnClick="() => OpenChanged.InvokeAsync(false)">Done</Button>
+        </Actions>
+    </Sheet>
+}
+
+@code {
+    private RenderFragment Body => @<text>
         @if (View.MayAdd)
         {
             <PersonFinder Label="Add someone" Placeholder="Add someone: find them by name" Find="Source.FindAsync" ActionText="@($"Add as {FirstGivable!.Name}")"
@@ -42,13 +56,8 @@
                 }
             </ul>
         }
-    </ChildContent>
-    <Actions>
-        <Button Block="true" Variant="ButtonVariant.Quiet" OnClick="() => OpenChanged.InvokeAsync(false)">Done</Button>
-    </Actions>
-</Sheet>
+    </text>;
 
-@code {
     private string? _busy;
     private string? _problem;
     private (string PersonId, string RoleId)? _explaining;
@@ -59,6 +68,7 @@
     [Parameter] public string? Lead { get; set; }
     [Parameter] public string Empty { get; set; } = "No one yet.";
     [Parameter] public bool Open { get; set; }
+    [Parameter] public bool Inline { get; set; }
     [Parameter] public EventCallback<bool> OpenChanged { get; set; }
     [Parameter] public EventCallback OnChanged { get; set; }
 

@@ -41,3 +41,13 @@ with counts; Account at the foot.
 FORM: Your pages, then areas folded; position 7 of 7; seed:f7e60a5ef83688e2
 
 FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, DESIGN.md, and every shipping raster carrying its provenance
+
+## Areas, recut (2026-11-12)
+
+The owner (#18, on Prayer: "feels like this section is becoming partially catch-all. basically everything in the entire
+app relates to people somehow") picked **What you do most, first** on the decision page
+(`.impeccable/mocks/admin-nav-calendar/groups-rhythm.html`, seed:0466a0835d69e83f, code-led): seven areas in the order
+staff reach for them. Sundays & sermons (Sermons, Import from the website) · This week (Announcements, Calendar, Prayer,
+Weekly digest) · Ministries & groups (Chats, Life Groups, Ministries; Rosters when it has a page) · Safety (Safe Ministry
+Check, Safeguarding) · People & access (People, App review) · The app (App styling, Insights, Media, Places in the app) ·
+Technical (App health, Design gallery, Feedback). Everything else in this brief stands: folding, pins, Jump to, the foot.

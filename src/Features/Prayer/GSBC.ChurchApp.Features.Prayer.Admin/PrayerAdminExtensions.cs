@@ -12,7 +12,7 @@ public static class PrayerAdminExtensions
     public static IServiceCollection AddPrayerAdmin(this IServiceCollection services, ClientModules modules)
     {
         modules.Add(new ClientModule("Prayer", typeof(PrayerAdminExtensions).Assembly,
-            [new NavEntry("Prayer", "prayer", AppIcons.Prayer, PrayerPermissions.Wall, Area: NavAreas.People,
+            [new NavEntry("Prayer", "prayer", AppIcons.Prayer, PrayerPermissions.Wall, Area: NavAreas.ThisWeek,
                 Summary: "Prayer requests from the app, for the pastoral team, and what the prayer wall shows")],
             [PrayerFeeds.Inbox], []));
         return services.AddPrayerClient().AddSingleton<PastoralClient>().AddSingleton<DigestSchedulesClient>();

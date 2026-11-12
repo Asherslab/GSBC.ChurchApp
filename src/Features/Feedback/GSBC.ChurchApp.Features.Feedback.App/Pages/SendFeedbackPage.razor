@@ -7,8 +7,7 @@
 <UnsavedGuard Changed="() => _sentId is null && (_text.Trim().Length > 0 || _picked.Count > 0)" What="your feedback" />
 <RefreshOn On="ChangeKind.Outbox | ChangeKind.Session | ChangeKind.Access" Changed="LoadAsync" />
 
-<Page Title="Send feedback" BackHref="more" BackLabel="More">
-    <Masthead Title="Send feedback" Note="Something broken, looking wrong, or an idea? Tell us." />
+<Page Title="Send feedback" BackHref="more" BackLabel="More" TopBar="TopBarStyle.Solid">
     @if (_here is null || _allowed is null)
     {
         <Section First="true"><Skeleton /></Section>
@@ -47,61 +46,45 @@
     }
     else
     {
-        <Section First="true">
-            @if (_picked.Count == 0)
-            {
-                <FilePick Label="Choose screenshots or videos" Kinds="PickableFiles.PicturesAndVideos" Multiple="true" Limit="FeedbackLimits.MostAttachments"
-                          TooLarge="FeedbackLimits.TooLarge" Class="feedback-empty" OnPicked="Picked">
-                    <span class="feedback-empty__tile"><Icon Name="image" /></span>
-                    <span class="feedback-empty__title">@(context ? "Keeping it on this phone…" : "Choose screenshots or videos")</span>
-                    <span class="feedback-empty__hint">From your photo library. Up to @FeedbackLimits.MostAttachments.</span>
-                </FilePick>
-            }
-            else
-            {
-                <div class="feedback-stage">
-                    <div class="feedback-stage__shown">
-                        <MediaPreview Media="Chosen" Controls="true" Class="feedback-stage__media" />
-                        <button type="button" class="feedback-stage__remove" aria-label="@($"Don't send {Chosen.FileName}")" @onclick="() => UnpickAsync(Chosen)"><Icon Name="x" Size="IconSize.Small" /></button>
-                    </div>
-                    <div class="feedback-strip-col">
-                        <div class="feedback-strip" role="listbox" aria-label="Chosen screenshots and videos">
+        <div class="feedback-compose">
+            <div class="feedback-compose__about">
+                <p class="feedback-compose__lead">Something broken, looking wrong, or an idea? Write it below, and add screenshots or videos with the paperclip.</p>
+                <p class="feedback-sentwith"><Icon Name="info" Size="IconSize.Small" /><span>Sent with it: @SentWith</span></p>
+            </div>
+            <Composer Label="Tell us about it" Placeholder="What happened, or your idea?" MaxLength="FeedbackLimits.LongestText" Rows="3"
+                      @bind-Text="_text" CanSend="@(Blocked is null)" Busy="_sending" OnSend="SendAsync">
+                <Above>
+                    @if (_picked.Count > 0)
+                    {
+                        <div class="feedback-picked" aria-label="Screenshots and videos to send">
                             @foreach (MediaRef media in _picked)
                             {
-                                <button type="button" role="option" aria-selected="@(media == Chosen)" class="feedback-strip__item @(media == Chosen ? "feedback-strip__item--on" : "")"
-                                        aria-label="@media.FileName" @onclick="() => _chosen = media">
-                                    <AttachmentThumb Media="media" Class="feedback-strip__thumb" />
-                                </button>
+                                <span class="feedback-picked__item">
+                                    <AttachmentThumb Media="media" Class="feedback-picked__thumb" />
+                                    <Button Small="true" Icon="x" AriaLabel="@($"Don't send {media.FileName}")" Class="feedback-picked__remove" OnClick="() => UnpickAsync(media)" />
+                                </span>
                             }
+                            <span class="feedback-picked__count">@_picked.Count of @FeedbackLimits.MostAttachments</span>
                         </div>
-                        @if (_picked.Count < FeedbackLimits.MostAttachments)
-                        {
-                            <FilePick Label="Add another screenshot or video" Kinds="PickableFiles.PicturesAndVideos" Multiple="true" Limit="FeedbackLimits.MostAttachments - _picked.Count"
-                                      TooLarge="FeedbackLimits.TooLarge" Class="feedback-strip__add" OnPicked="Picked">
-                                <Icon Name="@(context ? "clock" : "plus")" />
-                            </FilePick>
-                        }
-                    </div>
-                </div>
-                <p class="feedback-count">@_picked.Count chosen · up to @FeedbackLimits.MostAttachments</p>
-            }
-        </Section>
-        <Section>
-            <TextField Label="Tell us about it" Multiline="true" MaxLength="FeedbackLimits.LongestText" AutoCapitalize="sentences" @bind-Value="_text"
-                       Placeholder="What happened, what you expected, or your idea" />
-        </Section>
-        <div class="editor-foot">
-            <div class="editor-foot__actions">
-                <SaveBar Block="true" Label="Send" Busy="_sending" OnSave="SendAsync" Blocked="@Blocked" />
-            </div>
-            <p class="feedback-sentwith"><Icon Name="info" Size="IconSize.Small" /><span>Sent with it: @SentWith</span></p>
+                    }
+                </Above>
+                <Attach>
+                    @if (_picked.Count < FeedbackLimits.MostAttachments)
+                    {
+                        <FilePick Label="Add screenshots or videos" Kinds="PickableFiles.PicturesAndVideos" Multiple="true" Limit="FeedbackLimits.MostAttachments - _picked.Count"
+                                  TooLarge="FeedbackLimits.TooLarge" Class="composer__attach" OnPicked="Picked">
+                            <Icon Name="@(context ? "clock" : "paperclip")" />
+                            <span>@(context ? "Keeping it on this phone…" : "Add screenshots or videos")</span>
+                        </FilePick>
+                    }
+                </Attach>
+            </Composer>
         </div>
     }
 </Page>
 
 @code {
     private readonly List<MediaRef> _picked = [];
-    private MediaRef? _chosen;
     private string _text = "";
     private string? _sentId;
     private bool _sending;
@@ -109,8 +92,6 @@
     private FeedbackHere? _here;
 
     [Inject] private Platform.Client.Native.NativeBridge Bridge { get; set; } = null!;
-
-    private MediaRef Chosen => _chosen is { } chosen && _picked.Contains(chosen) ? chosen : _picked[0];
 
     private bool Waiting => _here?.Last is { State: not Sending.Sent };
 
@@ -131,8 +112,10 @@
                 parts.Add(PhoneModels.Name(model));
             if (Bridge.OsVersion is { Length: > 0 } os)
                 parts.Add($"{(Bridge.Platform == "android" ? "Android" : "iOS")} {os}");
-            parts.Add("the page you came from and this phone's state");
-            return string.Join(", ", parts) + ".";
+            parts.Add("the pages you came from");
+            if (Feedback.Screenshots.Select(shot => shot.Page).Distinct().ToList() is { Count: > 0 } screenshotted)
+                parts.Add($"where you took screenshots in the last hour ({string.Join(", ", screenshotted)})");
+            return string.Join(", ", parts) + " and this phone's state.";
         }
     }
 
@@ -154,14 +137,11 @@
         if (_picked.Count >= FeedbackLimits.MostAttachments)
             return;
         _picked.Add(media);
-        _chosen ??= media;
     }
 
     private async Task UnpickAsync(MediaRef media)
     {
         _picked.Remove(media);
-        if (_chosen == media)
-            _chosen = _picked.FirstOrDefault();
         await Feedback.ForgetAsync(media);
     }
 
@@ -172,7 +152,6 @@
         {
             _sentId = await Feedback.SendAsync(_text, _picked.ToList());
             _picked.Clear();
-            _chosen = null;
             _text = "";
             _here = await Feedback.HereAsync();
         }

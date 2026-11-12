@@ -1293,6 +1293,7 @@ button.text-link:disabled { color: var(--ink-3); cursor: default; }
 .people-row__names { overflow: hidden; font-size: var(--text-row); font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
 .people-row__count { color: var(--ink-2); font-size: var(--text-caption); }
 
+.people-sheet--inline { display: grid; gap: var(--stack); }
 .people-sheet__found, .people-sheet__people { display: grid; margin: 8px 0 0; padding: 0; list-style: none; }
 .people-sheet__found { margin-bottom: 8px; }
 .people-sheet__found-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 52px; padding: 6px 0; border-bottom: 1px solid var(--line); }
@@ -1455,6 +1456,14 @@ span.stage-pipeline__stage { pointer-events: none; }
 .board__col--folded span { writing-mode: vertical-rl; font-size: var(--text-label); font-weight: 700; }
 .board__col--folded:hover { color: var(--ink); }
 .board__col--folded:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.composer { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-xs); padding: var(--space-sm) var(--gutter) var(--space-md); border-top: 1px solid var(--line); background: var(--bar); -webkit-backdrop-filter: saturate(1.6) blur(16px); backdrop-filter: saturate(1.6) blur(16px); }
+.keyboard-open .composer { padding-bottom: var(--space-sm); }
+.composer__bar { display: flex; align-items: flex-end; gap: var(--space-xs); }
+.composer__field { flex: 1; min-height: 40px; max-height: 9.5em; padding: var(--space-sm) var(--space-md); border: 0; border-radius: 20px; background: var(--field); box-shadow: inset 0 0 0 1px var(--field-edge); color: var(--ink); font: inherit; font-size: var(--text-body); line-height: 1.38; resize: none; field-sizing: content; }
+.composer__field:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+.composer .btn.composer__send { flex: none; width: 40px; min-width: 40px; height: 40px; min-height: 40px; padding: 0; border-radius: var(--radius-full); }
+.composer .file-pick.composer__attach { position: relative; flex: none; display: grid; place-items: center; width: 40px; height: 40px; min-height: 0; padding: 0; border-radius: var(--radius-full); background: var(--sand); color: var(--ink-2); }
+.composer .file-pick.composer__attach > span:not(.icon) { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .board__slot { display: grid; min-width: 0; border-radius: var(--radius-tile); }
 .board__slot[draggable="true"] { cursor: grab; }
 .board__empty { margin: 0; padding: var(--space-xl) var(--space-md); border: 1px dashed color-mix(in srgb, var(--ink-3) 45%, transparent); border-radius: var(--radius-tile); color: var(--ink-2); font-size: var(--text-caption); text-align: center; text-wrap: pretty; }
@@ -1573,6 +1582,11 @@ span.stage-pipeline__stage { pointer-events: none; }
 .reorder__body { flex: 1; min-width: 0; }
 .reorder__body > .toggle-row { border-bottom: 0; }
 .reorder__trail { flex: none; display: flex; align-items: center; }
+.reorder--quiet .reorder__row { min-height: 44px; border-bottom: 0; border-radius: var(--radius-tile); background: none; }
+.reorder--quiet .reorder__row--lifted { background: var(--surface); box-shadow: var(--lift), inset 0 0 0 2px var(--accent); }
+.reorder--quiet .reorder__grip { width: var(--space-xl); height: 32px; margin-left: 0; padding: 0; border: 0; border-radius: var(--radius-inner); background: none; opacity: 0; transition: opacity 140ms var(--ease-out); }
+.reorder--quiet .reorder__row:hover .reorder__grip, .reorder--quiet .reorder__grip:focus-visible, .reorder--quiet .reorder__row--lifted .reorder__grip { opacity: 1; }
+@media (hover: none) { .reorder--quiet .reorder__grip { opacity: 1; } }
 .reorder__preview { display: flex; gap: var(--space-xl); overflow: hidden; margin-bottom: var(--space-xs); padding-bottom: var(--space-xs); border-bottom: 1px solid var(--line); color: var(--ink-3); font-size: var(--text-caption); font-weight: 600; white-space: nowrap; }
 .reorder__preview .is-first { color: var(--ink); box-shadow: inset 0 -3px 0 var(--marker); padding-bottom: var(--space-xs); }
 

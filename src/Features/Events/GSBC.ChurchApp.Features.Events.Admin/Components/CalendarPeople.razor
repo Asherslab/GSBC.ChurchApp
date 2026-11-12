@@ -1,0 +1,16 @@
+@inject IPlacePeopleSource People
+
+<LiveData @key="Calendar.Settings.Calendar.Id" @ref="_live" TValue="PlacePeopleView" Feeds="Source.Feeds" Load="Source.LoadAsync" FailedTitle="Can't load who's on this calendar">
+    <PeopleSheet Inline="true" Source="Source" View="context.Value" Title="@($"People on the {Calendar.Settings.Calendar.Name} calendar")"
+                 Empty="No one is on it yet." OnChanged="ReloadAsync" />
+</LiveData>
+
+@code {
+    private LiveData<PlacePeopleView>? _live;
+
+    [Parameter, EditorRequired] public required DeskCalendar Calendar { get; set; }
+
+    private IPlacePeople Source => People.For(ScopeKind.Calendar, Calendar.Settings.Calendar.Id);
+
+    private Task ReloadAsync() => _live?.ReloadAsync() ?? Task.CompletedTask;
+}

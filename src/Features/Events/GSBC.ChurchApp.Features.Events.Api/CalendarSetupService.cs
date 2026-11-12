@@ -81,6 +81,31 @@ internal sealed class CalendarSetupService(
         return Settings(calendar);
     }
 
+    public async ValueTask<Done> OrderCalendarsAsync(CalendarOrder request, CallContext context = default)
+    {
+        CancellationToken cancellationToken = context.CancellationToken;
+        List<CalendarRecord> calendars = await db.Calendars.OrderBy(calendar => calendar.Order).ThenBy(calendar => calendar.Name).ToListAsync(cancellationToken);
+        List<string> wanted = request.CalendarIds.Distinct().ToList();
+        if (wanted.Any(id => calendars.All(calendar => calendar.Id.ToString() != id)))
+            throw new RpcException(new Status(StatusCode.NotFound, "A calendar in that order isn't here any more. Try again."));
+        IEnumerable<CalendarRecord> ordered = wanted.Select(id => calendars.Single(calendar => calendar.Id.ToString() == id))
+            .Concat(calendars.Where(calendar => !wanted.Contains(calendar.Id.ToString())));
+        DateTime now = time.GetUtcNow().UtcDateTime;
+        int order = 0;
+        foreach (CalendarRecord calendar in ordered)
+        {
+            if (calendar.Order != order)
+            {
+                (calendar.Order, calendar.UpdatedAt) = (order, now);
+                publisher.MarkAdmin(calendar.Id, calendar.Id);
+            }
+            order++;
+        }
+        await db.SaveChangesAsync(cancellationToken);
+        await publisher.PublishAsync(cancellationToken);
+        return new Done();
+    }
+
     public async ValueTask<CalendarRemoval> RemovalAsync(CalendarToRemove request, CallContext context = default) =>
         await remover.WhatGoesAsync(request.CalendarId, context.CancellationToken);
 

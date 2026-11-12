@@ -135,8 +135,9 @@ from the page. They picked the **folded** layout on the decision page (`.impecca
   ⋯ beside it.
 - **Who can start a chat** is explained in a ministry's Chats tab to someone who can't ("Production's leaders start
   chats here", or "leaders and team" when the ministry lets the team start them).
-- Reactions use the shared `BubbleReactions`; the composer's controls are shared buttons. Once the shared `Composer`
-  (Admin navigation station) is merged, the composer's bar moves onto it.
+- Reactions use the shared `BubbleReactions`; the message box is the shared `Composer`
+  (2026-11-12): reply or edit context, *Writing for* chips, mentions and picked files in its `Above`, the paperclip in
+  `Attach`, and Send turning to a check while editing. Send feedback on the phone uses the same component.
 
 ## Deleting
 

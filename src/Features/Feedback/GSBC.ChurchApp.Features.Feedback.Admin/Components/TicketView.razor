@@ -126,6 +126,14 @@
                         {
                             <dt>Page</dt><dd>@ticket.Page</dd>
                         }
+                        @if (ticket.Phone is { RecentPages.Count: > 1 } phone)
+                        {
+                            <dt>Before</dt><dd>@string.Join(", ", phone.RecentPages.Skip(1))</dd>
+                        }
+                        @if (ticket.Phone is { Screenshots.Count: > 0 } screenshotted)
+                        {
+                            <dt>Screenshots</dt><dd>@FeedbackWords.Screenshots(screenshotted.Screenshots)</dd>
+                        }
                     }
                 </dl>
 

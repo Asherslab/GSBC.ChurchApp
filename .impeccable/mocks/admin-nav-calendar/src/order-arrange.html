@@ -1,0 +1,7 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Arrange, then Done</title>
+<link rel="stylesheet" href="cal.css"><script src="../../design-system/icons.js"></script><script src="cal.js"></script><script src="../../design-system/kit.js"></script></head>
+<body class="sk-admin" data-current="Calendar">
+<main><div class="workbench workbench--no-detail calendar-workbench"><aside class="workbench__aside" data-aside></aside><section class="workbench__main"><div class="calendar-main__head"><div><h2 class="calendar-main__title">All your calendars</h2></div><div class="calendar-main__actions"><div class="segmented" role="radiogroup"><button class="segmented__option" role="radio" aria-checked="true">Agenda</button><button class="segmented__option" role="radio" aria-checked="false">Month</button></div><button class="btn btn--primary"><i data-icon="plus"></i>New event</button></div></div><div class="calendar-agenda" data-agenda></div></section></div></main>
+<script>document.querySelector("[data-aside]").innerHTML = calAside({ chosen: null, arrange: true, tip: "The order here is the order on phones, in Browse calendars and the Calendar tab. Drag, or use the arrows." }); document.querySelector("[data-agenda]").innerHTML = agenda();</script>
+</body></html>

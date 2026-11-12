@@ -35,3 +35,12 @@ info icon, and Send docked in the foot bar.
 FORM: "The screenshot leads", 3rd of 7 on the ordered list; seed:89df9deccaf2dfa5. Signature move: the chosen picture
 as the page's hero in its true phone proportions, the filmstrip choosing which one is large.
 FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, DESIGN.md, and every shipping raster carrying its provenance
+
+## Written like a message (2026-11-12)
+
+Owner (#55): "The send sheet and such just take up so much space, especially with keyboard up. Doesn't look nice." Picked
+**Like writing a message** on the decision page (`.impeccable/mocks/admin-nav-calendar/fb-composer.html`, code-led),
+over a slim bar and Send at the end of the page. THESIS: feedback is a message, so it is written in a message box docked
+on the keyboard, not a form. FIRST VIEWPORT: solid top bar; a short lead and *Sent with it*; the shared `Composer` at the
+foot (paperclip, three-line field that grows, round Send), chosen files as a thumbnail row above it. Replaces the
+masthead, the dashed picker, the stage and the sticky foot bar of 2026-11-11.

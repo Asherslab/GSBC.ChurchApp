@@ -93,9 +93,13 @@ window.gsbcShell = (() => {
       root.classList.remove('keyboard-open');
       root.style.setProperty('--kb', '0px');
     });
-    document.addEventListener('focusin', () => {
+    const accessoryBarFor = (field) => keyboard.setAccessoryBarVisible({ isVisible: !field?.closest?.('.composer') }).catch(() => { });
+    document.addEventListener('focusin', (event) => {
+      accessoryBarFor(event.target);
       if (root.classList.contains('keyboard-open')) afterLayout(keepFieldInView);
     });
+    document.addEventListener('pointerdown', (event) => accessoryBarFor(event.target), true);
+    document.addEventListener('focusout', () => accessoryBarFor(null));
   };
   followKeyboard();
 

@@ -50,7 +50,13 @@ public static class CalendarWorkbenchLinks
 
     public static string Showing(string? show) => show is null ? Page : $"{Page}?show={show}";
 
-    public static string Calendar(string slug) => $"{Page}?calendar={Uri.EscapeDataString(slug)}";
+    public const string NewCalendar = "new";
+    public const string RegularTab = "regular";
+    public const string PeopleTab = "people";
+    public const string SettingsTab = "settings";
+
+    public static string Calendar(string slug, string? tab = null) =>
+        tab is null ? $"{Page}?calendar={Uri.EscapeDataString(slug)}" : $"{Page}?calendar={Uri.EscapeDataString(slug)}&tab={tab}";
 
     public static string Event(string occurrenceId, string? show = null) =>
         show is null ? $"{Page}?event={Uri.EscapeDataString(occurrenceId)}" : $"{Page}?show={show}&event={Uri.EscapeDataString(occurrenceId)}";

@@ -44,6 +44,15 @@ public sealed class PhoneDetails
     [ProtoMember(4)] public string OsVersion { get; set; } = "";
     [ProtoMember(5)] public string Model { get; set; } = "";
     [ProtoMember(6)] public bool DevelopmentBuild { get; set; }
+    [ProtoMember(7)] public List<string> RecentPages { get; set; } = [];
+    [ProtoMember(8)] public List<ScreenshotTaken> Screenshots { get; set; } = [];
+}
+
+[ProtoContract]
+public sealed class ScreenshotTaken
+{
+    [ProtoMember(1)] public string Page { get; set; } = "";
+    [ProtoMember(2)] public DateTime At { get; set; }
 }
 
 [ProtoContract]

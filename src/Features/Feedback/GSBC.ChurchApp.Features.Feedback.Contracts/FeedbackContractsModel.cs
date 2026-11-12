@@ -9,6 +9,7 @@ namespace GSBC.ChurchApp.Features.Feedback.Contracts;
 [ProtoModel]
 [ProtoSerializable(typeof(Done))]
 [ProtoSerializable(typeof(PhoneDetails))]
+[ProtoSerializable(typeof(ScreenshotTaken))]
 [ProtoSerializable(typeof(BrowserDetails))]
 [ProtoSerializable(typeof(FeedbackSend))]
 [ProtoSerializable(typeof(DeskQuery))]

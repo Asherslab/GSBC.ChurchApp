@@ -1,0 +1,137 @@
+@using GSBC.ChurchApp.Platform.Ui.Content
+@inject CalendarEditing Editing
+@inject CalendarSubscriptions Subscriptions
+
+<UnsavedGuard Changed="() => Changed" What="@(Calendar is null ? "the new calendar" : "this calendar's settings")" Save="SaveBeforeLeavingAsync" />
+
+<div class="calendar-settings">
+    <Section Grouped="true" First="true" Title="@(Calendar is null ? "The new calendar" : "About this calendar")" Lead="Its name, who sees it, and how its events are published.">
+        <ChildContent>
+            <div class="calendar-settings__fields">
+                <TextField Label="Name" Value="@_name" ValueChanged="value => _name = value" MaxLength="60" Required="true" />
+                <TextField Label="Description" Value="@_description" ValueChanged="value => _description = value" MaxLength="160" Hint="One line under its name in Browse calendars." />
+                <AudiencePicker Label="Who it's for" Value="@_audience" ValueChanged="value => _audience = value" />
+                <ToggleRow Title="Shown on new phones" Description="@(_defaults ? "On: everyone it's for sees it without adding it" : "Off: people add it from Browse calendars")" Checked="_defaults" CheckedChanged="value => _defaults = value" />
+                <ToggleRow Title="Needs a publisher" Description="Editors without the publisher role save events and ask to publish" Checked="_needsPublisher" CheckedChanged="value => _needsPublisher = value" />
+                <TextField Label="Copy from an iCal address (optional)" Type="url" Value="@_icalSource" ValueChanged="value => _icalSource = value.Trim()" Placeholder="https://"
+                           Hint="@IcalHint" Problem="@(Calendar?.Settings.ICalProblem is { Length: > 0 } problem ? problem : null)" />
+                <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+            </div>
+        </ChildContent>
+        <Foot>
+            <SaveBar New="@(Calendar is null)" OnCancel="CancelAsync" Label="@(Calendar is null ? "Add the calendar" : "Save")" Busy="_saving" OnSave="SaveAsync" State="SaveBar.For(Changed, _saved)"
+                     Blocked="@(_name.Trim().Length == 0 ? $"Give it a name to {(Calendar is null ? "add" : "save")} it." : null)" />
+        </Foot>
+    </Section>
+
+    @if (Calendar is { } existing)
+    {
+        <Section Grouped="true" Title="Calendar apps" Lead="iPhone, Google and Outlook calendars can subscribe to it.">
+            <CopyField Label="Link for calendar apps" Value="@LinkFor(existing.Settings.Calendar)"
+                       Hint="@(CalendarSubscriptions.IsForEveryone(existing.Settings.Calendar) ? "Anyone can subscribe with this." : "A private calendar: people subscribe through their own link in the app.")" />
+        </Section>
+    }
+</div>
+
+@code {
+    private string _name = "";
+    private string _description = "";
+    private string _audience = "";
+    private bool _defaults;
+    private bool _needsPublisher;
+    private string _icalSource = "";
+    private string? _problem;
+    private bool _saving;
+    private bool _saved;
+    private bool _loaded;
+    private DeskCalendar? _loadedFrom;
+    private object _stored = "";
+
+    [Parameter] public DeskCalendar? Calendar { get; set; }
+    [Parameter] public EventCallback<CalendarSettings> Saved { get; set; }
+    [Parameter] public EventCallback Closed { get; set; }
+
+    private string IcalHint => Calendar?.Settings.ICalReadAt is { } read
+        ? $"Read-only here while it's set. Last read {EventWords.Date(EventWords.Today(read))}."
+        : "A calendar copied from elsewhere (school terms, a ministry's Google Calendar) stays read-only here and refreshes by itself.";
+
+    private object Shape => (_name, _description, _audience, _defaults, _needsPublisher, _icalSource);
+
+    private bool Changed => !Shape.Equals(_stored);
+
+    private async Task<bool> SaveBeforeLeavingAsync()
+    {
+        if (_name.Trim().Length == 0)
+            return false;
+        await SaveAsync();
+        return _problem is null;
+    }
+
+    protected override void OnParametersSet()
+    {
+        if (_loaded && ReferenceEquals(_loadedFrom, Calendar))
+            return;
+        _saved = _saved && _loadedFrom?.Settings.Calendar.Id == Calendar?.Settings.Calendar.Id;
+        (_loaded, _loadedFrom) = (true, Calendar);
+        Load();
+    }
+
+    private void Load()
+    {
+        CalendarSettings? settings = Calendar?.Settings;
+        _name = settings?.Calendar.Name ?? "";
+        _description = settings?.Calendar.Description ?? "";
+        _audience = settings?.Calendar.Audience ?? "everyone";
+        _defaults = settings?.Calendar.ShownOnNewPhones ?? false;
+        _needsPublisher = settings?.NeedsPublisher ?? false;
+        _icalSource = settings?.ICalSource ?? "";
+        _stored = Shape;
+        _problem = null;
+    }
+
+    private async Task CancelAsync()
+    {
+        Load();
+        if (Calendar is null)
+            await Closed.InvokeAsync();
+    }
+
+    private string LinkFor(CalendarInfo calendar) => Subscriptions.Web(CalendarSubscriptions.CalendarPath(calendar));
+
+    private async Task SaveAsync()
+    {
+        _saving = true;
+        _problem = null;
+        _saved = false;
+        try
+        {
+            CalendarInfo calendar = Calendar?.Settings.Calendar ?? new CalendarInfo();
+            CalendarSettings saved = await Editing.Setup.SaveCalendarAsync(new CalendarSettings
+            {
+                Calendar = new CalendarInfo
+                {
+                    Id = calendar.Id,
+                    Name = _name.Trim(),
+                    Slug = calendar.Slug,
+                    Description = _description.Trim(),
+                    Audience = _audience,
+                    ShownOnNewPhones = _defaults,
+                    MinistryId = calendar.MinistryId,
+                    Order = calendar.Order,
+                },
+                NeedsPublisher = _needsPublisher,
+                ICalSource = _icalSource,
+            });
+            (_saved, _stored) = (true, Shape);
+            await Saved.InvokeAsync(saved);
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            _problem = CalendarEditing.Problem(exception);
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+}

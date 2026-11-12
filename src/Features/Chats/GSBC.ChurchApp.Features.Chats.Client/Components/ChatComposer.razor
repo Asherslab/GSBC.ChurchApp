@@ -47,7 +47,10 @@ else if (!Card.YouMaySend && WritableChildren.Count == 0)
 }
 else
 {
-    <div class="chat-composer">
+    <Composer Label="Message" Placeholder="@Placeholder" MaxLength="ChatLimits.TextLength" Text="@_text" TextChanged="Typed"
+              CanSend="@(_text.Trim().Length > 0 || (_picked.Count > 0 && Editing is null))" SendIcon="@(Editing is null ? "send" : "check")"
+              SendLabel="@(Editing is null ? "Send" : "Save the change")" OnSend="SendAsync">
+        <Above>
         @if (Editing is not null)
         {
             <div class="chat-composer__context">
@@ -101,17 +104,14 @@ else
                 }
             </div>
         }
-        <div class="chat-composer__bar">
+        </Above>
+        <Attach>
             @if (Editing is null && Store.CanAttach && _picked.Count < ChatLimits.AttachmentsPerMessage)
             {
-                <FilePick Label="Add a photo or file" ImagesOnly="false" Class="chat-composer__attach" OnPicked="Picked" />
+                <FilePick Label="Add a photo or file" ImagesOnly="false" Class="composer__attach" OnPicked="Picked" />
             }
-            <textarea class="chat-composer__field" rows="1" placeholder="@Placeholder" aria-label="Message" maxlength="@ChatLimits.TextLength"
-                      value="@_text" @oninput="Typed"></textarea>
-            <Button Icon="@(Editing is null ? "send" : "check")" Class="chat-composer__send" AriaLabel="@(Editing is null ? "Send" : "Save the change")"
-                    Disabled="@(_text.Trim().Length == 0 && (_picked.Count == 0 || Editing is not null))" OnClick="SendAsync" />
-        </div>
-    </div>
+        </Attach>
+    </Composer>
 }
 
 @code {
@@ -179,9 +179,9 @@ else
             _forChild = WritableChildren.FirstOrDefault()?.Id ?? "";
     }
 
-    private void Typed(ChangeEventArgs change)
+    private void Typed(string text)
     {
-        _text = change.Value?.ToString() ?? "";
+        _text = text;
         if (Editing is null)
             Store.KeepDraft(Card.Id, _text);
     }
