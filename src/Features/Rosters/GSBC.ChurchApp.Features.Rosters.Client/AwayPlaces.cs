@@ -2,7 +2,7 @@ namespace GSBC.ChurchApp.Features.Rosters.Client;
 
 public static class AwayPlaces
 {
-    public const string Yours = "away";
+    public const string Yours = "account/away";
 
     public static string Team(string ministryId) => $"ministries/{ministryId}/away";
 

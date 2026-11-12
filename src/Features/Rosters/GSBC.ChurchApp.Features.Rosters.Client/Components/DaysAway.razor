@@ -118,7 +118,7 @@
         @<ListGroup>
             @foreach (AwaySpan span in spans.Where(span => !span.Weekly).OrderBy(span => span.From))
             {
-                <ListRow @key="span.Id" Title="@RosterLines.Span(span)" Subtitle="@span.Note" Icon="circle-off" IconTone="RowTone.Quiet" Chevron="true" OnClick="() => Edit(who, span)" />
+                <ListRow @key="span.Id" Title="@RosterLines.Span(span)" Subtitle="@(span.Note.Length > 0 ? span.Note : span.StartTime.Length + span.EndTime.Length == 0 ? "All day" : null)" Icon="circle-off" IconTone="RowTone.Quiet" Chevron="true" OnClick="() => Edit(who, span)" />
             }
             <ListRow Title="Add days away" Icon="plus" IconTone="RowTone.Accent" OnClick="() => Add(who, null)" />
         </ListGroup>;

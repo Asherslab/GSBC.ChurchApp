@@ -180,7 +180,7 @@ B for days away". **Where this disagrees with anything below, this wins.**
 - **Days away are their own page** (owner, #68, 2026-11-12: "This and submitting them should be a page, not just at the
   bottom of rosters"). On the phone the Roster tab ends with a *Days away* group: *Your days away* with when you're next
   away, and for leaders *The team's days away* with how many are away in the next four weeks (the owner chose a second
-  row over one team page). They open `/away` and `/ministries/{id}/away`, which hold the same `DaysAway` editor with
+  row over one team page). They open `/account/away` (it belongs with Account, so More stays lit) and `/ministries/{id}/away`, which hold the same `DaysAway` editor with
   `Month | List` at the top (the owner picked "Month or list" on the decision page,
   `.impeccable/mocks/days-away/b-month-or-list.html`): Month is `MonthDays` to tap, List the repeating rules and one-off
   days; *Add days away* ends both. Account's *Rosters* group has the same *Your days away* row. The admin panel keeps

@@ -1599,6 +1599,7 @@ span.stage-pipeline__stage { pointer-events: none; }
 
 .month-days { display: grid; gap: var(--space-sm); }
 .month-days__bar { display: flex; align-items: center; justify-content: space-between; gap: var(--space-sm); }
+.month-days__bar .btn:disabled:not([aria-busy="true"]) { box-shadow: none; color: var(--ink-3); opacity: 0.5; }
 .month-days__title { font-size: var(--text-row); font-weight: 700; }
 .month-days__grid { display: grid; gap: var(--space-2xs); }
 .month-days__week { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: var(--space-2xs); }
