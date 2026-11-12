@@ -959,6 +959,8 @@ component is shown, live, in the gallery (`/gallery` on both).
 | One role of several | `RoleMenu` | A button showing the role; its menu says what each role allows, with Remove in red last. Applies at once. Several roles at once stay a tick list (`RoleTick`). |
 | Steps something moves through | `StagePipeline` | Done steps ticked, the current one solid, the next waiting; press a step to move there. |
 | Boards | `Board` + `BoardCard` | Sand columns with a count, a dashed sentence when empty, optional "Add one here", a folded column for what's put aside. |
+| Days marked on a month | `MonthDays` | A month of day tiles with ‹ › and a key under it: shaded for all day, the top half for mornings, the bottom half for evenings, struck through for a day skipped; choosing a day opens what's on it. Days away use it. |
+| One rule of a few, each needing a sentence | `Segmented Rows` | Radio rows inside a settings group, each with a detail line; a sentence after the group says what follows. The roster's swap rule and what the team sees use it. |
 | Dates and times | `DateField`, `TimeField`, `DateTimeField` | Admin: type it ("15 Nov", "7:30pm"), or open the calendar or the list of times (every 15 minutes) from the button at the field's right end; what was understood reads back under it with a check. Phone: the native wheel. Never `Type="date"` or `Type="time"` in a feature. |
 | A picture, bigger | `PictureOpen` + `PictureViewer` | The whole window on near-black, arrows and a filmstrip, Download. Never squeeze a picture into a pane. |
 | Icons | `AppIcons` (Platform.Contracts) | One icon per meaning, named for the thing (`AppIcons.Prayer`, `AppIcons.Settings`); a cog always means "the settings of what you're looking at". |

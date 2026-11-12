@@ -24,7 +24,7 @@
         {
             <div class="field">
                 <span class="field__label">On</span>
-                <ToggleChips TValue="int" Label="Days of the week" Chips="WeekdayChips" Toggled="chip => ToggleWeekday(chip.Value)" />
+                <ToggleChips TValue="int" Label="Days of the week" Chips="WeekdayChips" Toggled="chip => ToggleWeekday(chip.Value)" Class="away-weekdays" />
             </div>
             <DateField Label="Starting" @bind-Value="_draft.From" Min="@Today" />
             <DateField Label="Until (leave empty for until further notice)" @bind-Value="_draft.To" Min="@(_draft.From.Length > 0 ? _draft.From : Today)" Placeholder="Until further notice" />

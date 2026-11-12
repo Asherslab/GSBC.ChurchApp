@@ -114,6 +114,38 @@ reminder.**
 they belong to a ministry); how long the church wants anything kept if "forever" changes; the shape of the
 auditors' coordination chat. (Blue card and training data from Safe Ministry Check: built 2026-11-10.)
 
+## Wave 2: Rosters' screens (owner, 2026-11-12)
+
+Designed on the decision page (`.impeccable/mocks/rosters/wave2/`); the owner picked "A for training lines, A for swap rule,
+B for days away". **Where this disagrees with anything below, this wins.**
+
+- **Days away repeat, cover part of a day and skip weeks** (owner: "run of days, and repeating (with a time, e.g. some
+  people might only attend pm services) (with exceptions)"). A day away is a run of days, or **every week** on chosen days
+  from a start date until an end date or until further notice; either can be all day, mornings (until 12pm), evenings
+  (from 5pm) or between times; a repeating one can skip dates. One rule decides whether someone is away for a roster date
+  (`AwayRules` in Rosters.Contracts, used by the server's flags and the phone's): the date's day must be in the run, on one
+  of the weekdays, not skipped, and the event's time must overlap the times ("Away that day", or "Away at that time").
+  The editor is a **month** (`MonthDays`, Platform.Ui): shaded all day, the top half for mornings, the bottom half for
+  evenings, struck through when skipped; choosing a day adds days away there, opens the days away on it, or for a
+  repeating one says "not away this day" (or "away this day after all"). Repeating ones are listed above the month and
+  one-off ones below it.
+- **Leaders can change their team's days away** (owner: "leaders need to be able to edit/modify this"). Anyone who may
+  edit a ministry's roster (`ministries.roster.edit` on it) may set and remove days away for anyone on its team, as well as
+  the person, their parent and staff with *See and change anyone's days away*. The Roster tab's days away for a leader is
+  **The team's days away**, choosing whose; for everyone else it's theirs and their children's.
+- **A trainee is a line of their own** (owner: both leaders and the trainee notice). On the date, under the position,
+  indented, led by a "T": "Training, with Jo" once someone trained is on (aqua); alone it's amber with the flag, and the
+  position's *Put someone on* says "someone trained for Ben". The grid marks a trainee's cell "Training". The trainee's own
+  date says who they're training with, or that a leader puts someone trained on with them.
+- **The swap rule reads as what happens.** *How the roster works* is in groups (Answers; When someone asks the team for a
+  swap as three radio rows, `Segmented Rows`; Asking one person; What the team sees; Calendars it rosters from), with a
+  sentence ("So when someone can't do a date, they ask the team…") under the swap choices.
+- **One voice in the roster's settings** (#48: "Inconsistent language, use 'leaders' or otherwise, not yourself"): settings
+  talk about *leaders* and *they* (the team), never *you* or *yourself*; only the person asking for a swap is spoken to
+  ("You choose who on the team to ask").
+- **Delete in ⋯** (Pattern map): deleting a position, taking a date off the roster, taking someone off a date and deleting
+  days away are in the item's ⋯ menu and ask once.
+
 ## Wave 1: the owner's answers (2026-11-11/12, built 2026-11-12)
 
 The owner's feedback on dev (reports #11–#49) and their answers to the defaults list, built on the back end with only the

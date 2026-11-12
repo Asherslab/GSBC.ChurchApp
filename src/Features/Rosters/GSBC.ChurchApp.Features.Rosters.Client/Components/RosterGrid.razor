@@ -33,7 +33,7 @@
                     </th>
                     @foreach (RosterDate date in shown)
                     {
-                        IReadOnlyList<Assignment> on = RosterLines.In(date, position);
+                        IReadOnlyList<Assignment> on = RosterLines.In(date, position).OrderBy(assignment => assignment.Training).ToList();
                         int gaps = Math.Max(0, position.Needed - RosterLines.Filled(date, position));
                         <td @key="date.Id">
                             @foreach (Assignment assignment in on)
