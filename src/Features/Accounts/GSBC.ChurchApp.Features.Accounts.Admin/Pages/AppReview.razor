@@ -9,7 +9,7 @@
     </Actions>
 </TitleBand>
 
-<SplitView Detail="@Detail" DetailLabel="@DetailLabel">
+<Workbench Detail="@Detail" DetailLabel="@DetailLabel">
     <LiveData @ref="_live" TValue="ReviewAccess" Load="LoadAsync" FailedTitle="Can't load app review right now">
         @foreach (DemoAccountInfo account in context.Value.DemoAccounts.Where(account => account.Problem is not null))
         {
@@ -32,7 +32,7 @@
             </Empty>
         </DataTable>
     </LiveData>
-</SplitView>
+</Workbench>
 
 @code {
     private enum Panel { None, MakeCode, MakeDemoAccount, Code }
@@ -46,7 +46,7 @@
     {
         Panel.MakeCode when _access is not null => @<MakeReviewCode DemoAccounts="_access.DemoAccounts" OnMade="ReloadAsync" OnCancel="Close" OnMakeDemoAccount="() => Open(Panel.MakeDemoAccount)" />,
         Panel.MakeDemoAccount => @<MakeDemoAccount OnMade="ReloadAsync" OnCancel="Close" OnMakeCode="() => Open(Panel.MakeCode)" />,
-        Panel.Code when _selected is not null => @<ReviewCodeDetail @key="_selected.Id" Code="_selected" Account="AccountOf(_selected)" OnChanged="ReloadAsync" />,
+        Panel.Code when _selected is not null => @<ReviewCodeDetail @key="_selected.Id" Code="_selected" Account="AccountOf(_selected)" OnChanged="ReloadAsync" OnClose="Close" />,
         _ => null,
     };
 
