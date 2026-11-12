@@ -15,8 +15,8 @@
     </div>
     @if (_uploading && PhoneUpload)
     {
-        <FilePick Label="@(ImagesOnly ? "Choose a picture from this phone" : "Choose a picture or PDF from this phone")" ImagesOnly="ImagesOnly" OnPicked="media => OnPick.InvokeAsync(media)" />
-        <p class="hint">It's sent with your save, as soon as the phone is online.</p>
+        <FilePick Box="true" Label="@(ImagesOnly ? "Choose a picture" : "Choose a picture or PDF")" Hint="From this phone. It's sent with your save, as soon as the phone is online."
+                  ImagesOnly="ImagesOnly" OnPicked="media => OnPick.InvokeAsync(media)" />
     }
     else if (_uploading && DirectUpload is { } direct)
     {

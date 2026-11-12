@@ -125,14 +125,16 @@ from the page. They picked the **folded** layout on the decision page (`.impecca
   earlier versions. Photos open in the picture viewer. Coming from a report folds to the reported messages.
 - **Beside it:** the chat's reports (mark handled, with what was done) and every check of the chat.
 - **Pausing** is in a message's ⋯ menu (auditors only) and in the report's ⋯ on the desk; it asks why and is logged.
-- **Deleting a chat** is in the record's ⋯ menu on the desk and the chat's ⋯ in the app, and asks once.
+- **Deleting a chat** is in the record's ⋯ menu on the desk and at the foot of the chat's settings in the app, and asks once.
 
 ## In the app (owner's feedback, 2026-11-12)
 
 - **Photos open bigger** (#36): a message's photos and videos open in the shared picture viewer; swipe between them,
   swipe down or ✕ to close. Other files still open through their private link.
-- **The cog** (#47): a chat's top-right icon is the settings cog (mute, who's in it); leaders delete the chat from the
-  ⋯ beside it.
+- **The cog** (#47, #64): a chat's top-right icon is the settings cog (mute, who's in it), and it is the only one;
+  leaders delete the chat from the foot of those settings (owner: "if there's already a settings cog for something, put
+  the delete under that, instead of the kebab + settings"). The composer's attach button is the paperclip, as on every
+  composer.
 - **Who can start a chat** is explained in a ministry's Chats tab to someone who can't ("Production's leaders start
   chats here", or "leaders and team" when the ministry lets the team start them).
 - Reactions use the shared `BubbleReactions`; the message box is the shared `Composer`

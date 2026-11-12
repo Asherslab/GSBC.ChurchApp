@@ -44,7 +44,7 @@
                     <TextField Label="Name" Value="@(_name ?? child.Name)" ValueChanged="value => _name = value" AutoComplete="off" />
                 }
                 <div class="ui-after">
-                    <DateField Label="Birth date" Value="@(_born ?? PeopleWords.FieldDay(child.BirthDate))" ValueChanged="value => _born = value" />
+                    <DateField Label="Birth date" Shortcuts="false" Value="@(_born ?? PeopleWords.FieldDay(child.BirthDate))" ValueChanged="value => _born = value" />
                 </div>
                 @if (_name is not null || _born is not null)
                 {

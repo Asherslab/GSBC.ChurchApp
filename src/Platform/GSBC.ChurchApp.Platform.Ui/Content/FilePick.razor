@@ -4,19 +4,30 @@
 @implements IAsyncDisposable
 @inject FileUploads Uploads
 @inject IJSRuntime JS
+@inject UiHost Host
 
-<label class="add-row file-pick @(_busy ? "file-pick--busy" : "") @Class">
-    @if (ChildContent is null)
-    {
-        <Icon Name="@(Chosen == PickableFiles.Pictures ? "image" : "file")" Size="IconSize.Small" />
-        <span>@(_busy ? "Keeping it on this phone…" : Label)</span>
-    }
-    else
-    {
-        @ChildContent(_busy)
-    }
-    <InputFile @ref="_input" OnChange="PickAsync" accept="@Uploads.Accepted(Chosen)" multiple="@Multiple" disabled="@_busy" class="visually-hidden" aria-label="@Label" />
-</label>
+@if (Box)
+{
+    <DropBox Prompt="@Label" Hint="@(_busy ? Keeping : Hint)" Icon="@(ChildContent is null ? ShownIcon : null)" Words="@ChildContent?.Invoke(_busy)" Busy="_busy"
+             TakesPaste="TakesPaste" DropOn="@DropOn" Class="@Class">
+        <InputFile @ref="_input" OnChange="PickAsync" accept="@Uploads.Accepted(Chosen)" multiple="@Multiple" disabled="@_busy" class="visually-hidden" aria-label="@Label" />
+    </DropBox>
+}
+else
+{
+    <label class="add-row file-pick @(_busy ? "file-pick--busy" : "") @Class">
+        @if (ChildContent is null)
+        {
+            <Icon Name="@ShownIcon" Size="IconSize.Small" />
+            <span>@(_busy ? Keeping : Label)</span>
+        }
+        else
+        {
+            @ChildContent(_busy)
+        }
+        <InputFile @ref="_input" OnChange="PickAsync" accept="@Uploads.Accepted(Chosen)" multiple="@Multiple" disabled="@_busy" class="visually-hidden" aria-label="@Label" />
+    </label>
+}
 <Notice Tone="NoticeTone.Warning" Text="@_problem" />
 
 @code {
@@ -33,6 +44,9 @@
     [Parameter] public Func<string, long, string?>? TooLarge { get; set; }
     [Parameter] public string AltText { get; set; } = "";
     [Parameter] public string? Class { get; set; }
+    [Parameter] public string? Icon { get; set; }
+    [Parameter] public bool Box { get; set; }
+    [Parameter] public string? Hint { get; set; }
     [Parameter] public RenderFragment<bool>? ChildContent { get; set; }
     [Parameter] public EventCallback<MediaRef> OnPicked { get; set; }
     [Parameter] public EventCallback<IReadOnlyList<ChosenFile>> OnChosen { get; set; }
@@ -41,11 +55,15 @@
 
     public ElementReference? Input => _input?.Element;
 
+    private string Keeping => Host.Desktop ? "Adding it…" : "Keeping it on this phone…";
+
+    private string ShownIcon => Icon ?? (Chosen == PickableFiles.Pictures ? "image" : "file");
+
     private PickableFiles Chosen => Kinds ?? (ImagesOnly ? PickableFiles.Pictures : PickableFiles.PicturesAndDocuments);
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (!firstRender || (!TakesPaste && DropOn is null) || _input?.Element is not { } input)
+        if (!firstRender || Box || (!TakesPaste && DropOn is null) || _input?.Element is not { } input)
             return;
         await using IJSObjectReference module = await JS.InvokeAsync<IJSObjectReference>("import", "./_content/GSBC.ChurchApp.Platform.Ui/js/file-pick.js");
         _listening = await module.InvokeAsync<IJSObjectReference>("listen", input, DropOn, TakesPaste);

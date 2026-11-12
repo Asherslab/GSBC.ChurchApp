@@ -15,7 +15,7 @@
                 {
                     <FilePick Label="Choose files" Kinds="PickableFiles.PicturesAndVideos" Multiple="true" Limit="Room" TooLarge="FeedbackLimits.TooLarge"
                               Class="feedback-send__choose" OnChosen="ChosenAsync">
-                        <Icon Name="paperclip" Size="IconSize.Small" /><span>@(context ? "Sending…" : "Choose files")</span>
+                        <Icon Name="@AppIcons.Attach" Size="IconSize.Small" /><span>@(context ? "Sending…" : "Choose files")</span>
                     </FilePick>
                 }
             </div>
@@ -26,7 +26,7 @@
                 }
                 @if (Room > 0)
                 {
-                    <FilePick @ref="_pick" Label="Paste, drop or choose screenshots and videos" Kinds="PickableFiles.PicturesAndVideos" Multiple="true" Limit="Room"
+                    <FilePick @ref="_pick" Box="true" Label="Paste, drop or choose screenshots and videos" Kinds="PickableFiles.PicturesAndVideos" Multiple="true" Limit="Room"
                               TooLarge="FeedbackLimits.TooLarge" TakesPaste="true" DropOn=".feedback-send" Class="feedback-send__drop" OnChosen="ChosenAsync">
                         <strong>Paste <kbd>@(_commandKey ? "⌘V" : "Ctrl V")</kbd> or drop screenshots and videos</strong><span>@(context ? "Sending…" : $"Or click to choose. Up to {FeedbackLimits.MostAttachments}")</span>
                     </FilePick>
