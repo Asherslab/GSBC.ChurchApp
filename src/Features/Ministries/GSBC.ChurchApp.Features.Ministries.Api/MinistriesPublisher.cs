@@ -74,7 +74,6 @@ internal sealed class MinistriesPublisher(
         List<PostRecord> posts = (await db.Posts.AsNoTracking().ToListAsync(cancellationToken)).Where(post => active.Contains(post.MinistryId)).ToList();
         List<FileRecord> files = (await db.Files.AsNoTracking().ToListAsync(cancellationToken)).Where(file => active.Contains(file.MinistryId)).ToList();
         List<AskRecord> asks = (await db.Asks.AsNoTracking().OrderBy(ask => ask.AskedAt).ToListAsync(cancellationToken)).Where(ask => active.Contains(ask.MinistryId)).ToList();
-        List<SessionRecord> sessions = (await db.Sessions.AsNoTracking().ToListAsync(cancellationToken)).Where(session => active.Contains(session.GroupId)).ToList();
         List<SitOutRecord> sitOuts = (await db.SitOuts.AsNoTracking().ToListAsync(cancellationToken)).Where(sitOut => active.Contains(sitOut.GroupId)).ToList();
         List<RoundRecord> rounds = await db.Rounds.AsNoTracking().ToListAsync(cancellationToken);
         Dictionary<Guid, RoundRecord> roundsById = rounds.ToDictionary(round => round.Id);
@@ -113,10 +112,6 @@ internal sealed class MinistriesPublisher(
                     MinistryViews.Calendar(calendar), calendar.Audience == Audience.Everyone ? null : calendar.Audience.Text) with { GroupKey = calendar.MinistryId.ToString() });
 
         rows.AddRange(rounds.Select(round => Public(MinistriesFeeds.Rounds, round.Id, MinistryViews.Round(round))));
-        rows.AddRange(sessions.GroupBy(session => session.GroupId).Select(group => Public(MinistriesFeeds.Sessions, group.Key, new GroupSessions
-        {
-            GroupId = group.Key.ToString(), Changes = group.OrderBy(session => session.Date).Select(MinistryViews.Session).ToList(),
-        })));
 
         rows.AddRange(sitOuts.Select(sitOut => Encoded(MinistriesFeeds.SittingOut, $"{sitOut.GroupId}@{sitOut.RoundId}",
             MinistryViews.SittingOut(sitOut, roundsById.GetValueOrDefault(sitOut.RoundId), tree))));

@@ -1,9 +1,15 @@
 @inject IMinistryWrites Ministries
+@inject TimeProvider Clock
 
 <UnsavedGuard Changed="() => Open" Editing="Draft" State="() => Shape" What="this post" />
 
 <Sheet Open="Open" OpenChanged="OpenChanged" Title="@(Draft.Id.Length == 0 ? "New post" : "Change the post")" Lead="@($"In {Page.Ministry.Name}.")">
     <ChildContent>
+        @if (AboutASunday)
+        {
+            <SelectField Label="Which Sunday" Options="SundayChoices" Value="@Draft.Sunday" ValueChanged="value => Draft.Sunday = value" />
+            <ToggleRow Title="@SundayPosts.NoClass" Description="Coming up shows the Sunday struck through" Checked="Draft.NoClass" CheckedChanged="NoClassChanged" />
+        }
         <TextField Label="Title" @bind-Value="Draft.Title" MaxLength="120" Required="true" />
         <TextField Label="What to say" @bind-Value="Draft.Body" Multiline="true" MaxLength="4000" />
         <Segmented TValue="string" Label="Who it's for" ShowLabel="true" Stacked="true" Options="Audiences" Value="Draft.Audience" ValueChanged="value => Draft.Audience = value" />
@@ -35,15 +41,37 @@
     [Parameter, EditorRequired] public required Post Draft { get; set; }
     [Parameter] public EventCallback OnSaved { get; set; }
 
-    private object Shape => (Draft.Title, Draft.Body, Draft.Audience, Draft.Important, Draft.AskWholeChurch);
+    private object Shape => (Draft.Title, Draft.Body, Draft.Audience, Draft.Important, Draft.AskWholeChurch, Draft.Sunday, Draft.NoClass);
 
     private IReadOnlyList<SegmentOption<string>> Audiences =>
         Page.You.MayPostFor.Select(audience => new SegmentOption<string>(audience, MinistryWords.Short(audience))).ToList();
 
-    public static Post DraftOf(Post? post, MinistryPage page) => new()
+    private bool AboutASunday => Draft.Sunday.Length > 0;
+
+    private IReadOnlyList<FieldOption> SundayChoices =>
+        SundayPosts.UpcomingSundays(Page, Clock).Prepend(Draft.Sunday).Distinct().Order(StringComparer.Ordinal)
+            .Select(sunday => new FieldOption(sunday, $"Sunday {MinistryWords.Day(sunday)}")).ToList();
+
+    private void NoClassChanged(bool off)
+    {
+        if (Draft.Title.Trim().Length == 0 || Draft.Title == SundayPosts.NoClass)
+            Draft.Title = off ? SundayPosts.NoClass : "";
+        Draft.NoClass = off;
+    }
+
+    public static Post DraftForSunday(MinistryPage page, string sunday)
+    {
+        Post draft = DraftOf(null, page, Contracts.Audiences.Everyone);
+        draft.Sunday = sunday;
+        return draft;
+    }
+
+    public static Post DraftOf(Post? post, MinistryPage page, string? audience = null) => new()
     {
         Id = post?.Id ?? "", Title = post?.Title ?? "", Body = post?.Body ?? "", Important = post?.Important ?? false,
-        Audience = post?.Audience ?? (page.You.MayPostFor.Contains(Contracts.Audiences.Team) ? Contracts.Audiences.Team : page.You.MayPostFor.FirstOrDefault() ?? ""),
+        Sunday = post?.Sunday ?? "", NoClass = post?.NoClass ?? false,
+        Audience = post?.Audience ?? (audience is not null && page.You.MayPostFor.Contains(audience) ? audience
+            : page.You.MayPostFor.Contains(Contracts.Audiences.Team) ? Contracts.Audiences.Team : page.You.MayPostFor.FirstOrDefault() ?? ""),
     };
 
     private Task SaveAsync() => RunAsync(() => Ministries.SavePostAsync(Page.Ministry.Id, Draft));

@@ -10,6 +10,8 @@
 .week-day__head span { color: var(--ink-3); font-size: var(--text-caption); font-weight: 400; }
 .week-day .list { border-top: 0; }
 .week-day .agenda-row { border-top: 1px solid var(--line); border-bottom: 0; }
+.week-day__note { display: flex; align-items: center; gap: var(--space-sm); min-height: var(--touch); padding: 0 0 var(--space-sm) calc(4.75rem + var(--stack)); color: var(--accent); font-size: var(--text-caption); font-weight: 600; text-decoration: none; }
+.week-day__note span { flex: 1; min-width: 0; }
 .week-more { display: grid; padding: 24px var(--gutter) 0; }
 .week-end { padding: 20px var(--gutter) 0; }
 

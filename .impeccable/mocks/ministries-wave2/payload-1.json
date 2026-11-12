@@ -1,0 +1,47 @@
+{
+  "title": "A Life Group's Calendar: telling the group about one Sunday",
+  "question": "As you asked (#56), Its Sundays goes: a group with a set shows a linked calendar's events only between its set's first and last Sunday (an all-year group: the sets it doesn't sit out), and its own or added calendars show everything. Unlinking moves into each linked calendar's ⋯ menu and asks once (#50), and leaders can link from the phone (#54). One thing needs a home now: the \"No class this Sunday\" and \"bring a plate\" notes that lived on Its Sundays. They're for this group only, so they can't go on the shared Life Groups event. Where should a leader set them? Two more quick questions follow on this page.",
+  "options": [
+    {
+      "id": "each-sunday",
+      "kind": "assigned",
+      "kicker": "THE ROLL",
+      "label": "On the Sunday itself, in Coming up",
+      "thesis": "Each of its Sundays in Coming up has a ⋯ menu for leaders: No class this Sunday, Add a note for the group. The change shows on that row, struck through or with the note under it.",
+      "palette": ["#2a3d5e", "#f4efe7", "#00776d", "#e7ae74", "#ffffff"],
+      "materials": ["Coming up rows", "⋯ item menu", "struck-through Not on line", "note line"],
+      "viewport": "Calendar tab: Add a calendar and Link a calendar, Coming up with its Sundays (one struck through: No class this Sunday), the ⋯ menu open, then Linked calendars.",
+      "risk": "Only Sundays in Coming up can be changed (about the next 12 events), so a note for a Sunday months away waits until it comes up.",
+      "html": ".impeccable/mocks/ministries-wave2/a-each-sunday.html",
+      "htmlFrame": "390x844"
+    },
+    {
+      "id": "sunday-strip",
+      "kind": "dealt",
+      "label": "A strip of its Sundays above Coming up",
+      "thesis": "A short row of date tiles for the set's Sundays (15, 22, 29 Nov, 6 Dec), marked No class or Note. Tap one to tell the group about it in a sheet; Coming up shows the result.",
+      "palette": ["#2a3d5e", "#f4efe7", "#e7ae74", "#00776d"],
+      "materials": ["date tiles", "sheet with switch and text", "Cancel and Save"],
+      "viewport": "Calendar tab: the tools, Its Sundays as four date tiles (22 No class, 29 Note), Coming up below; the sheet for Sunday 22 November open.",
+      "risk": "Keeps a second list of Sundays next to Coming up, which is close to the doubling you found counter-intuitive.",
+      "html": ".impeccable/mocks/ministries-wave2/b-sunday-strip.html",
+      "htmlFrame": "390x844"
+    },
+    {
+      "id": "news-post",
+      "kind": "dealt",
+      "label": "Tell the group in News",
+      "thesis": "A change to a Sunday is a News post for one of its Sundays (\"No class on Sunday 22 Nov\"), so it notifies the group like any post; Coming up shows it under that Sunday, linked to the post.",
+      "palette": ["#2a3d5e", "#00776d", "#f4efe7", "#ffffff"],
+      "materials": ["accent action row", "News post with a Sunday", "linked line under the Sunday"],
+      "viewport": "Calendar tab: the tools, Tell the group about a Sunday, then Coming up with 22 Nov struck through and \"News: No class on Sunday 22 Nov\" under it.",
+      "risk": "A post is heavier than a quick note, and the group is notified each time.",
+      "html": ".impeccable/mocks/ministries-wave2/c-news-post.html",
+      "htmlFrame": "390x844"
+    }
+  ],
+  "reroll": true,
+  "steer": true,
+  "followup": true,
+  "buildPath": { "value": "code" }
+}

@@ -203,6 +203,13 @@ button.row:active, a.row:active { background: var(--line); }
 .row__subtitle { display: block; margin-top: 2px; font-size: var(--text-caption); line-height: 1.35; color: var(--ink-2); overflow-wrap: anywhere; }
 .row__trail { display: flex; align-items: center; gap: 6px; flex: none; font-size: var(--text-caption); color: var(--ink-3); font-variant-numeric: tabular-nums; }
 .row--disabled :is(.row__title, .row__subtitle, .row__trail, .row__icon) { color: var(--ink-3); }
+.row-with-menu { position: relative; }
+.row-with-menu > .row { padding-right: calc(var(--space-3xl) + var(--space-sm)); }
+.row-with-menu--navigates > .row { padding-right: 0; }
+.row-with-menu--navigates > .row > .row__trail::before { content: ""; order: 1; width: calc(var(--space-3xl) + var(--space-2xs)); }
+.row-with-menu--navigates > .row > .row__trail > .icon:last-child { order: 2; }
+.row-with-menu__menu { position: absolute; top: 50%; right: 0; translate: 0 -50%; }
+.row-with-menu--navigates > .row-with-menu__menu { right: var(--space-2xl); }
 .row--reading { align-items: flex-start; padding: 22px 0; }
 .row--reading .row__icon { margin-top: -6px; }
 .row--reading .row__subtitle { margin-top: 4px; max-width: 65ch; font-size: var(--text-body); line-height: 1.45; color: var(--ink); }

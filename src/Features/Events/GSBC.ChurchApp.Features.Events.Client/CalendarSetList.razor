@@ -14,7 +14,7 @@
             <div class="calendar-next">
                 @foreach (IGrouping<DateOnly, EventOccurrence> day in context.Value.Occurrences.GroupBy(EventWords.DayOf))
                 {
-                    <DaySection @key="day.Key" Day="day.Key" Today="EventWords.Today(Now)" Occurrences="day" Diary="context.Value.Diary" NowUtc="Now" FromOf="FromOf" />
+                    <DaySection @key="day.Key" Day="day.Key" Today="EventWords.Today(Now)" Occurrences="day" Diary="context.Value.Diary" NowUtc="Now" FromOf="FromOf" NoteOf="NoteOf" />
                 }
             </div>
         }
@@ -36,6 +36,9 @@
         Calendars.Select(calendar => calendar.From).Distinct().Count() > 1
             ? Calendars.FirstOrDefault(calendar => calendar.Id == occurrence.CalendarId)?.From
             : null;
+
+    private DayNote? NoteOf(EventOccurrence occurrence) =>
+        Calendars.FirstOrDefault(calendar => calendar.Id == occurrence.CalendarId)?.Notes?.FirstOrDefault(note => note.Day == EventWords.DayOf(occurrence));
 
     private async Task<ComingUpInSet> LoadAsync()
     {

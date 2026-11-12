@@ -208,6 +208,7 @@ internal sealed class MinistryViews(
         Id = post.Id.ToString(), MinistryId = post.MinistryId.ToString(), Title = post.Title, Body = post.Body, Audience = post.Audience,
         Important = post.Important, Author = post.AuthorName, PostedAt = post.PostedAt, EditedAt = post.EditedAt, From = from,
         WholeChurch = post.WholeChurchAskedAt is null ? "" : "Asked to send to the whole church",
+        Sunday = post.Sunday?.ToString("yyyy-MM-dd") ?? "", NoClass = post.NoClass,
     };
 
     public static FileItem File(FileRecord file, string from = "") => new()
@@ -230,5 +231,4 @@ internal sealed class MinistryViews(
         Round = round is null ? null : Round(round),
     };
 
-    public static SessionChange Session(SessionRecord session) => new() { Date = session.Date.ToString("yyyy-MM-dd"), Off = session.Off, Note = session.Note };
 }

@@ -1,3 +1,4 @@
+@using GSBC.ChurchApp.Platform.Client.Modules
 <section class="week-day" aria-labelledby="@HeadingId">
     <h2 class="week-day__head" id="@HeadingId" data-day="@EventDates.Format(Day)">
         @EventWords.DayHeading(Day, Today)
@@ -6,7 +7,16 @@
     <div class="list">
         @foreach (EventOccurrence occurrence in Occurrences)
         {
-            <OccurrenceRow @key="occurrence.Id" Occurrence="occurrence" Calendar="Diary.Calendar(occurrence.CalendarId)" NowUtc="NowUtc" Highlight="true" NewChange="IsNewChange(occurrence)" From="@FromOf?.Invoke(occurrence)" />
+            DayNote? note = NoteOf?.Invoke(occurrence);
+            <OccurrenceRow @key="occurrence.Id" Occurrence="occurrence" Calendar="Diary.Calendar(occurrence.CalendarId)" NowUtc="NowUtc" Highlight="true" NewChange="IsNewChange(occurrence)" From="@FromOf?.Invoke(occurrence)" NotOnInstead="@note?.NotOn" />
+            @if (note is not null)
+            {
+                <a class="week-day__note" href="@note.Href" @key="@($"{occurrence.Id}-note")">
+                    <Icon Name="megaphone" Size="IconSize.Small" />
+                    <span>@note.Title</span>
+                    <Icon Name="chevron-right" Size="IconSize.Small" />
+                </a>
+            }
         }
     </div>
 </section>
@@ -19,6 +29,7 @@
     [Parameter] public DateTime NowUtc { get; set; }
     [Parameter] public Func<EventOccurrence, bool> IsNewChange { get; set; } = _ => false;
     [Parameter] public Func<EventOccurrence, string?>? FromOf { get; set; }
+    [Parameter] public Func<EventOccurrence, DayNote?>? NoteOf { get; set; }
 
     private string HeadingId => $"day-{EventDates.Format(Day)}";
 }

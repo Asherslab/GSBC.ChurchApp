@@ -182,6 +182,7 @@ internal sealed class MinistryLeadingService(
         Post wanted = request.Post;
         if (MinistryRules.WhyNotPost(wanted.Title, wanted.Body, wanted.Audience, MinistryLogic.PostableAudiences(ministry.AttendJoin)) is { } problem)
             throw Invalid(problem);
+        DateOnly? sunday = wanted.Sunday.Length == 0 ? null : await SundayOfAsync(ministry, wanted.Sunday, cancellationToken);
 
         Guid? chosenId = wanted.New ? ParseId(wanted.Id) : null;
         if (chosenId is { } already && await db.Posts.AsNoTracking().SingleOrDefaultAsync(found => found.Id == already, cancellationToken) is { } sent)
@@ -200,6 +201,7 @@ internal sealed class MinistryLeadingService(
             post.EditedAt = Now;
         bool tellNow = wanted.Important && (isNew || !post.Important);
         (post.Title, post.Body, post.Audience, post.Important) = (wanted.Title.Trim(), wanted.Body.Trim(), wanted.Audience, wanted.Important);
+        (post.Sunday, post.NoClass) = (sunday, sunday is not null && wanted.NoClass);
         if (wanted.AskWholeChurch && post.WholeChurchAskedAt is null)
             post.WholeChurchAskedAt = Now;
         changes.Touch(ministry.Id);
@@ -211,6 +213,13 @@ internal sealed class MinistryLeadingService(
                 $"{ministry.Name}: {post.Title}", Shortened(post.Body), $"/ministries/{ministry.Id}/news",
                 Subject: $"ministries/posts/{post.Id:N}", ScopeId: ministry.Id.ToString()) { Actor = me }, cancellationToken);
         return MinistryViews.Post(post);
+    }
+
+    private async Task<DateOnly> SundayOfAsync(MinistryRecord group, string wanted, CancellationToken cancellationToken)
+    {
+        List<SitOutRecord> sitOuts = await db.SitOuts.AsNoTracking().Where(sitOut => sitOut.GroupId == group.Id).ToListAsync(cancellationToken);
+        List<string> sundays = group.ShowsInLifeGroups ? MinistryViews.SundaysOf(group, await db.Rounds.AsNoTracking().ToListAsync(cancellationToken), sitOuts) : [];
+        return sundays.Contains(wanted) ? DateOf(wanted) : throw Invalid("Choose one of its Sundays.");
     }
 
     public async ValueTask<Done> DeletePostAsync(ItemRef request, CallContext context = default)
@@ -587,28 +596,6 @@ internal sealed class MinistryLeadingService(
         await keptEvents.KeepInStepAsync(LifeGroupSundays.Plan(await db.Rounds.AsNoTracking().ToListAsync(cancellationToken)), cancellationToken);
 
     private static ClaimsPrincipal UserOf(CallContext context) => context.ServerCallContext?.GetHttpContext().User ?? new ClaimsPrincipal();
-
-    public async ValueTask<Done> SaveSessionAsync(SessionSave request, CallContext context = default)
-    {
-        CancellationToken cancellationToken = context.CancellationToken;
-        MinistryRecord group = Existing(await views.TreeAsync(cancellationToken), request.MinistryId);
-        DateOnly date = DateOf(request.Change.Date);
-        string note = request.Change.Note.Trim();
-        SessionRecord? session = await db.Sessions.SingleOrDefaultAsync(found => found.GroupId == group.Id && found.Date == date, cancellationToken);
-        if (!request.Change.Off && note.Length == 0)
-        {
-            if (session is not null)
-                db.Sessions.Remove(session);
-        }
-        else
-        {
-            session ??= db.Sessions.Add(new SessionRecord { GroupId = group.Id, Date = date }).Entity;
-            (session.Off, session.Note) = (request.Change.Off, note);
-        }
-        changes.Touch(group.Id);
-        await db.SaveChangesAsync(cancellationToken);
-        return new Done();
-    }
 
     private async Task<MinistryDetails> AddAsync(Guid? parentId, MinistryDetails wanted, CancellationToken cancellationToken)
     {

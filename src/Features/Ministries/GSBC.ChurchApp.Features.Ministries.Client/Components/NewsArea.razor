@@ -19,11 +19,11 @@
                 bool mine = post.From.Length == 0 && Page.You.MayPostFor.Count > 0;
                 @if (mine)
                 {
-                    <button type="button" class="ministry-item" @key="post.Id" @onclick="() => Open(post)">@Item(post)</button>
+                    <button type="button" class="ministry-item" id="@($"post-{post.Id}")" @key="post.Id" @onclick="() => Open(post)">@Item(post)</button>
                 }
                 else
                 {
-                    <div class="ministry-item" @key="post.Id">@Item(post)</div>
+                    <div class="ministry-item" id="@($"post-{post.Id}")" @key="post.Id">@Item(post)</div>
                 }
             }
         </MinistryBox>
@@ -42,6 +42,16 @@
     private void Open(Post? post) => (_draft, _open) = (PostSheet.DraftOf(post, Page), true);
 
     private RenderFragment Item(Post post) => @<text>
+        @if (post.Sunday.Length > 0)
+        {
+            <span class="ministry-item__meta">
+                @if (post.NoClass)
+                {
+                    <Pill Tone="PillTone.Marker">@SundayPosts.NoClass</Pill>
+                }
+                <span>@SundayPosts.For(post)</span>
+            </span>
+        }
         <span class="ministry-item__title">@post.Title</span>
         @if (post.Body.Length > 0)
         {

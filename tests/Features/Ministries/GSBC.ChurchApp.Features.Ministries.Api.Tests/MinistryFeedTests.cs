@@ -159,6 +159,29 @@ public sealed class MinistryFeedTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task APostAboutASundayMustBeOneOfTheGroupsOwnSundaysAndReachesThePhoneWithIt()
+    {
+        string sunday = ChurchDay(14).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+        await using (AsyncServiceScope scope = _services.CreateAsyncScope())
+        {
+            MinistryLeadingService leading = scope.ServiceProvider.GetRequiredService<MinistryLeadingService>();
+            Post NoClassOn(string day) => new() { Title = "No class this Sunday", Audience = Audiences.Everyone, Sunday = day, NoClass = true };
+
+            RpcException notItsSunday = await Assert.ThrowsAsync<RpcException>(async () =>
+                await leading.SavePostAsync(new PostSave { MinistryId = _band.Id.ToString(), Post = NoClassOn(ChurchDay(21).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)) }, Call(_leader)));
+            RpcException notALifeGroup = await Assert.ThrowsAsync<RpcException>(async () =>
+                await leading.SavePostAsync(new PostSave { MinistryId = _youth.Id.ToString(), Post = NoClassOn(sunday) }, Call(_leader)));
+            Assert.Equal([StatusCode.InvalidArgument, StatusCode.InvalidArgument], [notItsSunday.StatusCode, notALifeGroup.StatusCode]);
+
+            await leading.SavePostAsync(new PostSave { MinistryId = _band.Id.ToString(), Post = NoClassOn(sunday) }, Call(_leader));
+            await scope.ServiceProvider.GetRequiredService<MinistriesPublisher>().PublishAsync(Cancel);
+        }
+
+        Post onThePhone = Assert.Single((await (await PhoneOfAsync(_visitor)).Ministries.MinistryAsync(_band.Id.ToString())).Posts);
+        Assert.Equal((sunday, true), (onThePhone.Sunday, onThePhone.NoClass));
+    }
+
+    [Fact]
     public async Task AYoungPersonJoiningATeamWaitsForAParentsYesAndItsLeadersHearOfIt()
     {
         Guid teen = _people.Child("Tom Young", _visitor);
