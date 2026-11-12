@@ -44,3 +44,10 @@ over a slim bar and Send at the end of the page. THESIS: feedback is a message, 
 on the keyboard, not a form. FIRST VIEWPORT: solid top bar; a short lead and *Sent with it*; the shared `Composer` at the
 foot (paperclip, three-line field that grows, round Send), chosen files as a thumbnail row above it. Replaces the
 masthead, the dashed picker, the stage and the sticky foot bar of 2026-11-11.
+
+## Pictures back at the top (2026-11-12)
+
+Owner (#59): "Looks way too barren now. Put the images back up top where they were before. But keep the textbox and send
+like it is, looks decent". FIRST VIEWPORT: solid top bar; the 2026-11-11 picture area at the top (the dashed *Choose
+screenshots or videos* tile, or the chosen one large beside its filmstrip and + tile, "1 of 6 chosen"); the lead and
+*Sent with it*; the shared `Composer` at the foot, unchanged except that it has no paperclip, so pictures have one way in.
