@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-11-12T12:00:00+00:00",
+  "generatedAt": "2026-11-12T18:00:00+00:00",
   "title": "Design System: GSBC Church App",
   "extensions": {
     "colorMeta": {
@@ -861,6 +861,36 @@
           "#e7efff"
         ],
         "roleHint": "Field Edge in dark: night-ink-3 at 70%."
+      },
+      "viewer-backdrop": {
+        "role": "neutral",
+        "displayName": "Viewer Night",
+        "canonical": "rgb(8 12 22 / 0.97)",
+        "tonalRamp": [
+          "#03050a",
+          "#080c16",
+          "#141b2b",
+          "#232c40",
+          "#3a4459",
+          "#5b6478",
+          "#8d94a5",
+          "#c9cdd6"
+        ]
+      },
+      "viewer-control": {
+        "role": "neutral",
+        "displayName": "Viewer Control",
+        "canonical": "rgb(255 255 255 / 0.12)",
+        "tonalRamp": [
+          "rgb(255 255 255 / 0.04)",
+          "rgb(255 255 255 / 0.08)",
+          "rgb(255 255 255 / 0.12)",
+          "rgb(255 255 255 / 0.22)",
+          "rgb(255 255 255 / 0.36)",
+          "rgb(255 255 255 / 0.52)",
+          "rgb(255 255 255 / 0.7)",
+          "rgb(255 255 255 / 0.88)"
+        ]
       }
     },
     "typographyMeta": {
@@ -966,6 +996,21 @@
         "name": "drag-lift",
         "value": "filter: drop-shadow(0 18px 26px color-mix(in srgb, var(--ink) 30%, transparent)); scale: 1.04 while moving",
         "purpose": "A Home tile while it is moved or resized on the admin Hub canvas, nowhere else."
+      },
+      {
+        "name": "pop",
+        "value": "0 0 0 1px var(--line), 0 18px 36px -16px var(--scrim)",
+        "purpose": "Menus, popovers and the chip picker's matches: anything that opens over the page from a button."
+      },
+      {
+        "name": "pop-wide",
+        "value": "0 0 0 1px var(--line), 0 18px 40px -12px var(--scrim)",
+        "purpose": "The Account menu and the date and time popovers."
+      },
+      {
+        "name": "settings-group",
+        "value": "inset 0 0 0 1px var(--line), var(--lift)",
+        "purpose": "An admin settings group's card."
       }
     ],
     "motion": [
@@ -1062,26 +1107,6 @@
         "purpose": "Access page stacks its role column above the place."
       },
       {
-        "name": "admin-workbench-two-pane",
-        "value": "1428px",
-        "purpose": "Workbench detail drops under the work area."
-      },
-      {
-        "name": "admin-workbench-narrow-panes",
-        "value": "1648px",
-        "purpose": "Workbench outer panes narrow."
-      },
-      {
-        "name": "split-view-stack",
-        "value": "1200px",
-        "purpose": "Split-view detail drops beneath the list (shared component, window width)."
-      },
-      {
-        "name": "split-view-compact",
-        "value": "1201px to 1440px",
-        "purpose": "Admin split-view detail narrows to 300 to 360px."
-      },
-      {
         "name": "table-optional-columns",
         "value": "760px (list container)",
         "purpose": "Optional table columns hide when the split-view list is narrower."
@@ -1095,6 +1120,21 @@
         "name": "feedback-ticket-page-stack",
         "value": "1100px",
         "purpose": "A Feedback ticket opened as a page drops its side under its main column."
+      },
+      {
+        "name": "workbench-record-narrows",
+        "value": "1360px",
+        "purpose": "The record pane narrows to 320 to 380px and the rail moves above the list, or folds away with FoldAside while a record is open."
+      },
+      {
+        "name": "workbench-one-pane",
+        "value": "760px",
+        "purpose": "The workbench shows one pane at a time; the split view's form stacks the record under the list."
+      },
+      {
+        "name": "save-bar-narrow",
+        "value": "520px (container)",
+        "purpose": "A save bar's other actions move to their own line above Cancel and Save."
       }
     ],
     "themes": {
@@ -1374,7 +1414,7 @@
       "name": "Split view detail",
       "kind": "card",
       "refersTo": "table-cell",
-      "description": "The detail beside a table: a hairline-ruled column, not a card.",
+      "description": "The workbench's record pane: a hairline-ruled column, flat on the page, never a card.",
       "html": "<div class=\"ds-split\"><div class=\"ds-split__list\">Table</div><aside class=\"ds-split__panel\"><h2>B. Staff</h2><p>Joined 28 October</p></aside></div>",
       "css": ".ds-split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(240px, 320px); gap: 32px; font-family: \"Montserrat\", -apple-system, system-ui, sans-serif; } .ds-split__list { color: var(--ink-3, #626a79); } .ds-split__panel { padding: 4px 0 24px 28px; border-left: 1px solid var(--line, rgb(42 61 94 / 0.12)); } .ds-split__panel h2 { margin: 0 0 4px; color: var(--ink, #18233a); font-size: 20px; font-weight: 700; letter-spacing: -0.015em; } .ds-split__panel p { margin: 0; color: var(--ink-2, #545e70); font-size: 14px; }"
     },
@@ -1609,11 +1649,59 @@
       "description": "The stops a prayed-for request's person hears at: a ringed start On the wall, accent dots for each time spaced by the square root of the gap, and an ink-ringed daily stop, joined by a 2px strong-sand line.",
       "html": "<ol class=\"ds-pt\" aria-label=\"When they're told\"><li class=\"ds-pt-stop ds-pt-stop--start\"><span>On the wall</span></li><li class=\"ds-pt-stop\" style=\"flex-grow:1\"><span>15m</span></li><li class=\"ds-pt-stop\" style=\"flex-grow:1\"><span>30m</span></li><li class=\"ds-pt-stop\" style=\"flex-grow:1.41\"><span>1h</span></li><li class=\"ds-pt-stop\" style=\"flex-grow:2\"><span>2h</span></li><li class=\"ds-pt-stop\" style=\"flex-grow:2.83\"><span>6h</span></li><li class=\"ds-pt-stop ds-pt-stop--daily\"><span>Then every day at 12pm</span></li></ol>",
       "css": ".ds-pt { display: flex; flex-wrap: wrap; gap: 8px 0; width: 640px; margin: 0; padding: 0; list-style: none; font-family: \"Montserrat\", -apple-system, system-ui, sans-serif; } .ds-pt-stop { position: relative; display: grid; justify-items: start; gap: 8px; flex: 1 0 auto; min-width: 56px; padding-right: 14px; color: var(--ink-3, #626a79); font-size: 14px; font-weight: 600; font-variant-numeric: tabular-nums; } .ds-pt-stop::before { content: \"\"; width: 12px; height: 12px; border-radius: 999px; background: var(--accent, #00776d); } .ds-pt-stop::after { content: \"\"; position: absolute; top: 5px; left: 12px; right: 0; height: 2px; background: var(--sand-strong, #e9e1d4); } .ds-pt-stop:last-child::after { display: none; } .ds-pt-stop--start { flex-grow: 0; color: var(--ink-2, #545e70); } .ds-pt-stop--start::before { background: var(--surface, #ffffff); box-shadow: inset 0 0 0 2px var(--accent, #00776d); } .ds-pt-stop--daily { color: var(--ink, #18233a); } .ds-pt-stop--daily::before { background: var(--surface, #ffffff); box-shadow: inset 0 0 0 3px var(--ink, #18233a); }"
+    },
+    {
+      "name": "Save bar",
+      "kind": "custom",
+      "refersTo": "button-primary",
+      "description": "Cancel bottom left, Save bottom right, the status on its own line above at the right.",
+      "html": "<div class=\"ds-save\"><p class=\"ds-save__status\">You have changes that aren't saved</p><div class=\"ds-save__row\"><button class=\"ds-save__quiet\">Cancel</button><span class=\"ds-save__gap\"></span><button class=\"ds-save__main\">Save</button></div></div>",
+      "css": ".ds-save { display: grid; gap: 8px; width: 420px; font-family: \"Montserrat\", -apple-system, system-ui, sans-serif; } .ds-save__status { justify-self: end; margin: 0; color: var(--ink-2, #545e70); font-size: 14px; font-weight: 600; } .ds-save__row { display: flex; align-items: center; gap: 8px; } .ds-save__gap { flex: 1; } .ds-save button { min-height: 44px; padding: 0 18px; border: 0; border-radius: 22px; font: inherit; font-weight: 600; font-size: 14.5px; cursor: pointer; transition: transform 140ms cubic-bezier(0.22, 1, 0.36, 1); } .ds-save button:active { transform: scale(0.96); } .ds-save button:focus-visible { outline: 2px solid var(--accent, #00776d); outline-offset: 2px; } .ds-save__quiet { background: var(--field, #f4efe7); color: var(--ink, #18233a); } .ds-save__main { background: var(--primary, #2a3d5e); color: var(--on-primary, #fff); }"
+    },
+    {
+      "name": "Workbench: rail, list and record",
+      "kind": "custom",
+      "refersTo": "workbench-record",
+      "description": "Filters in a sand rail, the list, and the record ruled off on the right with its pane head.",
+      "html": "<div class=\"ds-wb\"><aside class=\"ds-wb__rail\"><p class=\"ds-wb__label\">Status</p><button class=\"ds-wb__filter ds-wb__filter--on\">Everyone <span>24</span></button><button class=\"ds-wb__filter\">Waiting <span>3</span></button></aside><section class=\"ds-wb__list\"><div class=\"ds-wb__row ds-wb__row--on\">Jordan Example</div><div class=\"ds-wb__row\">Sam Sample</div></section><aside class=\"ds-wb__rec\"><div class=\"ds-wb__head\"><div><h2>Jordan Example</h2><p>jordan@example.com</p></div><button class=\"ds-wb__more\" aria-label=\"More\">&#8943;</button></div></aside></div>",
+      "css": ".ds-wb { display: grid; grid-template-columns: 200px 1fr 260px; min-height: 240px; font-family: \"Montserrat\", -apple-system, system-ui, sans-serif; color: var(--ink, #18233a); } .ds-wb__rail { display: grid; align-content: start; gap: 2px; padding: 24px 16px; background: var(--sand, #f4efe7); } .ds-wb__label { margin: 0 0 4px 8px; color: var(--ink-3, #626a79); font-size: 14px; font-weight: 700; } .ds-wb__filter { display: flex; justify-content: space-between; min-height: 38px; padding: 0 8px; border: 0; border-radius: 9px; background: none; color: var(--ink-2, #545e70); font: inherit; font-size: 14.5px; font-weight: 600; cursor: pointer; } .ds-wb__filter span { color: var(--ink-3, #626a79); font-size: 14px; } .ds-wb__filter:hover { background: rgb(255 255 255 / 0.6); } .ds-wb__filter--on { background: #fff; color: var(--ink, #18233a); box-shadow: 0 1px 3px rgb(0 0 0 / 0.14); } .ds-wb__filter:focus-visible { outline: 2px solid var(--accent, #00776d); outline-offset: 2px; } .ds-wb__list { padding: 24px 32px; } .ds-wb__row { min-height: 48px; display: flex; align-items: center; padding: 0 12px; border-bottom: 1px solid var(--line, rgb(42 61 94 / 0.12)); font-size: 15.5px; font-weight: 600; } .ds-wb__row--on { border-radius: 12px; border-color: transparent; background: var(--selected-fill, #f4efe7); } .ds-wb__rec { padding: 24px; border-left: 1px solid var(--line, rgb(42 61 94 / 0.12)); background: var(--page, #fff); } .ds-wb__head { display: flex; align-items: flex-start; gap: 8px; } .ds-wb__head > div { flex: 1; } .ds-wb__head h2 { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.2; } .ds-wb__head p { margin: 4px 0 0; color: var(--ink-2, #545e70); font-size: 14px; } .ds-wb__more { width: 44px; height: 44px; border: 0; border-radius: 22px; background: none; color: var(--ink-2, #545e70); font-size: 20px; cursor: pointer; } .ds-wb__more:hover { background: var(--field, #f4efe7); color: var(--ink, #18233a); }"
+    },
+    {
+      "name": "Menu",
+      "kind": "custom",
+      "refersTo": "menu-panel",
+      "description": "The more-actions menu: items that say what they do, Delete last and red after a rule.",
+      "html": "<div class=\"ds-menu\" role=\"menu\"><button class=\"ds-menu__item\" role=\"menuitem\"><span class=\"ds-menu__lead\">&#8599;</span><span><b>Open as a page</b><small>The whole record in the window</small></span></button><div class=\"ds-menu__rule\"></div><button class=\"ds-menu__item ds-menu__item--danger\" role=\"menuitem\"><span class=\"ds-menu__lead\">&#215;</span><span><b>Delete</b><small>Asks first</small></span></button></div>",
+      "css": ".ds-menu { display: grid; width: 15rem; padding: 6px; border-radius: 12px; background: var(--surface, #fff); box-shadow: 0 0 0 1px var(--line, rgb(42 61 94 / 0.12)), 0 18px 36px -16px var(--scrim, rgb(0 0 0 / 0.38)); font-family: \"Montserrat\", -apple-system, system-ui, sans-serif; } .ds-menu__item { display: flex; align-items: flex-start; gap: 8px; min-height: 44px; padding: 8px; border: 0; border-radius: 9px; background: none; color: var(--ink, #18233a); font: inherit; text-align: left; cursor: pointer; } .ds-menu__item:hover, .ds-menu__item:focus-visible { background: var(--selected-fill, #f4efe7); outline: none; } .ds-menu__item b { display: block; font-size: 15.5px; font-weight: 600; } .ds-menu__item small { display: block; color: var(--ink-2, #545e70); font-size: 14px; } .ds-menu__lead { width: 18px; color: var(--accent, #00776d); } .ds-menu__item--danger, .ds-menu__item--danger .ds-menu__lead { color: var(--danger, #b4372f); } .ds-menu__rule { height: 1px; margin: 6px 4px; background: var(--line, rgb(42 61 94 / 0.12)); }"
+    },
+    {
+      "name": "Settings group (admin card)",
+      "kind": "card",
+      "refersTo": "settings-group-admin",
+      "description": "A group of settings on its own card with a sand foot for its save bar.",
+      "html": "<section class=\"ds-group\"><h2>The details</h2><p class=\"ds-group__lead\">What people see on the ministry's page.</p><div class=\"ds-group__body\"><label>Name<input value=\"Example ministry\"></label></div><div class=\"ds-group__foot\">These change straight away</div></section>",
+      "css": ".ds-group { max-width: 520px; border-radius: 14px; background: var(--surface, #fff); box-shadow: inset 0 0 0 1px var(--line, rgb(42 61 94 / 0.12)), 0 1px 2px rgb(24 35 58 / 0.06), 0 10px 24px -14px rgb(24 35 58 / 0.3); font-family: \"Montserrat\", -apple-system, system-ui, sans-serif; color: var(--ink, #18233a); } .ds-group h2 { margin: 0; padding: 16px 20px 0; font-size: 20px; font-weight: 700; letter-spacing: -0.015em; } .ds-group__lead { margin: 2px 20px 0; color: var(--ink-2, #545e70); font-size: 14px; } .ds-group__body { padding: 16px 20px 20px; } .ds-group label { display: grid; gap: 6px; color: var(--ink-2, #545e70); font-size: 14px; font-weight: 600; } .ds-group input { padding: 13px 14px; border: 0; border-radius: 12px; background: var(--field, #f4efe7); box-shadow: inset 0 0 0 1px rgb(98 106 121 / 0.7); color: var(--ink, #18233a); font: inherit; font-size: 16px; font-weight: 400; } .ds-group input:focus-visible { outline: none; box-shadow: inset 0 0 0 2px var(--accent, #00776d); } .ds-group__foot { padding: 12px 20px; border-top: 1px solid var(--line, rgb(42 61 94 / 0.12)); border-radius: 0 0 14px 14px; background: color-mix(in srgb, var(--sand, #f4efe7) 55%, var(--surface, #fff)); color: var(--ink-2, #545e70); font-size: 14px; }"
+    },
+    {
+      "name": "Date field (admin)",
+      "kind": "input",
+      "refersTo": "date-popover",
+      "description": "Type the date, or open the calendar from the button at the field's right end.",
+      "html": "<div class=\"ds-date\"><label>Starts</label><div class=\"ds-date__box\"><input value=\"Sun 15 Nov\"><button aria-label=\"Choose a date\">&#9638;</button></div><span class=\"ds-date__back\">&#10003; Sunday 15 November 2026</span></div>",
+      "css": ".ds-date { display: grid; gap: 6px; width: 260px; font-family: \"Montserrat\", -apple-system, system-ui, sans-serif; } .ds-date label { color: var(--ink-2, #545e70); font-size: 14px; font-weight: 600; } .ds-date__box { position: relative; } .ds-date input { width: 100%; box-sizing: border-box; padding: 13px 48px 13px 14px; border: 0; border-radius: 12px; background: var(--field, #f4efe7); box-shadow: inset 0 0 0 1px rgb(98 106 121 / 0.7); color: var(--ink, #18233a); font: inherit; font-size: 16px; font-variant-numeric: tabular-nums; } .ds-date input:focus-visible { outline: none; box-shadow: inset 0 0 0 2px var(--accent, #00776d); } .ds-date button { position: absolute; top: 50%; right: 4px; width: 40px; height: 40px; border: 0; border-radius: 9px; background: none; color: var(--ink-2, #545e70); cursor: pointer; transform: translateY(-50%); } .ds-date button:hover { background: var(--selected-fill, #f4efe7); color: var(--ink, #18233a); } .ds-date button:focus-visible { outline: 2px solid var(--accent, #00776d); outline-offset: -2px; } .ds-date__back { color: var(--ink-2, #545e70); font-size: 14px; }"
+    },
+    {
+      "name": "Board column and card",
+      "kind": "card",
+      "refersTo": "board-card",
+      "description": "The shared board: sand columns with a count, white cards, the open one ringed in marker.",
+      "html": "<section class=\"ds-board\"><h2>New <span>2</span></h2><a class=\"ds-board__card ds-board__card--open\" href=\"#\"><small>#12 &#183; 2 hours ago</small><b>The calendar doesn't scroll</b></a><a class=\"ds-board__card\" href=\"#\"><small>#13</small><b>Add a link to the bulletin</b></a></section>",
+      "css": ".ds-board { display: flex; flex-direction: column; gap: 8px; width: 220px; padding: 12px; border-radius: 14px; background: var(--sand, #f4efe7); font-family: \"Montserrat\", -apple-system, system-ui, sans-serif; } .ds-board h2 { display: flex; justify-content: space-between; margin: 0; padding: 2px 4px 4px; font-size: 14.5px; font-weight: 700; color: var(--ink, #18233a); } .ds-board h2 span { min-width: 24px; padding: 0 8px; border-radius: 999px; background: var(--page, #fff); color: var(--ink-2, #545e70); font-size: 12px; font-weight: 600; text-align: center; } .ds-board__card { display: grid; gap: 4px; padding: 12px 16px 16px; border-radius: 10px; background: var(--surface, #fff); box-shadow: inset 0 0 0 1px var(--line, rgb(42 61 94 / 0.12)); color: var(--ink-2, #545e70); font-size: 14px; text-decoration: none; transition: box-shadow 140ms ease-out, transform 140ms ease-out; } .ds-board__card:hover { box-shadow: inset 0 0 0 1px rgb(98 106 121 / 0.55); } .ds-board__card:active { transform: scale(0.98); } .ds-board__card:focus-visible { outline: 2px solid var(--accent, #00776d); outline-offset: 2px; } .ds-board__card--open, .ds-board__card--open:hover { box-shadow: 0 0 0 2px var(--marker, #e7ae74); } .ds-board__card small { color: var(--ink-3, #626a79); font-variant-numeric: tabular-nums; } .ds-board__card b { color: var(--ink, #18233a); font-size: 15.5px; font-weight: 600; }"
     }
   ],
   "narrative": {
     "northStar": "The Sunday Bulletin",
-    "overview": "**Creative North Star: \"The Sunday Bulletin\"**\n\nThe app reads like the church's own printed bulletin brought onto a phone. Every top-level tab opens on a navy masthead carrying a large title, a short line of context in beige, and the faint ring of the church's mark bleeding off the right edge; below it the page turns white and continues as a single readable column, with sand-coloured callouts where the bulletin would use a shaded box. On the long, sectioned pages (Sunday and Listen) a sticky row of section tabs sits under the masthead with an orange underline that slides to the section in view, so the page navigates like a folded bulletin rather than a dashboard.\n\nDensity is calm and generous: one column, a 20px gutter, list rows with hairline dividers instead of card stacks, and type sized off the iOS body text setting so the congregation's own Dynamic Type choice carries through. The system rejects the generic church-app template, a uniform grid of identical icon squares, and the feed of identical cards; content sits on the page, and cards appear only where a picture leads (an event, a sermon series). Home is the one tab root laid out as tiles (the Hub, chosen 2026-10-27): a grid the church arranges, where tiles differ in size, tone and content shape, so it reads as the bulletin's front page rather than an app launcher.\n\nLight is the default scheme. An app-wide dark scheme (night navy ground, raised navy surfaces, bright aqua, orange progress) is chosen in Appearance or follows the system. A second palette, the 2026 yearly theme (the website's greens and a serif masthead), is a full alternate. Which one everyone sees is data, not a release: staff choose it in Configuration's Colours area, optionally for a run of dates, and anyone who may make that choice can preview the other palette on their own phone first.\n\nThe admin panel is the same bulletin carried to the church office's desk. A persistent navy sidebar takes the masthead's place, the work area stays white, and a compact title band replaces the phone masthead. It opens on the office week: the next seven days as a sand rail of white day columns carrying what is dated, then what needs you and the areas you look after. Areas are worked as hairline tables with the chosen record's detail ruled off beside them. The panel follows the computer's light or dark setting.",
+    "overview": "**Creative North Star: \"The Sunday Bulletin\"**\n\nThe app reads like the church's own printed bulletin brought onto a phone. Every top-level tab opens on a navy masthead carrying a large title, a short line of context in beige, and the faint ring of the church's mark bleeding off the right edge; below it the page turns white and continues as a single readable column, with sand-coloured callouts where the bulletin would use a shaded box. On the long, sectioned pages (Sunday and Listen) a sticky row of section tabs sits under the masthead with an orange underline that slides to the section in view, so the page navigates like a folded bulletin rather than a dashboard.\n\nDensity is calm and generous: one column, a 20px gutter, list rows with hairline dividers instead of card stacks, and type sized off the iOS body text setting so the congregation's own Dynamic Type choice carries through. The system rejects the generic church-app template, a uniform grid of identical icon squares, and the feed of identical cards; content sits on the page, and cards appear only where a picture leads (an event, a sermon series). Home is the one tab root laid out as tiles (the Hub, chosen 2026-10-27): a grid the church arranges, where tiles differ in size, tone and content shape, so it reads as the bulletin's front page rather than an app launcher.\n\nLight is the default scheme. An app-wide dark scheme (night navy ground, raised navy surfaces, bright aqua, orange progress) is chosen in Appearance or follows the system. A second palette, the 2026 yearly theme (the website's greens and a serif masthead), is a full alternate. Which one everyone sees is data, not a release: staff choose the year's theme under *The app's colours* on App styling (optionally for a run of dates), an event's colours go in a draft turned on between dates, and anyone who may make that choice can preview the other palette on their own phone first.\n\nThe admin panel is the same bulletin carried to the church office's desk. A persistent navy sidebar takes the masthead's place, the work area stays white, and a compact title band replaces the phone masthead. It opens on the office week: the next seven days as a sand rail of white day columns carrying what is dated, then what needs you and the areas you look after. Areas are worked in one workbench: filters in a sand rail where a page has them, the list, and the chosen record ruled off beside it with Cancel and Save at its foot. Each job is done one way, by one shared component, on the phone and on the desk alike. The panel follows the computer's light or dark setting until someone picks Light or Dark in the Account menu.",
     "keyCharacteristics": [
       "Navy masthead on every tab root, with the mark's ring echo at 7% opacity.",
       "Sticky section tabs with a sliding orange underline on sectioned pages.",
@@ -1622,9 +1710,10 @@
       "Montserrat throughout at 400, 600 and 700; DM Serif Text only for yearly-theme mastheads.",
       "rem type tied to the iOS body text size, so Dynamic Type scales the whole app.",
       "In the admin panel, a 248px navy sidebar of Jump to, pinned pages and areas that fold, an orange marker bar on the current page and orange count capsules, over a white work area that opens with a title band.",
+      "One way per job (the pattern map): the workbench for a list and its record, Cancel bottom left and Save bottom right, Delete in the item's ⋯ menu, settings in grouped sections, underline tabs for switching views.",
       "Home as the Hub: a 2 to 4 column grid of 14px-radius tiles in theme tones, each tile one of six shapes, sized by the church in columns and rows, under a compact masthead.",
       "The calendar as one running diary: a sticky navy week band with the seven-day rail over day sections of hairline agenda rows, where regular events stay quiet and only what's different (a special, a change, a date that isn't on) speaks; an event opens on a navy head with a white date block, and is edited where it is read; a regular event has a page of its own that opens on its run of dates, and a date of it is changed on its own.",
-      "A tab bar of up to four tabs staff choose in a draft (Home and Sermons until they publish a change), ending in More, always last; staff arrange it on a Tab bar canvas beside the Hub's. A notifications bell with an orange unread badge joins every tab root with the inbox."
+      "A tab bar built from what features register, ending in More; with the Hub home (favoured 2026-10-27) it grows to Home, Listen, Prayer, More. A notifications bell with an orange unread badge joins every tab root with the inbox."
     ],
     "rules": [
       {
@@ -1634,12 +1723,17 @@
       },
       {
         "name": "The Marker Rule",
-        "body": "Orange means \"here\" or \"new\": the active section, the unread item, how far you've listened, today on the week rail, an event changed since members last opened it, the tile chosen on the Hub canvas. It is never a button fill and never decoration. The one ground it may fill is a Home tile in the Highlight or Pale highlight tone (`marker`, `marker-soft`), which staff choose for a tile they want to stand out; no tile ships in solid Highlight by default. On the canvas it also marks the chosen picture in the media chooser.",
+        "body": "Orange means \"here\" or \"new\": the active section, the unread item, how far you've listened, today on the week rail, an event changed since members last opened it, the tile chosen on the Hub canvas, the next set of Life Groups to fill. It is never a button fill and never decoration. The one ground it may fill is a Home tile in the Highlight or Pale highlight tone (`marker`, `marker-soft`), which staff choose for a tile they want to stand out; no tile ships in solid Highlight by default. The other is a calendar row that stands out (a one-off or a changed date), tinted marker at 14% in the app's week and month lists (owner, 2026-11-09), so it follows the theme as the marker does. On the canvas it also marks the chosen picture in the media chooser.",
         "section": "colors"
       },
       {
         "name": "The Aqua Acts Rule",
         "body": "Aqua is for live state, for things you can act on (links, passages, the active tab), and for one short line of metadata at most (a series or recurrence line, a \"Streamed on YouTube\" tag). Navy is for the primary action itself. Don't use aqua for headings or running text.",
+        "section": "colors"
+      },
+      {
+        "name": "The Contrast Rule",
+        "body": "Text and placeholders hold 4.5:1 against what they sit on; icons and the edges of controls hold 3:1. The quiet inks (ink-2, ink-3) are worked out to read on the page, on shaded boxes and on fields, in every theme and both schemes. Nothing is faded with opacity to look quiet, past or disabled: it changes colour instead (Buttons, *Disabled*). Opacity is for images and covers, drag ghosts, the mark at 7%, and brief press and busy feedback, and never takes text below these numbers. App styling refuses a theme that breaks it: the theme check measures each text colour against what it sits on, in light and in dark, quiet and secondary text in shaded boxes and in fields, danger text in shaded boxes, the masthead's quieter text and the text on its buttons included.",
         "section": "colors"
       },
       {
@@ -1659,7 +1753,7 @@
       },
       {
         "name": "The Sidebar Offset Rule",
-        "body": "Admin breakpoints are window media queries offset by the sidebar's 248px. Never make the work area a size container: it becomes the containing block for fixed elements and traps sheets and overlays inside it. A component may still use a container on its own inner list (as the split view does).",
+        "body": "Admin breakpoints are window media queries offset by the sidebar's 248px; the workbench's own steps are 1360px and 760px of window. Never make the work area a size container: it becomes the containing block for fixed elements and traps sheets and overlays inside it. A component may still use a container on its own inner list (as the workbench's list pane and the save bar do).",
         "section": "layout"
       },
       {
@@ -1668,24 +1762,24 @@
         "section": "layout"
       },
       {
+        "name": "The Still Frame Rule",
+        "body": "A page that shows one thing at a time keeps its frame while what it shows changes. App styling's title band keeps its 72px whether it carries the sentence or a draft's save line, its buttons hold their places with the Drafts menu always last at the far right, and the phone and the 400px panel keep their widths whether you look at what everyone sees, the colours, Home or the tab bar; choosing a part changes only what is in the panel. The media library keeps its bars above the split view for the same reason.",
+        "section": "layout"
+      },
+      {
         "name": "The One Column Rule",
-        "body": "No grids of tiles on a tab root other than Home's Hub, and no uniform icon grid anywhere: the Hub's tiles differ in size, tone and shape. Beyond the Hub, the only multi-column layouts are the two-up series grid on Listen and the day rail. On the desk the admin panel adds its shell, the day rail (a week or a fortnight) and the office week's two columns, split views, the workbench, the announcements desk's writing and proof columns, the Places explorer's directory and phone, App styling's phone and panel, the Feedback board's status columns and its docked ticket (and a ticket page's main column and side), and the media library's folder tiles and picture grid (the folders and files themselves, not tools), and still no grid of tool tiles.",
+        "body": "No grids of tiles on a tab root other than Home's Hub, and no uniform icon grid anywhere: the Hub's tiles differ in size, tone and shape. Beyond the Hub, the only multi-column layouts are the two-up series grid on Listen and the day rail. On the desk the admin panel adds its shell, the day rail (a week or a fortnight) and the office week's two columns, the workbench (the split view included), the announcements desk's writing and proof columns, the Places explorer's directory and phone, App styling's phone and panel, a board's columns and its docked ticket (and a ticket page's main column and side), and the media library's folder tiles and picture grid (the folders and files themselves, not tools), and still no grid of tool tiles.",
         "section": "layout"
       },
       {
         "name": "The Flat Page Rule",
-        "body": "Rows, callouts, the sermon head and the player sit flat on the page; only a boxed list, a picture card, a Home tile in the Card tone (`raised`) or the age question on Account (a white card asked once, above Your family, until it is answered) may lift. If something needs separating, give it sand, not a shadow. In the admin panel the only lifted things are the sign-in card, account panels, the workbench's settings panel, the selection tray (docked over a list that scrolls beneath it), the Drafts menu's popover and the Feedback board's ticket while it floats over the board under 1228px; tables, the office week and the split view's detail are flat, separated by hairlines and sand, and today on the rail is an inset 2px primary ring, not a shadow. The chosen capsule on the rail, or the current \"Not sent yet\" chip, is a 2px marker outline at a 2px offset.",
+        "body": "Rows, callouts, the sermon head and the player sit flat on the page; only a boxed list, a picture card, a Home tile in the Card tone (`raised`) or the age question on Account (a white card asked once, above Your family, until it is answered) may lift. If something needs separating, give it sand, not a shadow. In the admin panel the only lifted things are the sign-in card, account panels, settings groups (a hairline ring and the lift), the selection tray (docked over a list that scrolls beneath it), menus and popovers (the Pop shadow) and the Feedback board's ticket while it floats over the board under 1228px; tables, the office week, board columns and the workbench's record pane are flat, separated by hairlines and sand, and today on the rail is an inset 2px primary ring, not a shadow. The chosen capsule on the rail, or the current \"Not sent yet\" chip, is a 2px marker outline at a 2px offset.",
         "section": "elevation"
       },
       {
         "name": "The Tonal Selection Rule",
         "body": "A selected row is marked by a fill one tonal step off its ground (Selected Fill, rounded to the field radius and widened 12px into the gutter on each side, its hairline hidden), never by a shadow or a border. A sand leading tile on a selected row takes the page colour (white in light, night in dark) so it still reads as a tile; an accent tile keeps its tint.",
         "section": "elevation"
-      },
-      {
-        "name": "The App's Own Rule",
-        "body": "Wherever the app owns something rather than staff (the Made by the app shelf, its folders and crumbs, a file's folder, the shelf's empty state), it carries the lock glyph and one plain caption saying what it is and what staff can't do to it. The lock is ink-2 or the surrounding text colour; ownership takes no colour or badge of its own.",
-        "section": "components"
       },
       {
         "name": "The Quiet Regular Rule",
@@ -1695,6 +1789,11 @@
       {
         "name": "The One Date Rule",
         "body": "A date of a regular event is only that date, and the regular event is changed only on its own page. Never put a switch between \"this date\" and \"every date\" in an editor; link the two with words (\"One of the Morning service, every Sunday. Edit the regular event ›\") and let a date say how it differs from the usual, with Put it back.",
+        "section": "components"
+      },
+      {
+        "name": "The App's Own Rule",
+        "body": "Wherever the app owns something rather than staff (the Made by the app shelf, its folders and crumbs, a file's folder, the shelf's empty state), it carries the lock glyph and one plain caption saying what it is and what staff can't do to it. The lock is ink-2 or the surrounding text colour; ownership takes no colour or badge of its own.",
         "section": "components"
       }
     ],
@@ -1707,7 +1806,9 @@
       "**Do** read colours through the semantic roles so light, dark and the yearly palette all work without component overrides.",
       "**Do** keep touch targets at 44px or more and give presses a scale and a haptic.",
       "**Do** mark a selected row with Selected Fill, a tonal step, and nothing else.",
-      "**Do** open every admin page on a title band, and work an area as a data table with its detail in a split view beside it.",
+      "**Do** open every admin page on a title band, and work an area in the workbench: filters in the sand rail, the list, the record ruled off beside it.",
+      "**Do** put Cancel bottom left and Save bottom right of anything that saves, with its status on its own line above.",
+      "**Do** put Delete and every other action on an item in its ⋯ menu, and ask once before deleting, saying what goes with it.",
       "**Do** offset admin breakpoints by the 248px sidebar.",
       "**Do** let staff choose what something opens with the place field and its directory, never by typing an address.",
       "**Do** give a Home tile one of the eight theme tones, and draw it in a layout its kind declares for its size.",
@@ -1715,7 +1816,9 @@
       "**Do** grey out a layout that doesn't suit a tile and say why, rather than hiding it.",
       "**Do** keep a regular event quiet in the agenda and let only a special, a change or a date that isn't on speak, with a date not on said in a line under its title.",
       "**Do** edit an event where it is read: the same head as a live preview, every change in a field below it, and the save in a foot bar; edit a regular event on its own page, from its run of dates.",
-      "**Do** mark whatever the app owns with the lock glyph and one plain caption, and keep a page's bars and path row above its split view so choosing an item never moves the list."
+      "**Do** mark whatever the app owns with the lock glyph and one plain caption, and keep a page's bars and path row above its list so choosing an item never moves the list.",
+      "**Do** show a safeguarding item that has run out in danger and one due soon in the marker, and never let either block anyone.",
+      "**Do** keep a page that shows one thing at a time in one frame (the Still Frame Rule), and put a phone preview's choices under it as one sentence of sand chips that change only the phone."
     ],
     "donts": [
       "**Don't** lay a tab root other than Home out as a grid of tiles, and don't let the Hub become a uniform grid of identical icon squares or a feed of identical cards.",
@@ -1726,7 +1829,9 @@
       "**Don't** redraw or restyle the church mark beyond recolouring the supplied artwork.",
       "**Don't** set font sizes in px.",
       "**Don't** put a phone masthead in the admin panel, or open it on a grid of tool tiles.",
-      "**Don't** box the split view's detail as a card; it is a hairline-ruled column.",
+      "**Don't** box the workbench's record pane as a card; it is a hairline-ruled column on the page.",
+      "**Don't** put a red Delete button in a foot, a save bar or on the page.",
+      "**Don't** use the browser's own date or time input in the admin panel, or build a second copy of a pattern the map already has.",
       "**Don't** make the admin work area a size container.",
       "**Don't** mark a date that isn't on with a suffix on its title or by dropping it from the list."
     ]

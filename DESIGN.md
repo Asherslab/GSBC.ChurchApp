@@ -61,6 +61,8 @@ colors:
   year-night-masthead: "#24382a"
   year-bright-sage: "#a6cf9e"
   on-year-bright-sage: "#10200f"
+  viewer-backdrop: "rgb(8 12 22 / 0.97)"
+  viewer-control: "rgb(255 255 255 / 0.12)"
 typography:
   display:
     fontFamily: "Montserrat, -apple-system, system-ui, sans-serif"
@@ -142,16 +144,24 @@ rounded:
   touch: "22px"
   full: "999px"
 spacing:
-  hairline: "2px"
-  xs: "6px"
-  sm: "10px"
-  md: "14px"
-  tile-gap: "12px"
+  space-3xs: "2px"
+  space-2xs: "4px"
+  space-xs: "6px"
+  space-sm: "8px"
+  space-md: "12px"
+  space-lg: "16px"
+  space-xl: "20px"
+  space-2xl: "24px"
+  space-3xl: "32px"
+  space-4xl: "48px"
+  stack: "14px"
   gutter: "20px"
+  after-tabs: "20px"
+  section-first: "22px"
+  section: "30px"
+  tile-gap: "12px"
   tile-row-min: "88px"
   tile-row-max: "132px"
-  lg: "22px"
-  section: "30px"
   touch: "44px"
   row: "56px"
 components:
@@ -843,6 +853,85 @@ components:
     typography: "{typography.pill}"
   feedback-label-accent:
     textColor: "{colors.aqua-deep}"
+  workbench-rail:
+    backgroundColor: "{colors.sand}"
+    width: "248px"
+    padding: "24px 16px 32px"
+  workbench-record:
+    backgroundColor: "{colors.white}"
+    width: "440px"
+    padding: "24px 24px 0"
+  pane-head-title:
+    textColor: "{colors.ink}"
+    typography: "{typography.title-lg}"
+  rail-filter:
+    textColor: "{colors.ink-2}"
+    typography: "{typography.label}"
+    rounded: "{rounded.inner}"
+    height: "38px"
+    padding: "0 8px"
+  rail-filter-on:
+    backgroundColor: "{colors.white}"
+    textColor: "{colors.ink}"
+  settings-group-admin:
+    backgroundColor: "{colors.white}"
+    rounded: "{rounded.card}"
+    padding: "16px 20px 20px"
+    width: "820px"
+  settings-group-phone:
+    backgroundColor: "{colors.white}"
+    rounded: "{rounded.card}"
+    padding: "12px 16px"
+  menu-panel:
+    backgroundColor: "{colors.white}"
+    rounded: "{rounded.field}"
+    padding: "6px"
+    width: "15rem"
+  menu-item:
+    textColor: "{colors.ink}"
+    typography: "{typography.row-title}"
+    rounded: "{rounded.inner}"
+    height: "44px"
+    padding: "8px"
+  menu-item-danger:
+    textColor: "{colors.danger}"
+  account-menu:
+    backgroundColor: "{colors.white}"
+    rounded: "{rounded.card}"
+    padding: "12px"
+    width: "312px"
+  date-popover:
+    backgroundColor: "{colors.white}"
+    rounded: "{rounded.card}"
+    padding: "12px"
+    width: "344px"
+  date-popover-day:
+    textColor: "{colors.ink}"
+    rounded: "{rounded.inner}"
+    height: "36px"
+    typography: "{typography.caption}"
+  date-popover-day-chosen:
+    backgroundColor: "{colors.navy}"
+    textColor: "{colors.white}"
+  board-column:
+    backgroundColor: "{colors.sand}"
+    rounded: "{rounded.card}"
+    padding: "12px"
+    width: "180px"
+  board-card:
+    backgroundColor: "{colors.white}"
+    textColor: "{colors.ink-2}"
+    rounded: "{rounded.tile}"
+    padding: "12px 16px 16px"
+    typography: "{typography.caption}"
+  picture-viewer:
+    backgroundColor: "{colors.viewer-backdrop}"
+    textColor: "{colors.white}"
+  picture-viewer-button:
+    backgroundColor: "{colors.viewer-control}"
+    textColor: "{colors.white}"
+    rounded: "{rounded.full}"
+    size: "44px"
 ---
 
 # Design System: GSBC Church App
@@ -857,23 +946,24 @@ component is shown, live, in the gallery (`/gallery` on both).
 
 | Job | Use | Where things go |
 |---|---|---|
-| A list and the record chosen from it (admin) | `Workbench` | Filters in a sand rail on the left only when the page has filters (with `FoldAside`, the rail steps aside while a record is open in a narrow window); the list in the middle; the record ruled off on the right, staying beside the list at every desktop width. The page's one add action sits in the `TitleBand`, top right. |
+| A list and the record chosen from it (admin) | `Workbench` | Filters in a sand rail on the left only when the page has filters; the list in the middle; the record ruled off on the right, staying beside the list at every desktop width. At 1360px and under the rail moves above the list, or, with `FoldAside`, steps aside while a record is open. A page without a rail uses `SplitView`, which is the same workbench. The page's one add action sits in the `TitleBand`, top right. |
 | A record's heading | `PaneHead` | Title and a one-line lead; its ⋯ menu (`Actions`) holds Delete and every other action on the item; Open as a page and Close at the right. |
-| Saving | `SaveBar` (+ `UnsavedGuard`) | **Cancel bottom left, Save bottom right** of anything that saves, on both sides. The status line ("Saved", "You have changes that aren't saved") sits on its own line above, never between the buttons. A create form never says it has unsaved changes (`New`). |
+| Saving | `SaveBar` (+ `UnsavedGuard`) | **Cancel bottom left, Save bottom right** of anything that saves, on both sides. The status line ("Saved", "You have changes that aren't saved") or the reason it can't save sits on its own line above, at the right (centred over a full-width save), never between the buttons. Other actions (the bar's child content) sit after Cancel; when the bar is 520px or narrower they move to their own line above it, at the right. A create form never says it has unsaved changes (`New`). |
 | Deleting | the item's ⋯ menu, then a `Sheet` | Delete is always an action on the item, never a red button in a foot or on the page. It asks once, saying what goes with it. Actions list the main (red) one first: the admin panel shows it at the right with Keep it at the far left; the phone stacks it on top. |
 | Adding | the record pane | New opens a blank record, already chosen, in the record pane beside the list; Cancel takes it away. On the phone it is a page with the same fields. |
 | A group of settings | `Section Grouped` (+ `Foot`) | A card on the admin panel (title and lead inside, a sand foot for its save bar or "These change straight away"); an inset group on the phone. A form that saves with a button and switches that change at once never share a group. |
 | Switching views | `TabStrip`, `Segmented`, `FilterChips` | Tabs (the underline) for different things; Segmented for the same list two ways; chips only to narrow down. Chips never switch views, and Segmented never picks a value that tabs should show. |
 | Tools for a list | the `Workbench` rail with `FilterChips Rail` (admin); main button + `Menu` (phone) | Search and filter groups live in the rail (`FilterChips Rail`, one per group, with counts). On the phone the main action is one wide button and the rest go in its ⋯ `Menu`, so nothing wraps alone. |
-| More actions | `Menu` | One ⋯ button; items say what they do, with a line under when it helps; Delete last and red. |
+| More actions | `Menu` | One ⋯ button; items are made with `this.Item(...)` (`MenuItems`), so each action belongs to the page that made it and the page redraws after it; they say what they do, with a line under when it helps; Delete last and red, after a rule (`startsGroup`). A hand-built panel uses `MenuButton` rows. |
+| A small panel that opens from a button | `Popover` | The surface on the menu's shadow; Escape or a click outside closes it. The Account menu is one. |
 | One role of several | `RoleMenu` | A button showing the role; its menu says what each role allows, with Remove in red last. Applies at once. Several roles at once stay a tick list (`RoleTick`). |
 | Steps something moves through | `StagePipeline` | Done steps ticked, the current one solid, the next waiting; press a step to move there. |
 | Boards | `Board` + `BoardCard` | Sand columns with a count, a dashed sentence when empty, optional "Add one here", a folded column for what's put aside. |
-| Dates and times | `DateField`, `TimeField`, `DateTimeField` | Admin: type it, or open the calendar or time list from the button at the field's right end. Phone: the native wheel. Never `Type="date"` or `Type="time"` in a feature. |
+| Dates and times | `DateField`, `TimeField`, `DateTimeField` | Admin: type it ("15 Nov", "7:30pm"), or open the calendar or the list of times (every 15 minutes) from the button at the field's right end; what was understood reads back under it with a check. Phone: the native wheel. Never `Type="date"` or `Type="time"` in a feature. |
 | A picture, bigger | `PictureOpen` + `PictureViewer` | The whole window on near-black, arrows and a filmstrip, Download. Never squeeze a picture into a pane. |
-| Icons | `AppIcons` | One icon per meaning; a cog always means "the settings of what you're looking at". |
-| Light or dark | `SchemeChoice` | Phone: Appearance. Admin: the Account menu in the sidebar. |
-| Spacing | `--space-*`, `--section`, `--stack`, `--gutter` | No new raw pixel spacing. |
+| Icons | `AppIcons` (Platform.Contracts) | One icon per meaning, named for the thing (`AppIcons.Prayer`, `AppIcons.Settings`); a cog always means "the settings of what you're looking at". |
+| Light or dark | `SchemeChoice` | Phone: Appearance. Admin: the Account menu, which opens from the sidebar's Account row. |
+| Spacing | `--space-*`, `--section`, `--section-first`, `--stack`, `--gutter`, `--after-tabs` | No new raw pixel spacing. |
 
 **Rules for the workflow** (they apply to every station):
 
@@ -895,7 +985,7 @@ Density is calm and generous: one column, a 20px gutter, list rows with hairline
 
 Light is the default scheme. An app-wide dark scheme (night navy ground, raised navy surfaces, bright aqua, orange progress) is chosen in Appearance or follows the system. A second palette, the 2026 yearly theme (the website's greens and a serif masthead), is a full alternate. Which one everyone sees is data, not a release: staff choose the year's theme under *The app's colours* on App styling (optionally for a run of dates), an event's colours go in a draft turned on between dates, and anyone who may make that choice can preview the other palette on their own phone first.
 
-The admin panel is the same bulletin carried to the church office's desk. A persistent navy sidebar takes the masthead's place, the work area stays white, and a compact title band replaces the phone masthead. It opens on the office week: the next seven days as a sand rail of white day columns carrying what is dated, then what needs you and the areas you look after. Areas are worked as hairline tables with the chosen record's detail ruled off beside them. The panel follows the computer's light or dark setting until someone picks Light or Dark in the Account menu.
+The admin panel is the same bulletin carried to the church office's desk. A persistent navy sidebar takes the masthead's place, the work area stays white, and a compact title band replaces the phone masthead. It opens on the office week: the next seven days as a sand rail of white day columns carrying what is dated, then what needs you and the areas you look after. Areas are worked in one workbench: filters in a sand rail where a page has them, the list, and the chosen record ruled off beside it with Cancel and Save at its foot. Each job is done one way, by one shared component, on the phone and on the desk alike. The panel follows the computer's light or dark setting until someone picks Light or Dark in the Account menu.
 
 **Key Characteristics:**
 - Navy masthead on every tab root, with the mark's ring echo at 7% opacity.
@@ -905,6 +995,7 @@ The admin panel is the same bulletin carried to the church office's desk. A pers
 - Montserrat throughout at 400, 600 and 700; DM Serif Text only for yearly-theme mastheads.
 - rem type tied to the iOS body text size, so Dynamic Type scales the whole app.
 - In the admin panel, a 248px navy sidebar of Jump to, pinned pages and areas that fold, an orange marker bar on the current page and orange count capsules, over a white work area that opens with a title band.
+- One way per job (the pattern map): the workbench for a list and its record, Cancel bottom left and Save bottom right, Delete in the item's ⋯ menu, settings in grouped sections, underline tabs for switching views.
 - Home as the Hub: a 2 to 4 column grid of 14px-radius tiles in theme tones, each tile one of six shapes, sized by the church in columns and rows, under a compact masthead.
 - The calendar as one running diary: a sticky navy week band with the seven-day rail over day sections of hairline agenda rows, where regular events stay quiet and only what's different (a special, a change, a date that isn't on) speaks; an event opens on a navy head with a white date block, and is edited where it is read; a regular event has a page of its own that opens on its run of dates, and a date of it is changed on its own.
 - A tab bar built from what features register, ending in More; with the Hub home (favoured 2026-10-27) it grows to Home, Listen, Prayer, More. A notifications bell with an orange unread badge joins every tab root with the inbox.
@@ -1003,6 +1094,8 @@ A single scrolling column per screen inside a fixed shell; the page scroller hid
 
 Every screen is built from the same frame: a 48px top bar (plus the top safe area) laid over the masthead, the masthead itself pulled up under the bar so its navy reaches the top of the screen, then optional sticky section tabs that stop under the top bar, then sections. Tab roots carry the bell in the top bar; pushed detail pages carry a back button labelled with the parent. A page appears at once, with no fade or slide: fading a page in let the masthead's navy, which sits behind every page for the overscroll, show through its content as a grey veil, and a page replaced by its loaded self played it twice.
 
+Spacing comes from one scale in `tokens.css`: 2, 4, 6, 8, 12, 16, 20, 24, 32 and 48px (`--space-3xs` to `--space-4xl`), with named rhythms on top: the gutter (20px), the stack (14px), the section gap (30px, 22px for the first) and the gap under a tab strip (20px). New spacing uses them; the drift ratchet only lets raw pixel spacing go down.
+
 Rows are at least 56px tall, interactive targets at least 44px. The tab bar is a fixed five-column grid with 48px items above the bottom safe area. Section anchors keep a scroll margin of the top safe area plus 100px so a jumped-to heading lands below the sticky bars.
 
 **With the keyboard up** (owner's reports, 2026-11-11/12) the screen ends where the keyboard begins, and nothing moves on its own. The app follows the keyboard itself (Capacitor Keyboard with `resize: none`): it sets `keyboard-open` on the root and `--kb` to the keyboard's height, accessory bar included, and the shell shrinks to sit on it, so the status bar, the top bar and the masthead stay put and nothing slides under the clock. The tab bar and the preview banner step aside, the page's foot reserve drops to 32px, and the space behind the keyboard is page colour, never the masthead's navy. The focused field is always shown above the keyboard and above any foot bar. A sheet sits on the keyboard and is never taller than the space above it; it slides in first and only then focuses its search field. A foot bar (Send, Save) stays docked just above the keyboard with only its actions and any warning; its explanatory lines and quiet links come back when the keyboard goes. The chat composer docks on the keyboard the same way. On Android the window itself resizes, so `--kb` stays 0 and only the class applies. The rules live in their own block at the end of `ui.css`.
@@ -1020,20 +1113,21 @@ A two-column shell: a 248px navy sidebar, sticky at the full window height and s
 - **Places in the app:** the directory beside a sticky 440px phone column (24px from the top) with a 40px gap, capped at 1320px. The phone's holder is as tall as the window allows between 380 and 560px (the window height less 340px), and the phone fits that height.
 - **App styling:** capped at 1440px. A title band held at 72px whatever it shows: the title on one line, cut off with an ellipsis, over one lead line 1.6rem tall; its actions never wrap. Under it two columns with a 48px gap: the phone column, sticky 16px from the top and as tall as the window less 150px (at least 520px), holding the phone with its preview chips 14px below; and the 400px panel, its parts 14px apart and 32px clear at its foot, scrolling with the page.
 - **Media:** above 900px the title band keeps its search (180 to 210px), New folder and Upload on the title row. Under it, a wrapping bar (12 by 20px gaps, 16px below): the shelf switch on the left, the type filter chips and the Grid/List switch on the right. Then the path row (at least 36px: breadcrumbs, with the open folder's actions at its end) and, on the app's shelf, its note. The bar, the path row and the note span above the split view, so opening a file's detail never moves the grid at any depth. Inside the list: folder tiles auto-filling at least 210px wide (10px gaps), 16px, then the picture grid auto-filling at least 168px wide (20 by 14px gaps).
-- **Split view:** a list beside a detail column of 340 to 440px with a 32px gap, capped at 1600px; the detail is sticky 24px from the top and scrolls within the window height. Between 1201 and 1440px the detail narrows to 300 to 360px with a 24px gap. Under 1200px it drops beneath the list. A table inside the list hides its optional columns once the list is narrower than 760px.
-- **Breakpoints allow for the sidebar.** The work area's breakpoints are window media queries offset by the 248px sidebar: the three-pane workbench narrows its outer panes at 1648px and drops the detail under the work area at 1428px; the office week stacks its columns and lets the seven-day rail scroll sideways (days at least 84px) at 1228px, where the announcements desk also drops its proof under the writing column (static, up to 360px) and the Feedback board's docked ticket becomes an overlay; the fortnight rail always keeps days at least 56px and scrolls sideways when they don't fit; a person's Roles tab drops its explanation panel under the ticks (no longer sticky) at 1328px; a person's Family and Safeguarding tabs narrow their panel to 260 to 340px (28px gap) at 1328px and drop it under the rows (static, the record's fields one column) at 928px; the Places explorer drops its phone column under the directory at 1100px (static, up to 420px, a hairline above, 24px of space), and so does App styling its panel under the phone (28px of space, the phone column static and 640px tall); at 760px App styling's title band wraps and grows to fit.
-- **Calendar workbench:** the workbench at full window height: the sand column (24 by 18px padding, 32px at its foot) holding the calendar's items and calendars; the middle pane opening on its own head (a headline title, a caption lead up to 72ch, then the Agenda and Month switch at least 13rem wide beside New event, wrapping) over the agenda as day sections 18px apart, or the month grid capped at 640px; and the detail pane ruled off by a hairline on its left (24px padding, 20px at 1648px; the rule goes at 1428px when the detail drops below), holding the event, a calendar's settings or a break as a lifted panel that clips its navy head to the 14px radius.
+- **Workbench (a list and its record):** three panes edge to edge at the window's full height: the sand rail (248px; 24px in at the top, 16px at the sides, 32px at its foot), the list (24px top, 32px sides, 48px foot) and the record pane (360 to 440px, 24px in, ruled off by a hairline on its left, sticky, as tall as the window and scrolling on its own, its save bar docked at its foot). A page without filters drops the rail; with nothing chosen the list takes the room. At 1360px and under the record narrows to 320 to 380px and the rail sits above the list (16 by 32px padding), or, with `FoldAside`, steps aside while a record is open. At 760px and under, or when asked to be narrow (the app's form), one pane shows at a time; the split view's form stacks the record under the list instead, with a hairline above it. A workbench under other content on a page is ruled off by a hairline above it. A table in the list hides its optional columns once the list is narrower than 760px.
+- **Breakpoints allow for the sidebar.** The work area's breakpoints are window media queries offset by the 248px sidebar: the office week stacks its columns and lets the seven-day rail scroll sideways (days at least 84px) at 1228px, where the announcements desk also drops its proof under the writing column (static, up to 360px) and the Feedback board's docked ticket becomes an overlay; the fortnight rail always keeps days at least 56px and scrolls sideways when they don't fit; a person's Roles tab drops its explanation panel under the ticks (no longer sticky) at 1328px; a person's Family and Safeguarding tabs narrow their panel to 260 to 340px (28px gap) at 1328px and drop it under the rows (static, the record's fields one column) at 928px; the Places explorer drops its phone column under the directory at 1100px (static, up to 420px, a hairline above, 24px of space), and so does App styling its panel under the phone (28px of space, the phone column static and 640px tall); at 760px App styling's title band wraps and grows to fit.
+- **Calendar workbench:** the shared workbench, its rail folding while a record is open at 1360px and under: the sand rail holding the calendar's items and calendars; the middle pane opening on its own head (a headline title, a caption lead up to 72ch, then the Agenda and Month switch at least 13rem wide beside New event, wrapping) over the agenda as day sections 18px apart, or the month grid capped at 640px; and the record pane, holding the event, a calendar's settings or a break flat on the page.
 - **Feedback board:** the title band (its search up to 320px), the Board and Blocked phones tab strip, then the status columns 16px below in one row 10px apart, scrolling sideways when they don't fit. Clicking a card docks its ticket beside the board: the board and a 360 to 440px dock, capped together at 1600px; the dock is sticky at the top, as tall as the window and scrolling on its own, runs to the work area's top, right and foot edges, and is ruled off by a hairline on its left (28px in, 48px at its foot). Under 1228px the dock leaves the grid and floats over the board at the window's right edge (up to 440px, full height, a -18px 0 32px shadow in the scrim colour). A ticket opened as its own page (`/feedback/{number}`) is two columns, its main column beside a 280 to 360px side 40px apart, capped at 1320px; one column under 1100px.
+- **Settings pages:** settings in grouped sections, each a card up to 820px wide, 20px apart (see Components, *Settings groups*).
 - **Narrow (900px and under):** the sidebar becomes a sticky top strip (8 by 12px padding) with the mark and "Good Shepherd" at one end and a Menu button at the other: a 38px capsule on the masthead tint, label size at 600 in white, with a menu icon that turns to an x and "Close" while the menu is open. The menu opens the same sidebar under the strip as a navy panel up to 320px wide (12 by 14px padding, 20px at the foot, scrolling on its own, a 0 18px 32px shadow in the scrim colour) over the scrim. Escape, a click outside or opening a page closes it; opening moves focus to Jump to, and closing returns it to Menu. The work area padding drops to 20px top, 16px sides and 48px foot.
 
 ### Named Rules
-**The Sidebar Offset Rule.** Admin breakpoints are window media queries offset by the sidebar's 248px. Never make the work area a size container: it becomes the containing block for fixed elements and traps sheets and overlays inside it. A component may still use a container on its own inner list (as the split view does).
+**The Sidebar Offset Rule.** Admin breakpoints are window media queries offset by the sidebar's 248px; the workbench's own steps are 1360px and 760px of window. Never make the work area a size container: it becomes the containing block for fixed elements and traps sheets and overlays inside it. A component may still use a container on its own inner list (as the workbench's list pane and the save bar do).
 
 **The Masthead First Rule.** Every tab root and every settings page opens on a masthead with a title; long, sectioned pages add sticky section tabs under it. Detail pages with a picture lead with the picture instead (a 16:9 hero under a solid navy top bar). The admin panel has no masthead: its navy is the sidebar, and every page opens on a title band.
 
 **The Still Frame Rule.** A page that shows one thing at a time keeps its frame while what it shows changes. App styling's title band keeps its 72px whether it carries the sentence or a draft's save line, its buttons hold their places with the Drafts menu always last at the far right, and the phone and the 400px panel keep their widths whether you look at what everyone sees, the colours, Home or the tab bar; choosing a part changes only what is in the panel. The media library keeps its bars above the split view for the same reason.
 
-**The One Column Rule.** No grids of tiles on a tab root other than Home's Hub, and no uniform icon grid anywhere: the Hub's tiles differ in size, tone and shape. Beyond the Hub, the only multi-column layouts are the two-up series grid on Listen and the day rail. On the desk the admin panel adds its shell, the day rail (a week or a fortnight) and the office week's two columns, split views, the workbench, the announcements desk's writing and proof columns, the Places explorer's directory and phone, App styling's phone and panel, the Feedback board's status columns and its docked ticket (and a ticket page's main column and side), and the media library's folder tiles and picture grid (the folders and files themselves, not tools), and still no grid of tool tiles.
+**The One Column Rule.** No grids of tiles on a tab root other than Home's Hub, and no uniform icon grid anywhere: the Hub's tiles differ in size, tone and shape. Beyond the Hub, the only multi-column layouts are the two-up series grid on Listen and the day rail. On the desk the admin panel adds its shell, the day rail (a week or a fortnight) and the office week's two columns, the workbench (the split view included), the announcements desk's writing and proof columns, the Places explorer's directory and phone, App styling's phone and panel, a board's columns and its docked ticket (and a ticket page's main column and side), and the media library's folder tiles and picture grid (the folders and files themselves, not tools), and still no grid of tool tiles.
 
 ## Elevation & Depth
 
@@ -1045,10 +1139,11 @@ Mostly flat and tonal. Depth comes from colour steps (navy masthead over white p
 - **Knob** (`0 2px 6px rgb(0 0 0 / 0.2)`): the switch thumb.
 - **Play overlay** (`0 10px 30px rgb(0 0 0 / 0.35)`): the round play button over a video hero.
 - **Badge ring** (`0 0 0 2px` masthead colour): separates the unread badge from the bell.
+- **Pop** (`0 0 0 1px` hairline, `0 18px 36px -16px` scrim; `0 18px 40px -12px` for the Account menu and the date and time popovers): menus, popovers and the chip picker's matches, anything that opens over the page from a button.
 - **Drag lift** (`filter: drop-shadow(0 18px 26px` ink at 30%`)`, with the tile scaled to 1.04 while it moves): a Home tile while it is being moved or resized on the admin canvas, nowhere else.
 
 ### Named Rules
-**The Flat Page Rule.** Rows, callouts, the sermon head and the player sit flat on the page; only a boxed list, a picture card, a Home tile in the Card tone (`raised`) or the age question on Account (a white card asked once, above Your family, until it is answered) may lift. If something needs separating, give it sand, not a shadow. In the admin panel the only lifted things are the sign-in card, account panels, the workbench's settings panel, the selection tray (docked over a list that scrolls beneath it), the Drafts menu's popover and the Feedback board's ticket while it floats over the board under 1228px; tables, the office week and the split view's detail are flat, separated by hairlines and sand, and today on the rail is an inset 2px primary ring, not a shadow. The chosen capsule on the rail, or the current "Not sent yet" chip, is a 2px marker outline at a 2px offset.
+**The Flat Page Rule.** Rows, callouts, the sermon head and the player sit flat on the page; only a boxed list, a picture card, a Home tile in the Card tone (`raised`) or the age question on Account (a white card asked once, above Your family, until it is answered) may lift. If something needs separating, give it sand, not a shadow. In the admin panel the only lifted things are the sign-in card, account panels, settings groups (a hairline ring and the lift), the selection tray (docked over a list that scrolls beneath it), menus and popovers (the Pop shadow) and the Feedback board's ticket while it floats over the board under 1228px; tables, the office week, board columns and the workbench's record pane are flat, separated by hairlines and sand, and today on the rail is an inset 2px primary ring, not a shadow. The chosen capsule on the rail, or the current "Not sent yet" chip, is a 2px marker outline at a 2px offset.
 
 **The Tonal Selection Rule.** A selected row is marked by a fill one tonal step off its ground (Selected Fill, rounded to the field radius and widened 12px into the gutter on each side, its hairline hidden), never by a shadow or a border. A sand leading tile on a selected row takes the page colour (white in light, night in dark) so it still reads as a tile; an accent tile keeps its tint.
 
@@ -1056,7 +1151,7 @@ Mostly flat and tonal. Depth comes from colour steps (navy masthead over white p
 
 Soft, rounded, never sharp. The working radius is 14px for anything box-shaped (callouts, sermon head, player, notes, boxed lists, feature cards, series covers, full-width buttons); 12px for the smaller boxes (status strip, fields, segmented track, now-playing art); 10px for tiles inside rows (row icons and thumbnails); 9px for a selected segment inside its track. Anything sized to a touch target is a capsule: buttons at 44px tall with a 22px radius, chips, passage chips, the pray button, pills, round icon buttons and the play toggle. Sheets round only their top corners at 22px and carry a 38 by 5px grabber. Speaker photos are circles. The calendar's date block is a 78px tile at the 14px radius (62px at 12px when compact); week-rail days and month-grid days round at 12px; month marks are 5px dots, and "not on" is a 6px open ring. Home tiles take the 14px radius and clip what they hold (a picture, the bleeding mark); their icons sit in the 34px, 10px-radius row tile. The blue card takes the 14px radius and clips a ring at its top right: a 150px circle drawn as an 18px stroke of the masthead chip colour, set 44px out past the top and right edges; its status is a 24px capsule.
 
-The admin panel uses the same scale: sidebar links, area heads, pin buttons and the Jump to field, Jump to's rows, sortable header buttons and office-week capsules at 9px; the rail's day columns at 10px inside its 14px sand track; fields, the search field and the chosen-place token at 12px; filter chips and count capsules as capsules; media thumbnails at 8px, like the app's. A dashed line means "you can change this": the upload drop zone (1.5px of ink-3 at 45% on fill-on-surface at the 14px radius, turning deep aqua on hover or focus), and the same frame on the phone when Send feedback has nothing chosen yet. The event head is never outlined: it previews, and fields edit (owner, 2026-11-08). Folder tiles and the media grid's thumbnails take the 12px field radius (folder tiles with a hairline border, their icon tile at 9px); breadcrumbs and folder-picker rows round at 9px; the selection tray takes the 14px radius.
+The admin panel uses the same scale: sidebar links, area heads, pin buttons and the Jump to field, Jump to's rows, sortable header buttons and office-week capsules at 9px; the rail's day columns at 10px inside its 14px sand track; fields, the search field and the chosen-place token at 12px; filter chips and count capsules as capsules; media thumbnails at 8px, like the app's. A dashed line means "you can change this": the upload drop zone (1.5px of ink-3 at 45% on fill-on-surface at the 14px radius, turning deep aqua on hover or focus), and the same frame on the phone when Send feedback has nothing chosen yet. The event head is never outlined: it previews, and fields edit (owner, 2026-11-08). Folder tiles and the media grid's thumbnails take the 12px field radius (folder tiles with a hairline border, their icon tile at 9px); breadcrumbs and folder-picker rows round at 9px; the selection tray takes the 14px radius. Menus and their items round at 12px and 9px, the Account menu and the date popover at 14px, its days and times at 9px. Board columns take 14px and their cards 10px; a filter in the rail is a 9px row, not a capsule. In the picture viewer the controls are 44px circles and the filmstrip's 56px thumbnails round at 9px.
 
 The phone frame carries device geometry, not UI shapes: a 46px screen radius inside a 9px bezel ring, a Dynamic Island capsule (124 by 36px) or a notch (160 by 32px, its bottom corners at 20px). The lock-screen proof draws a lock screen the same way: a 3.2rem tabular clock, and a 20px app icon at a 28% radius. These match the hardware being drawn; they are not part of the radius scale and never appear on a UI box.
 
@@ -1076,7 +1171,7 @@ Capsules with a firm press: they scale to 0.96 on press with an ease-out curve, 
 - **Icon buttons:** 44px round, transparent, with a translucent fill and a 0.94 scale on press; disabled, the outline above.
 
 ### Chips
-- **Filter chips:** 36px capsules in sand with ink-2 text; selected becomes navy with white text. Scroll horizontally without a scrollbar. The admin's shared filter chips are smaller (34px, 12px padding, caption at 600), wrap with a 6px gap, take the field fill, turn ink on hover and primary with on-primary text when chosen (pressed state for screen readers), and can carry a tabular count, in ink-3 until the chip is chosen.
+- **Filter chips:** 36px capsules in sand with ink-2 text; selected becomes navy with white text. Scroll horizontally without a scrollbar. The admin's shared filter chips are smaller (34px, 12px padding, caption at 600), wrap with a 6px gap, take the field fill, turn ink on hover and primary with on-primary text when chosen (pressed state for screen readers), and can carry a tabular count, in ink-3 until the chip is chosen. **Rail** (`FilterChips Rail`, one group per filter in the workbench's rail): a caption-size 700 label in ink-3, then each choice as a full-width 38px row at the 9px radius, label size, left-aligned with its count in ink-3 at the end; hover tints it with the segment colour at 60%, and the chosen one is the segment tile (white in light) with the segment shadow. Groups sit 16px apart.
 - **Toggle chips:** several on at once, each a 36px capsule (14px at the sides, caption at 600): sand with ink-2 when off, primary with on-primary when on, pressed state for screen readers and a haptic on tap. The row scrolls sideways into the gutter without a scrollbar, 8px apart, and can end in a trailing slot (the calendar's deep-aqua "+ Browse" at caption 600); the wrap form wraps in place instead. The calendars in your week use it. The **quiet** form is for a set that is usually all on, where solid capsules would shout (the weekly digest's calendars, owner 2026-11-09): it wraps, 6px apart, 32px capsules at 12px sides with no fill, ink-2 text and a 1px ring of ink-3 at 45% when off (ring ink-3 and text ink on hover), and sand with ink text led by a small check in accent when on (9px at the leading side).
 - **Passage chips:** 32px capsules in sand with deep-aqua text and a small open-book icon; tapping opens the passage in the in-app browser.
 - **Pill:** a small (0.7059rem, 700) capsule of orange at 28% with orange-ink text, for status such as "Later release".
@@ -1105,10 +1200,10 @@ The docked feedback ticket's status uses it. Pressing a stage moves to it, backw
 ### Saving
 A form with unsaved changes always asks before they're lost (owner, 2026-11-10: "we need prompts any time data might be lost without saving"). There are two kinds of form, and a person can always tell which one they're on.
 - **Saves by itself** (autosave): for long work that's built up over time and has its own publish or send step, such as app styling drafts, an announcement being written, or the digest. It shows `SaveStatus` near its title: "Saving…", "Saved" (or "Saves as you type" before the first save), "Couldn't save. Trying again by itself." with *Try now*, or why it can't save yet ("Give it a title so it can save"). It never has a Save button. It asks before leaving only while a save is waiting, running, failed or not possible yet.
-- **Saves with a button**: for everything else, a record someone changes and then commits (a ministry's details, an event, a sermon, a break). Its one save action is `SaveBar`: a primary button named for what it does ("Save", "Add the regular event", "Add the ministry"), with "You have changes that aren't saved" (a pencil in ink-3) beside it while there are changes, and "Saved" with the check only once the save has happened. It always asks before leaving with changes.
-- **Can't save yet:** the button is disabled and the reason sits next to it in words, caption at 600 in ink-2 ("Give it a title to add it."), never only in a tooltip.
-- **Where the save goes:** in a desktop editor with a navy header, on the header's action row at the right, as the on-masthead button (white with navy text; disabled, the masthead's outline, see Buttons), its status and reason to its left in on-masthead-2. In a panel or a page, at the foot of the form: the editor foot (sticky, full width in a narrow column) or the form's last row, with quieter actions (Cancel, Close, a second way to save) after it. On a sheet, in the sheet's actions, full width, the reason or status centred under it. On the phone, the editor foot, full width.
-- **Instant changes** (a switch, a role tick, linking a person) take effect the moment they're made and need neither a Save nor a status. Keep them visibly apart from a Save-button form on the same screen: in their own section below the form's SaveBar, as Ministry Settings does with *Ministries under it* and *Delete*.
+- **Saves with a button**: for everything else, a record someone changes and then commits (a ministry's details, an event, a sermon, a break). Its one save action is `SaveBar`: Cancel (quiet) at the left, a primary button named for what it does ("Save", "Add the regular event", "Add the ministry") at the right, and above them, on its own line at the right, "You have changes that aren't saved" (a pencil in ink-3) while there are changes and "Saved" with the check only once the save has happened. A new record (`New`) never says it has unsaved changes. Any other action sits after Cancel and moves to its own line above the buttons when the bar is 520px or narrower. It always asks before leaving with changes.
+- **Can't save yet:** the button is disabled and the reason takes the status line above it, in words, caption at 600 in ink-2 ("Give it a title to add it."), never only in a tooltip.
+- **Where the save goes:** in a desktop editor with a navy header, on the header's action row at the right, as the on-masthead button (white with navy text; disabled, the masthead's outline, see Buttons), its status and reason in on-masthead-2. In the workbench's record pane, docked at the pane's foot; in a settings group, in its sand foot; elsewhere in a panel or a page, the editor foot (sticky) or the form's last row. On a sheet, in the sheet's actions. On the phone, the editor foot, the save full width (`Block`) with Cancel beside it and the status centred above. Delete is never in a save bar: it is in the item's ⋯ menu.
+- **Instant changes** (a switch, a role tick, linking a person) take effect the moment they're made and need neither a Save nor a status. Keep them visibly apart from a Save-button form on the same screen: in their own group below the form's, whose foot says "These change straight away", never in the same group as a Save button.
 - **Leaving:** `UnsavedGuard` covers going to another page, a sidebar link, Back and closing the browser tab (the browser's own warning). Screens that swap what's open without navigating (the calendar, sermons, series and speakers) ask `UnsavedChanges.MayLeaveAsync()` first. The sheet says what would be lost and offers *Save and go on* (when the form can save), *Discard the changes* and *Stay here*.
 
 ### Lists and rows
@@ -1169,6 +1264,7 @@ A sticky, horizontally scrolling row of 600 labels in ink-3 (18px apart) that pi
 
 ### Sheet
 A bottom sheet over a 38% black scrim: page-coloured, top corners 22px, a grabber, a title-large heading and ink-2 lead, rising 320ms with the ease-out curve. Used for My notes, the first-launch topics welcome, the notifications welcome, confirmations and What's new. On wide screens (720px and up) the sheet is centred (560px), and one without a cover hides its grabber. Sections inside a sheet drop the page gutter and their top margin, and take the sheet's. With the keyboard up it sits on the keyboard and its search field takes focus only once it has arrived (see Layout).
+- **Actions:** the main action comes first. On the phone they stack full width, the main one on top (a red Delete in a confirm too). In the admin panel they sit in one row: the main one at the right, the quiet one that backs out (Keep it, Cancel, Stay here) at the far left, any others between. A confirm says what goes with the thing in its lead and asks once.
 - **Wide:** for a sheet that carries a whole list to choose from (the place picker): 760px on wide screens, with 28px side padding.
 - **Cover:** an optional navy band across the top of the sheet, edge to edge, in the masthead's colours. The grabber sits on it in the masthead chip colour, and the mark bleeds off the right at 7% (180px wide). The cover says what the sheet is about, so a covered sheet is usually named by its label rather than a title.
 - **Paged sheet:** steps through a few items in one sheet, each with its own cover and body. Under the body, orange page dots mark where you are: 8px, the current one widening to a 20px capsule, each in a 36 by 44px target. Swipe left or right on the cover or the body to turn the page. The actions are an optional per-page action (primary) over Next, which reads Done on the last page; with no action, Next is the primary. Only a page change slides: the next page comes in 14px from the right, the previous from the left (260ms). Opening shows only the sheet's rise. One item shows no dots.
@@ -1203,11 +1299,29 @@ The church calendar as one running diary from today. The ordinary stays quiet an
 **The One Date Rule.** A date of a regular event is only that date, and the regular event is changed only on its own page. Never put a switch between "this date" and "every date" in an editor; link the two with words ("One of the Morning service, every Sunday. Edit the regular event ›") and let a date say how it differs from the usual, with Put it back.
 
 ### Admin workbench and drafts
-- **Workbench:** three panes in one view: a sand list column (280 to 340px, hairline right edge), a white work area (24 by 32px padding), and a detail pane (320 to 512px) whose content is a lifted white settings panel at the 14px radius. Under 1200px the detail drops beneath the work area; under 760px, or whenever it is asked to be narrow (the app's form), it becomes one column that shows a single pane at a time.
+- **Workbench:** the sand filter rail, the list and the record pane, as Layout describes. The record is flat on the page, ruled off by a hairline, never a card; it opens on a `PaneHead` and ends in its `SaveBar`, docked at the pane's foot over the page colour. Adding opens a blank record, already chosen, in the same pane.
+- **Pane head:** the record's title in title-large type (700, -0.02em, 1.2, balanced, stopping at three lines), a caption lead in ink-2 4px under it, then at the right its tools: the ⋯ menu of everything you can do to the item (Delete last), *Open as a page* and Close, as quiet icon buttons with no fill until hovered. 20px of space under it.
 - **Tab strip:** a wrapping row of label-weight tabs in ink-3, 22px apart and 44px tall, over a hairline; the selected tab turns ink with the 3px orange underline. A tab can carry a count in a capsule of marker at 22% with marker-ink text (tabular figures), and a trailing slot holds an add action in deep aqua. It is the static sibling of the section tabs: it switches what is shown, it does not scroll the page. **Link mode:** given an address per tab, each tab is a link and the chosen one is the current page (still the 3px orange underline), so a page's areas are tabs with their own addresses, as a ministry's are; a tab replaces the address rather than adding to history. **Sticky** (phone) pins it under the top bar on the page colour, gutter-padded, one row that scrolls sideways without a scrollbar.
 - **Save status:** one caption line at 600 that is polite to screen readers: a small spinner and "Saving…", a deep-aqua check and "Saved", a pencil in ink-3 and "You have changes that aren't saved" for a form saved with a button, or, on failure, a cloud-off icon and "Couldn't save. Trying again by itself." in orange ink with an underlined "Try now". An optional detail follows in ink-3 after a middle dot.
 - **Selected row:** see the Tonal Selection Rule; the same treatment marks the open draft in the Drafts menu and the chosen row in the work area. In the workbench's sand list column a list-style table hides its header and rounds each cell to the field radius, so the selected row is a white segment tile.
-- **Admin overrides:** in the admin panel the workbench fills the window height, narrows its outer panes to 260 to 300px and 320 to 400px at 1648px, and drops the detail under the work area (24 by 32px padding, a hairline above) at 1428px.
+- **Admin overrides:** in the admin panel a workbench that opens the page cancels the work area's padding and runs edge to edge at the window's height; one under other content keeps the sides and is ruled off by a hairline above it.
+
+### Menus and popovers
+- **Menu:** one quiet ⋯ icon button (no fill until hovered or open, then the field fill). It opens a panel 6px below, held to its right edge (or its left, `AlignStart`), at least 15rem and at most 22rem wide: the surface at the 12px radius with the Pop shadow, 6px in. Each item is a 44px row at the 9px radius: a small leading icon in accent (a check for the chosen one), the label at row size and 600, and an optional caption line in ink-2 under it saying what it does. Hover and focus take Selected Fill. A rule (hairline) starts a group; the danger item comes last after one, its words and icon in danger. Arrow keys, Home and End move through it; Escape or a click outside closes it. A menu with words (`Text`, `Chevron`) is a button showing the current choice with a chevron that turns over while it's open; `Block` makes it full width at the 12px radius.
+- **Role menu:** the menu with words, showing the person's role ("Team", "Leader"); each role an item with what it allows under it, the current one ticked, and *Remove* in red last. It applies at once. Several roles at once stay a tick list.
+- **Popover:** the same surface for a small panel that isn't a list of actions. **Account menu:** opened from the sidebar's Account row, a 312px popover fixed 12px from the window's left and 48px from its foot, at the 14px radius and 12px in: the person's name at row size and email in caption ink-2 over a hairline, *Light or dark* (`SchemeChoice` with its label), a rule, then *Your account* and *Sign out* as menu rows.
+
+### Settings groups
+`Section Grouped`, with an optional `Foot`. **Admin:** a card up to 820px wide on the surface at the 14px radius, ringed by a hairline and lifted, 20px below what's above: its title in title type and ink and its lead inside, 16 by 20px in, then its fields (20px in at the foot), then a sand foot under a hairline (sand at 55% over the surface, 12 by 20px in) holding the group's save bar or the caption "These change straight away". **Phone:** an inset group: a caption-size heading in ink-2 16px in, the rows on the group colour (white on a sand page in light, a raised panel on the night page in dark) at the 14px radius, 12 by 16px in, with the first and last hairlines hidden; a foot is a caption line in ink-2 under the group. A page of grouped sections takes the group ground.
+
+### Date and time fields
+In the admin panel a date or time is a text field you type into ("Like 15 Nov", "Like 7:30pm"), tabular, with a 40px button at its right end (a calendar or clock icon in ink-2, Selected Fill on hover and while open). What it understood reads back under the field in caption ink-2 led by an accent check; something it can't read is a problem line. The date popover is 344px on the surface at the 14px radius, 12px in, with the Pop shadow, fading in over 160ms: the month at label size and 700 between 36px step buttons, micro weekday heads (Sunday in accent), then 36px days at caption 600 (days outside the month in ink-3 at 400, Sundays in accent, today a 2px primary ring, the chosen day primary with on-primary), and quick choices as filter chips under a hairline. The time popover is a list of every 15 minutes, up to 260px tall, the chosen time on Selected Fill with an accent check. `DateTimeField` puts both under one label. On the phone each is the native wheel.
+
+### Picture viewer
+A picture opened bigger (`PictureOpen` on the thumbnail, a zoom cursor) fills the whole window on the viewer backdrop (near-black at 97%), in white: the title line ("Picture 2 of 5 · …") in caption at 600 at 78%, Download and Close as 44px round controls on white at 12% (22% on hover), the picture contained between the previous and next controls, and a filmstrip of 56px thumbnails at 60% (the current one whole, ringed 3px in marker). Arrow keys, Home and End move through them, Escape closes, a swipe across turns and a swipe down closes. Under 640px the step controls go and the thumbnails are 44px.
+
+### Boards
+`Board` and `BoardCard`, one board for anything that moves through stages (feedback tickets). Sand columns at the 14px radius, 12px in, 12px apart, at least min(62vh, 640px) tall and 180px wide (a narrow column 160px; `Compact` keeps them at 200px beside an open record so they stay readable), scrolling sideways when they don't fit. A head at label size and 700 with its count in a page-coloured capsule (pill size, 600, ink-2, tabular). An empty column says so in a caption ink-2 sentence inside a dashed frame (1px of ink-3 at 45%, the tile radius); a column can show only its latest and say how many more; *Add one here* is a caption 600 accent link at its foot. A column that folds becomes a 46px strip with its name and count set vertically. A column being dropped on gets a 2px inset accent ring; cards move by dragging, or Alt and the arrow keys. A card is the surface at the tile radius, 12 by 16px in, ringed by a hairline (stronger on hover): an optional 76px picture at the 9px radius on strong sand, a tabular caption meta line in ink-3, the title at row size and 600, then its labels. The open card is ringed 2px in marker.
 
 ### App styling
 The app's look on the desk: the app as everyone sees it, said in one sentence and shown on a phone, with drafts as the way a change travels, behind one menu. One layout for every state (the Still Frame Rule).
@@ -1221,14 +1335,14 @@ The app's look on the desk: the app as everyone sees it, said in one sentence an
 - **Theme swatches:** three overlapping 22px discs (6px overlap, each ringed 2px in the page colour) of a palette's colours, a made theme's being its masthead, accent and marker. One component, shared with the app's Appearance page, so a theme looks the same wherever it is chosen.
 
 ### Admin sidebar (signature)
-The admin panel's masthead, turned on its side. A 248px navy column, 22px between its parts: the mark in beige at 30px beside "Good Shepherd" at 700, then the navigation, 18px between its groups. Pages sit in areas cut by the job staff are doing (owner, 2026-11-09): Sundays & sermons, Calendar & news, The app, People, Technical (App health, App review), and the foot, set off by a 1px rule of the masthead tint and pushed to the bottom: actions a feature adds come first (Send feedback, for staff who may send it), then You (Account) always last.
+The admin panel's masthead, turned on its side. A 248px navy column, 22px between its parts: the mark in beige at 30px beside "Good Shepherd" at 700, then the navigation, 18px between its groups. Pages sit in areas cut by the job staff are doing (owner, 2026-11-09): Sundays & sermons, Calendar & news, The app, People, Technical (App health, App review), and the foot, set off by a 1px rule of the masthead tint and pushed to the bottom: actions a feature adds come first (Send feedback, for staff who may send it), then Account, always last, which opens the Account menu.
 - **Jump to:** first, a 38px button on the masthead tint at the 9px radius: a small search icon, "Jump to…" at label size and 600 in white at 76%, and the key hint at its end ("⌘K" on a Mac, "Ctrl K" elsewhere) in beige micro at +0.04em. Hover lifts the fill to white at 18% and the text to white. It, ⌘K and Ctrl K open Jump to.
 - **Home, then Pinned:** Home sits alone under Jump to. The pages someone pins follow under an uppercase beige micro label, "Pinned", in the order they were pinned; pins are kept with the account, so they follow it to any computer (owner, 2026-11-09). When there are pins, the areas get an "Everything" label of the same kind above them; without pins neither label shows.
 - **Area heads:** each area opens on a 36px button at the 9px radius: a beige chevron that turns 90° when the area is open (200ms, ease-out), the area's name at label size and 700 in white, and a count at the end. A folded area shows the orange count capsule of what's waiting inside it when there is any, otherwise a muted count of its pages (pill size at 600, white at 76%, tabular); an open one shows the page count. Hover fills the head with the masthead tint at 60%.
 - **Folding:** an area starts open when the person sees 8 pages or fewer, folded otherwise, and folding or unfolding it is remembered on that computer. The area of the page you're on opens by itself, without being remembered. An opening area's pages fade in and slide 4px down into place over 200ms (ease-out). Pages in an area are in alphabetical order and indent to 24px.
 - **Links:** 38px, label type at 600 with a small icon, in white at 76%, the title cut with an ellipsis; hover fills them with the masthead tint at 60%, and the current link takes the full tint and white text while a 3px orange bar, rounded on its outer end, scales in from its centre at the sidebar's left edge (240ms, ease-out). A pinned page is marked current only under Pinned; its row in its area stays a plain link. A count of things waiting sits at the end of a link in an orange capsule (20px, pill type, tabular, on-marker text), only when the count is above zero, and refreshes as you move between pages.
 - **Pin:** every page under Pinned or in an area carries a 30px pin button at the 9px radius, 4px in from the row's end, in white at 76%. It appears when the row is hovered or holds focus (the link makes room for it) and is always shown on touch screens; hover fills it with the masthead tint. A pinned page's pin is orange and filled. Pinning is only in the sidebar, not on each page (owner, 2026-11-09).
-- **Actions in the foot:** a row that opens a sheet over the page instead of going somewhere (a `SidebarAction` a feature registers, shown only with its permission). It is a button drawn exactly as a link (full width, left-aligned, the same icon and label), marked current while its sheet is open, and says it opens a dialog. Send feedback is the first, with the speech-bubble icon (2026-11-11).
+- **Actions in the foot:** a row that opens a sheet over the page instead of going somewhere (a `SidebarAction` a feature registers, shown only with its permission). It is a button drawn exactly as a link (full width, left-aligned, the same icon and label), marked current while its sheet is open, and says it opens a dialog. Send feedback is the first, with the speech-bubble icon (2026-11-11); Account is the last and opens the Account menu as a popover rather than a sheet.
 - **A failed save:** if pins can't be saved, a line on the masthead tint at the 9px radius (8 by 10px padding, caption size, white) says "Couldn't save your pins." with "Try now" in beige at 700, underlined.
 
 Focus rings in the sidebar, and on the narrow window's Menu button, are orange.
@@ -1269,7 +1383,7 @@ The admin's digest (`/digest`) in the split view, after the approved mock. Above
 - **Read only:** someone who may see it but not change it gets the timeline and a notice, "Only the pastoral team can change these."; everyone gets the closing caption ink-3 line "People can turn these off in Notification settings."
 
 ### Data table
-The admin's working list. A toolbar row (search, filter chips) wraps above a full-width table at row-title size. Headers are caption-size 600 in ink-3 over a hairline; sortable headers are buttons whose arrow is hidden until hover and shows in orange ink on the sorted column (fading 160ms). Rows are divided by hairlines with 12px cells; numbers and dates align right in tabular figures, secondary cells are caption in ink-2, long text is cut off at 30ch. A selectable row shows a pointer, fills with selected-fill at 55% on hover and the full selected-fill when chosen; focus is an inset 2px deep-aqua ring, and the arrow keys move the selection. An empty table shows an empty state beneath it.
+The admin's working list, in the workbench's list pane; its search and filters live in the rail when the page has one, otherwise in a toolbar row above. A full-width table at row-title size. Headers are caption-size 600 in ink-3 over a hairline; sortable headers are buttons whose arrow is hidden until hover and shows in orange ink on the sorted column (fading 160ms). Rows are divided by hairlines with 12px cells; numbers and dates align right in tabular figures, secondary cells are caption in ink-2, long text is cut off at 30ch. A selectable row shows a pointer, fills with selected-fill at 55% on hover and the full selected-fill when chosen; focus is an inset 2px deep-aqua ring, and the arrow keys move the selection. An empty table shows an empty state beneath it.
 
 ### Charts
 - **Stat tile:** a hairline above, the value in display size at 700, a row-size 600 label in ink, then an optional caption change in ink-2 and explanation in ink-3. A value too small to show (Fewer than 5) is the quiet tile: title size in ink-2.
@@ -1277,7 +1391,7 @@ The admin's working list. A toolbar row (search, filter chips) wraps above a ful
 - **Trend line:** the main series is a 2px deep-aqua line ending in a labelled dot, the comparison series a 2px dashed ink-3 line (its legend swatch dashed too), over hairline gridlines with pill-size tabular ticks, the plot capped at 760px. A hover crosshair shows a lifted tooltip. Columns are not focusable: the table of every number under the chart, behind a deep-aqua 600 summary, is the accessible view. With fewer than two points the chart is a sand panel at the 14px radius with one caption line in ink-2.
 
 ### Split view
-The admin's table-and-detail layout. The detail is a hairline-ruled column, not a card: 28px from a 1px line on its left, flat on the white page. When it drops beneath the list, the line moves above it. Without a selection the list takes the full width.
+`SplitView` is the workbench without a rail, kept for the pages not yet moved onto it (a drift ratchet counts them, and the count only goes down). The record is the workbench's record pane, a hairline-ruled column, not a card; at 760px and under it drops beneath the list with the line above it. Without a selection the list takes the full width.
 
 ### Places in the app
 The app laid out on the desk: every place in the app, grouped by area, beside a phone showing the chosen one. Reached from the sidebar's The app area (link).
@@ -1519,7 +1633,7 @@ The sidebar foot's *Send feedback* opens a sheet over whatever page you're on, s
 ### Feedback board (admin)
 `/feedback`: numbered tickets moving left to right through status columns, under the title band "Feedback" with its lead of what's waiting ("3 new · 1 in progress · 2 fixed, to check"). Dated 2026-11-11.
 - **Where it came from:** above the board, 16px under the tabs, the admin filter chips "Everywhere", "The app" and "The admin panel".
-- **Columns:** each a sand track at the 14px radius, 10px in, its cards 8px apart, at least min(62vh, 640px) tall; at least 170px wide (140px with a ticket docked), Resolved narrower at three quarters. The head is fixed at two lines of label size at 700 in ink (1.35 line height, cut off past two) so every column's first card starts at the same height, its count at the other end in a white capsule (pill size, 600, ink-2, tabular). An empty column says so in a caption ink-3 line ("Nothing new."); Resolved shows its latest 20 and then "And N more. Find one by its number or words." A column under a drag takes an inset 2px deep-aqua ring.
+- **Columns:** the shared board (Components, *Boards*), `Compact` while a ticket is docked. Each a sand track at the 14px radius, 10px in, its cards 8px apart, at least min(62vh, 640px) tall; at least 170px wide (140px with a ticket docked), Resolved narrower at three quarters. The head is fixed at two lines of label size at 700 in ink (1.35 line height, cut off past two) so every column's first card starts at the same height, its count at the other end in a white capsule (pill size, 600, ink-2, tabular). An empty column says so in a caption ink-3 line ("Nothing new."); Resolved shows its latest 20 and then "And N more. Find one by its number or words." A column under a drag takes an inset 2px deep-aqua ring.
 - **Not doing:** folded by default into a 46px strip of the same sand track, its "Not doing · N" set vertically at label size and 700 in ink-2 (ink on hover); opened, it is a narrow column whose head folds it again. Cards drop on the strip as on a column.
 - **Ticket card:** a white card at the tile radius, 10 by 12px in (12px at its foot), a hairline under it: an optional 88px cover (the first screenshot from its top, at the 9px radius on strong sand), "#12 · Ruth" in tabular caption ink-3, the title at row size and 600 in ink (wrapping, never cut off), then labels that wrap 4px apart: pill size at 700 in ink-2 on fill-on-surface at the 9px radius. A ticket from the admin panel leads with "Admin panel" in primary at 12% with primary text, then the browser; one from the app shows the app build and the phone's name. The build, phone and browser labels stay on one line and are cut with an ellipsis (the full text on hover); the source and state labels wrap instead, since their words carry the meaning. Then the file count in deep aqua at 12% with a paperclip, "Pictures deleted" once they're gone, and on a closed ticket the day its files go ("Files go 18 Nov"). A card that is Resolved or Not doing dims its cover to 62% and its title to ink-2. The open card is ringed 2px in marker. Press scales it to 0.98; focus is the deep-aqua outline 2px out. Cards drag between columns; clicking docks the ticket, and ⌘-click or Ctrl-click opens `/feedback/{number}` in a new tab, said in a caption hint under the board.
 - **Docked ticket:** a head of "#12 · 2 hours ago" in tabular caption ink-3 (one line, ellipsis), *Open as a page* as a text link and a small quiet close, over the title in title type at 700 (balanced). Then the status as the stage pipeline (New, In progress, Fixed, to check, Resolved; up to 520px, 760px on the page), and under it, on their own lines, a quiet underlined *Mark not doing* (a quiet "Not doing" pill once it is) and a caption ink-3 hint: open, that pictures, videos and phone data are deleted 7 days after it's Resolved or Not doing; closed, when it closed, the day its pictures and videos are deleted, and that the ticket goes entirely 180 days after closing. Reopening a ticket keeps its files. Pictures and videos scroll sideways 12px apart, each 240px tall at the field radius on strong sand with its kind and size in caption ink-3 under it.
@@ -1552,7 +1666,7 @@ the admin panel for tokens, type and the shared components. The admin shell, the
 |---|---|---|
 | Screen frame, top bar, back | `Page` | `BackHref` makes it a pushed page (back button, edge swipe); `OnBack` gives the back button its own action; `Actions` fills the top bar's end |
 | Masthead | `Masthead` | Title, note, a slot for the live element, `Beside` for a control on the title's row, and a `Class` |
-| Section and section head | `Section` | Title, lead, a "see all" link, a trailing slot |
+| Section and section head | `Section` | Title, lead, a "see all" link, a trailing slot; `Grouped` makes it a settings group (a card on the admin panel, an inset group on the phone) and `Foot` fills its foot |
 | Callout, picture card, navy card | `Card` | `CardTone.Callout`, `Raised` (only where a picture leads, via `Media`), `Masthead` |
 | Rows and boxed lists | `ListGroup`, `ListRow` | Leading tile tones, trailing text or content, chevron or external-link icon, disabled; `Reading` for entries to read, `TitleExtra` for a pill after the title, `Below` for more; `Unread` true or false sets the dot and the title weight |
 | Pull to refresh | `PullToRefresh` | Wraps the whole page body, masthead included; the indicator sits under the top bar. Touch only, so offer a button too |
@@ -1575,17 +1689,27 @@ the admin panel for tokens, type and the shared components. The admin shell, the
 | Icon picker | `IconPicker` (Configuration.Client) | The chosen icon and *Change icon*, opening the grid; uploaded icons and their upload for tiles, the app's own only for tabs |
 | Admin title band | `TitleBand` | Title, lead or lead slot, back link, actions; sets the browser title |
 | Admin tables | `DataTable`, `TableColumn` | Columns with a cell, an optional sort key and a class (`num`, `optional`, `quiet`, `truncate`); a toolbar slot, an empty slot, selection with the arrow keys |
-| Table and detail | `SplitView` | A list and an optional detail column, hairline-ruled |
+| Table and detail | `SplitView` | The workbench without a rail (`workbench--stack`); only goes down |
 | Search | `SearchField` | Labelled, settles before it reports the value |
-| Filters | `FilterChips`, `FilterOption` | One choice from a set, with optional counts |
+| Filters | `FilterChips`, `FilterOption` | One choice from a set, with optional counts; `Rail` draws a group of rows for the workbench's rail, `ShowLabel` its label |
 | Office week | `IOfficeWeekSource`, `OfficeWeek` | Features contribute tasks and dated spans (`Everyone`, `Layer`, `Draft`); `NavEntry.Summary` is an area's one-line purpose on the home page |
 | Day rail | `DayRail` | `First`, `Today`, `Days` (7, or 14 for a fortnight), the spans, a hidden heading, the quiet line, a `Legend` of kinds and words, and the `Selected` href; a span whose end equals its start is a moment |
-| Admin workbench | `Workbench` | Aside, main and detail panes; `Narrow` makes it the one-column form; `Showing` picks the pane in one column |
+| Admin workbench | `Workbench` | `Aside` (the rail), main and `Detail` (the record) panes; `FoldAside` hides the rail while a record is open at 1360px and under; `Narrow` makes it the one-column form; `Showing` picks the pane in one column |
+| Record head | `PaneHead` | `Title`, `Lead`, `Actions` (the ⋯ menu's `MenuItem`s), `Tools`, `OnOpen`, `OnClose` |
+| More actions | `Menu`, `MenuItem`, `MenuItems`, `MenuButton` | `Label`, `Items` made with `this.Item(label, action, icon:, detail:, danger:, startsGroup:, @checked:, disabled:)`; `Text` and `Chevron` for a menu with words, `Block`, `Small`, `AlignStart`; `MenuButton` is one row in a hand-built panel |
+| A small panel | `Popover` | `Label`, `Open`/`OpenChanged`; focus moves into it, Escape and a click outside close it |
+| Roles | `RoleMenu`, `RoleChoice`, `RoleTick`, `RoleGives` | One role of several, with what each allows and an optional Remove; several at once as ticks |
+| Boards | `Board`, `BoardColumn`, `BoardCard`, `BoardMove` | Columns (`Narrow`, `Folds`, `Shown` and `More`, `Addable`), `ColumnOf`, a `Card` template, `OnMove`, `OnAdd`, `Compact`; a card's `Shot`, `Meta`, `Labels`, `Open`, `Quiet` |
+| Dates and times | `DateField`, `TimeField`, `DateTimeField` (`TypedDates`) | Typed with a calendar or time popover on the desk (`UiHost.Desktop`), the native field on the phone; `Min`, `Max`, `Hint`, `Problem` |
+| A picture, bigger | `PictureOpen`, `PictureViewer` | `Pictures`, `Index`, `Noun`, `About`, `Open`; Download of the original |
+| Light or dark | `SchemeChoice` | Automatic, Light, Dark through `Appearance`; `ShowLabel`, `Hint` |
+| App icons | `AppIcons` (Platform.Contracts) | The one name for each kind of thing's icon; `IconRules` checks one icon per meaning |
+| Gallery | `DesignGallery` | Every public component live with sample names and when to use it, at `/gallery` on both hosts |
 | Pill | `Pill` | `PillTone.Marker`, `Accent`, `Masthead`, `Quiet`, `Danger` (run out only), with an optional icon |
 | Charts | `StatTile`, `TrendLine` | `Quiet` for a value too small to show; a main and an optional comparison series, a table of every number, an `Empty` line under two points |
 | Ranked list | `RankedList`, `RankedItem` | Title, explanation, label and value items, an `Empty` line; `Numbered` (default true) shows the rank |
 | Save state | `SaveStatus` | Saved, waiting, saving, failed with a retry, not saved yet; an optional detail |
-| Save action | `SaveBar` | The one save button with its reason when it can't save and its `SaveStatus`; `OnMasthead`, `Block`, `Submit`, extra actions after it |
+| Save action | `SaveBar` | Cancel (`OnCancel`, `CancelLabel`) at the left, the one save button at the right, the reason it can't save (`Blocked`) or its `SaveStatus` above; `New`, `OnMasthead`, `Block`, `Submit`; other actions as child content, after Cancel, moving above when narrow |
 | Edits in children | `EditScope` | Re-renders the editor around it when anything inside is edited, so a header or a save button that reads a shared model stays current |
 | Unsaved changes | `UnsavedGuard`, `UnsavedChanges` | Leaving a form with changes (another tab, page or sidebar link, Back, or an in-page switch that asks `UnsavedChanges`) opens a sheet: *Save and go on* (when the form can save), *Discard the changes*, *Stay here*; closing or reloading the browser tab gets the browser's own warning |
 | Stages | `StagePipeline` | `Label`, `Stages` (`SegmentOption`s in order), `Value`/`ValueChanged`, `Disabled`, `Class` |
@@ -1617,7 +1741,7 @@ the admin panel for tokens, type and the shared components. The admin shell, the
 | Calendar | `DaySection`, `MonthGrid`, `EventHead`, `DateBlock`, `EventDetails`, `EventEditor`, `ComingUpTile` (Events Client) | The week, the month, an event and editing it on the phone and in the admin panel (`InPanel`); styled in `events.css`. The admin page is `CalendarWorkbench` with `CalendarSettingsPanel` and `BreakPanel` |
 | Icons, mark | `Icon`, `BrandMark` | Lucide paths (ISC); the mark is the logo pack's file as a mask, never redrawn |
 
-A development build has More → Design gallery, which shows every block in the current palette.
+The Design gallery (`/gallery`, in the admin panel's Technical area and in the app's More, for staff who may send feedback) shows every shared component in the current palette. The drift tests (`DesignDriftRules`, `IconRules`, with their counts in `design-ratchets.json`) hold the pattern map.
 
 ## Do's and Don'ts
 
@@ -1630,7 +1754,9 @@ A development build has More → Design gallery, which shows every block in the 
 - **Do** read colours through the semantic roles so light, dark and the yearly palette all work without component overrides.
 - **Do** keep touch targets at 44px or more and give presses a scale and a haptic.
 - **Do** mark a selected row with Selected Fill, a tonal step, and nothing else.
-- **Do** open every admin page on a title band, and work an area as a data table with its detail in a split view beside it.
+- **Do** open every admin page on a title band, and work an area in the workbench: filters in the sand rail, the list, the record ruled off beside it.
+- **Do** put Cancel bottom left and Save bottom right of anything that saves, with its status on its own line above.
+- **Do** put Delete and every other action on an item in its ⋯ menu, and ask once before deleting, saying what goes with it.
 - **Do** offset admin breakpoints by the 248px sidebar.
 - **Do** let staff choose what something opens with the place field and its directory, never by typing an address.
 - **Do** give a Home tile one of the eight theme tones, and draw it in a layout its kind declares for its size.
@@ -1638,7 +1764,7 @@ A development build has More → Design gallery, which shows every block in the 
 - **Do** grey out a layout that doesn't suit a tile and say why, rather than hiding it.
 - **Do** keep a regular event quiet in the agenda and let only a special, a change or a date that isn't on speak, with a date not on said in a line under its title.
 - **Do** edit an event where it is read: the same head as a live preview, every change in a field below it, and the save in a foot bar; edit a regular event on its own page, from its run of dates.
-- **Do** mark whatever the app owns with the lock glyph and one plain caption, and keep a page's bars and path row above its split view so choosing an item never moves the list.
+- **Do** mark whatever the app owns with the lock glyph and one plain caption, and keep a page's bars and path row above its list so choosing an item never moves the list.
 - **Do** show a safeguarding item that has run out in danger and one due soon in the marker, and never let either block anyone.
 - **Do** keep a page that shows one thing at a time in one frame (the Still Frame Rule), and put a phone preview's choices under it as one sentence of sand chips that change only the phone.
 
@@ -1651,6 +1777,8 @@ A development build has More → Design gallery, which shows every block in the 
 - **Don't** redraw or restyle the church mark beyond recolouring the supplied artwork.
 - **Don't** set font sizes in px.
 - **Don't** put a phone masthead in the admin panel, or open it on a grid of tool tiles.
-- **Don't** box the split view's detail as a card; it is a hairline-ruled column.
+- **Don't** box the workbench's record pane as a card; it is a hairline-ruled column on the page.
+- **Don't** put a red Delete button in a foot, a save bar or on the page.
+- **Don't** use the browser's own date or time input in the admin panel, or build a second copy of a pattern the map already has.
 - **Don't** make the admin work area a size container.
 - **Don't** mark a date that isn't on with a suffix on its title or by dropping it from the list.

@@ -361,7 +361,6 @@ button.text-link:disabled { color: var(--ink-3); cursor: default; }
 .btn--icon { width: var(--touch); padding: 0; }
 .btn--icon.btn--small { width: 36px; }
 .btn:disabled:not([aria-busy="true"]) { background: none; box-shadow: inset 0 0 0 1.5px var(--ink-3); color: var(--ink-2); cursor: default; transform: none; }
-.btn--primary:disabled:not([aria-busy="true"]) { background: var(--primary); box-shadow: none; color: var(--on-primary); opacity: 0.42; }
 .btn:is(.btn--on-masthead, .btn--ghost-masthead):disabled:not([aria-busy="true"]) { box-shadow: inset 0 0 0 1.5px var(--on-masthead-2); color: var(--on-masthead-2); }
 .btn[aria-busy="true"] { opacity: 0.85; cursor: progress; }
 .spinner { width: 16px; height: 16px; flex: none; border-radius: var(--radius-full); border: 2px solid currentColor; border-right-color: transparent; animation: spin 700ms linear infinite; }
@@ -1396,7 +1395,7 @@ button.text-link:disabled { color: var(--ink-3); cursor: default; }
 .date-field__day--sunday { color: var(--accent); }
 .date-field__day--today { box-shadow: inset 0 0 0 2px var(--primary); }
 .date-field__day--chosen, .date-field__day--chosen:hover { background: var(--primary); color: var(--on-primary); }
-.date-field__day:disabled { color: var(--ink-3); opacity: 0.45; cursor: default; background: none; }
+.date-field__day:disabled { color: var(--ink-3); cursor: default; background: none; text-decoration: line-through; text-decoration-color: color-mix(in srgb, var(--ink-3) 60%, transparent); }
 .date-field__quick { display: flex; flex-wrap: wrap; gap: var(--space-xs); margin-top: var(--space-md); padding-top: var(--space-md); border-top: 1px solid var(--line); }
 .date-field__quick .filter-chip:disabled { opacity: 0.5; cursor: default; }
 .date-field__time { display: flex; align-items: center; width: 100%; min-height: 36px; padding: 0 var(--space-md); border: 0; border-radius: var(--radius-inner); background: none; color: var(--ink); font: inherit; font-size: var(--text-row); font-variant-numeric: tabular-nums; text-align: left; cursor: pointer; }
