@@ -5,7 +5,7 @@
 
 <UnsavedGuard Changed="() => Changed" What="the sign-in code" />
 
-<h2 class="panel-title">Make a code</h2>
+<PaneHead Title="Make a code" OnClose="CloseAsync" />
 @if (_made is not null)
 {
     <p class="panel-lead">Copy it now: it's shown only this once. Put it in App Store Connect's password field, with @_email as the user name.</p>
@@ -30,9 +30,8 @@ else
         <TextField Label="What it's for" @bind-Value="_label" AutoComplete="off" Hint="Such as TestFlight 1.2 or App Store 1.0" MaxLength="80" />
         <TextField Label="Works for (days)" Type="number" Value="@_days" ValueChanged="value => _days = value" Min="1" Max="180" Hint="30 days is usually enough for a review" />
         <Notice Tone="NoticeTone.Warning" Text="@_problem" />
-        <SaveBar Class="panel-actions" Submit="true" Label="Make the code" Busy="_busy" Blocked="@(!int.TryParse(_days, out _) ? "Say how many days it works for to make it." : null)">
-            <Button Variant="ButtonVariant.Quiet" OnClick="CloseAsync">Close</Button>
-        </SaveBar>
+        <SaveBar Class="panel-actions" Submit="true" Label="Make the code" Busy="_busy" Blocked="@(!int.TryParse(_days, out _) ? "Say how many days it works for to make it." : null)"
+                 OnCancel="CloseAsync" />
     </form>
 }
 

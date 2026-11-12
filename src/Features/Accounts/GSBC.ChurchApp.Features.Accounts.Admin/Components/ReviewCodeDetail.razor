@@ -2,8 +2,8 @@
 @inject AccountsClient Accounts
 @inject AccountsOfficeClient Office
 
-<h2 class="panel-title">@Code.Label</h2>
-<p class="panel-lead">@(Account is null ? "Its demo account was removed." : $"Signs in to {Account.DisplayName}, {Account.Email}.")</p>
+<PaneHead Title="@Code.Label" Lead="@(Account is null ? "Its demo account was removed." : $"Signs in to {Account.DisplayName}, {Account.Email}.")"
+          Actions="Actions" OnClose="OnClose" />
 
 <dl class="facts">
     <dt>State</dt>
@@ -21,20 +21,33 @@
     }
 </dl>
 
-@if (ReviewCodeState.Order(Code) == 0)
+@if (Working)
 {
-    <section class="panel-section" aria-labelledby="turn-off-@Code.Id">
-        <h3 class="panel-subtitle" id="turn-off-@Code.Id">Turn the code off</h3>
-        <p class="panel-lead">It stops working at once, and anyone signed in with it is signed out. Turn it off once Apple has approved the build.</p>
-        <Button Variant="ButtonVariant.Danger" Busy="_busy" OnClick="TurnOffAsync">Turn the code off</Button>
-    </section>
+    <p class="panel-hint">Turn it off, under More, once Apple has approved the build.</p>
 }
 
 <Notice Tone="NoticeTone.Warning" Text="@_problem" />
 
+<Sheet Open="_asking" OpenChanged="open => _asking = open" Title="@($"Turn off {Code.Label}?")"
+       Lead="It stops working at once, and anyone signed in with it is signed out. It can't be turned back on; make a new code if you need one.">
+    <Actions>
+        <Button Variant="ButtonVariant.Danger" Busy="_busy" OnClick="TurnOffAsync">Turn it off</Button>
+        <Button Variant="ButtonVariant.Quiet" OnClick="() => _asking = false">Keep it</Button>
+    </Actions>
+</Sheet>
+
 @code {
     private bool _busy;
+    private bool _asking;
     private string? _problem;
+
+    [Parameter] public EventCallback OnClose { get; set; }
+
+    private bool Working => ReviewCodeState.Order(Code) == 0;
+
+    private IReadOnlyList<MenuItem> Actions => Working
+        ? [new("Turn the code off…", () => { _asking = true; return Task.CompletedTask; }, "circle-off", "Stops it working and signs reviewers out", Danger: true)]
+        : [];
 
     [Parameter, EditorRequired] public required ReviewCodeInfo Code { get; set; }
     [Parameter] public DemoAccountInfo? Account { get; set; }
@@ -47,6 +60,7 @@
         try
         {
             await Office.TurnOffReviewCodeAsync(Code.Id);
+            _asking = false;
             await OnChanged.InvokeAsync();
         }
         catch (RpcException exception)

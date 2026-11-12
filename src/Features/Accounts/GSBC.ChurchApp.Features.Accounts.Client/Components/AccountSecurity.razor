@@ -10,7 +10,7 @@
     }
     @if (!context.Value.DemoAccount)
     {
-        <Section First="true" Title="Passkeys" Lead="A second passkey, on another phone or computer, means losing one device never locks you out.">
+        <Section First="true" Title="Passkeys" Grouped="true" Lead="A second passkey, on another phone or computer, means losing one device never locks you out.">
             <ListGroup>
                 @foreach (PasskeySummary passkey in context.Value.Passkeys)
                 {
@@ -30,7 +30,7 @@
         </Section>
     }
 
-    <Section First="context.Value.DemoAccount" Title="Where you're signed in" Lead="This device first, then the rest by when they were last used. Sign out of anything you don't recognise.">
+    <Section First="context.Value.DemoAccount" Title="Where you're signed in" Grouped="true" Lead="This device first, then the rest by when they were last used. Sign out of anything you don't recognise.">
         <ListGroup>
             @foreach (SessionSummary session in context.Value.Sessions)
             {
