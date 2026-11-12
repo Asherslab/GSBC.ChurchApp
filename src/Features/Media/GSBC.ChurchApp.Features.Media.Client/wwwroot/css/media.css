@@ -38,8 +38,9 @@
 .media-choice__tick { position: absolute; top: 8px; right: 8px; display: grid; place-items: center; width: 26px; height: 26px; border-radius: var(--radius-full); background: var(--marker); color: var(--on-marker); }
 .media-choice__name { overflow: hidden; font-size: var(--text-caption); font-weight: 600; white-space: nowrap; text-overflow: ellipsis; }
 .media-choice__used { font-size: var(--text-caption); color: var(--ink-3); }
-.media-choice__foot { display: flex; align-items: center; gap: 10px; padding-top: 14px; border-top: 1px solid var(--line); }
-.media-choice__chosen { display: grid; flex: 1; min-width: 0; gap: 1px; font-size: var(--text-caption); color: var(--ink-2); }
+.media-choice__foot { display: grid; gap: var(--space-sm); padding-top: var(--stack); border-top: 1px solid var(--line); }
+.media-choice__actions { display: flex; align-items: center; justify-content: space-between; gap: var(--space-sm); }
+.media-choice__chosen { display: grid; justify-items: end; min-width: 0; text-align: right; gap: 1px; font-size: var(--text-caption); color: var(--ink-2); }
 .media-choice__chosen > * { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .media-choice__where { margin: 0; color: var(--ink-2); font-weight: 600; }
 .media-choice .breadcrumbs { margin: -4px 0 -6px -8px; }
