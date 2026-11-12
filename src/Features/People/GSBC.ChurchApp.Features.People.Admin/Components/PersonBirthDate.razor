@@ -1,0 +1,84 @@
+@inject PeopleClient People
+@inject PeopleOfficeClient Office
+@inject IAccess Access
+@inject TimeProvider Clock
+
+<UnsavedGuard Changed="() => _changing && _born != _bornWas" What="their birth date" />
+
+<LiveData @ref="_live" TValue="PersonFamily" Feeds="[PeopleFeeds.Family]" Load="() => Office.GetPersonAsync(Person.Id).AsTask()">
+    <ChildContent>
+        @{
+            PersonFamily family = context.Value;
+            DateOnly today = ChurchTime.Today(Clock);
+        }
+        <span class="person-born">
+            @BornLine(family, today)
+            @if (Access.Can(PeoplePermissions.FamilyEdit, family.Id))
+            {
+                <Button Variant="ButtonVariant.Link" OnClick="() => Start(family)">@(family.BirthDate is null ? "Add it" : "Change")</Button>
+            }
+        </span>
+        <Sheet Open="_changing" OpenChanged="open => _changing = open" Title="@($"{Person.FirstName}'s birth date")" Lead="It says whether they're under 18, which decides who their parents are in the app and who safeguarding follows up.">
+            <ChildContent>
+                <DateField Label="Birth date" Value="@_born" ValueChanged="value => _born = value" Max="@($"{today:yyyy-MM-dd}")" />
+                <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+            </ChildContent>
+            <Actions>
+                <SaveBar Label="Save" Busy="_busy" OnSave="() => SaveAsync(PeopleWords.ParseDay(_born))" OnCancel="() => _changing = false"
+                         Blocked="@(PeopleWords.ParseDay(_born) is null ? "Give a birth date to save it." : null)">
+                    @if (family.BirthDate is not null)
+                    {
+                        <Button Variant="ButtonVariant.Quiet" Disabled="_busy" OnClick="() => SaveAsync(null)">Clear it</Button>
+                    }
+                </SaveBar>
+            </Actions>
+        </Sheet>
+    </ChildContent>
+    <Loading />
+    <Failed />
+</LiveData>
+
+@code {
+    private LiveData<PersonFamily>? _live;
+    private bool _changing, _busy;
+    private string _born = "", _bornWas = "";
+    private string? _problem;
+
+    [Parameter, EditorRequired] public required PersonOnPage Person { get; set; }
+
+    private static string BornLine(PersonFamily family, DateOnly today) => family.BirthDate switch
+    {
+        { } born when Ages.IsMinor(WireDates.FromWire(born), today) => $"Born {born:d MMM yyyy} · {PeopleWords.Age(born, today)} years old, under 18",
+        { } born => $"Born {born:d MMM yyyy} · {PeopleWords.Age(born, today)} years old",
+        null when family.SaysAdult => "Says they're 18 or older",
+        null => "No birth date",
+    };
+
+    private void Start(PersonFamily family)
+    {
+        _born = _bornWas = PeopleWords.FieldDay(family.BirthDate);
+        _problem = null;
+        _changing = true;
+    }
+
+    private async Task SaveAsync(DateOnly? born)
+    {
+        _busy = true;
+        _problem = null;
+        try
+        {
+            await People.SetBirthDateAsync(Person.Id, born);
+            _changing = false;
+            if (_live is not null)
+                await _live.ReloadAsync();
+        }
+        catch (RpcException exception)
+        {
+            _problem = PeopleWords.Problem(exception);
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+}

@@ -8,11 +8,7 @@
         bool minor = Ages.IsMinor(WireDates.FromWire(me.BirthDate), today);
         List<LinkAsk> myAsks = me.Asks.Where(ask => ask.ChildId == me.Id).ToList();
     }
-    <Section Title="Your family" Lead="@(minor ? "Your parents see your details in the app while you're under 18." : "Children you look after in the app.")">
-        @if (me.BirthDate is null && !me.SaysAdult)
-        {
-            <BirthDateAsk OnSaved="ReloadAsync" />
-        }
+    <Section Title="Your family" Grouped="true" Lead="@(minor ? "Your parents see your details in the app while you're under 18." : "Children you look after in the app.")">
         <ListGroup>
             @foreach (LinkAsk ask in me.AskedOfThem)
             {
@@ -59,10 +55,6 @@
             {
                 <ListRow Title="Add a child" Subtitle="A child in your care, under 18" Icon="plus" IconTone="RowTone.Accent" OnClick="() => _adding = true" />
             }
-            @if (me.BirthDate is { } born)
-            {
-                <ListRow Title="@($"Born {born:d MMMM yyyy}")" Subtitle="@PeopleWords.WhoSees" Icon="calendar" IconTone="RowTone.Quiet" />
-            }
         </ListGroup>
         @if (minor && me.Parents.Count > 0)
         {
@@ -72,7 +64,7 @@
 
     @if (me.Safeguarding is { } record && (record.HasCard || record.HasTraining))
     {
-        <Section Title="Blue card and training" Lead="As the church office has it. Tell the office if something's wrong.">
+        <Section Title="Blue card and training" Grouped="true" Lead="As the church office has it. Tell the office if something's wrong.">
             <YourSafeguarding Record="record" Today="today" />
         </Section>
     }

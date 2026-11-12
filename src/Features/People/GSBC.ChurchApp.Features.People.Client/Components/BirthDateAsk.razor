@@ -2,15 +2,13 @@
 
 <UnsavedGuard Changed="() => _born.Length > 0" What="your birth date" Save="SaveBeforeLeavingAsync" />
 
-<Card Tone="CardTone.Raised" Title="How old are you?">
-    <p>The church keeps young people safe in the app, so it asks everyone once. @PeopleWords.WhoSees</p>
-    <div class="ui-after">
-        <DateField Label="Your birth date" Value="@_born" ValueChanged="value => _born = value" Max="@($"{ChurchTime.Today(Clock):yyyy-MM-dd}")" AutoComplete="bday" Problem="@_problem" />
-    </div>
-    <SaveBar Class="ui-after" Label="Save" Busy="_busy" OnSave="() => SaveAsync(adult: false)" Blocked="@(PeopleWords.ParseDay(_born) is null ? "Enter your birth date to save it." : null)">
-        <Button Variant="ButtonVariant.Quiet" Disabled="_busy" OnClick="() => SaveAsync(adult: true)">I'm 18 or older</Button>
-    </SaveBar>
-</Card>
+<div class="ui-after">
+    <DateField Label="Your birth date" Value="@_born" ValueChanged="value => _born = value" Max="@($"{ChurchTime.Today(Clock):yyyy-MM-dd}")" AutoComplete="bday" Problem="@_problem"
+               Hint="@($"The church keeps young people safe in the app, so it asks everyone once. {PeopleWords.WhoSees}")" />
+</div>
+<SaveBar Class="ui-after" Label="Save" Busy="_busy" OnSave="() => SaveAsync(adult: false)" Blocked="@(PeopleWords.ParseDay(_born) is null ? "Enter your birth date to save it." : null)">
+    <Button Variant="ButtonVariant.Quiet" Disabled="_busy" OnClick="() => SaveAsync(adult: true)">I'm 18 or older</Button>
+</SaveBar>
 
 @code {
     [Parameter] public EventCallback OnSaved { get; set; }
