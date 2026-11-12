@@ -80,23 +80,25 @@
                     {
                         <EmptyState Icon="search" Title="Nothing matches" Body="No message fits all of these. Clear one of them to see more." />
                     }
-                    <div class="chat-review">
-                        @foreach (ReviewLine line in lines)
-                        {
-                            switch (line)
+                    <div class="chat-review__scroll">
+                        <div class="chat-review">
+                            @foreach (ReviewLine line in lines)
                             {
-                                case ReviewDay day:
-                                    <h3 class="chat-review__day">@ChatLead.Day(day.Day)</h3>
-                                    break;
-                                case ReviewFold fold:
-                                    <Button Variant="ButtonVariant.Link" Class="chat-review__fold" OnClick="() => Open(fold)">@FoldWords(fold)</Button>
-                                    break;
-                                case ReviewMessage shown:
-                                    <CheckedLine @key="shown.Found.Message.Id" Reveal="@(shown.Found.Message.Id == _revealId)" Found="shown.Found" Match="shown.Match" Faded="@(_filter.Narrows && !shown.Match)" Reported="@reported.Contains(shown.Found.Message.Id)" Words="@_filter.Words"
-                                                 Actions="@MessageActions(context.Value, shown.Found)" />
-                                    break;
+                                switch (line)
+                                {
+                                    case ReviewDay day:
+                                        <h3 class="chat-review__day">@ChatLead.Day(day.Day)</h3>
+                                        break;
+                                    case ReviewFold fold:
+                                        <Button Variant="ButtonVariant.Link" Class="chat-review__fold" OnClick="() => Open(fold)">@FoldWords(fold)</Button>
+                                        break;
+                                    case ReviewMessage shown:
+                                        <CheckedLine @key="shown.Found.Message.Id" Found="shown.Found" Match="shown.Match" Faded="@(_filter.Narrows && !shown.Match)" Reported="@reported.Contains(shown.Found.Message.Id)" Words="@_filter.Words"
+                                                     Actions="@MessageActions(context.Value, shown.Found)" />
+                                        break;
+                                }
                             }
-                        }
+                        </div>
                     </div>
                 </ChildContent>
                 <Detail>
@@ -148,7 +150,6 @@
     private bool _allSenders;
     private DeskChat? _deleting;
     private string? _shownFor;
-    private string? _revealId;
     private ReviewFilter _filter = new();
     private readonly HashSet<string> _opened = [];
     private LiveData<Reports>? _reports;
@@ -205,12 +206,10 @@
     private void Opened(OpenCheck check)
     {
         _check = check;
-        _revealId = check.Chat.Messages.LastOrDefault()?.Message.Id;
     }
 
     private void OpenAround(OpenCheck check, string messageId)
     {
-        _revealId = messageId;
         _shownFor = messageId;
         _filter = new ReviewFilter(Only: ReviewOnly.Reported);
         _opened.Clear();

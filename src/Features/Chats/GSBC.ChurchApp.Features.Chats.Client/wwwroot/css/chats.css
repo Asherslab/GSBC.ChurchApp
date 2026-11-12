@@ -75,6 +75,7 @@
 .chat-review__count { display: flex; align-items: center; justify-content: space-between; gap: var(--space-md); margin-bottom: var(--space-md); font-size: var(--text-caption); color: var(--ink-2); }
 .chat-review__count p { margin: 0; }
 .chat-review__count strong { color: var(--ink); }
+.chat-review__scroll { display: flex; flex-direction: column-reverse; max-height: max(18rem, calc(100dvh - 21rem)); overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; }
 .chat-review { display: grid; gap: var(--space-sm); }
 .chat-review__day { margin: var(--space-md) 0 0; text-align: center; font-size: var(--text-pill); font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-3); }
 .chat-review__fold.btn { display: flex; width: 100%; gap: var(--space-md); font-size: var(--text-caption); color: var(--ink-3); }
@@ -122,6 +123,8 @@
 .chat-checked__message .chat-photo-open.picture-open { width: auto; max-width: min(220px, 100%); }
 .chat-checked__message .chat-photo { width: auto; max-width: 100%; max-height: 220px; object-fit: cover; }
 @media (max-width: 1360px) {
+  .chat-review__scroll { max-height: max(16rem, calc(100dvh - 37rem)); }
+  .chat-review-bench.workbench { grid-template-rows: auto 1fr; }
   .chat-review-bench .workbench__aside { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-md) var(--space-xl); align-items: start; }
   .chat-review-bench .workbench__aside > .search-field { grid-column: 1 / -1; }
   .chat-review-bench .workbench__aside > * + *, .workbench__aside .chat-review__when + * { margin-top: 0; }
