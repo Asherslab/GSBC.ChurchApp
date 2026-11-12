@@ -19,5 +19,5 @@ public sealed class ChatChecks(OversightClient oversight)
     }
 
     public static string PageOf(string chatId, string? message = null) =>
-        message is null ? $"chats/check/{chatId}" : $"chats/check/{chatId}?message={message}#m-{message}";
+        message is null ? $"chat-safety/check/{chatId}" : $"chat-safety/check/{chatId}?message={message}#m-{message}";
 }

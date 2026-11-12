@@ -1,10 +1,11 @@
 @using GSBC.ChurchApp.Platform.Client.Modules
+@inject IAccess Access
 
-<Section First="true">
-    <EmptyState Icon="message-square" Title="Chats are on people's phones" Body="@($"In the admin panel, {On.Name}'s chats are on the Chats page, where you can check them (every check is logged) and handle reports.")">
-        <Button Variant="ButtonVariant.Quiet" Href="chats/all">Open Chats</Button>
-    </EmptyState>
-</Section>
+<MinistryChatsTab On="On" />
+@if (Access.Can(ChatsPermissions.Check, On.Id))
+{
+    <p class="hint">Chats you're in open in Chats. To read one of @(On.Name)'s other chats, check it under <a href="chat-safety/all">Chat safety</a>; every check is logged.</p>
+}
 
 @code {
     [Parameter, EditorRequired] public required MinistryOnPage On { get; set; }
