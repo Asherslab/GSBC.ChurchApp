@@ -1,0 +1,72 @@
+<!doctype html><html lang="en-AU"><head><meta charset="utf-8"><link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet"><title>C: Trainee paired on the place, the rule as one choice</title><style>:root{--nav:#2a3d5e;--note:#d5c9b7;--page:#fff;--sand:#f4efe7;--sand2:#e9e1d4;--ink:#18233a;--ink2:#4a5468;--ink3:#7d8596;--accent:#00776d;--aqua:#009c8f;--marker:#e7ae74;--mink:#8a5422;--danger:#b4372f;--line:rgba(42,61,94,.12);--group:#f4efe7}
+*{box-sizing:border-box;margin:0;padding:0}
+body{width:1440px;height:900px;overflow:hidden;background:#e4dccf;font-family:Montserrat,-apple-system,sans-serif;color:var(--ink);display:flex;gap:28px;justify-content:center;padding:14px 24px;font-size:15px}
+.ph{width:390px;display:flex;flex-direction:column;gap:6px}
+.cap{font-size:13px;font-weight:700;color:var(--ink2);letter-spacing:.02em;height:18px}
+.scr{width:390px;height:844px;border-radius:30px;overflow:hidden;background:var(--page);position:relative;box-shadow:0 2px 14px rgba(24,35,58,.18)}
+.top{height:92px;background:var(--nav);color:#fff;padding:52px 18px 0;font-weight:600;font-size:15px}
+.mast{background:var(--nav);color:#fff;padding:2px 20px 14px}.mast h1{font-size:27px;letter-spacing:-.02em}.mast p{color:var(--note);font-size:13px;font-weight:600;margin-top:2px}
+.tabs{display:flex;gap:18px;padding:0 20px;border-bottom:1px solid var(--line);font-size:14px;font-weight:600;color:var(--ink3)}.tabs span{padding:11px 0}.tabs .on{color:var(--ink);box-shadow:inset 0 -3px 0 var(--marker)}
+.scrim{position:absolute;inset:0;background:rgba(24,35,58,.42)}
+.sheet{position:absolute;left:0;right:0;bottom:0;top:62px;background:var(--page);border-radius:22px 22px 0 0;padding:10px 20px 20px;overflow:hidden}
+.sheet.grp{background:var(--group)}
+.grab{width:36px;height:5px;border-radius:3px;background:var(--sand2);margin:0 auto 12px}
+.sheet h3{font-size:21px;letter-spacing:-.02em;line-height:1.2}.lead{font-size:13px;color:var(--ink2);margin:4px 0 12px}
+.ph4{font-size:15px;font-weight:700;margin:16px 0 4px;display:flex;justify-content:space-between}.ph4 span{font-size:13px;color:var(--ink3);font-weight:600;font-variant-numeric:tabular-nums}
+.row{min-height:54px;display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--line)}
+.row:first-of-type{border-top:1px solid var(--line)}
+.row .t{flex:1;min-width:0}.row b{display:block;font-weight:600;font-size:15px;line-height:1.3}.row .s{display:block;font-size:13px;color:var(--ink2);line-height:1.35}
+.av{width:36px;height:36px;border-radius:50%;background:var(--sand);color:var(--nav);display:grid;place-items:center;font-weight:700;font-size:13px;flex:none}
+.tile{width:34px;height:34px;border-radius:10px;background:var(--sand);display:grid;place-items:center;font-weight:700;font-size:13px;color:var(--nav);flex:none}
+.tile.warm{background:rgba(231,174,116,.3);color:var(--mink)}.tile.acc{background:rgba(0,156,143,.14);color:var(--accent)}.tile.q{color:var(--ink3)}
+.add{color:var(--accent);font-weight:600}
+.flag{font-size:12.5px;font-weight:600;color:var(--mink)}
+.pill{display:inline-flex;align-items:center;height:22px;padding:0 9px;border-radius:11px;font-size:12px;font-weight:700;background:var(--sand);color:var(--ink2);white-space:nowrap}
+.pill.ok{background:rgba(0,156,143,.14);color:var(--accent)}.pill.m{background:rgba(231,174,116,.3);color:var(--mink)}
+.x{color:var(--ink3);font-size:18px;width:28px;text-align:center}
+.g{background:#fff;border-radius:14px;padding:0 16px;margin-top:6px}.g .row:first-of-type{border-top:0}.g .row:last-child{border-bottom:0}
+.gh{font-size:13px;color:var(--ink2);font-weight:600;margin:16px 0 0 16px}.gf{font-size:12.5px;color:var(--ink2);margin:6px 16px 0}
+.radio{width:22px;height:22px;border-radius:50%;box-shadow:inset 0 0 0 2px var(--sand2);flex:none}.radio.on{box-shadow:inset 0 0 0 7px var(--aqua)}
+.tog{width:50px;height:30px;border-radius:15px;background:var(--sand2);position:relative;flex:none}.tog:after{content:"";position:absolute;left:3px;top:3px;width:24px;height:24px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.tog.on{background:var(--aqua)}.tog.on:after{left:23px}
+.seg{display:flex;background:var(--sand);border-radius:12px;padding:3px;font-size:13.5px;font-weight:600;color:var(--ink2)}.seg span{flex:1;text-align:center;padding:8px 4px}.seg .on{background:#fff;border-radius:9px;color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.14)}
+.lab{font-size:13px;font-weight:600;color:var(--ink2);margin:12px 0 6px}
+.in{background:var(--sand);border-radius:12px;padding:11px 14px;font-size:15px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}.chip{height:32px;border-radius:16px;background:var(--sand);font-size:13.5px;font-weight:600;padding:0 12px;display:inline-flex;align-items:center;gap:6px;color:var(--ink2)}.chip.on{background:var(--nav);color:#fff}
+.bar{position:absolute;left:0;right:0;bottom:0;padding:12px 20px 26px;background:var(--page);border-top:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}
+.btn{height:44px;border-radius:22px;padding:0 18px;display:inline-flex;align-items:center;font-weight:600;font-size:14.5px;background:var(--sand);color:var(--ink)}.btn.p{background:var(--nav);color:#fff}
+.btn.sm{height:32px;padding:0 12px;font-size:13px}
+.say{background:var(--sand);border-radius:12px;padding:10px 12px;font-size:13px;color:var(--ink2);margin-top:8px}.say b{color:var(--ink)}
+.pair{display:flex;align-items:center;gap:12px;background:rgba(0,156,143,.07);border-radius:12px;padding:10px 12px;margin:6px 0}.avs{display:flex}.avs .av+.av{margin-left:-10px;box-shadow:0 0 0 2px #fff}.alone{border-left:3px solid var(--marker);padding-left:10px}.stk{background:var(--sand);border-radius:12px;padding:3px;display:flex;flex-direction:column}.stk div{padding:10px 12px;border-radius:9px}.stk .on{background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.14)}.stk b{display:block;font-size:14.5px}.stk span{font-size:12.5px;color:var(--ink2)}</style></head><body><div class="ph"><div class="cap">1 · A trainee on a date (leader)</div><div class="scr"><div class="top">‹ Production</div><div class="scrim"></div>
+<div class="sheet"><div class="grab"></div><h3>Sun 15 Nov · 6pm · Evening service</h3><p class="lead">Sunday 15 November, 6pm to 7:30pm, on Sundays.</p>
+<div class="ph4">Sound <span>1 of 1</span></div>
+<div class="pair"><div class="avs"><div class="av">JM</div><div class="av">SL</div></div><div class="t"><b>Jo Martin trains Sam Lee</b><span class="s">Jo can do it · Sam: no answer yet</span></div><span class="x">⋯</span></div>
+<div class="ph4">Cameras <span>1 of 2</span></div>
+<div class="row"><div class="av">AR</div><div class="t"><b>Ana Reid</b></div><span class="pill ok">Can do it</span><span class="x">⋯</span></div>
+<div class="row alone"><div class="av">BH</div><div class="t"><b>Ben Ho, training</b><span class="s flag">Needs someone trained on with them</span></div><span class="x">⋯</span></div>
+<div style="padding:8px 0"><span class="btn sm p">Put someone trained on</span></div>
+<div class="ph4">Lights <span>1 of 1</span></div>
+<div class="row"><div class="av">KP</div><div class="t"><b>Kim Park</b></div><span class="pill ok">Can do it</span><span class="x">⋯</span></div>
+</div></div></div>
+
+<div class="ph"><div class="cap">2 · The swap rule (How the roster works)</div><div class="scr"><div class="top">‹ Production</div><div class="scrim"></div>
+<div class="sheet grp"><div class="grab"></div><h3>How the roster works</h3><p class="lead">For Production.</p>
+<div class="lab">When someone asks the team for a swap</div>
+<div class="stk"><div><b>Nobody takes it</b><span>They ask a leader instead</span></div><div class="on"><b>Anyone on the team can take it</b><span>Whoever takes it is on; leaders hear</span></div><div><b>Anyone can offer, and a leader says yes</b><span>Leaders choose between offers</span></div></div>
+<div class="g" style="margin-top:14px"><div class="row"><div class="t"><b>They can ask someone on the team themselves</b><span class="s">That person says yes or can't</span></div><div class="tog on"></div></div></div>
+<div class="lab">What the team sees</div><div class="stk"><div class="on"><b>The whole roster</b></div><div><b>Their own dates, and who's on with them</b></div><div><b>Only their own dates</b></div></div>
+<div class="bar"><span class="btn">Cancel</span><span class="btn p">Save</span></div></div></div></div>
+
+<div class="ph"><div class="cap">3 · Days away (yours, your children's, or a leader's team)</div><div class="scr"><div class="top">‹ Account</div>
+<div style="padding:6px 20px"><h3 style="font-size:24px">Days away</h3><p class="lead">Leaders of every team you're on see these, and can change them.</p>
+<div class="row"><div class="tile">↻</div><div class="t"><b>Every Sunday, mornings</b><span class="s">Until further notice · not 20 Dec, 27 Dec</span></div><span class="x">›</span></div>
+<div class="row"><div class="tile q">28</div><div class="t"><b>Saturday 28 November</b><span class="s">Tom · Camp</span></div><span class="x">›</span></div>
+<div class="row"><div class="tile acc">+</div><div class="t"><b class="add">Add days away</b></div></div></div>
+<div class="scrim" style="top:330px"></div><div class="sheet" style="top:250px"><div class="grab"></div><h3>Days away</h3>
+<div class="lab">Who</div><div class="seg"><span class="on">Me</span><span>Tom</span></div>
+<div class="lab">How often</div><div class="seg"><span>Once</span><span class="on">Every week</span></div>
+<div class="lab">Day</div><div class="in">Sunday</div>
+<div class="lab">Part of the day</div><div class="seg"><span>All day</span><span class="on">Morning</span><span>Evening</span><span>Times</span></div>
+<div class="lab">Not on</div><div class="chips"><span class="chip">20 Dec ×</span><span class="chip">27 Dec ×</span><span class="chip" style="color:var(--accent)">+ Add</span></div>
+<div class="bar"><span class="btn">Cancel</span><span class="btn p">Save</span></div></div></div></div>
+</body></html>

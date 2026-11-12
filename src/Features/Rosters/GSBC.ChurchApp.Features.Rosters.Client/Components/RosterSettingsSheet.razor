@@ -1,53 +1,62 @@
+@using System.Globalization
 @inject RosterWrites Writes
 @inject IRosterReads Reads
 
 <UnsavedGuard Changed="() => Open && Changed" What="how the roster works" Save="SaveAsync" />
 
-<Sheet Open="Open" OpenChanged="OpenChanged" Title="How the roster works" Lead="@($"For {View.MinistryName}. Days away are always allowed.")">
+<Sheet Open="Open" OpenChanged="OpenChanged" Title="How the roster works" Lead="@($"For {View.MinistryName}. Leaders always see the whole roster, and the team can always mark days away.")">
     <ChildContent>
-        <ToggleRow Title="Ask people to answer" Description="They say whether they can do each date, and you hear when they can't" @bind-Checked="_draft.Replies" />
-        <h3 class="roster-position">Calendars it rosters from</h3>
-        <p class="roster-hint">Add a date starts with these calendars' events. Every calendar is still there.</p>
-        @if (Open)
-        {
-            <LiveData TValue="IReadOnlyList<EventChoice>" Load="() => Reads.EventChoicesAsync(View.MinistryId)" Feeds="Reads.Feeds">
-                <ChildContent>
-                    @foreach ((string id, string name) in Calendars(context.Value))
-                    {
-                        <ToggleRow @key="id" Title="@name" Checked="_draft.Calendars.Contains(id)" CheckedChanged="on => ToggleCalendar(id, on)" />
-                    }
-                </ChildContent>
-                <Loading><Skeleton Shape="SkeletonShape.Lines" Count="3" /></Loading>
-            </LiveData>
-        }
-        <h3 class="roster-position">Swaps</h3>
-        <Segmented TValue="string" Label="When someone asks the team" ShowLabel="true" Stacked="true" Value="@_draft.OpenSwaps" ValueChanged="value => _draft.OpenSwaps = value"
-                   Options="@([.. OpenSwaps.All.Select(value => new SegmentOption<string>(value, RosterLines.OpenSwapsWords(value)))])" />
-        <ToggleRow Title="@RosterLines.WaysWords(SwapWays.Direct)" Description="They choose who to ask, and that person says yes or can't" @bind-Checked="_draft.DirectSwaps" />
-        <p class="roster-hint">@(!_draft.SwapsOn ? "Nobody can ask for a swap; they tell a leader instead." : "Leaders hear of every swap.")</p>
-        <Segmented TValue="string" Label="What the team sees" ShowLabel="true" Stacked="true" Value="@_draft.WhoSees" ValueChanged="value => _draft.WhoSees = value"
-                   Options="@([.. new[] { WhoSees.Everything, WhoSees.WithYou, WhoSees.Yours }.Select(value => new SegmentOption<string>(value, RosterLines.WhoSeesWords(value)))])"
-                   Hint="Leaders always see the whole roster." />
-        <SelectField Label="Reminder before each date" Value="@_draft.RemindDaysBefore.ToString(System.Globalization.CultureInfo.InvariantCulture)"
-                     ValueChanged="value => _draft.RemindDaysBefore = int.Parse(value, System.Globalization.CultureInfo.InvariantCulture)" Options="Reminders" />
-        @if (_draft.Replies)
-        {
-            <SelectField Label="If someone hasn't answered" Value="@_draft.NudgeAfterDays.ToString(System.Globalization.CultureInfo.InvariantCulture)"
-                         ValueChanged="value => _draft.NudgeAfterDays = int.Parse(value, System.Globalization.CultureInfo.InvariantCulture)" Options="Nudges" />
-        }
+        <Section Grouped="true" First="true" Title="Answers">
+            <ToggleRow Title="Ask people to answer" Description="They say whether they can do each date, and leaders hear when someone can't" @bind-Checked="_draft.Replies" />
+            @if (_draft.Replies)
+            {
+                <SelectField Label="If someone hasn't answered" Value="@Number(_draft.NudgeAfterDays)" ValueChanged="value => _draft.NudgeAfterDays = Parse(value)" Options="Nudges" />
+            }
+            <SelectField Label="Reminder before each date" Value="@Number(_draft.RemindDaysBefore)" ValueChanged="value => _draft.RemindDaysBefore = Parse(value)" Options="Reminders" />
+        </Section>
+        <Section Grouped="true" Title="When someone asks the team for a swap" Foot="@SwapFoot">
+            <Segmented TValue="string" Label="When someone asks the team for a swap" Rows="true" Value="@_draft.OpenSwaps" ValueChanged="value => _draft.OpenSwaps = value"
+                       Options="@([.. OpenSwaps.All.Select(value => new SegmentOption<string>(value, RosterLines.OpenSwapsWords(value), Detail: RosterLines.OpenSwapsDetail(value)))])" />
+        </Section>
+        <Section Grouped="true" Title="Asking one person">
+            <ToggleRow Title="@RosterLines.WaysWords(SwapWays.Direct)" Description="They choose who on the team to ask, and that person says yes or can't" @bind-Checked="_draft.DirectSwaps" />
+        </Section>
+        <p class="roster-say">@RosterLines.SwapSentence(_draft)</p>
+        <Section Grouped="true" Title="What the team sees">
+            <Segmented TValue="string" Label="What the team sees" Rows="true" Value="@_draft.WhoSees" ValueChanged="value => _draft.WhoSees = value"
+                       Options="@([.. new[] { WhoSees.Everything, WhoSees.WithYou, WhoSees.Yours }.Select(value => new SegmentOption<string>(value, RosterLines.WhoSeesWords(value)))])" />
+        </Section>
+        <Section Grouped="true" Title="Calendars it rosters from" Lead="Add a date starts on these calendars' events. Every calendar is still there.">
+            @if (Open)
+            {
+                <LiveData TValue="IReadOnlyList<EventChoice>" Load="() => Reads.EventChoicesAsync(View.MinistryId)" Feeds="Reads.Feeds">
+                    <ChildContent>
+                        @foreach ((string id, string name) in Calendars(context.Value))
+                        {
+                            <ToggleRow @key="id" Title="@name" Checked="_draft.Calendars.Contains(id)" CheckedChanged="on => ToggleCalendar(id, on)" />
+                        }
+                        @if (_draft.Calendars.Count == 0)
+                        {
+                            <p class="hint">With none chosen, it starts on @(View.MinistryName)'s own calendars.</p>
+                        }
+                    </ChildContent>
+                    <Loading><Skeleton Shape="SkeletonShape.Lines" Count="3" /></Loading>
+                </LiveData>
+            }
+        </Section>
         <Notice Tone="NoticeTone.Warning" Text="@_problem" />
     </ChildContent>
     <Actions>
-        <SaveBar Block="true" Label="Save" Busy="_busy" OnSave="SaveAsync" State="@(Changed ? SaveState.Unsaved : null)" />
+        <SaveBar Label="Save" Busy="_busy" OnSave="SaveAsync" OnCancel="() => OpenChanged.InvokeAsync(false)" State="@(Changed ? SaveState.Unsaved : null)" />
     </Actions>
 </Sheet>
 
 @code {
     private static readonly IReadOnlyList<FieldOption> Reminders =
-        [new("0", "No reminder"), new("1", "The day before"), .. new[] { 2, 3, 4, 5, 6, 7 }.Select(days => new FieldOption(days.ToString(System.Globalization.CultureInfo.InvariantCulture), $"{days} days before"))];
+        [new("0", "No reminder"), new("1", "The day before"), .. new[] { 2, 3, 4, 5, 6, 7 }.Select(days => new FieldOption(Number(days), $"{days} days before"))];
 
     private static readonly IReadOnlyList<FieldOption> Nudges =
-        [new("0", "Don't remind them"), new("1", "Remind them after a day"), .. new[] { 2, 3, 4, 5, 7 }.Select(days => new FieldOption(days.ToString(System.Globalization.CultureInfo.InvariantCulture), $"Remind them after {days} days"))];
+        [new("0", "Don't remind them"), new("1", "Remind them after a day"), .. new[] { 2, 3, 4, 5, 7 }.Select(days => new FieldOption(Number(days), $"Remind them after {days} days"))];
 
     private RosterSettings _draft = new();
     private bool _busy;
@@ -57,10 +66,16 @@
     [Parameter] public EventCallback<bool> OpenChanged { get; set; }
     [Parameter, EditorRequired] public required RosterView View { get; set; }
 
+    private RenderFragment SwapFoot => @<text>Leaders hear of every swap.</text>;
+
     private bool Changed =>
         (_draft.Replies, _draft.WhoSees, _draft.RemindDaysBefore, _draft.NudgeAfterDays, _draft.OpenSwaps, _draft.DirectSwaps, string.Join(",", _draft.Calendars.Order()))
         != (View.Settings.Replies, View.Settings.WhoSees, View.Settings.RemindDaysBefore, View.Settings.NudgeAfterDays, View.Settings.OpenSwaps, View.Settings.DirectSwaps,
             string.Join(",", View.Settings.Calendars.Order()));
+
+    private static string Number(int value) => value.ToString(CultureInfo.InvariantCulture);
+
+    private static int Parse(string value) => int.Parse(value, CultureInfo.InvariantCulture);
 
     private IEnumerable<(string Id, string Name)> Calendars(IReadOnlyList<EventChoice> choices) =>
         choices.Where(choice => choice.CalendarId.Length > 0).Select(choice => (choice.CalendarId, choice.CalendarName))

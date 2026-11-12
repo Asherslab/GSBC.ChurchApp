@@ -21,16 +21,19 @@ public static class AwayRules
             .OrderBy(flag => flag == AwayFlag ? 0 : 1)
             .FirstOrDefault();
 
+    public static bool OnDay(AwaySpan span, DateOnly day) => InRun(span, day) && !Skips(span, day);
+
+    public static bool Skips(AwaySpan span, DateOnly day) => InRun(span, day) && span.Except.Any(each => Day(each) == day);
+
+    private static bool InRun(AwaySpan span, DateOnly day) =>
+        Day(span.From) is { } from && day >= from
+        && (span.To.Length == 0 ? span.Weekly : Day(span.To) is { } to && day <= to)
+        && (!span.Weekly || span.Weekdays.Contains((int)day.DayOfWeek));
+
     public static bool Covers(AwaySpan span, DateTime startsLocal, DateTime endsLocal, bool allDay)
     {
         DateOnly day = DateOnly.FromDateTime(startsLocal);
-        if (Day(span.From) is not { } from || day < from)
-            return false;
-        if (span.To.Length > 0 && (Day(span.To) is not { } to || day > to))
-            return false;
-        if (span.Weekly && !span.Weekdays.Contains((int)day.DayOfWeek))
-            return false;
-        if (span.Except.Any(each => Day(each) == day))
+        if (!OnDay(span, day))
             return false;
         if (allDay || AllDay(span))
             return true;

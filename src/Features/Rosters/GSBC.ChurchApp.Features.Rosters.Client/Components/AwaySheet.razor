@@ -1,59 +1,186 @@
+@using System.Globalization
 @inject RosterWrites Writes
 @inject TimeProvider Clock
 
-<UnsavedGuard Changed="() => Open && (_from.Length > 0 || _note.Length > 0)" What="the days away" />
+<UnsavedGuard Changed="() => Open && Changed" What="the days away" Save="SaveAsync" />
 
-<Sheet Open="Open" OpenChanged="OpenChanged" Title="Days away" Lead="Always allowed. Leaders see them when they fill the roster.">
+<Sheet Open="Open" OpenChanged="OpenChanged" Title="@(Span is null ? "Days away" : RosterLines.Span(Span))"
+       Lead="@(Who is { } who && who.Id != YourId ? $"For {who.Name}. Leaders of their teams see these." : "Leaders of every team you're on see these.")">
     <ChildContent>
-        @if (People.Count > 1)
+        @if (Span is not null)
         {
-            <Segmented TValue="string" Label="Who's away" ShowLabel="true" Value="@Who" ValueChanged="value => _who = value"
-                       Options="Choices" />
+            <div class="away-more">
+                <Menu Label="More for these days away" Items="More" />
+            </div>
         }
-        <TextField Label="First day" Type="date" @bind-Value="_from" Min="@Today" />
-        <TextField Label="Last day" Type="date" Value="@LastDay" ValueChanged="value => _to = value" Min="@EarliestLastDay" />
-        <TextField Label="A note for the leaders (if you like)" @bind-Value="_note" MaxLength="200" />
+        @if (Span is null && People.Count > 1 && People.Count <= 3)
+        {
+            <Segmented TValue="string" Label="Who's away" ShowLabel="true" Value="@WhoId" ValueChanged="id => _who = id"
+                       Options="@(People.Select(person => new SegmentOption<string>(person.Id, person.Id == YourId ? "Me" : RosterLines.First(person.Name))).ToList())" />
+        }
+        <Segmented TValue="bool" Label="How often" ShowLabel="true" Value="_draft.Weekly" ValueChanged="SetWeekly"
+                   Options="@([new SegmentOption<bool>(false, "Once"), new SegmentOption<bool>(true, "Every week")])" />
+        @if (_draft.Weekly)
+        {
+            <div class="field">
+                <span class="field__label">On</span>
+                <ToggleChips TValue="int" Label="Days of the week" Chips="WeekdayChips" Toggled="chip => ToggleWeekday(chip.Value)" />
+            </div>
+            <DateField Label="Starting" @bind-Value="_draft.From" Min="@Today" />
+            <DateField Label="Until (leave empty for until further notice)" @bind-Value="_draft.To" Min="@(_draft.From.Length > 0 ? _draft.From : Today)" Placeholder="Until further notice" />
+        }
+        else
+        {
+            <DateField Label="First day" @bind-Value="_draft.From" Min="@Today" />
+            <DateField Label="Last day" Value="@(_draft.To.Length > 0 ? _draft.To : _draft.From)" ValueChanged="value => _draft.To = value" Min="@(_draft.From.Length > 0 ? _draft.From : Today)" />
+        }
+        <Segmented TValue="string" Label="Away for" ShowLabel="true" Value="@Part" ValueChanged="SetPart" Options="Parts" />
+        @if (Part == Times)
+        {
+            <div class="away-times">
+                <TimeField Label="From" @bind-Value="_draft.StartTime" Placeholder="The start of the day" />
+                <TimeField Label="Until" @bind-Value="_draft.EndTime" Placeholder="The end of the day" />
+            </div>
+        }
+        @if (_draft.Weekly && _draft.Except.Count > 0)
+        {
+            <div class="field">
+                <span class="field__label">Not away on</span>
+                <ToggleChips TValue="string" Label="Days not away" Quiet="true" Chips="@(_draft.Except.Order().Select(day => new ToggleChip<string>(day, Short(day), true)).ToList())"
+                             Toggled="chip => _draft.Except.Remove(chip.Value)" />
+                <span class="field__hint">Choose one to be away that day after all. Choose a day on the month to add one.</span>
+            </div>
+        }
+        <TextField Label="A note for the leaders (if you like)" @bind-Value="_draft.Note" MaxLength="200" />
         <Notice Tone="NoticeTone.Warning" Text="@_problem" />
     </ChildContent>
     <Actions>
-        <SaveBar Block="true" Label="Add the days" Busy="_busy" OnSave="SaveAsync" Blocked="@(_from.Length == 0 ? "Choose the first day." : null)" />
+        <SaveBar Label="@(Span is null ? "Add the days" : "Save")" New="Span is null" Busy="_busy" OnSave="SaveAsync" OnCancel="() => OpenChanged.InvokeAsync(false)"
+                 State="@(Span is not null && Changed ? SaveState.Unsaved : null)" Blocked="@AwayRules.WhyNot(Draft, ChurchTime.Today(Clock))" />
+    </Actions>
+</Sheet>
+
+<Sheet Open="_deleting" OpenChanged="open => _deleting = open" Title="Delete these days away?" Lead="Leaders stop seeing them. You can add them again any time.">
+    <Actions>
+        <Button Block="true" Variant="ButtonVariant.Danger" Disabled="_busy" OnClick="DeleteAsync">Delete</Button>
+        <Button Block="true" Variant="ButtonVariant.Quiet" OnClick="() => _deleting = false">Keep them</Button>
     </Actions>
 </Sheet>
 
 @code {
+    private const string AllDay = "all", Mornings = "mornings", Evenings = "evenings", Times = "times";
+
+    private static readonly IReadOnlyList<SegmentOption<string>> Parts =
+        [new(AllDay, "All day"), new(Mornings, "Mornings"), new(Evenings, "Evenings"), new(Times, "Times")];
+
+    private static readonly DayOfWeek[] Week =
+        [DayOfWeek.Monday, DayOfWeek.Tuesday, DayOfWeek.Wednesday, DayOfWeek.Thursday, DayOfWeek.Friday, DayOfWeek.Saturday, DayOfWeek.Sunday];
+
+    private AwaySave _draft = new();
     private string? _who;
-    private string _from = "", _to = "", _note = "";
-    private bool _busy;
+    private string? _part;
+    private bool _busy, _deleting;
     private string? _problem;
 
     [Parameter] public bool Open { get; set; }
     [Parameter] public EventCallback<bool> OpenChanged { get; set; }
     [Parameter, EditorRequired] public required IReadOnlyList<PersonLine> People { get; set; }
     [Parameter, EditorRequired] public required string YourId { get; set; }
-
-    private IReadOnlyList<SegmentOption<string>> Choices =>
-        People.Select(person => new SegmentOption<string>(person.Id, person.Id == YourId ? "Me" : RosterLines.First(person.Name))).ToList();
-
-    private string Who => _who ?? People.FirstOrDefault()?.Id ?? "";
+    [Parameter] public PersonLine? Who { get; set; }
+    [Parameter] public AwaySpan? Span { get; set; }
+    [Parameter] public DateOnly? Day { get; set; }
 
     private string Today => RosterLines.Wire(ChurchTime.Today(Clock));
 
-    private string LastDay => _to.Length > 0 ? _to : _from;
+    private string WhoId => _who ?? Who?.Id ?? YourId;
 
-    private string EarliestLastDay => _from.Length > 0 ? _from : Today;
+    private AwaySave Draft => new()
+    {
+        AwayId = _draft.AwayId, PersonId = WhoId, From = _draft.From, To = _draft.Weekly ? _draft.To : _draft.To.Length > 0 ? _draft.To : _draft.From,
+        Weekly = _draft.Weekly, Weekdays = _draft.Weekly ? [.. _draft.Weekdays] : [], StartTime = _draft.StartTime, EndTime = _draft.EndTime,
+        Except = _draft.Weekly ? [.. _draft.Except] : [], Note = _draft.Note.Trim(),
+    };
 
-    private async Task SaveAsync()
+    private bool Changed => Span is null
+        ? _draft.Note.Trim().Length > 0 || _draft.Weekly
+        : (Draft.From, Draft.To, Draft.Weekly, string.Join(",", Draft.Weekdays), Draft.StartTime, Draft.EndTime, string.Join(",", Draft.Except), Draft.Note)
+          != (Span.From, Span.To, Span.Weekly, string.Join(",", Span.Weekdays.Order()), Span.StartTime, Span.EndTime, string.Join(",", Span.Except.Order()), Span.Note);
+
+    private string Part => _part ?? (_draft.StartTime, _draft.EndTime) switch
+    {
+        ("", "") => AllDay,
+        ("", "12:00") => Mornings,
+        ("17:00", "") => Evenings,
+        _ => Times,
+    };
+
+    private IReadOnlyList<ToggleChip<int>> WeekdayChips =>
+        Week.Select(day => new ToggleChip<int>((int)day, day.ToString()[..3], _draft.Weekdays.Contains((int)day))).ToList();
+
+    protected override void OnInitialized()
+    {
+        string day = Day is { } picked ? RosterLines.Wire(picked) : "";
+        _draft = Span is { } span
+            ? new AwaySave
+            {
+                AwayId = span.Id, From = span.From, To = span.To, Weekly = span.Weekly, Weekdays = [.. span.Weekdays.Order()], StartTime = span.StartTime,
+                EndTime = span.EndTime, Except = [.. span.Except], Note = span.Note,
+            }
+            : new AwaySave { AwayId = RosterIds.New(), From = day, To = day };
+    }
+
+    private void SetPart(string part)
+    {
+        _part = part;
+        (_draft.StartTime, _draft.EndTime) = part switch
+        {
+            AllDay => ("", ""),
+            Mornings => ("", "12:00"),
+            Evenings => ("17:00", ""),
+            _ => (_draft.StartTime, _draft.EndTime),
+        };
+    }
+
+    private void SetWeekly(bool weekly)
+    {
+        _draft.Weekly = weekly;
+        if (weekly && Span is null)
+        {
+            _draft.To = "";
+            if (_draft.Weekdays.Count == 0 && AwayRules.Day(_draft.From) is { } first)
+                _draft.Weekdays.Add((int)first.DayOfWeek);
+        }
+    }
+
+    private void ToggleWeekday(int day)
+    {
+        if (!_draft.Weekdays.Remove(day))
+            _draft.Weekdays.Add(day);
+    }
+
+    private static string Short(string wire) =>
+        AwayRules.Day(wire) is { } day ? day.ToString("ddd d MMM", CultureInfo.InvariantCulture) : wire;
+
+    private IReadOnlyList<MenuItem> More =>
+        [this.Item("Delete these days away…", () => _deleting = true, "trash-2", danger: true)];
+
+    private async Task<bool> SaveAsync()
     {
         _busy = true;
-        _problem = await RosterProblems.TryAsync(() => Writes.SaveAwayAsync(new AwaySave
-        {
-            PersonId = Who, From = _from, To = LastDay, Note = _note.Trim(),
-        }));
+        _problem = await RosterProblems.TryAsync(() => Writes.SaveAwayAsync(Draft));
         _busy = false;
         if (_problem is null)
-        {
-            (_from, _to, _note) = ("", "", "");
             await OpenChanged.InvokeAsync(false);
-        }
+        return _problem is null;
+    }
+
+    private async Task DeleteAsync()
+    {
+        _busy = true;
+        _problem = await RosterProblems.TryAsync(() => Writes.RemoveAwayAsync(Span!.Id));
+        _busy = false;
+        _deleting = false;
+        if (_problem is null)
+            await OpenChanged.InvokeAsync(false);
     }
 }

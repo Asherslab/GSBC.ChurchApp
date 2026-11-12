@@ -7,7 +7,7 @@
 
 .roster-tools > .btn--primary { flex: 1 1 auto; }
 
-.roster-shape { max-width: 22rem; margin-bottom: 12px; }
+.roster-shape { max-width: 22rem; margin-bottom: var(--space-md); }
 
 .roster-day {
   display: grid;
@@ -27,12 +27,17 @@
   color: var(--marker-ink);
 }
 
+.roster-day--accent {
+  background: color-mix(in srgb, var(--accent) 14%, var(--page));
+  color: var(--accent);
+}
+
 .row.roster-yours { align-items: flex-start; }
 
-.row.roster-yours .roster-day { margin-top: 2px; }
+.row.roster-yours .roster-day { margin-top: var(--space-3xs); }
 
 .roster-note {
-  margin: 4px 0 0;
+  margin: var(--space-2xs) 0 0;
   font-size: var(--text-caption);
   color: var(--ink-2);
 }
@@ -40,14 +45,14 @@
 .roster-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 10px;
+  gap: var(--space-sm);
+  margin-top: var(--space-sm);
 }
 
-.roster-why { margin-top: 10px; }
+.roster-why { margin-top: var(--space-sm); }
 
 .roster-hint {
-  margin: 14px 0 0;
+  margin: var(--stack) 0 0;
   max-width: 65ch;
   font-size: var(--text-caption);
   color: var(--ink-2);
@@ -57,7 +62,7 @@
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  margin: 22px 0 6px;
+  margin: var(--section-first) 0 var(--space-xs);
   font-size: var(--text-row);
   font-weight: 700;
   color: var(--ink);
@@ -79,8 +84,8 @@
 .roster-grid__bar {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 8px;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-sm);
 }
 
 .roster-grid__range {
@@ -92,8 +97,8 @@
 .roster-grid {
   overflow-x: auto;
   scrollbar-width: none;
-  margin: 0 calc(-1 * var(--gutter, 20px));
-  padding: 0 var(--gutter, 20px);
+  margin: 0 calc(-1 * var(--gutter));
+  padding: 0 var(--gutter);
 }
 
 .roster-grid::-webkit-scrollbar { display: none; }
@@ -108,7 +113,7 @@
 
 .roster-grid th,
 .roster-grid td {
-  padding: 8px;
+  padding: var(--space-sm);
   border-bottom: 1px solid var(--line);
   text-align: left;
   vertical-align: top;
@@ -122,7 +127,7 @@
   z-index: 1;
   min-width: 112px;
   background: var(--page);
-  box-shadow: calc(-1 * var(--gutter, 20px)) 0 0 var(--page);
+  box-shadow: calc(-1 * var(--gutter)) 0 0 var(--page);
   font-weight: 600;
   color: var(--ink);
 }
@@ -150,12 +155,12 @@
 
 .roster-cell {
   display: block;
-  padding: 4px 6px;
+  padding: var(--space-2xs) var(--space-xs);
   border-radius: var(--radius-field);
   color: var(--ink);
 }
 
-.roster-cell + .roster-cell { margin-top: 4px; }
+.roster-cell + .roster-cell { margin-top: var(--space-2xs); }
 
 .roster-cell small {
   display: block;
@@ -185,3 +190,22 @@
 }
 
 .roster-cell--gap:hover { background: color-mix(in srgb, var(--accent) 8%, var(--page)); }
+
+.away-who { margin-bottom: var(--stack); max-width: 22rem; }
+
+.away-month { max-width: 30rem; margin: var(--stack) 0; }
+
+.away-more { display: flex; justify-content: flex-end; }
+
+.away-times { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-md); }
+
+.roster-cell small.roster-cell__training { color: var(--accent); }
+
+.roster-say {
+  margin: var(--space-md) 0 0;
+  padding: var(--space-md) var(--space-lg);
+  border-radius: var(--radius-field);
+  background: var(--sand);
+  color: var(--ink-2);
+  font-size: var(--text-caption);
+}

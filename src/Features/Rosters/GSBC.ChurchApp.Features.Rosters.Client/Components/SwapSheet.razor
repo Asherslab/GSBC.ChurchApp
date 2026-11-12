@@ -12,11 +12,11 @@
             @if (ways.Count > 1)
             {
                 <Segmented TValue="string" Label="How" ShowLabel="true" Stacked="true" Value="way" ValueChanged="value => _way = value"
-                           Options="ways.Select(each => new SegmentOption<string>(each, Short(each), Detail: RosterLines.WaysWords(each, date.View.Settings))).ToList()" />
+                           Options="ways.Select(each => new SegmentOption<string>(each, Short(each), Detail: RosterLines.AskerWords(each, date.View.Settings))).ToList()" />
             }
             else
             {
-                <p class="roster-hint">@RosterLines.WaysWords(way, date.View.Settings). You stay on until someone takes it.</p>
+                <p class="roster-hint">@RosterLines.AskerWords(way, date.View.Settings). You stay on until someone takes it.</p>
             }
             @if (way == SwapWays.Direct)
             {

@@ -40,6 +40,10 @@
                             {
                                 <span class="roster-cell roster-cell--@(View.Settings.Replies ? assignment.State : Replies.On)">
                                     @(Wide ? assignment.Name : RosterLines.First(assignment.Name))
+                                    @if (assignment.Training && !assignment.Flags.Contains(Training.AloneFlag))
+                                    {
+                                        <small class="roster-cell__training">Training</small>
+                                    }
                                     @foreach (string flag in assignment.Flags)
                                     {
                                         <small>@flag</small>

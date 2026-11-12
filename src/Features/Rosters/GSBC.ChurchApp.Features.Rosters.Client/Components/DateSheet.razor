@@ -29,16 +29,35 @@
             }
             else
             {
+                @if (View.MayEdit && !View.Archived)
+                {
+                    <div class="away-more">
+                        <Menu Label="More for this date" Items="@DateMenu(date)" />
+                    </div>
+                }
                 @foreach (Position position in View.Positions)
                 {
                     IReadOnlyList<Assignment> on = RosterLines.In(date, position);
+                    int open = Math.Max(0, position.Needed - RosterLines.Filled(date, position));
+                    List<Assignment> alone = on.Where(each => each.Flags.Contains(Training.AloneFlag)).ToList();
                     <h3 class="roster-position">@position.Name <span>@RosterLines.Filled(date, position) of @position.Needed</span></h3>
                     <ListGroup>
-                        @foreach (Assignment assignment in on)
+                        @foreach (Assignment assignment in on.OrderBy(each => each.Training))
                         {
-                            <ListRow @key="assignment.Id" Title="@assignment.Name" Subtitle="@Detail(assignment)"
-                                     IconTone="@(assignment.Flags.Count > 0 || assignment.State == Replies.Declined ? RowTone.Warm : RowTone.Primary)">
-                                <Leading><Avatar Name="@assignment.Name" /></Leading>
+                            bool trainee = assignment.Training && Replies.Fills(assignment.State);
+                            bool isAlone = assignment.Flags.Contains(Training.AloneFlag);
+                            <ListRow @key="assignment.Id" Title="@assignment.Name" Subtitle="@Detail(assignment, on)" Indent="@(trainee ? 1 : 0)"
+                                     IconTone="@(isAlone || assignment.Flags.Count > 0 || assignment.State == Replies.Declined ? RowTone.Warm : trainee ? RowTone.Accent : RowTone.Primary)">
+                                <Leading>
+                                    @if (trainee)
+                                    {
+                                        <span class="roster-day @(isAlone ? "roster-day--warm" : "roster-day--accent")" aria-label="Training">T</span>
+                                    }
+                                    else
+                                    {
+                                        <Avatar Name="@assignment.Name" />
+                                    }
+                                </Leading>
                                 <TrailingContent>
                                     @if (View.Settings.Replies && assignment.State != Replies.On)
                                     {
@@ -46,25 +65,22 @@
                                     }
                                     @if (Changeable(date))
                                     {
-                                        <Button Small="true" Variant="ButtonVariant.Quiet" Icon="x" AriaLabel="@($"Take {assignment.Name} off {position.Name}")" Disabled="_busy"
-                                                OnClick="() => RunAsync(() => Writes.UnassignAsync(View.MinistryId, assignment.Id))" />
+                                        <Menu Label="@($"More for {assignment.Name}")" Small="true"
+                                              Items="@([this.Item($"Take {RosterLines.First(assignment.Name)} off {position.Name}", () => RunAsync(() => Writes.UnassignAsync(View.MinistryId, assignment.Id)), "user-x", "They hear straight away")])" />
                                     }
                                 </TrailingContent>
                             </ListRow>
                         }
                         @if (Changeable(date))
                         {
-                            <ListRow Title="Put someone on" Icon="plus" IconTone="RowTone.Accent" OnClick="() => (_picking, _find) = (position, string.Empty)" />
+                            <ListRow Title="Put someone on" Subtitle="@OpenWords(open, alone)" Icon="plus" IconTone="@(alone.Count > 0 ? RowTone.Warm : RowTone.Accent)"
+                                     OnClick="() => (_picking, _find) = (position, string.Empty)" />
                         }
                         else if (on.Count == 0)
                         {
                             <ListRow Title="Nobody yet" IconTone="RowTone.Quiet" />
                         }
                     </ListGroup>
-                }
-                @if (View.MayEdit && !View.Archived)
-                {
-                    <p class="roster-hint">Removing the date takes everyone off it and tells them. The event stays on its calendar.</p>
                 }
             }
         </ChildContent>
@@ -73,10 +89,13 @@
             {
                 <Button Block="true" Variant="ButtonVariant.Quiet" OnClick="() => _picking = null">Back to the date</Button>
             }
-            else if (View.MayEdit && !View.Archived)
-            {
-                <Button Block="true" Variant="ButtonVariant.Danger" Disabled="_busy" OnClick="RemoveAsync">Remove the date from the roster</Button>
-            }
+        </Actions>
+    </Sheet>
+    <Sheet Open="_removing" OpenChanged="open => _removing = open" Title="Take this date off the roster?"
+           Lead="Everyone on it comes off and hears straight away. The event stays on its calendar.">
+        <Actions>
+            <Button Block="true" Variant="ButtonVariant.Danger" Disabled="_busy" OnClick="RemoveAsync">Take it off the roster</Button>
+            <Button Block="true" Variant="ButtonVariant.Quiet" OnClick="() => _removing = false">Keep it</Button>
         </Actions>
     </Sheet>
 }
@@ -84,7 +103,7 @@
 @code {
     private Position? _picking;
     private string _find = "";
-    private bool _busy;
+    private bool _busy, _removing;
     private string? _problem;
 
     [Parameter, EditorRequired] public required RosterView View { get; set; }
@@ -98,15 +117,25 @@
     private string Lead(RosterDate date) =>
         $"{RosterLines.LongWhen(date)}{(date.CalendarName.Length > 0 ? $", on {date.CalendarName}" : "")}.{(date.NotOn ? " It's off the calendar now." : "")}";
 
-    private static string Detail(Assignment assignment) =>
+    private static string Detail(Assignment assignment, IReadOnlyList<Assignment> on) =>
         string.Join(" · ", ((string[])
         [
-            assignment.Training && !assignment.Flags.Contains(Training.AloneFlag) ? "Training, with someone trained" : "",
+            assignment.Training && Replies.Fills(assignment.State) && !assignment.Flags.Contains(Training.AloneFlag) ? RosterLines.TrainingWith(assignment, on) : "",
             assignment.RepliedBy.Length > 0 ? $"Answered by {assignment.RepliedBy}" : "",
             assignment.Reason.Length > 0 ? $"“{assignment.Reason}”" : "",
             assignment.Swap is { } swap && SwapStates.Live(swap.State) ? swap.State == SwapStates.Offered ? $"{RosterLines.First(swap.OfferedByName)} offers to take it" : "Asked for a swap" : "",
             .. assignment.Flags,
         ]).Where(line => line.Length > 0));
+
+    private static string OpenWords(int open, IReadOnlyList<Assignment> alone) =>
+        string.Join(" · ", ((string[])
+        [
+            open switch { 0 => "", 1 => "1 place open", _ => $"{open} places open" },
+            alone.Count == 0 ? "" : $"someone trained for {string.Join(" and ", alone.Select(each => RosterLines.First(each.Name)))}",
+        ]).Where(line => line.Length > 0));
+
+    private IReadOnlyList<MenuItem> DateMenu(RosterDate date) =>
+        [this.Item("Take the date off the roster…", () => _removing = true, "trash-2", "Everyone on it comes off and hears", danger: true)];
 
     private IEnumerable<TeamMember> Choices(RosterDate date, Position position) =>
         View.Team
@@ -123,6 +152,7 @@
 
     private async Task RemoveAsync()
     {
+        _removing = false;
         await RunAsync(() => Writes.RemoveDateAsync(View.MinistryId, DateId!));
         if (_problem is null)
             await OnClose.InvokeAsync();

@@ -166,6 +166,11 @@
             @<ToggleChips TValue="string" Label="Calendars" Chips="CalendarChips" Toggled="chip => ToggleCalendar(chip.Value)" />)
         @Item("The same list two ways, or one small choice: Segmented", "Two to four options that fit on one line.",
             @<Segmented TValue="string" Label="Show as" Options="Views" @bind-Value="_view" />)
+        @Item("One rule of a few, each needing a sentence: Segmented Rows", "Radio rows in a settings group, set once and read often, like the roster's swap rule.",
+            @<Segmented TValue="string" Label="When someone asks the team for a swap" Rows="true" Options="SwapRules" @bind-Value="_swapRule" />)
+        @Item("Days on a month: MonthDays", "Whole days, mornings, evenings and skipped days at a glance; choosing a day opens what's on it.",
+            @<MonthDays Label="Days away" Month="@(_month ?? Today)" MonthChanged="month => _month = month" Marks="SampleMarks" Today="Today" Earliest="Today"
+                       Words="mark => mark.ToString()" Key="Shaded: away. Top half: mornings. Struck through: not away that day." />)
         @Item("Light or dark: SchemeChoice", "The same choice on the phone and in the Account menu.",
             @<SchemeChoice ShowLabel="true" />)
         @Item("On or off: ToggleRow", "A setting that changes straight away.",
@@ -374,6 +379,22 @@
     private static readonly IReadOnlyList<TabOption<string>> Tabs = [new("about", "About"), new("news", "News", 2), new("people", "People"), new("settings", "Settings")];
     private static readonly IReadOnlyList<Crumb> Trail = [new("Library", "library", "folder"), new("Events", "events"), new("2026", "2026")];
     private static readonly IReadOnlyList<SegmentOption<string>> Views = [new("grid", "Grid"), new("list", "List")];
+    private static readonly IReadOnlyList<SegmentOption<string>> SwapRules =
+    [
+        new("off", "Nobody takes it", Detail: "They ask a leader instead"),
+        new("team", "Anyone on the team can take it", Detail: "Whoever takes it is on; leaders hear"),
+        new("approve", "Anyone can offer, and a leader says yes"),
+    ];
+    private string _swapRule = "team";
+    private DateOnly? _month;
+
+    private DayMark SampleMarks(DateOnly day) => day.DayOfWeek switch
+    {
+        DayOfWeek.Sunday when day.Day is > 21 and <= 28 => DayMark.Skipped,
+        DayOfWeek.Sunday => DayMark.Morning,
+        DayOfWeek.Saturday when day.Day is > 7 and <= 14 => DayMark.AllDay,
+        _ => DayMark.None,
+    };
     private static readonly IReadOnlyList<FieldOption> Services = [new("am", "Sunday 10:30am"), new("pm", "Sunday 6pm")];
     private static readonly IReadOnlyList<RoleChoice<string>> Roles =
     [

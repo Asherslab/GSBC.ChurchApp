@@ -92,6 +92,12 @@ public static class RosterLines
     public static IReadOnlyList<Assignment> In(RosterDate date, Position position) =>
         date.Assignments.Where(assignment => assignment.PositionId == position.Id).ToList();
 
+    public static string TrainingWith(Assignment trainee, IEnumerable<Assignment> samePosition)
+    {
+        List<string> trained = samePosition.Where(each => each.Id != trainee.Id && each.Fills && !each.Training).Select(each => First(each.Name)).ToList();
+        return trained.Count == 0 ? "Training, with someone trained" : $"Training, with {string.Join(" and ", trained)}";
+    }
+
     public static int Filled(RosterDate date, Position position) => In(date, position).Count(assignment => assignment.Fills);
 
     public static int Gaps(RosterView view, RosterDate date) => view.Positions.Sum(position => Math.Max(0, position.Needed - Filled(date, position)));
@@ -137,13 +143,38 @@ public static class RosterLines
     {
         SwapWays.Team => "Anyone on the team can take it",
         SwapWays.Approve => "Anyone on the team can offer, and a leader says yes",
-        SwapWays.Direct => "Ask someone on the team yourself",
+        SwapWays.Direct => "They can ask someone on the team themselves",
         _ => way,
     };
 
-    public static string WaysWords(string way, RosterSettings settings) => WaysWords(way == SwapWays.Open ? settings.OpenSwaps : way);
+    public static string AskerWords(string way, RosterSettings settings) => way switch
+    {
+        SwapWays.Direct => "You choose who on the team to ask, and they say yes or can't",
+        SwapWays.Open when settings.OpenSwaps == OpenSwaps.Approve => "Anyone on the team can offer to take it, and a leader says yes",
+        _ => "Anyone on the team can take it",
+    };
 
-    public static string OpenSwapsWords(string openSwaps) => openSwaps == OpenSwaps.Off ? "Not to the whole team" : WaysWords(openSwaps);
+    public static string OpenSwapsWords(string openSwaps) => openSwaps switch
+    {
+        OpenSwaps.Off => "Nobody takes it",
+        OpenSwaps.Approve => "Anyone can offer, and a leader says yes",
+        _ => "Anyone on the team can take it",
+    };
+
+    public static string OpenSwapsDetail(string openSwaps) => openSwaps switch
+    {
+        OpenSwaps.Off => "They ask a leader to find someone instead",
+        OpenSwaps.Approve => "A leader chooses who takes it",
+        _ => "Whoever takes it is on straight away",
+    };
+
+    public static string SwapSentence(RosterSettings settings) => (settings.OpenSwaps != OpenSwaps.Off, settings.DirectSwaps) switch
+    {
+        (false, false) => "So when someone can't do a date, they tell a leader, who finds someone else.",
+        (true, false) => $"So when someone can't do a date, they ask the team{(settings.OpenSwaps == OpenSwaps.Approve ? ", and a leader says yes to an offer" : "")}. They stay on until it's taken.",
+        (false, true) => "So when someone can't do a date, they ask someone on the team they choose. They stay on until it's taken.",
+        (true, true) => $"So when someone can't do a date, they ask the whole team or someone they choose{(settings.OpenSwaps == OpenSwaps.Approve ? "; a leader says yes to an offer from the team" : "")}. They stay on until it's taken.",
+    };
 
     public static IReadOnlyList<string> WaysOpenTo(RosterSettings settings) =>
         [.. settings.OpenSwaps != OpenSwaps.Off ? [SwapWays.Open] : Array.Empty<string>(), .. settings.DirectSwaps ? [SwapWays.Direct] : Array.Empty<string>()];
@@ -197,6 +228,35 @@ public static class RosterLines
         (null, { } until) => $"until {ChurchDates.Time(DateOnly.MinValue.ToDateTime(until))}",
         ({ } from, null) => $"from {ChurchDates.Time(DateOnly.MinValue.ToDateTime(from))}",
         ({ } from, { } until) => $"{ChurchDates.Time(DateOnly.MinValue.ToDateTime(from))} to {ChurchDates.Time(DateOnly.MinValue.ToDateTime(until))}",
+    };
+
+    public static DayMark MarkOn(IEnumerable<AwaySpan> spans, DateOnly day)
+    {
+        List<AwaySpan> all = spans.ToList();
+        List<DayMark> on = all.Where(span => AwayRules.OnDay(span, day)).Select(MarkOf).ToList();
+        if (on.Contains(DayMark.AllDay))
+            return DayMark.AllDay;
+        if (on.Count > 0)
+            return on.Distinct().Count() == 1 ? on[0] : DayMark.Part;
+        return all.Any(span => AwayRules.Skips(span, day)) ? DayMark.Skipped : DayMark.None;
+    }
+
+    public static DayMark MarkOf(AwaySpan span) => (AwayRules.Time(span.StartTime), AwayRules.Time(span.EndTime)) switch
+    {
+        (null, null) => DayMark.AllDay,
+        (null, { } until) when until <= MorningsEnd => DayMark.Morning,
+        ({ } from, null) when from >= MorningsEnd => DayMark.Evening,
+        _ => DayMark.Part,
+    };
+
+    public static string MarkWords(DayMark mark) => mark switch
+    {
+        DayMark.AllDay => "away all day",
+        DayMark.Morning => "away in the morning",
+        DayMark.Evening => "away in the evening",
+        DayMark.Part => "away part of the day",
+        DayMark.Skipped => "not away this time",
+        _ => "",
     };
 
     public static readonly TimeOnly MorningsEnd = new(12, 0);
