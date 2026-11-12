@@ -4,7 +4,7 @@
 <MinistryChatsTab On="On" />
 @if (Access.Can(ChatsPermissions.Check, On.Id))
 {
-    <p class="hint">Chats you're in open in Chats. To read one of @(On.Name)'s other chats, check it under <a href="chat-safety/all">Chat safety</a>; every check is logged.</p>
+    <p class="hint">To read one of @(On.Name)'s chats you're not in, check it under <a href="chat-safety/all">Chat safety</a>. Every check is logged.</p>
 }
 
 @code {

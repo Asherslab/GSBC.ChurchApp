@@ -2,13 +2,13 @@
 
 @if (OnDelete.HasDelegate)
 {
-    <PaneHead Title="Chat settings" Lead="@ChatText.Who(Card)" Actions="@(Card.YouMayManage ? ChatActions : null)" />
+    <PaneHead Title="Chat settings" Actions="@(Card.YouMayManage ? ChatActions : null)" />
 }
 <Section Title="Notifications" Grouped="true" First="true">
     <ToggleRow Title="Mute" Description="No notifications from this chat, unless someone mentions you. It still shows in your chats." Checked="Card.Muted"
                CheckedChanged="muted => Store.MuteAsync(Card, muted)" />
 </Section>
-<Section Title="@($"In this chat · {Card.People.Count}")" Grouped="true">
+<Section Title="Who's in it" Grouped="true">
     <ListGroup>
         @foreach (ChatPerson person in Card.People.OrderBy(Order).ThenBy(person => person.Name))
         {

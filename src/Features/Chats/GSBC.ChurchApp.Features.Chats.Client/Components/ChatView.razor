@@ -4,7 +4,7 @@
 @inject IServiceProvider Services
 @inject NavigationManager Navigation
 
-<ChatFrame Title="@_title" Lead="@(InPanel && _card is not null ? ChatText.Who(_card) : null)" BackHref="@BackHref" BackLabel="@BackLabel" InPanel="InPanel">
+<ChatFrame Title="@_title" Lead="@(InPanel && _card is not null ? PanelLead(_card) : null)" BackHref="@BackHref" BackLabel="@BackLabel" InPanel="InPanel">
     <Actions>
         @if (_card is not null)
         {
@@ -267,6 +267,9 @@
     }
 
     private void ShowSeen(ChatMessage message) => _seen = message;
+
+    private static string PanelLead(ChatCard card) =>
+        card.MinistryName.Length > 0 && card.Kind != ChatKinds.Ask ? $"{card.MinistryName} · {ChatText.Who(card)}" : ChatText.Who(card);
 
     private async Task OpenSettings()
     {
