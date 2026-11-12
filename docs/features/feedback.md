@@ -46,6 +46,12 @@ production app, not through TestFlight. Choices marked *Claude's default* are th
   large in its own 9:16 frame at the top, with a filmstrip of the others and a + to add more; empty, it is one tall
   dashed *Choose screenshots or videos*. Then *Tell us about it* (generic on purpose: problems and ideas alike) and a
   quiet line saying what goes with it. Send is in the foot bar. Words or a picture is enough; nothing else is required.
+- **Written like a message** (owner, 2026-11-12, #55: "The send sheet and such just take up so much space, especially
+  with keyboard up. Doesn't look nice"; picked *Like writing a message* on the decision page,
+  `.impeccable/mocks/admin-nav-calendar/fb-composer.html`). Replaces the layout above: the usual top bar instead of a
+  masthead, a short lead and the *Sent with it* line, and a composer docked at the foot (and on the keyboard while it's
+  up): a paperclip that picks screenshots and videos, the message field and a round Send. Chosen files show as small
+  thumbnails above the field. The composer is the shared `Composer` (Platform.Ui), the same job as Chats' message bar.
 - **Recorded by itself:** app version and build, platform and OS version, the phone's model, whether it's a
   development build, the environment (on the server), the page they came from before More (`RecentPages`), who is
   signed in, the install, and **the phone's state** (sync state, online, signed in, every feed's rows, size and cursor,

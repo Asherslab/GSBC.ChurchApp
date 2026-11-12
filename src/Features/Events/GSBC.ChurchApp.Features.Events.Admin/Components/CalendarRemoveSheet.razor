@@ -1,0 +1,67 @@
+@inject CalendarEditing Editing
+
+<Sheet Open="_removal is not null" OpenChanged="open => { if (!open) Close(); }" Title="@(_removal is { } asked ? RemovalWords.Title(asked) : null)">
+    <ChildContent>
+        @if (_removal is { } removal)
+        {
+            @foreach (string line in RemovalWords.Lines(removal))
+            {
+                <p class="sheet__lead">@line</p>
+            }
+            <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+        }
+    </ChildContent>
+    <Actions>
+        @if (_removal is { } removal)
+        {
+            <Button Block="true" Variant="ButtonVariant.Danger" Busy="_removing" OnClick="RemoveAsync">@RemovalWords.Confirm(removal)</Button>
+            <Button Block="true" Variant="ButtonVariant.Quiet" OnClick="Close">Keep it</Button>
+        }
+    </Actions>
+</Sheet>
+
+@code {
+    private CalendarRemoval? _removal;
+    private string? _problem;
+    private bool _removing;
+
+    [Parameter, EditorRequired] public required DeskCalendar Calendar { get; set; }
+    [Parameter] public EventCallback Removed { get; set; }
+    [Parameter] public EventCallback<string> Failed { get; set; }
+
+    public async Task AskAsync()
+    {
+        _problem = null;
+        try
+        {
+            _removal = await Editing.Setup.RemovalAsync(new CalendarToRemove { CalendarId = Calendar.Settings.Calendar.Id });
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            await Failed.InvokeAsync(CalendarEditing.Problem(exception));
+        }
+        StateHasChanged();
+    }
+
+    private void Close() => _removal = null;
+
+    private async Task RemoveAsync()
+    {
+        _removing = true;
+        _problem = null;
+        try
+        {
+            await Editing.Setup.RemoveCalendarAsync(new CalendarToRemove { CalendarId = Calendar.Settings.Calendar.Id });
+            _removal = null;
+            await Removed.InvokeAsync();
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            _problem = CalendarEditing.Problem(exception);
+        }
+        finally
+        {
+            _removing = false;
+        }
+    }
+}

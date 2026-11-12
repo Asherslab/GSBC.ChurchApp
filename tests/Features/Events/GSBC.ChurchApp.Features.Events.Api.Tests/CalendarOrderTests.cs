@@ -12,7 +12,7 @@ public sealed class CalendarOrderTests : EventsHost
     public async Task TheOrderStaffSetIsTheOrderPhonesGetAndCalendarsLeftOutKeepTheirPlaceAfterIt()
     {
         CalendarSettings services = await CalendarAsync("Services", Audience.Everyone);
-        CalendarSettings kids = await CalendarAsync("Impact Kids", Audience.Everyone);
+        await CalendarAsync("Impact Kids", Audience.Everyone);
         CalendarSettings youth = await CalendarAsync("Impact Youth", Audience.Everyone);
 
         await WithAsync(async provider => await provider.GetRequiredService<CalendarSetupService>()

@@ -1,0 +1,89 @@
+@typeparam TItem
+
+<ul class="reorder @(Arranging ? "reorder--arranging" : "") @Class" aria-label="@Label">
+    @for (int index = 0; index < Items.Count; index++)
+    {
+        int at = index;
+        TItem item = Items[at];
+        string name = NameOf(item);
+        <li @key="KeyOf(item)" class="reorder__item @ItemClass?.Invoke(item) @(Same(item, _dragging) ? "reorder__item--lifted" : "") @DropClass(at)"
+            draggable="@(Moves ? "true" : "false")" @ondragstart="() => _dragging = item" @ondragend="EndDrag"
+            @ondragenter="() => Enter(at)" @ondragover:preventDefault="Moves" @ondrop="() => DropAsync(at)">
+            @if (Moves)
+            {
+                <button type="button" class="reorder__grip" aria-label="@($"Move {name}")" aria-keyshortcuts="Alt+ArrowUp Alt+ArrowDown"
+                        title="Drag to move, or press Alt and an arrow key" @onkeydown="args => KeyAsync(args, at)">
+                    <Icon Name="grip" Size="IconSize.Small" />
+                </button>
+            }
+            <div class="reorder__row">@Row(item)</div>
+            @if (Moves && Arranging)
+            {
+                <span class="reorder__moves">
+                    <Button Small="true" Variant="ButtonVariant.Quiet" Icon="arrow-up" AriaLabel="@($"Move {name} up")" Disabled="@(at == 0)" OnClick="() => MoveAsync(at, at - 1)" />
+                    <Button Small="true" Variant="ButtonVariant.Quiet" Icon="arrow-down" AriaLabel="@($"Move {name} down")" Disabled="@(at == Items.Count - 1)" OnClick="() => MoveAsync(at, at + 1)" />
+                </span>
+            }
+        </li>
+    }
+</ul>
+<p class="visually-hidden" role="status">@_said</p>
+
+@code {
+    private TItem? _dragging;
+    private int? _dropAt;
+    private string _said = "";
+
+    [Parameter, EditorRequired] public required string Label { get; set; }
+    [Parameter, EditorRequired] public required IReadOnlyList<TItem> Items { get; set; }
+    [Parameter, EditorRequired] public required Func<TItem, string> KeyOf { get; set; }
+    [Parameter, EditorRequired] public required Func<TItem, string> NameOf { get; set; }
+    [Parameter, EditorRequired] public required RenderFragment<TItem> Row { get; set; }
+    [Parameter] public EventCallback<IReadOnlyList<TItem>> OnReorder { get; set; }
+    [Parameter] public bool Arranging { get; set; }
+    [Parameter] public Func<TItem, string?>? ItemClass { get; set; }
+    [Parameter] public string? Class { get; set; }
+
+    private bool Moves => OnReorder.HasDelegate;
+
+    private bool Same(TItem item, TItem? other) => other is not null && KeyOf(item) == KeyOf(other);
+
+    private string DropClass(int at)
+    {
+        if (_dragging is null || _dropAt != at)
+            return "";
+        int from = Items.ToList().FindIndex(item => Same(item, _dragging));
+        return at == from ? "" : at > from ? "reorder__item--drop-after" : "reorder__item--drop-before";
+    }
+
+    private void Enter(int at)
+    {
+        if (Moves && _dragging is not null)
+            _dropAt = at;
+    }
+
+    private void EndDrag() => (_dragging, _dropAt) = (default, null);
+
+    private async Task DropAsync(int at)
+    {
+        TItem? moving = _dragging;
+        EndDrag();
+        if (moving is not null)
+            await MoveAsync(Items.ToList().FindIndex(item => Same(item, moving)), at);
+    }
+
+    private Task KeyAsync(KeyboardEventArgs args, int at) =>
+        args is { AltKey: true, Key: "ArrowUp" or "ArrowDown" } ? MoveAsync(at, at + (args.Key == "ArrowDown" ? 1 : -1)) : Task.CompletedTask;
+
+    private async Task MoveAsync(int from, int to)
+    {
+        if (from < 0 || to < 0 || to >= Items.Count || from == to)
+            return;
+        List<TItem> moved = [.. Items];
+        TItem item = moved[from];
+        moved.RemoveAt(from);
+        moved.Insert(to, item);
+        _said = $"{NameOf(item)} moved to {to + 1} of {moved.Count}.";
+        await OnReorder.InvokeAsync(moved);
+    }
+}

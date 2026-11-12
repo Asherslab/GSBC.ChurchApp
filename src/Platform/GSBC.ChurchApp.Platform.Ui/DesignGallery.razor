@@ -1,5 +1,6 @@
 @using GSBC.ChurchApp.Platform.Client.People
 @using GSBC.ChurchApp.Platform.Contracts.Media
+@using GSBC.ChurchApp.Platform.Ui.Content
 @inject TimeProvider Clock
 @inject UiHost Host
 
@@ -62,7 +63,7 @@
         @Item("Different lists or parts of one thing: TabStrip", "Each tab is a different list. There is always room under it.",
             @<TabStrip TValue="string" Label="Parts of the ministry" Options="Tabs" @bind-Value="_tab" />)
         @Item("Where you are in folders: Breadcrumbs", "Media and anything else kept in folders.",
-            @<Breadcrumbs Label="Where you are" Trail="Trail" OnOpen="crumb => _crumb = crumb.Label" />)
+            @<Breadcrumbs Label="Where you are" Trail="Trail" OnOpen="_ => { }" />)
         @Item("Something to read or open on the phone: Card", "One card, never cards inside cards.",
             @<div class="gallery__stack">
                 <Card Title="Your challenge this week">Read Job 33 and pray for one person by name each morning.</Card>
@@ -274,8 +275,19 @@
                     </BoardCard>
                 </Card>
             </Board>)
+        @Item("Putting things in order: ReorderList", "Drag by the handle, or press Alt and an up or down arrow on it. Arranging shows the arrows too.",
+            @<div class="gallery__stack">
+                <ReorderList TItem="string" Label="Sample order" Items="_ordered" KeyOf="name => name" NameOf="name => name" OnReorder="ordered => _ordered = [.. ordered]">
+                    <Row Context="name"><span>@name</span></Row>
+                </ReorderList>
+                <ReorderList TItem="string" Label="Sample order, arranging" Items="_ordered" KeyOf="name => name" NameOf="name => name" Arranging="true" OnReorder="ordered => _ordered = [.. ordered]">
+                    <Row Context="name"><span>@name</span></Row>
+                </ReorderList>
+            </div>)
         @Item("A ranked list: RankedList", "Insights: the most of something.",
             @<RankedList Title="Most played sermons" Items="Ranked" Numbered="true" />)
+        @Item("Writing a message: Composer", "A message box docked at the foot, with a paperclip and a round Send: Send feedback on the phone.",
+            @<Composer Label="Sample message" Placeholder="Write something" @bind-Text="_composed" CanSend="@(_composed.Trim().Length > 0)" OnSend="() => _composed = string.Empty" />)
         @Item("A chat message: MessageBubble", "Chats only.",
             @<div class="gallery__stack">
                 <MessageBubble Name="Jordan Example" Time="9:41am" FirstOfRun="true">Can someone bring the urn on Sunday?</MessageBubble>
@@ -407,7 +419,6 @@
     private string _query = "";
     private string _ministryName = SampleMinistry;
     private string _tab = "about";
-    private string? _crumb;
     private int _week;
     private bool _paged, _deleting, _popover, _tray, _editor = true, _explain, _anonymous = true, _viewing, _banner;
     private string _role = "team";
@@ -426,6 +437,9 @@
     private string _stage = "followed";
     private int? _openTicket;
     private readonly HashSet<string> _hidden = [];
+    private string _composed = "";
+    private List<string> _ordered = ["Services", "Impact Kids", "Impact Kids Team", "Life Groups"];
+
     private List<SampleTicket> _tickets =
     [
         new(48, "Alex Sample", "Inconsistent words in the roster settings", "Wording", "New"),

@@ -45,3 +45,13 @@ FORM: *Workbench*, 1st on the ranked list, dealt over THE ROLL's lanes (seed:c57
 the right pane that is always the thing you chose (an event, a calendar, a break), editing in place.
 
 FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, DESIGN.md, and every shipping raster carrying its provenance
+
+## A calendar's page, and the church's order (2026-11-12)
+
+Owner's picks on the decision page (`.impeccable/mocks/admin-nav-calendar/`, one round with the sidebar and the phone's
+Send feedback): #53 "move the settings button out of the side bar, make it a tab on the calendar page, like ministries
+does it" → **Events · Regular events · People · Settings** (`cal-tabs-people.html`): the name as a PaneHead with a lead
+and its ⋯ menu (Remove this calendar), TabStrip, Agenda/Month stays a Segmented inside Events, People lists who's on it
+inline, Settings is one grouped card with Cancel and Save, then Calendar apps. #52 "Allow me to reorder the calendars on
+the left side" → **drag by a handle** (`order-drag.html`), the shared `ReorderList` (Alt+↑/↓ on the handle), one order for
+the church that phones show too, set by Calendar Managers. #51: the toolbar's items keep their size and wrap.

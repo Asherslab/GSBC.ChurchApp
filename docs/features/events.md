@@ -264,8 +264,8 @@ all four on 2026-11-08):
   pane is the chosen event in the same editor as the phone (*Save*, *Not on this date*), or a date of a regular
   event in the date's editor.
 - **Calendar setup lives in the workbench too** (owner, 2026-11-08: "settings per calendar on the workbench, breaks
-  & etc"; `workbench-settings.html`), not on a page of its own. A calendar's settings button opens them in the right
-  pane: description, who it's for (Hub tiles' picker), *Shown on new phones*, *Needs a publisher*, who can edit it
+  & etc"; `workbench-settings.html`), not on a page of its own. Since 2026-11-12 they are the calendar's *Settings*
+  tab (see *A calendar's own page* below): description, who it's for (Hub tiles' picker), *Shown on new phones*, *Needs a publisher*, who can edit it
   (Calendar editor holders at that calendar, given through Access), an iCal address to copy from for a read-only
   calendar, and its link for calendar apps. *Breaks* lists the named breaks in the middle pane (dates, and which
   regular events use each) and opens the chosen one on the right. Setup controls show only to holders of
@@ -343,8 +343,8 @@ over moving its events to another calendar first or keeping it 30 days to put ba
     (specials included), their own breaks, its *Also shown on* links both ways, and any pending *Asked to publish* or
     *asked to show* requests from or to it. Its events come off the other calendars they were shown on; events from
     other calendars that were only shown on it stay on their own. Named breaks are the office's and stay.
-45. **Who and where:** holders of `events.calendars.manage`, from the calendar's settings in the admin panel's
-    workbench (*Remove this calendar*). Not on the phone: calendar setup stays in the admin panel (decision 35).
+45. **Who and where:** holders of `events.calendars.manage`, from the ⋯ menu beside a calendar's name on its page in
+    the admin panel's workbench (*Remove this calendar*). Not on the phone: calendar setup stays in the admin panel (decision 35).
 46. **The confirmation says what goes:** how many events and regular events, how many are also shown elsewhere and
     how many shown here stay, how many people and phones have added it, whether it's shown on every new phone, that
     calendar apps subscribed to its link stop getting it, and that it can't be undone. The button names it ("Remove
@@ -426,9 +426,9 @@ the locked sketches and finish-reviewed (`.impeccable/review/events/`).
   people* after saving something already shown; *Ask to publish*; *Also shown on* with the widening sentence; delete.
   *Show an event from another calendar* (`ShowFromElsewhere`), from your calendar's side. On the phone for holders of
   `events.edit` at the calendar.
-- **The admin panel** (`Events.Admin`): Calendar is the workbench (your calendars with switches and settings, Needs
+- **The admin panel** (`Events.Admin`): Calendar is the workbench (your calendars in the church's order with switches, Needs
   details, Asked to publish with *Asked to show on your calendar* and its widening sentence, + New calendar, Breaks;
-  Agenda | Month; the editor, a calendar's settings or a break on the right). Its Needs details and Asked to publish
+  Agenda | Month, or a calendar's own page with its tabs; the editor or a break on the right). Its Needs details and Asked to publish
   feed the office week and the sidebar's count.
 - **Home:** *This week* (`hub.week`, same key and layouts) moved from Configuration's waiting tiles into Events as
   `EventsTiles.Week`, showing *Coming up*.
@@ -559,7 +559,7 @@ approved mocks (surface briefs `.impeccable/surfaces/tures-events-admin-pages-di
   and a private calendar's own link use the person's link: `IYourCalendarLink` is `PhoneCalendarLink` on the phone
   (`CalendarFiles.Link`/`ResetLink`) and `PersonCalendarLink` in the admin panel (`PersonLink`/`ResetPersonLink`).
   *Make a new link* resets it; offline, the screen says the link needs a connection instead of showing a broken button.
-- **People** in a calendar's settings (2026-11-09) names its Editors and Publishers and opens the shared People sheet:
+- **People** on a calendar (2026-11-09; its own tab since 2026-11-12) names its Editors and Publishers and opens the shared People sheet:
   find someone, tick Editor or Publisher, take them off ([access.md](access.md#admin-screens)). A regular event's
   *Organisers*, under How it runs in the admin panel only, work the same way.
 - **The editor reads the calendar's publishing rules from the desk** (`Editing.Desk`), on the phone too, so an editor
@@ -614,9 +614,25 @@ approved mocks (surface briefs `.impeccable/surfaces/tures-events-admin-pages-di
   seeing the 'all'. all should still be offered"). Each calendar you can edit is a choice in the workbench's left
   list: the middle shows only its Agenda | Month under its name, and *+ New event* adds to it. *All your calendars*
   stays the first choice, merged as before. The choice is in the address (`calendar?calendar={slug}`, and
-  `?show=needs|asked|breaks` for the other lists), so a refresh or a link keeps it. The sliders beside a calendar
-  still open its settings on the right. **The switches show only under *All your calendars*:** they choose what's
+  `?show=needs|asked|breaks` for the other lists), so a refresh or a link keeps it. Since 2026-11-12 a picked calendar has
+  tabs (`&tab=regular|people|settings`; see below). **The switches show only under *All your calendars*:** they choose what's
   merged there, and mean nothing when one calendar is picked.
+- **A calendar's own page** (owner, 2026-11-12, #53: "Design consistency - move the settings button out of the side bar,
+  make it a tab on the calendar page, like ministries does it"; picked on the decision page from three tab sets,
+  `.impeccable/mocks/admin-nav-calendar/cal-tabs-people.html`). A picked calendar shows its name with a one-line lead and
+  a ⋯ menu (*Remove this calendar*), then tabs **Events · Regular events · People · Settings**. Events keeps Agenda |
+  Month, *From another calendar* and *+ New event*; Regular events is the list that was the switch's third choice;
+  People lists its Editors and Publishers inline with *Add someone* (the shared People sheet's body, `Inline`);
+  Settings is one card (name, description, who it's for, shown on new phones, needs a publisher, iCal address) with
+  Cancel and Save, then the link for calendar apps. A calendar copied from iCal has no Regular events tab. *+ New
+  calendar* opens the same card in the middle; adding it opens the new calendar's page. The old `?settings={id}` link
+  goes to the Settings tab.
+- **The church's order of calendars** (owner, 2026-11-12, #52: "Allow me to reorder the calendars on the left side";
+  picked *drag by a handle*, `order-drag.html`). One order for everyone, kept in each calendar's `Order` and set by
+  `ICalendarSetupService.OrderCalendars` (holders of `events.calendars.manage`); calendars it doesn't name keep their
+  place after the ones it does. Phones already sort Browse calendars and the Calendar tab by it, so it reaches them
+  through the calendars feed. In the workbench a handle appears beside each calendar on hover or focus: drag it, or
+  press Alt and ↑ or ↓ on it (the shared `ReorderList`).
 - **The month moves sideways** (owner: "the calendar month should be scrollable too, that's more natural based on
   how iphone calendar works"). iPhone Calendar's month scrolls up and down, but there the months fill the screen;
   here the grid sits in a page that scrolls, with the chosen day's events under it, so an up-and-down swipe on the
