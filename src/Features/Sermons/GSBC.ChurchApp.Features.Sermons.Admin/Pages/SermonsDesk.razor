@@ -16,7 +16,7 @@
         <Aside>
             <div class="sermons-desk__find">
                 <SearchField Label="Find a sermon" Placeholder="Title, speaker, series or service" Value="@_query" ValueChanged="SearchAsync" />
-                <FilterChips TValue="string" Label="Show" Options="Filters(context.Value.Sermons)" Value="_filter" ValueChanged="FilterAsync" />
+                <FilterChips TValue="string" Label="Show" Rail="true" Options="Filters(context.Value.Sermons)" Value="_filter" ValueChanged="FilterAsync" />
                 @if (context.Value.Sermons.PodcastFeedUrl is { } feed)
                 {
                     <CopyField Label="Podcast feed" Value="@feed" Hint="Give this address to Apple Podcasts and Spotify. It updates within five minutes of a change." />
