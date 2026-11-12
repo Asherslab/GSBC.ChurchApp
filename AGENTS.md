@@ -237,9 +237,10 @@ from scratch), and say so.
 
 To run a worktree's backend **beside** the owner's instead of stopping it, start the AppHost with
 `Dev__PortOffset=100`: its fixed ports move up by 100 (the gateway on 5400), it starts no Cloudflare tunnel and
-its media store gets its own volume. The copy script needs the main database stopped, so copy with `pg_dump`
-from the main Postgres container instead (read-only), give the copy a new `sync.origin`, and empty its
-`notifications.devices` (otherwise your backend pushes to the owner's phone, as happened 2026-11-12). Give it its own
+its media store gets its own volume. The copy script needs the main database stopped, so once your AppHost is up run
+`tools/dev/copy-main-db-live.sh` instead: it reads main's with `pg_dump`, gives the copy a new `sync.origin` and empties
+its `notifications.devices` (otherwise your backend pushes to the owner's phone, as happened 2026-11-12). Don't
+hand-roll the copy: a `docker exec … rm` stops the station on a permission prompt. Give it its own
 dashboard ports too (`ASPNETCORE_URLS`, `ASPIRE_DASHBOARD_OTLP_ENDPOINT_URL`, `ASPIRE_RESOURCE_SERVICE_ENDPOINT_URL`),
 and to sign in on `http://localhost:5400` set `Accounts__Passkeys__RelyingPartyId=localhost` and
 `Accounts__Passkeys__AllowedOrigins__0=http://localhost:5400`. Stop it by its own process id, never by pattern.
