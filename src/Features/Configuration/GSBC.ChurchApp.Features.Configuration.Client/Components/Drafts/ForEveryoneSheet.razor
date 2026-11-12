@@ -6,18 +6,18 @@
         @switch (_way)
         {
             case ForEveryoneWay.TryNow:
-                <TextField Label="Turn it off by itself (optional)" Type="datetime-local" Value="@_ends" ValueChanged="value => _ends = value"
+                <DateTimeField Label="Turn it off by itself (optional)" Value="@_ends" ValueChanged="value => _ends = value"
                            Hint="Leave it empty to keep it on until someone turns it off." />
                 break;
             case ForEveryoneWay.BetweenDates:
                 <div class="ui-pair">
-                    <TextField Label="Turns on" Type="datetime-local" Value="@_starts" ValueChanged="value => _starts = value" />
-                    <TextField Label="Turns off" Type="datetime-local" Value="@_ends" ValueChanged="value => _ends = value" />
+                    <DateTimeField Label="Turns on" Value="@_starts" ValueChanged="value => _starts = value" />
+                    <DateTimeField Label="Turns off" Value="@_ends" ValueChanged="value => _ends = value" />
                 </div>
                 <p class="field__hint">Phones get it ahead of time and switch by themselves, even without signal.</p>
                 break;
             default:
-                <TextField Label="Publishes on" Type="datetime-local" Value="@_publishAt" ValueChanged="value => _publishAt = value"
+                <DateTimeField Label="Publishes on" Value="@_publishAt" ValueChanged="value => _publishAt = value"
                            Hint="The server publishes it at that moment, even if nobody has the admin panel open. Changes you save before then are published too." />
                 @if (PublishAt is { } at)
                 {

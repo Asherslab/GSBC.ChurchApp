@@ -94,7 +94,7 @@
                                     @if (_later)
                                     {
                                         <div class="announcement-check__pair">
-                                            <TextField Label="Day" Type="date" Value="@_day" ValueChanged="value => _day = value" Min="@Today.ToString(DayFormat, CultureInfo.InvariantCulture)" />
+                                            <DateField Label="Day" Value="@_day" ValueChanged="value => _day = value" Min="@Today.ToString(DayFormat, CultureInfo.InvariantCulture)" />
                                             <SelectField Label="Time" Options="Times" Value="@_time" ValueChanged="value => _time = value" />
                                         </div>
                                         <p class="announcement-check__note">@LaterLine</p>

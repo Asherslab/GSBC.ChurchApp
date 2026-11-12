@@ -40,7 +40,7 @@
                     <TextField Label="Name" Value="@(_name ?? child.Name)" ValueChanged="value => _name = value" AutoComplete="off" />
                 }
                 <div class="ui-after">
-                    <TextField Label="Birth date" Type="date" Value="@(_born ?? PeopleWords.FieldDay(child.BirthDate))" ValueChanged="value => _born = value" />
+                    <DateField Label="Birth date" Value="@(_born ?? PeopleWords.FieldDay(child.BirthDate))" ValueChanged="value => _born = value" />
                 </div>
                 <div class="ui-actions ui-after">
                     <Button Small="true" Variant="ButtonVariant.Quiet" Busy="_busy" Disabled="@(_name is null && _born is null)" OnClick="SaveAsync">Save details</Button>

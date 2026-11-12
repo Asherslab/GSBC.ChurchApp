@@ -70,14 +70,14 @@
             <SaveStatus State="_save" SavedText="@(draft.SavedAt is null ? "Saves as you change it" : "Saved")" Detail="@SentLine(draft)" Retry="SaveNowAsync" />
 
             <div class="digest-desk__choices">
-                <TextField Label="From" Type="date" Value="@draft.Start" ValueChanged="ChooseStartAsync" />
+                <DateField Label="From" Value="@draft.Start" ValueChanged="ChooseStartAsync" />
                 <div class="field digest-desk__length">
                     <span class="field__label" aria-hidden="true">How long</span>
                     <Segmented TValue="DigestRange" Label="How long" Options="RangeOptions" Value="draft.Range" ValueChanged="ChooseRangeAsync" />
                 </div>
                 @if (draft.Range == DigestRange.Custom)
                 {
-                    <TextField Label="To" Type="date" Value="@draft.End" Min="@draft.Start" ValueChanged="ChooseEndAsync" />
+                    <DateField Label="To" Value="@draft.End" Min="@draft.Start" ValueChanged="ChooseEndAsync" />
                 }
                 <p class="digest-desk__range">@RangeOf(draft)</p>
             </div>

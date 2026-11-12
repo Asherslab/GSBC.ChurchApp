@@ -1,0 +1,53 @@
+@inject UiHost Host
+
+@if (!Host.Desktop)
+{
+    <TextField Label="@Label" Type="datetime-local" Value="@Value" ValueChanged="ValueChanged" Min="@Min" Max="@Max" Hint="@Hint" Problem="@Problem" Disabled="Disabled" />
+}
+else
+{
+    <fieldset class="date-time-field">
+        <legend class="field__label">@Label</legend>
+        <div class="ui-pair">
+            <DateField Label="Day" Value="@DayPart" ValueChanged="SetDayAsync" Min="@DayOf(Min)" Max="@DayOf(Max)" Disabled="Disabled" Problem="@Problem" />
+            <TimeField Label="Time" Value="@TimePart" ValueChanged="SetTimeAsync" Disabled="Disabled" />
+        </div>
+        @if (Hint is not null)
+        {
+            <span class="field__hint">@Hint</span>
+        }
+    </fieldset>
+}
+
+@code {
+    private const string DefaultTime = "09:00";
+    private string? _pendingDay;
+    private string? _pendingTime;
+
+    [Parameter, EditorRequired] public required string Label { get; set; }
+    [Parameter] public string Value { get; set; } = "";
+    [Parameter] public EventCallback<string> ValueChanged { get; set; }
+    [Parameter] public string? Min { get; set; }
+    [Parameter] public string? Max { get; set; }
+    [Parameter] public string? Hint { get; set; }
+    [Parameter] public string? Problem { get; set; }
+    [Parameter] public bool Disabled { get; set; }
+
+    private string DayPart => DayOf(Value) ?? _pendingDay ?? "";
+    private string TimePart => Value.Length > 11 ? Value[11..16] : _pendingTime ?? "";
+
+    private static string? DayOf(string? value) => value is { Length: >= 10 } ? value[..10] : null;
+
+    private Task SetDayAsync(string day)
+    {
+        _pendingDay = day;
+        return day.Length == 0 ? ValueChanged.InvokeAsync("") : ValueChanged.InvokeAsync($"{day}T{(TimePart.Length > 0 ? TimePart : DefaultTime)}");
+    }
+
+    private Task SetTimeAsync(string time)
+    {
+        _pendingTime = time;
+        string day = DayPart;
+        return day.Length == 0 || time.Length == 0 ? Task.CompletedTask : ValueChanged.InvokeAsync($"{day}T{time}");
+    }
+}

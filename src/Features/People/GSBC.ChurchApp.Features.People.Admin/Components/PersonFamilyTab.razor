@@ -31,7 +31,7 @@
                 @if (_changingBirthDate)
                 {
                     <div class="people-inline">
-                        <TextField Label="Birth date" Type="date" Value="@_born" ValueChanged="value => _born = value" Max="@($"{today:yyyy-MM-dd}")" />
+                        <DateField Label="Birth date" Value="@_born" ValueChanged="value => _born = value" Max="@($"{today:yyyy-MM-dd}")" />
                         <Button Variant="ButtonVariant.Quiet" OnClick="() => _changingBirthDate = false">Cancel</Button>
                         @if (family.BirthDate is not null)
                         {
@@ -122,7 +122,7 @@
                                           Leave="Leave(family)" Busy="@_busyFor" OnChosen="person => LinkAsync(family.Id, person.Id)" />
                             <div class="people-inline">
                                 <TextField Label="Or add a child who isn't in the app" Placeholder="Their name" Value="@_childName" ValueChanged="value => _childName = value" />
-                                <TextField Label="Birth date" Type="date" Value="@_childBorn" ValueChanged="value => _childBorn = value" Max="@($"{today:yyyy-MM-dd}")" />
+                                <DateField Label="Birth date" Value="@_childBorn" ValueChanged="value => _childBorn = value" Max="@($"{today:yyyy-MM-dd}")" />
                                 <Button Variant="ButtonVariant.Quiet" Busy="_busy" Disabled="@(_childName.Trim().Length == 0 || PeopleWords.ParseDay(_childBorn) is null)" OnClick="() => AddChildAsync(family.Id)">Add</Button>
                             </div>
                             <div class="ui-actions ui-after">
