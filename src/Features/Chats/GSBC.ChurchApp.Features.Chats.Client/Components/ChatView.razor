@@ -8,7 +8,7 @@
     <Actions>
         @if (_card is not null)
         {
-            <Button Variant="ButtonVariant.Quiet" Icon="@AppIcons.Settings" AriaLabel="Chat settings" Tooltip="Chat settings" OnClick="OpenSettings" />
+            <Button Variant="ButtonVariant.Quiet" Icon="@AppIcons.Settings" AriaLabel="Chat settings" Tooltip="Chat settings" Expanded="@(InPanel ? SettingsOpen : null)" Class="@(InPanel && SettingsOpen ? "chat-frame__cog chat-frame__cog--on" : "chat-frame__cog")" OnClick="OpenSettings" />
         }
     </Actions>
     <Beside>
@@ -77,7 +77,7 @@
                         bool mine = message.SenderId == card.You;
                         <MessageBubble Mine="mine" FirstOfRun="first" Name="@NameOf(message, mine)" NameNote="@RoleNote(card, message)"
                                        Time="@TimeOf(message)" Dimmed="@(line.State != LineState.Sent || _editing?.Id == message.Id)" Removed="message.Deleted"
-                                       Id="@($"m-{message.Id}")" OnLongPress="() => OpenActions(line)"
+                                       Id="@($"m-{message.Id}")" OnLongPress="() => OpenActions(line)" MoreLabel="@(InPanel && line.State == LineState.Sent && !message.Deleted ? "What to do with this message" : null)"
                                        OnQuote="@(message.ReplyTo is { } replied ? EventCallback.Factory.Create(this, () => GoToAsync(chat, replied)) : default)">
                             <Quote>
                                 @if (message is { ReplyTo: { } quote, Deleted: false })
@@ -90,6 +90,12 @@
                                     </span>
                                 }
                             </Quote>
+                            <Tools>
+                                @if (InPanel && _acting?.Message.Id == message.Id)
+                                {
+                                    <MessageActions Card="card" Line="_acting" OnClose="() => _acting = null" OnReply="Reply" OnEdit="Edit" InPanel="true" />
+                                }
+                            </Tools>
                             <Reactions>
                                 <BubbleReactions Reactions="@ReactionsOf(card, message)" Disabled="!card.YouMaySend" OnToggle="reaction => Store.ReactAsync(message, reaction.Emoji, !reaction.Yours)" />
                             </Reactions>
@@ -136,7 +142,10 @@
             </div>
             <ChatComposer Chat="chat" Editing="_editing" ReplyingTo="_replyingTo" OnDone="Done" EnterSends="InPanel" DropOn="@(InPanel ? ".chat" : null)" />
         </div>
-        <MessageActions Card="card" Line="_acting" OnClose="() => _acting = null" OnReply="Reply" OnEdit="Edit" />
+        @if (!InPanel)
+        {
+            <MessageActions Card="card" Line="_acting" OnClose="() => _acting = null" OnReply="Reply" OnEdit="Edit" />
+        }
         @if (!InPanel)
         {
             <ChatPeopleSheet Card="card" Open="_people" OpenChanged="open => _people = open" OnDelete="AskToDelete" />
@@ -171,6 +180,7 @@
     [Parameter] public string BackHref { get; set; } = "chats";
     [Parameter] public string BackLabel { get; set; } = "Chats";
     [Parameter] public bool InPanel { get; set; }
+    [Parameter] public bool SettingsOpen { get; set; }
     [Parameter] public EventCallback OnSettings { get; set; }
 
     private string _title = "Chat";

@@ -31,9 +31,12 @@ rows on Selected Fill when open, sand bubbles for others and navy for yours (the
 STORY: Open Chats, see which chats have something new, open one, read and reply with the keyboard, react, paste a
 picture, glance at who's in it, mute it, move to the next.
 
-FIRST VIEWPORT: Sidebar; list column (title Chats, New chat +, search, rows with ministry, preview, time, unread count);
-conversation (chat name, ministry · audience · people, cog toggles the right pane, ⋯ for leaders; quiet staff line,
-days, bubbles, composer with Enter/Shift+Enter hint); right pane (mute, people with roles, explanation).
+FIRST VIEWPORT: Sidebar; list column (title Chats, search, rows with ministry, preview, time, unread count);
+conversation (chat name, ministry · audience · people, cog toggles the right pane; quiet staff line,
+days, bubbles, composer with Enter/Shift+Enter hint); right pane (Chat settings head with ⋯ holding Delete for leaders, mute, people with roles, explanation). Starting a
+chat stays in a ministry's Chats tab (amended 2026-11-13 after review: the server can't yet say where you may start
+one, so a panel-wide New chat would offer ministries that refuse; docs/features/chats.md, default 3). Each message has
+a ⋯ on hover or focus (and Enter on a focused message) opening its actions as a popover.
 
 FORM: three panes, second on the ordered list (lead roll was ministry rail); seed: seed:26205211306c0b57
 
