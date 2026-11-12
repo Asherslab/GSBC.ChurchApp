@@ -10,7 +10,6 @@
     "src/Features/Notifications/GSBC.ChurchApp.Features.Notifications.Client/wwwroot/css/notifications.css": 25,
     "src/Features/People/GSBC.ChurchApp.Features.People.Client/wwwroot/css/people.css": 32,
     "src/Features/Prayer/GSBC.ChurchApp.Features.Prayer.Client/wwwroot/css/prayer.css": 57,
-    "src/Features/Rosters/GSBC.ChurchApp.Features.Rosters.Client/wwwroot/css/rosters.css": 17,
     "src/Features/Sermons/GSBC.ChurchApp.Features.Sermons.Client/wwwroot/css/sermons.css": 63,
     "src/Hosts/App/GSBC.ChurchApp.Hosts.App/wwwroot/css/app.css": 4,
     "src/Hosts/GSBC.ChurchApp.Hosts.Admin/wwwroot/css/admin.css": 137,
@@ -74,8 +73,7 @@
   },
   "nativeDates": {
     "src/Features/Configuration/GSBC.ChurchApp.Features.Configuration.Client/Components/Styling/PreviewChips.razor": 1,
-    "src/Features/Prayer/GSBC.ChurchApp.Features.Prayer.Client/Components/WallChoice.razor": 1,
-    "src/Features/Rosters/GSBC.ChurchApp.Features.Rosters.Client/Components/AwaySheet.razor": 2
+    "src/Features/Prayer/GSBC.ChurchApp.Features.Prayer.Client/Components/WallChoice.razor": 1
   },
   "quietFirst": {},
   "splitView": {
@@ -84,7 +82,6 @@
   },
   "deleteOutsideMenu": {
     "src/Features/Chats/GSBC.ChurchApp.Features.Chats.Admin/Pages/ChatsTabView.razor": 1,
-    "src/Features/Chats/GSBC.ChurchApp.Features.Chats.Admin/Pages/ReportsTab.razor": 1,
-    "src/Features/Rosters/GSBC.ChurchApp.Features.Rosters.Client/Components/YourDateRow.razor": 1
+    "src/Features/Chats/GSBC.ChurchApp.Features.Chats.Admin/Pages/ReportsTab.razor": 1
   }
 }

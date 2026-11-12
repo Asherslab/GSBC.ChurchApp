@@ -33,13 +33,17 @@
                     </th>
                     @foreach (RosterDate date in shown)
                     {
-                        IReadOnlyList<Assignment> on = RosterLines.In(date, position);
+                        IReadOnlyList<Assignment> on = RosterLines.In(date, position).OrderBy(assignment => assignment.Training).ToList();
                         int gaps = Math.Max(0, position.Needed - RosterLines.Filled(date, position));
                         <td @key="date.Id">
                             @foreach (Assignment assignment in on)
                             {
                                 <span class="roster-cell roster-cell--@(View.Settings.Replies ? assignment.State : Replies.On)">
                                     @(Wide ? assignment.Name : RosterLines.First(assignment.Name))
+                                    @if (assignment.Training && !assignment.Flags.Contains(Training.AloneFlag))
+                                    {
+                                        <small class="roster-cell__training">Training</small>
+                                    }
                                     @foreach (string flag in assignment.Flags)
                                     {
                                         <small>@flag</small>

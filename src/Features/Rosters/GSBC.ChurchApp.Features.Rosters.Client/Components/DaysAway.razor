@@ -1,4 +1,5 @@
 @inject RosterWrites Writes
+@inject TimeProvider Clock
 
 <LiveData @ref="_live" TValue="AwayList" Load="Load" Feeds="Feeds" Remember="@Remember">
     <ChildContent>
@@ -6,59 +7,121 @@
             AwayList away = context.Value;
             IReadOnlyList<PersonLine> people = People ?? away.People.Select(person => new PersonLine { Id = person.PersonId, Name = person.Name }).ToList();
             string yourId = YourId ?? away.YourId;
-            List<(PersonLine Person, AwaySpan Span)> spans = people
-                .SelectMany(person => (away.People.FirstOrDefault(each => each.PersonId == person.Id)?.Spans ?? []).Select(span => (person, span)))
-                .ToList();
+            PersonLine? who = people.FirstOrDefault(person => person.Id == _who) ?? people.FirstOrDefault(person => person.Id == yourId) ?? people.FirstOrDefault();
+            DateOnly today = ChurchTime.Today(Clock);
+            List<AwaySpan> spans = who is null ? [] : (away.People.FirstOrDefault(each => each.PersonId == who.Id)?.Spans ?? []).Where(span => AwayRules.Current(span, today)).ToList();
         }
-        @if (people.Count > 0)
+        @if (who is not null)
         {
-            <Section First="First" Title="Days away" Lead="@(people.Count > 1 ? "Leaders of every ministry you or your children serve in see these. They can still put you on, and it's flagged." : Lead)">
+            <Section First="First" Title="@Title" Lead="@(people.Count > 1 && People is null ? "Leaders of every team you or your children are on see these, and can change them. They can still put you on; it's flagged." : Lead)">
+                @if (people.Count > 1 && people.Count <= MostSegments)
+                {
+                    <Segmented TValue="string" Label="Whose days away" Value="@who.Id" ValueChanged="id => _who = id" Class="away-who"
+                               Options="@(people.Select(person => new SegmentOption<string>(person.Id, person.Id == yourId ? "Me" : RosterLines.First(person.Name))).ToList())" />
+                }
+                else if (people.Count > MostSegments)
+                {
+                    <SelectField Label="Whose days away" Value="@who.Id" ValueChanged="id => _who = id"
+                                 Options="@(people.Select(person => new FieldOption(person.Id, person.Name)).ToList())" />
+                }
                 <ListGroup>
-                    @foreach ((PersonLine person, AwaySpan span) in spans)
+                    @foreach (AwaySpan rule in spans.Where(span => span.Weekly))
                     {
-                        <ListRow @key="span.Id" Title="@RosterLines.Span(span)" Subtitle="@string.Join(" · ", new[] { person.Id == yourId || people.Count == 1 ? "" : RosterLines.First(person.Name), span.Note }.Where(line => line.Length > 0))"
-                                 Icon="circle-off" IconTone="RowTone.Quiet">
-                            <TrailingContent>
-                                <Button Small="true" Variant="ButtonVariant.Quiet" Icon="x" AriaLabel="@($"Remove {RosterLines.Span(span)}")" Disabled="_busy" OnClick="() => RemoveAsync(span)" />
-                            </TrailingContent>
-                        </ListRow>
+                        <ListRow @key="rule.Id" Title="@RosterLines.Span(rule)" Subtitle="@Line(RosterLines.SpanDetail(rule, today), rule.Note)" Icon="repeat" IconTone="RowTone.Warm"
+                                 Chevron="true" OnClick="() => Edit(who, rule)" />
                     }
-                    <ListRow Title="Add days away" Icon="plus" IconTone="RowTone.Accent" OnClick="() => _adding = true" />
+                </ListGroup>
+                <MonthDays Label="@($"Days {(who.Id == yourId ? "you're" : $"{RosterLines.First(who.Name)} is")} away")" Month="@(_month ?? today)" MonthChanged="month => _month = month"
+                           Marks="day => RosterLines.MarkOn(spans, day)" Words="RosterLines.MarkWords" Today="today" Earliest="today"
+                           OnPick="day => Pick(who, spans, day)" Class="away-month"
+                           Key="@(spans.Count == 0 ? $"Choose a day to say {(who.Id == yourId ? "you're" : $"{RosterLines.First(who.Name)} is")} away." : "Shaded: away. Top half: mornings; bottom half: evenings. Struck through: not away that time. Choose a day to change it.")" />
+                <ListGroup>
+                    @foreach (AwaySpan span in spans.Where(span => !span.Weekly))
+                    {
+                        <ListRow @key="span.Id" Title="@RosterLines.Span(span)" Subtitle="@span.Note" Icon="circle-off" IconTone="RowTone.Quiet" Chevron="true" OnClick="() => Edit(who, span)" />
+                    }
+                    <ListRow Title="Add days away" Icon="plus" IconTone="RowTone.Accent" OnClick="() => Add(who, null)" />
                 </ListGroup>
                 <Notice Tone="NoticeTone.Warning" Text="@_problem" />
             </Section>
-            <AwaySheet @key="@($"away-{_adding}")" Open="_adding" OpenChanged="AddedAsync" People="people" YourId="@yourId" />
+            <AwaySheet @key="_editing" Open="_editing is not null" OpenChanged="ClosedAsync" People="people" YourId="@yourId" Who="_editingWho" Span="_span" Day="_day" />
+            <Sheet Open="_picked is not null" OpenChanged="open => _picked = open ? _picked : null" Title="@(_picked?.ToString("dddd d MMMM", System.Globalization.CultureInfo.InvariantCulture))"
+                   Lead="@(_picked is { } day && _rule is { } rule ? AwayRules.Skips(rule, day) ? $"Not away this time, from “{RosterLines.Span(rule)}”." : $"Away, from “{RosterLines.Span(rule)}”." : null)">
+                <Actions>
+                    @if (_picked is { } day && _rule is { } rule)
+                    {
+                        <Button Block="true" Disabled="_busy" OnClick="() => SkipAsync(who, rule, day)">@(AwayRules.Skips(rule, day) ? "Away this day after all" : who.Id == yourId ? "I'm not away this day" : $"{RosterLines.First(who.Name)} isn't away this day")</Button>
+                        <Button Block="true" Variant="ButtonVariant.Quiet" OnClick="() => { _picked = null; Edit(who, rule); }">Change the rule</Button>
+                    }
+                </Actions>
+            </Sheet>
         }
     </ChildContent>
     <Loading />
 </LiveData>
 
 @code {
+    private const int MostSegments = 3;
+
     private LiveData<AwayList>? _live;
-    private bool _adding, _busy;
+    private string? _who;
+    private DateOnly? _month;
+    private string? _editing;
+    private PersonLine? _editingWho;
+    private AwaySpan? _span;
+    private DateOnly? _day;
+    private DateOnly? _picked;
+    private AwaySpan? _rule;
+    private bool _busy;
     private string? _problem;
 
     [Parameter, EditorRequired] public required Func<Task<AwayList>> Load { get; set; }
     [Parameter, EditorRequired] public required IReadOnlyCollection<string> Feeds { get; set; }
     [Parameter] public IReadOnlyList<PersonLine>? People { get; set; }
     [Parameter] public string? YourId { get; set; }
-    [Parameter] public string Lead { get; set; } = "Leaders of every ministry you serve in see these. They can still put you on, and it's flagged.";
+    [Parameter] public string Title { get; set; } = "Days away";
+    [Parameter] public string Lead { get; set; } = "Leaders of every team you're on see these, and can change them. They can still put you on; it's flagged.";
     [Parameter] public string? Remember { get; set; }
     [Parameter] public bool First { get; set; }
 
-    private async Task AddedAsync(bool open)
+    private static string Line(params string[] parts) => string.Join(" · ", parts.Where(part => part.Length > 0));
+
+    private void Add(PersonLine who, DateOnly? day) => (_editing, _editingWho, _span, _day) = (RosterIds.New(), who, null, day);
+
+    private void Edit(PersonLine who, AwaySpan span) => (_editing, _editingWho, _span, _day) = (span.Id, who, span, null);
+
+    private void Pick(PersonLine who, IReadOnlyList<AwaySpan> spans, DateOnly day)
     {
-        _adding = open;
-        if (!open && _live is not null)
+        if (spans.FirstOrDefault(span => !span.Weekly && AwayRules.OnDay(span, day)) is { } once)
+            Edit(who, once);
+        else if (spans.FirstOrDefault(span => span.Weekly && (AwayRules.OnDay(span, day) || AwayRules.Skips(span, day))) is { } rule)
+            (_picked, _rule) = (day, rule);
+        else
+            Add(who, day);
+    }
+
+    private async Task ClosedAsync(bool open)
+    {
+        if (open)
+            return;
+        _editing = null;
+        if (_live is not null)
             await _live.ReloadAsync();
     }
 
-    private async Task RemoveAsync(AwaySpan span)
+    private async Task SkipAsync(PersonLine who, AwaySpan rule, DateOnly day)
     {
+        string wire = RosterLines.Wire(day);
+        List<string> except = AwayRules.Skips(rule, day) ? rule.Except.Where(each => each != wire).ToList() : [.. rule.Except, wire];
         _busy = true;
-        _problem = await RosterProblems.TryAsync(() => Writes.RemoveAwayAsync(span.Id));
+        _problem = await RosterProblems.TryAsync(() => Writes.SaveAwayAsync(new AwaySave
+        {
+            AwayId = rule.Id, PersonId = who.Id, From = rule.From, To = rule.To, Note = rule.Note, Weekly = rule.Weekly, Weekdays = [.. rule.Weekdays],
+            StartTime = rule.StartTime, EndTime = rule.EndTime, Except = except,
+        }));
         _busy = false;
-        if (_problem is null && _live is not null)
+        _picked = null;
+        if (_live is not null)
             await _live.ReloadAsync();
     }
 }

@@ -39,3 +39,36 @@ FORM: phone tab 4 of 7 ("a row per date, a sheet per date"), seed: ab1474082d421
 term as a grid"), seed: ab1474082d42122057ad7b5d06994755.
 
 FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, DESIGN.md
+
+## Wave 2 (2026-11-12): training, the swap rule, days away
+
+Interview (owner): both leaders and the trainee must notice a trainee (leaders: the place stays open until someone
+trained is on; trainee: who they're on with). Days away: "run of days, and repeating (with a time, e.g. some people might
+only attend pm services) (with exceptions). also - leaders need to be able to edit/modify this". The swap rule is set
+once by a leader. Decision page `.impeccable/mocks/rosters/wave2/` (seed: 89120112d496e030); the owner picked in chat:
+"A for training lines, A for swap rule, B for days away".
+
+## Direction contract (wave 2)
+
+THESIS: Each rule reads as what will happen, in sentences, on the components already in the app: a trainee is a line of
+their own under the position, the swap rule a set of radio rows with a sentence saying what follows, and days away a
+month you look at, where repeating, part-day and skipped days are visible at a glance. Refuses switches that can
+contradict each other and a list of date ranges nobody can picture.
+
+OWN-WORLD: Hairline rows; a trainee row indented under its position, led by an aqua "T" tile (warm when alone, with the
+marker-ink flag "Training: needs someone trained on with them") and the place counted as open; inset settings groups with
+radio rows and a sand "So when Jo can't do 15 Nov…" line; the `MonthDays` grid: white day tiles ringed by a hairline,
+marker at 55% for away all day, the top half for mornings, the bottom half for evenings, struck through in ink-3 for a
+day skipped; repeating rules as sand callouts with *Change*.
+
+STORY: A leader sees Ben training alone in amber and puts Jo on. Jo, a volunteer who only comes at night, sets "Every
+Sunday, mornings, until further notice", then taps 20 Dec to say she'll be there that once. A leader fixes a team
+member's days away from the roster.
+
+FIRST VIEWPORT: Days away: whose (Me | Tom) when it's for more than one, the repeating rules as callouts, the month with
+‹ ›, a caption key, then the one-off days as rows, and *Add days away*. Settings: Answers, then *When someone asks the
+team for a swap* (three radio rows), *Ask someone yourself*, the sentence, Cancel and Save.
+
+FORM: picks A/A/B from the dealt hand; seed: 89120112d496e030.
+
+FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, DESIGN.md, and every shipping raster carrying its provenance

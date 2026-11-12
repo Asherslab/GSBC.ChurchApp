@@ -127,6 +127,11 @@ public sealed class AwaySpan
     [ProtoMember(2)] public string From { get; set; } = "";
     [ProtoMember(3)] public string To { get; set; } = "";
     [ProtoMember(4)] public string Note { get; set; } = "";
+    [ProtoMember(5)] public bool Weekly { get; set; }
+    [ProtoMember(6)] public List<int> Weekdays { get; set; } = [];
+    [ProtoMember(7)] public string StartTime { get; set; } = "";
+    [ProtoMember(8)] public string EndTime { get; set; } = "";
+    [ProtoMember(9)] public List<string> Except { get; set; } = [];
 }
 
 [ProtoContract]
@@ -285,6 +290,11 @@ public sealed class AwaySave
     [ProtoMember(3)] public string From { get; set; } = "";
     [ProtoMember(4)] public string To { get; set; } = "";
     [ProtoMember(5)] public string Note { get; set; } = "";
+    [ProtoMember(6)] public bool Weekly { get; set; }
+    [ProtoMember(7)] public List<int> Weekdays { get; set; } = [];
+    [ProtoMember(8)] public string StartTime { get; set; } = "";
+    [ProtoMember(9)] public string EndTime { get; set; } = "";
+    [ProtoMember(10)] public List<string> Except { get; set; } = [];
 }
 
 [ProtoContract]

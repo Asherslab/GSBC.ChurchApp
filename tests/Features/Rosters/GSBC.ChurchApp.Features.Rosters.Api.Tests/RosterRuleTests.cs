@@ -10,15 +10,16 @@ public sealed class RosterRuleTests
     private static readonly DateOnly Sunday = new(2026, 11, 15);
     private static readonly DateTime Now = TestClock.Start;
     private static readonly DateTime Later = Now.AddDays(7);
+    private static readonly DateRecord EveningService = new() { StartsAt = new DateTime(2026, 11, 15, 8, 0, 0, DateTimeKind.Utc), EndsAt = new DateTime(2026, 11, 15, 9, 30, 0, DateTimeKind.Utc) };
 
     [Fact]
     public void EveryUnmetRequirementIsFlaggedInWords()
     {
         PositionRecord cameras = new() { Name = "Cameras", NeedsBlueCard = true, NeedsTraining = true, NeedsTrained = true };
-        IReadOnlyList<string> flags = RosterRules.Flags(cameras, Sunday, [new AwayDays(Sunday.AddDays(-1), Sunday)],
+        IReadOnlyList<string> flags = RosterRules.Flags(cameras, EveningService, [Away(Sunday.AddDays(-1), Sunday)],
             new SafeguardingStanding(Guid.NewGuid(), HoldsBlueCard: false, TrainingCurrent: false), aloneTraining: true, alsoOn: ["Presenter PC"]);
 
-        Assert.Equal([RosterRules.AwayFlag, RosterRules.NoBlueCardFlag, RosterRules.NoTrainingFlag, Training.AloneFlag, "Also on Presenter PC that day"], flags);
+        Assert.Equal([AwayRules.AwayFlag, RosterRules.NoBlueCardFlag, RosterRules.NoTrainingFlag, Training.AloneFlag, "Also on Presenter PC that day"], flags);
     }
 
     [Fact]
@@ -26,7 +27,7 @@ public sealed class RosterRuleTests
     {
         PositionRecord cameras = new() { Name = "Cameras", NeedsBlueCard = true, NeedsTraining = true, NeedsTrained = true };
 
-        Assert.Empty(RosterRules.Flags(cameras, Sunday, [new AwayDays(Sunday.AddDays(1), Sunday.AddDays(3))],
+        Assert.Empty(RosterRules.Flags(cameras, EveningService, [Away(Sunday.AddDays(1), Sunday.AddDays(3))],
             new SafeguardingStanding(Guid.NewGuid(), HoldsBlueCard: true, TrainingCurrent: true), aloneTraining: false, alsoOn: []));
     }
 
@@ -134,9 +135,31 @@ public sealed class RosterRuleTests
     [Fact]
     public void AwayDatesNeedOnlyToMakeSense()
     {
-        Assert.Null(RosterRules.WhyNotAway(Sunday, Sunday, Sunday));
-        Assert.NotNull(RosterRules.WhyNotAway(Sunday, Sunday.AddDays(-1), Sunday.AddDays(-5)));
-        Assert.NotNull(RosterRules.WhyNotAway(Sunday.AddDays(-3), Sunday.AddDays(-2), Sunday));
+        Assert.Null(AwayRules.WhyNot(Save(Sunday, Sunday), Sunday));
+        Assert.Null(AwayRules.WhyNot(Save(Sunday, null, weekly: [0], until: "12:00"), Sunday));
+        Assert.NotNull(AwayRules.WhyNot(Save(Sunday, null), Sunday));
+        Assert.NotNull(AwayRules.WhyNot(Save(Sunday, Sunday.AddDays(-1)), Sunday.AddDays(-5)));
+        Assert.NotNull(AwayRules.WhyNot(Save(Sunday.AddDays(-3), Sunday.AddDays(-2)), Sunday));
+        Assert.NotNull(AwayRules.WhyNot(Save(Sunday, null, weekly: []), Sunday));
+        Assert.NotNull(AwayRules.WhyNot(Save(Sunday, Sunday, from: "17:00", until: "12:00"), Sunday));
+    }
+
+    [Fact]
+    public void RepeatingDaysAwayCoverOnlyTheirWeekdaysTimesAndNotTheExceptions()
+    {
+        AwaySpan sundayMornings = new()
+        {
+            From = Wire(Sunday), Weekly = true, Weekdays = [(int)DayOfWeek.Sunday], EndTime = "12:00", Except = [Wire(Sunday.AddDays(14))],
+        };
+
+        Assert.True(AwayRules.Covers(sundayMornings, At(Sunday, 9), At(Sunday, 10, 15), allDay: false));
+        Assert.True(AwayRules.Covers(sundayMornings, At(Sunday.AddDays(7 * 30), 10, 30), At(Sunday.AddDays(7 * 30), 12), allDay: false));
+        Assert.False(AwayRules.Covers(sundayMornings, At(Sunday, 18), At(Sunday, 19, 30), allDay: false));
+        Assert.False(AwayRules.Covers(sundayMornings, At(Sunday.AddDays(14), 9), At(Sunday.AddDays(14), 10), allDay: false));
+        Assert.False(AwayRules.Covers(sundayMornings, At(Sunday.AddDays(3), 9), At(Sunday.AddDays(3), 10), allDay: false));
+        Assert.False(AwayRules.Covers(sundayMornings, At(Sunday.AddDays(-7), 9), At(Sunday.AddDays(-7), 10), allDay: false));
+        Assert.Equal(AwayRules.AwayThenFlag, AwayRules.FlagFor([sundayMornings], At(Sunday, 9), At(Sunday, 10), allDay: false));
+        Assert.Equal(AwayRules.AwayFlag, AwayRules.FlagFor([sundayMornings, Away(Sunday, Sunday)], At(Sunday, 9), At(Sunday, 10), allDay: false));
     }
 
     [Fact]
@@ -167,4 +190,15 @@ public sealed class RosterRuleTests
         Id = "d", StartsAt = Later,
         Assignments = on.Select((each, index) => new Assignment { Id = $"a{index}", PersonId = each.Person, Swap = each.Swap }).ToList(),
     };
+
+    private static AwaySpan Away(DateOnly from, DateOnly to) => new() { From = Wire(from), To = Wire(to) };
+
+    private static AwaySave Save(DateOnly first, DateOnly? last, int[]? weekly = null, string from = "", string until = "") => new()
+    {
+        From = Wire(first), To = last is { } day ? Wire(day) : "", Weekly = weekly is not null, Weekdays = [.. weekly ?? []], StartTime = from, EndTime = until,
+    };
+
+    private static DateTime At(DateOnly day, int hour, int minute = 0) => day.ToDateTime(new TimeOnly(hour, minute));
+
+    private static string Wire(DateOnly day) => day.ToString(AwayRules.DayFormat, System.Globalization.CultureInfo.InvariantCulture);
 }

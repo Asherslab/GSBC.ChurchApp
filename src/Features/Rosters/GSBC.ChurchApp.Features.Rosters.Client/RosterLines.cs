@@ -12,8 +12,6 @@ public sealed record YourDate(RosterView View, RosterDate Date, Assignment Assig
 
 public static class RosterLines
 {
-    public const string AwayFlag = "Away that day";
-
     public static IReadOnlyList<YourDate> Yours(RosterView view, DateTime nowUtc)
     {
         Dictionary<string, PersonLine> people = view.You.ToDictionary(person => person.Id);
@@ -94,6 +92,12 @@ public static class RosterLines
     public static IReadOnlyList<Assignment> In(RosterDate date, Position position) =>
         date.Assignments.Where(assignment => assignment.PositionId == position.Id).ToList();
 
+    public static string TrainingWith(Assignment trainee, IEnumerable<Assignment> samePosition)
+    {
+        List<string> trained = samePosition.Where(each => each.Id != trainee.Id && each.Fills && !each.Training).Select(each => First(each.Name)).ToList();
+        return trained.Count == 0 ? "Training, with someone trained" : $"Training, with {string.Join(" and ", trained)}";
+    }
+
     public static int Filled(RosterDate date, Position position) => In(date, position).Count(assignment => assignment.Fills);
 
     public static int Gaps(RosterView view, RosterDate date) => view.Positions.Sum(position => Math.Max(0, position.Needed - Filled(date, position)));
@@ -108,11 +112,9 @@ public static class RosterLines
 
     public static IReadOnlyList<string> FlagsIfOn(RosterView view, TeamMember member, RosterDate date, Position position)
     {
-        DateOnly day = ChurchTime.DayOf(date.StartsAt);
         List<string> flags = [];
-        if (member.Away.Any(span => DateOnly.TryParse(span.From, CultureInfo.InvariantCulture, out DateOnly from)
-                                    && DateOnly.TryParse(span.To, CultureInfo.InvariantCulture, out DateOnly to) && from <= day && day <= to))
-            flags.Add(AwayFlag);
+        if (AwayRules.FlagFor(member.Away, ChurchTime.ToChurch(date.StartsAt), ChurchTime.ToChurch(date.EndsAt), date.AllDay) is { } away)
+            flags.Add(away);
         if (position.NeedsBlueCard && !member.HoldsBlueCard)
             flags.Add("No current blue card");
         if (position.NeedsTraining && !member.TrainingCurrent)
@@ -131,23 +133,57 @@ public static class RosterLines
             needs.Add("a blue card");
         if (position.NeedsTraining)
             needs.Add("Safe Ministry training");
-        if (position.NeedsTrained)
-            needs.Add("being trained for it");
         string people = position.Needed == 1 ? "1 person" : $"{position.Needed} people";
-        return needs.Count == 0 ? people : $"{people} · needs {string.Join(", ", needs)}";
+        return string.Join(" · ", ((string[])
+        [
+            people,
+            needs.Count == 0 ? "" : $"needs {string.Join(" and ", needs)}",
+            position.NeedsTrained ? "trained, or with someone trained" : "",
+        ]).Where(part => part.Length > 0));
     }
 
     public static string WaysWords(string way) => way switch
     {
         SwapWays.Team => "Anyone on the team can take it",
         SwapWays.Approve => "Anyone on the team can offer, and a leader says yes",
-        SwapWays.Direct => "Ask someone on the team yourself",
+        SwapWays.Direct => "They can ask someone on the team themselves",
         _ => way,
     };
 
-    public static string WaysWords(string way, RosterSettings settings) => WaysWords(way == SwapWays.Open ? settings.OpenSwaps : way);
+    public static string AskerWords(string way, RosterSettings settings) => way switch
+    {
+        SwapWays.Direct => "You choose who on the team to ask, and they say yes or can't",
+        SwapWays.Open when settings.OpenSwaps == OpenSwaps.Approve => "Anyone on the team can offer to take it, and a leader says yes",
+        _ => "Anyone on the team can take it",
+    };
 
-    public static string OpenSwapsWords(string openSwaps) => openSwaps == OpenSwaps.Off ? "Not to the whole team" : WaysWords(openSwaps);
+    public static string OpenSwapsWords(string openSwaps) => openSwaps switch
+    {
+        OpenSwaps.Off => "Nobody takes it",
+        OpenSwaps.Approve => "Anyone can offer, and a leader says yes",
+        _ => "Anyone on the team can take it",
+    };
+
+    public static string OpenSwapsDetail(string openSwaps) => openSwaps switch
+    {
+        OpenSwaps.Off => "They ask a leader to find someone instead",
+        OpenSwaps.Approve => "A leader chooses who takes it",
+        _ => "Whoever takes it is on straight away",
+    };
+
+    public static string SwapSentence(RosterSettings settings, string who, string when)
+    {
+        string opening = $"So when {who} can't do {when},";
+        bool team = settings.OpenSwaps != OpenSwaps.Off;
+        string leader = settings.OpenSwaps == OpenSwaps.Approve ? " A leader says yes to whoever offers." : "";
+        return (team, settings.DirectSwaps) switch
+        {
+            (false, false) => $"{opening} they tell a leader, who finds someone else.",
+            (true, false) => $"{opening} they ask the team, and stay on until it's taken.{leader} Leaders hear.",
+            (false, true) => $"{opening} they ask someone on the team they choose, and stay on until it's taken. Leaders hear.",
+            (true, true) => $"{opening} they ask the whole team or someone they choose, and stay on until it's taken.{leader} Leaders hear.",
+        };
+    }
 
     public static IReadOnlyList<string> WaysOpenTo(RosterSettings settings) =>
         [.. settings.OpenSwaps != OpenSwaps.Off ? [SwapWays.Open] : Array.Empty<string>(), .. settings.DirectSwaps ? [SwapWays.Direct] : Array.Empty<string>()];
@@ -163,9 +199,82 @@ public static class RosterLines
 
     public static string Wire(DateOnly day) => day.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
 
-    public static string Span(AwaySpan span) =>
-        DateOnly.TryParse(span.From, CultureInfo.InvariantCulture, out DateOnly from) && DateOnly.TryParse(span.To, CultureInfo.InvariantCulture, out DateOnly to)
-            ? from == to ? from.ToString("dddd d MMMM", CultureInfo.InvariantCulture)
-            : $"{from.ToString("d MMM", CultureInfo.InvariantCulture)} to {to.ToString("d MMM", CultureInfo.InvariantCulture)}"
-            : "";
+    public static string Span(AwaySpan span)
+    {
+        string times = TimesWords(span);
+        if (span.Weekly)
+        {
+            string days = WeekdaysWords(span.Weekdays);
+            return times.Length == 0 ? $"Every {days}" : $"{Capital(days)} {times}";
+        }
+        if (AwayRules.Day(span.From) is not { } from)
+            return "";
+        DateOnly to = AwayRules.Day(span.To) ?? from;
+        string run = from == to ? from.ToString("dddd d MMMM", CultureInfo.InvariantCulture)
+            : $"{from.ToString("d MMM", CultureInfo.InvariantCulture)} to {to.ToString("d MMM", CultureInfo.InvariantCulture)}";
+        return times.Length == 0 ? run : $"{run}, {times}";
+    }
+
+    public static string SpanDetail(AwaySpan span, DateOnly today)
+    {
+        if (!span.Weekly)
+            return "";
+        List<string> parts = [];
+        if (AwayRules.Day(span.From) is { } from && from > today)
+            parts.Add($"From {from.ToString("d MMM", CultureInfo.InvariantCulture)}");
+        parts.Add(AwayRules.Day(span.To) is { } to ? $"until {to.ToString("d MMM", CultureInfo.InvariantCulture)}" : "until further notice");
+        List<DateOnly> except = span.Except.Select(AwayRules.Day).OfType<DateOnly>().Where(day => day >= today).Order().ToList();
+        if (except.Count > 0)
+            parts.Add($"not {string.Join(", ", except.Select(day => day.ToString("d MMM", CultureInfo.InvariantCulture)))}");
+        return Capital(string.Join(", ", parts));
+    }
+
+    private static string TimesWords(AwaySpan span) => (AwayRules.Time(span.StartTime), AwayRules.Time(span.EndTime)) switch
+    {
+        (null, null) => "",
+        (null, { } until) when until == MorningsEnd => "mornings",
+        ({ } from, null) when from == EveningsStart => "evenings",
+        (null, { } until) => $"until {ChurchDates.Time(DateOnly.MinValue.ToDateTime(until))}",
+        ({ } from, null) => $"from {ChurchDates.Time(DateOnly.MinValue.ToDateTime(from))}",
+        ({ } from, { } until) => $"{ChurchDates.Time(DateOnly.MinValue.ToDateTime(from))} to {ChurchDates.Time(DateOnly.MinValue.ToDateTime(until))}",
+    };
+
+    public static DayMark MarkOn(IEnumerable<AwaySpan> spans, DateOnly day)
+    {
+        List<AwaySpan> all = spans.ToList();
+        List<DayMark> on = all.Where(span => AwayRules.OnDay(span, day)).Select(MarkOf).ToList();
+        if (on.Contains(DayMark.AllDay))
+            return DayMark.AllDay;
+        if (on.Count > 0)
+            return on.Distinct().Count() == 1 ? on[0] : DayMark.Part;
+        return all.Any(span => AwayRules.Skips(span, day)) ? DayMark.Skipped : DayMark.None;
+    }
+
+    private static DayMark MarkOf(AwaySpan span) => (AwayRules.Time(span.StartTime), AwayRules.Time(span.EndTime)) switch
+    {
+        (null, null) => DayMark.AllDay,
+        (null, { } until) when until <= MorningsEnd => DayMark.Morning,
+        ({ } from, null) when from >= MorningsEnd => DayMark.Evening,
+        _ => DayMark.Part,
+    };
+
+    public static string MarkWords(DayMark mark) => mark switch
+    {
+        DayMark.AllDay => "away all day",
+        DayMark.Morning => "away in the morning",
+        DayMark.Evening => "away in the evening",
+        DayMark.Part => "away part of the day",
+        DayMark.Skipped => "not away this time",
+        _ => "",
+    };
+
+    private static readonly TimeOnly MorningsEnd = new(12, 0);
+    private static readonly TimeOnly EveningsStart = new(17, 0);
+
+    private static string WeekdaysWords(IReadOnlyCollection<int> weekdays) =>
+        weekdays.Count == 7 ? "day"
+        : string.Join(" and ", ((DayOfWeek[])[DayOfWeek.Monday, DayOfWeek.Tuesday, DayOfWeek.Wednesday, DayOfWeek.Thursday, DayOfWeek.Friday, DayOfWeek.Saturday, DayOfWeek.Sunday])
+            .Where(day => weekdays.Contains((int)day)).Select(day => day.ToString()));
+
+    private static string Capital(string words) => words.Length == 0 ? words : char.ToUpperInvariant(words[0]) + words[1..];
 }
