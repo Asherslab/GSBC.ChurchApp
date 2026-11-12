@@ -89,17 +89,12 @@ public sealed class OnlineMinistries(ChannelBase channel) : IMinistryReads, IMin
 
     public async Task RemoveCalendarAsync(string ministryId, string id) => await _leading.RemoveCalendarAsync(new ItemRef { MinistryId = ministryId, Id = id });
 
-
-
     public async Task SitOutAsync(SittingOut sittingOut, bool off) => await _leading.SitOutAsync(new SitOutSave { SittingOut = sittingOut, Off = off });
 
     public async Task<LifeGroupsCalendar> LifeGroupsCalendarAsync() => await _leading.LifeGroupsCalendarAsync(new LifeGroupsRequest());
 
     public async Task<LifeGroupsCalendar> ShowLifeGroupsInAsync(string calendarId) =>
         await _leading.ShowLifeGroupsInAsync(new LifeGroupsCalendarChoice { CalendarId = calendarId });
-
-    public async Task SaveSessionAsync(string groupId, SessionChange change) =>
-        await _leading.SaveSessionAsync(new SessionSave { MinistryId = groupId, Change = change });
 
     public async Task SaveRoundAsync(Round round) => await _leading.SaveRoundAsync(new RoundSave { Round = round });
 

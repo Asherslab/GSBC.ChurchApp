@@ -97,7 +97,6 @@ public sealed class MinistryPage
     [ProtoMember(6)] public List<FileItem> Files { get; set; } = [];
     [ProtoMember(7)] public List<CalendarLine> Calendars { get; set; } = [];
     [ProtoMember(8, IsRequired = true)] public YourPlace You { get; set; } = new();
-    [ProtoMember(9)] public List<SessionChange> Sessions { get; set; } = [];
     [ProtoMember(10)] public Round? Round { get; set; }
     [ProtoMember(11)] public List<SittingOut> SittingOut { get; set; } = [];
     [ProtoMember(12)] public List<string> Sundays { get; set; } = [];
@@ -162,6 +161,8 @@ public sealed class Post
     [ProtoMember(11)] public bool AskWholeChurch { get; set; }
     [ProtoMember(12)] public string WholeChurch { get; set; } = "";
     [ProtoMember(13)] public bool New { get; set; }
+    [ProtoMember(14)] public string Sunday { get; set; } = "";
+    [ProtoMember(15)] public bool NoClass { get; set; }
 }
 
 [ProtoContract]
@@ -190,8 +191,15 @@ public sealed class CalendarLine
     [ProtoMember(5)] public string MinistryId { get; set; } = "";
     [ProtoMember(6)] public string From { get; set; } = "";
     [ProtoMember(7)] public bool Linked { get; set; }
-    [ProtoMember(8)] public List<string> Days { get; set; } = [];
-    [ProtoMember(9)] public bool OnItsDays { get; set; }
+    [ProtoMember(10)] public List<DaySpan> Within { get; set; } = [];
+    [ProtoMember(11)] public bool OnlyWithin { get; set; }
+}
+
+[ProtoContract]
+public sealed class DaySpan
+{
+    [ProtoMember(1)] public string From { get; set; } = "";
+    [ProtoMember(2)] public string To { get; set; } = "";
 }
 
 [ProtoContract]
@@ -244,6 +252,7 @@ public sealed class AskLine
     [ProtoMember(10)] public string MinistryName { get; set; } = "";
     [ProtoMember(11)] public string AskedById { get; set; } = "";
     [ProtoMember(12)] public bool WaitingForParent { get; set; }
+    [ProtoMember(13)] public bool NoParent { get; set; }
 }
 
 [ProtoContract]
@@ -408,7 +417,6 @@ public sealed class LifeGroupsPage
 {
     [ProtoMember(2)] public List<Round> Rounds { get; set; } = [];
     [ProtoMember(3)] public List<MinistrySummary> Groups { get; set; } = [];
-    [ProtoMember(4)] public List<GroupSessions> Sessions { get; set; } = [];
     [ProtoMember(5)] public bool MayPlan { get; set; }
     [ProtoMember(6)] public List<Crumb> Under { get; set; } = [];
     [ProtoMember(7)] public string CalendarName { get; set; } = "";
@@ -459,21 +467,6 @@ public sealed class Round
 }
 
 [ProtoContract]
-public sealed class GroupSessions
-{
-    [ProtoMember(1)] public string GroupId { get; set; } = "";
-    [ProtoMember(2)] public List<SessionChange> Changes { get; set; } = [];
-}
-
-[ProtoContract]
-public sealed class SessionChange
-{
-    [ProtoMember(1)] public string Date { get; set; } = "";
-    [ProtoMember(2)] public bool Off { get; set; }
-    [ProtoMember(3)] public string Note { get; set; } = "";
-}
-
-[ProtoContract]
 public sealed class RoundSave
 {
     [ProtoMember(2, IsRequired = true)] public Round Round { get; set; } = new();
@@ -483,15 +476,6 @@ public sealed class RoundSave
 public sealed class RoundRef
 {
     [ProtoMember(1)] public string Id { get; set; } = "";
-}
-
-[ProtoContract]
-public sealed class SessionSave : IScopedRequest
-{
-    [ProtoMember(1)] public string MinistryId { get; set; } = "";
-    [ProtoMember(2, IsRequired = true)] public SessionChange Change { get; set; } = new();
-
-    public string ScopeId => MinistryId;
 }
 
 [ProtoContract]

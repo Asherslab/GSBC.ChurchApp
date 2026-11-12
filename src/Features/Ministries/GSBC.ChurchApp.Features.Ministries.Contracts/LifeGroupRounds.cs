@@ -15,6 +15,15 @@ public static class LifeGroupRounds
         return rounds.Where(round => Runs(groupId, groupRoundId, round, off)).SelectMany(round => round.Sundays).Distinct().Order(StringComparer.Ordinal).ToList();
     }
 
+    public static List<DaySpan> SpansOf(string groupId, string groupRoundId, IEnumerable<Round> rounds, IEnumerable<SittingOut> sittingOut)
+    {
+        List<SittingOut> off = sittingOut.ToList();
+        return rounds.Where(round => round.Sundays.Count > 0 && Runs(groupId, groupRoundId, round, off))
+            .Select(round => new DaySpan { From = round.Sundays.Min(StringComparer.Ordinal)!, To = round.Sundays.Max(StringComparer.Ordinal)! })
+            .OrderBy(span => span.From, StringComparer.Ordinal)
+            .ToList();
+    }
+
     public static SittingOut? SitsOut(string groupId, Round round, IEnumerable<SittingOut> sittingOut) =>
         sittingOut.FirstOrDefault(each => each.GroupId == groupId && each.RoundId == round.Id);
 

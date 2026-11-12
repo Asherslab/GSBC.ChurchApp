@@ -1,0 +1,46 @@
+{
+  "title": "A ministry's tabs: turning them on and putting them in order",
+  "question": "#21: \"Allow reordering the tabs in a ministry per ministry.\" Settings becomes groups (cards in the admin panel, inset groups on the phone, as #12 asked), and Who can start a chat sits in its own group. The tabs a ministry uses and their order sit together, on the phone and in the admin panel. How should a leader move a tab?",
+  "options": [
+    {
+      "id": "arrows",
+      "kind": "assigned",
+      "kicker": "THE ROLL",
+      "label": "One list: switch and arrows on each tab",
+      "thesis": "Its tabs is one group listing News, Calendar, Chats, Files and Roster in the order they show, each with up and down arrows and its on/off switch. Changes apply straight away, as App styling's tab bar does.",
+      "palette": ["#2a3d5e", "#f4efe7", "#008176", "#ffffff"],
+      "materials": ["inset group", "up/down icon buttons", "switch"],
+      "viewport": "Settings tab: Its tabs with five rows (Roster off at the end), then the Chats group with Who can start a chat.",
+      "risk": "Three controls per row is busy on a small phone.",
+      "html": ".impeccable/mocks/ministries-wave2/t-a-arrows.html",
+      "htmlFrame": "390x844"
+    },
+    {
+      "id": "drag",
+      "kind": "dealt",
+      "label": "Drag with a live preview of the tabs",
+      "thesis": "Its tabs shows the tab strip as people will see it, and the rows below drag by their grip; the strip follows as you drag. Each row's ⋯ menu moves it for a keyboard or screen reader.",
+      "palette": ["#2a3d5e", "#f4efe7", "#008176", "#e7ae74"],
+      "materials": ["preview tab strip", "drag grips", "switch", "⋯ Move up / Move down"],
+      "viewport": "Settings tab: the preview strip, Calendar lifted mid-drag, the switches, then the Chats group.",
+      "risk": "Dragging in a scrolling page on a phone is fiddly, and it's a new pattern to learn.",
+      "html": ".impeccable/mocks/ministries-wave2/t-b-drag.html",
+      "htmlFrame": "390x844"
+    },
+    {
+      "id": "sheet",
+      "kind": "dealt",
+      "label": "Switches stay; the order is its own sheet",
+      "thesis": "Its tabs keeps simple on/off rows, with Change the order of the tabs under them. That opens a sheet with up and down arrows, saved with Cancel and Save.",
+      "palette": ["#2a3d5e", "#f4efe7", "#00776d", "#ffffff"],
+      "materials": ["switch rows", "accent action row", "sheet with arrows", "Cancel and Save"],
+      "viewport": "Settings tab: the switch rows and Change the order of the tabs, with the order sheet open over them.",
+      "risk": "The order is one step away, and the order sheet saves while the switches change at once.",
+      "html": ".impeccable/mocks/ministries-wave2/t-c-sheet.html",
+      "htmlFrame": "390x844"
+    }
+  ],
+  "reroll": true,
+  "steer": true,
+  "buildPath": { "value": "code" }
+}

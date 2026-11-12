@@ -73,10 +73,9 @@ internal sealed class MinistriesService(
             Calendars = await views.CalendarsAsync(tree, ministry.Id, grants, me is not null, cancellationToken),
             You = await YouAsync(me, tree, ministry, grants, cancellationToken),
         };
+        List<DaySpan>? within = null;
         if (ministry.ShowsInLifeGroups)
         {
-            page.Sessions = (await db.Sessions.AsNoTracking().Where(session => session.GroupId == ministry.Id).OrderBy(session => session.Date).ToListAsync(cancellationToken))
-                .Select(MinistryViews.Session).ToList();
             if (ministry.RoundId is { } roundId && await db.Rounds.AsNoTracking().SingleOrDefaultAsync(found => found.Id == roundId, cancellationToken) is { } round)
                 page.Round = MinistryViews.Round(round);
             List<SitOutRecord> sitOuts = await db.SitOuts.AsNoTracking().Where(sitOut => sitOut.GroupId == ministry.Id).ToListAsync(cancellationToken);
@@ -86,9 +85,11 @@ internal sealed class MinistriesService(
             page.SittingOut = sitOuts.Where(sitOut => rounds.TryGetValue(sitOut.RoundId, out RoundRecord? set) && set.Sundays.Count > 0 && set.Sundays.Max() >= today)
                 .OrderBy(sitOut => rounds[sitOut.RoundId].Sundays.Min())
                 .Select(sitOut => MinistryViews.SittingOut(sitOut, rounds[sitOut.RoundId], tree)).ToList();
-            page.Sundays = MinistryViews.SundaysOf(ministry, await db.Rounds.AsNoTracking().ToListAsync(cancellationToken), sitOuts);
+            List<RoundRecord> all = await db.Rounds.AsNoTracking().ToListAsync(cancellationToken);
+            page.Sundays = MinistryViews.SundaysOf(ministry, all, sitOuts);
+            within = MinistryViews.SpansOf(ministry, all, sitOuts);
         }
-        page.Calendars.AddRange(await views.LinkedAsync(ministry, ministry.ShowsInLifeGroups ? page.Sundays : null, cancellationToken));
+        page.Calendars.AddRange(await views.LinkedAsync(ministry, within, cancellationToken));
         return page;
     }
 
@@ -99,7 +100,6 @@ internal sealed class MinistriesService(
         MinistryTree tree = await views.TreeAsync(cancellationToken);
         IReadOnlyList<MinistryRecord> groups = tree.LifeGroups();
         List<Guid> groupIds = groups.Select(group => group.Id).ToList();
-        List<SessionRecord> sessions = await db.Sessions.AsNoTracking().Where(session => groupIds.Contains(session.GroupId)).ToListAsync(cancellationToken);
         GrantSet grants = await views.GrantsAsync(me, cancellationToken);
         Dictionary<Guid, string> yours = me is { } person ? await YoursAsync(person, groups, grants, cancellationToken) : [];
         List<SitOutRecord> sitOuts = await db.SitOuts.AsNoTracking().Where(sitOut => groupIds.Contains(sitOut.GroupId)).ToListAsync(cancellationToken);
@@ -110,9 +110,6 @@ internal sealed class MinistriesService(
             Rounds = (await db.Rounds.AsNoTracking().ToListAsync(cancellationToken))
                 .OrderBy(round => round.Sundays.DefaultIfEmpty().Min()).Select(MinistryViews.Round).ToList(),
             Groups = groups.Select(group => MinistryViews.Summary(group, yours.GetValueOrDefault(group.Id) ?? "")).ToList(),
-            Sessions = sessions.GroupBy(session => session.GroupId)
-                .Select(each => new GroupSessions { GroupId = each.Key.ToString(), Changes = each.OrderBy(session => session.Date).Select(MinistryViews.Session).ToList() })
-                .ToList(),
             MayPlan = grants.IsAllowed(MinistriesPermissions.PlanLifeGroups),
             Under = groups.Select(group => group.ParentId).OfType<Guid>().Distinct().Select(tree.Find).OfType<MinistryRecord>()
                 .Select(parent => new Crumb { Id = parent.Id.ToString(), Name = parent.Name }).ToList(),
@@ -301,7 +298,7 @@ internal sealed class MinistriesService(
             Age = facts.GetValueOrDefault(ask.PersonId)?.Age, As = ask.As,
             AskedBy = ask.AskedBy == ask.PersonId ? "" : names.GetValueOrDefault(ask.AskedBy) ?? "", AskedById = ask.AskedBy.ToString(),
             Note = ask.Note, AskedAt = ask.AskedAt, MinistryId = ask.MinistryId.ToString(), MinistryName = tree.Find(ask.MinistryId)?.Name ?? "",
-            WaitingForParent = ask.WaitingForParent,
+            WaitingForParent = ask.WaitingForParent, NoParent = ask.WaitingForParent && facts.GetValueOrDefault(ask.PersonId) is { Parents.Count: 0 },
         }).ToList();
     }
 

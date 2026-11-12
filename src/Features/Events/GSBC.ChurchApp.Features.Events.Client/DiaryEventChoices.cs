@@ -16,6 +16,9 @@ public sealed class DiaryEventChoices(CalendarDiary diary) : IEventChoices
             .ToList();
     }
 
+    public async Task<IReadOnlyList<CalendarChoiceLine>> ForEveryoneAsync() =>
+        (await diary.ForEveryoneAsync()).Select(calendar => new CalendarChoiceLine(calendar.Id, calendar.Name, calendar.MinistryId)).ToList();
+
     private static EventChoiceLine Line(Diary diary, EventOccurrence occurrence)
     {
         CalendarInfo? calendar = diary.Calendar(occurrence.CalendarId);

@@ -253,7 +253,13 @@
                 <ListRow Title="New this week" Subtitle="Two notices" Icon="bell" IconTone="RowTone.Warm" Trailing="2" Href="gallery" />
                 <ListRow Title="Website" Subtitle="example.com" Icon="link" IconTone="RowTone.Quiet" Href="https://example.com" External="true" />
                 <ListRow Title="Coming later" Subtitle="Not in this version" Icon="lock" Disabled="true" />
+                <ListRow Title="Services" Subtitle="A row with its own ⋯ menu (Actions): the row opens it, the menu acts on it" Icon="link" IconTone="RowTone.Quiet" Href="gallery" Actions="RowActions" />
             </ListGroup>)
+        @Item("Putting things in order: ReorderList", "Drag a row by its handle, or use its ⋯ menu to move it up or down; the preview above follows as you drag.",
+            @<ReorderList TItem="string" Items="_order" Key="name => name" Name="name => name" Label="Tabs, in order" OnReordered="order => _order = order">
+                <Preview>@foreach (string name in context) { <span @key="name">@name</span> }</Preview>
+                <ItemTemplate><span class="gallery__note">@context</span></ItemTemplate>
+            </ReorderList>)
         @Item("A list under headings: GroupedList", "Sorted into groups, like people by first letter.",
             @<GroupedList TItem="SamplePerson" Items="People" GroupKey="person => person.Name[..1]">
                 <ItemTemplate><ListRow Title="@context.Name" Subtitle="@context.Email" /></ItemTemplate>
@@ -411,6 +417,7 @@
     private int _week;
     private bool _paged, _deleting, _popover, _tray, _editor = true, _explain, _anonymous = true, _viewing, _banner;
     private string _role = "team";
+    private IReadOnlyList<string> _order = ["News", "Calendar", "Chats", "Files"];
     private string _view = "grid";
     private string _name = "";
     private string _request = "";
@@ -467,6 +474,11 @@
         this.Item("Send a recovery link", () => Task.CompletedTask, "send"),
         this.Item("Open as a page", () => Task.CompletedTask, "maximize-2"),
         this.Item("Delete Jordan…", () => { _deleting = true; return Task.CompletedTask; }, "trash-2", danger: true, startsGroup: true),
+    ];
+
+    private IReadOnlyList<MenuItem> RowActions =>
+    [
+        this.Item("Unlink Services…", () => { _deleting = true; return Task.CompletedTask; }, "x", danger: true),
     ];
 
     private IReadOnlyList<MenuItem> NewItems =>

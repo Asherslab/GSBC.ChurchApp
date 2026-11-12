@@ -52,6 +52,11 @@ public sealed class CalendarDiary(IServiceProvider services)
             contacts.ToDictionary(entry => entry.OccurrenceId, entry => entry.Contacts));
     }
 
+    public async Task<IReadOnlyList<CalendarInfo>> ForEveryoneAsync() =>
+        _feeds is { IsAvailable: true } feeds
+            ? (await ReadAllAsync<CalendarInfo>(feeds, EventsFeeds.Calendars)).OrderBy(calendar => calendar.Order).ThenBy(calendar => calendar.Name).ToList()
+            : [];
+
     public static IReadOnlyList<EventOccurrence> ComingUp(IEnumerable<EventOccurrence> occurrences, DateTime nowUtc, int count)
     {
         DateOnly today = ChurchTime.DayOf(nowUtc);

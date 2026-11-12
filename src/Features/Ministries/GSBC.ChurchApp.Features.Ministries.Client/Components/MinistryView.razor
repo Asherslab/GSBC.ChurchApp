@@ -10,6 +10,8 @@
             string backLabel = page.Path.LastOrDefault()?.Name ?? "Ministries";
         }
         <Page Title="@ministry.Name" BackHref="@back" BackLabel="@backLabel">
+            <Actions><MinistryMenu Page="page" Href="id => MinistriesPlaces.Of(id)" Variant="ButtonVariant.GhostOnMasthead" /></Actions>
+            <ChildContent>
             <Masthead Title="@ministry.Name" Note="@(MinistryWords.HeroNote(ministry) is { Length: > 0 } note ? note : null)">
                 <div class="ministry-hero__action">
                     <MinistryHeroAction Page="page" OnJoin="() => _joining = true" />
@@ -25,6 +27,7 @@
             }
             <WaitingToSend MethodsUnder="@MinistryMethods.Under" Describe="MinistryMethods.Describe" First="@(_joined is null)" />
             <MinistryArea Page="page" Area="@area" Href="id => MinistriesPlaces.Of(id)" OnChanged="ReloadAsync" />
+            </ChildContent>
         </Page>
         <JoinSheet @key="@($"{Id}{_joining}")" Open="_joining" OpenChanged="open => _joining = open" Page="page" OnJoined="JoinedAsync" />
     </ChildContent>

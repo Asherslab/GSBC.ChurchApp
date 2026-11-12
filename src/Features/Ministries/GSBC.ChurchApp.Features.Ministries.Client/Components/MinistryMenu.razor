@@ -1,0 +1,100 @@
+@inject IMinistryWrites Ministries
+@inject MinistryLookups Lookups
+@inject NavigationManager Navigation
+
+@if (Page.You.MayDelete)
+{
+    <Menu Label="@($"More for {Page.Ministry.Name}")" Items="Items" Variant="Variant" Disabled="_busy" />
+
+    <Sheet Open="_archiving" OpenChanged="open => _archiving = open" Title="@($"Archive {Page.Ministry.Name}?")" Lead="@ArchiveWords">
+        <ChildContent>
+            <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+        </ChildContent>
+        <Actions>
+            <Button Block="true" Busy="_busy" OnClick="ArchiveAsync">Archive it</Button>
+            <Button Block="true" Variant="ButtonVariant.Quiet" Disabled="_busy" OnClick="() => _archiving = false">Keep it</Button>
+        </Actions>
+    </Sheet>
+
+    <Sheet Open="_preview is not null" OpenChanged="open => { if (!open) _preview = null; }" Title="@($"Delete {_preview?.Name}?")" Lead="@(_preview is { } preview ? DeleteWords(preview) : null)">
+        <ChildContent>
+            <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+        </ChildContent>
+        <Actions>
+            <Button Block="true" Variant="ButtonVariant.Danger" Busy="_busy" OnClick="DeleteAsync">Delete it</Button>
+            <Button Block="true" Variant="ButtonVariant.Quiet" Disabled="_busy" OnClick="() => _preview = null">Keep it</Button>
+        </Actions>
+    </Sheet>
+}
+
+@code {
+    private bool _archiving;
+    private DeletionPreview? _preview;
+    private bool _busy;
+    private string? _problem;
+
+    [Parameter, EditorRequired] public required MinistryPage Page { get; set; }
+    [Parameter, EditorRequired] public required Func<string, string> Href { get; set; }
+    [Parameter] public string AfterDelete { get; set; } = MinistriesPlaces.Directory;
+    [Parameter] public ButtonVariant Variant { get; set; } = ButtonVariant.Quiet;
+
+    private IReadOnlyList<MenuItem> Items =>
+    [
+        this.Item($"Archive {Page.Ministry.Name}…", () => { (_archiving, _problem) = (true, null); }, "archive", "Puts it away without deleting anything. Staff can restore it."),
+        this.Item($"Delete {Page.Ministry.Name}…", PreviewAsync, "trash", "Shows what goes with it first", danger: true, startsGroup: true),
+    ];
+
+    private string ArchiveWords =>
+        $"{Page.Ministry.Name}{(Page.SubMinistries.Count > 0 ? $" and the {MinistryWords.Ministries(Page.SubMinistries.Count)} under it" : "")} leave every list and the app, and nothing more can be posted. Its people, news, files and calendars are kept, and staff can restore it from Archived.";
+
+    private static string DeleteWords(DeletionPreview preview)
+    {
+        List<string> goes = [];
+        if (preview.Posts > 0) goes.Add($"{preview.Posts} {(preview.Posts == 1 ? "post" : "posts")}");
+        if (preview.Files > 0) goes.Add($"{preview.Files} {(preview.Files == 1 ? "file" : "files")}");
+        if (preview.Calendars.Count > 0) goes.Add($"the {MinistryWords.Names(preview.Calendars)} {(preview.Calendars.Count == 1 ? "calendar" : "calendars")} and {preview.Events} {(preview.Events == 1 ? "event" : "events")}");
+        if (preview.People > 0) goes.Add($"everyone's place in it ({preview.People})");
+        string what = goes.Count > 0 ? $"This deletes {MinistryWords.Names(goes)}." : "Nothing else is in it.";
+        string under = preview.SubMinistries > 0
+            ? $" The {MinistryWords.Ministries(preview.SubMinistries)} under it {(preview.SubMinistries == 1 ? "moves" : "move")} up to {(preview.SubMinistriesGoTo.Length > 0 ? preview.SubMinistriesGoTo : "the top level")}."
+            : "";
+        return $"{what}{under} This can't be undone.";
+    }
+
+    private Task PreviewAsync() => RunAsync(async () => _preview = await Lookups.DeletionAsync(Page.Ministry.Id));
+
+    private Task ArchiveAsync() =>
+        RunAsync(async () =>
+        {
+            await Ministries.ArchiveAsync(Page.Ministry.Id);
+            _archiving = false;
+            Leave();
+        });
+
+    private Task DeleteAsync() =>
+        RunAsync(async () =>
+        {
+            await Ministries.DeleteAsync(Page.Ministry.Id);
+            _preview = null;
+            Leave();
+        });
+
+    private void Leave() => Navigation.NavigateTo(Page.Ministry.ParentId.Length > 0 ? Href(Page.Ministry.ParentId) : AfterDelete, replace: true);
+
+    private async Task RunAsync(Func<Task> work)
+    {
+        (_busy, _problem) = (true, null);
+        try
+        {
+            await work();
+        }
+        catch (RpcException exception)
+        {
+            _problem = MinistryLookups.Problem(exception);
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+}

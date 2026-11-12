@@ -12,7 +12,6 @@ public sealed class MinistriesDbContext(DbContextOptions<MinistriesDbContext> op
     public DbSet<PostRecord> Posts => Set<PostRecord>();
     public DbSet<FileRecord> Files => Set<FileRecord>();
     public DbSet<RoundRecord> Rounds => Set<RoundRecord>();
-    public DbSet<SessionRecord> Sessions => Set<SessionRecord>();
     public DbSet<SitOutRecord> SitOuts => Set<SitOutRecord>();
 
     protected override string Schema => SchemaName;
@@ -54,11 +53,6 @@ public sealed class MinistriesDbContext(DbContextOptions<MinistriesDbContext> op
             entity.ToTable("rounds");
             entity.HasKey(round => round.Id);
             entity.Property(round => round.Id).ValueGeneratedNever();
-        });
-        modelBuilder.Entity<SessionRecord>(entity =>
-        {
-            entity.ToTable("sessions");
-            entity.HasKey(session => new { session.GroupId, session.Date });
         });
         modelBuilder.Entity<SitOutRecord>(entity =>
         {

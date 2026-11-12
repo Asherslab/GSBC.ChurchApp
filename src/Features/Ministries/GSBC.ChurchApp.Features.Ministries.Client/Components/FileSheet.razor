@@ -57,10 +57,6 @@
     </ChildContent>
     <Actions>
         <SaveBar Block="true" Label="@(Draft.Id.Length > 0 ? "Save" : IsDocument ? "Add the file" : "Add the link")" Busy="_busy" OnSave="SaveAsync" Blocked="@Blocked" />
-        @if (Draft.Id.Length > 0)
-        {
-            <Button Block="true" Variant="ButtonVariant.Danger" Disabled="_busy" OnClick="DeleteAsync">Delete it</Button>
-        }
     </Actions>
 </Sheet>
 
@@ -147,8 +143,6 @@
         IsDocument && Draft.Id.Length == 0
             ? Uploads.For(_picked, FileMediaId, Target())
             : null;
-
-    private Task DeleteAsync() => RunAsync(() => Ministries.DeleteFileAsync(Page.Ministry.Id, Draft.Id), keepPicked: false);
 
     private async Task CloseAsync(bool open)
     {
