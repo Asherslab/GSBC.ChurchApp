@@ -91,7 +91,7 @@ public sealed class RosterFlowTests : IAsyncLifetime
         await AssignAsync(_jo);
 
         RosterView leader = await ViewAsync(_leader);
-        Assert.Equal([RosterRules.AwayFlag, RosterRules.NoBlueCardFlag], leader.Dates.Single().Assignments.Single().Flags);
+        Assert.Equal([AwayRules.AwayFlag, RosterRules.NoBlueCardFlag], leader.Dates.Single().Assignments.Single().Flags);
         Assert.Empty((await ViewAsync(_jo)).Dates.Single().Assignments.Single().Flags);
         Assert.Contains(_notifications.Sent, sent => sent.Audience == NotificationAudience.Person(_jo) && sent.Title.StartsWith("You're on", StringComparison.Ordinal));
     }
@@ -241,7 +241,7 @@ public sealed class RosterFlowTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task DaysAwayAreThePersonsAndOnlyTheyTheirParentOrTheOfficeSetThem()
+    public async Task DaysAwayAreThePersonsAndOnlyTheyTheirParentALeaderOfTheirTeamOrTheOfficeSetThem()
     {
         await using (AsyncServiceScope scope = _services.CreateAsyncScope())
             await scope.ServiceProvider.GetRequiredService<RosterPublisher>().PublishAllAsync(Cancel);
@@ -252,8 +252,12 @@ public sealed class RosterFlowTests : IAsyncLifetime
         await Assert.ThrowsAsync<RpcException>(() =>
             Run(service => service.SaveAwayAsync(_stranger, new AwaySave { AwayId = Guid.CreateVersion7().ToString(), PersonId = _jo.ToString(), From = day, To = day }, Cancel)));
         await Run(service => service.SaveAwayAsync(_office, new AwaySave { AwayId = Guid.CreateVersion7().ToString(), PersonId = _jo.ToString(), From = day, To = day }, Cancel));
+        await Run(service => service.SaveAwayAsync(_leader, new AwaySave
+        {
+            AwayId = Guid.CreateVersion7().ToString(), PersonId = _jo.ToString(), From = day, Weekly = true, Weekdays = [(int)DayOfWeek.Sunday], EndTime = "12:00",
+        }, Cancel));
 
-        Assert.Single((await AwayRowAsync(_jo))!.People.Single().Spans);
+        Assert.Equal(2, (await AwayRowAsync(_jo))!.People.Single().Spans.Count);
     }
 
     [Fact]

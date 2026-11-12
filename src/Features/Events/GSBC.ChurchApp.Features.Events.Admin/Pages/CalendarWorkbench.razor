@@ -216,11 +216,11 @@
                     @AsideItem("Asked to publish", desk.AskedToPublish + desk.AskedToShow.Count, _middle == Middle.Asked, () => Go(Middle.Asked))
                 }
             </nav>
-            <ReorderList TItem="DeskCalendar" Label="Your calendars" Class="calendar-aside__calendars" Items="desk.Calendars"
-                         KeyOf="calendar => calendar.Settings.Calendar.Id" NameOf="calendar => calendar.Settings.Calendar.Name"
-                         ItemClass="@(calendar => SelectedCalendar(view)?.Settings.Calendar.Id == calendar.Settings.Calendar.Id ? "calendar-aside__calendar is-chosen" : "calendar-aside__calendar")"
-                         OnReorder="@(desk.CanManage ? EventCallback.Factory.Create<IReadOnlyList<DeskCalendar>>(this, OrderAsync) : default)">
-                <Row Context="calendar">
+            <ReorderList TItem="DeskCalendar" Label="Your calendars" Class="calendar-aside__calendars" Items="desk.Calendars" Quiet="true" Disabled="@(!desk.CanManage)"
+                         Key="calendar => calendar.Settings.Calendar.Id" Name="calendar => calendar.Settings.Calendar.Name"
+                         RowClass="@(calendar => SelectedCalendar(view)?.Settings.Calendar.Id == calendar.Settings.Calendar.Id ? "calendar-aside__calendar is-chosen" : "calendar-aside__calendar")"
+                         OnReordered="OrderAsync">
+                <ItemTemplate Context="calendar">
                     @{
                         CalendarInfo info = calendar.Settings.Calendar;
                         bool on = calendar.CanEdit && !_hidden!.Contains(info.Id);
@@ -243,7 +243,7 @@
                             <span aria-hidden="true"></span>
                         </label>
                     }
-                </Row>
+                </ItemTemplate>
             </ReorderList>
             @if (desk.CanManage && desk.Calendars.Count > 1)
             {

@@ -4,6 +4,12 @@
 
 <Sheet Open="Open" OpenChanged="CloseAsync" Title="@(_editing is null ? "Positions" : _editing.Id.Length == 0 ? "A new position" : _editing.Name)"
        Lead="@(_editing is null ? "The jobs people do on each date. What a position needs is flagged when someone is put on, but never stops them." : null)">
+    <Tools>
+        @if (_editing is { Id.Length: > 0 } editing)
+        {
+            <Menu Label="@($"More for {editing.Name}")" Items="@([this.Item("Delete the position…", () => _deleting = true, "trash-2", "Everyone on it on dates to come comes off", danger: true)])" />
+        }
+    </Tools>
     <ChildContent>
         @if (_editing is { } position)
         {
@@ -12,10 +18,10 @@
                          ValueChanged="value => position.Needed = int.Parse(value, System.Globalization.CultureInfo.InvariantCulture)" Options="Counts" />
             <ToggleRow Title="Needs a current blue card" Description="Read from Safe Ministry Check, or the church office's records" @bind-Checked="position.NeedsBlueCard" />
             <ToggleRow Title="Needs Safe Ministry training" Description="Current training, from the same records" @bind-Checked="position.NeedsTraining" />
-            <ToggleRow Title="Needs to be trained for it" Description="You choose below who's trained" @bind-Checked="position.NeedsTrained" />
+            <ToggleRow Title="Needs to be trained for it" Description="Leaders tick who's trained. Anyone else goes on as training, with someone trained" @bind-Checked="position.NeedsTrained" />
             @if (position.NeedsTrained && position.Id.Length > 0)
             {
-                <h3 class="roster-position">Trained for it</h3>
+                <h3 class="roster-position">Trained for @position.Name</h3>
                 <ListGroup>
                     @foreach (TeamMember member in View.Team)
                     {
@@ -23,7 +29,7 @@
                         <ToggleRow @key="member.PersonId" Title="@member.Name" Checked="trained" CheckedChanged="value => TrainAsync(position, member, value)" />
                     }
                 </ListGroup>
-                <p class="roster-hint">Ticking someone takes effect straight away.</p>
+                <p class="roster-hint">These change straight away. Someone not ticked goes on as training and needs someone trained on with them.</p>
             }
             <Notice Tone="NoticeTone.Warning" Text="@_problem" />
         }
@@ -41,15 +47,18 @@
     <Actions>
         @if (_editing is { } position)
         {
-            <SaveBar Block="true" Label="@(position.Id.Length == 0 ? "Add the position" : "Save")" Busy="_busy" OnSave="SaveAsync"
+            <SaveBar Label="@(position.Id.Length == 0 ? "Add the position" : "Save")" New="@(position.Id.Length == 0)" Busy="_busy" OnSave="SaveAsync" OnCancel="() => _editing = null"
+                     CancelLabel="Back" State="@(position.Id.Length > 0 && Changed ? SaveState.Unsaved : null)"
                      Blocked="@(position.Name.Trim().Length == 0 ? "Give it a name to save it." : null)" />
-            @if (position.Id.Length > 0)
-            {
-                <Button Block="true" Variant="ButtonVariant.Danger" Disabled="_busy" OnClick="DeleteAsync">Delete the position</Button>
-                <p class="roster-hint">Deleting it takes everyone off it on dates to come and tells them. Past dates keep it.</p>
-            }
-            <Button Block="true" Variant="ButtonVariant.Quiet" OnClick="() => _editing = null">Back to the positions</Button>
         }
+    </Actions>
+</Sheet>
+
+<Sheet Open="_deleting" OpenChanged="open => _deleting = open" Title="@($"Delete {_editing?.Name}?")"
+       Lead="Everyone on it on dates to come comes off and hears straight away. Past dates keep its name.">
+    <Actions>
+        <Button Block="true" Variant="ButtonVariant.Danger" Disabled="_busy" OnClick="DeleteAsync">Delete the position</Button>
+        <Button Block="true" Variant="ButtonVariant.Quiet" OnClick="() => _deleting = false">Keep it</Button>
     </Actions>
 </Sheet>
 
@@ -59,7 +68,7 @@
 
     private Position? _editing;
     private Position? _original;
-    private bool _busy;
+    private bool _busy, _deleting;
     private string? _problem;
 
     [Parameter] public bool Open { get; set; }
@@ -97,6 +106,7 @@
 
     private async Task DeleteAsync()
     {
+        _deleting = false;
         _busy = true;
         _problem = await RosterProblems.TryAsync(() => Writes.DeletePositionAsync(View.MinistryId, _editing!.Id));
         _busy = false;

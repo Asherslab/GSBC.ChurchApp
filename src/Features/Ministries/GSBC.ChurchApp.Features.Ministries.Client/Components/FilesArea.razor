@@ -2,6 +2,7 @@
 @using GSBC.ChurchApp.Platform.Client.Uploads
 @inject FileUploads Uploads
 @inject Shell Shell
+@inject IMinistryWrites Ministries
 @inject IServiceProvider Services
 
 <Section First="true">
@@ -26,14 +27,8 @@
                 @foreach (FileItem file in Page.Files.Where(file => file.Audience == audience))
                 {
                     <ListRow @key="file.Id" Title="@file.Title" Subtitle="@Subtitle(file)" Icon="@(file.Kind == FileKinds.Document ? "file" : "link")" IconTone="RowTone.Accent"
-                             Href="@(file.Kind == FileKinds.Document ? null : file.Url)" External="true" OnClick="() => OpenDocumentAsync(file)">
-                        <TrailingContent>
-                            @if (file.From.Length == 0 && Page.You.MayPostFor.Count > 0)
-                            {
-                                <Button Small="true" Variant="ButtonVariant.Quiet" Icon="pencil" AriaLabel="@($"Change {file.Title}")" OnClick="() => Open(file)" />
-                            }
-                        </TrailingContent>
-                    </ListRow>
+                             Href="@(file.Kind == FileKinds.Document ? null : file.Url)" External="true" OnClick="() => OpenDocumentAsync(file)"
+                             Actions="@(file.From.Length == 0 && Page.You.MayPostFor.Count > 0 ? Actions(file) : null)" />
                 }
             </ListGroup>
         </MinistryBox>
@@ -42,11 +37,24 @@
 
 <Notice Tone="NoticeTone.Warning" Text="@_problem" />
 
+<Sheet Open="_deleting is not null" OpenChanged="open => { if (!open) _deleting = null; }" Title="@($"Delete {_deleting?.Title}?")"
+       Lead="@(_deleting?.Kind == FileKinds.Document ? "It goes for everyone it was for. This can't be undone." : "The link goes for everyone it was for. The page it opens isn't changed.")">
+    <ChildContent>
+        <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+    </ChildContent>
+    <Actions>
+        <Button Block="true" Variant="ButtonVariant.Danger" Busy="_busy" OnClick="DeleteAsync">Delete it</Button>
+        <Button Block="true" Variant="ButtonVariant.Quiet" Disabled="_busy" OnClick="() => _deleting = null">Keep it</Button>
+    </Actions>
+</Sheet>
+
 <FileSheet Open="_open" OpenChanged="open => _open = open" Page="Page" Draft="_draft" OnSaved="OnChanged" />
 
 @code {
     private bool _open;
+    private bool _busy;
     private string? _problem;
+    private FileItem? _deleting;
 
     private IPrivateMediaLinks? Links => Services.GetService(typeof(IPrivateMediaLinks)) as IPrivateMediaLinks;
     private FileItem _draft = new();
@@ -74,6 +82,31 @@
             _problem = $"{file.Title} can't be opened right now. Opening a document needs a connection.";
         else
             await Shell.OpenExternalAsync(link);
+    }
+
+    private IReadOnlyList<MenuItem> Actions(FileItem file) =>
+    [
+        this.Item($"Change {file.Title}", () => Open(file), "pencil", "Its name, its line and who it's for"),
+        this.Item($"Delete {file.Title}…", () => { (_deleting, _problem) = (file, null); }, "trash", danger: true, startsGroup: true),
+    ];
+
+    private async Task DeleteAsync()
+    {
+        (_busy, _problem) = (true, null);
+        try
+        {
+            await Ministries.DeleteFileAsync(Page.Ministry.Id, _deleting!.Id);
+            _deleting = null;
+            await OnChanged.InvokeAsync();
+        }
+        catch (RpcException exception)
+        {
+            _problem = MinistryLookups.Problem(exception);
+        }
+        finally
+        {
+            _busy = false;
+        }
     }
 
     private static string Subtitle(FileItem file) =>

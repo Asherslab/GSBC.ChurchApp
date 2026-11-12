@@ -1,5 +1,6 @@
 @implements IDisposable
 @inject Shell Shell
+@inject IJSRuntime Js
 
 <div class="menu @(Block ? "menu--block" : "") @Class" @onkeydown="OnKeyAsync">
     @if (Text is null)
@@ -19,7 +20,7 @@
     @if (_open)
     {
         <button type="button" class="menu__away" tabindex="-1" aria-label="Close the menu" @onclick="Close"></button>
-        <div class="menu__panel @(AlignStart ? "menu__panel--start" : "")" role="menu" aria-label="@Label">
+        <div class="menu__panel @(AlignStart ? "menu__panel--start" : "")" role="menu" aria-label="@Label" @ref="_panel">
             @for (int index = 0; index < Items.Count; index++)
             {
                 MenuItem item = Items[index];
@@ -57,6 +58,7 @@
     private readonly Dictionary<int, ElementReference> _items = [];
     private bool _open;
     private bool _focusPending;
+    private ElementReference _panel;
     private int _active;
 
     [Parameter, EditorRequired] public required string Label { get; set; }
@@ -123,7 +125,20 @@
         if (!_focusPending || !_items.TryGetValue(_active, out ElementReference item))
             return;
         _focusPending = false;
+        await PlaceAsync();
         await item.FocusAsync();
+    }
+
+    private async Task PlaceAsync()
+    {
+        try
+        {
+            await using IJSObjectReference module = await Js.InvokeAsync<IJSObjectReference>("import", "./_content/GSBC.ChurchApp.Platform.Ui/js/menu.js");
+            await module.InvokeVoidAsync("place", _panel);
+        }
+        catch (JSException)
+        {
+        }
     }
 
     public void Dispose() => _items.Clear();

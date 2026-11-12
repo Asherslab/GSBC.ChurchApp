@@ -279,9 +279,17 @@ namespace GSBC.ChurchApp.Features.Ministries.Api.Data.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("ministry_id");
 
+                    b.Property<bool>("NoClass")
+                        .HasColumnType("boolean")
+                        .HasColumnName("no_class");
+
                     b.Property<DateTime>("PostedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("posted_at");
+
+                    b.Property<DateOnly?>("Sunday")
+                        .HasColumnType("date")
+                        .HasColumnName("sunday");
 
                     b.Property<string>("Title")
                         .IsRequired()
@@ -333,31 +341,6 @@ namespace GSBC.ChurchApp.Features.Ministries.Api.Data.Migrations
                         .HasName("pk_rounds");
 
                     b.ToTable("rounds", "ministries");
-                });
-
-            modelBuilder.Entity("GSBC.ChurchApp.Features.Ministries.Api.Data.SessionRecord", b =>
-                {
-                    b.Property<Guid>("GroupId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("group_id");
-
-                    b.Property<DateOnly>("Date")
-                        .HasColumnType("date")
-                        .HasColumnName("date");
-
-                    b.Property<string>("Note")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("note");
-
-                    b.Property<bool>("Off")
-                        .HasColumnType("boolean")
-                        .HasColumnName("off");
-
-                    b.HasKey("GroupId", "Date")
-                        .HasName("pk_sessions");
-
-                    b.ToTable("sessions", "ministries");
                 });
 
             modelBuilder.Entity("GSBC.ChurchApp.Features.Ministries.Api.Data.SitOutRecord", b =>

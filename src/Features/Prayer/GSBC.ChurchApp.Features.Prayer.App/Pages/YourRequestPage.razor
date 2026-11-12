@@ -16,38 +16,42 @@
         }
         else
         {
+            <div class="prayer-band">
+                <div class="prayer-band__head">
+                    <p class="prayer-band__meta">
+                        <span>@(line.Sending == Sending.Sent ? "Sent" : "Written") @PrayerWords.Day(line.SentAt)</span>
+                        @if (line.Wall == WallState.Shown)
+                        {
+                            <span>Shown as @(line.WallName.Length > 0 ? line.WallName : PrayerWords.NoName.ToLowerInvariant())</span>
+                        }
+                    </p>
+                    <Menu Label="More for your request" Small="true" Items="Actions(line)" />
+                </div>
+                @if (line.Sending == Sending.Sent)
+                {
+                    <StagePipeline TValue="YourStage" Label="Where your request is" Stages="Stages(line)" Value="Stage(line)" ReadOnly="true" />
+                    <p class="prayer-band__state">@PrayerWords.Where(line)</p>
+                }
+                else
+                {
+                    <SaveStatus State="@(line.Sending == Sending.CouldNotSend ? SaveState.Failed : SaveState.Waiting)" WaitingText="@PrayerWords.Status(line)"
+                                FailedText="Couldn't send" Detail="@line.Problem" Retry="() => Prayer.RetryAsync(line.Id)" />
+                }
+            </div>
             <Section First="true">
-                <p class="prayer-yours__status @(line.Sending == Sending.Sent ? "" : "is-waiting")">@PrayerWords.Status(line)</p>
-                <p class="prayer-yours__text">@line.Text</p>
-                <p class="prayer-yours__meta">@(line.Sending == Sending.Sent ? "Sent" : "Written") @PrayerWords.Day(line.SentAt)@(line.Wall == WallState.Shown ? $" · Shown as {(line.WallName.Length > 0 ? line.WallName : PrayerWords.NoName.ToLowerInvariant())}" : "")</p>
+                <p class="prayer-request__text">@line.Text</p>
                 @if (line.Answered && line.AnsweredNote.Length > 0)
                 {
                     <Card Class="prayer-yours__answered" Title="Answered"><p>@line.AnsweredNote</p></Card>
                 }
-                @if (line.Problem is { Length: > 0 } problem)
-                {
-                    <Notice Tone="NoticeTone.Warning" Text="@problem" />
-                }
             </Section>
-            <Section>
-                <ListGroup>
-                    @if (line.Sending == Sending.CouldNotSend)
-                    {
-                        <ListRow Title="Try sending it again" Icon="send" OnClick="() => Prayer.RetryAsync(line.Id)" />
-                    }
-                    @if (!line.Answered && line.Sending != Sending.CouldNotSend)
-                    {
-                        <ListRow Title="It was answered" Subtitle="@(line.Wall == WallState.Shown ? "Add a few words of thanks for the prayer wall" : "Let the pastoral team know")"
-                                 Icon="check" IconTone="RowTone.Accent" Chevron="true" OnClick="() => Open(Ask.Answered)" />
-                    }
-                    @if (line.Wall is WallState.Shown or WallState.Waiting && line.Sending != Sending.CouldNotSend)
-                    {
-                        <ListRow Title="Take it off the prayer wall" Subtitle="The pastoral team still has it" Icon="eye-off" Chevron="true" OnClick="() => Open(Ask.TakeDown)" />
-                    }
-                    <ListRow Title="Delete it" Subtitle="From the pastoral team and the prayer wall" Icon="x" IconTone="RowTone.Warm" Chevron="true"
-                             OnClick="() => Open(Ask.Delete)" />
-                </ListGroup>
-            </Section>
+            @if (!line.Answered && line.Sending != Sending.CouldNotSend)
+            {
+                <Section>
+                    <Button Block="true" Icon="check" OnClick="() => Open(Ask.Answered)">It was answered</Button>
+                    <p class="prayer-request__fact prayer-yours__hint">@(line.Wall == WallState.Shown ? "Add a few words of thanks for the prayer wall." : "Let the pastoral team know.")</p>
+                </Section>
+            }
         }
     </LiveData>
 </Page>
@@ -84,6 +88,13 @@
         Delete,
     }
 
+    private enum YourStage
+    {
+        Sent,
+        Wall,
+        Answered,
+    }
+
     private const ChangeKind Reload = ChangeKind.Reconnected | ChangeKind.Session | ChangeKind.Access | ChangeKind.Outbox;
 
     [Parameter] public string Id { get; set; } = "";
@@ -91,6 +102,23 @@
     private Ask _asking;
     private string _note = "";
     private bool _busy;
+
+    private static IReadOnlyList<SegmentOption<YourStage>> Stages(YourLine line) => line.AskedForWall
+        ? [new(YourStage.Sent, "Sent"), new(YourStage.Wall, line.Wall is WallState.Ended or WallState.TakenDown ? "Was on the wall" : "On the wall"), new(YourStage.Answered, "Answered")]
+        : [new(YourStage.Sent, "Sent"), new(YourStage.Answered, "Answered")];
+
+    private static YourStage Stage(YourLine line) => line.Answered ? YourStage.Answered
+        : line.Wall is WallState.Shown or WallState.Ended ? YourStage.Wall
+        : YourStage.Sent;
+
+    private IReadOnlyList<MenuItem> Actions(YourLine line)
+    {
+        List<MenuItem> items = [];
+        if (line.Wall is WallState.Shown or WallState.Waiting && line.Sending != Sending.CouldNotSend)
+            items.Add(this.Item("Take it off the prayer wall…", () => Open(Ask.TakeDown), "eye-off", "The pastoral team still has it"));
+        items.Add(this.Item("Delete it…", () => Open(Ask.Delete), "trash-2", "From the pastoral team and the prayer wall", danger: true, startsGroup: items.Count > 0));
+        return items;
+    }
 
     private void Open(Ask ask) => (_asking, _note) = (ask, "");
 

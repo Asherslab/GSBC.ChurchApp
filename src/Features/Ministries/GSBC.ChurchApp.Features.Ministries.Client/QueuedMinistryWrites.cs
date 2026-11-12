@@ -93,7 +93,6 @@ public sealed class QueuedMinistryWrites(IOutbox outbox) : IMinistryWrites
 
     public Task RemoveCalendarAsync(string ministryId, string id) => SendAsync(MinistryMethods.RemoveCalendar, new ItemRef { MinistryId = ministryId, Id = id });
 
-    public Task SaveSessionAsync(string groupId, SessionChange change) => SendAsync(MinistryMethods.SaveSession, new SessionSave { MinistryId = groupId, Change = change });
 
     private static T Minted<T>(T item, string id, Action<string> mint)
     {

@@ -8,15 +8,17 @@ namespace GSBC.ChurchApp.Features.Ministries.Api.Tests;
 public sealed class LifeGroupsPlanningTests
 {
     [Fact]
-    public void AGroupsLinkedCalendarShowsOnlyItsOwnSundaysAndAnAllYearGroupFollowsTheBreaks()
+    public void AGroupsLinkedCalendarShowsWhileItsSetRunsAndAnAllYearGroupFollowsTheBreaks()
     {
-        Round term3 = new() { Id = "t3", Sundays = ["2026-07-19", "2026-07-26"] }, term4 = new() { Id = "t4", Sundays = ["2026-10-11", "2026-10-18"] };
-        Round[] rounds = [term4, term3];
+        Round term3 = new() { Id = "t3", Sundays = ["2026-07-26", "2026-07-19"] }, term4 = new() { Id = "t4", Sundays = ["2026-10-11", "2026-11-01"] };
+        Round[] rounds = [term4, term3, new() { Id = "planning" }];
 
-        Assert.Equal(["2026-10-11", "2026-10-18"], LifeGroupRounds.SundaysOf("youth", "t4", rounds, []));
-        Assert.Equal(["2026-07-19", "2026-07-26", "2026-10-11", "2026-10-18"], LifeGroupRounds.SundaysOf("kids-life", "", rounds, []));
-        Assert.Equal(["2026-10-11", "2026-10-18"], LifeGroupRounds.SundaysOf("kids-life", "", rounds, [new SittingOut { GroupId = "kids-life", RoundId = "t3" }]));
+        Assert.Equal([("2026-10-11", "2026-11-01")], Spans(LifeGroupRounds.SpansOf("youth", "t4", rounds, [])));
+        Assert.Equal([("2026-07-19", "2026-07-26"), ("2026-10-11", "2026-11-01")], Spans(LifeGroupRounds.SpansOf("kids-life", "", rounds, [])));
+        Assert.Equal([("2026-10-11", "2026-11-01")], Spans(LifeGroupRounds.SpansOf("kids-life", "", rounds, [new SittingOut { GroupId = "kids-life", RoundId = "t3" }])));
     }
+
+    private static List<(string, string)> Spans(IEnumerable<DaySpan> spans) => spans.Select(span => (span.From, span.To)).ToList();
 
     [Fact]
     public void PlanningTheLifeGroupsSundaysIsChurchWideAndLeadingAMinistryDoesNotGiveIt()

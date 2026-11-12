@@ -6,6 +6,7 @@ using GSBC.ChurchApp.Platform.Api.Calendars;
 using GSBC.ChurchApp.Platform.Api.Ministries;
 using GSBC.ChurchApp.Platform.Api.People;
 using GSBC.ChurchApp.Platform.Common;
+using GSBC.ChurchApp.Platform.Permissions;
 using Grpc.Core;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
@@ -91,21 +92,31 @@ internal sealed class RostersService(
     {
         IReadOnlyDictionary<Guid, string> names = await people.NamesAsync(covered, cancellationToken);
         DateOnly today = ChurchTime.Today(time);
-        ILookup<Guid, AwayRecord> spans = (await db.Away.AsNoTracking().Where(span => covered.Contains(span.PersonId) && span.To >= today).OrderBy(span => span.From)
+        ILookup<Guid, AwayRecord> spans = (await db.Away.AsNoTracking().Where(span => covered.Contains(span.PersonId) && (span.To == null || span.To >= today)).OrderBy(span => span.From)
             .ToListAsync(cancellationToken)).ToLookup(span => span.PersonId);
         return new AwayList
         {
             People = covered.Select(person => new AwayOf
             {
                 PersonId = person.ToString(), Name = names.GetValueOrDefault(person) ?? "Someone",
-                Spans = spans[person].Select(span => new AwaySpan { Id = span.Id.ToString(), From = RosterBook.Wire(span.From), To = RosterBook.Wire(span.To), Note = span.Note })
-                    .ToList(),
+                Spans = spans[person].Select(RosterRules.LineOf).ToList(),
             }).ToList(),
         };
     }
 
-    private async Task<bool> MaySetAwayAsync(Guid me, Guid person, CancellationToken cancellationToken) =>
-        await families.MayActForAsync(me, person, cancellationToken) || (await access.GrantsForAsync(me, cancellationToken)).IsAllowed(RostersPermissions.Away);
+    private async Task<bool> MaySetAwayAsync(Guid me, Guid person, CancellationToken cancellationToken)
+    {
+        if (await families.MayActForAsync(me, person, cancellationToken))
+            return true;
+        GrantSet grants = await access.GrantsForAsync(me, cancellationToken);
+        if (grants.IsAllowed(RostersPermissions.Away))
+            return true;
+        foreach (MinistryFacts ministry in await ministries.UsingAsync(RosterParts.Key, cancellationToken))
+            if (!ministry.Archived && grants.IsAllowed(RostersPermissions.Edit, ministry.Id.ToString())
+                && (await ministries.TeamAsync(ministry.Id, cancellationToken)).Any(member => member.PersonId == person))
+                return true;
+        return false;
+    }
 
     public ValueTask<Done> SavePositionAsync(PositionSave request, CallContext context = default) => SavePositionAsync(SignedIn(context), request, context.CancellationToken);
 
@@ -518,10 +529,8 @@ internal sealed class RostersService(
     {
         Guid person = request.PersonId.Length > 0 ? IdOf(request.PersonId, "person") : me;
         if (!await MaySetAwayAsync(me, person, cancellationToken))
-            throw Refused("Only they, or a parent of theirs, can say when they're away.");
-        if (!DateOnly.TryParseExact(request.From, "yyyy-MM-dd", out DateOnly from) || !DateOnly.TryParseExact(request.To, "yyyy-MM-dd", out DateOnly to))
-            throw Invalid("Choose the first and last day.");
-        if (RosterRules.WhyNotAway(from, to, ChurchTime.Today(time)) is { } why)
+            throw Refused("Only they, a parent of theirs or a leader of a team they're on can say when they're away.");
+        if (AwayRules.WhyNot(request, ChurchTime.Today(time)) is { } why)
             throw Invalid(why);
 
         Guid id = IdOf(request.AwayId, "away dates");
@@ -530,11 +539,18 @@ internal sealed class RostersService(
             throw NotHere();
         if (away is null)
             db.Away.Add(away = new AwayRecord { Id = id, PersonId = person });
-        (away.From, away.To, away.Note, away.MadeBy, away.MadeAt) = (from, to, request.Note.Trim(), me, time.GetUtcNow().UtcDateTime);
+        away.From = AwayRules.Day(request.From)!.Value;
+        away.To = AwayRules.Day(request.To);
+        away.Weekly = request.Weekly;
+        away.Weekdays = request.Weekly ? [.. request.Weekdays.Distinct().Order()] : [];
+        away.StartTime = AwayRules.Time(request.StartTime);
+        away.EndTime = AwayRules.Time(request.EndTime);
+        away.Except = [.. request.Except.Select(AwayRules.Day).OfType<DateOnly>().Distinct().Order()];
+        (away.Note, away.MadeBy, away.MadeAt) = (request.Note.Trim(), me, time.GetUtcNow().UtcDateTime);
         await db.SaveChangesAsync(cancellationToken);
         await publisher.PublishAwayAsync([person], cancellationToken);
         await publisher.PublishAllAsync(cancellationToken);
-        await TellOfClashesAsync(person, new AwayDays(from, to), me, cancellationToken);
+        await TellOfClashesAsync(person, RosterRules.LineOf(away), me, cancellationToken);
         return new Done();
     }
 
@@ -546,7 +562,7 @@ internal sealed class RostersService(
         if (await db.Away.SingleOrDefaultAsync(each => each.Id == id, cancellationToken) is not { } away)
             return new Done();
         if (!await MaySetAwayAsync(me, away.PersonId, cancellationToken))
-            throw Refused("Only they, or a parent of theirs, can change when they're away.");
+            throw Refused("Only they, a parent of theirs or a leader of a team they're on can change when they're away.");
 
         db.Away.Remove(away);
         await db.SaveChangesAsync(cancellationToken);
@@ -555,12 +571,13 @@ internal sealed class RostersService(
         return new Done();
     }
 
-    private async Task TellOfClashesAsync(Guid person, AwayDays span, Guid actor, CancellationToken cancellationToken)
+    private async Task TellOfClashesAsync(Guid person, AwaySpan span, Guid actor, CancellationToken cancellationToken)
     {
         DateTime now = time.GetUtcNow().UtcDateTime;
         List<(AssignmentRecord Assignment, DateRecord Date)> coming = await ComingAsync(db.Assignments.Where(each => each.PersonId == person), now, cancellationToken);
         List<(AssignmentRecord Assignment, DateRecord Date)> clashes = coming
-            .Where(each => Replies.Fills(each.Assignment.State) && span.Covers(ChurchTime.DayOf(each.Date.StartsAt))).ToList();
+            .Where(each => Replies.Fills(each.Assignment.State)
+                           && AwayRules.Covers(span, ChurchTime.ToChurch(each.Date.StartsAt), ChurchTime.ToChurch(each.Date.EndsAt), each.Date.AllDay)).ToList();
         if (clashes.Count == 0)
             return;
 

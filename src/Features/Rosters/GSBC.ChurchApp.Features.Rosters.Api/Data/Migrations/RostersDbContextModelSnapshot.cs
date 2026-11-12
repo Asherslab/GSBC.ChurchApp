@@ -106,6 +106,15 @@ namespace GSBC.ChurchApp.Features.Rosters.Api.Data.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
+                    b.Property<TimeOnly?>("EndTime")
+                        .HasColumnType("time without time zone")
+                        .HasColumnName("end_time");
+
+                    b.PrimitiveCollection<List<DateOnly>>("Except")
+                        .IsRequired()
+                        .HasColumnType("date[]")
+                        .HasColumnName("except");
+
                     b.Property<DateOnly>("From")
                         .HasColumnType("date")
                         .HasColumnName("from");
@@ -127,9 +136,22 @@ namespace GSBC.ChurchApp.Features.Rosters.Api.Data.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("person_id");
 
-                    b.Property<DateOnly>("To")
+                    b.Property<TimeOnly?>("StartTime")
+                        .HasColumnType("time without time zone")
+                        .HasColumnName("start_time");
+
+                    b.Property<DateOnly?>("To")
                         .HasColumnType("date")
                         .HasColumnName("to");
+
+                    b.PrimitiveCollection<List<int>>("Weekdays")
+                        .IsRequired()
+                        .HasColumnType("integer[]")
+                        .HasColumnName("weekdays");
+
+                    b.Property<bool>("Weekly")
+                        .HasColumnType("boolean")
+                        .HasColumnName("weekly");
 
                     b.HasKey("Id")
                         .HasName("pk_away");

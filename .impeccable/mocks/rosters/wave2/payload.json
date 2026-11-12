@@ -1,0 +1,46 @@
+{
+  "title": "Rosters: training, the swap rule and days away",
+  "question": "One round for three things, each sketch shows all three on the phone (the admin panel uses the same pieces, wider): 1) a trainee on a date, 2) the swap rule in How the roster works, 3) the days-away editor, now with repeating days, a time of day and exceptions, which leaders can change for their team. Lock the set closest to what you want; use Steer to mix (e.g. 'B's days away with A's training').",
+  "options": [
+    {
+      "id": "two-lists",
+      "kind": "assigned",
+      "kicker": "THE ROLL",
+      "label": "A: Training as its own line, rules in plain rows",
+      "thesis": "A trainee sits on a line under the position ('Sam, training with Jo'); the place stays open in amber until someone trained is on. Days away split into Regular and Coming up, each rule one sentence.",
+      "palette": ["#2a3d5e", "#f4efe7", "#009c8f", "#e7ae74", "#ffffff"],
+      "materials": ["hairline rows", "inset settings groups", "radio rows with a detail line", "one editor sheet"],
+      "viewport": "Three phones: Sunday 15 Nov's date sheet with Sound 1 of 1 and Sam training with Jo; How the roster works with the swap rule as three radio rows plus 'Ask someone yourself', and a line saying what happens; Days away with Regular ('Sunday mornings, until further notice, except 20 Dec') and Coming up, and its editor sheet.",
+      "risk": "The most rows of the three; the swap preview line adds reading for a setting set once.",
+      "html": ".impeccable/mocks/rosters/wave2/two-lists.html",
+      "htmlFrame": "1440x900"
+    },
+    {
+      "id": "calendar",
+      "kind": "dealt",
+      "label": "B: Days away on a month, training as a badge",
+      "thesis": "Days away is a month calendar: away days shaded (half-shaded for a time of day), a repeating rule above it, tap a shaded day to make it an exception. Training is a small 'Training' badge on the name with a dotted tie to the trained person.",
+      "palette": ["#2a3d5e", "#f4efe7", "#009c8f", "#e7ae74", "#ffffff"],
+      "materials": ["month grid", "half-shaded days", "badge", "radio cards"],
+      "viewport": "Three phones: the date sheet with a Training badge on Sam and an amber 'needs someone trained' line until Jo is on; the swap rule as three radio cards; November as a month with Sunday mornings half-shaded and 20 Dec crossed out as an exception.",
+      "risk": "A month grid is a new shared component; a long run of days or 'until further notice' only shows a month at a time.",
+      "html": ".impeccable/mocks/rosters/wave2/calendar.html",
+      "htmlFrame": "1440x900"
+    },
+    {
+      "id": "pairs",
+      "kind": "dealt",
+      "label": "C: Trainee paired on the place, the rule as one choice",
+      "thesis": "Trainee and trainer share one joined row ('Jo trains Sam'); alone, the trainee's row has an amber edge and 'Put someone trained on'. The swap rule is one stacked choice of three sentences. Days away is a single list; the editor asks Once or Every week first.",
+      "palette": ["#2a3d5e", "#f4efe7", "#009c8f", "#e7ae74", "#ffffff"],
+      "materials": ["joined pair row", "stacked segmented choice", "Once / Every week switch", "chips for exceptions"],
+      "viewport": "Three phones: the date sheet with Jo and Sam as one joined pair under Sound; the swap rule as the existing stacked Segmented with each option's detail line; the days-away sheet set to Every week, Sunday, Mornings, with two exception chips.",
+      "risk": "A joined pair row is a new row shape; with two trainees and one trainer it needs care.",
+      "html": ".impeccable/mocks/rosters/wave2/pairs.html",
+      "htmlFrame": "1440x900"
+    }
+  ],
+  "reroll": true,
+  "steer": true,
+  "buildPath": { "value": "code" }
+}

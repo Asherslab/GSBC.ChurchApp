@@ -145,23 +145,28 @@ internal sealed class MinistryViews(
         MinistryId = calendar.MinistryId.ToString(), From = from,
     };
 
-    public static CalendarLine Linked(MinistryCalendar calendar, Guid ministryId, IReadOnlyList<string>? days) => new()
+    public static CalendarLine Linked(MinistryCalendar calendar, Guid ministryId, IReadOnlyList<DaySpan>? within) => new()
     {
         Id = calendar.Id.ToString(), Name = calendar.Name, Slug = calendar.Slug, Audience = Audiences.Everyone, MinistryId = ministryId.ToString(), Linked = true,
-        Days = [.. days ?? []], OnItsDays = days is not null,
+        Within = [.. within ?? []], OnlyWithin = within is not null,
     };
 
-    public async Task<List<CalendarLine>> LinkedAsync(MinistryRecord ministry, IReadOnlyList<string>? days, CancellationToken cancellationToken) =>
+    public async Task<List<CalendarLine>> LinkedAsync(MinistryRecord ministry, IReadOnlyList<DaySpan>? within, CancellationToken cancellationToken) =>
         !IsOn(ministry, MinistryParts.Calendar) || ministry.LinkedCalendars.Count == 0
             ? []
             : (await calendars.ForEveryoneAsync(cancellationToken)).Where(calendar => ministry.LinkedCalendars.Contains(calendar.Id))
                 .OrderBy(calendar => calendar.Name, StringComparer.Ordinal)
-                .Select(calendar => Linked(calendar, ministry.Id, days))
+                .Select(calendar => Linked(calendar, ministry.Id, within))
                 .ToList();
 
-    public static List<string> SundaysOf(MinistryRecord group, IEnumerable<RoundRecord> rounds, IEnumerable<SitOutRecord> sitOuts) =>
-        LifeGroupRounds.SundaysOf(group.Id.ToString(), group.RoundId?.ToString() ?? "", rounds.Select(Round),
-            sitOuts.Where(sitOut => sitOut.GroupId == group.Id).Select(sitOut => new SittingOut { GroupId = sitOut.GroupId.ToString(), RoundId = sitOut.RoundId.ToString() }));
+    public static List<string> SundaysOf(MinistryRecord group, IReadOnlyList<RoundRecord> rounds, IEnumerable<SitOutRecord> sitOuts) =>
+        LifeGroupRounds.SundaysOf(group.Id.ToString(), group.RoundId?.ToString() ?? "", rounds.Select(Round), SittingOut(group, sitOuts));
+
+    public static List<DaySpan> SpansOf(MinistryRecord group, IReadOnlyList<RoundRecord> rounds, IEnumerable<SitOutRecord> sitOuts) =>
+        LifeGroupRounds.SpansOf(group.Id.ToString(), group.RoundId?.ToString() ?? "", rounds.Select(Round), SittingOut(group, sitOuts));
+
+    private static IEnumerable<SittingOut> SittingOut(MinistryRecord group, IEnumerable<SitOutRecord> sitOuts) =>
+        sitOuts.Where(sitOut => sitOut.GroupId == group.Id).Select(sitOut => new SittingOut { GroupId = sitOut.GroupId.ToString(), RoundId = sitOut.RoundId.ToString() });
 
     public static Audience WhileHidden(Guid ministryId) =>
         Audience.HoldingAt(MinistriesPermissions.SettingsNode, Scope.Of(ScopeKind.Ministry, ministryId.ToString()));
@@ -203,6 +208,7 @@ internal sealed class MinistryViews(
         Id = post.Id.ToString(), MinistryId = post.MinistryId.ToString(), Title = post.Title, Body = post.Body, Audience = post.Audience,
         Important = post.Important, Author = post.AuthorName, PostedAt = post.PostedAt, EditedAt = post.EditedAt, From = from,
         WholeChurch = post.WholeChurchAskedAt is null ? "" : "Asked to send to the whole church",
+        Sunday = post.Sunday?.ToString("yyyy-MM-dd") ?? "", NoClass = post.NoClass,
     };
 
     public static FileItem File(FileRecord file, string from = "") => new()
@@ -225,5 +231,4 @@ internal sealed class MinistryViews(
         Round = round is null ? null : Round(round),
     };
 
-    public static SessionChange Session(SessionRecord session) => new() { Date = session.Date.ToString("yyyy-MM-dd"), Off = session.Off, Note = session.Note };
 }

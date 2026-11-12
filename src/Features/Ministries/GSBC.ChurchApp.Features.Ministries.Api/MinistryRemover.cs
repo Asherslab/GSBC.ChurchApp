@@ -42,7 +42,6 @@ internal sealed class MinistryRemover(MinistriesDbContext db, MinistryChanges ch
             await db.Posts.Where(post => post.MinistryId == ministry.Id).ExecuteDeleteAsync(cancellationToken);
             await db.Files.Where(file => file.MinistryId == ministry.Id).ExecuteDeleteAsync(cancellationToken);
             await db.Asks.Where(ask => ask.MinistryId == ministry.Id).ExecuteDeleteAsync(cancellationToken);
-            await db.Sessions.Where(session => session.GroupId == ministry.Id).ExecuteDeleteAsync(cancellationToken);
             await db.SitOuts.Where(sitOut => sitOut.GroupId == ministry.Id).ExecuteDeleteAsync(cancellationToken);
             await db.SitOuts.Where(sitOut => sitOut.InsteadId == ministry.Id).ExecuteUpdateAsync(set => set.SetProperty(sitOut => sitOut.InsteadId, (Guid?)null), cancellationToken);
             await db.Ministries.Where(found => found.Id == ministry.Id).ExecuteDeleteAsync(cancellationToken);
