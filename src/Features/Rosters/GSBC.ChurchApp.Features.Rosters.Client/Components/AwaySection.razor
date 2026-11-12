@@ -1,8 +1,29 @@
 @inject IRosterReads Reads
+@inject IEnumerable<AwayOnItsOwnPage> OwnPage
+@inject TimeProvider Clock
 
-@if (View.MayEdit && !View.Archived && View.Team.Count > 0)
+@if (OwnPage.Any())
 {
-    <DaysAway @key="View.MinistryId" Load="TeamAsync" Feeds="Reads.Feeds" People="TeamPeople" YourId="@View.YourId" Remember="@($"rosters.away.{View.MinistryId}")"
+    @if (View.You.Count > 0 || TeamAway.Shown(View))
+    {
+        <Section Title="Days away">
+            <ListGroup>
+                @if (View.You.Count > 0)
+                {
+                    <YourAwayRow />
+                }
+                @if (TeamAway.Shown(View))
+                {
+                    <ListRow Title="The team's days away" Subtitle="@RosterLines.TeamAwayLine(TeamAway.Spans(View), ChurchTime.Today(Clock))" Icon="users" IconTone="RowTone.Quiet"
+                             Href="@AwayPlaces.Team(View.MinistryId)" Chevron="true" />
+                }
+            </ListGroup>
+        </Section>
+    }
+}
+else if (TeamAway.Shown(View))
+{
+    <DaysAway @key="View.MinistryId" Load="() => TeamAway.LoadAsync(Reads, View)" Feeds="Reads.Feeds" People="TeamAway.People(View)" YourId="@View.YourId" Remember="@($"rosters.away.{View.MinistryId}")"
               Title="The team's days away" Lead="Leaders can change anyone's days away. Anyone away is flagged when they're put on." />
 }
 else if (View.You.Count > 0)
@@ -12,20 +33,4 @@ else if (View.You.Count > 0)
 
 @code {
     [Parameter, EditorRequired] public required RosterView View { get; set; }
-
-    private IReadOnlyList<PersonLine> TeamPeople =>
-        View.You.Concat(View.Team.Select(member => new PersonLine { Id = member.PersonId, Name = member.Name }))
-            .DistinctBy(person => person.Id).ToList();
-
-    private async Task<AwayList> TeamAsync()
-    {
-        AwayList yours = await Reads.AwayAsync();
-        return new AwayList
-        {
-            YourId = View.YourId,
-            People = yours.People
-                .Concat(View.Team.Select(member => new AwayOf { PersonId = member.PersonId, Name = member.Name, Spans = member.Away }))
-                .DistinctBy(person => person.PersonId).ToList(),
-        };
-    }
 }
