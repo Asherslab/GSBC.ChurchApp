@@ -54,6 +54,9 @@ public sealed class PrayerApprovals(ILocalFeeds feeds, IOutbox outbox, ILocalPre
     public Task AddNoteAsync(string id, string text) =>
         QueueAsync(id, "AddNote", new NoteSave { RequestId = id, Text = text.Trim() }, "Adding your note");
 
+    public Task DeleteNoteAsync(string id, string noteId) =>
+        QueueAsync(id, "DeleteNote", new NoteRef { RequestId = id, NoteId = noteId }, "Deleting a note");
+
     public async Task RetryAsync(string id)
     {
         foreach (QueuedOnPhone queued in (await QueuedAsync()).Where(item => item.RequestId == id))

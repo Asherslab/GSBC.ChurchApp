@@ -70,13 +70,14 @@
                 </Section>
                 <Section Grouped="true" Title="Notes for the pastoral team" Lead="Only people who can read prayer requests see these. The person never does.">
                     <ChildContent>
-                        @foreach (CareNote note in pastoral.Notes)
+                        @foreach (CareNote note in pastoral.Notes.Where(note => !_deleted.Contains(note.Id)))
                         {
                             <div class="prayer-note" @key="note.Id">
                                 <div class="prayer-note__body">
                                     <p>@note.Text</p>
                                     <span>@note.Author · @ChurchDates.Ago(note.At, Now)</span>
                                 </div>
+                                <Menu Label="More for this note" Small="true" Items="NoteActions(note.Id)" />
                             </div>
                         }
                         <TextField Label="Add a note" Multiline="true" MaxLength="2000" @bind-Value="_note" />
@@ -90,12 +91,21 @@
     </LiveData>
 </Page>
 
+<Sheet Open="_deletingNote is not null" OpenChanged="open => _deletingNote = open ? _deletingNote : null" Title="Delete this note?" Lead="Nobody on the pastoral team will see it again. This can't be undone.">
+    <Actions>
+        <Button Block="true" Variant="ButtonVariant.Danger" OnClick="DeleteNoteAsync">Delete the note</Button>
+        <Button Block="true" Variant="ButtonVariant.Quiet" OnClick="() => _deletingNote = null">Keep it</Button>
+    </Actions>
+</Sheet>
+
 @code {
     private const ChangeKind Reload = ChangeKind.Reconnected | ChangeKind.Session | ChangeKind.Access | ChangeKind.Outbox;
 
     [Parameter] public string Id { get; set; } = "";
 
     private string _note = "";
+    private string? _deletingNote;
+    private readonly HashSet<string> _deleted = [];
 
     private DateTime Now => Clock.GetUtcNow().UtcDateTime;
 
@@ -110,6 +120,18 @@
     {
         await Approvals.ShowAsync(save, wall.Wall == WallState.Shown);
         return true;
+    }
+
+    private IReadOnlyList<MenuItem> NoteActions(string noteId) =>
+        [this.Item("Delete this note…", () => _deletingNote = noteId, "trash-2", danger: true)];
+
+    private async Task DeleteNoteAsync()
+    {
+        if (_deletingNote is not { } noteId)
+            return;
+        _deletingNote = null;
+        _deleted.Add(noteId);
+        await Approvals.DeleteNoteAsync(Id, noteId);
     }
 
     private async Task AddNoteAsync()

@@ -4,6 +4,12 @@
 <UnsavedGuard Changed="() => Open" Editing="Draft" State="() => Shape" What="this post" />
 
 <Sheet Open="Open" OpenChanged="OpenChanged" Title="@(Draft.Id.Length > 0 ? "Change the post" : AboutASunday ? "Tell the group about a Sunday" : "New post")" Lead="@($"In {Page.Ministry.Name}.")">
+    <Tools>
+        @if (Draft.Id.Length > 0)
+        {
+            <Menu Label="More for this post" Items="More" />
+        }
+    </Tools>
     <ChildContent>
         @if (AboutASunday)
         {
@@ -24,15 +30,21 @@
     <Actions>
         <SaveBar Block="true" Label="@(Draft.Id.Length == 0 ? MinistryWords.PostFor(Draft.Audience) : "Save")" Busy="_busy" OnSave="SaveAsync"
                  Blocked="@(Draft.Title.Trim().Length == 0 ? "Give it a title to post it." : null)" />
-        @if (Draft.Id.Length > 0)
-        {
-            <Button Block="true" Variant="ButtonVariant.Danger" Disabled="_busy" OnClick="DeleteAsync">Delete the post</Button>
-        }
+    </Actions>
+</Sheet>
+
+<Sheet Open="_deleting" OpenChanged="open => _deleting = open" Title="Delete this post?" Lead="It goes from the news for everyone it was for. This can't be undone.">
+    <ChildContent>
+        <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+    </ChildContent>
+    <Actions>
+        <Button Block="true" Variant="ButtonVariant.Danger" Disabled="_busy" OnClick="DeleteAsync">Delete the post</Button>
+        <Button Block="true" Variant="ButtonVariant.Quiet" OnClick="() => _deleting = false">Keep it</Button>
     </Actions>
 </Sheet>
 
 @code {
-    private bool _busy;
+    private bool _busy, _deleting;
     private string? _problem;
 
     [Parameter] public bool Open { get; set; }
@@ -76,7 +88,14 @@
 
     private Task SaveAsync() => RunAsync(() => Ministries.SavePostAsync(Page.Ministry.Id, Draft));
 
-    private Task DeleteAsync() => RunAsync(() => Ministries.DeletePostAsync(Page.Ministry.Id, Draft.Id));
+    private IReadOnlyList<MenuItem> More =>
+        [this.Item("Delete the post…", () => _deleting = true, "trash-2", danger: true)];
+
+    private async Task DeleteAsync()
+    {
+        await RunAsync(() => Ministries.DeletePostAsync(Page.Ministry.Id, Draft.Id));
+        _deleting = _problem is not null;
+    }
 
     private async Task RunAsync(Func<Task> work)
     {
