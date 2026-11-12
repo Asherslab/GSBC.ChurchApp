@@ -1,23 +1,41 @@
 @inject IMinistryWrites Ministries
 
-<Section Title="What it uses" Lead="Turn off what this ministry doesn't use. Its tab and everything in it are hidden from everyone, leaders too, until you turn it back on. Nothing is deleted.">
-    @foreach (MinistryPart part in MinistryParts.All)
-    {
-        <ToggleRow @key="part.Key" Title="@part.Name" Description="@part.Does" Checked="@(!Off.Contains(part.Key))" Disabled="_busy" CheckedChanged="on => TurnAsync(part.Key, on)" />
-    }
-    @if (!Off.Contains(MinistryParts.Chats))
-    {
-        <Segmented TValue="string" Label="Who can start a chat" ShowLabel="true" Value="@StartsChats" ValueChanged="StartersAsync"
-                   Options="@([new SegmentOption<string>(ChatStarters.Leaders, "Leaders"), new SegmentOption<string>(ChatStarters.Team, "The team too")])"
-                   Hint="The team can start group chats for the team or people they choose. Channels and chats with attendees or parents stay with leaders." />
-    }
-    @foreach ((MinistryPart part, PartFromBelow below) in Gathering)
-    {
-        <ToggleRow @key="@($"{part.Key}-below")" Title="@below.Title" Description="@below.Does"
-                   Checked="@FromBelow.Contains(part.Key)" Disabled="_busy" CheckedChanged="on => FromBelowAsync(part.Key, on)" />
-    }
-    <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+<Section Title="Its tabs" Lead="Turn off what it doesn't use: the tab and everything in it are hidden from everyone, leaders too, until you turn it back on. Nothing is deleted." Grouped="true">
+    <ChildContent>
+        @foreach (MinistryPart part in MinistryParts.All)
+        {
+            <ToggleRow @key="part.Key" Title="@part.Name" Description="@part.Does" Checked="@(!Off.Contains(part.Key))" Disabled="_busy" CheckedChanged="on => TurnAsync(part.Key, on)" />
+        }
+        <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+    </ChildContent>
+    <Foot>These change straight away.</Foot>
 </Section>
+
+@if (!Off.Contains(MinistryParts.Chats))
+{
+    <Section Title="Chats" Grouped="true">
+        <ChildContent>
+            <Segmented TValue="string" Label="Who can start a chat" ShowLabel="true" Value="@StartsChats" ValueChanged="StartersAsync"
+                       Options="@([new SegmentOption<string>(ChatStarters.Leaders, "Leaders"), new SegmentOption<string>(ChatStarters.Team, "The team too")])"
+                       Hint="The team can start group chats for the team or people they choose. Channels and chats with attendees or parents stay with leaders." />
+        </ChildContent>
+        <Foot>This changes straight away.</Foot>
+    </Section>
+}
+
+@if (Gathering.Any())
+{
+    <Section Title="From the ministries under it" Grouped="true">
+        <ChildContent>
+            @foreach ((MinistryPart part, PartFromBelow below) in Gathering)
+            {
+                <ToggleRow @key="@($"{part.Key}-below")" Title="@below.Title" Description="@below.Does"
+                           Checked="@FromBelow.Contains(part.Key)" Disabled="_busy" CheckedChanged="on => FromBelowAsync(part.Key, on)" />
+            }
+        </ChildContent>
+        <Foot>These change straight away.</Foot>
+    </Section>
+}
 
 @code {
     private List<string> _off = [];

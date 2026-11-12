@@ -87,7 +87,6 @@
   "deleteOutsideMenu": {
     "src/Features/Chats/GSBC.ChurchApp.Features.Chats.Admin/Pages/ChatsTabView.razor": 1,
     "src/Features/Chats/GSBC.ChurchApp.Features.Chats.Admin/Pages/ReportsTab.razor": 1,
-    "src/Features/Ministries/GSBC.ChurchApp.Features.Ministries.Client/Components/SettingsArea.razor": 1,
     "src/Features/Rosters/GSBC.ChurchApp.Features.Rosters.Client/Components/YourDateRow.razor": 1
   }
 }
