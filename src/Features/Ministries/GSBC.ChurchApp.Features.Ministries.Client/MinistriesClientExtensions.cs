@@ -14,6 +14,7 @@ public static class MinistriesClientExtensions
     public static IServiceCollection AddMinistriesOnPhone(this IServiceCollection services) =>
         services
             .AddMinistriesClient()
+            .AddSingleton<HeldParts>()
             .AddSingleton<IMinistryReads, StoredMinistries>()
             .AddSingleton<IMinistryWrites, QueuedMinistryWrites>()
             .AddSingleton<IMinistryPeopleWrites, MinistryPeopleWrites>();
