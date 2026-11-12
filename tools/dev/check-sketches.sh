@@ -2,9 +2,11 @@
 set -euo pipefail
 
 usage="Usage: tools/dev/check-sketches.sh <payload.json>
-Checks every HTML sketch an impeccable decision-page payload declares is self-contained, before serve-question --start or --update.
+Run straight after every impeccable serve-question --start or --update. Checks every HTML sketch the payload declares is
+self-contained, then marks each as just written.
 The page serves each sketch alone at /sketch/<n>, so a stylesheet, script, font or picture it links by a relative path
-never loads and the sketch shows unstyled."
+never loads and the sketch shows unstyled. It also only serves a sketch written after the round was served or updated;
+one written before stays on \"sketching\" forever."
 
 [ $# -eq 1 ] && [ -f "$1" ] || { echo "$usage"; exit 1; }
 
@@ -37,5 +39,8 @@ if problems:
     print("Sketches that will show unstyled on the decision page (inline these into the file):")
     print("\n".join(f"  {p}" for p in problems))
     sys.exit(1)
-print(f"{sum(1 for c in cards if c.get('html'))} sketches are self-contained.")
+sketches = [Path(c["html"]) for c in cards if c.get("html")]
+for sketch in sketches:
+    sketch.touch()
+print(f"{len(sketches)} sketches are self-contained and marked as just written.")
 EOF
