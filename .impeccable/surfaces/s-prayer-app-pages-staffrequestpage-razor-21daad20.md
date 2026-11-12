@@ -27,7 +27,7 @@ StagePipeline in deep aqua, white inset groups on the group ground with caption 
 Save bottom right with the quiet second action at the left.
 
 STORY: the approver sees who and when and where it stands (the care steps, or for a wall-only approver one strong status line) at a glance, reads the words, then decides the wall in its
-group, then contact and notes. The person sees Sent → On the prayer wall → Answered and acts from a ⋯-free list.
+group, then contact and notes. The person sees Sent → On the prayer wall → Answered and acts from one wide button, with taking it down and Delete in the band's ⋯ menu (the pattern map).
 
 FIRST VIEWPORT: top bar; sand band full width with the meta line (sent, name, Under 18 pill) and the three-stage
 pipeline; their words at lead size; "The prayer wall" group heading with the form starting.

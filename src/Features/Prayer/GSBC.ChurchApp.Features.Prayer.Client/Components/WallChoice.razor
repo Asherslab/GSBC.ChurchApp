@@ -62,9 +62,11 @@
 
     private IReadOnlyList<SegmentOption<bool>> Names => [new(false, PrayerWords.NoName), new(true, Case.ShortName)];
 
-    private string? NameHint => Case.Wall == WallState.Shown && !Case.WallShowsName
-        ? "They'd like their name shown. The wall shows no name at the moment."
-        : Case.Minor ? "They're under 18. No name is safer unless they'd like it." : null;
+    private string? NameHint => string.Join(" ", new[]
+    {
+        Case.Wall == WallState.Shown && !Case.WallShowsName ? "They'd like their name shown. The wall shows no name at the moment." : null,
+        Case.Minor ? "They're under 18. No name is safer unless they'd like it." : null,
+    }.OfType<string>()) is { Length: > 0 } hint ? hint : null;
 
     private static string Day(DateOnly day) => day.ToString("yyyy-MM-dd");
 
