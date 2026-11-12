@@ -12,6 +12,7 @@ public static class IconPaths
         ["calendar"] = """<path d="M8 2v3"/> <path d="M16 2v3"/> <rect x="3" y="3" width="18" height="18" rx="2"/> <path d="M3 9h18"/>""",
         ["check"] = """<path d="M20 6 9 17l-5-5"/>""",
         ["chevron-down"] = """<path d="m6 9 6 6 6-6"/>""",
+        ["chevron-up"] = """<path d="m18 15-6-6-6 6"/>""",
         ["chevron-left"] = """<path d="m15 18-6-6 6-6"/>""",
         ["chevron-right"] = """<path d="m9 18 6-6-6-6"/>""",
         ["clock"] = """<circle cx="12" cy="12" r="10"/> <path d="M12 6v6l4 2"/>""",

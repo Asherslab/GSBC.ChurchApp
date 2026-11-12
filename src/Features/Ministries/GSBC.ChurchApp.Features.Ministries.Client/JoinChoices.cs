@@ -11,7 +11,8 @@ public static class JoinChoices
         MinistryDetails ministry = page.Ministry;
         YourPlace you = page.You;
         List<JoinChoice> choices = [];
-        if (Offered(ministry.AttendJoin, Waiting(you, "", Places.Attending)) && !you.Roles.Contains(Roles.Attendee))
+        bool leads = you.Roles.Contains(Roles.Leader) || you.Roles.Contains(Roles.Admin) || you.LeadsFromAbove;
+        if (Offered(ministry.AttendJoin, Waiting(you, "", Places.Attending)) && !you.Roles.Contains(Roles.Attendee) && !leads)
             choices.Add(Choice("", Places.Attending, "Me, to come along", ministry.AttendJoin, "", Waiting(you, "", Places.Attending)));
         foreach (ChildPlace child in you.Children)
             if (Offered(ministry.AttendJoin, child.Asked) && !child.Attends)
