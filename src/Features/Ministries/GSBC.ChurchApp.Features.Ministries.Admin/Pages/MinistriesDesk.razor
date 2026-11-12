@@ -58,7 +58,7 @@
                     MinistryPage shown = live.Value;
                     string area = MinistryAreas.Known(shown, Area ?? MinistriesPlaces.About);
                 }
-                <PaneHead Title="@shown.Ministry.Name" Lead="@(string.Join(" · ", new[] { shown.Path.Count > 0 ? $"Under {string.Join(" › ", shown.Path.Select(crumb => crumb.Name))}" : "", MinistryWords.HeroNote(shown.Ministry) }.Where(part => part.Length > 0)))">
+                <PaneHead Title="@shown.Ministry.Name" Lead="@(string.Join(" · ", new[] { MinistryLogic.IsHidden(shown.Ministry) ? "Hidden from everyone else" : "", shown.Path.Count > 0 ? $"Under {string.Join(" › ", shown.Path.Select(crumb => crumb.Name))}" : "", MinistryWords.HeroNote(shown.Ministry) }.Where(part => part.Length > 0)))">
                     <Tools><MinistryMenu Page="shown" Href="ministry => Href(ministry)" AfterDelete="/ministries" /></Tools>
                 </PaneHead>
                 <TabStrip TValue="string" Label="@($"{MinistryWords.Possessive(shown.Ministry.Name)} areas")" Options="MinistryAreas.Tabs(shown)" Value="@area" Href="key => Href(shown.Ministry.Id, key)" />
