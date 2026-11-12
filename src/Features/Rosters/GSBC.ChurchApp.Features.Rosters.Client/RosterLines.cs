@@ -12,8 +12,6 @@ public sealed record YourDate(RosterView View, RosterDate Date, Assignment Assig
 
 public static class RosterLines
 {
-    public const string AwayFlag = "Away that day";
-
     public static IReadOnlyList<YourDate> Yours(RosterView view, DateTime nowUtc)
     {
         Dictionary<string, PersonLine> people = view.You.ToDictionary(person => person.Id);
@@ -108,11 +106,9 @@ public static class RosterLines
 
     public static IReadOnlyList<string> FlagsIfOn(RosterView view, TeamMember member, RosterDate date, Position position)
     {
-        DateOnly day = ChurchTime.DayOf(date.StartsAt);
         List<string> flags = [];
-        if (member.Away.Any(span => DateOnly.TryParse(span.From, CultureInfo.InvariantCulture, out DateOnly from)
-                                    && DateOnly.TryParse(span.To, CultureInfo.InvariantCulture, out DateOnly to) && from <= day && day <= to))
-            flags.Add(AwayFlag);
+        if (AwayRules.FlagFor(member.Away, ChurchTime.ToChurch(date.StartsAt), ChurchTime.ToChurch(date.EndsAt), date.AllDay) is { } away)
+            flags.Add(away);
         if (position.NeedsBlueCard && !member.HoldsBlueCard)
             flags.Add("No current blue card");
         if (position.NeedsTraining && !member.TrainingCurrent)
@@ -163,9 +159,53 @@ public static class RosterLines
 
     public static string Wire(DateOnly day) => day.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
 
-    public static string Span(AwaySpan span) =>
-        DateOnly.TryParse(span.From, CultureInfo.InvariantCulture, out DateOnly from) && DateOnly.TryParse(span.To, CultureInfo.InvariantCulture, out DateOnly to)
-            ? from == to ? from.ToString("dddd d MMMM", CultureInfo.InvariantCulture)
-            : $"{from.ToString("d MMM", CultureInfo.InvariantCulture)} to {to.ToString("d MMM", CultureInfo.InvariantCulture)}"
-            : "";
+    public static string Span(AwaySpan span)
+    {
+        string times = TimesWords(span);
+        if (span.Weekly)
+        {
+            string days = WeekdaysWords(span.Weekdays);
+            return times.Length == 0 ? $"Every {days}" : $"{Capital(days)} {times}";
+        }
+        if (AwayRules.Day(span.From) is not { } from)
+            return "";
+        DateOnly to = AwayRules.Day(span.To) ?? from;
+        string run = from == to ? from.ToString("dddd d MMMM", CultureInfo.InvariantCulture)
+            : $"{from.ToString("d MMM", CultureInfo.InvariantCulture)} to {to.ToString("d MMM", CultureInfo.InvariantCulture)}";
+        return times.Length == 0 ? run : $"{run}, {times}";
+    }
+
+    public static string SpanDetail(AwaySpan span, DateOnly today)
+    {
+        if (!span.Weekly)
+            return "";
+        List<string> parts = [];
+        if (AwayRules.Day(span.From) is { } from && from > today)
+            parts.Add($"From {from.ToString("d MMM", CultureInfo.InvariantCulture)}");
+        parts.Add(AwayRules.Day(span.To) is { } to ? $"until {to.ToString("d MMM", CultureInfo.InvariantCulture)}" : "until further notice");
+        List<DateOnly> except = span.Except.Select(AwayRules.Day).OfType<DateOnly>().Where(day => day >= today).Order().ToList();
+        if (except.Count > 0)
+            parts.Add($"not {string.Join(", ", except.Select(day => day.ToString("d MMM", CultureInfo.InvariantCulture)))}");
+        return Capital(string.Join(", ", parts));
+    }
+
+    public static string TimesWords(AwaySpan span) => (AwayRules.Time(span.StartTime), AwayRules.Time(span.EndTime)) switch
+    {
+        (null, null) => "",
+        (null, { } until) when until == MorningsEnd => "mornings",
+        ({ } from, null) when from == EveningsStart => "evenings",
+        (null, { } until) => $"until {ChurchDates.Time(DateOnly.MinValue.ToDateTime(until))}",
+        ({ } from, null) => $"from {ChurchDates.Time(DateOnly.MinValue.ToDateTime(from))}",
+        ({ } from, { } until) => $"{ChurchDates.Time(DateOnly.MinValue.ToDateTime(from))} to {ChurchDates.Time(DateOnly.MinValue.ToDateTime(until))}",
+    };
+
+    public static readonly TimeOnly MorningsEnd = new(12, 0);
+    public static readonly TimeOnly EveningsStart = new(17, 0);
+
+    private static string WeekdaysWords(IReadOnlyCollection<int> weekdays) =>
+        weekdays.Count == 7 ? "day"
+        : string.Join(" and ", ((DayOfWeek[])[DayOfWeek.Monday, DayOfWeek.Tuesday, DayOfWeek.Wednesday, DayOfWeek.Thursday, DayOfWeek.Friday, DayOfWeek.Saturday, DayOfWeek.Sunday])
+            .Where(day => weekdays.Contains((int)day)).Select(day => day.ToString()));
+
+    private static string Capital(string words) => words.Length == 0 ? words : char.ToUpperInvariant(words[0]) + words[1..];
 }

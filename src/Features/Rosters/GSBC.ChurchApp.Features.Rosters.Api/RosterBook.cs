@@ -24,7 +24,7 @@ internal sealed class RosterBook(
     DateTime now)
 {
     private readonly ILookup<Guid, AssignmentRecord> _byDate = assignments.ToLookup(assignment => assignment.DateId);
-    private readonly ILookup<Guid, AwayDays> _away = away.ToLookup(span => span.PersonId, span => new AwayDays(span.From, span.To));
+    private readonly ILookup<Guid, AwaySpan> _away = away.ToLookup(span => span.PersonId, RosterRules.LineOf);
     private readonly HashSet<(Guid Position, Guid Person)> _trained = trained.Select(each => (each.PositionId, each.PersonId)).ToHashSet();
     private readonly Dictionary<Guid, PositionRecord> _positions = positions.ToDictionary(position => position.Id);
 
@@ -92,13 +92,12 @@ internal sealed class RosterBook(
 
     private RosterDate DateOf(DateRecord date, bool leads)
     {
-        DateOnly day = ChurchTime.DayOf(date.StartsAt);
         List<AssignmentRecord> on = _byDate[date.Id].OrderBy(assignment => assignment.AssignedAt).ToList();
         return new RosterDate
         {
             Id = date.Id.ToString(), EventKey = date.EventKey, Title = date.Title, CalendarName = date.CalendarName,
             StartsAt = date.StartsAt, EndsAt = date.EndsAt, AllDay = date.AllDay, NotOn = date.NotOn || date.Gone,
-            Assignments = on.Select(assignment => AssignmentOf(assignment, day, on, leads)).ToList(),
+            Assignments = on.Select(assignment => AssignmentOf(assignment, date, on, leads)).ToList(),
         };
     }
 
@@ -108,7 +107,7 @@ internal sealed class RosterBook(
     private IReadOnlySet<Guid> AloneOn(IEnumerable<AssignmentRecord> sameDate) =>
         Training.Alone(sameDate.Select(each => (each.Id, each.PositionId, each.PersonId is not null && Replies.Fills(each.State), IsTrainee(each.PositionId, each.PersonId))));
 
-    private Assignment AssignmentOf(AssignmentRecord assignment, DateOnly day, IReadOnlyList<AssignmentRecord> sameDate, bool leads)
+    private Assignment AssignmentOf(AssignmentRecord assignment, DateRecord date, IReadOnlyList<AssignmentRecord> sameDate, bool leads)
     {
         string name = NameOf(assignment.PersonId);
         SwapRecord? swap = swaps.Where(each => each.AssignmentId == assignment.Id && SwapStates.Live(each.State)).MaxBy(each => each.AskedAt);
@@ -117,7 +116,7 @@ internal sealed class RosterBook(
             Id = assignment.Id.ToString(), PositionId = assignment.PositionId.ToString(), PositionName = assignment.PositionName,
             PersonId = assignment.PersonId?.ToString() ?? "", Name = name, State = assignment.State, Reason = assignment.Reason,
             RepliedBy = assignment.RepliedBy is { } by && by != assignment.PersonId ? RosterRules.ForWords(NameOf(by), name) : "",
-            Flags = leads && assignment.PersonId is { } person && Replies.Fills(assignment.State) ? FlagsOf(assignment, person, day, sameDate) : [],
+            Flags = leads && assignment.PersonId is { } person && Replies.Fills(assignment.State) ? FlagsOf(assignment, person, date, sameDate) : [],
             Training = IsTrainee(assignment.PositionId, assignment.PersonId),
             Swap = swap is null ? null : new SwapLine
             {
@@ -128,9 +127,9 @@ internal sealed class RosterBook(
         };
     }
 
-    private List<string> FlagsOf(AssignmentRecord assignment, Guid person, DateOnly day, IReadOnlyList<AssignmentRecord> sameDate) =>
+    private List<string> FlagsOf(AssignmentRecord assignment, Guid person, DateRecord date, IReadOnlyList<AssignmentRecord> sameDate) =>
         _positions.TryGetValue(assignment.PositionId, out PositionRecord? position)
-            ? RosterRules.Flags(position, day, _away[person], standings.GetValueOrDefault(person), AloneOn(sameDate).Contains(assignment.Id),
+            ? RosterRules.Flags(position, date, _away[person], standings.GetValueOrDefault(person), AloneOn(sameDate).Contains(assignment.Id),
                 sameDate.Where(other => other.Id != assignment.Id && other.PersonId == person && Replies.Fills(other.State)).Select(other => other.PositionName)).ToList()
             : [];
 
@@ -148,8 +147,7 @@ internal sealed class RosterBook(
                 PersonId = person.ToString(), Name = NameOf(person), Age = family is { Minor: true } ? family.Age : null,
                 Leads = team.Any(member => member.PersonId == person && member.Leads),
                 HoldsBlueCard = standing?.HoldsBlueCard == true, TrainingCurrent = standing?.TrainingCurrent == true,
-                Away = _away[person].Where(span => span.To >= ChurchTime.DayOf(now))
-                    .Select(span => new AwaySpan { From = Wire(span.From), To = Wire(span.To) }).ToList(),
+                Away = _away[person].Where(span => AwayRules.Current(span, ChurchTime.DayOf(now))).ToList(),
                 ReachedThrough = family is { Minor: true, CanSignIn: false, Parents.Count: > 0 }
                     ? string.Join(" and ", family.Parents.Select(parent => RosterRules.First(NameOf(parent))))
                     : "",

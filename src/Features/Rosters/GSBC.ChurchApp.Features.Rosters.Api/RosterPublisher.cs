@@ -64,7 +64,7 @@ internal sealed class RosterPublisher(RostersDbContext db, RosterViews views, IM
             person => facts.GetValueOrDefault(person)?.Children.Prepend(person).Distinct().ToList() ?? [person]);
         List<Guid> everyone = covers.Values.SelectMany(each => each).Distinct().ToList();
         DateOnly today = ChurchTime.Today(time);
-        ILookup<Guid, AwayRecord> spans = (await db.Away.AsNoTracking().Where(span => everyone.Contains(span.PersonId) && span.To >= today)
+        ILookup<Guid, AwayRecord> spans = (await db.Away.AsNoTracking().Where(span => everyone.Contains(span.PersonId) && (span.To == null || span.To >= today))
             .OrderBy(span => span.From).ToListAsync(cancellationToken)).ToLookup(span => span.PersonId);
         IReadOnlyDictionary<Guid, FamilyFacts> coveredFacts = await families.FactsAsync(everyone, cancellationToken);
         IReadOnlyDictionary<Guid, string> names = await people.NamesAsync(everyone, cancellationToken);
@@ -79,8 +79,7 @@ internal sealed class RosterPublisher(RostersDbContext db, RosterViews views, IM
                 People = shown.Select(person => new AwayOf
                 {
                     PersonId = person.ToString(), Name = names.GetValueOrDefault(person) ?? "Someone",
-                    Spans = spans[person].Select(span => new AwaySpan { Id = span.Id.ToString(), From = RosterBook.Wire(span.From), To = RosterBook.Wire(span.To), Note = span.Note })
-                        .ToList(),
+                    Spans = spans[person].Select(RosterRules.LineOf).ToList(),
                 }).ToList(),
             };
             wanted[$"{recipient:N}"] = (recipient, RostersPayloads.Encode(list));

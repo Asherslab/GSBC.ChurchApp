@@ -48,7 +48,7 @@ internal sealed class RosterViews(
         IReadOnlyDictionary<Guid, string> names = await people.NamesAsync(named, cancellationToken);
         DateOnly today = ChurchTime.Today(time);
         IReadOnlyDictionary<Guid, SafeguardingStanding> standings = await safeguarding.OfAsync(involved, today, cancellationToken);
-        List<AwayRecord> away = await db.Away.AsNoTracking().Where(span => involved.Contains(span.PersonId) && span.To >= today.AddDays(-RostersFeeds.DaysBack))
+        List<AwayRecord> away = await db.Away.AsNoTracking().Where(span => involved.Contains(span.PersonId) && (span.To == null || span.To >= today.AddDays(-RostersFeeds.DaysBack)))
             .ToListAsync(cancellationToken);
 
         return new RosterBook(ministry, settings, positions, trained, dates, assignments, swaps, team, facts, names, standings, away,

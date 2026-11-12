@@ -1,27 +1,22 @@
 using GSBC.ChurchApp.Features.Rosters.Api.Data;
 using GSBC.ChurchApp.Features.Rosters.Contracts;
 using GSBC.ChurchApp.Platform.Api.People;
+using GSBC.ChurchApp.Platform.Common;
 
 namespace GSBC.ChurchApp.Features.Rosters.Api;
-
-internal sealed record AwayDays(DateOnly From, DateOnly To)
-{
-    public bool Covers(DateOnly day) => From <= day && day <= To;
-}
 
 internal static class RosterRules
 {
     public const int MostDaysBefore = 28;
-    public const string AwayFlag = "Away that day";
     public const string NoBlueCardFlag = "No current blue card";
     public const string NoTrainingFlag = "Safe Ministry training not current";
 
-    public static IReadOnlyList<string> Flags(PositionRecord position, DateOnly day, IEnumerable<AwayDays> away, SafeguardingStanding? standing, bool aloneTraining,
+    public static IReadOnlyList<string> Flags(PositionRecord position, DateRecord date, IEnumerable<AwaySpan> away, SafeguardingStanding? standing, bool aloneTraining,
         IEnumerable<string> alsoOn)
     {
         List<string> flags = [];
-        if (away.Any(span => span.Covers(day)))
-            flags.Add(AwayFlag);
+        if (AwayRules.FlagFor(away, ChurchTime.ToChurch(date.StartsAt), ChurchTime.ToChurch(date.EndsAt), date.AllDay) is { } awayFlag)
+            flags.Add(awayFlag);
         if (position.NeedsBlueCard && standing?.HoldsBlueCard != true)
             flags.Add(NoBlueCardFlag);
         if (position.NeedsTraining && standing?.TrainingCurrent != true)
@@ -112,10 +107,14 @@ internal static class RosterRules
             RemindDaysBefore = record.RemindDaysBefore, NudgeAfterDays = record.NudgeAfterDays,
         };
 
-    public static string? WhyNotAway(DateOnly from, DateOnly to, DateOnly today) =>
-        to < from ? "The last day can't be before the first."
-        : to < today ? "Those days have passed."
-        : null;
+    public static AwaySpan LineOf(AwayRecord away) => new()
+    {
+        Id = away.Id.ToString(), From = RosterBook.Wire(away.From), To = away.To is { } to ? RosterBook.Wire(to) : "", Note = away.Note,
+        Weekly = away.Weekly, Weekdays = [.. away.Weekdays.Order()],
+        StartTime = away.StartTime?.ToString(AwayRules.TimeFormat, System.Globalization.CultureInfo.InvariantCulture) ?? "",
+        EndTime = away.EndTime?.ToString(AwayRules.TimeFormat, System.Globalization.CultureInfo.InvariantCulture) ?? "",
+        Except = [.. away.Except.Order().Select(RosterBook.Wire)],
+    };
 
     public static string ForWords(string actorName, string personName) => $"{First(actorName)}, for {First(personName)}";
 
