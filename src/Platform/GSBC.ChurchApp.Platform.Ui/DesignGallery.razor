@@ -286,6 +286,8 @@
     <Section Title="Status" Lead="Where something is, and how much.">
         @Item("Steps a thing moves through: StagePipeline", "Done steps ticked, the current one solid. Press a step to move there.",
             @<StagePipeline TValue="string" Label="Where it is" Stages="Stages" @bind-Value="_stage" />)
+        @Item("Where something stands, for the person it belongs to: StagePipeline ReadOnly", "The same steps, not pressable, for someone who can see where it is but not move it.",
+            @<StagePipeline TValue="string" Label="Where yours is" Stages="Stages" Value="_stage" ReadOnly="true" />)
         @Item("A short state: Pill", "One word or two, never a sentence.",
             @<div class="gallery__row">
                 <Pill>New</Pill>

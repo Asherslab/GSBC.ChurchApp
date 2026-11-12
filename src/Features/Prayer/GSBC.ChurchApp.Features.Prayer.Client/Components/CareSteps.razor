@@ -1,0 +1,50 @@
+<div class="prayer-care">
+    <StagePipeline TValue="CareState" Label="Pastoral care" Stages="Stages" Value="Care" Disabled="Busy" ValueChanged="MoveAsync" />
+    @if (Care == CareState.Answered && AnsweredNote.Length > 0)
+    {
+        <p class="prayer-care__answered">Answered: @AnsweredNote</p>
+    }
+</div>
+
+<UnsavedGuard Changed="() => _answering && _note.Trim().Length > 0" What="the words for the wall" />
+
+<Sheet Open="_answering" OpenChanged="open => _answering = open" Title="Mark it answered"
+       Lead="Anything to say? If it's on the prayer wall, the wall shows it under the request, and the person hears it was answered.">
+    <ChildContent>
+        <TextField Label="Words for the wall" Hint="Optional" Multiline="true" MaxLength="500" @bind-Value="_note" />
+    </ChildContent>
+    <Actions>
+        <SaveBar Block="true" Label="Mark it answered" Busy="Busy" OnSave="AnsweredAsync" OnCancel="() => _answering = false" New="true" />
+    </Actions>
+</Sheet>
+
+@code {
+    private static readonly IReadOnlyList<SegmentOption<CareState>> Stages =
+    [
+        new(CareState.New, PrayerWords.Care(CareState.New)),
+        new(CareState.FollowedUp, PrayerWords.Care(CareState.FollowedUp)),
+        new(CareState.Answered, PrayerWords.Care(CareState.Answered)),
+    ];
+
+    [Parameter, EditorRequired] public required CareState Care { get; set; }
+    [Parameter, EditorRequired] public required Func<CareState, string, Task> Move { get; set; }
+    [Parameter] public string AnsweredNote { get; set; } = "";
+    [Parameter] public bool Busy { get; set; }
+
+    private bool _answering;
+    private string _note = "";
+
+    private Task MoveAsync(CareState care)
+    {
+        if (care != CareState.Answered)
+            return Move(care, "");
+        (_answering, _note) = (true, "");
+        return Task.CompletedTask;
+    }
+
+    private async Task AnsweredAsync()
+    {
+        await Move(CareState.Answered, _note);
+        (_answering, _note) = (false, "");
+    }
+}

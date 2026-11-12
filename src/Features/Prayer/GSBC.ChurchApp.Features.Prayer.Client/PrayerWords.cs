@@ -10,6 +10,7 @@ public static class PrayerWords
     public const string NoName = "No name";
     public const string Private = "Only the pastoral team reads it, unless you ask for it on the prayer wall too.";
     public const string CantSendHere = "Prayer requests are sent from the church app on a phone.";
+    public const string ShortNameHint = "Your first name and the first letter of your last, like Sam S.";
 
     public static string Excerpt(string text, int longest = 90)
     {
@@ -60,7 +61,7 @@ public static class PrayerWords
     {
         if (item.Pending is { } pending)
             return pending.Failed ? $"Couldn't send: {pending.What.ToLowerInvariant()}" : $"{pending.What}. Waiting to send";
-        string from = item.Care?.From ?? (item.Wall is { FirstName.Length: > 0 } wall ? wall.FirstName : NoName);
+        string from = item.Care?.From ?? (item.Wall is { ShortName.Length: > 0 } wall ? wall.ShortName : NoName);
         return $"{from} · {ChurchDates.Ago(item.SentAt, now)}";
     }
 
