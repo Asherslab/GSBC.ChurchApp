@@ -33,8 +33,26 @@ export function attach(list, receiver) {
       grip.removeEventListener('pointermove', onMove);
       grip.removeEventListener('pointerup', onEnd);
       grip.removeEventListener('pointercancel', onEnd);
-      rows.forEach((each) => { each.style.transform = ''; });
-      row.classList.remove('reorder__row--lifted');
+      if (to === from) {
+        row.classList.remove('reorder__row--lifted');
+        rows.forEach((each) => { each.style.transform = ''; });
+        return;
+      }
+      const dropped = row.getBoundingClientRect().top;
+      const settle = () => {
+        observer.disconnect();
+        clearTimeout(fallback);
+        rows.forEach((each) => { each.style.transition = 'none'; each.style.transform = ''; });
+        row.classList.remove('reorder__row--lifted');
+        const offset = dropped - row.getBoundingClientRect().top;
+        row.style.transform = offset ? `translateY(${offset}px)` : '';
+        row.getBoundingClientRect();
+        rows.forEach((each) => { each.style.transition = ''; });
+        requestAnimationFrame(() => { row.style.transform = ''; });
+      };
+      const observer = new MutationObserver(settle);
+      observer.observe(list, { childList: true });
+      const fallback = setTimeout(settle, 1500);
       receiver.invokeMethodAsync('Moved', from, to);
     };
 

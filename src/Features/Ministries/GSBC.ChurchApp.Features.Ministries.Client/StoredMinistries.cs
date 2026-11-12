@@ -8,7 +8,7 @@ using GSBC.ChurchApp.Platform.Permissions;
 
 namespace GSBC.ChurchApp.Features.Ministries.Client;
 
-public sealed class StoredMinistries(ILocalFeeds feeds, IAccess access, TimeProvider time) : IMinistryReads
+public sealed class StoredMinistries(ILocalFeeds feeds, IAccess access, TimeProvider time, HeldParts? held = null) : IMinistryReads
 {
     private const int Page = 500;
     private const int MostPosts = 200;
@@ -19,7 +19,7 @@ public sealed class StoredMinistries(ILocalFeeds feeds, IAccess access, TimeProv
     {
         MinistryMap map = await MapAsync();
         YourMinistries? yours = await YoursAsync();
-        Dictionary<string, string> words = Words(map, map.All, yours);
+        Dictionary<string, string> words = Words(map.All, yours);
         Dictionary<string, string> latest = [];
         foreach (string id in words.Keys.Where(id => MinistryLogic.IsOn(map.Find(id)!.Ministry, MinistryParts.News)))
             if ((await ItemsAsync<Post>(MinistriesFeeds.Posts, MinistriesFeeds.PrivatePosts, [id]))
@@ -39,7 +39,7 @@ public sealed class StoredMinistries(ILocalFeeds feeds, IAccess access, TimeProv
     {
         MinistryMap map = await MapAsync();
         MinistryCard card = map.Find(id) ?? throw new MinistryNotHereException("That ministry isn't here any more.");
-        MinistryDetails ministry = card.Ministry;
+        MinistryDetails ministry = held?.Over(card.Ministry) ?? card.Ministry;
         List<string> above = map.Showing(id, MinistryParts.News);
         List<string> below = [.. map.Gathered(id, MinistryParts.News).Where(place => place != id)];
         List<string> fileIds = map.Showing(id, MinistryParts.Files);
@@ -68,7 +68,7 @@ public sealed class StoredMinistries(ILocalFeeds feeds, IAccess access, TimeProv
                 .OrderBy(calendar => calendarIds.IndexOf(calendar.MinistryId))
                 .Select(calendar => From(calendar, map, id))
                 .ToList(),
-            You = await YouAsync(map, ministry),
+            You = await YouAsync(ministry),
         };
         List<DaySpan>? within = null;
         if (ministry.ShowsInLifeGroups)
@@ -103,7 +103,7 @@ public sealed class StoredMinistries(ILocalFeeds feeds, IAccess access, TimeProv
         MinistryMap map = await MapAsync();
         List<MinistryCard> groups = map.All.Where(card => card.Ministry.ShowsInLifeGroups).ToList();
         List<string> groupIds = groups.Select(group => group.Ministry.Id).ToList();
-        Dictionary<string, string> words = Words(map, groups, await YoursAsync());
+        Dictionary<string, string> words = Words(groups, await YoursAsync());
         return new LifeGroupsPage
         {
             CalendarName = (await AllAsync<LifeGroupsCalendar>(MinistriesFeeds.LifeGroups)).FirstOrDefault()?.CalendarName ?? "",
@@ -125,7 +125,7 @@ public sealed class StoredMinistries(ILocalFeeds feeds, IAccess access, TimeProv
         return people;
     }
 
-    private async Task<YourPlace> YouAsync(MinistryMap map, MinistryDetails ministry)
+    private async Task<YourPlace> YouAsync(MinistryDetails ministry)
     {
         YourPlace you = new() { SignedIn = access.SignedIn };
         if (!access.SignedIn)
@@ -156,7 +156,7 @@ public sealed class StoredMinistries(ILocalFeeds feeds, IAccess access, TimeProv
         return you;
     }
 
-    private Dictionary<string, string> Words(MinistryMap map, IEnumerable<MinistryCard> among, YourMinistries? yours)
+    private Dictionary<string, string> Words(IEnumerable<MinistryCard> among, YourMinistries? yours)
     {
         Dictionary<string, string> words = [];
         if (yours is null)

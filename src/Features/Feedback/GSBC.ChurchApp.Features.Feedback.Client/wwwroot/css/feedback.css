@@ -11,11 +11,21 @@
 .feedback-compose__about { flex: 1; min-height: 0; display: grid; align-content: start; gap: var(--space-sm); padding: var(--space-lg) var(--gutter); overflow-y: auto; }
 .feedback-compose__lead { margin: 0; max-width: 65ch; color: var(--ink-2); font-size: var(--text-body); line-height: 1.45; }
 .feedback-compose .composer__field { min-height: calc(3lh + 18px); }
-.feedback-picked { display: flex; align-items: flex-end; gap: var(--space-xs); overflow-x: auto; padding-top: var(--space-2xs); scrollbar-width: none; }
-.feedback-picked__item { position: relative; flex: none; }
-.feedback-picked__thumb { width: 42px; aspect-ratio: 9 / 16; }
-.feedback-picked .btn.feedback-picked__remove { position: absolute; top: -6px; right: -6px; width: 24px; min-width: 24px; height: 24px; min-height: 24px; padding: 0; border-radius: var(--radius-full); background: var(--ink); color: var(--page); }
-.feedback-picked__count { flex: none; align-self: center; margin-left: var(--space-2xs); color: var(--ink-2); font-size: var(--text-caption); font-variant-numeric: tabular-nums; }
+.feedback-empty.add-row { display: grid; justify-items: center; align-content: center; gap: var(--space-sm); width: min(100%, 12rem); aspect-ratio: 3 / 4; margin: var(--space-xs) auto var(--space-sm); padding: var(--space-lg) var(--space-md); border: 1.5px dashed color-mix(in srgb, var(--ink-3) 45%, transparent); border-radius: var(--radius); background: var(--fill-on-surface); color: var(--ink); text-align: center; transition: border-color 160ms var(--ease-out); }
+.feedback-empty.add-row:is(:hover, :focus-within) { border-color: var(--accent); }
+.feedback-empty__tile { display: grid; place-items: center; width: 52px; height: 52px; border-radius: var(--radius-field); background: color-mix(in srgb, var(--accent) 14%, transparent); color: var(--accent); }
+.feedback-empty__title { font-size: var(--text-row); font-weight: 700; text-wrap: balance; }
+.feedback-empty__hint { color: var(--ink-2); font-size: var(--text-caption); font-weight: 400; }
+.feedback-stage { display: flex; align-items: flex-end; justify-content: center; gap: var(--space-md); margin-top: var(--space-xs); }
+.feedback-stage__shown { position: relative; flex: none; min-width: 5rem; min-height: 8rem; overflow: hidden; border-radius: var(--radius); background: var(--sand-strong); }
+.feedback-stage__media { display: block; width: auto; height: auto; max-width: min(40vw, 9rem); max-height: 14rem; }
+.feedback-stage .btn.feedback-stage__remove { position: absolute; top: var(--space-sm); right: var(--space-sm); width: 32px; min-width: 32px; height: 32px; min-height: 32px; padding: 0; border-radius: var(--radius-full); background: var(--video-shade); color: var(--on-video); }
+.feedback-strip { display: flex; flex-direction: column; gap: var(--space-sm); max-height: 14rem; padding: var(--space-2xs); margin: calc(-1 * var(--space-2xs)); overflow-y: auto; scrollbar-width: none; }
+.feedback-strip .btn.feedback-strip__item { flex: none; width: 46px; min-width: 0; height: auto; min-height: 0; aspect-ratio: 9 / 16; padding: 0; overflow: hidden; border-radius: var(--radius-tile); background: var(--sand-strong); opacity: 0.72; transition: opacity 160ms var(--ease-out), box-shadow 160ms var(--ease-out); }
+.feedback-strip .btn.feedback-strip__item--on { opacity: 1; box-shadow: 0 0 0 3px var(--marker); }
+.feedback-strip__thumb { width: 100%; height: 100%; border-radius: 0; }
+.feedback-strip__add.add-row { display: grid; place-items: center; flex: none; width: 46px; height: 46px; min-height: 0; padding: 0; border: 0; border-radius: var(--radius-tile); background: var(--fill-on-surface); color: var(--accent); }
+.feedback-count { margin: 0 0 var(--space-xs); color: var(--ink-2); font-size: var(--text-caption); font-variant-numeric: tabular-nums; text-align: center; }
 .feedback-sentwith { display: flex; gap: 6px; margin: 0; font-size: var(--text-caption); line-height: 1.35; color: var(--ink-2); max-width: 65ch; }
 .feedback-sentwith .icon { flex: none; margin-top: 1px; }
 .feedback-sent__actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }

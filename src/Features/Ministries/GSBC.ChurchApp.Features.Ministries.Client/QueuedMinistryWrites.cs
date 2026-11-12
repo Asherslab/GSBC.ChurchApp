@@ -5,7 +5,7 @@ using GSBC.ChurchApp.Platform.Client.Uploads;
 
 namespace GSBC.ChurchApp.Features.Ministries.Client;
 
-public sealed class QueuedMinistryWrites(IOutbox outbox) : IMinistryWrites
+public sealed class QueuedMinistryWrites(IOutbox outbox, HeldParts held) : IMinistryWrites
 {
     public async Task<JoinOutcome> JoinAsync(MinistryDetails ministry, string personId, string place, string note, bool parentFirst = false)
     {
@@ -59,12 +59,24 @@ public sealed class QueuedMinistryWrites(IOutbox outbox) : IMinistryWrites
         return details;
     }
 
-    public Task SavePartsAsync(string ministryId, IEnumerable<string> partsOff, IEnumerable<string> partsFromBelow, string chatStarters = "",
-        IEnumerable<string>? partsOrder = null) =>
-        SendAsync(MinistryMethods.SaveParts, new PartsSave
+    public async Task SavePartsAsync(string ministryId, IEnumerable<string> partsOff, IEnumerable<string> partsFromBelow, string chatStarters = "",
+        IEnumerable<string>? partsOrder = null)
+    {
+        PartsSave save = new()
         {
             MinistryId = ministryId, PartsOff = [.. partsOff], PartsFromBelow = [.. partsFromBelow], ChatStarters = chatStarters, PartsOrder = [.. partsOrder ?? []],
-        });
+        };
+        held.Hold(save);
+        try
+        {
+            await SendAsync(MinistryMethods.SaveParts, save);
+        }
+        catch
+        {
+            held.Forget(ministryId);
+            throw;
+        }
+    }
 
     public Task MoveAsync(string ministryId, string underId) => SendAsync(MinistryMethods.Move, new MoveRequest { MinistryId = ministryId, UnderId = underId });
 

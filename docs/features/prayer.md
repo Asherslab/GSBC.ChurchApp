@@ -99,9 +99,11 @@ is the owner's is marked so.
   same form as the desk, `WallChoice`: the words, starting from theirs, which never change; the name, shown by
   default when they allowed it; the day it leaves; *Put it on the wall* or *Save the changes* bottom right, *Not for
   the wall* or *Take it off the wall* beside Cancel), *Getting in touch* (their number or email, tapped to call or
-  write) and *Notes for the pastoral team* with *Add a note*.
+  write) and *Notes for the pastoral team* with *Add a note*; each note has its own ⋯ menu with *Delete this note…*,
+  asking once, as on the desk (2026-11-12, the Pattern map's Delete). The delete queues in the outbox and the note goes
+  from the page at once.
 - **Pastoral team extras:** the steps move either way on the phone, so *Mark new again* is there too (2026-11-12). Not on
-  the phone: deleting a request or a note, the history, search and the other tabs; those are in the admin panel.
+  the phone: deleting a request, the history, search and the other tabs; those are in the admin panel.
   Moving the steps stays the pastoral team's (`prayer.requests.read`), as on the desk.
 - **Data:** two feeds with a permission audience, so they're private, gone on sign-out and reset when the role
   changes. `prayer.approving` (`prayer.wall.moderate`) carries a request only while it waits for the wall or is on

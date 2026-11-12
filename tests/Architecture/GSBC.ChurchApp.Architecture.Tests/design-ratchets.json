@@ -11,7 +11,7 @@
     "src/Features/Prayer/GSBC.ChurchApp.Features.Prayer.Client/wwwroot/css/prayer.css": 1,
     "src/Features/Sermons/GSBC.ChurchApp.Features.Sermons.Client/wwwroot/css/sermons.css": 63,
     "src/Hosts/App/GSBC.ChurchApp.Hosts.App/wwwroot/css/app.css": 4,
-    "src/Hosts/GSBC.ChurchApp.Hosts.Admin/wwwroot/css/admin.css": 137,
+    "src/Hosts/GSBC.ChurchApp.Hosts.Admin/wwwroot/css/admin.css": 136,
     "src/Platform/GSBC.ChurchApp.Platform.Ui/wwwroot/css/rich-text.css": 10,
     "src/Platform/GSBC.ChurchApp.Platform.Ui/wwwroot/css/ui.css": 394
   },

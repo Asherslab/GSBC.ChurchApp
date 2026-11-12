@@ -142,6 +142,15 @@ Pattern map.
 - **Tab order** (#21; owner's pick on the decision page: drag with a live preview): Its tabs lists the parts in order,
   each with its switch; drag a row by its handle, or use its ⋯ menu to move it up or down; the tab strip above follows.
   About is always first. Changes apply at once (`ReorderList`, Platform.Ui).
+- **No blinking while ordering tabs** (#58, owner: "Moving the tabs around does some weird blinking and such"; fixed
+  2026-11-12). Two causes: on the phone the change queued in the outbox but the phone's store still held the old order,
+  so the list and the page's tab strip went back to it until Sync brought the server's answer, then flipped again; and
+  letting go cleared the rows' offsets before the new order was drawn, so the rows slid back first. Now the phone holds a
+  queued change to a ministry's tabs (order, on or off, chats, from below) over what the store says until the store
+  agrees or someone else's change arrives (`HeldParts`); the rows stay put until the new order is drawn and the dropped
+  row settles into its slot; and the switches no longer grey out while a change saves (changes go one after another).
+- **Deleting a post** is in the post sheet's ⋯ menu (*Delete the post…*), asking once (2026-11-12), not a red button
+  under Save.
 - **Invite only** (#22; owner: "Let's just not offer an ask to join or join button and call it a day"): no line in the
   directory and no join button; Open and Ask to join stay.
 - **A parent's yes**: a parent's *Waiting for your yes* comes first on About; a young person's own ask says it waits for a

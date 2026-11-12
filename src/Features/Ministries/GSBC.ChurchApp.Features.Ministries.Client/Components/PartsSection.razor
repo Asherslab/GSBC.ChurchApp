@@ -1,9 +1,10 @@
+@implements IDisposable
 @inject IMinistryWrites Ministries
 
 <Section Title="Its tabs" Lead="Drag a tab by its handle, or use its ⋯ menu, to change the order people see. About is always first." Grouped="true">
     <ChildContent>
         <ReorderList TItem="MinistryPart" Items="Parts" Key="part => part.Key" Name="part => part.Name" Label="@($"{MinistryWords.Possessive(Page.Ministry.Name)} tabs, in order")"
-                     OnReordered="ReorderAsync" Disabled="_busy">
+                     OnReordered="ReorderAsync">
             <Preview>
                 <span class="is-first">About</span>
                 @foreach (MinistryPart part in context.Where(part => !Off.Contains(part.Key)))
@@ -13,7 +14,7 @@
             </Preview>
             <ItemTemplate>
                 <ToggleRow Title="@context.Name" Description="@(Off.Contains(context.Key) ? "Hidden from everyone, leaders too, until you turn it back on. Nothing in it is deleted." : null)" Muted="@Off.Contains(context.Key)" Checked="@(!Off.Contains(context.Key))"
-                           Disabled="_busy" CheckedChanged="on => TurnAsync(context.Key, on)" />
+                           CheckedChanged="on => TurnAsync(context.Key, on)" />
             </ItemTemplate>
         </ReorderList>
         <Notice Tone="NoticeTone.Warning" Text="@_problem" />
@@ -40,7 +41,7 @@
             @foreach ((MinistryPart part, PartFromBelow below) in Gathering)
             {
                 <ToggleRow @key="@($"{part.Key}-below")" Title="@below.Title" Description="@below.Does"
-                           Checked="@FromBelow.Contains(part.Key)" Disabled="_busy" CheckedChanged="on => FromBelowAsync(part.Key, on)" />
+                           Checked="@FromBelow.Contains(part.Key)" CheckedChanged="on => FromBelowAsync(part.Key, on)" />
             }
         </ChildContent>
         <Foot>These change straight away.</Foot>
@@ -48,12 +49,14 @@
 }
 
 @code {
+    private readonly SemaphoreSlim _saving = new(1, 1);
     private List<string> _off = [];
     private List<string> _fromBelow = [];
     private string? _starters;
     private List<string>? _order;
     private MinistryDetails? _seen;
     private bool _busy;
+    private int _waiting;
     private string? _problem;
 
     [Parameter, EditorRequired] public required MinistryPage Page { get; set; }
@@ -91,6 +94,8 @@
     {
         string before = StartsChats;
         (_starters, _busy, _problem) = (starters, true, null);
+        _waiting++;
+        await _saving.WaitAsync();
         try
         {
             await Ministries.SavePartsAsync(Page.Ministry.Id, Off, FromBelow, starters);
@@ -102,7 +107,8 @@
         }
         finally
         {
-            _busy = false;
+            _saving.Release();
+            _busy = --_waiting > 0;
         }
     }
 
@@ -115,6 +121,8 @@
     {
         List<string>? before = _order;
         (_order, _busy, _problem) = ([.. order.Select(part => part.Key)], true, null);
+        _waiting++;
+        await _saving.WaitAsync();
         try
         {
             await Ministries.SavePartsAsync(Page.Ministry.Id, Off, FromBelow, partsOrder: _order);
@@ -126,7 +134,8 @@
         }
         finally
         {
-            _busy = false;
+            _saving.Release();
+            _busy = --_waiting > 0;
         }
     }
 
@@ -140,6 +149,8 @@
     {
         (List<string> before, List<string> beforeFromBelow) = (_off, _fromBelow);
         (_off, _fromBelow, _busy, _problem) = (off, fromBelow, true, null);
+        _waiting++;
+        await _saving.WaitAsync();
         try
         {
             await Ministries.SavePartsAsync(Page.Ministry.Id, off, fromBelow);
@@ -151,7 +162,10 @@
         }
         finally
         {
-            _busy = false;
+            _saving.Release();
+            _busy = --_waiting > 0;
         }
     }
+
+    public void Dispose() => _saving.Dispose();
 }

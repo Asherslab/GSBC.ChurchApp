@@ -185,6 +185,14 @@ Waiting rows already sent still settle when their ticket leaves New.
 
 Staff settings and quiet hours apply as for every staff notification.
 
+## The screenshots back at the top (2026-11-12)
+
+Owner (#59): "Looks way too barren now. Put the images back up top where they were before. But keep the textbox and send
+like it is, looks decent". The page keeps the message composer at the foot and brings back the picture area at the top:
+the large *Choose screenshots or videos* tile, and once some are chosen, the chosen one large beside the filmstrip with a
++ tile. The composer's paperclip is gone (*Claude's default*), so the top is the one place pictures are added rather
+than two that both look like the main way in.
+
 ## Built
 
 `Feedback.Contracts` (the `Feedback` and `Desk` services, tickets, limits, permissions, the feed, the notification),
