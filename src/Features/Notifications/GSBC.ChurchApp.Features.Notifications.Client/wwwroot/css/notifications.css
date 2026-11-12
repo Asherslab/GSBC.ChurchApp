@@ -26,8 +26,6 @@
   max-width: 1180px;
 }
 .announcement-desk__writing { display: grid; gap: 16px; min-width: 0; }
-.announcement-desk__head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 16px; }
-.announcement-desk__title { margin: 0; font-size: var(--text-title); font-weight: 700; letter-spacing: -0.015em; overflow-wrap: anywhere; }
 .announcement-desk__state { margin: 0; color: var(--ink-2); font-size: var(--text-caption); }
 .announcement-desk__message { max-width: 65ch; margin: 0; color: var(--ink); font-size: var(--text-body); line-height: 1.62; white-space: pre-line; }
 .announcement-desk__sent { display: grid; gap: 14px; }

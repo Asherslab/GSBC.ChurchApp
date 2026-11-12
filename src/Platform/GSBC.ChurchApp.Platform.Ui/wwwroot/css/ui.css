@@ -870,8 +870,8 @@ button.text-link:disabled { color: var(--ink-3); cursor: default; }
 .office-rail__swatch { width: 14px; height: 10px; border-radius: 3px; }
 
 .office-rail__span--moment .office-rail__span-title { display: -webkit-box; white-space: normal; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
-.office-rail--fortnight .office-rail__grid { grid-template-columns: repeat(var(--days), minmax(56px, 1fr)); column-gap: 6px; min-height: 0; overflow-x: auto; }
-.office-rail--fortnight .office-rail__day { padding: 8px 8px 10px; }
+.office-rail--fortnight .office-rail__grid { grid-template-columns: repeat(var(--days), minmax(42px, 1fr)); column-gap: var(--space-2xs); min-height: 0; overflow-x: auto; }
+.office-rail--fortnight .office-rail__day { padding: var(--space-sm) var(--space-xs) var(--space-md); }
 .office-rail--fortnight .office-rail__span { margin: 0 4px 6px; padding: 5px 7px; font-size: var(--text-pill); }
 
 @media (max-width: 1228px) {

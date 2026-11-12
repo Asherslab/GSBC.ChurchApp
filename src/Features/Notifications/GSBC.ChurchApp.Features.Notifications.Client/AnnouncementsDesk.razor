@@ -46,8 +46,7 @@
     {
         <div class="announcement-desk">
             <div class="announcement-desk__writing">
-                <div class="announcement-desk__head">
-                    <h2 class="announcement-desk__title">@DeskTitle</h2>
+                <PaneHead Title="@DeskTitle" Actions="ItemActions">
                     @if (_editing.State == Recalled)
                     {
                         <Pill Tone="PillTone.Quiet">Recalled</Pill>
@@ -56,7 +55,7 @@
                     {
                         <SaveStatus State="_save" SavedText="@(_editing.Id.Length == 0 ? "Saves as you type" : "Saved")" UnsavedText="@WhyNotSaving" Detail="@StateLabel(_editing)" Retry="SaveNowAsync" />
                     }
-                </div>
+                </PaneHead>
 
                 @if (_told is not null)
                 {
@@ -135,10 +134,6 @@
                     </dl>
 
                     <div class="announcement-desk__actions">
-                        @if (_editing.Id.Length > 0)
-                        {
-                            <Button Variant="ButtonVariant.Danger" Small="true" Busy="_busy" OnClick="() => _deleting = true">Delete…</Button>
-                        }
                         <span class="announcement-desk__spacer"></span>
                         <Button Variant="ButtonVariant.Quiet" Icon="smartphone" Busy="_busy" Disabled="@(!Ready)" OnClick="SendToMeAsync">Send to my phone</Button>
                         @if (MaySend)
@@ -156,23 +151,6 @@
                     <div class="announcement-desk__sent">
                         <p class="announcement-desk__state">@SentLine(_editing)</p>
                         <p class="announcement-desk__message">@_editing.Body</p>
-                        @if (_editing.State == Scheduled && MaySend)
-                        {
-                            <div class="announcement-desk__actions">
-                                <Button Variant="ButtonVariant.Quiet" Busy="_busy" OnClick="CancelAsync">Don't send it: back to writing</Button>
-                            </div>
-                        }
-                        else if (_editing.State is Sent or Recalled)
-                        {
-                            <div class="announcement-desk__actions">
-                                @if (_editing.State == Sent && MaySend)
-                                {
-                                    <Button Variant="ButtonVariant.Danger" Small="true" Busy="_busy" OnClick="() => _recalling = true">Recall…</Button>
-                                }
-                                <span class="announcement-desk__spacer"></span>
-                                <Button Variant="ButtonVariant.Quiet" Icon="copy" Busy="_busy" OnClick="CopyAsync">Copy into a new announcement</Button>
-                            </div>
-                        }
                     </div>
                 }
             </div>
@@ -308,6 +286,14 @@
     private bool MaySend => Access.Can(NotificationsPermissions.Send);
 
     private bool Editable => _editing.State is Drafting or WaitingToSend;
+
+    private IReadOnlyList<MenuItem> ItemActions =>
+    [
+        .. _editing.State == Scheduled && MaySend ? [new MenuItem("Don't send it", CancelAsync, "undo", "Back to being written", Disabled: _busy)] : Array.Empty<MenuItem>(),
+        .. _editing.State is Sent or Recalled ? [new MenuItem("Copy into a new announcement", CopyAsync, "copy", Disabled: _busy)] : Array.Empty<MenuItem>(),
+        .. _editing.State == Sent && MaySend ? [new MenuItem("Recall…", () => { _recalling = true; return Task.CompletedTask; }, "circle-off", "It leaves the app's notifications on every phone", Danger: true, StartsGroup: true)] : Array.Empty<MenuItem>(),
+        .. Editable && _editing.Id.Length > 0 ? [new MenuItem("Delete…", () => { _deleting = true; return Task.CompletedTask; }, "trash-2", Danger: true, StartsGroup: true)] : Array.Empty<MenuItem>(),
+    ];
 
     private bool Ready => _editing.Title.Trim().Length > 0 && LinkProblem is null;
 

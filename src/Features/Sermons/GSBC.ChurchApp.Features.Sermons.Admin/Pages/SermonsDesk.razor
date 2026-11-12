@@ -12,14 +12,18 @@
 </TitleBand>
 
 <LiveData @ref="_live" TValue="DeskView" Feeds="DeskFeeds" Load="LoadAsync" FailedTitle="Can't load sermons right now">
-    @if (context.Value.Sermons.PodcastFeedUrl is { } feed)
-    {
-        <CopyField Label="Podcast feed" Value="@feed" Hint="Give this address to Apple Podcasts and Spotify. It updates within five minutes of a change." />
-    }
-    <div class="sermons-desk">
-        <section class="sermons-desk__queue" aria-label="Sermons">
-            <FilterChips TValue="string" Label="Show" Options="Filters(context.Value.Sermons)" Value="_filter" ValueChanged="FilterAsync" />
-            <SearchField Label="Find a sermon" Placeholder="Title, speaker, series or service" Value="@_query" ValueChanged="SearchAsync" />
+    <Workbench Class="sermons-desk" AsideLabel="Find a sermon" DetailLabel="@(_uploading ? "Upload a sermon" : "The sermon")">
+        <Aside>
+            <div class="sermons-desk__find">
+                <SearchField Label="Find a sermon" Placeholder="Title, speaker, series or service" Value="@_query" ValueChanged="SearchAsync" />
+                <FilterChips TValue="string" Label="Show" Options="Filters(context.Value.Sermons)" Value="_filter" ValueChanged="FilterAsync" />
+                @if (context.Value.Sermons.PodcastFeedUrl is { } feed)
+                {
+                    <CopyField Label="Podcast feed" Value="@feed" Hint="Give this address to Apple Podcasts and Spotify. It updates within five minutes of a change." />
+                }
+            </div>
+        </Aside>
+        <ChildContent>
             @if (context.Value.Sermons.Sermons.Count == 0)
             {
                 <EmptyState Icon="@(_filter == SermonFilters.NeedsALook ? "check" : "search")" Title="@EmptyTitle" Body="@EmptyBody" />
@@ -54,8 +58,8 @@
                     <Button Variant="ButtonVariant.Quiet" Block="true" OnClick="MoreAsync">Show more</Button>
                 }
             }
-        </section>
-        <section class="sermons-desk__record" aria-label="@(_uploading ? "Upload a sermon" : "The sermon")">
+        </ChildContent>
+        <Detail>
             @if (_uploading)
             {
                 <UploadSermon Sermons="Sermons" Series="context.Value.Series" Speakers="context.Value.Speakers" Services="context.Value.Services" Added="AddedAsync" Cancelled="CancelUploadAsync" />
@@ -68,8 +72,8 @@
             {
                 <EmptyState Icon="sermons" Title="Choose a sermon" Body="Its details, its audio and what to correct show here." />
             }
-        </section>
-    </div>
+        </Detail>
+    </Workbench>
 </LiveData>
 
 @code {
