@@ -114,7 +114,7 @@ else
         else
         {
             <EventHead Day="Date" Label="@(OnDate.Fields.Label.Length > 0 ? OnDate.Fields.Label : CalendarName)" Title="@(OnDate.Fields.Title.Length > 0 ? OnDate.Fields.Title : draft.Every.Fields.Title)"
-                       When="@(draft.NotOnThisDate ? "Not on this date" : EventWords.Join(EventDates.Times(OnDate.StartMinute, OnDate.EndMinute), "this date only"))" Compact="InPanel"
+                       When="@(draft.NotOnThisDate ? "Not on this date" : EventWords.Join(EventDates.Times(OnDate.StartMinute, OnDate.EndMinute), "this\u00A0date\u00A0only"))" Compact="InPanel"
                        Actions="@(_kept.By.Length > 0 ? null : DateActions(draft))" />
             <div class="date-of">
                 <Icon Name="repeat" Size="IconSize.Small" />

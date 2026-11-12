@@ -26,7 +26,7 @@
                 }
                 else
                 {
-                    <FilePick Label="Choose a document or picture from this computer" ImagesOnly="false" OnChosen="Chose" />
+                    <FilePick Box="true" Label="Drop a document or picture here" Hint="Or click to choose one from this computer" ImagesOnly="false" OnChosen="Chose" />
                 }
             }
             else if (_picked is { } picked)
@@ -42,7 +42,7 @@
             }
             else
             {
-                <FilePick Label="Choose a document or picture from this phone" ImagesOnly="false" OnPicked="Picked" />
+                <FilePick Box="true" Label="Choose a document or picture" Hint="From this phone's photos or files" ImagesOnly="false" OnPicked="Picked" />
             }
         }
         <TextField Label="Name" @bind-Value="Draft.Title" MaxLength="120" Required="true" Placeholder="Helpers' guide" />

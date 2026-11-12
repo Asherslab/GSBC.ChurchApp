@@ -108,7 +108,7 @@ else
         <Attach>
             @if (Editing is null && Store.CanAttach && _picked.Count < ChatLimits.AttachmentsPerMessage)
             {
-                <FilePick Label="Add a photo or file" ImagesOnly="false" Class="composer__attach" OnPicked="Picked" />
+                <FilePick Label="Add a photo or file" ImagesOnly="false" Icon="@AppIcons.Attach" Class="composer__attach" OnPicked="Picked" />
             }
         </Attach>
     </Composer>

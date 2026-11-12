@@ -20,7 +20,7 @@
         </span>
         <Sheet Open="_changing" OpenChanged="open => _changing = open" Title="@($"{Person.FirstName}'s birth date")" Lead="It says whether they're under 18, which decides who their parents are in the app and who safeguarding follows up.">
             <ChildContent>
-                <DateField Label="Birth date" Placeholder="Like 4 Mar 2011" Value="@_born" ValueChanged="value => _born = value" Max="@($"{today:yyyy-MM-dd}")" />
+                <DateField Label="Birth date" Shortcuts="false" Placeholder="Like 4 Mar 2011" Value="@_born" ValueChanged="value => _born = value" Max="@($"{today:yyyy-MM-dd}")" />
                 <Notice Tone="NoticeTone.Warning" Text="@_problem" />
             </ChildContent>
             <Actions>

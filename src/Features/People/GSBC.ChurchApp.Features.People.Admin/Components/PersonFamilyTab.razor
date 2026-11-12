@@ -94,7 +94,7 @@
                                           Leave="Leave(family)" Busy="@_busyFor" OnChosen="person => LinkAsync(family.Id, person.Id)" />
                             <div class="people-inline">
                                 <TextField Label="Or add a child who isn't in the app" Placeholder="Their name" Value="@_childName" ValueChanged="value => _childName = value" />
-                                <DateField Label="Birth date" Placeholder="Like 4 Mar 2011" Value="@_childBorn" ValueChanged="value => _childBorn = value" Max="@($"{today:yyyy-MM-dd}")" />
+                                <DateField Label="Birth date" Shortcuts="false" Placeholder="Like 4 Mar 2011" Value="@_childBorn" ValueChanged="value => _childBorn = value" Max="@($"{today:yyyy-MM-dd}")" />
                                 <Button Variant="ButtonVariant.Quiet" Busy="_busy" Disabled="@(_childName.Trim().Length == 0 || PeopleWords.ParseDay(_childBorn) is null)" OnClick="() => AddChildAsync(family.Id)">Add</Button>
                             </div>
                             <div class="ui-actions ui-after">

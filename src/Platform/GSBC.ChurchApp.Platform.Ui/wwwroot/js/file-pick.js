@@ -1,5 +1,5 @@
 export function hand(input, files) {
-  if (!files.length || input.disabled) return;
+  if (!input || !files.length || input.disabled) return;
   const transfer = new DataTransfer();
   for (const file of files) transfer.items.add(file);
   input.files = transfer.files;
@@ -8,13 +8,20 @@ export function hand(input, files) {
 
 const filesIn = (list) => Array.from(list ?? []).filter((file) => file.size > 0);
 
+export function listenWithin(box, dropOn, takesPaste) {
+  return watch(() => box.querySelector('input[type="file"]'), dropOn ? box.closest(dropOn) : box, takesPaste);
+}
+
 export function listen(input, dropOn, takesPaste) {
-  const zone = dropOn ? input.closest(dropOn) : null;
+  return watch(() => input, dropOn ? input.closest(dropOn) : null, takesPaste);
+}
+
+function watch(inputOf, zone, takesPaste) {
   const paste = (event) => {
     const pasted = filesIn(event.clipboardData?.files);
     if (!pasted.length) return;
     event.preventDefault();
-    hand(input, pasted);
+    hand(inputOf(), pasted);
   };
   const over = (event) => {
     if (!Array.from(event.dataTransfer?.types ?? []).includes('Files')) return;
@@ -29,7 +36,7 @@ export function listen(input, dropOn, takesPaste) {
     const dropped = filesIn(event.dataTransfer?.files);
     if (!dropped.length) return;
     event.preventDefault();
-    hand(input, dropped);
+    hand(inputOf(), dropped);
   };
   if (takesPaste) document.addEventListener('paste', paste);
   zone?.addEventListener('dragover', over);

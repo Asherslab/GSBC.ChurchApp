@@ -13,13 +13,15 @@
             <Menu Label="More for your account" Items="AccountActions" Small="true" Disabled="_busy" />
         </Trailing>
         <ChildContent>
-        <TextField Label="Name" Value="@(_name ?? context.Value.Profile.DisplayName)" ValueChanged="value => _name = value" AutoComplete="name" />
-        @if (_name is not null)
-        {
-            <SaveBar Class="ui-after" Label="Save name" Busy="_busy" OnSave="SaveNameAsync" OnCancel="() => _name = null" State="SaveState.Unsaved"
-                     Blocked="@(!Signals.Online ? "Needs a connection." : _name.Trim().Length == 0 ? "Give your name to save it." : null)" />
-        }
-        <div class="ui-after">
+        <div class="ui-pair ui-pair--wide">
+            <div>
+                <TextField Label="Name" Value="@(_name ?? context.Value.Profile.DisplayName)" ValueChanged="value => _name = value" AutoComplete="name" />
+                @if (_name is not null)
+                {
+                    <SaveBar Class="ui-after" Label="Save name" Busy="_busy" OnSave="SaveNameAsync" OnCancel="() => _name = null" State="SaveState.Unsaved"
+                             Blocked="@(!Signals.Online ? "Needs a connection." : _name.Trim().Length == 0 ? "Give your name to save it." : null)" />
+                }
+            </div>
             <ListGroup>
                 <ListRow Title="@context.Value.Profile.Email" Subtitle="@(context.Value.Profile.EmailConfirmed ? "Confirmed" : "Not confirmed yet")" Icon="send" IconTone="RowTone.Quiet" />
             </ListGroup>

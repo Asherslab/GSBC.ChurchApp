@@ -292,6 +292,10 @@
             </ReorderList>)
         @Item("A ranked list: RankedList", "Insights: the most of something.",
             @<RankedList Title="Most played sermons" Items="Ranked" Numbered="true" />)
+        @Item("Taking a file: DropBox", "Every place that takes a file: drop it on the dashed box, paste it where the box allows, or click to choose. FilePick Box uses it on both sides.",
+            @<DropBox Icon="file" Prompt="Drop a document or picture here" Hint="Or click to choose one from this computer">
+                <input type="file" class="visually-hidden" />
+            </DropBox>)
         @Item("Writing a message: Composer", "A message box docked at the foot, with a paperclip and a round Send: Send feedback on the phone.",
             @<Composer Label="Sample message" Placeholder="Write something" @bind-Text="_composed" CanSend="@(_composed.Trim().Length > 0)" OnSend="() => _composed = string.Empty" />)
         @Item("A chat message: MessageBubble and BubbleReactions", "Chats only. Reactions sit under the bubble; the same chips in a row are the picker in a message's sheet. A status under it uses a Link button.",

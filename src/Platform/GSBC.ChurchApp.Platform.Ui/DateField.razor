@@ -23,42 +23,90 @@ else
             {
                 <button type="button" class="date-field__away" tabindex="-1" aria-label="Close the calendar" @onclick="Close"></button>
                 <div class="date-field__popover" role="dialog" aria-label="@($"Choose {Label.ToLowerInvariant()}")">
-                    <div class="date-field__month">
-                        <button type="button" class="date-field__step" aria-label="Previous month" @onclick="() => Turn(-1)"><Icon Name="chevron-left" Size="IconSize.Small" /></button>
-                        <span class="date-field__month-name" aria-live="polite">@TypedDates.Month(_month)</span>
-                        <button type="button" class="date-field__step" aria-label="Next month" @onclick="() => Turn(1)"><Icon Name="chevron-right" Size="IconSize.Small" /></button>
-                    </div>
-                    <div class="date-field__grid" role="grid" aria-label="@TypedDates.Month(_month)" data-keep-arrows @onkeydown="OnGridKeyAsync">
-                        <div class="date-field__week" role="row">
-                            @for (int column = 0; column < Weekdays.Length; column++)
+                    @if (_picking == Picking.Days)
+                    {
+                        <div class="date-field__month">
+                            <button type="button" class="date-field__step" aria-label="Previous month" @onclick="() => Turn(-1)"><Icon Name="chevron-left" Size="IconSize.Small" /></button>
+                            <button type="button" class="date-field__heading" aria-live="polite" aria-label="@($"{TypedDates.Month(_month)}. Choose a month and year")" @onclick="() => Pick(Picking.Months)">
+                                @TypedDates.Month(_month)<Icon Name="chevron-down" Size="IconSize.Small" />
+                            </button>
+                            <button type="button" class="date-field__step" aria-label="Next month" @onclick="() => Turn(1)"><Icon Name="chevron-right" Size="IconSize.Small" /></button>
+                        </div>
+                        <div class="date-field__grid" role="grid" aria-label="@TypedDates.Month(_month)" data-keep-arrows @onkeydown="OnGridKeyAsync">
+                            <div class="date-field__week" role="row">
+                                @for (int column = 0; column < Weekdays.Length; column++)
+                                {
+                                    <span class="date-field__weekday @(column == Weekdays.Length - 1 ? "date-field__weekday--sunday" : "")" role="columnheader">@Weekdays[column]</span>
+                                }
+                            </div>
+                            @for (int week = 0; week < 6; week++)
                             {
-                                <span class="date-field__weekday @(column == Weekdays.Length - 1 ? "date-field__weekday--sunday" : "")" role="columnheader">@Weekdays[column]</span>
+                                <div class="date-field__week" role="row">
+                                    @for (int column = 0; column < 7; column++)
+                                    {
+                                        int cell = week * 7 + column;
+                                        DateOnly day = FirstShown.AddDays(cell);
+                                        bool chosen = day == Chosen;
+                                        bool focused = day == _focus;
+                                        <button type="button" role="gridcell" class="@DayClass(day)" aria-selected="@(chosen ? "true" : "false")"
+                                                aria-current="@(day == Today ? "date" : null)" aria-label="@TypedDates.ShowInFull(day)" disabled="@(!Allowed(day))"
+                                                tabindex="@(focused ? 0 : -1)" @ref="_days[cell]" @onclick="() => ChooseAsync(day)">
+                                            @day.Day
+                                        </button>
+                                    }
+                                </div>
                             }
                         </div>
-                        @for (int week = 0; week < 6; week++)
+                        @if (Shortcuts && Quick.Any())
                         {
-                            <div class="date-field__week" role="row">
-                                @for (int column = 0; column < 7; column++)
+                            <div class="date-field__quick">
+                                @foreach ((string label, DateOnly day) in Quick)
                                 {
-                                    int cell = week * 7 + column;
-                                    DateOnly day = FirstShown.AddDays(cell);
-                                    bool chosen = day == Chosen;
-                                    bool focused = day == _focus;
-                                    <button type="button" role="gridcell" class="@DayClass(day)" aria-selected="@(chosen ? "true" : "false")"
-                                            aria-current="@(day == Today ? "date" : null)" aria-label="@TypedDates.ShowInFull(day)" disabled="@(!Allowed(day))"
-                                            tabindex="@(focused ? 0 : -1)" @ref="_days[cell]" @onclick="() => ChooseAsync(day)">
-                                        @day.Day
-                                    </button>
+                                    <button type="button" class="filter-chip" @onclick="() => ChooseAsync(day)">@label</button>
                                 }
                             </div>
                         }
-                    </div>
-                    <div class="date-field__quick">
-                        @foreach ((string label, DateOnly day) in Quick)
-                        {
-                            <button type="button" class="filter-chip" disabled="@(!Allowed(day))" @onclick="() => ChooseAsync(day)">@label</button>
-                        }
-                    </div>
+                    }
+                    else if (_picking == Picking.Months)
+                    {
+                        <div class="date-field__month">
+                            <button type="button" class="date-field__step" aria-label="Previous year" disabled="@(!AllowedYear(_month.Year - 1))" @onclick="() => TurnYears(-1)"><Icon Name="chevron-left" Size="IconSize.Small" /></button>
+                            <button type="button" class="date-field__heading" aria-live="polite" aria-label="@($"{_month.Year}. Choose a year")" @onclick="() => Pick(Picking.Years)">
+                                @_month.Year<Icon Name="chevron-down" Size="IconSize.Small" />
+                            </button>
+                            <button type="button" class="date-field__step" aria-label="Next year" disabled="@(!AllowedYear(_month.Year + 1))" @onclick="() => TurnYears(1)"><Icon Name="chevron-right" Size="IconSize.Small" /></button>
+                        </div>
+                        <div class="date-field__picks" role="group" aria-label="@($"Months of {_month.Year}")">
+                            @for (int month = 1; month <= 12; month++)
+                            {
+                                DateOnly first = new(_month.Year, month, 1);
+                                int index = month - 1;
+                                <button type="button" class="@MonthClass(first)"
+                                        aria-label="@TypedDates.Month(first)" disabled="@(!AllowedMonth(first))" @ref="_picks[index]" @onclick="() => ShowMonth(first)">
+                                    @TypedDates.ShortMonth(month)
+                                </button>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="date-field__month">
+                            <button type="button" class="date-field__step" aria-label="Earlier years" disabled="@(!AllowedBetween(new DateOnly(FirstYear - YearsShown, 1, 1), new DateOnly(FirstYear - 1, 12, 31)))" @onclick="() => TurnYears(-YearsShown)"><Icon Name="chevron-left" Size="IconSize.Small" /></button>
+                            <span class="date-field__month-name" aria-live="polite">@FirstYear – @(FirstYear + YearsShown - 1)</span>
+                            <button type="button" class="date-field__step" aria-label="Later years" disabled="@(!AllowedBetween(new DateOnly(FirstYear + YearsShown, 1, 1), new DateOnly(FirstYear + 2 * YearsShown - 1, 12, 31)))" @onclick="() => TurnYears(YearsShown)"><Icon Name="chevron-right" Size="IconSize.Small" /></button>
+                        </div>
+                        <div class="date-field__picks date-field__picks--years" role="group" aria-label="Years">
+                            @for (int offset = 0; offset < YearsShown; offset++)
+                            {
+                                int index = offset;
+                                int year = FirstYear + index;
+                                <button type="button" class="@YearClass(year)"
+                                        disabled="@(!AllowedYear(year))" @ref="_picks[index]" @onclick="() => ShowYear(year)">
+                                    @year
+                                </button>
+                            }
+                        </div>
+                    }
                 </div>
             }
         </div>
@@ -81,7 +129,10 @@ else
     private static readonly string[] Weekdays = ["M", "T", "W", "T", "F", "S", "S"];
     private static int _fields;
     private readonly string _id = $"date-field-{Interlocked.Increment(ref _fields)}";
+    private const int YearsShown = 20;
     private readonly ElementReference[] _days = new ElementReference[42];
+    private readonly ElementReference[] _picks = new ElementReference[YearsShown];
+    private Picking _picking;
     private string _text = "";
     private string? _shownValue;
     private string? _typingProblem;
@@ -101,6 +152,14 @@ else
     [Parameter] public bool Required { get; set; }
     [Parameter] public bool Disabled { get; set; }
     [Parameter] public string? AutoComplete { get; set; }
+    [Parameter] public bool Shortcuts { get; set; } = true;
+
+    private enum Picking { Days, Months, Years }
+
+    private int FirstYear =>
+        TypedDates.Day(Max) is { } max && max.Year - Aligned < YearsShown ? Math.Max(1, max.Year - YearsShown + 1) : Aligned;
+
+    private int Aligned => _month.Year - Mod(_month.Year, YearsShown);
 
     private DateOnly Today => ChurchTime.Today(Clock);
     private DateOnly? Chosen => TypedDates.Day(Value);
@@ -115,10 +174,10 @@ else
         get
         {
             DateOnly sunday = TypedDates.ThisSunday(Today);
-            yield return ("Today", Today);
-            yield return (sunday == Today ? "Next Sunday" : "This Sunday", sunday == Today ? sunday.AddDays(7) : sunday);
-            if (sunday != Today)
-                yield return ("Next Sunday", sunday.AddDays(7));
+            (string, DateOnly)[] choices = sunday == Today
+                ? [("Today", Today), ("Next Sunday", sunday.AddDays(7))]
+                : [("Today", Today), ("This Sunday", sunday), ("Next Sunday", sunday.AddDays(7))];
+            return choices.Where(choice => Allowed(choice.Item2));
         }
     }
 
@@ -196,6 +255,7 @@ else
         DateOnly start = TypedDates.TryParseDay(_text, Today, out DateOnly typed) ? typed : Chosen ?? Today;
         _focus = start;
         _month = new DateOnly(start.Year, start.Month, 1);
+        _picking = Picking.Days;
         _open = true;
         _focusPending = true;
         return Task.CompletedTask;
@@ -203,9 +263,60 @@ else
 
     private void Close() => _open = false;
 
+    private void Pick(Picking picking)
+    {
+        _picking = picking;
+        _focusPending = true;
+    }
+
+    private void TurnYears(int years) => _month = InRange(_month.AddYears(years));
+
+    private void ShowMonth(DateOnly first)
+    {
+        _month = first;
+        _focus = new DateOnly(first.Year, first.Month, Math.Min(_focus.Day, DateTime.DaysInMonth(first.Year, first.Month)));
+        Pick(Picking.Days);
+    }
+
+    private void ShowYear(int year)
+    {
+        _month = InRange(new DateOnly(year, _month.Month, 1));
+        Pick(Picking.Months);
+    }
+
+    private bool AllowedMonth(DateOnly first) => AllowedBetween(first, first.AddMonths(1).AddDays(-1));
+
+    private bool AllowedYear(int year) => AllowedBetween(new DateOnly(year, 1, 1), new DateOnly(year, 12, 31));
+
+    private bool AllowedBetween(DateOnly from, DateOnly to) =>
+        (TypedDates.Day(Min) is not { } min || to >= min) && (TypedDates.Day(Max) is not { } max || from <= max);
+
+    private string MonthClass(DateOnly first) =>
+        PickClass(first.Month == _month.Month, Chosen?.Year == first.Year && Chosen?.Month == first.Month, Today.Year == first.Year && Today.Month == first.Month);
+
+    private string YearClass(int year) => PickClass(year == _month.Year, Chosen?.Year == year, Today.Year == year);
+
+    private DateOnly InRange(DateOnly first) =>
+        TypedDates.Day(Min) is { } min && first < new DateOnly(min.Year, min.Month, 1) ? new DateOnly(min.Year, min.Month, 1)
+        : TypedDates.Day(Max) is { } max && first > new DateOnly(max.Year, max.Month, 1) ? new DateOnly(max.Year, max.Month, 1)
+        : first;
+
+    private static string PickClass(bool shown, bool chosen, bool now) => string.Join(' ', new[]
+    {
+        "date-field__pick",
+        shown && !chosen ? "date-field__pick--shown" : null,
+        chosen ? "date-field__pick--chosen" : null,
+        now ? "date-field__pick--now" : null,
+    }.OfType<string>());
+
+    private static int FirstAllowed(int wanted, int count, Func<int, bool> allowed) =>
+        allowed(wanted) ? wanted : Enumerable.Range(0, count).FirstOrDefault(allowed);
+
+    private static int Mod(int value, int by) => ((value % by) + by) % by;
+
     private void Turn(int months)
     {
-        _month = _month.AddMonths(months);
+        _month = InRange(_month.AddMonths(months));
         _focus = new DateOnly(_month.Year, _month.Month, Math.Min(_focus.Day, DateTime.DaysInMonth(_month.Year, _month.Month)));
     }
 
@@ -219,7 +330,9 @@ else
 
     private Task OnFieldKeyAsync(KeyboardEventArgs key)
     {
-        if (key.Key == "Escape" && _open)
+        if (key.Key == "Escape" && _open && _picking != Picking.Days)
+            Pick(_picking == Picking.Years ? Picking.Months : Picking.Days);
+        else if (key.Key == "Escape" && _open)
             Close();
         return Task.CompletedTask;
     }
@@ -251,8 +364,11 @@ else
         if (!_open || !_focusPending)
             return;
         _focusPending = false;
-        int index = _focus.DayNumber - FirstShown.DayNumber;
-        if (index is >= 0 and < 42)
+        if (_picking == Picking.Months)
+            await _picks[FirstAllowed(_month.Month - 1, 12, index => AllowedMonth(new DateOnly(_month.Year, index + 1, 1)))].FocusAsync();
+        else if (_picking == Picking.Years)
+            await _picks[FirstAllowed(_month.Year - FirstYear, YearsShown, index => AllowedYear(FirstYear + index))].FocusAsync();
+        else if (_focus.DayNumber - FirstShown.DayNumber is var index and >= 0 and < 42)
             await _days[index].FocusAsync();
     }
 }

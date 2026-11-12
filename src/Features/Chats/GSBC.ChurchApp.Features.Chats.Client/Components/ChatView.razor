@@ -3,17 +3,12 @@
 @inject Shell Shell
 @inject IServiceProvider Services
 @inject NavigationManager Navigation
-@using GSBC.ChurchApp.Platform.Icons
 
 <Page Title="@_title" BackHref="@BackHref" BackLabel="@BackLabel" TopBar="TopBarStyle.Solid">
     <Actions>
         @if (_card is not null)
         {
             <Button Variant="ButtonVariant.Quiet" Icon="@AppIcons.Settings" AriaLabel="Chat settings" Tooltip="Chat settings" OnClick="() => _people = true" />
-            @if (_card.YouMayManage)
-            {
-                <Menu Label="@($"More for {_title}")" Items="ChatActions" />
-            }
         }
     </Actions>
     <ChildContent>
@@ -136,7 +131,7 @@
             <ChatComposer Chat="chat" Editing="_editing" ReplyingTo="_replyingTo" OnDone="Done" />
         </div>
         <MessageActions Card="card" Line="_acting" OnClose="() => _acting = null" OnReply="Reply" OnEdit="Edit" />
-        <ChatPeopleSheet Card="card" Open="_people" OpenChanged="open => _people = open" />
+        <ChatPeopleSheet Card="card" Open="_people" OpenChanged="open => _people = open" OnDelete="AskToDelete" />
         <Sheet Open="_deleting" OpenChanged="open => _deleting = open" Title="@($"Delete {ChatText.Title(card)}?")"
                Lead="Everyone in it loses the chat. The church keeps its messages and the log, so staff can still check it.">
             <Actions>
@@ -262,10 +257,11 @@
 
     private void ShowSeen(ChatMessage message) => _seen = message;
 
-    private IReadOnlyList<MenuItem> ChatActions =>
-    [
-        this.Item("Delete the chat…", () => _deleting = true, "trash-2", "For everyone in it. The church keeps its messages.", danger: true),
-    ];
+    private void AskToDelete()
+    {
+        _people = false;
+        _deleting = true;
+    }
 
     private async Task DeleteAsync(ChatCard card)
     {

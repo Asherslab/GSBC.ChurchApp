@@ -3,7 +3,7 @@
 <UnsavedGuard Changed="() => _born.Length > 0" What="your birth date" Save="SaveBeforeLeavingAsync" />
 
 <div class="ui-after">
-    <DateField Label="Your birth date" Value="@_born" ValueChanged="value => _born = value" Max="@($"{ChurchTime.Today(Clock):yyyy-MM-dd}")" AutoComplete="bday" Problem="@_problem" Placeholder="Like 4 Mar 2011"
+    <DateField Label="Your birth date" Shortcuts="false" Value="@_born" ValueChanged="value => _born = value" Max="@($"{ChurchTime.Today(Clock):yyyy-MM-dd}")" AutoComplete="bday" Problem="@_problem" Placeholder="Like 4 Mar 2011"
                Hint="@($"The church keeps young people safe in the app, so it asks everyone once. {PeopleWords.WhoSees}")" />
 </div>
 <SaveBar Class="ui-after" Label="Save birth date" Busy="_busy" OnSave="() => SaveAsync(adult: false)" Blocked="@(PeopleWords.ParseDay(_born) is null ? "Enter your birth date to save it." : null)">

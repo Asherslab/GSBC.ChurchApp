@@ -7,12 +7,9 @@
 <UnsavedGuard Changed="() => _file is not null" What="@(_busy ? "the upload that's still going" : "the picture you chose")" />
 
 <div class="media-upload">
-    <label class="media-upload__drop @(_busy ? "media-upload__drop--busy" : "")">
-        <Icon Name="image" />
-        <span class="media-upload__label">@Label</span>
-        <span class="media-upload__hint">@(_file is null ? "Click to choose a file from this computer" : _checking ? $"{_file.Name}: checking the library…" : _file.Name)</span>
+    <DropBox Icon="image" Prompt="@Label" Hint="@(_file is null ? "Drop it here, or click to choose one from this computer" : _checking ? $"{_file.Name}: checking the library…" : _file.Name)" Busy="_busy">
         <InputFile @ref="_picker" OnChange="ChooseAsync" accept="@MediaTypes.AcceptedFiles(FontsOnly)" disabled="@_busy" class="visually-hidden" />
-    </label>
+    </DropBox>
     @if (_file is not null && _match is { Media: { } existing } match)
     {
         <section @ref="_prompt" class="media-upload__match" tabindex="-1" aria-labelledby="media-upload-match-title" aria-describedby="media-upload-match-lead">

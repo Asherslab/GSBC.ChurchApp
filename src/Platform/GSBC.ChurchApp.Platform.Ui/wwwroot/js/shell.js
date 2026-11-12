@@ -70,9 +70,6 @@ window.gsbcShell = (() => {
   const keepFieldInView = () => {
     const field = document.activeElement;
     if (!(field instanceof HTMLElement) || !field.matches(typing)) return;
-    const scroller = field.closest('.sheet, .page-scroll');
-    const foot = scroller?.querySelector('.editor-foot');
-    scroller?.style.setProperty('--foot', `${foot && !foot.contains(field) ? foot.offsetHeight : 0}px`);
     field.scrollIntoView({ block: 'nearest' });
   };
 
