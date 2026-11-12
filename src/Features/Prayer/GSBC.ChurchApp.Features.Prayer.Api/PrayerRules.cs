@@ -28,8 +28,16 @@ internal static class PrayerRules
 
     public static bool MayPrayMore(int prayedInTheLastDay) => prayedInTheLastDay < PrayersPerDay;
 
-    public static string FirstName(string name) =>
-        name.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).FirstOrDefault() ?? "";
+    public static string ShortName(string name)
+    {
+        string[] words = name.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        return words.Length switch
+        {
+            0 => "",
+            1 => words[0],
+            _ => $"{words[0]} {char.ToUpperInvariant(words[^1][0])}.",
+        };
+    }
 
     public static bool IsOnTheWall(RequestRecord request, DateTime now) =>
         request.Wall == WallState.Shown && request.WallUntil > now;
@@ -59,7 +67,7 @@ internal static class PrayerRules
     {
         Id = request.Id.ToString(),
         Text = request.WallText,
-        Name = request.WallShowsName ? FirstName(request.Name) : "",
+        Name = request.WallShowsName ? ShortName(request.Name) : "",
         ShownAt = request.WallShownAt ?? request.SentAt,
         Until = request.WallUntil ?? request.SentAt,
         Prayed = request.Prayed,
@@ -77,7 +85,7 @@ internal static class PrayerRules
         Prayed = request.Prayed,
         Answered = request.Care == CareState.Answered,
         AnsweredNote = request.AnsweredNote,
-        WallName = request.Wall == WallState.Shown && request.WallShowsName ? FirstName(request.Name) : "",
+        WallName = request.Wall == WallState.Shown && request.WallShowsName ? ShortName(request.Name) : "",
         WallText = request.Wall == WallState.Shown ? request.WallText : "",
     };
 
@@ -88,7 +96,7 @@ internal static class PrayerRules
         SentAt = request.SentAt,
         Wall = request.Wall,
         Minor = request.Minor,
-        FirstName = request.ShowName ? FirstName(request.Name) : "",
+        ShortName = request.ShowName ? ShortName(request.Name) : "",
         WallText = request.WallText,
         WallShowsName = request.WallShowsName,
         WallUntil = request.Wall == WallState.Shown ? request.WallUntil : null,

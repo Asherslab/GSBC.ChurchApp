@@ -46,7 +46,7 @@ public sealed class WallTests : PrayerHost
 
         List<WallPost> wall = await WallAsync();
         Assert.Equal("", wall.Single(post => post.Id == hidden).Name);
-        Assert.Equal("Sam", wall.Single(post => post.Id == shown).Name);
+        Assert.Equal("Sam S.", wall.Single(post => post.Id == shown).Name);
         Assert.All(await RowsAsync(PrayerFeeds.Wall), row => Assert.Null(row.ScopeId));
     }
 

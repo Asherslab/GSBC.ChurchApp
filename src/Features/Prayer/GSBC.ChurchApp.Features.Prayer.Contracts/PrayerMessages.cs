@@ -163,7 +163,7 @@ public sealed class RequestDetails
     [ProtoMember(10)] public string AnsweredNote { get; set; } = "";
     [ProtoMember(11)] public List<CareNote> Notes { get; set; } = [];
     [ProtoMember(12)] public List<CareStep> History { get; set; } = [];
-    [ProtoMember(13)] public string FirstName { get; set; } = "";
+    [ProtoMember(13)] public string ShortName { get; set; } = "";
     [ProtoMember(14)] public bool MayRead { get; set; }
 }
 
@@ -223,7 +223,7 @@ public sealed class WallCase
     [ProtoMember(3)] public DateTime SentAt { get; set; }
     [ProtoMember(4)] public WallState Wall { get; set; }
     [ProtoMember(5)] public bool Minor { get; set; }
-    [ProtoMember(6)] public string FirstName { get; set; } = "";
+    [ProtoMember(6)] public string ShortName { get; set; } = "";
     [ProtoMember(7)] public string WallText { get; set; } = "";
     [ProtoMember(8)] public bool WallShowsName { get; set; }
     [ProtoMember(9)] public DateTime? WallUntil { get; set; }
