@@ -6,7 +6,7 @@ using ProtoBuf.Grpc;
 
 namespace GSBC.ChurchApp.Features.Chats.Api;
 
-internal sealed class ChatsService(ChatActions actions) : IChatsService
+internal sealed class ChatsService(ChatActions actions, ChatReads reads) : IChatsService
 {
     private static readonly Done Done = new();
 
@@ -48,6 +48,12 @@ internal sealed class ChatsService(ChatActions actions) : IChatsService
 
     public async ValueTask<Done> AskToJoinAsync(AskToJoin request, CallContext context = default) =>
         await Run(context, (me, token) => actions.AskToJoinAsync(me, request, token));
+
+    public async ValueTask<MyChats> MineAsync(Nothing request, CallContext context = default) =>
+        await reads.MineAsync(SignedIn(context), context.CancellationToken);
+
+    public async ValueTask<ChatMessages> MessagesAsync(MessagesRequest request, CallContext context = default) =>
+        await reads.MessagesAsync(SignedIn(context), request, context.CancellationToken);
 
     private static async Task<Done> Run(CallContext context, Func<Guid, CancellationToken, Task> action)
     {

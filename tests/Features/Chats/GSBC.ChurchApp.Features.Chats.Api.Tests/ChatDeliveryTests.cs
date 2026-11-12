@@ -46,7 +46,7 @@ public sealed class ChatDeliveryTests : IAsyncLifetime
             .AddSingleton<IPeopleIndex>(_church).AddSingleton<INotifications>(_church)
             .AddSingleton<IMediaReferences>(_church).AddSingleton<IMediaSystemFolders>(_church)
             .AddScoped<ChatFacts>().AddScoped<ChatPublisher>().AddScoped<ChatNotifier>().AddScoped<ChatAudit>().AddScoped<OversightMarks>()
-            .AddScoped<ChatActions>().AddScoped<ChatOversight>().AddScoped<ChatsPersonData>().AddScoped<ChatMedia>().AddScoped<ChatMediaAccess>()
+            .AddScoped<ChatActions>().AddScoped<ChatOversight>().AddScoped<ChatsPersonData>().AddScoped<ChatMedia>().AddScoped<ChatMediaAccess>().AddScoped<ChatReads>()
             .AddSingleton(new FeedRegistry([new FeedDefinition(ChatsFeeds.Chats, FeedAudience.OwnRecords), new FeedDefinition(ChatsFeeds.Messages, FeedAudience.OwnRecords)]))
             .AddSingleton<FeedChangeBroadcaster>()
             .AddScoped<SyncService>()
@@ -172,11 +172,39 @@ public sealed class ChatDeliveryTests : IAsyncLifetime
             Assert.False(await scope.ServiceProvider.GetRequiredService<ChatsDbContext>().Messages.AnyAsync(message => message.ClientId == "paused", Cancel));
         Assert.Empty(await TextsAsync(_helper, chat));
         Assert.Null(await CardAsync(_helper, chat));
+        MyChats onComputer = await MineAsync(_helper);
+        Assert.True(onComputer.Paused);
+        Assert.Empty(onComputer.Chats);
 
         await using (AsyncServiceScope scope = _services.CreateAsyncScope())
             await scope.ServiceProvider.GetRequiredService<ChatOversight>()
                 .PauseAsync(auditor, new PauseRequest { PersonId = _helper.ToString(), Paused = false }, Cancel);
         Assert.Equal(["Hello all"], await TextsAsync(_helper, chat));
+    }
+
+    [Fact]
+    public async Task TheAdminPanelReadsExactlyWhatSyncGivesThatPersonsPhone()
+    {
+        Guid chat = await StartAsync("Sunday team", "Hello all");
+        await SendAsync(_helper, chat, "first words", "one");
+        Guid edited = await MessageIdAsync(chat, "one");
+        await ActAsync(actions => actions.EditAsync(_helper, new EditMessage { MessageId = edited.ToString(), Text = "second words" }, Cancel));
+        await SendAsync(_leader, chat, "See you Sunday", "two");
+
+        Assert.Equal(["Hello all", "second words", "See you Sunday"], (await ReadAsync(_helper, chat)).Messages.Select(message => message.Text));
+        Assert.Equal(await TextsAsync(_helper, chat), (await ReadAsync(_helper, chat)).Messages.Select(message => message.Text));
+        Assert.Equal(["See you Sunday"], (await ReadAsync(_helper, chat, beforeSeq: 0, limit: 1)).Messages.Select(message => message.Text));
+        Assert.Equal(["Hello all", "second words"], (await ReadAsync(_helper, chat, beforeSeq: 3)).Messages.Select(message => message.Text));
+        Assert.Empty((await ReadAsync(_outsider, chat)).Messages);
+        Assert.Empty((await MineAsync(_outsider)).Chats);
+        Assert.Equal([chat.ToString()], (await MineAsync(_helper)).Chats.Select(card => card.Id));
+
+        _church.OffTeam(_helper);
+        await using (AsyncServiceScope scope = _services.CreateAsyncScope())
+            await scope.ServiceProvider.GetRequiredService<ChatPublisher>().PublishAllAsync(Cancel);
+
+        Assert.Empty((await MineAsync(_helper)).Chats);
+        Assert.Empty((await ReadAsync(_helper, chat)).Messages);
     }
 
     [Fact]
@@ -269,6 +297,19 @@ public sealed class ChatDeliveryTests : IAsyncLifetime
     }
 
     private async Task RefusedAsync(Func<ChatActions, Task> act) => await Assert.ThrowsAsync<RpcException>(() => ActAsync(act));
+
+    private async Task<MyChats> MineAsync(Guid person)
+    {
+        await using AsyncServiceScope scope = _services.CreateAsyncScope();
+        return await scope.ServiceProvider.GetRequiredService<ChatReads>().MineAsync(person, Cancel);
+    }
+
+    private async Task<ChatMessages> ReadAsync(Guid person, Guid chat, long beforeSeq = 0, int limit = 0)
+    {
+        await using AsyncServiceScope scope = _services.CreateAsyncScope();
+        return await scope.ServiceProvider.GetRequiredService<ChatReads>()
+            .MessagesAsync(person, new MessagesRequest { ChatId = chat.ToString(), BeforeSeq = beforeSeq, Limit = limit }, Cancel);
+    }
 
     private async Task<Guid> MessageIdAsync(Guid chat, string clientId)
     {
