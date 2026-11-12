@@ -9,7 +9,7 @@
     {
         <div class="ministry-tools">
             <Button Icon="plus" OnClick="() => Open(null)">Add a link</Button>
-            @if (Uploads.CanQueue)
+            @if (Uploads.CanQueue || Services.GetService(typeof(IDirectUploads)) is not null)
             {
                 <Button Icon="file" Variant="ButtonVariant.Quiet" OnClick="() => Open(null, document: true)">Add a file</Button>
             }
@@ -17,7 +17,7 @@
     }
     @if (Page.Files.Count == 0)
     {
-        <EmptyState Icon="folder" Title="No files yet" Body="@(Page.You.MayPostFor.Count > 0 ? "Add documents from this phone, and links to forms and recordings, each for the people who need it." : "Documents and links from this ministry show here.")" />
+        <EmptyState Icon="folder" Title="No files yet" Body="@(Page.You.MayPostFor.Count > 0 ? "Add documents, and links to forms and recordings, each for the people who need it." : "Documents and links from this ministry show here.")" />
     }
     @foreach (string audience in MinistryWords.BoxOrder.Where(audience => Page.Files.Any(file => file.Audience == audience)))
     {

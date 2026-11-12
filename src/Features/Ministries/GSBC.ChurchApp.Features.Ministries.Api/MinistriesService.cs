@@ -7,6 +7,7 @@ using GSBC.ChurchApp.Platform.Common;
 using GSBC.ChurchApp.Platform.Api.Calendars;
 using GSBC.ChurchApp.Platform.Api.Notifications;
 using GSBC.ChurchApp.Platform.Api.People;
+using GSBC.ChurchApp.Platform.Contracts.Notifications;
 using GSBC.ChurchApp.Platform.Permissions;
 using Microsoft.EntityFrameworkCore;
 using ProtoBuf.Grpc;
@@ -85,7 +86,9 @@ internal sealed class MinistriesService(
             page.SittingOut = sitOuts.Where(sitOut => rounds.TryGetValue(sitOut.RoundId, out RoundRecord? set) && set.Sundays.Count > 0 && set.Sundays.Max() >= today)
                 .OrderBy(sitOut => rounds[sitOut.RoundId].Sundays.Min())
                 .Select(sitOut => MinistryViews.SittingOut(sitOut, rounds[sitOut.RoundId], tree)).ToList();
+            page.Sundays = MinistryViews.SundaysOf(ministry, await db.Rounds.AsNoTracking().ToListAsync(cancellationToken), sitOuts);
         }
+        page.Calendars.AddRange(await views.LinkedAsync(ministry, ministry.ShowsInLifeGroups ? page.Sundays : null, cancellationToken));
         return page;
     }
 
@@ -136,29 +139,116 @@ internal sealed class MinistriesService(
         JoinDecision decision = MinistryRules.Decide(request.As == Places.Team ? ministry.TeamJoin : ministry.AttendJoin, request.As);
         if (decision.Refusal is { } refusal)
             throw Refused(refusal);
+        FamilyFacts facts = (await views.FactsAsync([person], cancellationToken))[person];
+        string name = (await people.NamesAsync([person], cancellationToken)).GetValueOrDefault(person) ?? "Someone";
+        if (MinistryRules.NeedsParentsYes(request.As, facts.Minor, person == me))
+        {
+            Guid askId = await AskAsync(ministry, person, request.As, me, note, waitingForParent: true, cancellationToken);
+            await TellParentsAsync(ministry, askId, name, facts, cancellationToken);
+            await TellLeadersAsync(MinistriesNotifications.Asked, ministry, $"{name} asks to join the team",
+                facts.Parents.Count > 0 ? "They're under 18, so a parent says yes first. You'll hear when they do." : "They're under 18 and no parent is linked to them yet. Link one in People.",
+                $"ministries/young-asks/{askId:N}", me, cancellationToken);
+            return new JoinOutcome { Asked = true, Words = "Asked. A parent of yours says yes first, and you'll hear in the app." };
+        }
         if (decision.Joins)
         {
             await roles.GiveAsFeatureAsync(person, Roles.KeyOf(role), ministry.Id.ToString(), null, cancellationToken);
             changes.Touch(ministry.Id);
             await db.SaveChangesAsync(cancellationToken);
+            if (request.As == Places.Team && facts.Minor)
+                await TellLeadersYoungJoinedAsync(ministry, person, name, me, cancellationToken);
             return new JoinOutcome { Joined = true, Words = $"You're in {ministry.Name}." };
         }
 
-        if (!await db.Asks.AnyAsync(ask => ask.MinistryId == ministry.Id && ask.PersonId == person && ask.As == request.As, cancellationToken))
-            db.Asks.Add(new AskRecord
+        await AskAsync(ministry, person, request.As, me, note, waitingForParent: false, cancellationToken);
+        await TellLeadersAsync(MinistriesNotifications.Asked, ministry, $"{name} asks to {(request.As == Places.Team ? "join the team" : "come along")}",
+            $"In {ministry.Name}. Answer in the app.", $"ministries/asks/{ministry.Id:N}", me, cancellationToken);
+        return new JoinOutcome { Asked = true, Words = "Asked. A leader says yes or no, and you'll hear in the app." };
+    }
+
+    public async ValueTask<Done> ParentAnswerAsync(AskRef request, CallContext context = default)
+    {
+        CancellationToken cancellationToken = context.CancellationToken;
+        Guid me = SignedIn(context);
+        Guid id = Guid.TryParse(request.AskId, out Guid parsed) ? parsed : Guid.Empty;
+        AskRecord ask = await db.Asks.SingleOrDefaultAsync(found => found.Id == id && found.WaitingForParent, cancellationToken)
+                        ?? throw new RpcException(new Status(StatusCode.NotFound, "That ask was already answered or taken back."));
+        FamilyFacts facts = (await views.FactsAsync([ask.PersonId], cancellationToken))[ask.PersonId];
+        if (!facts.Parents.Contains(me))
+            throw new RpcException(new Status(StatusCode.PermissionDenied, "Only their parent can say yes to this."));
+        MinistryTree tree = await views.TreeAsync(cancellationToken);
+        MinistryRecord ministry = Existing(tree, ask.MinistryId.ToString());
+        string name = (await people.NamesAsync([ask.PersonId], cancellationToken)).GetValueOrDefault(ask.PersonId) ?? "Someone";
+        await notifications.SettleAsync($"ministries/parent/{ask.Id:N}", cancellationToken);
+
+        if (!request.Yes)
+        {
+            db.Asks.Remove(ask);
+            changes.Touch(ministry.Id);
+            await db.SaveChangesAsync(cancellationToken);
+            await notifications.RaiseAsync(new Notification(MinistriesNotifications.Answered, NotificationAudience.Person(ask.PersonId),
+                $"Not {ministry.Name}'s team for now", "A parent of yours said not yet. Talk with them about it.", $"/ministries/{ministry.Id}",
+                Subject: $"ministries/parent-no/{ask.Id:N}") { Actor = me }, cancellationToken);
+            await TellLeadersAsync(MinistriesNotifications.Asked, ministry, $"{First(name)}'s parent said not yet",
+                $"They won't join {ministry.Name}'s team for now.", $"ministries/young-asks/{ask.Id:N}", me, cancellationToken);
+            return new Done();
+        }
+
+        if (MinistryRules.Decide(ministry.TeamJoin, Places.Team).Joins)
+        {
+            db.Asks.Remove(ask);
+            await roles.GiveAsFeatureAsync(ask.PersonId, Roles.KeyOf(Roles.Team), ministry.Id.ToString(), null, cancellationToken);
+            changes.Touch(ministry.Id);
+            await db.SaveChangesAsync(cancellationToken);
+            await notifications.RaiseAsync(new Notification(MinistriesNotifications.Answered, NotificationAudience.Person(ask.PersonId),
+                $"You're in {ministry.Name}", "A parent of yours said yes to joining the team.", $"/ministries/{ministry.Id}",
+                Subject: $"ministries/parent-yes/{ask.Id:N}") { Actor = me }, cancellationToken);
+            await TellLeadersYoungJoinedAsync(ministry, ask.PersonId, name, me, cancellationToken);
+            return new Done();
+        }
+
+        ask.WaitingForParent = false;
+        changes.Touch(ministry.Id);
+        await db.SaveChangesAsync(cancellationToken);
+        await TellLeadersAsync(MinistriesNotifications.Asked, ministry, $"{name} asks to join the team",
+            "A parent said yes. Answer in the app.", $"ministries/asks/{ministry.Id:N}", me, cancellationToken);
+        return new Done();
+    }
+
+    private async Task<Guid> AskAsync(MinistryRecord ministry, Guid person, string place, Guid me, string note, bool waitingForParent, CancellationToken cancellationToken)
+    {
+        AskRecord? ask = await db.Asks.SingleOrDefaultAsync(found => found.MinistryId == ministry.Id && found.PersonId == person && found.As == place, cancellationToken);
+        if (ask is null)
+            db.Asks.Add(ask = new AskRecord
             {
-                Id = Guid.CreateVersion7(), MinistryId = ministry.Id, PersonId = person, As = request.As, AskedBy = me, Note = note,
-                AskedAt = time.GetUtcNow().UtcDateTime,
+                Id = Guid.CreateVersion7(), MinistryId = ministry.Id, PersonId = person, As = place, AskedBy = me, Note = note,
+                AskedAt = time.GetUtcNow().UtcDateTime, WaitingForParent = waitingForParent,
             });
         changes.Touch(ministry.Id);
         await db.SaveChangesAsync(cancellationToken);
-        string name = (await people.NamesAsync([person], cancellationToken)).GetValueOrDefault(person) ?? "Someone";
-        await notifications.RaiseAsync(new Notification(
-            MinistriesNotifications.Asked, NotificationAudience.Holding(MinistriesPermissions.People, ministry.Id.ToString()),
-            $"{name} asks to {(request.As == Places.Team ? "join the team" : "come along")}", $"In {ministry.Name}. Answer in the app.",
-            $"/ministries/{ministry.Id}/people", Subject: $"ministries/asks/{ministry.Id:N}"), cancellationToken);
-        return new JoinOutcome { Asked = true, Words = "Asked. A leader says yes or no, and you'll hear in the app." };
+        return ask.Id;
     }
+
+    private async Task TellParentsAsync(MinistryRecord ministry, Guid askId, string name, FamilyFacts child, CancellationToken cancellationToken)
+    {
+        foreach (Guid parent in child.Parents)
+            await notifications.RaiseAsync(new Notification(MinistriesNotifications.ForYourYes, NotificationAudience.Person(parent),
+                $"{First(name)} asks to join {ministry.Name}'s team", "Say yes or not yet in the app. Its leaders know they asked.", $"/ministries/{ministry.Id}",
+                Subject: $"ministries/parent/{askId:N}", Action: "Answer") { Actor = child.PersonId }, cancellationToken);
+    }
+
+    private async Task TellLeadersYoungJoinedAsync(MinistryRecord ministry, Guid person, string name, Guid saidYes, CancellationToken cancellationToken)
+    {
+        string parent = (await people.NamesAsync([saidYes], cancellationToken)).GetValueOrDefault(saidYes) ?? "A parent";
+        await TellLeadersAsync(MinistriesNotifications.YoungJoined, ministry, $"{name} joined the team",
+            $"They're under 18; {First(parent)} said yes. Follow up with them and their family.", $"ministries/young-joined/{ministry.Id:N}/{person:N}", saidYes, cancellationToken);
+    }
+
+    private async Task TellLeadersAsync(NotificationKind kind, MinistryRecord ministry, string title, string body, string subject, Guid actor, CancellationToken cancellationToken) =>
+        await notifications.RaiseAsync(new Notification(kind, NotificationAudience.Holding(MinistriesPermissions.People, ministry.Id.ToString()),
+            title, body, $"/ministries/{ministry.Id}/people", Subject: subject) { Actor = actor }, cancellationToken);
+
+    private static string First(string name) => name.Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? name;
 
     public async ValueTask<Done> LeaveAsync(JoinRequest request, CallContext context = default)
     {
@@ -211,6 +301,7 @@ internal sealed class MinistriesService(
             Age = facts.GetValueOrDefault(ask.PersonId)?.Age, As = ask.As,
             AskedBy = ask.AskedBy == ask.PersonId ? "" : names.GetValueOrDefault(ask.AskedBy) ?? "", AskedById = ask.AskedBy.ToString(),
             Note = ask.Note, AskedAt = ask.AskedAt, MinistryId = ask.MinistryId.ToString(), MinistryName = tree.Find(ask.MinistryId)?.Name ?? "",
+            WaitingForParent = ask.WaitingForParent,
         }).ToList();
     }
 
@@ -226,6 +317,7 @@ internal sealed class MinistriesService(
         you.ParentOfAttendee = MinistryViews.Holds(grants, MinistriesPermissions.ParentsView, ministry.Id) && !you.Roles.Contains(Roles.Team) && !leadsHere;
 
         FamilyFacts mine = (await views.FactsAsync([person], cancellationToken))[person];
+        you.Minor = mine.Minor;
         if (mine.Children.Count > 0)
         {
             IReadOnlyDictionary<Guid, FamilyFacts> children = await views.FactsAsync(mine.Children, cancellationToken);
@@ -248,6 +340,10 @@ internal sealed class MinistriesService(
         List<AskRecord> asks = await db.Asks.AsNoTracking().Where(ask => ask.MinistryId == ministry.Id && (ask.PersonId == person || ask.AskedBy == person))
             .ToListAsync(cancellationToken);
         you.Asked = await AskLinesAsync(asks, tree, views, people, cancellationToken);
+        if (mine.Children.Count > 0)
+            you.ForYourYes = await AskLinesAsync(await db.Asks.AsNoTracking()
+                .Where(ask => ask.MinistryId == ministry.Id && ask.WaitingForParent && mine.Children.Contains(ask.PersonId) && ask.AskedBy != person)
+                .OrderBy(ask => ask.AskedAt).ToListAsync(cancellationToken), tree, views, people, cancellationToken);
         if (MinistryViews.Holds(grants, MinistriesPermissions.Post, ministry.Id))
             you.MayPostFor = [.. MinistryLogic.PostableAudiences(ministry.AttendJoin)];
         you.MayManagePeople = MinistryViews.Holds(grants, MinistriesPermissions.People, ministry.Id);

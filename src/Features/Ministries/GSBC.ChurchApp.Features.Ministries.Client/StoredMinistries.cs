@@ -64,6 +64,7 @@ public sealed class StoredMinistries(ILocalFeeds feeds, IAccess access, TimeProv
                 .Select(file => From(file, map, id))
                 .ToList(),
             Calendars = (await ItemsAsync<CalendarLine>(MinistriesFeeds.Calendars, MinistriesFeeds.PrivateCalendars, calendarIds))
+                .Where(calendar => !calendar.Linked)
                 .OrderBy(calendar => calendarIds.IndexOf(calendar.MinistryId))
                 .Select(calendar => From(calendar, map, id))
                 .ToList(),
@@ -74,12 +75,25 @@ public sealed class StoredMinistries(ILocalFeeds feeds, IAccess access, TimeProv
             page.Sessions = (await AllAsync<GroupSessions>(MinistriesFeeds.Sessions)).FirstOrDefault(group => group.GroupId == id)?.Changes ?? [];
             page.Round = (await AllAsync<Round>(MinistriesFeeds.Rounds)).FirstOrDefault(round => round.Id == ministry.RoundId);
             string today = ChurchTime.Today(time).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
-            page.SittingOut = (await AllAsync<SittingOut>(MinistriesFeeds.SittingOut))
+            IReadOnlyList<SittingOut> sittingOut = await AllAsync<SittingOut>(MinistriesFeeds.SittingOut);
+            page.SittingOut = sittingOut
                 .Where(sitOut => sitOut.GroupId == id && sitOut.Round is { Sundays.Count: > 0 } round && string.CompareOrdinal(round.Sundays.Max(), today) >= 0)
                 .OrderBy(sitOut => sitOut.Round!.Sundays.Min(), StringComparer.Ordinal)
                 .ToList();
+            page.Sundays = LifeGroupRounds.SundaysOf(id, ministry.RoundId, await AllAsync<Round>(MinistriesFeeds.Rounds), sittingOut);
         }
+        if (MinistryParts.IsOn(ministry.PartsOff, MinistryParts.Calendar))
+            page.Calendars.AddRange((await ItemsAsync<CalendarLine>(MinistriesFeeds.Calendars, MinistriesFeeds.PrivateCalendars, [id]))
+                .Where(calendar => calendar.Linked && calendar.MinistryId == id)
+                .OrderBy(calendar => calendar.Name, StringComparer.Ordinal)
+                .Select(calendar => OnItsDays(calendar, ministry.ShowsInLifeGroups ? page.Sundays : null)));
         return page;
+    }
+
+    private static CalendarLine OnItsDays(CalendarLine calendar, IReadOnlyList<string>? days)
+    {
+        (calendar.Days, calendar.OnItsDays) = ([.. days ?? []], days is not null);
+        return calendar;
     }
 
     public async Task<LifeGroupsPage> LifeGroupsAsync()
@@ -129,6 +143,8 @@ public sealed class StoredMinistries(ILocalFeeds feeds, IAccess access, TimeProv
             })
             .ToList();
         you.Asked = here.Where(ask => ask.PersonId == yours.PersonId || ask.AskedById == yours.PersonId).ToList();
+        you.Minor = yours.Minor;
+        you.ForYourYes = here.Where(ask => ask.WaitingForParent && ask.AskedById != yours.PersonId && yours.Children.Any(child => child.Id == ask.PersonId)).ToList();
         if (access.Can(MinistriesPermissions.Post, ministry.Id))
             you.MayPostFor = [.. MinistryLogic.PostableAudiences(ministry.AttendJoin)];
         you.MayManagePeople = access.Can(MinistriesPermissions.People, ministry.Id);

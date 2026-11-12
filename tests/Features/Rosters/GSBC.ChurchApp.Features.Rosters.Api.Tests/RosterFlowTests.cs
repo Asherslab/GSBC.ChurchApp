@@ -29,7 +29,7 @@ public sealed class RosterFlowTests : IAsyncLifetime
     private readonly SentNotifications _notifications = new();
     private readonly Guid _ministry = Guid.CreateVersion7();
     private readonly Guid _leader = Guid.CreateVersion7(), _jo = Guid.CreateVersion7(), _sam = Guid.CreateVersion7(), _tom = Guid.CreateVersion7();
-    private readonly Guid _sarah = Guid.CreateVersion7(), _stranger = Guid.CreateVersion7();
+    private readonly Guid _sarah = Guid.CreateVersion7(), _stranger = Guid.CreateVersion7(), _office = Guid.CreateVersion7();
     private readonly Guid _sound = Guid.CreateVersion7(), _date = Guid.CreateVersion7();
     private TestDatabase _database = null!;
     private ServiceProvider _services = null!;
@@ -64,9 +64,9 @@ public sealed class RosterFlowTests : IAsyncLifetime
             .AddSingleton<IRosterableEvents>(_events)
             .AddSingleton<IMinistryCalendars>(new NoCalendars())
             .AddSingleton<INotifications>(_notifications)
-            .AddSingleton<IAccessEvaluator>(new LeadersOf(_ministry, _leader))
+            .AddSingleton<IAccessEvaluator>(new LeadersOf(_ministry, _leader, _office))
             .AddScoped<RosterViews>().AddScoped<RosterPublisher>().AddScoped<RosterMessenger>().AddScoped<RosterReminders>()
-            .AddScoped<RostersService>().AddScoped<RostersPersonData>()
+            .AddScoped<RostersService>().AddScoped<RostersPersonData>().AddScoped<RostersMinistryPeople>()
             .AddRostersData()
             .AddSyncData();
         _services = services.BuildServiceProvider();
@@ -118,7 +118,7 @@ public sealed class RosterFlowTests : IAsyncLifetime
     [Fact]
     public async Task EachPhoneGetsOnlyWhatTheMinistryLetsItsTeamSee()
     {
-        await SetUpAsync(new Position { Name = "Sound", Needed = 3 }, new RosterSettings { WhoSees = WhoSees.Yours, SwapWays = [SwapWays.Team] });
+        await SetUpAsync(new Position { Name = "Sound", Needed = 3 }, new RosterSettings { WhoSees = WhoSees.Yours, OpenSwaps = OpenSwaps.Team });
         await AssignAsync(_jo);
         await AssignAsync(_tom);
 
@@ -132,15 +132,15 @@ public sealed class RosterFlowTests : IAsyncLifetime
     [Fact]
     public async Task AnApprovedSwapMovesThePlaceOnlyWhenALeaderSaysYes()
     {
-        await SetUpAsync(new Position { Name = "Sound" }, new RosterSettings { SwapWays = [SwapWays.Approve] });
+        await SetUpAsync(new Position { Name = "Sound" }, new RosterSettings { OpenSwaps = OpenSwaps.Approve });
         await AssignAsync(_jo);
         Guid assignment = await OnlyAssignmentAsync();
         Guid swap = Guid.CreateVersion7();
 
         await Assert.ThrowsAsync<RpcException>(() => Run(service => service.AskSwapAsync(_jo,
-            new SwapAsk { MinistryId = _ministry.ToString(), SwapId = Guid.CreateVersion7().ToString(), AssignmentId = assignment.ToString(), Way = SwapWays.Team }, Cancel)));
+            new SwapAsk { MinistryId = _ministry.ToString(), SwapId = Guid.CreateVersion7().ToString(), AssignmentId = assignment.ToString(), Way = SwapWays.Direct }, Cancel)));
         await Run(service => service.AskSwapAsync(_jo,
-            new SwapAsk { MinistryId = _ministry.ToString(), SwapId = swap.ToString(), AssignmentId = assignment.ToString(), Way = SwapWays.Approve }, Cancel));
+            new SwapAsk { MinistryId = _ministry.ToString(), SwapId = swap.ToString(), AssignmentId = assignment.ToString(), Way = SwapWays.Team }, Cancel));
         await Run(service => service.TakeSwapAsync(_sam, new SwapTake { MinistryId = _ministry.ToString(), SwapId = swap.ToString() }, Cancel));
 
         Assert.Equal("Jo Sample", (await ViewAsync(_leader)).Dates.Single().Assignments.Single().Name);
@@ -198,6 +198,78 @@ public sealed class RosterFlowTests : IAsyncLifetime
         Assert.Null(await RowAsync(_jo));
     }
 
+    [Fact]
+    public async Task ATraineeIsOnWithSomeoneTrainedAndLeadersHearWhenTheyreLeftWithNobody()
+    {
+        await SetUpAsync(new Position { Name = "Presenter PC", Needed = 1, NeedsTrained = true });
+        await Run(service => service.SetTrainedAsync(_leader, new TrainedChange { MinistryId = _ministry.ToString(), PositionId = _sound.ToString(), PersonId = _jo.ToString(), Trained = true }, Cancel));
+        await AssignAsync(_sam);
+
+        Assignment alone = (await ViewAsync(_leader)).Dates.Single().Assignments.Single();
+        Assert.Equal((true, false), (alone.Training, alone.Fills));
+        Assert.Equal([Training.AloneFlag], alone.Flags);
+        Assert.Contains(_notifications.Sent, sent => sent.Audience == NotificationAudience.Person(_sam) && sent.Title.EndsWith(": Presenter PC (training)", StringComparison.Ordinal));
+
+        await AssignAsync(_jo);
+        RosterDate partnered = (await ViewAsync(_leader)).Dates.Single();
+        Assert.Empty(partnered.Assignments.Single(each => each.PersonId == _sam.ToString()).Flags);
+        Assert.Equal(1, partnered.Assignments.Count(each => each.Fills));
+
+        Guid jos = Guid.Parse(partnered.Assignments.Single(each => each.PersonId == _jo.ToString()).Id);
+        _notifications.Sent.Clear();
+        await Run(service => service.ReplyAsync(_jo, new ReplyRequest { MinistryId = _ministry.ToString(), AssignmentId = jos.ToString(), Accept = false }, Cancel));
+
+        Assert.Contains(_notifications.Sent, sent => sent.Audience == NotificationAudience.Person(_leader) && sent.Title.StartsWith("Sam is training on", StringComparison.Ordinal));
+        Assert.Equal([Training.AloneFlag], (await ViewAsync(_leader)).Dates.Single().Assignments.Single(each => each.PersonId == _sam.ToString()).Flags);
+    }
+
+    [Fact]
+    public async Task AddingADateStartsWithTheCalendarsTheMinistryRostersFrom()
+    {
+        RosterableEvent sunday = _events.Events[Sunday];
+        _events.Events["kids-night"] = sunday with { Key = "kids-night", Title = "Kids night", CalendarId = Guid.CreateVersion7(), CalendarName = "Kids" };
+        await Run(service => service.SaveSettingsAsync(_leader, new SettingsSave
+        {
+            MinistryId = _ministry.ToString(), Settings = new RosterSettings { Calendars = [sunday.CalendarId.ToString(), "not a calendar"] },
+        }, Cancel));
+
+        await using AsyncServiceScope scope = _services.CreateAsyncScope();
+        EventChoices choices = await scope.ServiceProvider.GetRequiredService<RostersService>().EventChoicesAsync(_leader, new RosterQuery { MinistryId = _ministry.ToString() }, Cancel);
+
+        Assert.Equal([(Sunday, true), ("kids-night", false)], choices.Events.OrderBy(choice => choice.Title).Select(choice => (choice.Key, choice.Own)).Reverse());
+        Assert.Equal([sunday.CalendarId.ToString()], (await ViewAsync(_leader)).Settings.Calendars);
+    }
+
+    [Fact]
+    public async Task DaysAwayAreThePersonsAndOnlyTheyTheirParentOrTheOfficeSetThem()
+    {
+        await using (AsyncServiceScope scope = _services.CreateAsyncScope())
+            await scope.ServiceProvider.GetRequiredService<RosterPublisher>().PublishAllAsync(Cancel);
+        Assert.Equal([_jo.ToString()], (await AwayRowAsync(_jo))!.People.Select(person => person.PersonId));
+        Assert.Equal([_sarah.ToString(), _tom.ToString()], (await AwayRowAsync(_sarah))!.People.Select(person => person.PersonId));
+
+        string day = Wire(ChurchTime.Today(_clock).AddDays(3));
+        await Assert.ThrowsAsync<RpcException>(() =>
+            Run(service => service.SaveAwayAsync(_stranger, new AwaySave { AwayId = Guid.CreateVersion7().ToString(), PersonId = _jo.ToString(), From = day, To = day }, Cancel)));
+        await Run(service => service.SaveAwayAsync(_office, new AwaySave { AwayId = Guid.CreateVersion7().ToString(), PersonId = _jo.ToString(), From = day, To = day }, Cancel));
+
+        Assert.Single((await AwayRowAsync(_jo))!.People.Single().Spans);
+    }
+
+    [Fact]
+    public async Task SomeoneAddedToTheTeamHasTheRosterAsSoonAsTheMinistrySaysItsPeopleChanged()
+    {
+        await SetUpAsync(new Position { Name = "Sound", NeedsTrained = true });
+        _ministries.Teams[_ministry].Add(new MinistryMember(_stranger, false));
+        Assert.Null(await RowAsync(_stranger));
+
+        await using (AsyncServiceScope scope = _services.CreateAsyncScope())
+            await scope.ServiceProvider.GetRequiredService<RostersMinistryPeople>().ChangedAsync([_ministry], Cancel);
+
+        Assert.NotNull(await RowAsync(_stranger));
+        Assert.Contains((await ViewAsync(_leader)).Team, member => member.PersonId == _stranger.ToString());
+    }
+
     private async Task SetUpAsync(Position position, RosterSettings? settings = null)
     {
         position.Id = _sound.ToString();
@@ -236,14 +308,25 @@ public sealed class RosterFlowTests : IAsyncLifetime
         return row is null || row.Deleted ? null : RostersPayloads.Decode<RosterView>(row.Payload);
     }
 
+    private async Task<AwayList?> AwayRowAsync(Guid person)
+    {
+        await using AsyncServiceScope scope = _services.CreateAsyncScope();
+        FeedChangeRecord? row = await scope.ServiceProvider.GetRequiredService<RostersDbContext>().FeedChanges.AsNoTracking()
+            .Where(change => change.Feed == RostersFeeds.Away && change.ScopeId == person.ToString())
+            .OrderByDescending(change => change.Cursor)
+            .FirstOrDefaultAsync(Cancel);
+        return row is null || row.Deleted ? null : RostersPayloads.Decode<AwayList>(row.Payload);
+    }
+
     private static string Wire(DateOnly day) => RosterBook.Wire(day);
 
-    private sealed class LeadersOf(Guid ministry, Guid leader) : IAccessEvaluator
+    private sealed class LeadersOf(Guid ministry, Guid leader, Guid office) : IAccessEvaluator
     {
         public ValueTask<bool> IsAllowedAsync(ClaimsPrincipal user, string node, string? scopeId, CancellationToken cancellationToken) => ValueTask.FromResult(false);
 
-        public ValueTask<GrantSet> GrantsForAsync(Guid userId, CancellationToken cancellationToken) => ValueTask.FromResult(userId == leader
-            ? new GrantSet([new Grant(PermissionPattern.Parse(RostersPermissions.EditNode), Scope.Of(ScopeKind.Ministry, ministry.ToString()))])
+        public ValueTask<GrantSet> GrantsForAsync(Guid userId, CancellationToken cancellationToken) => ValueTask.FromResult(
+            userId == leader ? new GrantSet([new Grant(PermissionPattern.Parse(RostersPermissions.EditNode), Scope.Of(ScopeKind.Ministry, ministry.ToString()))])
+            : userId == office ? new GrantSet([new Grant(PermissionPattern.Parse(RostersPermissions.AwayNode), Scope.Global)])
             : GrantSet.Empty);
     }
 }

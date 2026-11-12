@@ -2,7 +2,7 @@ namespace GSBC.ChurchApp.Platform.Permissions;
 
 public sealed record Permission
 {
-    public Permission(string node, ScopeKind scopeKind, string description, bool isSensitive = false, string? area = null)
+    public Permission(string node, ScopeKind scopeKind, string description, bool isSensitive = false, string? area = null, bool opensAdminArea = false)
     {
         if (!PermissionNode.IsValid(node))
             throw new ArgumentException($"'{node}' is not a permission node: lowercase segments joined by dots.", nameof(node));
@@ -12,6 +12,7 @@ public sealed record Permission
         Description = description;
         IsSensitive = isSensitive;
         Area = area ?? FeatureArea(node);
+        OpensAdminArea = opensAdminArea;
     }
 
     public string Node { get; }
@@ -19,6 +20,7 @@ public sealed record Permission
     public string Description { get; }
     public bool IsSensitive { get; }
     public string Area { get; }
+    public bool OpensAdminArea { get; }
 
     public override string ToString() => Node;
 

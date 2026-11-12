@@ -1,51 +1,10 @@
 @inject IRosterReads Reads
-@inject RosterWrites Writes
 
 @if (View.You.Count > 0)
 {
-<LiveData TValue="AwayList" Load="Reads.AwayAsync" Feeds="Reads.Feeds" Remember="rosters.away">
-    <ChildContent>
-        @{
-            AwayList away = context.Value;
-            List<(PersonLine Person, AwaySpan Span)> spans = View.You
-                .SelectMany(person => (away.People.FirstOrDefault(each => each.PersonId == person.Id)?.Spans ?? []).Select(span => (person, span)))
-                .ToList();
-        }
-        <Section Title="Days away" Lead="@(View.You.Count > 1 ? "Leaders of every ministry you or your children serve in see these. They can still put you on, and it's flagged." : "Leaders of every ministry you serve in see these. They can still put you on, and it's flagged.")">
-            <ListGroup>
-                @foreach ((PersonLine person, AwaySpan span) in spans)
-                {
-                    <ListRow @key="span.Id" Title="@RosterLines.Span(span)" Subtitle="@string.Join(" · ", new[] { person.Id == View.YourId ? "" : RosterLines.First(person.Name), span.Note }.Where(line => line.Length > 0))"
-                             Icon="circle-off" IconTone="RowTone.Quiet">
-                        <TrailingContent>
-                            <Button Small="true" Variant="ButtonVariant.Quiet" Icon="x" AriaLabel="@($"Remove {RosterLines.Span(span)}")" Disabled="_busy" OnClick="() => RemoveAsync(span)" />
-                        </TrailingContent>
-                    </ListRow>
-                }
-                @if (View.You.Count > 0)
-                {
-                    <ListRow Title="Add days away" Icon="plus" IconTone="RowTone.Accent" OnClick="() => _adding = true" />
-                }
-            </ListGroup>
-            <Notice Tone="NoticeTone.Warning" Text="@_problem" />
-        </Section>
-    </ChildContent>
-    <Loading />
-</LiveData>
+    <DaysAway Load="Reads.AwayAsync" Feeds="Reads.Feeds" Remember="rosters.away" People="View.You" YourId="@View.YourId" />
 }
 
-<AwaySheet @key="@($"away-{_adding}")" Open="_adding" OpenChanged="open => _adding = open" People="View.You" YourId="@View.YourId" />
-
 @code {
-    private bool _adding, _busy;
-    private string? _problem;
-
     [Parameter, EditorRequired] public required RosterView View { get; set; }
-
-    private async Task RemoveAsync(AwaySpan span)
-    {
-        _busy = true;
-        _problem = await RosterProblems.TryAsync(() => Writes.RemoveAwayAsync(span.Id));
-        _busy = false;
-    }
 }

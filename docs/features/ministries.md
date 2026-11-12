@@ -1,6 +1,6 @@
 # Ministries
 
-Status: Stage 3 (rosters) built 2026-11-11, below; Stage 2 (ministries, team and attendees, joining, audiences, posts, files, calendars, Life Groups) built 2026-11-10, below; Stage 1 (People) built 2026-11-10, in [people.md](people.md); interviewed 2026-11-10 (below, supersedes the draft); draft 2026-10-30; not built yet (Home has sample *Ministries* and *Life Groups* tiles that open *coming soon*); areas separated into tabs 2026-10-31; who sees each module chosen per
+Status: the owner's answers of 2026-11-11/12 built 2026-11-12 (*Wave 1: the owner's answers*, below); Stage 3 (rosters) built 2026-11-11, below; Stage 2 (ministries, team and attendees, joining, audiences, posts, files, calendars, Life Groups) built 2026-11-10, below; Stage 1 (People) built 2026-11-10, in [people.md](people.md); interviewed 2026-11-10 (below, supersedes the draft); draft 2026-10-30; not built yet (Home has sample *Ministries* and *Life Groups* tiles that open *coming soon*); areas separated into tabs 2026-10-31; who sees each module chosen per
 ministry 2026-10-31. Extends [SPEC.md](../../SPEC.md), where v1's "Groups" line ("ministries,
 each with a contact or 'I'm interested' button") was the placeholder. A POC is in the PWA spike
 (`spikes/app-poc`, More → Ministries and a Hub tile). Everything in it is sample data.
@@ -114,6 +114,70 @@ reminder.**
 they belong to a ministry); how long the church wants anything kept if "forever" changes; the shape of the
 auditors' coordination chat. (Blue card and training data from Safe Ministry Check: built 2026-11-10.)
 
+## Wave 1: the owner's answers (2026-11-11/12, built 2026-11-12)
+
+The owner's feedback on dev (reports #11–#49) and their answers to the defaults list, built on the back end with only the
+UI needed to set each thing; wave 2 designs the screens. **Where this disagrees with anything below, this wins.**
+
+- **A ministry's people reach Rosters and Chats at once** (#30: "I can't mark Huia as trained?... this appears to be a
+  delay in live updates? ... huia did show up after a couple minutes"). Ministries signals *a ministry's people changed*
+  (`MinistryPeopleChanges` in Platform.Api: a marker on `ministries.people-changed` for each ministry whose people list
+  or card changed, and every ministry under it, since leaders lead downwards). Platform's watcher passes the ids to every
+  `IMinistryPeopleChanged` at once: Rosters republishes those rosters and its team's days away, Chats those ministries'
+  chats. Anything else that copies membership should implement it. Archiving or turning the roster off reaches it the
+  same way.
+- **Swaps: one rule** (owner: "'a leader confirms' should be mutually exclusive with 'anyone can take it'. doesn't make
+  sense to accidentally allow members to choose whether the leader can or can't confirm the change"). *When someone asks
+  the team*: nobody, anyone on the team can take it, or anyone can offer and a leader says yes (`OpenSwaps`); *Ask
+  someone on the team yourself* stays its own switch (`DirectSwaps`). The person asking picks only *anyone* or *someone
+  I choose*; the server decides whether a leader confirms. Existing rosters: a leader confirming wins over anyone taking
+  it (keeps the leaders' say); none of the two means nobody (`SwapRule` migration, tested).
+- **Days away are the person's, across every ministry** (owner: "days away should probably be global, not specific to a
+  ministry (but could be found in rostering)"). They always were stored per person; now they're set from Account on the
+  phone (you and your children, for anyone on a team), from each Roster tab, and from a person's *Days away* tab in the
+  admin panel by staff holding *See and change anyone's days away* (`ministries.roster.away`, in Ministries Manager).
+  Everyone on a roster's team gets their days-away row, even with none yet.
+- **Put on for training** (#32: "So those that aren't trained are put on, but with somebody else who is"; owner: "as long
+  as a trained person gets put on with them. order doesn't matter"). On a position that needs people trained for it,
+  someone not trained yet is on **as training**: worked out from who's ticked as trained, so ticking them later makes
+  them a full place by itself. A trainee **doesn't fill the place**, is flagged *Training: needs someone trained on with
+  them* until someone trained is on the same date and position (either order), is told "(training)" when put on, and
+  leaders hear when a trainee is left with nobody trained (a decline, a swap, someone taken off). Flags keep position
+  names as typed ("Presenter PC").
+- **The calendars a roster draws from** (#25: "Let a ministry select which calendars to pull events from to show in
+  rostering by default (still allow showing all just incase)"). *How the roster works → Calendars it rosters from*; Add a
+  date starts on those calendars' events, with *Every calendar* still there. With none chosen it starts on the
+  ministry's own calendars, as before.
+- **Who can start a chat, per ministry** (owner: "make it configurable per ministry"): leaders (default) or the team too.
+  Team members start **group chats for the team**; channels and chats with attendees or parents stay with leaders
+  (*default*: those carry the parent-consent and safeguarding steps leaders run).
+- **New ministries start with News, Calendar and Chats on** (owner: "maybe just a few reasonable, like News, Calendars
+  and Chats"); Files and Roster are a switch away.
+- **A young person joining a team needs a parent's yes, and the leaders are told** (owner: "for attending? no. for
+  joining? yes, but leader informed so they can follow up too"). Asking for themselves, the ask waits for a parent
+  (`WaitingForParent`); their parents are notified and answer on the ministry's About; the leaders hear at once ("a parent
+  says yes first", or that no parent is linked yet) and again when a parent says yes or not yet. On an open team the
+  parent's yes puts them on; on an Ask team it goes to the leaders, who can't say yes first. A parent joining their child
+  up is the parent's yes. *Not changed:* a leader adding a young person to the team themselves, and the ask-in-a-chat
+  route (that chat already waits for a parent's consent).
+- **Documents** (owner: "changing who a doc is for should be straight forward IMO"; #45: "why is 'add a file' only
+  available in the app, not in the admin dash?"). Changing who a document is for is an ordinary edit: the stored file
+  moves between public and private media (`IMediaAudiences`), unless it's also used elsewhere (then it says so). The
+  admin panel adds documents from the computer through Media's direct upload; the empty state no longer says "from this
+  phone".
+- **Life Groups link a calendar** (#15; owner: "not just 'add calendar' but also 'link existing calendar'. then 'Sundays'
+  tab isn't needed ... needs to be something of a filtered one... only shows the Sundays that the life group is rostered
+  on for"; and "sounds about right" to all-year groups following the breaks). Any ministry can **link a calendar for
+  everyone** (Calendar tab → *Link a calendar*, in the admin panel; unlink anywhere). On a ministry shown in Life Groups a
+  linked calendar shows **only the group's Sundays**: its set's, or for an all-year group every set's except those it
+  sits out (`LifeGroupRounds.SundaysOf`). Only calendars for everyone can be linked (*default*: a link's name reaches
+  every phone). The *Sundays* tab is gone; its "No class this Sunday" notes are under Calendar → *Its Sundays*, and old
+  `/sundays` links open Calendar.
+- **The role picker** (#13, #14): `Leading.SetRole` gives a person one role in a ministry (attendee, team, admin or
+  leader), or none, in one call, checking every give and take first so it never half-applies. The UI is wave 2.
+- **Tab order per ministry** (#21): `PartsOrder` beside the parts on and off (`PartsSave.PartsOrder`); tabs follow it,
+  with any part added later at the end. The editor is wave 2.
+
 ## Stage 3, built (2026-11-11)
 
 Rosters, built overnight while the owner was asleep, so **every design pick is Claude's recommendation** (marked *default*);
@@ -140,7 +204,7 @@ and `ISafeguardingStandings` (blue card and Safe Ministry training, from People'
   beside the name, and the leader can always put them on. Everyone put on hears at once.
 - **Answers:** *I can do it* and *Can't do it* (with an optional reason the leaders see); a ministry can turn answers off
   (*How it works*), and then being put on is simply being on.
-- **Swaps, the ways the ministry allows** (*default*: only *the team can pick it up*): the team picks it up (done, the
+- **Swaps, the ways the ministry allows** (superseded 2026-11-12 by *one rule*, above) (*default*: only *the team can pick it up*): the team picks it up (done, the
   leaders hear); the team offers and a leader says yes; ask someone on the team directly (they say yes or can't). With more
   than one on, the person chooses. You stay on until it's taken.
 - **Days away belong to the person, not a ministry** (*default*: away is away), always allowed, set for yourself or your
@@ -251,11 +315,10 @@ the owner to confirm:
 - **Who may open one:** the file's own audience. Everyone's documents are public media; Team, Attendees and Parents
   documents are private to that permission at the ministry and open through a short-lived link (`Media.GetLink`), so
   opening a document needs a connection.
-- **Changing who it's for** isn't offered for a document (the stored file keeps the audience it was added with).
-  Delete it and add it again.
+- **Changing who it's for** (superseded 2026-11-12: it's an ordinary edit now, above).
 - **Where it's kept:** Media → *Made by the app* → *Ministry files* → the ministry, seen by its team and by staff
   with oversight. Deleting the file, or the ministry, lets go of it, and staff may then delete it from Media.
-- **The admin panel** still adds links only.
+- **The admin panel** adds documents too (2026-11-12, above).
 
 **Deleting a ministry** (Settings, for the leaders of the ministry above it, or staff for a top-level one) first says what
 goes: the ministries under it **move up** to its parent (*default*), and its posts, files, asks, calendars and their events and everyone's
@@ -298,8 +361,7 @@ list when they're built). About and People always stay. Decided (Claude's readin
   (`shown_audience`) and narrows the calendar to whoever may change the ministry's settings, so its events leave people's
   week, the calendar feeds, iCal links and event notifications everywhere at once; turning Calendar on restores the audience
   (including any change made meanwhile). Leaders still see the events in the admin Calendar.
-- **New ministries start with everything on** (*default*: the new-ministry sheet doesn't ask; turning a part off is one
-  switch later).
+- **New ministries start with everything on** (superseded 2026-11-12: News, Calendar and Chats only, above).
 
 **A ministry's calendar can include the ministries under it** (owner: "the kids ministries calendar should be able to show
 an amalgamation of the calendars of the ministries under it"). Settings → *Show the calendars of the ministries under it*

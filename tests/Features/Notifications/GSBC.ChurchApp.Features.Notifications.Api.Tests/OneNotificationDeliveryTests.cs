@@ -49,9 +49,9 @@ public sealed class OneNotificationDeliveryTests : NotificationsHost
             await raiser.RaiseOneOfAsync(
             [
                 new Notification(TestKinds.NewInSeries, NotificationAudience.Holding(TestKinds.HearSeries, "summer-fit"), "New in Summer Fit: Drop The Weight", "",
-                    Link: "/sermon/1", Subject: "sermon/1", ScopeId: "summer-fit"),
+                    Link: "/sermon/1", Subject: "sermon/1", ScopeId: "summer-fit") { Actor = null },
                 new Notification(TestKinds.NewSermon, NotificationAudience.Holding(TestKinds.HearNew), "New sermon: Drop The Weight", "",
-                    Link: "/sermon/1", Subject: "sermon/1", ScopeId: "sermons"),
+                    Link: "/sermon/1", Subject: "sermon/1", ScopeId: "sermons") { Actor = null },
             ], Cancel);
             return true;
         });

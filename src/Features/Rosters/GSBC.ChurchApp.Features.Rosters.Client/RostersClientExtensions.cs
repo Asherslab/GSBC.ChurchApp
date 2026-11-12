@@ -11,10 +11,17 @@ public static class RostersClientExtensions
 {
     public static readonly IReadOnlyList<string> PrivateFeeds = [RostersFeeds.Ministries, RostersFeeds.Away];
 
+    private const int AfterFamily = 30;
+
     public static IServiceCollection AddRostersOnPhone(this IServiceCollection services) =>
         services
             .AddRostersClient()
-            .AddSingleton<IRosterReads, StoredRosters>();
+            .AddSingleton<IRosterReads, StoredRosters>()
+            .AddSingleton(new AccountSection("rosters-away", AfterFamily, builder =>
+            {
+                builder.OpenComponent<YourDaysAway>(0);
+                builder.CloseComponent();
+            }));
 
     public static IServiceCollection AddRostersClient(this IServiceCollection services) =>
         services

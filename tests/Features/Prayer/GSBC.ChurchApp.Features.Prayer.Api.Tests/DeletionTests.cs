@@ -22,6 +22,7 @@ public sealed class DeletionTests : PrayerHost
         Assert.Null(await RecordAsync(id));
         Assert.Empty(await WallAsync());
         Assert.Empty(await LiveRowsAsync(PrayerFeeds.Inbox));
+        Assert.Equal([Guid.Parse(id).ToString("N")], Told.Forgotten);
     }
 
     [Fact]

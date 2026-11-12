@@ -51,18 +51,18 @@ public sealed class LimitTests : PrayerHost
     }
 
     [Fact]
-    public async Task ThePersonHearsThatSomeonePrayedAtMostOnceADay()
+    public async Task EachPrayerGoesIntoItsRequestsDigestCountedFromWhenItWentOnTheWall()
     {
-        Guid person = Guid.CreateVersion7();
+        Guid person = Guid.CreateVersion7(), friend = Guid.CreateVersion7();
         string id = await SendAsync(Guid.CreateVersion7(), person, "For my job interview", forWall: true);
+        Clock.Advance(TimeSpan.FromHours(2));
         await ShowAsync(id);
-        Told.Raised.Clear();
+        DateTime shown = Clock.UtcNow;
 
-        for (int phone = 0; phone < 3; phone++)
-            await AppAsync(app => app.PrayAsync(Guid.CreateVersion7(), null, new PrayMark { Id = id, Prayed = true }, Cancel));
-        Clock.Advance(TimeSpan.FromDays(1));
+        await AppAsync(app => app.PrayAsync(Guid.CreateVersion7(), friend, new PrayMark { Id = id, Prayed = true }, Cancel));
         await AppAsync(app => app.PrayAsync(Guid.CreateVersion7(), null, new PrayMark { Id = id, Prayed = true }, Cancel));
 
-        Assert.Equal(2, Told.Raised.Count(notification => notification.Kind == PrayerNotifications.PrayedFor));
+        Assert.Equal([(friend, shown), (null, shown)], Told.Collected.Select(item => (item.Actor, item.StartedAt)));
+        Assert.All(Told.Collected, item => Assert.Equal((PrayerNotifications.PrayedFor, Guid.Parse(id).ToString("N")), (item.Kind, item.Group)));
     }
 }

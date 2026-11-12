@@ -3,14 +3,33 @@
 @using GSBC.ChurchApp.Platform.Ui.Content
 @inject IMinistryWrites Ministries
 @inject FileUploads Uploads
+@inject IServiceProvider Services
 
 <UnsavedGuard Changed="() => Open" Editing="Draft" State="() => Shape" What="@(IsDocument ? "this file" : "this link")" />
 
-<Sheet Open="Open" OpenChanged="CloseAsync" Title="@Title" Lead="@(IsDocument ? "A document or picture from this phone, for the people who need it." : "A document, form, recording or page on the web, for the people who need it.")">
+<Sheet Open="Open" OpenChanged="CloseAsync" Title="@Title" Lead="@(IsDocument ? $"A document or picture from this {Device}, for the people who need it." : "A document, form, recording or page on the web, for the people who need it.")">
     <ChildContent>
         @if (IsDocument && Draft.Id.Length == 0)
         {
-            @if (_picked is { } picked)
+            @if (Direct is not null)
+            {
+                @if (_chosen is { } chosen)
+                {
+                    <div class="ministry-picked">
+                        <Icon Name="file" />
+                        <span class="ministry-picked__about">
+                            <strong>@chosen.File.Name</strong>
+                            <span class="quiet">Sent when you add it.</span>
+                        </span>
+                        <Button Small="true" Variant="ButtonVariant.Quiet" Disabled="_busy" OnClick="() => _chosen = null">Choose another</Button>
+                    </div>
+                }
+                else
+                {
+                    <FilePick Label="Choose a document or picture from this computer" ImagesOnly="false" OnChosen="Chose" />
+                }
+            }
+            else if (_picked is { } picked)
             {
                 <div class="ministry-picked">
                     <Icon Name="file" />
@@ -32,15 +51,8 @@
             <TextField Label="Web address" @bind-Value="Draft.Url" Type="url" Placeholder="https://" AutoCapitalize="off" />
         }
         <TextField Label="A line about it (optional)" @bind-Value="Draft.Note" MaxLength="200" />
-        @if (IsDocument && Draft.Id.Length > 0)
-        {
-            <p class="ministry-who">@MinistryWords.WhoReads(Draft.Audience, Page.Ministry.Name) To change who it's for, delete it and add it again.</p>
-        }
-        else
-        {
-            <Segmented TValue="string" Label="Who it's for" ShowLabel="true" Stacked="true" Options="Audiences" Value="Draft.Audience" ValueChanged="value => Draft.Audience = value" />
-            <p class="ministry-who">@MinistryWords.WhoReads(Draft.Audience, Page.Ministry.Name)</p>
-        }
+        <Segmented TValue="string" Label="Who it's for" ShowLabel="true" Stacked="true" Options="Audiences" Value="Draft.Audience" ValueChanged="value => Draft.Audience = value" />
+        <p class="ministry-who">@MinistryWords.WhoReads(Draft.Audience, Page.Ministry.Name)</p>
         <Notice Tone="NoticeTone.Warning" Text="@_problem" />
     </ChildContent>
     <Actions>
@@ -58,6 +70,18 @@
     private bool _busy;
     private string? _problem;
     private MediaRef? _picked;
+    private ChosenFile? _chosen;
+
+    private IDirectUploads? Direct => Uploads.CanQueue ? null : Services.GetService(typeof(IDirectUploads)) as IDirectUploads;
+
+    private string Device => Direct is null ? "phone" : "computer";
+
+    private void Chose(IReadOnlyList<ChosenFile> chosen)
+    {
+        _chosen = chosen.FirstOrDefault();
+        if (_chosen is not null && Draft.Title.Trim().Length == 0)
+            Draft.Title = Path.GetFileNameWithoutExtension(_chosen.File.Name);
+    }
 
     [Parameter] public bool Open { get; set; }
     [Parameter] public EventCallback<bool> OpenChanged { get; set; }
@@ -76,12 +100,12 @@
     };
 
     private string? Blocked =>
-        IsDocument && Draft.Id.Length == 0 && _picked is null ? "Choose the file to add it."
+        IsDocument && Draft.Id.Length == 0 && _picked is null && _chosen is null ? "Choose the file to add it."
         : Draft.Title.Trim().Length == 0 ? "Give it a name to add it."
         : !IsDocument && Draft.Url.Trim().Length == 0 ? "Paste its web address to add it."
         : null;
 
-    private object Shape => (Draft.Title, Draft.Url, Draft.Note, Draft.Audience, _picked?.Url);
+    private object Shape => (Draft.Title, Draft.Url, Draft.Note, Draft.Audience, _picked?.Url, _chosen?.File.Name);
 
     private IReadOnlyList<SegmentOption<string>> Audiences =>
         Page.You.MayPostFor.Select(audience => new SegmentOption<string>(audience, MinistryWords.Short(audience))).ToList();
@@ -106,11 +130,22 @@
         _picked = null;
     }
 
-    private Task SaveAsync() => RunAsync(() => Ministries.SaveFileAsync(Page.Ministry.Id, Draft, Upload()), keepPicked: true);
+    private Task SaveAsync() => RunAsync(async () =>
+    {
+        if (Direct is { } direct && _chosen is { } chosen && Draft.Id.Length == 0 && Draft.MediaId.Length == 0)
+        {
+            await using Stream content = chosen.File.OpenReadStream(maxAllowedSize: long.MaxValue);
+            MediaRef sent = await direct.UploadAsync(content, chosen.File.Name, chosen.ContentType, chosen.File.Size, Target());
+            Draft.MediaId = sent.Id;
+        }
+        await Ministries.SaveFileAsync(Page.Ministry.Id, Draft, Upload());
+    }, keepPicked: true);
+
+    private UploadTarget Target() => new(Draft.Title.Trim(), Contracts.Audiences.NodeOf(Draft.Audience), Page.Ministry.Id, MinistryFileArea.Key, Page.Ministry.Id);
 
     private QueuedUpload? Upload() =>
         IsDocument && Draft.Id.Length == 0
-            ? Uploads.For(_picked, FileMediaId, new UploadTarget(Draft.Title.Trim(), Contracts.Audiences.NodeOf(Draft.Audience), Page.Ministry.Id, MinistryFileArea.Key, Page.Ministry.Id))
+            ? Uploads.For(_picked, FileMediaId, Target())
             : null;
 
     private Task DeleteAsync() => RunAsync(() => Ministries.DeleteFileAsync(Page.Ministry.Id, Draft.Id), keepPicked: false);

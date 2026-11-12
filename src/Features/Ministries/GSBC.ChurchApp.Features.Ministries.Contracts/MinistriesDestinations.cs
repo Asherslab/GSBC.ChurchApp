@@ -12,7 +12,8 @@ public static class MinistriesDestinations
 
     public static readonly DestinationPage LifeGroups = new("/life-groups", "Life Groups", AppIcons.LifeGroups, DestinationAreas.Pages, "Ministries", Audience.Everyone, Rank: 41);
 
-    public static readonly DestinationKind Ministry = new("ministries.ministry", Area, "Ministry", "users", "ministries", Feeds: [MinistriesFeeds.Ministries]);
+    public static readonly DestinationKind Ministry = new("ministries.ministry", Area, "Ministry", "users", "ministries", Feeds: [MinistriesFeeds.Ministries],
+        Sections: ["news", "calendar", "files", "roster", "chats", "sundays", "people", "settings"]);
 
     public static readonly DestinationSet All = new([Directory, LifeGroups], [Ministry]);
 }

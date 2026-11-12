@@ -23,6 +23,12 @@ internal sealed class MinistryCalendars(EventsDbContext db, EventsPublisher publ
         .Select(Of)
         .ToList();
 
+    public async ValueTask<IReadOnlyList<MinistryCalendar>> ForEveryoneAsync(CancellationToken cancellationToken) =>
+        (await db.Calendars.AsNoTracking().OrderBy(calendar => calendar.Order).ToListAsync(cancellationToken))
+        .Select(Of)
+        .Where(calendar => !calendar.Hidden && calendar.Audience.Text == Audience.Everyone.Text)
+        .ToList();
+
     public async ValueTask ShowAsync(Guid ministryId, bool shown, Audience whileHidden, CancellationToken cancellationToken)
     {
         List<CalendarRecord> owned = await db.Calendars.Where(calendar => calendar.MinistryId == ministryId).ToListAsync(cancellationToken);

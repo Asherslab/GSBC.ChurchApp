@@ -16,6 +16,9 @@ public interface IRostersService
     [SignedIn]
     ValueTask<AwayList> AwayAsync(Nothing request, CallContext context = default);
 
+    [Requires(RostersPermissions.AwayNode)]
+    ValueTask<AwayList> AwayOfAsync(PersonRef request, CallContext context = default);
+
     [Requires(RostersPermissions.EditNode)]
     ValueTask<Done> SavePositionAsync(PositionSave request, CallContext context = default);
 

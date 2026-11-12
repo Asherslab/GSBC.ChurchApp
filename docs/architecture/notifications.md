@@ -41,6 +41,17 @@ decided before anything raises one.
     someone has turned off reaches neither their inbox nor their phone; with several related ones, they get the most
     specific one they haven't turned off, and if they've turned off all of them, nothing. Kinds that can't be turned
     off (`Mandatory`) always arrive. Turning a kind off applies from then on (see *People's control*).
+12. **Nobody is told about what they did themselves** (owner, 2026-11-12, from a ministry post that notified its
+    author: "Why would I get a notification for the thing I just made?"). Every notification names who caused it, or
+    that nobody did, and the raiser leaves them out (see *Who caused it*).
+13. **Digests for things that aren't urgent** (owner, 2026-11-12, on feedback: "Spammy. Would rather maybe a daily digest
+    if there was any feedback today. Feedback isn't urgent"; 2026-11-11, on prayer: "do a few digests when first made
+    (first 15 minutes, 30, 45, 1hr, 3hrs, 6hrs) then daily digests around maybe midday? (digest being how many between
+    previous digest and now) make this part admin configurable, and allow a person to mute those notifications"). Any
+    kind can come as a digest; see *Digests*.
+14. **Every notification opens its page** (owner, 2026-11-12, "Bad notification link": *A new prayer request* opened
+    *There's nothing here*). Each kind declares the places it opens, and a test checks every one is a place (see
+    *Where a notification opens*).
 
 ## The pieces
 
@@ -89,7 +100,9 @@ A kind has:
 | `Pacing` | `null` (each pushes: chat messages, security), or `NotificationPacing(pushes, per)`: past that many pushes per recipient and ministry in that time, they collapse (below). Declared per kind (decision 9) |
 | `Waits` | It asks something of you (a draft to publish, a draft shared with you, an announcement to send). It shows under *Waiting* in the inbox until the feature **settles** its subject (below) |
 | `For` | The permission its audience holds. The phone's preferences list only kinds a person could get, checked with `IAccess.CanSomewhere` (held anywhere, at any scope); a kind without one is for everyone (owner, 2026-11-03: "through permissions") |
-| `InAdminPanel` | Its task is done in the admin panel (an announcement waiting to send). On the phone the row says so and doesn't open anything |
+| `InAdminPanel` | Its task is done in the admin panel (an announcement waiting to send). On the phone the row says so and doesn't open anything, and a push opens the notifications list |
+| `Opens` | The places its links may open, as routes (`/prayer/requests/{id}`), or `ChosenByStaff` for announcements (decision 14) |
+| `Digest` | `null`, or how it comes as a digest: its title for one and for many, its body, its schedule and who may change the schedule (decision 13) |
 
 `Platform.Contracts.Notifications` holds `NotificationKind` (AOT; the phone reads it).
 `INotifications` (Platform.Api, namespace `Platform.Api.Notifications`) is the one call a feature makes:
@@ -128,6 +141,11 @@ await notifications.RaiseAsync(new Notification(
   (`OneNotification.OnePerThing`), offline. Separate raises are separate things, even with the same subject.
   Tested in `OneNotificationTests` (the rule) and `OneNotificationDeliveryTests` (rows and pushes, and nothing when
   every reason is turned off).
+- **Who caused it (decision 12).** `Notification.Actor` is required (`{ Actor = me }`, or `{ Actor = null }` when
+  nobody did, such as a reminder or a new sermon), so the compiler makes every caller decide. The raiser leaves the
+  actor out of the audience: no inbox row and no push. A staff member's own test (*Send to my phone*, What's next's
+  test) still arrives. Broadcasts count too: whoever wrote an announcement, sent What's next or told people about an
+  event isn't told. Tested in `ActorTests`.
 - On start-up the server reconciles every registered kind into the public **`notifications.kinds`**
   feed, as Access does with the permission catalogue, so the phone's preferences list them without
   knowing the features.
@@ -144,6 +162,50 @@ Known sources, and how each will raise:
 | Events (Elvanto) | changed or cancelled; reminders | followers of the event's ministry, or everyone |
 | Prayer | a new request (staff); one asks for the wall; your request was prayed for / answered ([prayer.md](../features/prayer.md)) | the pastoral team; the prayer wall's staff; the person |
 | Sync | "new data, fetch it" | silent; not a kind, not in the inbox (below) |
+
+## Where a notification opens (decision 14)
+
+A notification's link is followed on the phone by `LinkOpener` ([destinations.md](destinations.md)), which only opens
+declared places; anything else shows *There's nothing here*. That's how *A new prayer request* came to open nothing:
+`/prayer/requests/{id}` and `/prayer/approve` weren't places. So:
+
+- **Each kind declares `Opens`**, the routes its links take (`new("/ministries/{id}/news", "/ministries/{id}")`).
+  `NotificationLinks.Checked` refuses any other in-app link; the raiser calls it, and so does every feature's test
+  fake, so a feature's own tests catch a wrong link.
+- **`NotificationLinkRules`** (Architecture tests) builds the API host and checks every registered kind: it declares
+  `Opens`, and each route is a place in the destination catalogue with a page in the app, or, for a kind done in the
+  admin panel, a page in the admin panel.
+- **Places added for it** (2026-11-12): a staff prayer request (`/prayer/requests/{id}`), *Prayer requests to approve*
+  (`/prayer/approve`), your own prayer request (`/prayer/yours/{id}`), a chat (`/chats/{id}`), and a ministry's
+  sections (`/ministries/{id}/news`, `/roster`, `/people` …). Chats now registers its places on the server too.
+- **A push opens a place or the inbox:** a push for an `InAdminPanel` kind, or with a link the phone has no place
+  for, carries the inbox's link (`PushRules.OnThePhone`).
+
+## Digests (decision 13)
+
+A kind with a `Digest` doesn't notify per item. The feature **collects** each item with
+`INotifications.CollectAsync(new NotificationDigestItem(kind, audience, group, link, startedAt) { Actor = … })`; items
+with the same kind and group (one prayer request; the whole Feedback board) make one digest.
+
+- **The schedule** (`DigestSchedule`): times after the digest started (`startedAt`, given by the feature: for prayer,
+  when the request went on the wall), then daily at a time of day in church time (`ChurchTime`). The first item due
+  after now sets the digest's next time; with nothing new, nothing is due.
+- **Sending** (`DigestSender`, every minute, `DigestSending`): due digests are claimed in one `UPDATE … RETURNING`, so
+  two API replicas never send one twice. Each person is told how many items arrived since the last digest that they
+  didn't cause themselves ("3 people prayed for your request"); someone with none gets nothing. Phones following get
+  the full count. It's then an ordinary notification: preferences (a person can turn the kind off), quiet hours and
+  the inbox apply, and its subject is the digest's, so a new digest replaces the last on the lock screen.
+- **Changing the schedule:** `gsbc.notifications.DigestSchedules` (gRPC, in Platform so a feature's own desk can use
+  it, through `DigestSchedulesClient`, admin only) reads a kind's schedule and changes it for holders of the digest's
+  `ChangedBy` permission. A kind without one keeps its declared schedule. Kept in `notifications.digest_schedules`;
+  choosing the declared schedule again removes the row.
+- **Deleting:** `ForgetDigestAsync(kind, group)` when the thing goes (a deleted prayer request); deleting an account
+  deletes digests addressed to them and forgets them as the cause of items.
+- **Digests today:** Feedback's *New feedback* once a day at 12pm, opening the board ([feedback.md](../features/feedback.md));
+  Prayer's *Someone prayed* 15, 30 and 45 minutes, 1, 3 and 6 hours after a request goes on the wall, then daily at
+  12pm, changed by the pastoral team ([prayer.md](../features/prayer.md)).
+- Tested in `DigestTests` (counts since the last one, nothing when nothing is new, your own items not counted, a daily
+  digest at midday church time, only holders change the schedule and the next digest follows it).
 
 ## Audience: always Access
 

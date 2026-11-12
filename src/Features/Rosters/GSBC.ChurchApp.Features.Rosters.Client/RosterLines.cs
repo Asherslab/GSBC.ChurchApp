@@ -94,14 +94,15 @@ public static class RosterLines
     public static IReadOnlyList<Assignment> In(RosterDate date, Position position) =>
         date.Assignments.Where(assignment => assignment.PositionId == position.Id).ToList();
 
-    public static int Filled(RosterDate date, Position position) => In(date, position).Count(assignment => Replies.Fills(assignment.State));
+    public static int Filled(RosterDate date, Position position) => In(date, position).Count(assignment => assignment.Fills);
 
     public static int Gaps(RosterView view, RosterDate date) => view.Positions.Sum(position => Math.Max(0, position.Needed - Filled(date, position)));
 
     public static string Summary(RosterView view, RosterDate date) =>
         string.Join(" · ", view.Positions.Select(position =>
         {
-            List<string> names = In(date, position).Where(assignment => Replies.Fills(assignment.State)).Select(assignment => First(assignment.Name)).ToList();
+            List<string> names = In(date, position).Where(assignment => Replies.Fills(assignment.State))
+                .Select(assignment => assignment.Training ? $"{First(assignment.Name)} (training)" : First(assignment.Name)).ToList();
             return $"{position.Name}: {(names.Count == 0 ? "nobody yet" : string.Join(", ", names))}";
         }));
 
@@ -116,10 +117,10 @@ public static class RosterLines
             flags.Add("No current blue card");
         if (position.NeedsTraining && !member.TrainingCurrent)
             flags.Add("Safe Ministry training not current");
-        if (position.NeedsTrained && !position.Trained.Contains(member.PersonId))
-            flags.Add($"Not trained for {position.Name.ToLowerInvariant()}");
+        if (Training.IsTrainee(position.NeedsTrained, position.Trained.Contains(member.PersonId)))
+            flags.Add(In(date, position).Any(assignment => assignment.Fills) ? "Goes on training, with someone trained" : "Goes on training: needs someone trained on with them");
         flags.AddRange(date.Assignments.Where(assignment => assignment.PersonId == member.PersonId && Replies.Fills(assignment.State))
-            .Select(assignment => $"Already on {assignment.PositionName.ToLowerInvariant()}"));
+            .Select(assignment => $"Already on {assignment.PositionName}"));
         return flags;
     }
 
@@ -143,6 +144,13 @@ public static class RosterLines
         SwapWays.Direct => "Ask someone on the team yourself",
         _ => way,
     };
+
+    public static string WaysWords(string way, RosterSettings settings) => WaysWords(way == SwapWays.Open ? settings.OpenSwaps : way);
+
+    public static string OpenSwapsWords(string openSwaps) => openSwaps == OpenSwaps.Off ? "Not to the whole team" : WaysWords(openSwaps);
+
+    public static IReadOnlyList<string> WaysOpenTo(RosterSettings settings) =>
+        [.. settings.OpenSwaps != OpenSwaps.Off ? [SwapWays.Open] : Array.Empty<string>(), .. settings.DirectSwaps ? [SwapWays.Direct] : Array.Empty<string>()];
 
     public static string WhoSeesWords(string whoSees) => whoSees switch
     {

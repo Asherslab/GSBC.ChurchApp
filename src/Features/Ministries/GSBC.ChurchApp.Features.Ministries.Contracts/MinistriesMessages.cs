@@ -82,6 +82,8 @@ public sealed class MinistryDetails
     [ProtoMember(17)] public List<string> PartsOff { get; set; } = [];
     [ProtoMember(19)] public List<string> PartsFromBelow { get; set; } = [];
     [ProtoMember(21)] public bool New { get; set; }
+    [ProtoMember(22)] public List<string> PartsOrder { get; set; } = [];
+    [ProtoMember(23)] public string ChatStarters { get; set; } = "";
 }
 
 [ProtoContract]
@@ -98,6 +100,7 @@ public sealed class MinistryPage
     [ProtoMember(9)] public List<SessionChange> Sessions { get; set; } = [];
     [ProtoMember(10)] public Round? Round { get; set; }
     [ProtoMember(11)] public List<SittingOut> SittingOut { get; set; } = [];
+    [ProtoMember(12)] public List<string> Sundays { get; set; } = [];
 }
 
 [ProtoContract]
@@ -128,6 +131,8 @@ public sealed class YourPlace
     [ProtoMember(9)] public bool MayDelete { get; set; }
     [ProtoMember(10)] public int Waiting { get; set; }
     [ProtoMember(11)] public bool ParentOfAttendee { get; set; }
+    [ProtoMember(12)] public List<AskLine> ForYourYes { get; set; } = [];
+    [ProtoMember(13)] public bool Minor { get; set; }
 }
 
 [ProtoContract]
@@ -184,6 +189,25 @@ public sealed class CalendarLine
     [ProtoMember(4)] public string Slug { get; set; } = "";
     [ProtoMember(5)] public string MinistryId { get; set; } = "";
     [ProtoMember(6)] public string From { get; set; } = "";
+    [ProtoMember(7)] public bool Linked { get; set; }
+    [ProtoMember(8)] public List<string> Days { get; set; } = [];
+    [ProtoMember(9)] public bool OnItsDays { get; set; }
+}
+
+[ProtoContract]
+public sealed class CalendarLinkSave : IScopedRequest
+{
+    [ProtoMember(1)] public string MinistryId { get; set; } = "";
+    [ProtoMember(2)] public string CalendarId { get; set; } = "";
+    [ProtoMember(3)] public bool Linked { get; set; }
+
+    public string ScopeId => MinistryId;
+}
+
+[ProtoContract]
+public sealed class LinkableCalendars
+{
+    [ProtoMember(1)] public List<Crumb> Calendars { get; set; } = [];
 }
 
 [ProtoContract]
@@ -219,6 +243,7 @@ public sealed class AskLine
     [ProtoMember(9)] public string MinistryId { get; set; } = "";
     [ProtoMember(10)] public string MinistryName { get; set; } = "";
     [ProtoMember(11)] public string AskedById { get; set; } = "";
+    [ProtoMember(12)] public bool WaitingForParent { get; set; }
 }
 
 [ProtoContract]
@@ -340,6 +365,8 @@ public sealed class PartsSave : IScopedRequest
     [ProtoMember(1)] public string MinistryId { get; set; } = "";
     [ProtoMember(2)] public List<string> PartsOff { get; set; } = [];
     [ProtoMember(4)] public List<string> PartsFromBelow { get; set; } = [];
+    [ProtoMember(5)] public List<string> PartsOrder { get; set; } = [];
+    [ProtoMember(6)] public string ChatStarters { get; set; } = "";
 
     public string ScopeId => MinistryId;
 }
@@ -526,6 +553,7 @@ public sealed class YourMinistries
     [ProtoMember(2)] public List<YourRoles> Places { get; set; } = [];
     [ProtoMember(3)] public List<AskLine> Asked { get; set; } = [];
     [ProtoMember(4)] public string PersonId { get; set; } = "";
+    [ProtoMember(5)] public bool Minor { get; set; }
 }
 
 [ProtoContract]

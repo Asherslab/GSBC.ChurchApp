@@ -17,6 +17,9 @@ public interface IMinistryLeadingService
     ValueTask<Done> ChangePersonAsync(PersonChange request, CallContext context = default);
 
     [Requires(MinistriesPermissions.PeopleNode)]
+    ValueTask<Done> SetRoleAsync(PersonChange request, CallContext context = default);
+
+    [Requires(MinistriesPermissions.PeopleNode)]
     ValueTask<FoundPeople> FindAsync(FindRequest request, CallContext context = default);
 
     [Requires(MinistriesPermissions.PeopleNode)]
@@ -69,6 +72,12 @@ public interface IMinistryLeadingService
 
     [Requires(MinistriesPermissions.SettingsNode)]
     ValueTask<CalendarLine> SaveCalendarAsync(CalendarSave request, CallContext context = default);
+
+    [Requires(MinistriesPermissions.SettingsNode)]
+    ValueTask<Done> LinkCalendarAsync(CalendarLinkSave request, CallContext context = default);
+
+    [Requires(MinistriesPermissions.SettingsNode)]
+    ValueTask<LinkableCalendars> LinkableCalendarsAsync(MinistryRef request, CallContext context = default);
 
     [Requires(MinistriesPermissions.SettingsNode)]
     ValueTask<CalendarRemoval> CalendarRemovalAsync(ItemRef request, CallContext context = default);

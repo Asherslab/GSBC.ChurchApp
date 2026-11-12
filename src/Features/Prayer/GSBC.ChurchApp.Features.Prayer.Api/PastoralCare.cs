@@ -173,7 +173,7 @@ internal sealed class PastoralCare(
         db.Requests.Remove(record);
         publisher.Deleted(record, time.GetUtcNow().UtcDateTime);
         await db.SaveChangesAsync(cancellationToken);
-        await telling.SettledAsync(record, cancellationToken);
+        await telling.DeletedAsync(record, cancellationToken);
     }
 
     private async Task<RequestRecord> FindAsync(string id, CancellationToken cancellationToken)

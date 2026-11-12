@@ -5,8 +5,15 @@
 <Sheet Open="Open" OpenChanged="OpenChanged" Title="@($"New chat in {MinistryName}")">
     <ChildContent>
         <TextField Label="Name" Value="@_draft.Name" ValueChanged="value => _draft.Name = value" MaxLength="ChatLimits.NameLength" Required="true" />
-        <Segmented TValue="string" Label="Kind" ShowLabel="true" Stacked="true" Options="Kinds" Value="_draft.Kind" ValueChanged="value => _draft.Kind = value" />
-        <Segmented TValue="string" Label="Who it's for" ShowLabel="true" Stacked="true" Options="Audiences" Value="_draft.Audience" ValueChanged="value => _draft.Audience = value" />
+        @if (Leads)
+        {
+            <Segmented TValue="string" Label="Kind" ShowLabel="true" Stacked="true" Options="Kinds" Value="_draft.Kind" ValueChanged="value => _draft.Kind = value" />
+            <Segmented TValue="string" Label="Who it's for" ShowLabel="true" Stacked="true" Options="Audiences" Value="_draft.Audience" ValueChanged="value => _draft.Audience = value" />
+        }
+        else
+        {
+            <p class="hint">A group chat for the team. Leaders start channels and chats with attendees or parents.</p>
+        }
         @if (_draft.Audience != ChatAudiences.Team)
         {
             <Notice Tone="NoticeTone.Warning"><strong>Parents say yes first.</strong> Your first message goes to each young person's parents. Their child gets the chat once a parent approves; until then it's just the adults.</Notice>
@@ -29,6 +36,7 @@
     [Parameter, EditorRequired] public required string MinistryId { get; set; }
     [Parameter, EditorRequired] public required string MinistryName { get; set; }
     [Parameter] public bool HasAttendees { get; set; }
+    [Parameter] public bool Leads { get; set; } = true;
 
     private object Shape => (_draft.Name, _draft.Kind, _draft.Audience, _draft.FirstMessage);
 

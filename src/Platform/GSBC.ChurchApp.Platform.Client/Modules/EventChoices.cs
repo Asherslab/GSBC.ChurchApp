@@ -1,6 +1,6 @@
 namespace GSBC.ChurchApp.Platform.Client.Modules;
 
-public sealed record EventChoiceLine(string Key, string Title, string CalendarName, string? MinistryId, DateTime StartsAt, DateTime EndsAt, bool AllDay);
+public sealed record EventChoiceLine(string Key, string Title, string CalendarName, string? MinistryId, DateTime StartsAt, DateTime EndsAt, bool AllDay, string CalendarId = "");
 
 public interface IEventChoices
 {

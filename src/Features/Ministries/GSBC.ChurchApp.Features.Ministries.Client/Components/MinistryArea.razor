@@ -12,14 +12,11 @@
     case MinistriesPlaces.News:
         <NewsArea Page="Page" OnChanged="OnChanged" />
         break;
-    case MinistriesPlaces.Calendar:
+    case MinistriesPlaces.Calendar or MinistriesPlaces.Sundays:
         <CalendarArea Page="Page" OnChanged="OnChanged" />
         break;
     case MinistriesPlaces.Files:
         <FilesArea Page="Page" OnChanged="OnChanged" />
-        break;
-    case MinistriesPlaces.Sundays:
-        <SundaysArea Page="Page" OnChanged="OnChanged" />
         break;
     case MinistriesPlaces.People:
         <PeopleArea Page="Page" Wide="Wide" OnChanged="OnChanged" />
@@ -39,5 +36,6 @@
     [Parameter] public EventCallback OnChanged { get; set; }
     [Parameter] public bool Wide { get; set; }
 
-    private MinistryOnPage OnPage => new(Page.Ministry.Id, Page.Ministry.Name, Wide, Page.You.MayEditSettings, Page.Ministry.AttendJoin != Joining.None);
+    private MinistryOnPage OnPage => new(Page.Ministry.Id, Page.Ministry.Name, Wide, Page.You.MayEditSettings, Page.Ministry.AttendJoin != Joining.None,
+        Page.You.MayEditSettings || (Page.Ministry.ChatStarters == ChatStarters.Team && Page.You.Roles.Contains(Roles.Team)));
 }

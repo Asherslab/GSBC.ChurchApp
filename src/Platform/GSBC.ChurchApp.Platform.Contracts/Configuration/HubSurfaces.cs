@@ -8,7 +8,7 @@ public static class HubSurfaces
     public const string EditNode = "config.hub.edit";
 
     public static readonly Permission Edit =
-        new(EditNode, ScopeKind.Global, "Arrange the app's Home screen: which tiles show, in what order, for whom and when", area: "App");
+        new(EditNode, ScopeKind.Global, "Arrange the app's Home screen: which tiles show, in what order, for whom and when", area: "App", opensAdminArea: true);
 
     public const string PublishNode = "config.hub.publish";
 

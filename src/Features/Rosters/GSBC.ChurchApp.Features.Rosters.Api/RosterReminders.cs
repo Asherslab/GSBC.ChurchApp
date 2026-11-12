@@ -37,7 +37,7 @@ internal sealed class RosterReminders(RostersDbContext db, RosterMessenger messe
                 assignment.RemindedAt = now;
                 await db.SaveChangesAsync(cancellationToken);
                 await messenger.TellAsync(person, RostersNotifications.Reminder, $"You're on {RosterText.Day(date.StartsAt)}",
-                    $"{RosterText.Line(date, assignment.PositionName)}, for {ministry.Name}.", ministry.Id, $"rosters/reminder/{assignment.Id:N}", cancellationToken);
+                    $"{RosterText.Line(date, assignment.PositionName)}, for {ministry.Name}.", ministry.Id, $"rosters/reminder/{assignment.Id:N}", null, cancellationToken);
             }
             else if (rules.Replies && RosterRules.NudgeDue(assignment.State, assignment.AssignedAt, date.StartsAt, now, rules.NudgeAfterDays, assignment.NudgedAt))
             {
@@ -45,7 +45,7 @@ internal sealed class RosterReminders(RostersDbContext db, RosterMessenger messe
                 await db.SaveChangesAsync(cancellationToken);
                 await messenger.TellAsync(person, RostersNotifications.Nudge, $"Can you do {RosterText.Day(date.StartsAt)}?",
                     $"{RosterText.Line(date, assignment.PositionName)}, for {ministry.Name}. Say whether you can do it.", ministry.Id, $"rosters/on/{assignment.Id:N}",
-                    cancellationToken, "Answer");
+                    null, cancellationToken, "Answer");
             }
         }
     }

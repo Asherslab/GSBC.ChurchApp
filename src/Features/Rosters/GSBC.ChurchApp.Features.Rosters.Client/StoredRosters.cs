@@ -36,11 +36,12 @@ public sealed class StoredRosters(ILocalFeeds feeds, TimeProvider time, IService
         if (_events is null)
             return [];
         DateTime now = time.GetUtcNow().UtcDateTime;
+        RosterSettings settings = (await YoursAsync()).FirstOrDefault(view => view.MinistryId == ministryId)?.Settings ?? new RosterSettings();
         return (await _events.UpcomingAsync(now, now + ChoicesAhead))
             .Select(line => new EventChoice
             {
                 Key = line.Key, Title = line.Title, CalendarName = line.CalendarName, StartsAt = line.StartsAt, EndsAt = line.EndsAt, AllDay = line.AllDay,
-                Own = line.MinistryId == ministryId,
+                Own = settings.DrawsFrom(line.CalendarId, line.MinistryId == ministryId), CalendarId = line.CalendarId,
             })
             .ToList();
     }

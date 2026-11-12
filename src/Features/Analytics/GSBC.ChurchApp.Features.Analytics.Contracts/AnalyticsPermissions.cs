@@ -10,10 +10,10 @@ public static class AnalyticsPermissions
     public const string DeveloperRole = "developer";
 
     public static readonly Permission View =
-        new(ViewNode, ScopeKind.Global, "See how the app is used: totals of phones, plays and taps, never anything about a person", area: "Insights and app health");
+        new(ViewNode, ScopeKind.Global, "See how the app is used: totals of phones, plays and taps, never anything about a person", area: "Insights and app health", opensAdminArea: true);
 
     public static readonly Permission HealthView =
-        new(HealthViewNode, ScopeKind.Global, "See app errors and failed calls, and get an email when a new kind of error appears", area: "Insights and app health");
+        new(HealthViewNode, ScopeKind.Global, "See app errors and failed calls, and get an email when a new kind of error appears", area: "Insights and app health", opensAdminArea: true);
 
     public static readonly IReadOnlyList<Permission> All = [View, HealthView];
 }

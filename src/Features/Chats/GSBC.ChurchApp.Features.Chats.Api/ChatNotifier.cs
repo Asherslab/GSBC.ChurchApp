@@ -8,7 +8,7 @@ namespace GSBC.ChurchApp.Features.Chats.Api;
 
 internal sealed class ChatNotifier(ChatsDbContext db, INotifications notifications, IPeopleIndex people, TimeProvider time)
 {
-    public static string Link(Guid chat) => $"/chats/{chat}";
+    public static string Link(Guid chat) => ChatsDestinations.Chat(chat.ToString());
 
     public static string ConsentSubject(Guid chat, Guid child) => $"chats/{chat:N}/consent/{child:N}";
 
@@ -39,11 +39,11 @@ internal sealed class ChatNotifier(ChatsDbContext db, INotifications notificatio
                 continue;
             await notifications.RaiseAsync(new Notification(
                 mentioned ? ChatsNotifications.Mention : ChatsNotifications.Message, NotificationAudience.Person(recipient.PersonId), title, body,
-                Link(message.ChatId), Subject: $"chats/{message.ChatId:N}/{message.Id:N}", ScopeId: published.Chat.MinistryId.ToString()), cancellationToken);
+                Link(message.ChatId), Subject: $"chats/{message.ChatId:N}/{message.Id:N}", ScopeId: published.Chat.MinistryId.ToString()) { Actor = message.SenderId }, cancellationToken);
         }
     }
 
-    public async Task ConsentAsync(Published published, CancellationToken cancellationToken)
+    public async Task ConsentAsync(Published published, Guid actor, CancellationToken cancellationToken)
     {
         List<Participant> waiting = published.Plan.Participants.Where(participant => participant.State == ChatStates.AwaitingConsent).ToList();
         if (waiting.Count == 0 || published.Chat.LastSeq == 0)
@@ -65,7 +65,7 @@ internal sealed class ChatNotifier(ChatsDbContext db, INotifications notificatio
                 await notifications.RaiseAsync(new Notification(
                     ChatsNotifications.Consent, NotificationAudience.Person(parent.PersonId), $"Is {name} OK to join {published.Chat.Name}?",
                     $"A leader in {published.Place?.Name} started a chat for {name}. Read the first message, then say yes or not now.",
-                    Link(published.Chat.Id), Subject: ConsentSubject(published.Chat.Id, child.PersonId), Action: "Read and decide"), cancellationToken);
+                    Link(published.Chat.Id), Subject: ConsentSubject(published.Chat.Id, child.PersonId), Action: "Read and decide") { Actor = actor }, cancellationToken);
             }
         }
         await db.SaveChangesAsync(cancellationToken);
@@ -79,10 +79,10 @@ internal sealed class ChatNotifier(ChatsDbContext db, INotifications notificatio
         report.To == ReportRoutes.Auditors
             ? notifications.RaiseAsync(new Notification(
                 ChatsNotifications.Urgent, NotificationAudience.Holding(ChatsPermissions.Audit), $"Urgent: a message was reported in {chat.Name}",
-                $"In {ministryName}. Read it in context in the admin panel, under Chats.", ReportsPage, Subject: ReportSubject(report.Id), Urgent: true),
+                $"In {ministryName}. Read it in context in the admin panel, under Chats.", ReportsPage, Subject: ReportSubject(report.Id), Urgent: true) { Actor = report.ReporterId },
                 cancellationToken)
             : notifications.RaiseAsync(new Notification(
                 ChatsNotifications.Report, NotificationAudience.Holding(ChatsPermissions.Check, chat.MinistryId.ToString()), $"A message was reported in {chat.Name}",
                 $"In {ministryName}. Open the chat to read it, or check it in the admin panel.", Link(chat.Id), Subject: ReportSubject(report.Id),
-                Action: "Open the chat"), cancellationToken);
+                Action: "Open the chat") { Actor = report.ReporterId }, cancellationToken);
 }

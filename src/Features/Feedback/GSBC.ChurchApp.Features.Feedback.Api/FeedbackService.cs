@@ -12,7 +12,7 @@ internal sealed class FeedbackService(FeedbackSenders senders, FeedbackSending s
 {
     public async ValueTask<Done> SendAsync(FeedbackSend request, CallContext context = default)
     {
-        Sender sender = await senders.WhoAsync(FeedbackCalls.User(context), CallingInstall.Find(context), context.CancellationToken);
+        Sender sender = await senders.WhoAsync(FeedbackCalls.User(context), CallingInstall.Find(context), request.Source, context.CancellationToken);
         await sending.SendAsync(sender, request, context.CancellationToken);
         return new Done();
     }

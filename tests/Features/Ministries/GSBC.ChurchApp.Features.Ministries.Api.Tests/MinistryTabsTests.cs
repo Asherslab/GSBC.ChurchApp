@@ -24,6 +24,16 @@ public sealed class MinistryTabsTests
         Assert.True(MinistryParts.HasTab(PageFor(attendee, tree, you: new YourPlace { MayEditSettings = true }), MinistryParts.Calendar));
     }
 
+    [Fact]
+    public void ANewMinistryStartsWithOnlyNewsCalendarAndChatsOn() =>
+        Assert.Equal([MinistryParts.News, MinistryParts.Calendar, MinistryParts.Chats],
+            MinistryParts.All.Select(part => part.Key).Where(part => MinistryParts.IsOn(MinistryParts.OffWhenNew(), part)));
+
+    [Fact]
+    public void TabsFollowTheMinistrysOrderWithAnyNewPartAtTheEnd() =>
+        Assert.Equal([MinistryParts.Chats, MinistryParts.Rosters, MinistryParts.News, MinistryParts.Calendar, MinistryParts.Files],
+            MinistryParts.Ordered([MinistryParts.Chats, "gone", MinistryParts.Rosters, MinistryParts.Chats]));
+
     private static MinistryPage PageFor(GrantSet grants, MinistryTree tree, YourPlace? you = null)
     {
         bool sees = MinistryViews.MaySee(Audiences.Team, grants, tree, Group.Id);

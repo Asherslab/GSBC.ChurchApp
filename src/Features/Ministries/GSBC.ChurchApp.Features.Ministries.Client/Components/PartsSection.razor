@@ -5,6 +5,12 @@
     {
         <ToggleRow @key="part.Key" Title="@part.Name" Description="@part.Does" Checked="@(!Off.Contains(part.Key))" Disabled="_busy" CheckedChanged="on => TurnAsync(part.Key, on)" />
     }
+    @if (!Off.Contains(MinistryParts.Chats))
+    {
+        <Segmented TValue="string" Label="Who can start a chat" ShowLabel="true" Value="@StartsChats" ValueChanged="StartersAsync"
+                   Options="@([new SegmentOption<string>(ChatStarters.Leaders, "Leaders"), new SegmentOption<string>(ChatStarters.Team, "The team too")])"
+                   Hint="The team can start group chats for the team or people they choose. Channels and chats with attendees or parents stay with leaders." />
+    }
     @foreach ((MinistryPart part, PartFromBelow below) in Gathering)
     {
         <ToggleRow @key="@($"{part.Key}-below")" Title="@below.Title" Description="@below.Does"
@@ -16,6 +22,7 @@
 @code {
     private List<string> _off = [];
     private List<string> _fromBelow = [];
+    private string? _starters;
     private MinistryDetails? _seen;
     private bool _busy;
     private string? _problem;
@@ -46,7 +53,28 @@
         if (ReferenceEquals(_seen, Page.Ministry) || _busy)
             return;
         _seen = Page.Ministry;
-        (_off, _fromBelow) = ([.. Page.Ministry.PartsOff], [.. Page.Ministry.PartsFromBelow]);
+        (_off, _fromBelow, _starters) = ([.. Page.Ministry.PartsOff], [.. Page.Ministry.PartsFromBelow], null);
+    }
+
+    private string StartsChats => _starters ?? (ChatStarters.IsValid(Page.Ministry.ChatStarters) ? Page.Ministry.ChatStarters : ChatStarters.Leaders);
+
+    private async Task StartersAsync(string starters)
+    {
+        string before = StartsChats;
+        (_starters, _busy, _problem) = (starters, true, null);
+        try
+        {
+            await Ministries.SavePartsAsync(Page.Ministry.Id, Off, FromBelow, starters);
+            await OnChanged.InvokeAsync();
+        }
+        catch (RpcException exception)
+        {
+            (_starters, _problem) = (before, MinistryLookups.Problem(exception));
+        }
+        finally
+        {
+            _busy = false;
+        }
     }
 
     private IEnumerable<(MinistryPart, PartFromBelow)> Gathering =>

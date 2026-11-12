@@ -140,6 +140,13 @@ grant.
   For a scoped node the request message implements `IScopedRequest`, so the interceptor knows which
   object is being acted on. `Architecture.Tests` (`TierRules`) fails on a method with no tier, more than one, or a
   node no feature declares. With no attribute the default is deny (SPEC §6: fail closed).
+- **Using the admin panel at all** (2026-11-11, for [feedback](../features/feedback.md)): a person may use the admin
+  panel when they hold, anywhere, a permission that opens a page in its sidebar. Those permissions are declared with
+  `opensAdminArea: true`, and `AdminPanelAccess.MayUseAsync` (Platform.Api) asks the person's grants about them. The
+  sidebar's own answer is the same question of its permitted pages, so a `SidebarAction` with no `Requires` shows for
+  anyone with one. `Architecture.Tests` (`AdminPanelRules`) fails when the marked permissions and the pages the admin
+  sidebar gates differ, so a new admin page marks its permission or the build fails. Holding only *Home* and *Places in
+  the app*, which need nothing, doesn't count.
 
 ## Checking, on the phone and in the browser
 

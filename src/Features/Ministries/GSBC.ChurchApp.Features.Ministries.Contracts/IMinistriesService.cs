@@ -26,5 +26,8 @@ public interface IMinistriesService
     ValueTask<Done> WithdrawAsync(AskRef request, CallContext context = default);
 
     [SignedIn]
+    ValueTask<Done> ParentAnswerAsync(AskRef request, CallContext context = default);
+
+    [SignedIn]
     ValueTask<WaitingList> WaitingAsync(WaitingRequest request, CallContext context = default);
 }

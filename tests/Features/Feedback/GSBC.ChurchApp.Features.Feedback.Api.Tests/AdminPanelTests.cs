@@ -1,3 +1,4 @@
+using Grpc.Core;
 using GSBC.ChurchApp.Features.Feedback.Contracts;
 using GSBC.ChurchApp.Testing;
 using Microsoft.Extensions.DependencyInjection;
@@ -11,7 +12,7 @@ public sealed class AdminPanelTests : FeedbackHost
     public async Task FeedbackFromTheAdminPanelKeepsTheBrowsersDetailsNotAPhonesAndTheBoardCanShowItOnItsOwn()
     {
         Guid person = Guid.CreateVersion7();
-        Access.Held[person] = [FeedbackPermissions.SendNode];
+        Access.Held[person] = [AdminArea.Node];
         string fromTheApp = await SendAsync(Guid.CreateVersion7(), null);
         string fromTheAdminPanel = await SendAsync(Guid.CreateVersion7(), person, source: FeedbackSource.AdminPanel);
 
@@ -30,10 +31,26 @@ public sealed class AdminPanelTests : FeedbackHost
     }
 
     [Fact]
+    public async Task AnyoneWithAPageInTheAdminPanelSendsFromItWithoutTheRoleButAMemberWithNoneThereCannot()
+    {
+        Guid staff = Guid.CreateVersion7();
+        Guid member = Guid.CreateVersion7();
+        Access.Held[staff] = [AdminArea.Node];
+
+        string sent = await SendAsync(null, staff, source: FeedbackSource.AdminPanel);
+        RpcException refused = await Assert.ThrowsAsync<RpcException>(() => SendAsync(null, member, source: FeedbackSource.AdminPanel));
+        RpcException notOnThePhone = await Assert.ThrowsAsync<RpcException>(() => SendAsync(null, staff));
+
+        Assert.Equal(staff, (await RecordAsync(sent))?.UserId);
+        Assert.Equal(StatusCode.PermissionDenied, refused.StatusCode);
+        Assert.Equal(StatusCode.PermissionDenied, notOnThePhone.StatusCode);
+    }
+
+    [Fact]
     public async Task AdminPanelScreenshotsAreTheTicketsOwnFilesAndGoAWeekAfterItIsResolved()
     {
         Guid person = Guid.CreateVersion7();
-        Access.Held[person] = [FeedbackPermissions.SendNode];
+        Access.Held[person] = [AdminArea.Node];
         string id = await SendAsync(null, person, attachments: ["shot"], phoneData: "not-from-a-phone", source: FeedbackSource.AdminPanel);
         Assert.Equal(["shot"], Media.Uses[FeedbackMedia.AttachmentsOwner(Guid.Parse(id))]);
 

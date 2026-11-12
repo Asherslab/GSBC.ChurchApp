@@ -23,8 +23,11 @@ internal sealed class ChatActions(
         ChatPlace place = await facts.PlaceAsync(ministryId, cancellationToken) ?? throw ChatErrors.Gone("That ministry was deleted.");
         if (!place.ChatsOn)
             throw ChatErrors.Refused(ChatErrors.ChatsOff);
-        if (!await facts.IsAllowedAsync(me, ChatsPermissions.Manage, ministryId.ToString(), cancellationToken))
-            throw ChatErrors.Refused("Only the ministry's leaders can start a chat.");
+        bool leads = await facts.IsAllowedAsync(me, ChatsPermissions.Manage, ministryId.ToString(), cancellationToken);
+        if (!leads && !(place.TeamMayStart && await facts.InAudienceAsync(me, place, ChatAudiences.Team, cancellationToken)))
+            throw ChatErrors.Refused(place.TeamMayStart ? "Only the ministry's team can start a chat." : "Only the ministry's leaders can start a chat.");
+        if (!leads && (request.Kind != ChatKinds.Group || request.Audience != ChatAudiences.Team))
+            throw ChatErrors.Refused("On the team you can start a group chat for the team. Ask a leader for a channel or a chat with attendees or parents.");
         string name = NameOf(request.Name);
         if (request.Kind is not (ChatKinds.Group or ChatKinds.Channel))
             throw ChatErrors.Invalid("Choose a group chat or a channel.");
@@ -118,7 +121,7 @@ internal sealed class ChatActions(
         audit.Record(me, AuditActions.PeopleChanged, string.Join(" ", said), chat.Id);
         MessageRecord note = await AddMessageAsync(chat, me, null, MessageKinds.Event, $"people:{Guid.NewGuid():N}", string.Join(" ", said), null, [], [], cancellationToken);
         Published published = await publisher.PublishAsync(chat.Id, [note.Id], true, cancellationToken);
-        await notifier.ConsentAsync(published, cancellationToken);
+        await notifier.ConsentAsync(published, me, cancellationToken);
     }
 
     public async Task SendAsync(Guid me, SendMessage request, CancellationToken cancellationToken, bool opensAsk = false)
@@ -175,7 +178,7 @@ internal sealed class ChatActions(
         await media.KeepAsync(message, chat.Name, cancellationToken);
         Published published = await publisher.PublishAsync(chatId, [message.Id], true, cancellationToken);
         await notifier.MessageAsync(published, message, cancellationToken);
-        await notifier.ConsentAsync(published, cancellationToken);
+        await notifier.ConsentAsync(published, me, cancellationToken);
     }
 
     public async Task EditAsync(Guid me, EditMessage request, CancellationToken cancellationToken)

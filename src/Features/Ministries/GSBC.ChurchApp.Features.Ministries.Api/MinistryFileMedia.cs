@@ -4,7 +4,7 @@ using GSBC.ChurchApp.Platform.Contracts.Media;
 
 namespace GSBC.ChurchApp.Features.Ministries.Api;
 
-internal sealed class MinistryFileMedia(IMediaReferences references, IMediaSystemFolders folders)
+internal sealed class MinistryFileMedia(IMediaReferences references, IMediaSystemFolders folders, IMediaAudiences audiences)
 {
     public static readonly MediaSystemArea Area = new(MinistryFileArea.Key, "Ministry files", "Made by the app: documents leaders add to their ministries",
         MinistriesPermissions.TeamView, StaffDeleteUnused: true, Uploaders: MinistriesPermissions.Post);
@@ -25,6 +25,9 @@ internal sealed class MinistryFileMedia(IMediaReferences references, IMediaSyste
         foreach (Guid fileId in fileIds)
             await references.UseAsync(Owner(fileId), [], cancellationToken);
     }
+
+    public Task<bool> ShareAsync(Guid fileId, Guid mediaId, string audience, Guid ministryId, CancellationToken cancellationToken) =>
+        audiences.ShareAsync(Area, mediaId.ToString(), Owner(fileId), Audiences.NodeOf(audience), ministryId.ToString(), cancellationToken);
 
     private static string Owner(Guid fileId) => $"ministries.file/{fileId}";
 }

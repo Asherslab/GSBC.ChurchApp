@@ -1,6 +1,7 @@
 using GSBC.ChurchApp.Platform.Api.Calendars;
 using GSBC.ChurchApp.Platform.Api.Ministries;
 using GSBC.ChurchApp.Platform.Api.Notifications;
+using GSBC.ChurchApp.Platform.Contracts.Notifications;
 using GSBC.ChurchApp.Platform.Api.People;
 using GSBC.ChurchApp.Platform.Contracts.Configuration;
 
@@ -102,11 +103,15 @@ internal sealed class SentNotifications : INotifications
 
     public Task RaiseAsync(Notification notification, CancellationToken cancellationToken)
     {
-        Sent.Add(notification);
+        Sent.Add(NotificationLinks.Checked(notification));
         return Task.CompletedTask;
     }
 
     public Task RaiseOneOfAsync(IReadOnlyList<Notification> mostSpecificFirst, CancellationToken cancellationToken) => RaiseAsync(mostSpecificFirst[0], cancellationToken);
 
     public Task SettleAsync(string subject, CancellationToken cancellationToken) => Task.CompletedTask;
+
+    public Task CollectAsync(NotificationDigestItem item, CancellationToken cancellationToken) => Task.CompletedTask;
+
+    public Task ForgetDigestAsync(NotificationKind kind, string group, CancellationToken cancellationToken) => Task.CompletedTask;
 }

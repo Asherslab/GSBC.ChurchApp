@@ -4,6 +4,7 @@ using GSBC.ChurchApp.Platform.Api.Access;
 using GSBC.ChurchApp.Platform.Api.Chats;
 using GSBC.ChurchApp.Platform.Api.Media;
 using GSBC.ChurchApp.Platform.Api.Notifications;
+using GSBC.ChurchApp.Platform.Contracts.Notifications;
 using GSBC.ChurchApp.Platform.Api.People;
 using GSBC.ChurchApp.Platform.Contracts.Chats;
 using GSBC.ChurchApp.Platform.Contracts.Configuration;
@@ -25,6 +26,8 @@ internal sealed class Church : IPermissionHolders, IAccessEvaluator, IRoleAssign
     public Guid MinistryId { get; } = Guid.NewGuid();
 
     public bool ChatsOn { get; set; } = true;
+
+    public bool TeamMayStart { get; set; }
 
     public List<Notification> Raised { get; } = [];
 
@@ -130,7 +133,7 @@ internal sealed class Church : IPermissionHolders, IAccessEvaluator, IRoleAssign
     public ValueTask<IReadOnlyList<ChatPlace>> AllAsync(CancellationToken cancellationToken) => ValueTask.FromResult<IReadOnlyList<ChatPlace>>([Place]);
 
     private ChatPlace Place => new(MinistryId, "Sample Ministry", ChatsOn,
-        new Dictionary<string, Audience> { [ChatAudiences.Team] = Audience.HoldingAt(TeamNode, Scope.Of(ScopeKind.Ministry, MinistryId.ToString())) });
+        new Dictionary<string, Audience> { [ChatAudiences.Team] = Audience.HoldingAt(TeamNode, Scope.Of(ScopeKind.Ministry, MinistryId.ToString())) }, TeamMayStart);
 
     public ValueTask<IReadOnlyDictionary<Guid, string>> NamesAsync(IReadOnlyCollection<Guid> people, CancellationToken cancellationToken) =>
         ValueTask.FromResult<IReadOnlyDictionary<Guid, string>>(people.Where(_names.ContainsKey).Distinct().ToDictionary(person => person, person => _names[person]));
@@ -145,13 +148,17 @@ internal sealed class Church : IPermissionHolders, IAccessEvaluator, IRoleAssign
 
     public Task RaiseAsync(Notification notification, CancellationToken cancellationToken)
     {
-        Raised.Add(notification);
+        Raised.Add(NotificationLinks.Checked(notification));
         return Task.CompletedTask;
     }
 
     public Task RaiseOneOfAsync(IReadOnlyList<Notification> mostSpecificFirst, CancellationToken cancellationToken) => RaiseAsync(mostSpecificFirst[0], cancellationToken);
 
     public Task SettleAsync(string subject, CancellationToken cancellationToken) => Task.CompletedTask;
+
+    public Task CollectAsync(NotificationDigestItem item, CancellationToken cancellationToken) => Task.CompletedTask;
+
+    public Task ForgetDigestAsync(NotificationKind kind, string group, CancellationToken cancellationToken) => Task.CompletedTask;
 
     public Task<IReadOnlyList<MediaRef>> VerifyAsync(IReadOnlyCollection<MediaRef> claimed, CancellationToken cancellationToken) =>
         claimed.All(media => Uploaded.Contains(media.Id))

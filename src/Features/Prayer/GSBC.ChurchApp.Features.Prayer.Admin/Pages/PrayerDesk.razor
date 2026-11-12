@@ -5,54 +5,62 @@
 @inject PastoralClient Pastoral
 @inject UnsavedChanges Unsaved
 @inject TimeProvider Clock
+@inject IAccess Access
 
 <PageTitle>Prayer · Good Shepherd admin</PageTitle>
 
 <LiveData @ref="_live" TValue="Inbox" Feeds="DeskFeeds" Load="LoadAsync" FailedTitle="Can't load prayer requests right now">
-    <Workbench AsideLabel="Prayer requests" Class="prayer-desk" Showing="@(_selectedId is null ? WorkbenchPane.Aside : WorkbenchPane.Main)">
+    <Workbench AsideLabel="Prayer requests" Class="prayer-desk" Showing="@(_selectedId is null && !InSettings ? WorkbenchPane.Aside : WorkbenchPane.Main)">
         <Aside>
             <h1 class="prayer-desk__title">Prayer</h1>
             <p class="prayer-desk__lead">Requests from the app. Only the pastoral team reads them, and the prayer wall shows only what you share.</p>
             <FilterChips TValue="Tab" Label="Show" Options="Tabs(context.Value)" Value="TabFor(context.Value)" ValueChanged="ChooseTabAsync" />
-            <SearchField Label="Find a request" Placeholder="Words or a name" Value="@_query" ValueChanged="SearchAsync" />
-            @if (Shown(context.Value) is { Count: > 0 } shown)
+            @if (!InSettings)
             {
-                <div class="prayer-desk__list" role="listbox" aria-label="Prayer requests">
-                    @foreach (InboxLine line in shown)
-                    {
-                        <button type="button" role="option" aria-selected="@(line.Id == _selectedId)" class="prayer-pick @(line.Id == _selectedId ? "is-selected" : "")"
-                                @onclick="() => SelectAsync(line.Id)">
-                            <strong>@PrayerWords.Excerpt(line.Text, 70)</strong>
-                            <span>@line.From · @ChurchDates.Ago(line.SentAt, Now)</span>
-                            <span class="prayer-pick__pills">
-                                @if (line.Care == CareState.New && context.Value.MayRead)
-                                {
-                                    <Pill>New</Pill>
-                                }
-                                @if (line.Wall == WallState.Waiting)
-                                {
-                                    <Pill Tone="PillTone.Accent">Asks for the wall</Pill>
-                                }
-                                @if (line.Minor)
-                                {
-                                    <Pill Tone="PillTone.Marker">Under 18</Pill>
-                                }
-                                @if (line.WantsContact)
-                                {
-                                    <Pill Tone="PillTone.Quiet">Get in touch</Pill>
-                                }
-                            </span>
-                        </button>
-                    }
-                </div>
-            }
-            else
-            {
-                <EmptyState Icon="@(_query.Length > 0 ? "search" : "check")" Title="@EmptyTitle(context.Value)" Body="@EmptyBody(context.Value)" />
+                <SearchField Label="Find a request" Placeholder="Words or a name" Value="@_query" ValueChanged="SearchAsync" />
+                @if (Shown(context.Value) is { Count: > 0 } shown)
+                {
+                    <div class="prayer-desk__list" role="listbox" aria-label="Prayer requests">
+                        @foreach (InboxLine line in shown)
+                        {
+                            <button type="button" role="option" aria-selected="@(line.Id == _selectedId)" class="prayer-pick @(line.Id == _selectedId ? "is-selected" : "")"
+                                    @onclick="() => SelectAsync(line.Id)">
+                                <strong>@PrayerWords.Excerpt(line.Text, 70)</strong>
+                                <span>@line.From · @ChurchDates.Ago(line.SentAt, Now)</span>
+                                <span class="prayer-pick__pills">
+                                    @if (line.Care == CareState.New && context.Value.MayRead)
+                                    {
+                                        <Pill>New</Pill>
+                                    }
+                                    @if (line.Wall == WallState.Waiting)
+                                    {
+                                        <Pill Tone="PillTone.Accent">Asks for the wall</Pill>
+                                    }
+                                    @if (line.Minor)
+                                    {
+                                        <Pill Tone="PillTone.Marker">Under 18</Pill>
+                                    }
+                                    @if (line.WantsContact)
+                                    {
+                                        <Pill Tone="PillTone.Quiet">Get in touch</Pill>
+                                    }
+                                </span>
+                            </button>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <EmptyState Icon="@(_query.Length > 0 ? "search" : "check")" Title="@EmptyTitle(context.Value)" Body="@EmptyBody(context.Value)" />
+                }
             }
         </Aside>
         <ChildContent>
-            @if (_selectedId is { } id)
+            @if (InSettings)
+            {
+                <PrayedForTimes />
+            }
+            else if (_selectedId is { } id)
             {
                 <PastoralRequest @key="id" Id="@id" OnGone="() => _selectedId = null" />
             }
@@ -73,6 +81,7 @@
         FollowedUp,
         Answered,
         Everything,
+        Settings,
     }
 
     private static readonly IReadOnlyList<string> DeskFeeds = [PrayerFeeds.Inbox];
@@ -87,6 +96,8 @@
 
     private DateTime Now => Clock.GetUtcNow().UtcDateTime;
 
+    private bool InSettings => _tab == Tab.Settings;
+
     protected override void OnParametersSet()
     {
         _selectedId ??= OpenId ?? RequestId;
@@ -98,7 +109,7 @@
 
     private Tab TabFor(Inbox inbox) => _tab ?? (inbox.MayRead ? Tab.New : Tab.ForTheWall);
 
-    private static IReadOnlyList<FilterOption<Tab>> Tabs(Inbox inbox)
+    private IReadOnlyList<FilterOption<Tab>> Tabs(Inbox inbox)
     {
         List<FilterOption<Tab>> tabs = [];
         if (inbox.MayRead)
@@ -111,6 +122,8 @@
             tabs.Add(new(Tab.Answered, "Answered"));
         }
         tabs.Add(new(Tab.Everything, "Everything"));
+        if (inbox.MayRead || Access.Can(PrayerPermissions.Settings))
+            tabs.Add(new(Tab.Settings, "Settings"));
         return tabs;
     }
 

@@ -70,6 +70,7 @@ public abstract class MediaLibraryHost : IAsyncLifetime
             .AddSingleton<IMediaAreaAccess>(Members)
             .AddScoped<MediaFolders>()
             .AddScoped<IMediaReferences, MediaReferences>()
+            .AddScoped<IMediaAudiences, MediaAudiences>()
             .BuildServiceProvider();
 
         IAmazonS3 client = Services.GetRequiredService<IAmazonS3>();

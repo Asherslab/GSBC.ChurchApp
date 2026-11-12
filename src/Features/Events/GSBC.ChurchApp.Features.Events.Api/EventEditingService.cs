@@ -134,7 +134,7 @@ internal sealed class EventEditingService(
         await notifications.RaiseAsync(new Notification(EventsNotifications.AskedToPublish,
             NotificationAudience.Holding(EventsPermissions.Publish, calendar.Id.ToString()),
             $"Waiting to publish: {item.Fields.Title}", $"In {calendar.Name}", Link: CalendarLink(calendar.Id), Subject: AskedSubject(item.Id), ScopeId: calendar.Id.ToString(),
-            Action: "Look"), cancellationToken);
+            Action: "Look") { Actor = item.AskedBy }, cancellationToken);
         return new Done();
     }
 
@@ -220,7 +220,7 @@ internal sealed class EventEditingService(
             await notifications.RaiseAsync(new Notification(EventsNotifications.AskedToShow,
                 NotificationAudience.Holding(EventsPermissions.Edit, otherId.ToString()),
                 $"Show “{item.Fields.Title}” on {other.Name}?", $"{home.Name} asks to show it on your calendar too",
-                Link: CalendarLink(otherId), Subject: ShowingSubject(otherId, item.Id), ScopeId: otherId.ToString(), Action: "Look"), cancellationToken);
+                Link: CalendarLink(otherId), Subject: ShowingSubject(otherId, item.Id), ScopeId: otherId.ToString(), Action: "Look") { Actor = Caller.UserId(user) }, cancellationToken);
         else
             await notifications.SettleAsync(ShowingSubject(otherId, item.Id), cancellationToken);
         return new Done();
@@ -341,7 +341,7 @@ internal sealed class EventEditingService(
             await notifications.RaiseAsync(new Notification(EventsNotifications.AskedToShowElsewhere,
                 NotificationAudience.Holding(EventsPermissions.Edit, home.Id.ToString()),
                 $"Show “{item.Fields.Title}” on {calendar.Name}?", $"{calendar.Name} asks to show it on their calendar too",
-                Link: CalendarLink(home.Id), Subject: ShowingSubject(yours, item.Id), ScopeId: home.Id.ToString(), Action: "Look"), cancellationToken);
+                Link: CalendarLink(home.Id), Subject: ShowingSubject(yours, item.Id), ScopeId: home.Id.ToString(), Action: "Look") { Actor = Caller.UserId(user) }, cancellationToken);
         else
             await notifications.SettleAsync(ShowingSubject(yours, item.Id), cancellationToken);
         return new ShowHereResult { Agreed = showing?.AgreedAt is not null && request.Show };
@@ -403,7 +403,7 @@ internal sealed class EventEditingService(
             : occurrence.NotOn ? "Not on" : occurrence.ChangeNote.Length > 0 ? occurrence.ChangeNote : WhenWords(occurrence);
         await notifications.RaiseOneOfAsync(Tellable(calendar).Select(audience => new Notification(EventsNotifications.Told, audience, title, body,
             Link: EventsDestinations.Event.PathOf(occurrence.Id), Subject: $"events/told/{occurrence.Id}/{now.Ticks}", ScopeId: calendar.Id.ToString(),
-            Action: "Open")).ToList(), cancellationToken);
+            Action: "Open") { Actor = Caller.UserId(UserOf(context)) }).ToList(), cancellationToken);
         await db.SaveChangesAsync(cancellationToken);
         return new Done();
     }

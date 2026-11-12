@@ -32,7 +32,7 @@ public static class PeoplePermissions
         new(FamiliesManageNode, ScopeKind.Global, "Link and unlink anyone's family, and add children for a parent", isSensitive: true, area: "People");
 
     public static readonly Permission SafeguardingView =
-        new(SafeguardingViewNode, ScopeKind.Person, "See someone's blue card and Safe Ministry training, and who's flagged", isSensitive: true, area: "People");
+        new(SafeguardingViewNode, ScopeKind.Person, "See someone's blue card and Safe Ministry training, and who's flagged", isSensitive: true, area: "People", opensAdminArea: true);
 
     public static readonly Permission SafeguardingEdit =
         new(SafeguardingEditNode, ScopeKind.Person, "Record someone's blue card and Safe Ministry training", isSensitive: true, area: "People");

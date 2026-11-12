@@ -109,11 +109,25 @@ is the owner's is marked so.
 |---|---|---|
 | `prayer.new` *Someone sends a prayer request* | holders of `prayer.requests.read` | a request arrives; waits until it's marked followed up or answered |
 | `prayer.wall.waiting` *A prayer request asks to be on the prayer wall* | holders of `prayer.wall.moderate` | a request asks for the wall; one notification per person with the one above (most specific first); waits until the wall is decided |
-| `prayer.prayed` *Someone prays for your prayer request* | the person | at most once a day per request (*Claude's default*) |
-| `prayer.answered` *The pastoral team marks your prayer request answered* | the person | staff mark it answered |
+| `prayer.prayed` *Someone prays for your prayer request* | the person | a digest (below); opens their request |
+| `prayer.answered` *The pastoral team marks your prayer request answered* | the person | staff mark it answered; opens their request |
 
 Neither staff kind puts the words in the notification; it opens the request in the app or the admin panel. The person's kinds
 reach signed-in people only (a signed-out phone sees the count in the app instead); both can be turned off.
+
+**Someone prayed comes as a digest** (owner, 2026-11-11: "do a few digests when first made (first 15 minutes, 30, 45,
+1hr, 3hrs, 6hrs) then daily digests around maybe midday? (digest being how many between previous digest and now) make
+this part admin configurable, and allow a person to mute those notifications"). Built 2026-11-12 on the platform's
+digests ([notifications.md](../architecture/notifications.md), *Digests*):
+
+- Each request is its own digest, counted from when it went on the wall (*Claude's reading* of "when first made":
+  nobody can pray before then, and a request staff approve two hours later would otherwise miss its early ones). Then
+  every day at 12pm church time while people keep praying.
+- Each says how many prayed since the last one ("3 people prayed for your request"), and none goes when nobody did. Praying
+  for your own request isn't counted for you. It replaces the earlier *at most once a day* default.
+- **Admin configurable:** *Choose when people hear that someone prayed* (`prayer.settings.change`, in the *Pastoral
+  team* role through `prayer.*`) changes the times on the Prayer desk. A person mutes them in Notification settings.
+- Deleting a request forgets its digest.
 
 ## Keeping and deleting
 

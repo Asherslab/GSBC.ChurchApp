@@ -1,5 +1,6 @@
 @using GSBC.ChurchApp.Platform.Client.Modules
 @inject MinistryLinks Links
+@inject IMinistryWrites Ministries
 @inject IServiceProvider Services
 
 @if (Tools)
@@ -9,11 +10,15 @@
         {
             <div class="ministry-tools">
                 <Button Icon="calendar-plus" OnClick="() => Open(null)">Add a calendar</Button>
+                @if (Services.GetService(typeof(ILinkableCalendars)) is ILinkableCalendars linkable)
+                {
+                    <Button Icon="link" Variant="ButtonVariant.Quiet" OnClick="() => OpenLinking(linkable)">Link a calendar</Button>
+                }
             </div>
         }
         @if (Page.Calendars.Count == 0)
         {
-            <EmptyState Icon="calendar" Title="No calendars yet" Body="Add a calendar for everyone, or one only the team sees. Its events show in people's week and their calendar links." />
+            <EmptyState Icon="calendar" Title="No calendars yet" Body="@(Page.Ministry.ShowsInLifeGroups ? "Link the calendar its Sundays are in, and only its own Sundays show here. Or add a calendar of its own." : "Add a calendar for everyone, or one only the team sees. Its events show in people's week and their calendar links.")" />
         }
     </Section>
 }
@@ -21,7 +26,8 @@
 @if (Page.Calendars.Count > 0 && Services.GetService(typeof(CalendarSetView)) is CalendarSetView view)
 {
     <Section First="@(!Tools)" Title="Coming up" Lead="@(FromBelow.Count > 0 ? $"From {Page.Ministry.Name} and the ministries under it." : null)">
-        @view.ComingUp(Page.Calendars.Select(calendar => new CalendarInSet(calendar.Id, calendar.From.Length > 0 ? calendar.From : Page.Ministry.Name)).ToList())
+        @view.ComingUp(Page.Calendars.Select(calendar => new CalendarInSet(calendar.Id, calendar.From.Length > 0 ? calendar.From : Page.Ministry.Name,
+            calendar.OnItsDays ? calendar.Days.ToHashSet() : null)).ToList())
     </Section>
 }
 
@@ -46,6 +52,46 @@
     }
 </Section>
 
+@if (Linked.Count > 0)
+{
+    <Section Title="Linked calendars" Lead="@(Page.Ministry.ShowsInLifeGroups ? "Only its own Sundays show from these." : null)">
+        <ListGroup>
+            @foreach (CalendarLine calendar in Linked)
+            {
+                <ListRow @key="calendar.Id" Title="@calendar.Name" Subtitle="@Links.CalendarNote" Icon="link" IconTone="RowTone.Quiet" Chevron="true" Href="@Links.Calendar(calendar)">
+                    <TrailingContent>
+                        @if (Page.You.MayEditSettings)
+                        {
+                            <Button Small="true" Variant="ButtonVariant.Quiet" Icon="x" AriaLabel="@($"Unlink {calendar.Name}")" Disabled="_busy" OnClick="() => LinkAsync(calendar.Id, false)" />
+                        }
+                    </TrailingContent>
+                </ListRow>
+            }
+        </ListGroup>
+    </Section>
+}
+
+@if (Page.Sundays.Count > 0)
+{
+    <SundaysArea Page="Page" OnChanged="OnChanged" />
+}
+
+<Sheet Open="_choices is not null" OpenChanged="open => { if (!open) _choices = null; }" Title="Link a calendar" Lead="Its events show here. Only calendars for everyone can be linked.">
+    <ChildContent>
+        <ListGroup>
+            @foreach (Contracts.Crumb choice in _choices ?? [])
+            {
+                <ListRow @key="choice.Id" Title="@choice.Name" Icon="calendar" IconTone="RowTone.Accent" Disabled="_busy" OnClick="() => LinkAsync(choice.Id, true)" />
+            }
+        </ListGroup>
+        @if (_choices is { Count: 0 })
+        {
+            <p class="hint">Every calendar for everyone is already linked or is this ministry's own.</p>
+        }
+        <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+    </ChildContent>
+</Sheet>
+
 @if (FromBelow.Count > 0)
 {
     <Section Title="From the ministries under it">
@@ -69,9 +115,40 @@
 
     private bool Tools => Page.You.MayEditSettings || Page.Calendars.Count == 0;
 
-    private IEnumerable<CalendarLine> Own => Page.Calendars.Where(calendar => calendar.From.Length == 0);
+    private IReadOnlyList<Contracts.Crumb>? _choices;
+    private bool _busy;
+    private string? _problem;
 
-    private IReadOnlyList<CalendarLine> FromBelow => Page.Calendars.Where(calendar => calendar.From.Length > 0).ToList();
+    private IEnumerable<CalendarLine> Own => Page.Calendars.Where(calendar => calendar.From.Length == 0 && !calendar.Linked);
+
+    private IReadOnlyList<CalendarLine> Linked => Page.Calendars.Where(calendar => calendar.Linked).ToList();
+
+    private async Task OpenLinking(ILinkableCalendars linkable)
+    {
+        _problem = null;
+        _choices = await linkable.ChoicesAsync(Page.Ministry.Id);
+    }
+
+    private async Task LinkAsync(string calendarId, bool linked)
+    {
+        (_busy, _problem) = (true, null);
+        try
+        {
+            await Ministries.LinkCalendarAsync(Page.Ministry.Id, calendarId, linked);
+            _choices = null;
+            await OnChanged.InvokeAsync();
+        }
+        catch (RpcException exception)
+        {
+            _problem = MinistryLookups.Problem(exception);
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private IReadOnlyList<CalendarLine> FromBelow => Page.Calendars.Where(calendar => calendar.From.Length > 0 && !calendar.Linked).ToList();
 
     private void Open(CalendarLine? calendar) => (_draft, _open) = (CalendarSheet.DraftOf(calendar, Page), true);
 }

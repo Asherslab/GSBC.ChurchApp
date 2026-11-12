@@ -6,7 +6,7 @@ using ProtoBuf.Grpc.Client;
 
 namespace GSBC.ChurchApp.Features.Ministries.Admin;
 
-public sealed class OnlineMinistries(ChannelBase channel) : IMinistryReads, IMinistryWrites
+public sealed class OnlineMinistries(ChannelBase channel) : IMinistryReads, IMinistryWrites, ILinkableCalendars
 {
     private readonly IMinistriesService _ministries = channel.CreateGrpcService<IMinistriesService>();
     private readonly IMinistryLeadingService _leading = channel.CreateGrpcService<IMinistryLeadingService>();
@@ -21,7 +21,10 @@ public sealed class OnlineMinistries(ChannelBase channel) : IMinistryReads, IMin
 
     public async Task<PeopleList> PeopleAsync(string ministryId) => await _leading.PeopleAsync(new MinistryRef { MinistryId = ministryId });
 
-    public async Task<JoinOutcome> JoinAsync(MinistryDetails ministry, string personId, string place, string note) =>
+    public async Task ParentAnswerAsync(string ministryId, string askId, bool yes) =>
+        await _ministries.ParentAnswerAsync(new AskRef { MinistryId = ministryId, AskId = askId, Yes = yes });
+
+    public async Task<JoinOutcome> JoinAsync(MinistryDetails ministry, string personId, string place, string note, bool parentFirst = false) =>
         await _ministries.JoinAsync(new JoinRequest { MinistryId = ministry.Id, PersonId = personId, As = place, Note = note });
 
     public async Task LeaveAsync(string ministryId, string personId, string place) =>
@@ -31,6 +34,9 @@ public sealed class OnlineMinistries(ChannelBase channel) : IMinistryReads, IMin
 
     public async Task AnswerAsync(string ministryId, string askId, bool yes) =>
         await _leading.AnswerAsync(new AskRef { MinistryId = ministryId, AskId = askId, Yes = yes });
+
+    public async Task SetRoleAsync(string ministryId, string personId, string role) =>
+        await _leading.SetRoleAsync(new PersonChange { MinistryId = ministryId, PersonId = personId, Role = role });
 
     public async Task ChangePersonAsync(string ministryId, string personId, string role, bool add) =>
         await _leading.ChangePersonAsync(new PersonChange { MinistryId = ministryId, PersonId = personId, Role = role, Add = add });
@@ -50,8 +56,12 @@ public sealed class OnlineMinistries(ChannelBase channel) : IMinistryReads, IMin
     public async Task<MinistryDetails> SaveMinistryAsync(MinistryDetails details) =>
         await _leading.SaveMinistryAsync(new MinistrySave { MinistryId = details.Id, Details = details });
 
-    public async Task SavePartsAsync(string ministryId, IEnumerable<string> partsOff, IEnumerable<string> partsFromBelow) =>
-        await _leading.SavePartsAsync(new PartsSave { MinistryId = ministryId, PartsOff = [.. partsOff], PartsFromBelow = [.. partsFromBelow] });
+    public async Task SavePartsAsync(string ministryId, IEnumerable<string> partsOff, IEnumerable<string> partsFromBelow, string chatStarters = "",
+        IEnumerable<string>? partsOrder = null) =>
+        await _leading.SavePartsAsync(new PartsSave
+        {
+            MinistryId = ministryId, PartsOff = [.. partsOff], PartsFromBelow = [.. partsFromBelow], ChatStarters = chatStarters, PartsOrder = [.. partsOrder ?? []],
+        });
 
     public async Task MoveAsync(string ministryId, string underId) => await _leading.MoveAsync(new MoveRequest { MinistryId = ministryId, UnderId = underId });
 
@@ -70,6 +80,12 @@ public sealed class OnlineMinistries(ChannelBase channel) : IMinistryReads, IMin
 
     public async Task SaveCalendarAsync(string ministryId, CalendarLine calendar) =>
         await _leading.SaveCalendarAsync(new CalendarSave { MinistryId = ministryId, Calendar = calendar });
+
+    public async Task LinkCalendarAsync(string ministryId, string calendarId, bool linked) =>
+        await _leading.LinkCalendarAsync(new CalendarLinkSave { MinistryId = ministryId, CalendarId = calendarId, Linked = linked });
+
+    public async Task<IReadOnlyList<Crumb>> ChoicesAsync(string ministryId) =>
+        (await _leading.LinkableCalendarsAsync(new MinistryRef { MinistryId = ministryId })).Calendars;
 
     public async Task RemoveCalendarAsync(string ministryId, string id) => await _leading.RemoveCalendarAsync(new ItemRef { MinistryId = ministryId, Id = id });
 

@@ -53,6 +53,7 @@ internal sealed class RostersService(
         DateOnly from = DayOf(request.From) ?? today;
         DateOnly to = DayOf(request.To) ?? today.AddDays(EventChoiceWeeks * 7);
         HashSet<Guid> own = (await calendars.OfAsync(ministry.Id, cancellationToken)).Select(calendar => calendar.Id).ToHashSet();
+        RosterSettings settings = RosterRules.SettingsOf(await db.Settings.AsNoTracking().SingleOrDefaultAsync(each => each.MinistryId == ministry.Id, cancellationToken));
         DateTime now = time.GetUtcNow().UtcDateTime;
         return new EventChoices
         {
@@ -61,7 +62,8 @@ internal sealed class RostersService(
                 .Select(found => new EventChoice
                 {
                     Key = found.Key, Title = found.Title, CalendarName = found.CalendarName, StartsAt = found.StartsAt, EndsAt = found.EndsAt,
-                    AllDay = found.AllDay, Own = own.Contains(found.CalendarId),
+                    AllDay = found.AllDay, Own = settings.DrawsFrom(found.CalendarId.ToString(), own.Contains(found.CalendarId)),
+                    CalendarId = found.CalendarId.ToString(),
                 })
                 .ToList(),
         };
@@ -75,6 +77,18 @@ internal sealed class RostersService(
         List<Guid> covered = (facts.GetValueOrDefault(me)?.Children ?? []).Prepend(me).Distinct().ToList();
         IReadOnlyDictionary<Guid, FamilyFacts> coveredFacts = await families.FactsAsync(covered, cancellationToken);
         covered = covered.Where(person => person == me || coveredFacts.GetValueOrDefault(person) is { Minor: true }).ToList();
+        AwayList list = await AwayListAsync(covered, cancellationToken);
+        list.YourId = me.ToString();
+        return list;
+    }
+
+    public ValueTask<AwayList> AwayOfAsync(PersonRef request, CallContext context = default) => AwayOfAsync(request, context.CancellationToken);
+
+    internal async ValueTask<AwayList> AwayOfAsync(PersonRef request, CancellationToken cancellationToken) =>
+        await AwayListAsync([IdOf(request.PersonId, "person")], cancellationToken);
+
+    private async Task<AwayList> AwayListAsync(IReadOnlyList<Guid> covered, CancellationToken cancellationToken)
+    {
         IReadOnlyDictionary<Guid, string> names = await people.NamesAsync(covered, cancellationToken);
         DateOnly today = ChurchTime.Today(time);
         ILookup<Guid, AwayRecord> spans = (await db.Away.AsNoTracking().Where(span => covered.Contains(span.PersonId) && span.To >= today).OrderBy(span => span.From)
@@ -89,6 +103,9 @@ internal sealed class RostersService(
             }).ToList(),
         };
     }
+
+    private async Task<bool> MaySetAwayAsync(Guid me, Guid person, CancellationToken cancellationToken) =>
+        await families.MayActForAsync(me, person, cancellationToken) || (await access.GrantsForAsync(me, cancellationToken)).IsAllowed(RostersPermissions.Away);
 
     public ValueTask<Done> SavePositionAsync(PositionSave request, CallContext context = default) => SavePositionAsync(SignedIn(context), request, context.CancellationToken);
 
@@ -133,7 +150,7 @@ internal sealed class RostersService(
 
         DateTime now = time.GetUtcNow().UtcDateTime;
         List<(AssignmentRecord Assignment, DateRecord Date)> coming = await ComingAsync(db.Assignments.Where(each => each.PositionId == id), now, cancellationToken);
-        await TakeOffAsync(ministry, coming, $"{position.Name} is no longer on {ministry.Name}'s roster.", cancellationToken);
+        await TakeOffAsync(ministry, coming, $"{position.Name} is no longer on {ministry.Name}'s roster.", me, cancellationToken);
         db.Positions.Remove(position);
         await db.Trained.Where(each => each.PositionId == id).ExecuteDeleteAsync(cancellationToken);
         await db.SaveChangesAsync(cancellationToken);
@@ -171,7 +188,7 @@ internal sealed class RostersService(
         if (record is null)
             db.Settings.Add(record = new SettingsRecord { MinistryId = ministry.Id });
         record.Replies = settings.Replies;
-        record.SwapWays = settings.SwapWays;
+        (record.OpenSwaps, record.DirectSwaps, record.Calendars) = (settings.OpenSwaps, settings.DirectSwaps, settings.Calendars.Select(Guid.Parse).ToList());
         record.WhoSees = settings.WhoSees;
         record.RemindDaysBefore = settings.RemindDaysBefore;
         record.NudgeAfterDays = settings.NudgeAfterDays;
@@ -214,7 +231,7 @@ internal sealed class RostersService(
             return new Done();
 
         List<(AssignmentRecord, DateRecord)> coming = await ComingAsync(db.Assignments.Where(each => each.DateId == id), time.GetUtcNow().UtcDateTime, cancellationToken);
-        await TakeOffAsync(ministry, coming, $"{ministry.Name} isn't rostering {removed.Title} on {RosterText.Day(removed.StartsAt)} any more.", cancellationToken);
+        await TakeOffAsync(ministry, coming, $"{ministry.Name} isn't rostering {removed.Title} on {RosterText.Day(removed.StartsAt)} any more.", me, cancellationToken);
         List<Guid> assignments = await db.Assignments.Where(each => each.DateId == id).Select(each => each.Id).ToListAsync(cancellationToken);
         await db.Swaps.Where(swap => assignments.Contains(swap.AssignmentId)).ExecuteDeleteAsync(cancellationToken);
         await db.Assignments.Where(each => each.DateId == id).ExecuteDeleteAsync(cancellationToken);
@@ -248,6 +265,7 @@ internal sealed class RostersService(
             return new Done();
 
         RosterSettings settings = RosterRules.SettingsOf(await db.Settings.AsNoTracking().SingleOrDefaultAsync(each => each.MinistryId == ministry.Id, cancellationToken));
+        IReadOnlySet<Guid> aloneBefore = await AloneAsync(dateId, cancellationToken);
         db.Assignments.Add(new AssignmentRecord
         {
             Id = id, DateId = dateId, MinistryId = ministry.Id, PositionId = positionId, PositionName = position.Name, PersonId = person,
@@ -255,9 +273,15 @@ internal sealed class RostersService(
         });
         await db.SaveChangesAsync(cancellationToken);
         await publisher.PublishAsync(ministry.Id, cancellationToken);
-        await messenger.TellAsync(person, RostersNotifications.PutOn, $"You're on {RosterText.Day(date.StartsAt)}: {position.Name.ToLowerInvariant()}",
-            settings.Replies ? $"{RosterText.Line(date, position.Name)}, for {ministry.Name}. Say whether you can do it." : $"{RosterText.Line(date, position.Name)}, for {ministry.Name}.",
-            ministry.Id, $"rosters/on/{id:N}", cancellationToken, settings.Replies ? "Answer" : "See the roster");
+        IReadOnlySet<Guid> aloneAfter = await AloneAsync(dateId, cancellationToken);
+        foreach (Guid partnered in aloneBefore.Except(aloneAfter))
+            await messenger.SettleAsync(AloneSubject(partnered), cancellationToken);
+
+        bool training = Training.IsTrainee(position.NeedsTrained, await db.Trained.AnyAsync(each => each.PositionId == positionId && each.PersonId == person, cancellationToken));
+        string with = training && !aloneAfter.Contains(id) ? " Someone trained is on with you." : "";
+        await messenger.TellAsync(person, RostersNotifications.PutOn, $"You're on {RosterText.Day(date.StartsAt)}: {position.Name}{(training ? " (training)" : "")}",
+            settings.Replies ? $"{RosterText.Line(date, position.Name)}, for {ministry.Name}.{with} Say whether you can do it." : $"{RosterText.Line(date, position.Name)}, for {ministry.Name}.{with}",
+            ministry.Id, $"rosters/on/{id:N}", me, cancellationToken, settings.Replies ? "Answer" : "See the roster");
         return new Done();
     }
 
@@ -269,14 +293,17 @@ internal sealed class RostersService(
         Guid id = IdOf(request.Id, "place");
         List<(AssignmentRecord Assignment, DateRecord Date)> coming = await ComingAsync(db.Assignments.Where(each => each.Id == id && each.MinistryId == ministry.Id),
             time.GetUtcNow().UtcDateTime, cancellationToken);
-        if (!await db.Assignments.AnyAsync(each => each.Id == id && each.MinistryId == ministry.Id, cancellationToken))
+        if (await db.Assignments.AsNoTracking().SingleOrDefaultAsync(each => each.Id == id && each.MinistryId == ministry.Id, cancellationToken) is not { } removed)
             return new Done();
 
-        await TakeOffAsync(ministry, coming.Where(each => Replies.Fills(each.Assignment.State)).ToList(), null, cancellationToken);
+        IReadOnlySet<Guid> aloneBefore = await AloneAsync(removed.DateId, cancellationToken);
+        await TakeOffAsync(ministry, coming.Where(each => Replies.Fills(each.Assignment.State)).ToList(), null, me, cancellationToken);
         await db.Swaps.Where(swap => swap.AssignmentId == id).ExecuteDeleteAsync(cancellationToken);
         await db.Assignments.Where(each => each.Id == id).ExecuteDeleteAsync(cancellationToken);
         await publisher.PublishAsync(ministry.Id, cancellationToken);
         await messenger.SettleAsync($"rosters/on/{id:N}", cancellationToken);
+        await messenger.SettleAsync(AloneSubject(id), cancellationToken);
+        await TellOfTraineesLeftAloneAsync(ministry, removed.DateId, aloneBefore, me, cancellationToken);
         return new Done();
     }
 
@@ -295,6 +322,7 @@ internal sealed class RostersService(
             throw Refused(why);
 
         Guid? was = assignment.PersonId;
+        IReadOnlySet<Guid> aloneBefore = await AloneAsync(date.Id, cancellationToken);
         if (request.Yes)
             Move(assignment, swap, taker, me);
         else
@@ -307,15 +335,17 @@ internal sealed class RostersService(
         if (request.Yes)
         {
             await messenger.TellAsync(taker, RostersNotifications.Swaps, $"You're on {RosterText.Day(date.StartsAt)}", $"A leader said yes: {line}.", ministry.Id,
-                $"rosters/swapped/{id:N}", cancellationToken);
+                $"rosters/swapped/{id:N}", me, cancellationToken);
             if (was is { } before)
                 await messenger.TellAsync(before, RostersNotifications.Swaps, "Your swap is done", $"Someone else is taking your place: {line}.", ministry.Id,
-                    $"rosters/swapped/{id:N}", cancellationToken);
+                    $"rosters/swapped/{id:N}", me, cancellationToken);
         }
+        if (request.Yes)
+            await TellOfTraineesLeftAloneAsync(ministry, date.Id, aloneBefore, me, cancellationToken);
         else
         {
             await messenger.TellAsync(taker, RostersNotifications.Swaps, "A leader said no to the swap", $"You're not taking that place: {line}.", ministry.Id,
-                $"rosters/swapped/{id:N}", cancellationToken);
+                $"rosters/swapped/{id:N}", me, cancellationToken);
         }
         return new Done();
     }
@@ -336,6 +366,7 @@ internal sealed class RostersService(
         string state = request.Accept ? Replies.Accepted : Replies.Declined;
         if (assignment.State == state && assignment.Reason == request.Reason.Trim())
             return new Done();
+        IReadOnlySet<Guid> aloneBefore = await AloneAsync(date.Id, cancellationToken);
         assignment.State = state;
         assignment.Reason = request.Accept ? "" : request.Reason.Trim();
         assignment.RepliedBy = me;
@@ -349,8 +380,9 @@ internal sealed class RostersService(
             string name = (await people.NamesAsync([assignment.PersonId!.Value], cancellationToken)).GetValueOrDefault(assignment.PersonId.Value) ?? "Someone";
             string reason = assignment.Reason.Length > 0 ? $" They said: “{assignment.Reason}”" : "";
             await messenger.TellLeadersAsync(ministry.Id, RostersNotifications.ForLeaders, $"{RosterRules.First(name)} can't do {RosterText.Day(date.StartsAt)}",
-                $"{RosterText.Line(date, assignment.PositionName)}.{reason} Find someone else on the roster.", $"rosters/declined/{id:N}", cancellationToken);
+                $"{RosterText.Line(date, assignment.PositionName)}.{reason} Find someone else on the roster.", $"rosters/declined/{id:N}", me, cancellationToken);
         }
+        await TellOfTraineesLeftAloneAsync(ministry, date.Id, aloneBefore, me, cancellationToken);
         return new Done();
     }
 
@@ -369,16 +401,17 @@ internal sealed class RostersService(
         DateRecord date = await db.Dates.AsNoTracking().SingleAsync(each => each.Id == assignment.DateId, cancellationToken);
         RosterSettings settings = RosterRules.SettingsOf(await db.Settings.AsNoTracking().SingleOrDefaultAsync(each => each.MinistryId == ministry.Id, cancellationToken));
         IReadOnlyList<MinistryMember> team = await ministries.TeamAsync(ministry.Id, cancellationToken);
-        Guid? to = request.Way == SwapWays.Direct && Guid.TryParse(request.ToPersonId, out Guid chosen) ? chosen : null;
+        string? way = RosterRules.WayFor(settings, request.Way);
+        Guid? to = way == SwapWays.Direct && Guid.TryParse(request.ToPersonId, out Guid chosen) ? chosen : null;
         bool mayAct = assignment.PersonId is { } person && await families.MayActForAsync(me, person, cancellationToken);
         bool asked = await db.Swaps.AnyAsync(each => each.AssignmentId == id && (each.State == SwapStates.Open || each.State == SwapStates.Offered), cancellationToken);
-        if (RosterRules.WhyNotAskSwap(mayAct, ministry.Archived, settings.SwapWays, request.Way, assignment.State, asked, date.StartsAt, time.GetUtcNow().UtcDateTime,
+        if (RosterRules.WhyNotAskSwap(mayAct, ministry.Archived, way, assignment.State, asked, date.StartsAt, time.GetUtcNow().UtcDateTime,
                 to is { } toPerson && toPerson != assignment.PersonId && team.Any(member => member.PersonId == toPerson)) is { } why)
             throw Refused(why);
 
         db.Swaps.Add(new SwapRecord
         {
-            Id = swapId, AssignmentId = id, MinistryId = ministry.Id, Way = request.Way, State = SwapStates.Open, AskedBy = me, AskedTo = to,
+            Id = swapId, AssignmentId = id, MinistryId = ministry.Id, Way = way!, State = SwapStates.Open, AskedBy = me, AskedTo = to,
             Note = request.Note.Trim(), AskedAt = time.GetUtcNow().UtcDateTime,
         });
         await db.SaveChangesAsync(cancellationToken);
@@ -389,13 +422,13 @@ internal sealed class RostersService(
         string note = request.Note.Trim().Length > 0 ? $" “{request.Note.Trim()}”" : "";
         if (to is { } direct)
             await messenger.TellAsync(direct, RostersNotifications.Swaps, $"Can you take {name}'s place?", $"{line}.{note}", ministry.Id, $"rosters/swap/{swapId:N}",
-                cancellationToken, "Answer");
+                me, cancellationToken, "Answer");
         else
             foreach (MinistryMember member in team.Where(member => !member.Leads && member.PersonId != assignment.PersonId))
                 await messenger.TellAsync(member.PersonId, RostersNotifications.Swaps, $"Can anyone take {name}'s place?", $"{line}.{note}", ministry.Id,
-                    $"rosters/swap/{swapId:N}", cancellationToken, "See the roster");
+                    $"rosters/swap/{swapId:N}", me, cancellationToken, "See the roster");
         await messenger.TellLeadersAsync(ministry.Id, RostersNotifications.ForLeaders, $"{name} asked for a swap",
-            to is null ? $"{line}. The team can pick it up." : $"{line}. They asked someone directly.", $"rosters/swap-asked/{swapId:N}", cancellationToken);
+            to is not null ? $"{line}. They asked someone directly." : way == SwapWays.Approve ? $"{line}. Someone on the team can offer, and you say yes." : $"{line}. The team can pick it up.", $"rosters/swap-asked/{swapId:N}", me, cancellationToken);
         return new Done();
     }
 
@@ -428,11 +461,12 @@ internal sealed class RostersService(
             await messenger.SettleAsync($"rosters/swap/{id:N}", cancellationToken);
             if (assignment.PersonId is { } asker)
                 await messenger.TellAsync(asker, RostersNotifications.Swaps, $"{takerName} can't take your place", $"{line}. You're still on; ask someone else or tell a leader.",
-                    ministry.Id, $"rosters/swapped/{id:N}", cancellationToken);
+                    ministry.Id, $"rosters/swapped/{id:N}", me, cancellationToken);
             return new Done();
         }
 
         Guid? before = assignment.PersonId;
+        IReadOnlySet<Guid> aloneBefore = await AloneAsync(date.Id, cancellationToken);
         string next = RosterRules.AfterTaking(swap.Way);
         if (next == SwapStates.Done)
             Move(assignment, swap, taker, me);
@@ -446,14 +480,15 @@ internal sealed class RostersService(
         {
             if (before is { } asker)
                 await messenger.TellAsync(asker, RostersNotifications.Swaps, $"{takerName} is taking your place", $"{line}. You're off it.", ministry.Id,
-                    $"rosters/swapped/{id:N}", cancellationToken);
+                    $"rosters/swapped/{id:N}", me, cancellationToken);
             await messenger.TellLeadersAsync(ministry.Id, RostersNotifications.ForLeaders, $"{takerName} took a place on the roster", $"{line}.",
-                $"rosters/swapped/{id:N}", cancellationToken);
+                $"rosters/swapped/{id:N}", me, cancellationToken);
+            await TellOfTraineesLeftAloneAsync(ministry, date.Id, aloneBefore, me, cancellationToken);
         }
         else
         {
             await messenger.TellLeadersAsync(ministry.Id, RostersNotifications.ForLeaders, $"{takerName} offers to take a place", $"{line}. Say yes or no on the roster.",
-                $"rosters/swap/{id:N}", cancellationToken);
+                $"rosters/swap/{id:N}", me, cancellationToken);
         }
         return new Done();
     }
@@ -482,7 +517,7 @@ internal sealed class RostersService(
     internal async ValueTask<Done> SaveAwayAsync(Guid me, AwaySave request, CancellationToken cancellationToken)
     {
         Guid person = request.PersonId.Length > 0 ? IdOf(request.PersonId, "person") : me;
-        if (!await families.MayActForAsync(me, person, cancellationToken))
+        if (!await MaySetAwayAsync(me, person, cancellationToken))
             throw Refused("Only they, or a parent of theirs, can say when they're away.");
         if (!DateOnly.TryParseExact(request.From, "yyyy-MM-dd", out DateOnly from) || !DateOnly.TryParseExact(request.To, "yyyy-MM-dd", out DateOnly to))
             throw Invalid("Choose the first and last day.");
@@ -499,7 +534,7 @@ internal sealed class RostersService(
         await db.SaveChangesAsync(cancellationToken);
         await publisher.PublishAwayAsync([person], cancellationToken);
         await publisher.PublishAllAsync(cancellationToken);
-        await TellOfClashesAsync(person, new AwayDays(from, to), cancellationToken);
+        await TellOfClashesAsync(person, new AwayDays(from, to), me, cancellationToken);
         return new Done();
     }
 
@@ -510,7 +545,7 @@ internal sealed class RostersService(
         Guid id = IdOf(request.AwayId, "away dates");
         if (await db.Away.SingleOrDefaultAsync(each => each.Id == id, cancellationToken) is not { } away)
             return new Done();
-        if (!await families.MayActForAsync(me, away.PersonId, cancellationToken))
+        if (!await MaySetAwayAsync(me, away.PersonId, cancellationToken))
             throw Refused("Only they, or a parent of theirs, can change when they're away.");
 
         db.Away.Remove(away);
@@ -520,7 +555,7 @@ internal sealed class RostersService(
         return new Done();
     }
 
-    private async Task TellOfClashesAsync(Guid person, AwayDays span, CancellationToken cancellationToken)
+    private async Task TellOfClashesAsync(Guid person, AwayDays span, Guid actor, CancellationToken cancellationToken)
     {
         DateTime now = time.GetUtcNow().UtcDateTime;
         List<(AssignmentRecord Assignment, DateRecord Date)> coming = await ComingAsync(db.Assignments.Where(each => each.PersonId == person), now, cancellationToken);
@@ -532,8 +567,37 @@ internal sealed class RostersService(
         string name = RosterRules.First((await people.NamesAsync([person], cancellationToken)).GetValueOrDefault(person) ?? "Someone");
         foreach ((AssignmentRecord assignment, DateRecord date) in clashes)
             await messenger.TellLeadersAsync(assignment.MinistryId, RostersNotifications.ForLeaders, $"{name} is away on {RosterText.Day(date.StartsAt)}",
-                $"They're on the roster for it: {RosterText.Line(date, assignment.PositionName)}.", $"rosters/clash/{assignment.Id:N}", cancellationToken);
+                $"They're on the roster for it: {RosterText.Line(date, assignment.PositionName)}.", $"rosters/clash/{assignment.Id:N}", actor, cancellationToken);
     }
+
+    private async Task<IReadOnlySet<Guid>> AloneAsync(Guid dateId, CancellationToken cancellationToken)
+    {
+        List<AssignmentRecord> on = await db.Assignments.AsNoTracking().Where(each => each.DateId == dateId).ToListAsync(cancellationToken);
+        List<Guid> positionIds = on.Select(each => each.PositionId).Distinct().ToList();
+        HashSet<Guid> needTrained = (await db.Positions.AsNoTracking().Where(position => positionIds.Contains(position.Id) && position.NeedsTrained)
+            .Select(position => position.Id).ToListAsync(cancellationToken)).ToHashSet();
+        HashSet<(Guid, Guid)> trained = (await db.Trained.AsNoTracking().Where(each => needTrained.Contains(each.PositionId)).ToListAsync(cancellationToken))
+            .Select(each => (each.PositionId, each.PersonId)).ToHashSet();
+        return Training.Alone(on.Select(each => (each.Id, each.PositionId, each.PersonId is not null && Replies.Fills(each.State),
+            each.PersonId is { } person && Training.IsTrainee(needTrained.Contains(each.PositionId), trained.Contains((each.PositionId, person))))));
+    }
+
+    private async Task TellOfTraineesLeftAloneAsync(MinistryFacts ministry, Guid dateId, IReadOnlySet<Guid> before, Guid actor, CancellationToken cancellationToken)
+    {
+        List<Guid> newly = (await AloneAsync(dateId, cancellationToken)).Except(before).ToList();
+        if (newly.Count == 0)
+            return;
+
+        DateRecord date = await db.Dates.AsNoTracking().SingleAsync(each => each.Id == dateId, cancellationToken);
+        List<AssignmentRecord> trainees = await db.Assignments.AsNoTracking().Where(each => newly.Contains(each.Id)).ToListAsync(cancellationToken);
+        IReadOnlyDictionary<Guid, string> names = await people.NamesAsync(trainees.Select(each => each.PersonId).OfType<Guid>().ToList(), cancellationToken);
+        foreach (AssignmentRecord trainee in trainees)
+            await messenger.TellLeadersAsync(ministry.Id, RostersNotifications.ForLeaders,
+                $"{RosterRules.First(names.GetValueOrDefault(trainee.PersonId ?? Guid.Empty) ?? "Someone")} is training on {RosterText.Day(date.StartsAt)} with nobody trained",
+                $"{RosterText.Line(date, trainee.PositionName)}. Put someone trained on with them.", AloneSubject(trainee.Id), actor, cancellationToken);
+    }
+
+    private static string AloneSubject(Guid assignmentId) => $"rosters/alone/{assignmentId:N}";
 
     private async Task<List<(AssignmentRecord Assignment, DateRecord Date)>> ComingAsync(IQueryable<AssignmentRecord> assignments, DateTime now, CancellationToken cancellationToken) =>
         (await assignments.AsNoTracking()
@@ -541,13 +605,14 @@ internal sealed class RostersService(
             .ToListAsync(cancellationToken))
         .Select(each => (each.assignment, each.date)).ToList();
 
-    private async Task TakeOffAsync(MinistryFacts ministry, IReadOnlyList<(AssignmentRecord Assignment, DateRecord Date)> coming, string? why, CancellationToken cancellationToken)
+    private async Task TakeOffAsync(MinistryFacts ministry, IReadOnlyList<(AssignmentRecord Assignment, DateRecord Date)> coming, string? why, Guid actor,
+        CancellationToken cancellationToken)
     {
         foreach ((AssignmentRecord assignment, DateRecord date) in coming)
             if (assignment.PersonId is { } person)
                 await messenger.TellAsync(person, RostersNotifications.PutOn, $"You're off the roster for {RosterText.Day(date.StartsAt)}",
                     why ?? $"A leader took you off: {RosterText.Line(date, assignment.PositionName)}, for {ministry.Name}.", ministry.Id, $"rosters/off/{assignment.Id:N}",
-                    cancellationToken);
+                    actor, cancellationToken);
     }
 
     private void Move(AssignmentRecord assignment, SwapRecord swap, Guid taker, Guid by)

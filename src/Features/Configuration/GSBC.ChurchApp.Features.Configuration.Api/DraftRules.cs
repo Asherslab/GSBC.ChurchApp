@@ -57,7 +57,7 @@ internal sealed class DraftRules(SurfaceCatalog surfaces)
         return named is null ? surface?.Title ?? patch.Surface : $"\"{named}\"";
     }
 
-    public Notification? WaitingToPublish(DraftRecord draft, IEnumerable<DraftChangeRecord> changes, string askedBy)
+    public Notification? WaitingToPublish(DraftRecord draft, IEnumerable<DraftChangeRecord> changes, Guid? askedById, string askedBy)
     {
         DraftChangeRecord first = changes.OrderBy(change => change.Area, StringComparer.Ordinal).First();
         return surfaces.Areas.TryGetValue(first.Area, out SurfaceArea? area)
@@ -68,18 +68,18 @@ internal sealed class DraftRules(SurfaceCatalog surfaces)
                 $"{askedBy} asked for it to be published. Publish it from the admin panel.",
                 Link: PreviewLink(draft),
                 Subject: Subject(draft),
-                Action: "Preview it")
+                Action: "Preview it") { Actor = askedById }
             : null;
     }
 
-    public static Notification SharedWith(DraftRecord draft, Guid person, string sharedBy) => new(
+    public static Notification SharedWith(DraftRecord draft, Guid person, Guid? sharedById, string sharedBy) => new(
         DraftNotifications.SharedWithYou,
         NotificationAudience.Person(person),
         $"{sharedBy} shared “{draft.Name}” with you",
         "See it on your phone before anyone else does.",
         Link: PreviewLink(draft),
         Subject: Subject(draft),
-        Action: "Preview it");
+        Action: "Preview it") { Actor = sharedById };
 
     public static string NotPublished(string reason) =>
         reason.Length <= ConfigurationDbContext.MaximumNotPublished ? reason : reason[..(ConfigurationDbContext.MaximumNotPublished - 1)] + "…";
@@ -91,7 +91,7 @@ internal sealed class DraftRules(SurfaceCatalog surfaces)
         $"{draft.NotPublished} Open it in the admin panel's Drafts to settle it, then publish it or schedule it again.",
         Link: PreviewLink(draft),
         Subject: Subject(draft),
-        Action: "Preview it");
+        Action: "Preview it") { Actor = null };
 
     public static string Subject(DraftRecord draft) => $"draft/{draft.Id}";
 

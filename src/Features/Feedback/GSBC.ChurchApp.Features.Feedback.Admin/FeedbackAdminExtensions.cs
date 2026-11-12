@@ -27,6 +27,6 @@ public static class FeedbackAdminExtensions
         return services.AddSingleton<FeedbackDeskClient>()
             .AddSingleton<RecentPages>().AddSingleton<IClientStartupTask>(provider => provider.GetRequiredService<RecentPages>())
             .AddSingleton<FeedbackFromAdmin>()
-            .AddSingleton(new SidebarAction("Send feedback", AppIcons.Feedback, FeedbackPermissions.Send, SendFeedback));
+            .AddSingleton(new SidebarAction("Send feedback", AppIcons.Feedback, SendFeedback));
     }
 }

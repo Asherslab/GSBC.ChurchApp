@@ -39,12 +39,16 @@ public abstract class NotificationsHost : IAsyncLifetime
             .AddSingleton<PushSignal>()
             .AddSingleton<IPermissionHolders>(Holders)
             .AddSingleton<IPeopleIndex>(Holders)
+            .AddSingleton<IAccessEvaluator>(Holders)
+            .AddScoped<DigestSchedulesService>()
             .AddSingleton<IPushTransport>(Transport)
             .AddScoped<NotificationRaiser>()
+            .AddScoped<DigestSchedules>()
+            .AddScoped<DigestSending>()
             .AddScoped<PushDispatcher>()
             .AddScoped<NotificationsService>()
             .AddScoped<AnnouncementsService>()
-            .AddSingleton(new PermissionCatalog([]))
+            .AddSingleton(new PermissionCatalog([new PermissionSet([TestKinds.ReceiveNotices])]))
             .AddSingleton(new DestinationCatalog([]))
             .AddSingleton(typeof(Microsoft.Extensions.Logging.ILogger<>), typeof(NullLogger<>))
             .AddSyncData()
@@ -72,6 +76,15 @@ public abstract class NotificationsHost : IAsyncLifetime
 
     private protected Task RaiseAsync(Notification notification) =>
         WithAsync<NotificationRaiser, Guid>(raiser => raiser.RaisedAsync(notification, Cancel));
+
+    private protected Task<int> SendDigestsAsync() => WithAsync<DigestSending, int>(sending => sending.SendDueAsync(Cancel));
+
+    private protected Task CollectAsync(NotificationDigestItem item) =>
+        WithAsync<NotificationRaiser, bool>(async raiser =>
+        {
+            await raiser.CollectAsync(item, Cancel);
+            return true;
+        });
 
     private protected Task<bool> DeliverAsync() =>
         WithAsync<PushDispatcher, bool>(async dispatcher =>
