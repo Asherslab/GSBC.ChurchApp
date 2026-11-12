@@ -1,14 +1,20 @@
 @implements IDisposable
 @inject Shell Shell
 
-<div class="menu @Class" @onkeydown="OnKeyAsync">
+<div class="menu @(Block ? "menu--block" : "") @Class" @onkeydown="OnKeyAsync">
     @if (Text is null)
     {
-        <Button Variant="Variant" Small="Small" Icon="@Icon" AriaLabel="@Label" Tooltip="@Label" Expanded="_open" OnClick="ToggleAsync" />
+        <Button Variant="Variant" Small="Small" Icon="@Icon" AriaLabel="@Label" Tooltip="@Label" Expanded="_open" Disabled="Disabled" OnClick="ToggleAsync" />
     }
     else
     {
-        <Button Variant="Variant" Small="Small" Icon="@Icon" Expanded="_open" OnClick="ToggleAsync">@Text</Button>
+        <Button Variant="Variant" Small="Small" Block="Block" Icon="@Icon" AriaLabel="@(Chevron ? $"{Label}: {Text}" : null)" Expanded="_open" Disabled="Disabled" OnClick="ToggleAsync">
+            <span class="menu__text-label">@Text</span>
+            @if (Chevron)
+            {
+                <GSBC.ChurchApp.Platform.Ui.Icon Name="chevron-down" Size="IconSize.Small" Class="menu__chevron" />
+            }
+        </Button>
     }
     @if (_open)
     {
@@ -60,6 +66,9 @@
     [Parameter] public ButtonVariant Variant { get; set; } = ButtonVariant.Quiet;
     [Parameter] public bool Small { get; set; }
     [Parameter] public bool AlignStart { get; set; }
+    [Parameter] public bool Block { get; set; }
+    [Parameter] public bool Chevron { get; set; }
+    [Parameter] public bool Disabled { get; set; }
     [Parameter] public string? Class { get; set; }
 
     private Task ToggleAsync()

@@ -1,0 +1,27 @@
+<a class="board-card @(Open ? "is-open" : "") @(Quiet ? "is-quiet" : "")" href="@Href" draggable="false" aria-current="@(Open ? "true" : null)"
+   @onclick="OnOpen" @onclick:preventDefault="OnOpen.HasDelegate">
+    @if (Shot is not null)
+    {
+        <span class="board-card__shot">@Shot</span>
+    }
+    @if (Meta is not null)
+    {
+        <span class="board-card__meta">@Meta</span>
+    }
+    <strong class="board-card__title">@Title</strong>
+    @if (Labels is not null)
+    {
+        <span class="board-card__labels">@Labels</span>
+    }
+</a>
+
+@code {
+    [Parameter, EditorRequired] public required string Title { get; set; }
+    [Parameter, EditorRequired] public required string Href { get; set; }
+    [Parameter] public RenderFragment? Shot { get; set; }
+    [Parameter] public RenderFragment? Meta { get; set; }
+    [Parameter] public RenderFragment? Labels { get; set; }
+    [Parameter] public bool Open { get; set; }
+    [Parameter] public bool Quiet { get; set; }
+    [Parameter] public EventCallback<MouseEventArgs> OnOpen { get; set; }
+}
