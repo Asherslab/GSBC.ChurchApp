@@ -499,7 +499,7 @@ button.text-link:disabled { color: var(--ink-3); cursor: default; }
 .save-status--failed, .save-status--failed > .icon { color: var(--marker-ink); }
 .save-status--unsaved > .icon { color: var(--ink-3); }
 .save-status .spinner { width: 12px; height: 12px; }
-.save-status__detail { font-weight: 400; color: var(--ink-3); }
+.save-status__detail, .save-status__dot { font-weight: 400; color: var(--ink-3); }
 .save-status__retry { padding: 0; border: 0; background: none; color: var(--accent); font: inherit; text-decoration: underline; text-underline-offset: 2px; cursor: pointer; }
 .save-bar { display: grid; gap: var(--space-sm); width: 100%; container: save-bar / inline-size; }
 .save-bar > :is(.save-status, .save-bar__why) { justify-self: end; text-align: right; }

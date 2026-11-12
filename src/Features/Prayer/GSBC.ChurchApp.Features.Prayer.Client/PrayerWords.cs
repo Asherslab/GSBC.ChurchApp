@@ -72,10 +72,10 @@ public static class PrayerWords
         _ => "New",
     };
 
-    public static string WallLine(WallState wall, DateTime? until) => wall switch
+    public static string WallLine(WallState wall) => wall switch
     {
         WallState.Waiting => "Asks for the prayer wall",
-        WallState.Shown when until is { } day => $"On the prayer wall until {Day(day)}",
+        WallState.Shown => "On the prayer wall",
         WallState.KeptPrivate => "Kept off the prayer wall",
         WallState.Ended => "Was on the prayer wall",
         WallState.TakenDown => "They took it off the prayer wall",

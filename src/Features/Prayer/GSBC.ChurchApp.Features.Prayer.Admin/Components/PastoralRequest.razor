@@ -13,14 +13,18 @@
             {
                 <p><Pill Tone="PillTone.Marker">Under 18</Pill></p>
             }
+            @if (request.MayRead)
+            {
+                <CareSteps Care="line.Care" AnsweredNote="@request.AnsweredNote" Busy="@(_busy == "care")" Move="CareAsync" />
+            }
+            else
+            {
+                <p class="prayer-band__state">@PrayerWords.WallLine(line.Wall)</p>
+            }
             <p class="prayer-request__text">@line.Text</p>
             @if (line.Minor)
             {
                 <Notice Tone="NoticeTone.Warning" Text="They're under 18. Take extra care with what's shared, and follow the church's child safety policy if anything in it worries you." />
-            }
-            @if (request.MayRead)
-            {
-                <CareSteps Care="line.Care" AnsweredNote="@request.AnsweredNote" Busy="@(_busy == "care")" Move="CareAsync" />
             }
             <Notice Tone="NoticeTone.Warning" Text="@_problem" />
         </div>

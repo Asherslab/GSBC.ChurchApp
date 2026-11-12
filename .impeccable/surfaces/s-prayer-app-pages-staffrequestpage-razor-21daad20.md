@@ -22,11 +22,11 @@ person's own request); the admin desk's record pane follows the same order insid
 THESIS: a request reads like a ticket: where it stands first, in one sand band, then their words, then each job in its
 own group. Refuses the old single column where actions, the wall form and notes ran together undifferentiated.
 
-OWN-WORLD: the app's bulletin world unchanged: sand band (sand-strong) under the solid navy top bar, the shared
+OWN-WORLD: the app's bulletin world unchanged: a band in `--sand-strong` as the theme renders it (Themes.cs mixes 8% of the masthead navy into it, so it reads a cooler sand than the page ground, which sets it apart) under the solid navy top bar, the shared
 StagePipeline in deep aqua, white inset groups on the group ground with caption headings in ink-2, field fills in sand,
 Save bottom right with the quiet second action at the left.
 
-STORY: the approver sees who and when and the care step at a glance, reads the words, then decides the wall in its
+STORY: the approver sees who and when and where it stands (the care steps, or for a wall-only approver one strong status line) at a glance, reads the words, then decides the wall in its
 group, then contact and notes. The person sees Sent → On the prayer wall → Answered and acts from a ⋯-free list.
 
 FIRST VIEWPORT: top bar; sand band full width with the meta line (sent, name, Under 18 pill) and the three-stage
