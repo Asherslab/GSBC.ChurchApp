@@ -5,7 +5,7 @@
     "src/Features/Configuration/GSBC.ChurchApp.Features.Configuration.Client/wwwroot/css/drafts.css": 113,
     "src/Features/Events/GSBC.ChurchApp.Features.Events.Client/wwwroot/css/events.css": 206,
     "src/Features/Feedback/GSBC.ChurchApp.Features.Feedback.Client/wwwroot/css/feedback.css": 64,
-    "src/Features/Media/GSBC.ChurchApp.Features.Media.Client/wwwroot/css/media.css": 65,
+    "src/Features/Media/GSBC.ChurchApp.Features.Media.Client/wwwroot/css/media.css": 51,
     "src/Features/Ministries/GSBC.ChurchApp.Features.Ministries.Client/wwwroot/css/ministries.css": 73,
     "src/Features/Notifications/GSBC.ChurchApp.Features.Notifications.Client/wwwroot/css/notifications.css": 27,
     "src/Features/People/GSBC.ChurchApp.Features.People.Client/wwwroot/css/people.css": 36,
@@ -91,7 +91,6 @@
     "src/Features/Chats/GSBC.ChurchApp.Features.Chats.Admin/Pages/ChatsTabView.razor": 1,
     "src/Features/Chats/GSBC.ChurchApp.Features.Chats.Admin/Pages/ReportsTab.razor": 1,
     "src/Features/Events/GSBC.ChurchApp.Features.Events.Admin/Pages/DigestDesk.razor": 1,
-    "src/Features/Media/GSBC.ChurchApp.Features.Media.Client/MediaLibrary.razor": 1,
     "src/Features/Ministries/GSBC.ChurchApp.Features.Ministries.Client/Components/PeopleArea.razor": 1
   },
   "deleteOutsideMenu": {
@@ -105,7 +104,6 @@
     "src/Features/Events/GSBC.ChurchApp.Features.Events.Admin/Components/CalendarSettingsPanel.razor": 1,
     "src/Features/Events/GSBC.ChurchApp.Features.Events.Client/EventEditor.razor": 1,
     "src/Features/Events/GSBC.ChurchApp.Features.Events.Client/RegularEventEditor.razor": 2,
-    "src/Features/Media/GSBC.ChurchApp.Features.Media.Client/MediaLibrary.razor": 3,
     "src/Features/Media/GSBC.ChurchApp.Features.Media.Client/PictureVersions.razor": 1,
     "src/Features/Ministries/GSBC.ChurchApp.Features.Ministries.Client/Components/SettingsArea.razor": 1,
     "src/Features/Notifications/GSBC.ChurchApp.Features.Notifications.Client/AnnouncementsDesk.razor": 2,
