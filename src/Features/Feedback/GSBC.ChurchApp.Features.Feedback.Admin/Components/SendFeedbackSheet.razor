@@ -40,10 +40,7 @@
         </div>
     </ChildContent>
     <Actions>
-        <div class="feedback-send__actions">
-            <Button Variant="ButtonVariant.Quiet" OnClick="() => OpenChanged.InvokeAsync(false)">Cancel</Button>
-            <SaveBar Label="Send" Busy="_sending" OnSave="SendAsync" Blocked="@Blocked" />
-        </div>
+        <SaveBar Label="Send" Busy="_sending" OnSave="SendAsync" Blocked="@Blocked" OnCancel="() => OpenChanged.InvokeAsync(false)" Class="feedback-send__save" />
     </Actions>
 </Sheet>
 @if (_thanks)

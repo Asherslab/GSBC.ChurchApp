@@ -113,9 +113,7 @@
 .feedback-send__drop strong { color: var(--ink); font-size: var(--text-label); font-weight: 700; }
 .feedback-send__drop kbd { padding: 1px 6px; border-radius: var(--radius-tile); background: var(--sand); font: inherit; font-weight: 700; font-variant-numeric: tabular-nums; }
 .feedback-send.is-dropping .feedback-send__drop { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, var(--page)); }
-.feedback-send__actions { display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: flex-start; gap: 8px; }
-.feedback-send__actions .save-bar { display: contents; }
-.feedback-send__actions .save-bar__why { flex-basis: 100%; text-align: right; }
+.feedback-send__save { width: 100%; }
 .feedback-send__thanks { display: flex; align-items: center; gap: 8px; margin: 4px 0 0; padding: 8px 10px; border-radius: var(--radius-inner); background: var(--masthead-chip); color: var(--on-masthead); font-size: var(--text-caption); font-weight: 600; animation: fade 200ms var(--ease-out) both; }
 dialog.is-capturing { visibility: hidden; }
 @media (min-width: 720px) {
