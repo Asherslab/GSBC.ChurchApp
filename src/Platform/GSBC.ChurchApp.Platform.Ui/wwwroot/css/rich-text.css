@@ -1017,5 +1017,5 @@
     position: sticky;
     left: 0;
     z-index: 1;
-    box-shadow: 0 0 0 var(--space-xs) var(--surface);
+    box-shadow: 0 0 0 var(--space-xs) var(--surface), calc(-1 * var(--space-sm)) 0 0 var(--space-sm) var(--surface);
 }

@@ -216,7 +216,13 @@ function decorate(view, emoji) {
   for (const { from, to } of view.visibleRanges) {
     for (let position = from; position <= to;) {
       const line = state.doc.lineAt(position);
-      if (footnoteDefinition.test(line.text) && !lineMarks.has(line.from)) lineMarks.set(line.from, lines.Footnote);
+      if (footnoteDefinition.test(line.text) && !lineMarks.has(line.from)) {
+        lineMarks.set(line.from, lines.Footnote);
+        if (!touches(selection, line.from, line.to)) {
+          const close = line.text.indexOf(']');
+          marks.push(collapsed.range(line.from, line.from + 2), collapsed.range(line.from + close, line.from + close + 1));
+        }
+      }
       if (line.length === 0 && line.number > 1 && line.number < state.doc.lines && !(selection && touches(selection, line.from, line.to)) && !lineMarks.has(line.from) && !inMedia(line.from))
         lineMarks.set(line.from, listLine.test(state.doc.line(line.number - 1).text) && listLine.test(state.doc.line(line.number + 1).text) ? blankInList : blankLine);
       position = line.to + 1;
