@@ -8,20 +8,22 @@
 @switch (Block)
 {
     case GalleryBlock gallery:
-        <div class="rich-text-gallery" data-count="@Math.Min(gallery.Items.Count, 4)">
-            @foreach ((MediaBlock item, int index) in Found(gallery.Items).Select((item, index) => (item, index)))
+        <figure class="rich-text-figure">
+            <div class="rich-text-gallery" data-count="@Math.Min(gallery.Items.Count, 4)">
+                @foreach ((MediaBlock item, int index) in Found(gallery.Items).Select((item, index) => (item, index)))
+                {
+                    <div class="rich-text-gallery__item">
+                        <PictureOpen Label="@($"Open {Describe(item)}")" OnOpen="() => Open(index)">
+                            <MediaImage Media="Media(item)" Alt="@Describe(item)" Size="MediaSizeName.Thumbnail" Class="rich-text-gallery__picture" />
+                        </PictureOpen>
+                    </div>
+                }
+            </div>
+            @if (gallery.Items[0].Caption.Length > 0)
             {
-                <figure class="rich-text-gallery__item">
-                    <PictureOpen Label="@($"Open {Describe(item)}")" OnOpen="() => Open(index)">
-                        <MediaImage Media="Media(item)" Alt="@Describe(item)" Size="MediaSizeName.Thumbnail" Class="rich-text-gallery__picture" />
-                    </PictureOpen>
-                    @if (item.Caption.Length > 0)
-                    {
-                        <figcaption>@item.Caption</figcaption>
-                    }
-                </figure>
+                <figcaption>@gallery.Items[0].Caption</figcaption>
             }
-        </div>
+        </figure>
         <PictureViewer @bind-Open="_viewing" @bind-Index="_viewingAt" Pictures="Pictures(gallery.Items)" Noun="Picture" About="@About" />
         break;
     case MediaBlock single when Content.MediaById(single.MediaId) is { } media:

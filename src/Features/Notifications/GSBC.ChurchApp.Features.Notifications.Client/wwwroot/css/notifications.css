@@ -57,3 +57,5 @@
 .announcement-confirm div { display: grid; grid-template-columns: 110px minmax(0, 1fr); gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--line); font-size: var(--text-row); }
 .announcement-confirm dt { color: var(--ink-2); font-size: var(--text-label); font-weight: 600; }
 .announcement-confirm dd { margin: 0; color: var(--ink); }
+
+.announcement-history__message { max-width: 65ch; margin: var(--space-md) 0; white-space: pre-line; color: var(--ink); }

@@ -1,0 +1,60 @@
+@page "/news/desk"
+@inject INewsReads News
+@inject IAccess Access
+@inject TimeProvider Clock
+
+<Page Title="To look at" BackHref="news" BackLabel="News" TopBar="TopBarStyle.Solid">
+    <LiveData TValue="IReadOnlyList<NewsPost>" Load="News.DeskAsync" Feeds="News.Feeds" ReloadOn="Reload" Remember="news.desk">
+        @foreach ((string title, string lead, NewsState[] states) in Groups)
+        {
+            List<NewsPost> posts = context.Value.Where(post => states.Contains(post.State)).OrderByDescending(post => post.CreatedAt).ToList();
+            @if (posts.Count > 0)
+            {
+                <Section Title="@title" Lead="@lead" First="@(title == FirstShown(context.Value))">
+                    <ListGroup>
+                        @foreach (NewsPost post in posts)
+                        {
+                            <ListRow @key="post.Id" Title="@post.Title" Subtitle="@Line(post)" Icon="@Icon(post)" IconTone="@(post.State == NewsState.Asked ? RowTone.Warm : RowTone.Quiet)"
+                                     Chevron="true" Href="@NewsWords.Href(post.Id)" />
+                        }
+                    </ListGroup>
+                </Section>
+            }
+        }
+        @if (!context.Value.Any(post => post.State != NewsState.Published))
+        {
+            <Section First="true">
+                <EmptyState Icon="check" Title="Nothing to look at" Body="Drafts, posts waiting to be published and ministries' asks show here." />
+            </Section>
+        }
+    </LiveData>
+</Page>
+
+@code {
+    private const ChangeKind Reload = ChangeKind.Reconnected | ChangeKind.Session | ChangeKind.Access | ChangeKind.Outbox;
+
+    private static readonly IReadOnlyList<(string Title, string Lead, NewsState[] States)> Groups =
+    [
+        ("Ministries asking", "A ministry's leaders ask for one of its posts to go to the whole church.", [NewsState.Asked]),
+        ("Waiting to be published", "Written by someone who asks for it to be published.", [NewsState.WaitingToPublish]),
+        ("Scheduled", "These publish by themselves at their time.", [NewsState.Scheduled]),
+        ("Being written", "Drafts nobody has posted yet.", [NewsState.Draft]),
+    ];
+
+    private static string FirstShown(IReadOnlyList<NewsPost> posts) =>
+        Groups.FirstOrDefault(group => posts.Any(post => group.States.Contains(post.State))).Title ?? "";
+
+    private string Line(NewsPost post) => post.State switch
+    {
+        NewsState.Asked => $"{post.From} · asked by {(post.AskedBy.Length > 0 ? post.AskedBy : "a leader")}",
+        NewsState.Scheduled when post.PublishAt is { } at => $"Publishes {ChurchDates.Describe(at, DateLineStyle.Relative, withTime: true, Clock.GetUtcNow().UtcDateTime)}",
+        _ => post.Author.Length > 0 ? $"By {post.Author}" : NewsWords.State(post),
+    };
+
+    private static string Icon(NewsPost post) => post.State switch
+    {
+        NewsState.Asked => "users-round",
+        NewsState.Scheduled => "clock",
+        _ => "pencil",
+    };
+}

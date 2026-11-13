@@ -1,0 +1,186 @@
+@using System.Globalization
+@using GSBC.ChurchApp.Platform.Client.Uploads
+@using GSBC.ChurchApp.Platform.Contracts.Configuration
+@using GSBC.ChurchApp.Platform.Contracts.Content
+@using GSBC.ChurchApp.Platform.Ui.Content
+@using GSBC.ChurchApp.Platform.Ui.News
+@inject NewsWrites Writes
+@inject IAccess Access
+@inject TimeProvider Clock
+
+<UnsavedGuard Changed="() => Changed" Editing="Post" State="() => Shape" What="this post" />
+
+<div class="news-form">
+    <PostEditor @ref="_editor" Title="@_title" TitleChanged="title => _title = title" Blocks="_blocks" OnChanged="() => _changes++" Target="Target"
+                SettingsSummary="@Summary">
+        <Settings>
+            <AudiencePicker Label="Who it's for" Value="@_audience" ValueChanged="audience => _audience = audience" />
+            @if (Post.ToldAt is { } told)
+            {
+                <p class="news-form__note">Its notification went @ChurchDates.Describe(told, DateLineStyle.Relative, withTime: true, Clock.GetUtcNow().UtcDateTime).</p>
+            }
+            else
+            {
+                <ToggleRow Title="Send a notification" Description="It opens the post. People who turned church news off don't get it." @bind-Checked="_tell" />
+                @if (_tell)
+                {
+                    <TextField Label="What it says" Value="@_tellTitle" ValueChanged="text => _tellTitle = text" Placeholder="@_title" MaxLength="120"
+                               Hint="Leave it empty to use the title" />
+                    <TextField Label="Its line" Value="@_tellBody" ValueChanged="text => _tellBody = text" Multiline="true" MaxLength="240"
+                               Hint="Leave it empty to use the start of the post" />
+                    <ToggleRow Title="Urgent" Description="Buzzes phones in quiet hours too, for something people need to know now" @bind-Checked="_urgent" />
+                }
+            }
+            <TextField Label="A link at the end (optional)" Value="@_linkPath" ValueChanged="path => _linkPath = path" Type="url" Placeholder="/events or https://…"
+                       Hint="A page in the app, such as an event, or a web address" Problem="@LinkProblem" />
+            @if (_linkPath.Trim().Length > 0)
+            {
+                <TextField Label="The link's words" Value="@_linkLabel" ValueChanged="label => _linkLabel = label" Placeholder="Open it" MaxLength="40" />
+            }
+            @if (MayPublish && Post.State is not NewsState.Published)
+            {
+                <Segmented TValue="bool" Label="When" ShowLabel="true" Options="WhenOptions" Value="_later" ValueChanged="later => _later = later" />
+                @if (_later)
+                {
+                    <DateTimeField Label="Publish it at" Value="@_publishAt" ValueChanged="value => _publishAt = value" Problem="@LaterProblem" />
+                }
+            }
+        </Settings>
+    </PostEditor>
+    <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+    <SaveBar Label="@SaveLabel" Busy="_busy" OnSave="SaveAsync" OnCancel="OnCancel" New="@(Post.Id.Length == 0)" Blocked="@Blocked">
+        @if (Post.Id.Length > 0 && MayPublish && Post.State is NewsState.Draft or NewsState.WaitingToPublish)
+        {
+            <Button Variant="ButtonVariant.Quiet" Disabled="_busy" OnClick="TryAsync">Send to my phone</Button>
+        }
+    </SaveBar>
+</div>
+
+@code {
+    private const string LocalFormat = "yyyy-MM-ddTHH:mm";
+    private static readonly string[] LocalFormats = [LocalFormat, "yyyy-MM-ddTHH:mm:ss"];
+
+    private static readonly IReadOnlyList<SegmentOption<bool>> WhenOptions = [new(false, "Now"), new(true, "Later")];
+
+    private PostEditor? _editor;
+    private List<PostBlock> _blocks = [];
+    private string _title = "", _audience = "", _tellTitle = "", _tellBody = "", _linkPath = "", _linkLabel = "", _publishAt = "";
+    private bool _tell, _urgent, _later, _busy;
+    private int _changes;
+    private string? _problem;
+    private object? _loadedShape;
+
+    [Parameter, EditorRequired] public required NewsPost Post { get; set; }
+    [Parameter] public EventCallback<NewsPost> OnSaved { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+
+    private bool MayPublish => Access.Can(NewsPermissions.Publish);
+
+    private static UploadTarget Target => new(Area: NewsAreas.Media, AreaScopeId: NewsAreas.Media);
+
+    private object Shape => (_title, _changes, _audience, _tell, _tellTitle, _tellBody, _urgent, _linkPath, _linkLabel, _later, _publishAt);
+
+    private bool Changed => !Equals(Shape, _loadedShape);
+
+    protected override void OnParametersSet()
+    {
+        if (ReferenceEquals(_loadedFor, Post))
+            return;
+        _loadedFor = Post;
+        (_id, _sent) = (Post.Id.Length > 0 ? Post.Id : Guid.CreateVersion7().ToString(), false);
+        _blocks = PostBlocks.Of(Post.Body);
+        if (_blocks.Count == 0)
+            _blocks.Add(new PostBlock { Kind = PostBlockKind.Text });
+        (_title, _audience) = (Post.Title, Post.Audience.Length > 0 ? Post.Audience : Audience.Everyone.Text);
+        bool isNew = Post.Id.Length == 0;
+        (_tell, _tellTitle, _tellBody, _urgent) = (isNew || Post.Tell, Post.TellTitle, Post.TellBody, Post.Urgent);
+        (_linkPath, _linkLabel) = (Post.LinkPath, Post.LinkLabel == "Open it" ? "" : Post.LinkLabel);
+        (_later, _publishAt) = (Post.PublishAt is not null, Post.PublishAt is { } at ? ChurchTime.ToChurch(at).ToString(LocalFormat, CultureInfo.InvariantCulture) : "");
+        _changes = 0;
+        _loadedShape = Shape;
+    }
+
+    private NewsPost? _loadedFor;
+
+    private string Summary => string.Join(" · ", new[]
+    {
+        AudienceWords(_audience),
+        Post.ToldAt is not null ? "Notification sent" : _tell ? _urgent ? "Urgent notification" : "Notification on" : "No notification",
+        !MayPublish ? "Asks to be published" : _later && Later is { } at ? $"At {ChurchDates.Describe(at, DateLineStyle.Short, withTime: true, Clock.GetUtcNow().UtcDateTime)}" : Post.State == NewsState.Published ? "Published" : "Now",
+    });
+
+    private static string AudienceWords(string audience) =>
+        !Audience.TryParse(audience, out Audience? parsed) || parsed == Audience.Everyone ? "Everyone"
+        : parsed == Audience.SignedIn ? "Everyone signed in"
+        : parsed.IsForRoles ? parsed.RoleIds.Count == 1 ? "People in a role" : $"People in {parsed.RoleIds.Count} roles"
+        : "Some people";
+
+    private DateTime? Later => DateTime.TryParseExact(_publishAt, LocalFormats, CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime local)
+        ? ChurchTime.ToUtc(local)
+        : null;
+
+    private string? LaterProblem => _later && _publishAt.Length > 0 && Later is { } at && at <= Clock.GetUtcNow().UtcDateTime ? "Choose a time that hasn't passed." : null;
+
+    private string? LinkProblem => _linkPath.Trim().Length > 0 && !LinkTargets.IsSafe(_linkPath.Trim()) ? "Use a page in the app, such as /events, or an https:// address." : null;
+
+    private string SaveLabel =>
+        Post.State == NewsState.Published ? "Save"
+        : !MayPublish ? "Ask for it to be published"
+        : _later ? "Schedule it"
+        : AudienceWords(_audience) == "Everyone" ? "Post for everyone" : "Post it";
+
+    private string? Blocked =>
+        _title.Trim().Length == 0 ? "Give it a title to post it."
+        : _later && MayPublish && Later is null ? "Choose when to publish it."
+        : LaterProblem ?? LinkProblem;
+
+    private string _id = "";
+    private bool _sent;
+
+    private NewsPost Wanted() => new()
+    {
+        Id = _id, New = Post.Id.Length == 0 && !_sent, Title = _title.Trim(), Body = _editor?.Content ?? PostBlocks.ToRichText(_blocks), Audience = _audience,
+        Tell = _tell, TellTitle = _tellTitle.Trim(), TellBody = _tellBody.Trim(), Urgent = _tell && _urgent,
+        LinkPath = _linkPath.Trim(), LinkLabel = _linkLabel.Trim(),
+    };
+
+    private Task SaveAsync() => RunAsync(async () =>
+    {
+        NewsPost saved = await Writes.SaveAsync(Wanted(), _editor?.WaitingFiles() ?? []);
+        _sent = true;
+        if (Post.State is not NewsState.Published)
+        {
+            if (MayPublish)
+                await Writes.PublishAsync(saved.Id, _later ? Later : null);
+            else
+                await Writes.AskToPublishAsync(saved.Id);
+        }
+        _loadedShape = Shape;
+        await OnSaved.InvokeAsync(saved);
+    });
+
+    private Task TryAsync() => RunAsync(async () =>
+    {
+        NewsPost saved = await Writes.SaveAsync(Wanted(), _editor?.WaitingFiles() ?? []);
+        _sent = true;
+        await Writes.TryOnMyPhoneAsync(saved.Id);
+        _loadedShape = Shape;
+    });
+
+    private async Task RunAsync(Func<Task> work)
+    {
+        (_busy, _problem) = (true, null);
+        try
+        {
+            await work();
+        }
+        catch (Grpc.Core.RpcException exception)
+        {
+            _problem = exception.Status.Detail;
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+}

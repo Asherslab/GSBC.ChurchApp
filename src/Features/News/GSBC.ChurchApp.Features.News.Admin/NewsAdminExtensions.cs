@@ -1,5 +1,6 @@
 using GSBC.ChurchApp.Features.News.Client;
 using GSBC.ChurchApp.Features.News.Contracts;
+using GSBC.ChurchApp.Platform.Client.Destinations;
 using GSBC.ChurchApp.Platform.Client.Modules;
 using GSBC.ChurchApp.Platform.Icons;
 using Microsoft.Extensions.DependencyInjection;
@@ -14,6 +15,7 @@ public static class NewsAdminExtensions
             [new NavEntry("Church news", "news", AppIcons.News, NewsPermissions.Write, Area: NavAreas.ThisWeek,
                 Summary: "News for the whole church: write, publish and schedule posts and their notifications, and answer ministries' asks")],
             [NewsFeeds.Desk], []));
-        return services.AddNewsClient().AddSingleton<OnlineNews>().AddSingleton<INewsReads>(provider => provider.GetRequiredService<OnlineNews>());
+        return services.AddNewsClient().AddSingleton<OnlineNews>().AddSingleton<INewsReads>(provider => provider.GetRequiredService<OnlineNews>())
+            .AddPlaceAction(new PlaceAction("Tell the church about it", AppIcons.News, place => $"news?opens={Uri.EscapeDataString(place.Path)}", NewsPermissions.Write));
     }
 }

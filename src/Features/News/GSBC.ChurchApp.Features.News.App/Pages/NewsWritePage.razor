@@ -1,0 +1,43 @@
+@page "/news/write"
+@page "/news/{Id:guid}/change"
+@inject INewsReads News
+@inject IAccess Access
+@inject NavigationManager Navigation
+
+<Page Title="@(Id is null ? "New post" : "Change the post")" BackHref="@Back" BackLabel="@(Id is null ? "News" : "The post")" TopBar="TopBarStyle.Solid">
+    <Section First="true">
+        @if (!Access.Can(NewsPermissions.Write))
+        {
+            <EmptyState Icon="@AppIcons.News" Title="Writing church news needs church staff's go-ahead" Body="Ask the church office if you'd like to post church news." />
+        }
+        else
+        {
+            <LiveData TValue="EditedPost" Load="LoadAsync" Feeds="News.Feeds" Remember="@($"news.write.{Id}")">
+                @if (context.Value.Post is { } post)
+                {
+                    <NewsPostForm Post="post" OnSaved="saved => Navigation.NavigateTo(NewsWords.Href(saved.Id))" OnCancel="() => Navigation.NavigateTo(Back)" />
+                }
+                else
+                {
+                    <EmptyState Icon="@AppIcons.News" Title="This post isn't here any more" Body="It may have been deleted." />
+                }
+            </LiveData>
+        }
+    </Section>
+</Page>
+
+@code {
+    [Parameter] public Guid? Id { get; set; }
+
+    private string Back => Id is { } id ? NewsWords.Href(id.ToString()) : "news";
+
+    private sealed record EditedPost(NewsPost? Post);
+
+    private async Task<EditedPost> LoadAsync()
+    {
+        if (Id is not { } id)
+            return new EditedPost(new NewsPost());
+        string wanted = id.ToString();
+        return new EditedPost((await News.DeskAsync()).FirstOrDefault(post => post.Id == wanted));
+    }
+}

@@ -44,7 +44,14 @@ public sealed class OnlineMinistries(ChannelBase channel) : IMinistryReads, IMin
     public async Task LinkParentAsync(string ministryId, string childId, string parentId) =>
         await _leading.LinkParentAsync(new LinkParentRequest { MinistryId = ministryId, ChildId = childId, ParentId = parentId });
 
-    public async Task SavePostAsync(string ministryId, Post post) => await _leading.SavePostAsync(new PostSave { MinistryId = ministryId, Post = post });
+    public async Task SavePostAsync(string ministryId, Post post, IReadOnlyList<QueuedUpload>? uploads = null) =>
+        await _leading.SavePostAsync(new PostSave { MinistryId = ministryId, Post = post });
+
+    public async Task ShareToChurchNewsAsync(string ministryId, string postId, bool tell) =>
+        await _leading.ShareToChurchNewsAsync(new ChurchNewsShare { MinistryId = ministryId, Id = postId, Tell = tell });
+
+    public async Task TakeOffChurchNewsAsync(string ministryId, string postId) =>
+        await _leading.TakeOffChurchNewsAsync(new ItemRef { MinistryId = ministryId, Id = postId });
 
     public async Task DeletePostAsync(string ministryId, string id) => await _leading.DeletePostAsync(new ItemRef { MinistryId = ministryId, Id = id });
 

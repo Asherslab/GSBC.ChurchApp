@@ -21,7 +21,11 @@ public interface IMinistryWrites
 
     Task LinkParentAsync(string ministryId, string childId, string parentId);
 
-    Task SavePostAsync(string ministryId, Post post);
+    Task SavePostAsync(string ministryId, Post post, IReadOnlyList<QueuedUpload>? uploads = null);
+
+    Task ShareToChurchNewsAsync(string ministryId, string postId, bool tell);
+
+    Task TakeOffChurchNewsAsync(string ministryId, string postId);
 
     Task DeletePostAsync(string ministryId, string id);
 

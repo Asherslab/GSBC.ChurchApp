@@ -23,13 +23,15 @@ public static class TabBarSurfaces
 
     public static readonly Surface Home = TabSettings.Declare("app.tab.home", new TabDefaults(ShellDestinations.Home.Path, "Home", "home"), defaultOrder: 100);
 
+    public static readonly Surface News = TabSettings.Declare("app.tab.news", new TabDefaults("/news", "News", "megaphone"), defaultOrder: 150);
+
     public static readonly Surface Sermons = TabSettings.Declare("app.tab.sermons", new TabDefaults("/sermons", "Sermons", "sermons"), defaultOrder: 200);
 
     public static readonly Surface Tab = TabSettings.Declare("app.tab", new TabDefaults("", "", ""), defaultOrder: 1000, repeatable: true);
 
-    public static readonly IReadOnlyList<Surface> StartingTabs = [Home, Sermons];
+    public static readonly IReadOnlyList<Surface> StartingTabs = [Home, News, Sermons];
 
-    public static SurfaceSet All => new([Home, Sermons, Tab]);
+    public static SurfaceSet All => new([Home, News, Sermons, Tab]);
 
     public static bool IsTab(Surface surface) => surface.Area.Key == Area.Key;
 

@@ -16,6 +16,8 @@ public static class MinistryMethods
     public const string LinkParent = Leading + "LinkParent";
     public const string SavePost = Leading + "SavePost";
     public const string DeletePost = Leading + "DeletePost";
+    public const string ShareToChurchNews = Leading + "ShareToChurchNews";
+    public const string TakeOffChurchNews = Leading + "TakeOffChurchNews";
     public const string SaveFile = Leading + "SaveFile";
     public const string DeleteFile = Leading + "DeleteFile";
     public const string SaveMinistry = Leading + "SaveMinistry";

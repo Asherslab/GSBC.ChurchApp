@@ -17,6 +17,7 @@ public sealed class NewsWrites(IWrites writes, IServiceProvider services)
         NewsPost sent = NewsContractsModel.Instance.DeepClone(post);
         if (sent.Id.Length == 0)
             (sent.Id, sent.New) = (Guid.CreateVersion7().ToString(), true);
+        sent.Picture = null;
         NewsSave save = new() { Post = sent };
         FileUploads? uploads = services.GetService<FileUploads>();
         List<QueuedUpload> queued = uploads is null ? [] : waiting

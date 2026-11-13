@@ -403,10 +403,12 @@ internal sealed class EventEditingService(
             : occurrence.NotOn ? "Not on" : occurrence.ChangeNote.Length > 0 ? occurrence.ChangeNote : WhenWords(occurrence);
         await notifications.RaiseOneOfAsync(Tellable(calendar).Select(audience => new Notification(EventsNotifications.Told, audience, title, body,
             Link: EventsDestinations.Event.PathOf(occurrence.Id), Subject: $"events/told/{occurrence.Id}/{now.Ticks}", ScopeId: calendar.Id.ToString(),
-            Action: "Open") { Actor = Caller.UserId(UserOf(context)) }).ToList(), cancellationToken);
+            Action: "Open", Urgent: IsCancelledToday(occurrence, day, now)) { Actor = Caller.UserId(UserOf(context)) }).ToList(), cancellationToken);
         await db.SaveChangesAsync(cancellationToken);
         return new Done();
     }
+
+    public static bool IsCancelledToday(EventOccurrence occurrence, DateOnly day, DateTime now) => occurrence.NotOn && day == ChurchTime.DayOf(now);
 
     public async ValueTask<NeedsDetailsList> NeedsDetailsAsync(Done request, CallContext context = default)
     {

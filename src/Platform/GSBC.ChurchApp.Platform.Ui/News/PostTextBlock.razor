@@ -1,0 +1,112 @@
+@using GSBC.ChurchApp.Platform.Contracts.Content
+@using GSBC.ChurchApp.Platform.Ui.Content
+@implements IAsyncDisposable
+@inject IJSRuntime JS
+
+<div class="rich-text-editor post-text">
+    <div class="rich-text-toolbar post-text__tools" role="toolbar" aria-label="Formatting">
+        <button type="button" data-action="bold" title="Bold (⌘B)" aria-label="Bold" @onclick='() => WrapAsync("**", "bold text")'><strong>B</strong></button>
+        <button type="button" data-action="italic" title="Italic (⌘I)" aria-label="Italic" @onclick='() => WrapAsync("*", "italic text")'><em>I</em></button>
+        <button type="button" title="Bulleted list" aria-label="Bulleted list" @onclick="() => LinesAsync(LineStyle.Bullets)"><Icon Name="list" Size="IconSize.Small" /></button>
+        <button type="button" title="Numbered list" aria-label="Numbered list" @onclick="() => LinesAsync(LineStyle.Numbers)">1.</button>
+        <button type="button" title="Quote" aria-label="Quote" @onclick="() => LinesAsync(LineStyle.Quote)">“ ”</button>
+        <button type="button" data-action="link" title="Link (⌘K)" aria-label="Link" aria-pressed="@_linking" @onclick="StartLinkAsync"><Icon Name="link" Size="IconSize.Small" /></button>
+    </div>
+    @if (_linking)
+    {
+        <div class="rich-text-panel">
+            <label>
+                Link to
+                <input type="text" inputmode="url" @bind="_href" @bind:event="oninput" placeholder="https://…, /events, mailto:… or tel:…" />
+            </label>
+            <button type="button" data-action="add-link" @onclick="AddLinkAsync" disabled="@(!LinkTargets.IsSafe(_href.Trim()))">Add link</button>
+            <button type="button" class="link" @onclick="() => _linking = false">Cancel</button>
+        </div>
+    }
+    <textarea class="rich-text-input post-text__input" @ref="_textarea" value="@Block.Text" @oninput="TypedAsync" rows="@Rows" aria-label="@Label"
+              placeholder="Write here. Bold, lists, quotes and links are in the bar above."></textarea>
+</div>
+
+@code {
+    private ElementReference _textarea;
+    private IJSObjectReference? _module;
+    private (int Start, int End)? _pendingSelection;
+    private bool _linking;
+    private string _href = "";
+    private EditorText _beforeLink;
+
+    [Parameter, EditorRequired] public required PostBlock Block { get; set; }
+    [Parameter] public EventCallback OnChanged { get; set; }
+    [Parameter] public string Label { get; set; } = "Text";
+
+    private int Rows => Math.Clamp(Block.Text.Count(character => character == '\n') + 3, 3, 14);
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _module = await JS.InvokeAsync<IJSObjectReference>("import", "./_content/GSBC.ChurchApp.Platform.Ui/js/rich-text-editor.js");
+            await _module.InvokeVoidAsync("attach", _textarea);
+        }
+        if (_pendingSelection is { } selection && _module is not null)
+        {
+            _pendingSelection = null;
+            await _module.InvokeVoidAsync("select", _textarea, selection.Start, selection.End);
+        }
+    }
+
+    private Task TypedAsync(ChangeEventArgs change)
+    {
+        Block.Text = change.Value?.ToString() ?? "";
+        return OnChanged.InvokeAsync();
+    }
+
+    private async Task WrapAsync(string marker, string placeholder) => await ApplyAsync(RichTextEdits.Wrap(await CurrentAsync(), marker, placeholder));
+
+    private async Task LinesAsync(LineStyle style) => await ApplyAsync(RichTextEdits.Lines(await CurrentAsync(), style));
+
+    private async Task StartLinkAsync()
+    {
+        _beforeLink = await CurrentAsync();
+        _linking = !_linking;
+        string selected = _beforeLink.Selected.Trim();
+        _href = LinkTargets.IsSafe(selected) ? selected : "";
+    }
+
+    private async Task AddLinkAsync()
+    {
+        _linking = false;
+        await ApplyAsync(RichTextEdits.Link(_beforeLink, _href.Trim(), "link text"));
+    }
+
+    private async Task<EditorText> CurrentAsync()
+    {
+        if (_module is null)
+            return new EditorText(Block.Text, Block.Text.Length, Block.Text.Length);
+        string[] parts = (await _module.InvokeAsync<string>("selection", _textarea)).Split(',', 3);
+        string text = parts[2];
+        int start = Math.Clamp(int.Parse(parts[0], System.Globalization.CultureInfo.InvariantCulture), 0, text.Length);
+        int end = Math.Clamp(int.Parse(parts[1], System.Globalization.CultureInfo.InvariantCulture), start, text.Length);
+        return new EditorText(text, start, end);
+    }
+
+    private Task ApplyAsync(EditorText edited)
+    {
+        Block.Text = edited.Text;
+        _pendingSelection = (edited.Start, edited.End);
+        return OnChanged.InvokeAsync();
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_module is null)
+            return;
+        try
+        {
+            await _module.DisposeAsync();
+        }
+        catch (JSDisconnectedException)
+        {
+        }
+    }
+}

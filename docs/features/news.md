@@ -44,3 +44,7 @@ embedded/etc in them".
 9. **Reading one post** (owner's pick on the decision page, 2026-11-13: *Its pictures and videos lead, as a strip*): the
    post's pictures and videos lead at the top as one swipeable strip (1 of 5); then the title, who posted it and when,
    and the text, where each still shows in place (`.impeccable/mocks/church-news/p-a-strip.html`).
+10. **Writing a post** (owner's pick on the decision page, 2026-11-13: *The post as blocks you add and move*): the post is a
+    list of blocks (text, a heading, a gallery with its caption, a video, a file), each moved by its handle or from its ⋯
+    menu, with an Add row of Text, Picture, Video, Audio and File; who it's for, the notification and when sit on one row
+    that opens their settings (`.impeccable/mocks/church-news/e-b-blocks.html`). The admin panel uses the same editor.

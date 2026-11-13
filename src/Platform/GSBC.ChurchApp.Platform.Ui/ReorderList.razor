@@ -30,7 +30,7 @@
             }
             @if (!Quiet)
             {
-                <Menu Label="@($"Move {Name(item)}")" Items="Moves(at)" Small="true" Disabled="Disabled" />
+                <Menu Label="@(More is null ? $"Move {Name(item)}" : $"More for {Name(item)}")" Items="[.. Moves(at), .. More?.Invoke(item) ?? []]" Small="true" Disabled="Disabled" />
             }
         </div>
     }
@@ -58,6 +58,7 @@
     [Parameter] public bool Disabled { get; set; }
     [Parameter] public bool Quiet { get; set; }
     [Parameter] public Func<TItem, string?>? RowClass { get; set; }
+    [Parameter] public Func<TItem, IReadOnlyList<MenuItem>>? More { get; set; }
     [Parameter] public string? Class { get; set; }
 
     private IReadOnlyList<TItem> Ordered => _held is not null && ReferenceEquals(_heldOver, Items) ? _held : Items;
