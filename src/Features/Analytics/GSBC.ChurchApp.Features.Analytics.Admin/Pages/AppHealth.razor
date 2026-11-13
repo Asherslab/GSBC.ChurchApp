@@ -39,7 +39,7 @@
 
     [Parameter] public Guid? Id { get; set; }
 
-    private string Lead => $"Errors from the app, the admin panel and the server, for whoever builds the app. A kind of error is kept until it hasn't happened for 30 days.";
+    private string Lead => "Errors from the app, the admin panel and the server, for whoever builds the app. A kind of error is kept until it hasn't happened for 30 days.";
 
     private Task<HealthOverview> LoadAsync() => Health.GetOverviewAsync(_days).AsTask();
 
