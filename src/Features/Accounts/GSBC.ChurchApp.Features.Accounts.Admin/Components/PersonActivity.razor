@@ -1,7 +1,7 @@
 @inject AccountsClient Accounts
 @inject AccountsOfficeClient Office
 
-<section class="person-page__account" aria-label="@($"What happened on {Person.DisplayName}'s account")">
+<section aria-label="@($"What happened on {Person.DisplayName}'s account")">
     <LiveData TValue="List<AuditInfo>" Feeds="[AccountsFeeds.People]" Load="LoadAuditAsync" FailedTitle="Can't load their activity">
         @if (context.Value.Count == 0)
         {

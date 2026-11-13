@@ -25,7 +25,7 @@ public static class PeopleAdminExtensions
             [PeopleFeeds.Family, PeopleFeeds.Safeguarding], [PeopleFeeds.Mine]));
         services.AddSingleton(new PersonTab(FamilyTab, "Family", FamilyOrder, Family, PeoplePermissions.FamilyView));
         services.AddSingleton(new PersonTab(SafeguardingTab, "Safeguarding", SafeguardingOrder, Safeguarding, PeoplePermissions.SafeguardingView));
-        services.AddSingleton(new PersonFact("born", 0, BirthDate, PeoplePermissions.FamilyView));
+        services.AddSingleton(new PersonFact("born", "Birth date", 0, BirthDate, PeoplePermissions.FamilyView));
         return services.AddPeopleClient().AddSingleton<SafeMinistryCheckClient>().AddSingleton<PeopleOfficeClient>().AddSingleton<IOfficeWeekSource, SafeguardingOfficeWeek>();
     }
 

@@ -1,4 +1,4 @@
-@if (!string.IsNullOrWhiteSpace(Text))
+@if (ChildContent is not null || !string.IsNullOrWhiteSpace(Text))
 {
     <div class="fact @(Icon is null ? "fact--plain" : "")">
         @if (Icon is not null)
@@ -6,7 +6,7 @@
             <span class="fact__icon"><Icon Name="@Icon" Size="IconSize.Small" /></span>
         }
         <dt class="fact__label">@Label</dt>
-        <dd class="fact__text">@Text</dd>
+        <dd class="fact__text">@(ChildContent ?? (RenderFragment)(builder => builder.AddContent(0, Text)))</dd>
     </div>
 }
 
@@ -14,4 +14,5 @@
     [Parameter, EditorRequired] public required string Label { get; set; }
     [Parameter] public string? Text { get; set; }
     [Parameter] public string? Icon { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
 }

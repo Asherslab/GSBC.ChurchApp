@@ -3,4 +3,4 @@ using Microsoft.AspNetCore.Components;
 
 namespace GSBC.ChurchApp.Platform.Client.Modules;
 
-public sealed record PersonFact(string Key, int Order, RenderFragment<PersonOnPage> Content, Permission? Requires = null);
+public sealed record PersonFact(string Key, string Label, int Order, RenderFragment<PersonOnPage> Content, Permission? Requires = null);

@@ -1,88 +1,104 @@
 @using Grpc.Core
+@using GSBC.ChurchApp.Platform.Client.Modules
 @inject AccountsClient Accounts
 @inject AccountsOfficeClient Office
 @inject TimeProvider Clock
 
-<Can Permission="AccountsPermissions.Manage">
-    <div class="ui-tools">
-        <Menu Label="@($"More for {Person.DisplayName}'s account")" Text="More" Items="Actions" Disabled="_busy" />
-    </div>
-</Can>
+<Section First="true" Title="Their details" Lead="Who they are. The app uses their birth date to tell who is under 18." Grouped="true">
+    <FactList>
+        <Fact Label="Name">@Person.DisplayName</Fact>
+        @if (Person.Email.Length > 0)
+        {
+            <Fact Label="Email">
+                @Person.Email
+                @if (Invitation is null)
+                {
+                    <span class="quiet"> · @(Person.EmailConfirmed ? "Confirmed" : "Not confirmed yet")</span>
+                }
+            </Fact>
+        }
+        @foreach (PersonFact fact in Facts)
+        {
+            <Fact Label="@fact.Label" @key="fact.Key">@fact.Content(new PersonOnPage(Person.Id, Person.DisplayName))</Fact>
+        }
+    </FactList>
+</Section>
 
-<dl class="facts">
-    <dt>Account</dt>
-    <dd><PersonState Person="Person" Invitation="Invitation" /></dd>
-    @if (Invitation is null)
-    {
-        <dt>Joined</dt>
-        <dd><DateLine At="Person.CreatedAt" /></dd>
-        <dt>Passkey</dt>
-        <dd>@(Person.HasPasskey ? "Has one" : "Not made yet")</dd>
-        <dt>Email</dt>
-        <dd>@(Person.EmailConfirmed ? "Confirmed" : "Not confirmed yet")</dd>
-    }
-    else
-    {
-        <dt>@(Invitation.Held ? "Added by" : "Invited by")</dt>
-        <dd>@(Invitation.InvitedBy ?? "Not recorded")</dd>
-        <dt>@(Invitation.Held ? "Added" : "Invited")</dt>
-        <dd><DateLine At="Invitation.InvitedAt" Style="DateLineStyle.Short" WithTime="true" /></dd>
-    }
-</dl>
-
-@if (Invitation is { Held: true })
-{
-    <section class="panel-section" aria-labelledby="invitation-@Person.Id">
-        <h3 class="panel-subtitle" id="invitation-@Person.Id">Waiting for you to invite them</h3>
-        <p class="panel-lead">They can be given roles and put in ministries, but they haven't heard anything from the app. Send their invitation when you're ready.</p>
+<Section Title="Their account" Lead="How they sign in to the app." Grouped="true">
+    <Trailing>
         <Can Permission="AccountsPermissions.Manage">
-            <div class="panel-actions">
-                <Button Icon="send" Busy="_busy" OnClick="ResendAsync">Send the invitation</Button>
-            </div>
-            <p class="panel-hint">The invitation is an email with a link that works for 7 days. Removing them, under More, takes away their account and anything they were given.</p>
+            <Menu Label="@($"More for {Person.DisplayName}'s account")" Items="Actions" Small="true" Disabled="_busy" />
         </Can>
-    </section>
-}
-else if (Invitation is not null)
-{
-    <section class="panel-section" aria-labelledby="invitation-@Person.Id">
-        <h3 class="panel-subtitle" id="invitation-@Person.Id">@(InvitationExpired ? "Their invitation has expired" : "Invited, not accepted yet")</h3>
-        <p class="panel-lead">
-            They haven't set up their sign-in yet.
-            @if (InvitationExpired)
+    </Trailing>
+    <ChildContent>
+        <FactList>
+            <Fact Label="Account"><PersonState Person="Person" Invitation="Invitation" /></Fact>
+            @if (Invitation is null)
             {
-                <text>The link stopped working <DateLine At="Invitation.ExpiresAt" Style="DateLineStyle.Relative" />.</text>
+                <Fact Label="Passkey">@(Person.HasPasskey ? "Has one" : "Not made yet")</Fact>
+                <Fact Label="Joined"><DateLine At="Person.CreatedAt" /></Fact>
             }
             else
             {
-                <text>The link in their email works until <DateLine At="Invitation.ExpiresAt" Style="DateLineStyle.Short" WithTime="true" />.</text>
+                <Fact Label="@(Invitation.Held ? "Added by" : "Invited by")">@(Invitation.InvitedBy ?? "Not recorded")</Fact>
+                <Fact Label="@(Invitation.Held ? "Added" : "Invited")"><DateLine At="Invitation.InvitedAt" Style="DateLineStyle.Short" WithTime="true" /></Fact>
             }
-        </p>
-        <Can Permission="AccountsPermissions.Manage">
-            <Notice Text="@_sent" />
-            <div class="panel-actions">
-                <Button Variant="ButtonVariant.Quiet" Icon="send" Busy="_busy" OnClick="ResendAsync">Send it again</Button>
-            </div>
-            <p class="panel-hint">Sending it again makes a new link that works for 7 days. Withdrawing it, under More, stops the link and removes the account they haven't set up.</p>
-        </Can>
-    </section>
-}
+        </FactList>
+        @if (Invitation is { Held: true })
+        {
+            <section class="panel-section" aria-labelledby="invitation-@Person.Id">
+                <h3 class="panel-subtitle" id="invitation-@Person.Id">Waiting for you to invite them</h3>
+                <p class="panel-lead">They can be given roles and put in ministries, but they haven't heard anything from the app. Send their invitation when you're ready.</p>
+                <Can Permission="AccountsPermissions.Manage">
+                    <div class="panel-actions">
+                        <Button Icon="send" Busy="_busy" OnClick="ResendAsync">Send the invitation</Button>
+                    </div>
+                    <p class="panel-hint">The invitation is an email with a link that works for 7 days. Removing them, in the ⋯ menu, takes away their account and anything they were given.</p>
+                </Can>
+            </section>
+        }
+        else if (Invitation is not null)
+        {
+            <section class="panel-section" aria-labelledby="invitation-@Person.Id">
+                <h3 class="panel-subtitle" id="invitation-@Person.Id">@(InvitationExpired ? "Their invitation has expired" : "Invited, not accepted yet")</h3>
+                <p class="panel-lead">
+                    They haven't set up their sign-in yet.
+                    @if (InvitationExpired)
+                    {
+                        <text>The link stopped working <DateLine At="Invitation.ExpiresAt" Style="DateLineStyle.Relative" />.</text>
+                    }
+                    else
+                    {
+                        <text>The link in their email works until <DateLine At="Invitation.ExpiresAt" Style="DateLineStyle.Short" WithTime="true" />.</text>
+                    }
+                </p>
+                <Can Permission="AccountsPermissions.Manage">
+                    <Notice Text="@_sent" />
+                    <div class="panel-actions">
+                        <Button Variant="ButtonVariant.Quiet" Icon="send" Busy="_busy" OnClick="ResendAsync">Send it again</Button>
+                    </div>
+                    <p class="panel-hint">Sending it again makes a new link that works for 7 days. Withdrawing it, in the ⋯ menu, stops the link and removes the account they haven't set up.</p>
+                </Can>
+            </section>
+        }
 
-<Can Permission="AccountsPermissions.Manage">
-    @if (Invitation is null)
-    {
-        <section class="panel-section" aria-labelledby="recovery-@Person.Id">
-            <h3 class="panel-subtitle" id="recovery-@Person.Id">Lost their passkey?</h3>
-            <p class="panel-lead">Make a recovery link and give it to them yourself. It works once, for a short time.</p>
-            @if (_link is not null)
+        <Can Permission="AccountsPermissions.Manage">
+            @if (Invitation is null)
             {
-                <CopyField Label="Recovery link" Value="@_link.Code" />
-                <p class="panel-hint">Works until <DateLine At="_link.ExpiresAt" Style="DateLineStyle.TimeOnly" />. Making another one stops this one.</p>
+                <section class="panel-section" aria-labelledby="recovery-@Person.Id">
+                    <h3 class="panel-subtitle" id="recovery-@Person.Id">Lost their passkey?</h3>
+                    <p class="panel-lead">Make a recovery link and give it to them yourself. It works once, for a short time.</p>
+                    @if (_link is not null)
+                    {
+                        <CopyField Label="Recovery link" Value="@_link.Code" />
+                        <p class="panel-hint">Works until <DateLine At="_link.ExpiresAt" Style="DateLineStyle.TimeOnly" />. Making another one stops this one.</p>
+                    }
+                    <Button Variant="ButtonVariant.Quiet" Icon="link" Busy="_busy" OnClick="IssueAsync">@(_link is null ? "Make a recovery link" : "Make a new link")</Button>
+                </section>
             }
-            <Button Variant="ButtonVariant.Quiet" Icon="link" Busy="_busy" OnClick="IssueAsync">@(_link is null ? "Make a recovery link" : "Make a new link")</Button>
-        </section>
-    }
-</Can>
+        </Can>
+    </ChildContent>
+</Section>
 
 <Notice Tone="NoticeTone.Warning" Text="@_problem" />
 
@@ -130,6 +146,7 @@ else
     [Parameter] public InvitationInfo? Invitation { get; set; }
     [Parameter] public EventCallback OnChanged { get; set; }
     [Parameter] public EventCallback OnRemoved { get; set; }
+    [Parameter] public IReadOnlyList<PersonFact> Facts { get; set; } = [];
 
     private string? _sent;
     private bool _withdrawing;
