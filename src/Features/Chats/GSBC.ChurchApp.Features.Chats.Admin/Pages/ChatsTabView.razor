@@ -47,7 +47,7 @@
     [
         new("Chat", chat => @<span><span class="cell-strong">@chat.Name</span><br /><span class="quiet">@chat.MinistryName</span></span>, chat => chat.Name),
         new("For", chat => @<span>@(chat.Kind == ChatKinds.Ask ? "Asking to join" : $"{ChatText.Audience(chat.Audience)}{(chat.Kind == ChatKinds.Channel ? " · leaders post" : "")}")</span>, chat => chat.Audience, "optional"),
-        new("People", chat => @<span>@chat.People</span>, chat => chat.People, "num"),
+        new("People", chat => @<span>@chat.People</span>, chat => chat.People, "num optional"),
         new("Last message", chat => chat.LastAt is { } at ? @<DateLine At="at" Style="DateLineStyle.Short" WithTime="true" /> : @<span class="quiet">None yet</span>, chat => chat.LastAt, "num optional"),
         new("Needs", chat => @<span class="chat-flag">@(chat.OpenReports > 0 ? ChatLead.Count(chat.OpenReports, "report", "reports") : chat.Flags.FirstOrDefault())</span>, chat => chat.OpenReports),
     ];
