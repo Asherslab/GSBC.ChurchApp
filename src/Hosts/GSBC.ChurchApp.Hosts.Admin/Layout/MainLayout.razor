@@ -6,6 +6,7 @@
 @inject ClientModules Modules
 @inject NavigationManager Navigation
 @inject IEnumerable<IOfficeWeekSource> Sources
+@inject IEnumerable<INavCounts> NavCounts
 @inject TimeProvider Clock
 
 <div class="admin-shell">
@@ -68,7 +69,7 @@
     private ModuleNav? _nav;
     private ElementReference _menuButton;
 
-    private IReadOnlyCollection<string> Feeds => Sources.SelectMany(source => source.Feeds).ToHashSet();
+    private IReadOnlyCollection<string> Feeds => Sources.SelectMany(source => source.Feeds).Concat(NavCounts.SelectMany(counts => counts.Feeds)).ToHashSet();
 
     private NavEntry? Area
     {
@@ -95,8 +96,10 @@
             DateTime now = Clock.GetUtcNow().UtcDateTime;
             OfficeWeek[] weeks = await Task.WhenAll(Sources.Select(source => source.LoadAsync(now, now.AddDays(7))));
             List<OfficeTask> tasks = weeks.SelectMany(week => week.Tasks).ToList();
+            IReadOnlyDictionary<string, int>[] counted = Access.SignedIn ? await Task.WhenAll(NavCounts.Select(counts => counts.CountAsync())) : [];
             _waiting = Modules.Navigation.Where(entry => entry.Href.Length > 0)
-                .ToDictionary(entry => entry.Href, entry => tasks.Count(task => task.Href == entry.Href || task.Href.StartsWith(entry.Href + "/", StringComparison.Ordinal)));
+                .ToDictionary(entry => entry.Href, entry => tasks.Count(task => task.Href == entry.Href || task.Href.StartsWith(entry.Href + "/", StringComparison.Ordinal))
+                    + counted.Sum(counts => counts.GetValueOrDefault(entry.Href)));
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
         {

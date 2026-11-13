@@ -1,0 +1,74 @@
+{
+  "title": "Chats on your computer: how the panel is laid out",
+  "question": "#74: \"a proper fully functional chat interface on desktop … a nicely laid out dedicated chat panel.\" The admin panel now has Chats in the sidebar for your own chats (the same chats and rules as the phone), and the old Chats desk is Chat safety. I built the three panes (the second card) overnight; pick another and I'll rebuild it.",
+  "options": [
+    {
+      "id": "ministry-rail",
+      "kind": "assigned",
+      "kicker": "THE ROLL",
+      "label": "Ministries down the side, then their chats",
+      "thesis": "A narrow column of your ministries, each with its unread count, picks which chats show; the conversation fills the rest, and the chat's people slide in from the cog.",
+      "palette": [
+        "#2a3d5e",
+        "#f4efe7",
+        "#00776d",
+        "#e7ae74"
+      ],
+      "materials": [
+        "ministry column with counts",
+        "chat list",
+        "conversation",
+        "people on demand"
+      ],
+      "viewport": "Sidebar, a ministry column (All, Youth band, Life Group Tue, Kids church), Youth band's three chats, the open chat with the composer at the bottom.",
+      "risk": "Most people are in two or three ministries, so the column is mostly empty; one more click to reach a chat in another ministry.",
+      "html": ".impeccable/mocks/desktop-chats/a-ministry-rail.html"
+    },
+    {
+      "id": "three-panes",
+      "kind": "dealt",
+      "label": "Three panes: chats, the conversation, its people",
+      "thesis": "Every chat down the left with search, unread counts and its ministry; the open conversation in the middle; the chat's people and settings ruled off on the right, and hidden with one button when you want the room.",
+      "palette": [
+        "#2a3d5e",
+        "#f4efe7",
+        "#00776d",
+        "#ffffff"
+      ],
+      "materials": [
+        "list and record (Workbench)",
+        "MessageBubble",
+        "Composer",
+        "PaneHead"
+      ],
+      "viewport": "Sidebar with Chats (3), the chat list with a search field, the open chat (bubbles, a reply, reactions, the composer), and the right pane with Mute and the people in it.",
+      "risk": "The tightest at 1280 wide: the right pane folds away under that.",
+      "html": ".impeccable/mocks/desktop-chats/b-three-panes.html"
+    },
+    {
+      "id": "side-by-side",
+      "kind": "dealt",
+      "label": "Several chats open side by side",
+      "thesis": "Open two or three chats as columns next to each other, each with its own composer, for a leader keeping an eye on the team chat and the parents' channel at once. The list narrows to a column of names.",
+      "palette": [
+        "#2a3d5e",
+        "#f4efe7",
+        "#00776d",
+        "#e7ae74"
+      ],
+      "materials": [
+        "narrow chat list",
+        "conversation columns",
+        "a composer per column"
+      ],
+      "viewport": "Sidebar, a narrow list, then Youth leaders and Youth parents open side by side.",
+      "risk": "Each column is narrow, long messages wrap a lot, and it's a new way of working nobody uses on the phone.",
+      "html": ".impeccable/mocks/desktop-chats/c-side-by-side.html"
+    }
+  ],
+  "reroll": true,
+  "steer": true,
+  "buildPath": {
+    "value": "code"
+  }
+}

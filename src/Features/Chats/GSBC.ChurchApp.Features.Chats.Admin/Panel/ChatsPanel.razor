@@ -1,0 +1,56 @@
+@page "/chats"
+@page "/chats/{Id}"
+@using GSBC.ChurchApp.Platform.Icons
+@inject IAccess Access
+@using Microsoft.JSInterop
+@inject IJSRuntime JS
+
+@if (!Access.SignedIn)
+{
+    <TitleBand Title="Chats" />
+    <div class="admin-gate">
+        <EmptyState Icon="key" Title="Sign in to see your chats" Body="Use the passkey on this computer or your phone.">
+            <Button Href="account" Icon="user">Sign in</Button>
+        </EmptyState>
+    </div>
+}
+else
+{
+    <div class="chat-desk @(Id is null ? "" : "chat-desk--open") @(_besideOpen ? "chat-desk--beside-open" : "")">
+        <section class="chat-desk__list" aria-label="Your chats">
+            <div class="chat-desk__list-head">
+                <h1 class="chat-desk__title">Chats</h1>
+                <SearchField Label="Search your chats" Placeholder="Search chats" Value="@_search" ValueChanged="value => _search = value" />
+            </div>
+            <ChatsList Search="@_search" Current="@Id" ShowHint="false" ByMinistry="true" />
+            <p class="hint chat-desk__hint">Chats from every ministry you're in, the newest ministry first. To start one, open its ministry's Chats tab. Church staff can check messages in chats.</p>
+        </section>
+        @if (Id is null)
+        {
+            <PageTitle>Chats · Good Shepherd admin</PageTitle>
+            <section class="chat-desk__none">
+                <EmptyState Icon="@AppIcons.Chats" Title="Choose a chat" Body="Your chats are on the left, the newest at the top. Messages arrive here as they're sent." />
+            </section>
+        }
+        else
+        {
+            <ChatView @key="Id" ChatId="@Id" InPanel="true" BackHref="chats" BackLabel="Chats" SettingsOpen="_besideOpen" OnSettings="() => _besideOpen = !_besideOpen" />
+        }
+    </div>
+}
+
+@code {
+    private string _search = "";
+    private bool _besideOpen;
+
+    [Parameter] public string? Id { get; set; }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+            return;
+        await using IJSObjectReference module = await JS.InvokeAsync<IJSObjectReference>("import", "./_content/GSBC.ChurchApp.Features.Chats.Client/js/chat-desk.js");
+        _besideOpen = await module.InvokeAsync<bool>("roomBeside");
+        StateHasChanged();
+    }
+}

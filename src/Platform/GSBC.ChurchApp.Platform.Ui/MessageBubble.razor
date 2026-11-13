@@ -1,4 +1,5 @@
 @implements IDisposable
+@using GSBC.ChurchApp.Platform.Icons
 
 <div class="bubble-row @(Mine ? "bubble-row--mine" : "") @(FirstOfRun ? "bubble-row--first" : "") @(Dimmed ? "bubble-row--dimmed" : "") @Class" id="@Id">
     @if (!Mine)
@@ -11,7 +12,7 @@
         </span>
     }
     <div class="bubble-row__stack">
-        <div class="bubble @(Removed ? "bubble--removed" : "")" role="group" aria-label="@AriaLabel"
+        <div class="bubble @(Removed ? "bubble--removed" : "")" role="group" aria-label="@AriaLabel" tabindex="@(MoreLabel is null ? null : "0")" @onkeydown="KeyAsync"
              @onpointerdown="Pressed" @onpointerup="Released" @onpointerleave="Released" @onpointercancel="Released"
              @oncontextmenu="OpenAsync" @oncontextmenu:preventDefault="OnLongPress.HasDelegate">
             @if (FirstOfRun && !Mine && Name is not null)
@@ -34,6 +35,11 @@
         </div>
         @Reactions
         @Status
+        @if (MoreLabel is not null)
+        {
+            <Button Variant="ButtonVariant.Quiet" Small="true" Icon="@AppIcons.More" AriaLabel="@MoreLabel" Tooltip="@MoreLabel" Class="bubble-row__more" OnClick="OpenAsync" />
+        }
+        @Tools
     </div>
 </div>
 
@@ -55,6 +61,8 @@
     [Parameter] public RenderFragment? Status { get; set; }
     [Parameter] public RenderFragment? ChildContent { get; set; }
     [Parameter] public EventCallback OnLongPress { get; set; }
+    [Parameter] public string? MoreLabel { get; set; }
+    [Parameter] public RenderFragment? Tools { get; set; }
     [Parameter] public EventCallback OnQuote { get; set; }
     [Parameter] public string QuoteLabel { get; set; } = "Go to the message this replies to";
 
@@ -83,6 +91,8 @@
         _press?.Dispose();
         _press = null;
     }
+
+    private Task KeyAsync(KeyboardEventArgs key) => key.Key is "Enter" or "ContextMenu" ? OpenAsync() : Task.CompletedTask;
 
     private Task OpenAsync() => OnLongPress.HasDelegate ? OnLongPress.InvokeAsync() : Task.CompletedTask;
 

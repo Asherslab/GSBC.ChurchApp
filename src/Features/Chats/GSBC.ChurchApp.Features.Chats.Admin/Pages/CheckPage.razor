@@ -1,4 +1,4 @@
-@page "/chats/check/{ChatId}"
+@page "/chat-safety/check/{ChatId}"
 @inject OversightClient Oversight
 @inject ChatChecks Checks
 @inject NavigationManager Navigation
@@ -9,12 +9,12 @@
     @{ DeskChat? chat = context.Value.Chats.FirstOrDefault(found => found.Id == ChatId) ?? _check?.Chat.Chat; }
     @if (chat is null)
     {
-        <TitleBand Title="Chat" BackHref="chats/all" BackText="Chats" />
+        <TitleBand Title="Chat" BackHref="chat-safety/all" BackText="Chat safety" />
         <EmptyState Icon="message-square" Title="This chat isn't here" Body="It may have been deleted, or it's in a ministry you don't check." />
     }
     else
     {
-        <TitleBand Title="@chat.Name" BrowserTitle="@($"Checking {chat.Name}")" BackHref="chats/all" BackText="Chats" Lead="@ChatLead.Of(chat)">
+        <TitleBand Title="@chat.Name" BrowserTitle="@($"Checking {chat.Name}")" BackHref="chat-safety/all" BackText="Chat safety" Lead="@ChatLead.Of(chat)">
             <Actions>
                 @if (chat.OpenReports > 0)
                 {
@@ -133,7 +133,7 @@
 </Sheet>
 
 <Sheet Open="_pausing is not null" OpenChanged="open => { if (!open) _pausing = null; }" Title="@($"Pause {_pausing?.Message.SenderName} from chats?")"
-       Lead="They lose every chat until someone lets them back in on the Chats desk. They aren't told who asked. It's logged.">
+       Lead="They lose every chat until someone lets them back in under Chat safety. They aren't told who asked. It's logged.">
     <ChildContent>
         <TextField Label="Why" Hint="Kept in the log." Value="@_pauseReason" ValueChanged="value => _pauseReason = value" MaxLength="ChatLimits.NoteLength" />
         <Notice Tone="NoticeTone.Warning" Text="@_pauseProblem" />
@@ -274,7 +274,7 @@
         {
             await Oversight.DeleteAsync(chat.Id);
             _deleting = null;
-            Navigation.NavigateTo("chats/all");
+            Navigation.NavigateTo("chat-safety/all");
         }
         catch (RpcException exception)
         {

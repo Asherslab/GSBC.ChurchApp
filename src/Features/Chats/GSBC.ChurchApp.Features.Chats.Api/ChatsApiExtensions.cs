@@ -20,7 +20,7 @@ public static class ChatsApiExtensions
     {
         services.AddChatsData();
         services.AddScoped<ChatFacts>().AddScoped<ChatPublisher>().AddScoped<ChatNotifier>().AddScoped<ChatAudit>().AddScoped<OversightMarks>()
-            .AddScoped<ChatActions>().AddScoped<ChatOversight>().AddScoped<ChatMedia>();
+            .AddScoped<ChatActions>().AddScoped<ChatOversight>().AddScoped<ChatMedia>().AddScoped<ChatReads>();
         services.AddScoped<IMediaAreaAccess, ChatMediaAccess>();
         services.AddMediaSystemArea(ChatMedia.Area);
         services.AddScoped<IScopeObjects, ChatScopeObjects>();

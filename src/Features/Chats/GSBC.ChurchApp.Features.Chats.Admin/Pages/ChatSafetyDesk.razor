@@ -1,11 +1,11 @@
-@page "/chats"
-@page "/chats/{Tab}"
+@page "/chat-safety"
+@page "/chat-safety/{Tab}"
 @inject OversightClient Oversight
 
-<TitleBand Title="Chats" Lead="Reports about messages, every ministry chat you may check, and people paused from chats. Opening a chat here is logged with your name and the time." />
+<TitleBand Title="Chat safety" Lead="Reports about messages, every ministry chat you may check, and people paused from chats. Opening a chat here is logged with your name and the time. Your own chats are under Chats." />
 
 <LiveData TValue="Desk" Load="Oversight.DeskAsync" Feeds="[ChatsFeeds.Oversight]" FailedTitle="Can't load chats right now">
-    <TabStrip TValue="string" Label="Chats desk" Options="Tabs(context.Value)" Value="@Current" Href="TabHref" />
+    <TabStrip TValue="string" Label="Chat safety" Options="Tabs(context.Value)" Value="@Current" Href="TabHref" />
     @switch (Current)
     {
         case Reports:
@@ -24,7 +24,7 @@
 </LiveData>
 
 @code {
-    private const string Base = "chats";
+    private const string Base = "chat-safety";
     private const string Reports = "reports";
     private const string ChatsTab = "all";
     private const string Paused = "paused";

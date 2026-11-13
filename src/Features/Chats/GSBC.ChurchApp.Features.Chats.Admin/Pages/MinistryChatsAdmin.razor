@@ -1,0 +1,12 @@
+@using GSBC.ChurchApp.Platform.Client.Modules
+@inject IAccess Access
+
+<MinistryChatsTab On="On" />
+@if (Access.Can(ChatsPermissions.Check, On.Id))
+{
+    <p class="hint">To read one of @(On.Name)'s chats you're not in, check it under <a href="chat-safety/all">Chat safety</a>. Every check is logged.</p>
+}
+
+@code {
+    [Parameter, EditorRequired] public required MinistryOnPage On { get; set; }
+}

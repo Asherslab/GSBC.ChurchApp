@@ -1,16 +1,22 @@
-@inject ChatsStore Store
+@inject IChats Store
 @inject TimeProvider Clock
 @inject Shell Shell
 @inject IServiceProvider Services
 @inject NavigationManager Navigation
 
-<Page Title="@_title" BackHref="@BackHref" BackLabel="@BackLabel" TopBar="TopBarStyle.Solid">
+<ChatFrame Title="@_title" Lead="@(InPanel && _card is not null ? PanelLead(_card) : null)" BackHref="@BackHref" BackLabel="@BackLabel" InPanel="InPanel">
     <Actions>
         @if (_card is not null)
         {
-            <Button Variant="ButtonVariant.Quiet" Icon="@AppIcons.Settings" AriaLabel="Chat settings" Tooltip="Chat settings" OnClick="() => _people = true" />
+            <Button Variant="ButtonVariant.Quiet" Icon="@AppIcons.Settings" AriaLabel="Chat settings" Tooltip="Chat settings" Expanded="@(InPanel ? SettingsOpen : null)" Class="@(InPanel && SettingsOpen ? "chat-frame__cog chat-frame__cog--on" : "chat-frame__cog")" OnClick="OpenSettings" />
         }
     </Actions>
+    <Beside>
+        @if (InPanel && _card is not null)
+        {
+            <ChatPeople Card="_card" OnDelete="AskToDelete" />
+        }
+    </Beside>
     <ChildContent>
 <LiveData @ref="_live" TValue="OpenedChat" Load="LoadAsync" Feeds="ChatsStore.Feeds" ReloadOn="ChangeKind.Reconnected | ChangeKind.Session | ChangeKind.Access | ChangeKind.Outbox">
     @if (context.Value.Chat is not { } chat)
@@ -71,7 +77,7 @@
                         bool mine = message.SenderId == card.You;
                         <MessageBubble Mine="mine" FirstOfRun="first" Name="@NameOf(message, mine)" NameNote="@RoleNote(card, message)"
                                        Time="@TimeOf(message)" Dimmed="@(line.State != LineState.Sent || _editing?.Id == message.Id)" Removed="message.Deleted"
-                                       Id="@($"m-{message.Id}")" OnLongPress="() => OpenActions(line)"
+                                       Id="@($"m-{message.Id}")" OnLongPress="() => OpenActions(line)" MoreLabel="@(InPanel && line.State == LineState.Sent && !message.Deleted ? "What to do with this message" : null)"
                                        OnQuote="@(message.ReplyTo is { } replied ? EventCallback.Factory.Create(this, () => GoToAsync(chat, replied)) : default)">
                             <Quote>
                                 @if (message is { ReplyTo: { } quote, Deleted: false })
@@ -79,11 +85,17 @@
                                     <span class="chat-quote"><strong>@quote.SenderName</strong><span>@QuoteText(chat, quote)</span>
                                         @if (_notHere.Contains(quote.MessageId))
                                         {
-                                            <span class="chat-quote__note">It isn't on your phone, so it can't be shown.</span>
+                                            <span class="chat-quote__note">@(InPanel ? "It's no longer in this chat, so it can't be shown." : "It isn't on your phone, so it can't be shown.")</span>
                                         }
                                     </span>
                                 }
                             </Quote>
+                            <Tools>
+                                @if (InPanel && _acting?.Message.Id == message.Id)
+                                {
+                                    <MessageActions Card="card" Line="_acting" OnClose="() => _acting = null" OnReply="Reply" OnEdit="Edit" InPanel="true" />
+                                }
+                            </Tools>
                             <Reactions>
                                 <BubbleReactions Reactions="@ReactionsOf(card, message)" Disabled="!card.YouMaySend" OnToggle="reaction => Store.ReactAsync(message, reaction.Emoji, !reaction.Yours)" />
                             </Reactions>
@@ -128,10 +140,16 @@
                     }
                 </div>
             </div>
-            <ChatComposer Chat="chat" Editing="_editing" ReplyingTo="_replyingTo" OnDone="Done" />
+            <ChatComposer Chat="chat" Editing="_editing" ReplyingTo="_replyingTo" OnDone="Done" EnterSends="InPanel" DropOn="@(InPanel ? ".chat" : null)" />
         </div>
-        <MessageActions Card="card" Line="_acting" OnClose="() => _acting = null" OnReply="Reply" OnEdit="Edit" />
-        <ChatPeopleSheet Card="card" Open="_people" OpenChanged="open => _people = open" OnDelete="AskToDelete" />
+        @if (!InPanel)
+        {
+            <MessageActions Card="card" Line="_acting" OnClose="() => _acting = null" OnReply="Reply" OnEdit="Edit" />
+        }
+        @if (!InPanel)
+        {
+            <ChatPeopleSheet Card="card" Open="_people" OpenChanged="open => _people = open" OnDelete="AskToDelete" />
+        }
         <Sheet Open="_deleting" OpenChanged="open => _deleting = open" Title="@($"Delete {ChatText.Title(card)}?")"
                Lead="Everyone in it loses the chat. The church keeps its messages and the log, so staff can still check it.">
             <Actions>
@@ -155,12 +173,15 @@
     }
 </LiveData>
     </ChildContent>
-</Page>
+</ChatFrame>
 
 @code {
     [Parameter, EditorRequired] public required string ChatId { get; set; }
     [Parameter] public string BackHref { get; set; } = "chats";
     [Parameter] public string BackLabel { get; set; } = "Chats";
+    [Parameter] public bool InPanel { get; set; }
+    [Parameter] public bool SettingsOpen { get; set; }
+    [Parameter] public EventCallback OnSettings { get; set; }
 
     private string _title = "Chat";
     private readonly HashSet<string> _added = [];
@@ -183,7 +204,7 @@
         Conversation? chat = _shown = await Store.ChatAsync(ChatId, _most);
         if (chat is { Paused: false, Card.YourRole.Length: > 0 })
             await Store.MarkReadAsync(chat.Card, chat.Card.LastSeq);
-        if (chat is not null && (ChatText.Title(chat.Card) != _title || _card is null))
+        if (chat is not null && (ChatText.Title(chat.Card) != _title || _card is null || InPanel))
         {
             _title = ChatText.Title(chat.Card);
             _card = chat.Card;
@@ -257,6 +278,17 @@
 
     private void ShowSeen(ChatMessage message) => _seen = message;
 
+    private static string PanelLead(ChatCard card) =>
+        card.MinistryName.Length > 0 && card.Kind != ChatKinds.Ask ? $"{card.MinistryName} · {ChatText.Kind(card)} · {ChatText.People(card)}" : ChatText.Who(card);
+
+    private async Task OpenSettings()
+    {
+        if (OnSettings.HasDelegate)
+            await OnSettings.InvokeAsync();
+        else
+            _people = true;
+    }
+
     private void AskToDelete()
     {
         _people = false;
@@ -267,7 +299,7 @@
     {
         _deleting = false;
         await Store.DeleteChatAsync(card);
-        Navigation.NavigateTo(ChatsDestinations.Chats.Path);
+        Navigation.NavigateTo(InPanel ? "chats" : ChatsDestinations.Chats.Path);
     }
 
     private static IReadOnlyList<BubbleReaction> ReactionsOf(ChatCard card, ChatMessage message) =>

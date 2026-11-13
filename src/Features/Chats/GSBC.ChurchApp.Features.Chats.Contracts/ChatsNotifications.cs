@@ -19,7 +19,7 @@ public static class ChatsNotifications
 
     public static readonly NotificationKind Urgent = new(
         "chats.urgent", "Someone reports a message straight to the church's chat auditors", "Chats", Mandatory: true, MayBeUrgent: true, Waits: true,
-        For: ChatsPermissions.Audit, InAdminPanel: true, Opens: new("/chats/reports"));
+        For: ChatsPermissions.Audit, InAdminPanel: true, Opens: new("/chat-safety/reports"));
 
     public static readonly IReadOnlyList<NotificationKind> All = [Message, Mention, Consent, Report, Urgent];
 }

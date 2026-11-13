@@ -1,0 +1,55 @@
+<!doctype html><html lang="en-AU"><head><meta charset="utf-8"><link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet"><title>Three panes</title><style>:root{--nav:#2a3d5e;--note:#d5c9b7;--page:#fff;--sand:#f4efe7;--sand2:#e9e1d4;--ink:#18233a;--ink2:#545e70;--ink3:#626a79;--accent:#00776d;--marker:#e7ae74;--line:rgba(42,61,94,.12);--tint:rgba(255,255,255,.12);--sel:#f4efe7}
+*{box-sizing:border-box;margin:0;padding:0}
+body{width:1440px;height:900px;overflow:hidden;background:var(--page);font-family:Montserrat,-apple-system,sans-serif;color:var(--ink);display:grid;grid-template-columns:248px 1fr;font-size:15px}
+.side{background:var(--nav);color:rgba(255,255,255,.76);padding:22px 14px 18px;display:flex;flex-direction:column;gap:4px;font-size:14.5px;font-weight:600;height:900px}
+.brand{color:#fff;font-weight:700;display:flex;gap:10px;align-items:center;margin-bottom:16px}.brand i{width:30px;height:30px;border-radius:50%;border:5px solid var(--note)}
+.jump{background:var(--tint);border-radius:9px;padding:9px 12px;margin-bottom:14px;display:flex;justify-content:space-between}.jump kbd{font:700 11px Montserrat;color:var(--note)}
+.area{color:#fff;font-weight:700;padding:8px 6px 4px;display:flex;gap:8px}.area:before{content:"›";color:var(--note)}
+.lnk{padding:9px 12px 9px 24px;border-radius:9px;display:flex;gap:10px;align-items:center}.lnk.top{padding-left:12px}
+.lnk.on{background:var(--tint);color:#fff;box-shadow:inset 3px 0 0 var(--marker)}
+.lnk em{margin-left:auto;font-style:normal;background:var(--marker);color:#2a1a08;border-radius:10px;font-size:12px;padding:1px 8px}
+.ic{width:15px;height:15px;border:1.8px solid currentColor;border-radius:4px;flex:none;opacity:.9}
+.foot{margin-top:auto;border-top:1px solid var(--tint);padding-top:10px;display:flex;flex-direction:column;gap:2px}.foot .lnk{padding-left:12px}
+.work{display:grid;height:900px;overflow:hidden}
+.list{border-right:1px solid var(--line);display:flex;flex-direction:column;overflow:hidden}
+.lhead{padding:24px 18px 12px}.lhead h1{font-size:24px;font-weight:700;letter-spacing:-.02em;display:flex;justify-content:space-between;align-items:center}
+.search{margin-top:12px;background:var(--sand);border-radius:10px;height:38px;padding:0 12px;display:flex;align-items:center;color:var(--ink3);font-size:14px;gap:8px}
+.row{display:flex;gap:11px;padding:11px 18px;align-items:flex-start}.row.on{background:var(--sel);box-shadow:inset 3px 0 0 var(--accent)}
+.av{width:36px;height:36px;border-radius:10px;background:rgba(0,119,109,.14);color:var(--accent);display:grid;place-items:center;font-weight:700;font-size:14px;flex:none}
+.av.w{background:rgba(231,174,116,.25);color:#8a5422}.av.n{background:rgba(42,61,94,.1);color:var(--nav)}
+.rt{flex:1;min-width:0}.rt b{display:flex;justify-content:space-between;font-size:14.5px;font-weight:600}.rt b small{font-weight:400;color:var(--ink3);font-size:12.5px}
+.rt span{display:flex;justify-content:space-between;gap:8px;font-size:13px;color:var(--ink2);margin-top:2px}.rt span i{font-style:normal;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cnt{background:var(--accent);color:#fff;border-radius:10px;font-size:11.5px;font-weight:700;padding:1px 7px;flex:none}
+.conv{display:flex;flex-direction:column;overflow:hidden;min-width:0}
+.chead{display:flex;justify-content:space-between;align-items:center;padding:18px 24px;border-bottom:1px solid var(--line)}
+.chead h2{font-size:18px;font-weight:700}.chead p{font-size:13px;color:var(--ink2);margin-top:2px}
+.ib{width:36px;height:36px;border-radius:18px;background:var(--sand);display:inline-grid;place-items:center;color:var(--ink2);font-weight:700;margin-left:6px}
+.msgs{flex:1;padding:18px 28px;display:flex;flex-direction:column;gap:6px;overflow:hidden;justify-content:flex-end}
+.quiet{font-size:12.5px;color:var(--ink3);text-align:center;margin-bottom:8px}
+.day{font-size:12px;font-weight:700;color:var(--ink3);text-align:center;margin:10px 0 4px}
+.b{max-width:62%;background:var(--sand);border-radius:16px 16px 16px 5px;padding:9px 13px;font-size:14.5px;line-height:1.45;align-self:flex-start}
+.b.me{background:var(--nav);color:#fff;border-radius:16px 16px 5px 16px;align-self:flex-end}
+.who{font-size:12.5px;font-weight:700;color:var(--ink2);margin:8px 0 1px 4px}.who small{font-weight:400;color:var(--ink3)}
+.q{border-left:2px solid rgba(255,255,255,.5);padding-left:8px;font-size:12.5px;opacity:.85;margin-bottom:4px}
+.t{font-size:11.5px;color:var(--ink3);margin:2px 6px 0}.t.r{align-self:flex-end}
+.rx{display:flex;gap:4px;margin:-2px 0 0 8px}.rx span{background:#fff;border:1px solid var(--line);border-radius:12px;font-size:12px;padding:1px 7px}
+.pic{width:220px;height:140px;border-radius:12px;background:linear-gradient(160deg,#c9d5c2,#84a87d);margin-bottom:6px}
+.comp{margin:0 24px 20px;background:var(--sand);border-radius:14px;padding:10px 12px;display:flex;gap:10px;align-items:flex-end}
+.comp .f{flex:1;font-size:14.5px;color:var(--ink3);padding:6px 2px}.send{width:38px;height:38px;border-radius:19px;background:var(--nav);color:#fff;display:grid;place-items:center;font-weight:700}
+.hint{margin:-14px 24px 14px;font-size:12px;color:var(--ink3)}
+kbd{font:700 11px Montserrat;background:var(--sand);border-radius:5px;padding:1px 5px;color:var(--ink2)}
+.pane{border-left:1px solid var(--line);padding:22px 20px;display:flex;flex-direction:column;gap:18px;overflow:hidden}
+.pane h3{font-size:13px;font-weight:700;color:var(--ink2);text-transform:none}
+.card{background:var(--sand);border-radius:12px;padding:4px 0}
+.pr{display:flex;align-items:center;gap:10px;padding:8px 12px;font-size:14px}.pr small{margin-left:auto;color:var(--ink3);font-size:12px}
+.sw{margin-left:auto;width:36px;height:20px;border-radius:10px;background:rgba(98,106,121,.35);position:relative}.sw:after{content:"";position:absolute;left:3px;top:3px;width:14px;height:14px;border-radius:50%;background:#fff}
+.dot{width:26px;height:26px;border-radius:50%;background:var(--sand2);display:grid;place-items:center;font-size:11px;font-weight:700;color:var(--ink2)}
+.min{display:flex;flex-direction:column;gap:4px;padding:24px 10px;background:var(--sand);border-right:1px solid var(--line)}
+.mi{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:10px;font-size:14px;font-weight:600;color:var(--ink2)}.mi.on{background:#fff;color:var(--ink);box-shadow:0 0 0 1px var(--line)}
+.mi .cnt{margin-left:auto}
+.col{border-right:1px solid var(--line);display:flex;flex-direction:column;overflow:hidden;min-width:0}
+</style></head><body><nav class="side"><div class="brand"><i></i>Good Shepherd</div><div class="jump">Jump to… <kbd>⌘K</kbd></div><div class="lnk top"><i class="ic"></i>Home</div><div class="lnk top on"><i class="ic" style="border-radius:50% 50% 50% 3px"></i>Chats<em>5</em></div><div class="area">Sundays &amp; sermons</div><div class="lnk">Sermons</div><div class="area">This week</div><div class="lnk">Calendar</div><div class="lnk">News</div><div class="area">Ministries &amp; groups</div><div class="lnk">Ministries</div><div class="area">Safety</div><div class="lnk">Chat safety</div><div class="lnk">Prayer</div><div class="area">People &amp; access</div><div class="lnk">People</div><div class="foot"><div class="lnk"><i class="ic" style="border-radius:50% 50% 50% 2px"></i>Send feedback</div><div class="lnk"><i class="ic" style="border-radius:50%"></i>Account</div></div></nav><div class="work" style="grid-template-columns:340px 1fr 300px"><div class="list"><div class="lhead"><h1>Chats <span class="ib" style="font-size:18px">+</span></h1><div class="search">⌕ Search chats</div></div><div class="row on"><div class="av ">YB</div><div class="rt"><b>Youth band leaders<small>7:42 pm</small></b><span><i>Youth band · Sam: Can someone grab the…</i><i class="cnt">2</i></span></div></div><div class="row"><div class="av n">YP</div><div class="rt"><b>Youth band parents<small>6:10 pm</small></b><span><i>Youth band · Leaders post · Pick-up is at 8:45</i></span></div></div><div class="row"><div class="av w">LG</div><div class="rt"><b>Tuesday Life Group<small>Yesterday</small></b><span><i>Life Group Tue · Priya: Bringing dessert 🙂</i><i class="cnt">3</i></span></div></div><div class="row"><div class="av ">KC</div><div class="rt"><b>Kids church team<small>Mon</small></b><span><i>Kids church · You: Thanks all</i></span></div></div><div class="row"><div class="av n">WT</div><div class="rt"><b>Welcome team<small>Sun</small></b><span><i>Welcome team · Rosters are up for Dec…</i></span></div></div><div class="row"><div class="av w">PR</div><div class="rt"><b>Production<small>2 Nov</small></b><span><i>Production · Lights cue sheet attached</i></span></div></div></div><div class="conv"><div class="chead"><div><h2>Youth band leaders</h2><p>Youth band · The team · 6 people</p></div><div><span class="ib">⚙</span><span class="ib">⋯</span></div></div><div class="msgs"><p class="quiet">Church staff can check messages in this chat.</p><p class="day">Today</p>
+<p class="who">Sam Example <small>· leader</small></p><div class="b">Setlist for Friday is in the files. We're opening with Build My Life.</div><div class="rx"><span>🙏 3</span><span>👍 2</span></div>
+<p class="who">Jordan Example</p><div class="b"><div class="pic"></div>Stage plot from last week, for anyone setting up</div><p class="t">6:58 pm</p>
+<div class="b me"><div class="q">Sam · Setlist for Friday is in the files…</div>I can be there at 6 to set up drums.</div><p class="t r">7:31 pm · Seen by 4</p>
+<p class="who">Sam Example <small>· leader</small></p><div class="b">Legend. Can someone grab the keys from the office?</div><p class="t">7:42 pm</p></div><div class="comp"><span class="ib" style="margin:0;background:#fff">+</span><span class="f">Message Youth band leaders</span><span class="send">↑</span></div><p class="hint"><kbd>Enter</kbd> sends · <kbd>Shift</kbd>+<kbd>Enter</kbd> new line · paste or drop pictures</p></div><div class="pane"><h3>Youth band leaders</h3><div class="card"><div class="pr">Mute this chat<span class="sw"></span></div></div><h3>In this chat · 6</h3><div class="card"><div class="pr"><span class="dot">SE</span>Sam Example<small>Leader</small></div><div class="pr"><span class="dot">AE</span>Alex Example<small>Leader</small></div><div class="pr"><span class="dot">JE</span>Jordan Example<small></small></div><div class="pr"><span class="dot">PE</span>Priya Example<small></small></div><div class="pr"><span class="dot">TE</span>Taylor Example<small></small></div><div class="pr"><span class="dot">You</span>You<small></small></div></div><p style="font-size:12.5px;color:var(--ink3)">Everyone on the Youth band team is in this chat. Change who is on the team from the ministry.</p></div></div></body></html>

@@ -14,6 +14,7 @@ public static class ChatsClientExtensions
         services
             .AddDestinations(ChatsDestinations.All)
             .AddSingleton<ChatsStore>()
+            .AddSingleton<IChats>(provider => provider.GetRequiredService<ChatsStore>())
             .AddSingleton(new MinistryPartView(ChatsParts.Key, On))
             .AddSingleton(provider => new ChatAsks(ask => provider.GetRequiredService<ChatsStore>().AskToJoinAsync(ask.MinistryId, ask.PersonId, ask.Place, ask.Text)))
             .AddHubTile<ChatsTile>(ChatsTiles.Chats);

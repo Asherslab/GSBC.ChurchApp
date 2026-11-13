@@ -45,6 +45,12 @@ public interface IChatsService
 
     [SignedIn]
     ValueTask<Done> AskToJoinAsync(AskToJoin request, CallContext context = default);
+
+    [SignedIn]
+    ValueTask<MyChats> MineAsync(Nothing request, CallContext context = default);
+
+    [SignedIn]
+    ValueTask<ChatMessages> MessagesAsync(MessagesRequest request, CallContext context = default);
 }
 
 [Service("gsbc.chats.Oversight")]

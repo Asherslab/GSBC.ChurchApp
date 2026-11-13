@@ -235,6 +235,28 @@ public sealed class MinistryChatsRequest : IScopedRequest
 }
 
 [ProtoContract]
+public sealed class MyChats
+{
+    [ProtoMember(1)] public List<ChatCard> Chats { get; set; } = [];
+    [ProtoMember(2)] public bool Paused { get; set; }
+}
+
+[ProtoContract]
+public sealed class MessagesRequest
+{
+    [ProtoMember(1)] public string ChatId { get; set; } = "";
+    [ProtoMember(2)] public long BeforeSeq { get; set; }
+    [ProtoMember(3)] public int Limit { get; set; }
+}
+
+[ProtoContract]
+public sealed class ChatMessages
+{
+    [ProtoMember(1)] public List<ChatMessage> Messages { get; set; } = [];
+    [ProtoMember(2)] public bool HasMore { get; set; }
+}
+
+[ProtoContract]
 public sealed class DeskRequest
 {
     [ProtoMember(1)] public string MinistryId { get; set; } = "";

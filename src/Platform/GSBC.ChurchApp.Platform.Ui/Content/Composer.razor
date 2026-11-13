@@ -1,9 +1,12 @@
+@implements IAsyncDisposable
+@inject IJSRuntime JS
+
 <div class="composer @Class">
     @Above
     <div class="composer__bar">
         @Attach
         <textarea class="composer__field" rows="@Rows" placeholder="@Placeholder" aria-label="@Label" maxlength="@MaxLength" autocapitalize="sentences"
-                  value="@Text" @oninput="TypedAsync"></textarea>
+                  value="@Text" @oninput="TypedAsync" @ref="_field"></textarea>
         <Button Icon="@SendIcon" AriaLabel="@SendLabel" Tooltip="@SendLabel" Disabled="@(!CanSend)" Busy="Busy" Class="composer__send" OnClick="OnSend" />
     </div>
     @Below
@@ -26,5 +29,48 @@
     [Parameter] public RenderFragment? Below { get; set; }
     [Parameter] public string? Class { get; set; }
 
+    [Parameter] public bool EnterSends { get; set; }
+    [Parameter] public EventCallback OnEscape { get; set; }
+
+    private ElementReference _field;
+    private IJSObjectReference? _keys;
+    private DotNetObjectReference<Composer>? _self;
+
     private Task TypedAsync(ChangeEventArgs change) => TextChanged.InvokeAsync(change.Value?.ToString() ?? "");
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender || !EnterSends)
+            return;
+        _self = DotNetObjectReference.Create(this);
+        await using IJSObjectReference module = await JS.InvokeAsync<IJSObjectReference>("import", "./_content/GSBC.ChurchApp.Platform.Ui/js/composer.js");
+        _keys = await module.InvokeAsync<IJSObjectReference>("enterSends", _field, _self);
+    }
+
+    [JSInvokable]
+    public async Task SendFromKeyboardAsync(string text)
+    {
+        await TextChanged.InvokeAsync(text);
+        if (CanSend && !Busy)
+            await OnSend.InvokeAsync();
+    }
+
+    [JSInvokable]
+    public Task EscapeAsync() => OnEscape.HasDelegate ? OnEscape.InvokeAsync() : Task.CompletedTask;
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_keys is not null)
+        {
+            try
+            {
+                await _keys.InvokeVoidAsync("dispose");
+                await _keys.DisposeAsync();
+            }
+            catch (JSDisconnectedException)
+            {
+            }
+        }
+        _self?.Dispose();
+    }
 }

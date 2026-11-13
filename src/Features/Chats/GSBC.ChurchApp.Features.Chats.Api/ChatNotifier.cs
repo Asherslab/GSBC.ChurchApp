@@ -73,13 +73,13 @@ internal sealed class ChatNotifier(ChatsDbContext db, INotifications notificatio
 
     public Task SettleAsync(string subject, CancellationToken cancellationToken) => notifications.SettleAsync(subject, cancellationToken);
 
-    public const string ReportsPage = "/chats/reports";
+    public const string ReportsPage = "/chat-safety/reports";
 
     public Task ReportAsync(ReportRecord report, ChatRecord chat, string ministryName, CancellationToken cancellationToken) =>
         report.To == ReportRoutes.Auditors
             ? notifications.RaiseAsync(new Notification(
                 ChatsNotifications.Urgent, NotificationAudience.Holding(ChatsPermissions.Audit), $"Urgent: a message was reported in {chat.Name}",
-                $"In {ministryName}. Read it in context in the admin panel, under Chats.", ReportsPage, Subject: ReportSubject(report.Id), Urgent: true) { Actor = report.ReporterId },
+                $"In {ministryName}. Read it in context in the admin panel, under Chat safety.", ReportsPage, Subject: ReportSubject(report.Id), Urgent: true) { Actor = report.ReporterId },
                 cancellationToken)
             : notifications.RaiseAsync(new Notification(
                 ChatsNotifications.Report, NotificationAudience.Holding(ChatsPermissions.Check, chat.MinistryId.ToString()), $"A message was reported in {chat.Name}",

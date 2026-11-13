@@ -14,6 +14,7 @@ public static class AppIcons
     public const string Media = "image";
     public const string PlacesInTheApp = "map";
     public const string Chats = "messages-square";
+    public const string ChatSafety = "shield";
     public const string LifeGroups = "book-open";
     public const string Ministries = "users-round";
     public const string People = "contact";

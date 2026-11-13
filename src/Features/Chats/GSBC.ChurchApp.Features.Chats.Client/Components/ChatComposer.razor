@@ -1,8 +1,6 @@
-@using GSBC.ChurchApp.Platform.Client.Uploads
 @using GSBC.ChurchApp.Platform.Contracts.Media
 @using GSBC.ChurchApp.Platform.Ui.Content
-@inject ChatsStore Store
-@inject FileUploads Uploads
+@inject IChats Store
 
 @if (Chat.Paused)
 {
@@ -47,7 +45,7 @@ else if (!Card.YouMaySend && WritableChildren.Count == 0)
 }
 else
 {
-    <Composer Label="Message" Placeholder="@Placeholder" MaxLength="ChatLimits.TextLength" Text="@_text" TextChanged="Typed"
+    <Composer Label="Message" Placeholder="@Placeholder" MaxLength="ChatLimits.TextLength" Text="@_text" TextChanged="Typed" EnterSends="EnterSends" OnEscape="StopAsync"
               CanSend="@(_text.Trim().Length > 0 || (_picked.Count > 0 && Editing is null))" SendIcon="@(Editing is null ? "send" : "check")"
               SendLabel="@(Editing is null ? "Send" : "Save the change")" OnSend="SendAsync">
         <Above>
@@ -108,9 +106,22 @@ else
         <Attach>
             @if (Editing is null && Store.CanAttach && _picked.Count < ChatLimits.AttachmentsPerMessage)
             {
-                <FilePick Label="Add a photo or file" ImagesOnly="false" Icon="@AppIcons.Attach" Class="composer__attach" OnPicked="Picked" />
+                @if (Store.UploadsDirectly)
+                {
+                    <FilePick Label="Add a photo or file" ImagesOnly="false" Icon="@AppIcons.Attach" Class="composer__attach" Multiple="true" Limit="@Room" TakesPaste="true" DropOn="@DropOn" OnChosen="ChoseAsync" />
+                }
+                else
+                {
+                    <FilePick Label="Add a photo or file" ImagesOnly="false" Icon="@AppIcons.Attach" Class="composer__attach" OnPicked="Picked" />
+                }
             }
         </Attach>
+        <Below>
+            @if (EnterSends)
+            {
+                <p class="chat-composer__keys"><kbd>Enter</kbd> sends, <kbd>Shift</kbd> <kbd>Enter</kbd> for a new line. Paste or drop pictures in.</p>
+            }
+        </Below>
     </Composer>
 }
 
@@ -125,6 +136,8 @@ else
     [Parameter] public ChatMessage? Editing { get; set; }
     [Parameter] public ChatMessage? ReplyingTo { get; set; }
     [Parameter] public EventCallback OnDone { get; set; }
+    [Parameter] public string? DropOn { get; set; }
+    [Parameter] public bool EnterSends { get; set; }
 
     private ChatCard Card => Chat.Card;
 
@@ -186,12 +199,20 @@ else
             Store.KeepDraft(Card.Id, _text);
     }
 
+    private int Room => ChatLimits.AttachmentsPerMessage - _picked.Count;
+
     private void Picked(MediaRef media) => _picked.Add(media);
+
+    private async Task ChoseAsync(IReadOnlyList<ChosenFile> chosen)
+    {
+        foreach (ChosenFile file in chosen.Take(Room))
+            _picked.Add(await Store.UploadAsync(Card, file));
+    }
 
     private async Task UnpickAsync(MediaRef media)
     {
         _picked.Remove(media);
-        await Uploads.ForgetAsync(media);
+        await Store.ForgetAsync(media);
     }
 
     private void Mention(ChatPerson person)

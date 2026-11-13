@@ -1,0 +1,31 @@
+@if (InPanel)
+{
+    <PageTitle>@Title · Good Shepherd admin</PageTitle>
+    <section class="chat-frame" aria-label="@Title">
+        @if (BackHref is not null)
+        {
+            <Button Variant="ButtonVariant.Quiet" Small="true" Icon="chevron-left" Href="@BackHref" Class="chat-frame__back">@BackLabel</Button>
+        }
+        <PaneHead Title="@Title" Lead="@Lead" Tools="Actions" Class="chat-frame__head" />
+        <div class="chat-frame__body">@ChildContent</div>
+    </section>
+    @if (Beside is not null)
+    {
+        <aside class="chat-frame__beside" aria-label="@($"About {Title}")">@Beside</aside>
+    }
+}
+else
+{
+    <Page Title="@Title" BackHref="@BackHref" BackLabel="@BackLabel" TopBar="TopBarStyle.Solid" Actions="Actions">@ChildContent</Page>
+}
+
+@code {
+    [Parameter, EditorRequired] public required string Title { get; set; }
+    [Parameter] public string? Lead { get; set; }
+    [Parameter] public string? BackHref { get; set; }
+    [Parameter] public string BackLabel { get; set; } = "Back";
+    [Parameter] public bool InPanel { get; set; }
+    [Parameter] public RenderFragment? Actions { get; set; }
+    [Parameter] public RenderFragment? Beside { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}

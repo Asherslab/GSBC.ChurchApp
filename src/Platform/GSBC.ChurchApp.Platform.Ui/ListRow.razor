@@ -16,7 +16,7 @@ else
     private RenderFragment Row => @<text>
 @if (Href is not null && !External && !Disabled)
 {
-    <a class="row @ReadingClass @Class" style="@IndentStyle" href="@Href" @onclick="TapAsync">@Body</a>
+    <a class="row @ReadingClass @(Current ? "row--current" : "") @Class" style="@IndentStyle" href="@Href" aria-current="@(Current ? "page" : null)" @onclick="TapAsync">@Body</a>
 }
 else if (Disabled || (Href is null && !OnClick.HasDelegate))
 {
@@ -45,6 +45,7 @@ else
     [Parameter] public bool Reading { get; set; }
     [Parameter] public bool? Unread { get; set; }
     [Parameter] public bool Chevron { get; set; }
+    [Parameter] public bool Current { get; set; }
     [Parameter] public int Indent { get; set; }
     [Parameter] public IReadOnlyList<MenuItem>? Actions { get; set; }
 
