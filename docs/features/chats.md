@@ -189,7 +189,13 @@ beside `payload.json`) has the alternatives.
    ("Kids Ministries · Team · group chat · 3 people"). Alternatives on the page: a
    column of your ministries first, then that ministry's chats (one more click, mostly empty for people in two or three
    ministries); several chats open side by side (narrow columns, a new way of working the phone doesn't have). Under
-   1360px wide the settings pane folds away and the cog brings it back; at phone width one pane shows at a time.
+   1360px wide the settings pane folds away and the panel arrow brings it back; at phone width one pane shows at a time.
+   **The pane's toggle is a panel arrow, not a cog** (owner, 2026-11-13, #77: "make that more of a collapse arrow, not an
+   odd looking settings button"): it points into the pane to hide it and out to show it, and says *Hide* or *Show chat
+   settings* to screen readers. The phone keeps its cog, which opens the chat's settings page.
+   **A message's actions at a desk end on their last item** (owner, 2026-11-13, #76): the popover uses the menu's rows,
+   so there is no rule or gap under Delete, and Delete (or *Delete, as a leader*) comes last after a rule, after
+   *Report this message*. The phone's sheet lists them in the same order.
 2. **Name and place:** *Chats* at the top of the sidebar beside Home (it's personal and used often, not one area's
    tool); the desk renamed *Chat safety* and moved to the Safety area beside Safeguarding. Alternatives: *Chat checks*;
    leaving the desk in Ministries & groups.

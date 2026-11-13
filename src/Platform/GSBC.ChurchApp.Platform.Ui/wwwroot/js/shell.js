@@ -22,7 +22,7 @@ window.gsbcShell = (() => {
     const title = masthead?.querySelector('h1')?.getBoundingClientRect();
     const titleGone = !!title && title.bottom <= bottom;
     topbar.classList.toggle('is-stuck', titleGone || page.scrollTop > Number(page.dataset.stuckAt ?? 44));
-    topbar.classList.toggle('is-solid', !!masthead && (masthead.getBoundingClientRect().bottom < bottom + mastheadLead || (!!title && title.top < bottom)));
+    topbar.classList.toggle('is-solid', !!masthead && page.scrollTop > 0 && (masthead.getBoundingClientRect().bottom < bottom + mastheadLead || (!!title && title.top < bottom)));
   }, { capture: true, passive: true });
 
   const movingKeys = new Set(['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'PageUp', 'PageDown', 'Home', 'End']);

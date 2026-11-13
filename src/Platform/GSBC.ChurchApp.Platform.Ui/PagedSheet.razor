@@ -8,7 +8,7 @@
         <div class="paged__page @_direction" @key="_page" @ontouchstart="TouchStart" @ontouchend="TouchEndAsync">@Page(_page)</div>
         @if (Count > 1)
         {
-            <div class="paged__dots">
+            <div class="paged__dots" style="--dots: @Count">
                 @for (int index = 0; index < Count; index++)
                 {
                     int page = index;

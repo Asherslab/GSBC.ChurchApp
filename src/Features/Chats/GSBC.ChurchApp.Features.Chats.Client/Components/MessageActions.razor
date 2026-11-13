@@ -64,40 +64,69 @@ else
     [Parameter] public EventCallback<ChatMessage> OnEdit { get; set; }
     [Parameter] public bool InPanel { get; set; }
 
+    private sealed record LineAction(string Title, string Icon, Func<Task> Run, bool Danger = false);
+
     private RenderFragment ActionsBody => @<text>
     @if (Line is not null)
     {
         ChatMessage message = Line.Message;
-        bool mine = message.SenderId == Card.You;
-        @if (Card.YouMaySend || Card.ForChildren.Count > 0)
+        bool mayReact = Card.YouMaySend || Card.ForChildren.Count > 0;
+        @if (mayReact)
         {
             <BubbleReactions Picker="true" Label="React" Class="chat-react-row" Reactions="@Picks(message)" OnToggle="reaction => ReactAsync(message, reaction.Emoji, !reaction.Yours)" />
         }
-        <ListGroup>
-            @if (Card.YouMaySend || Card.ForChildren.Count > 0)
+        IReadOnlyList<LineAction> actions = ActionsFor(message);
+        @if (InPanel)
+        {
+            @if (mayReact)
             {
-                <ListRow Title="Reply" Icon="reply" OnClick="() => OnReply.InvokeAsync(message)" />
+                <div class="menu__rule" role="separator"></div>
             }
-            @if (message.Text.Length > 0)
+            @foreach (LineAction action in actions)
             {
-                <ListRow Title="Copy the text" Icon="copy" OnClick="() => CopyAsync(message)" />
+                @if (action.Danger)
+                {
+                    <div class="menu__rule" role="separator"></div>
+                }
+                <MenuButton Icon="@action.Icon" Danger="action.Danger" OnClick="action.Run">@action.Title</MenuButton>
             }
-            @if (mine && Card.YouMaySend || mine && message.ForName.Length > 0)
-            {
-                <ListRow Title="Edit" Icon="pencil" OnClick="() => OnEdit.InvokeAsync(message)" />
-                <ListRow Title="Delete" Icon="trash" Class="row--danger" OnClick="() => _step = Step.Delete" />
-            }
-            else if (Card.YouMayManage)
-            {
-                <ListRow Title="Delete, as a leader" Icon="trash" Class="row--danger" OnClick="() => _step = Step.Delete" />
-            }
-            @if (!mine)
-            {
-                <ListRow Title="Report this message" Icon="flag" OnClick="() => _step = Step.Report" />
-            }
-        </ListGroup>
+        }
+        else
+        {
+            <ListGroup>
+                @foreach (LineAction action in actions)
+                {
+                    <ListRow Title="@action.Title" Icon="@action.Icon" Class="@(action.Danger ? "row--danger" : null)" OnClick="action.Run" />
+                }
+            </ListGroup>
+        }
     }
     </text>;
+
+    private List<LineAction> ActionsFor(ChatMessage message)
+    {
+        bool mine = message.SenderId == Card.You;
+        List<LineAction> actions = [];
+        if (Card.YouMaySend || Card.ForChildren.Count > 0)
+            actions.Add(new("Reply", "reply", () => OnReply.InvokeAsync(message)));
+        if (message.Text.Length > 0)
+            actions.Add(new("Copy the text", "copy", () => CopyAsync(message)));
+        if (mine && Card.YouMaySend || mine && message.ForName.Length > 0)
+            actions.Add(new("Edit", "pencil", () => OnEdit.InvokeAsync(message)));
+        if (!mine)
+            actions.Add(new("Report this message", "flag", () => ToStep(Step.Report)));
+        if (mine && Card.YouMaySend || mine && message.ForName.Length > 0)
+            actions.Add(new("Delete", "trash", () => ToStep(Step.Delete), Danger: true));
+        else if (Card.YouMayManage)
+            actions.Add(new("Delete, as a leader", "trash", () => ToStep(Step.Delete), Danger: true));
+        return actions;
+    }
+
+    private Task ToStep(Step step)
+    {
+        _step = step;
+        return Task.CompletedTask;
+    }
 
     private IReadOnlyList<SegmentOption<string>> Routes =>
     [

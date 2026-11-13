@@ -8,7 +8,15 @@
     <Actions>
         @if (_card is not null)
         {
-            <Button Variant="ButtonVariant.Quiet" Icon="@AppIcons.Settings" AriaLabel="Chat settings" Tooltip="Chat settings" Expanded="@(InPanel ? SettingsOpen : null)" Class="@(InPanel && SettingsOpen ? "chat-frame__cog chat-frame__cog--on" : "chat-frame__cog")" OnClick="OpenSettings" />
+            @if (InPanel)
+            {
+                string toggle = SettingsOpen ? "Hide chat settings" : "Show chat settings";
+                <Button Variant="ButtonVariant.Quiet" Icon="@(SettingsOpen ? AppIcons.HideSidePane : AppIcons.ShowSidePane)" AriaLabel="@toggle" Tooltip="@toggle" Expanded="SettingsOpen" OnClick="OpenSettings" />
+            }
+            else
+            {
+                <Button Variant="ButtonVariant.Quiet" Icon="@AppIcons.Settings" AriaLabel="Chat settings" Tooltip="Chat settings" OnClick="OpenSettings" />
+            }
         }
     </Actions>
     <Beside>
