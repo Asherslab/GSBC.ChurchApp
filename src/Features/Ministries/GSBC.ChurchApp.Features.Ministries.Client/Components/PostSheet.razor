@@ -10,7 +10,7 @@
 
 @if (OnAPage)
 {
-    <TitleBand Title="@Heading" BrowserTitle="@Heading" BackHref="@BackHref" BackText="@Page.Ministry.Name" Lead="@($"In {Page.Ministry.Name}. Write it as blocks: text, headings, pictures, video, audio or a file, moved by their handles.")">
+    <TitleBand Title="@Heading" BrowserTitle="@Heading" BackHref="@BackHref" BackText="@Page.Ministry.Name" Lead="@($"In {Page.Ministry.Name}. A title and the post. Pictures, video, files and more are under Insert.")">
         <Actions>
             @if (Draft.Id.Length > 0)
             {
@@ -30,7 +30,7 @@
         </Settings>
         <Preview>
             <PhoneFrame Label="The post, as it will look in the ministry's News" OnRoute="">
-                <Section First="true"><PostView Title="@(Draft.Title.Trim().Length > 0 ? Draft.Title.Trim() : "Its title")" Content="_body" From="@Page.Ministry.Name" When="Just now" /></Section>
+                <Section First="true"><PostView Band="true" Title="@(Draft.Title.Trim().Length > 0 ? Draft.Title.Trim() : "Its title")" Content="_body" From="@Page.Ministry.Name" When="Just now" /></Section>
             </PhoneFrame>
         </Preview>
         <Foot>@Saving</Foot>

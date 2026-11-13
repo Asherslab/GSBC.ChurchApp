@@ -31,7 +31,7 @@
         </Settings>
         <Preview>
             <PhoneFrame Label="The post, as it will look in the app's News" OnRoute="news">
-                <Section First="true"><PostView Title="@(_title.Trim().Length > 0 ? _title.Trim() : "Its title")" Content="Draft" Author="@Post.Author" When="Just now" LinkPath="@_linkPath.Trim()" LinkLabel="@_linkLabel.Trim()" /></Section>
+                <Section First="true"><PostView Band="true" Title="@(_title.Trim().Length > 0 ? _title.Trim() : "Its title")" Content="Draft" Author="@Post.Author" When="Just now" LinkPath="@_linkPath.Trim()" LinkLabel="@_linkLabel.Trim()" /></Section>
             </PhoneFrame>
         </Preview>
         <Foot>@Saving</Foot>

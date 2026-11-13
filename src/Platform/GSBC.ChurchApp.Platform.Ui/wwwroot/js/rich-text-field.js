@@ -61,7 +61,7 @@ const inlineKinds = { bold: 'StrongEmphasis', italic: 'Emphasis', strike: 'Strik
 const lineKinds = { ATXHeading1: 'h1', ATXHeading2: 'h2', ATXHeading3: 'h3', BulletList: 'bullets', OrderedList: 'numbers', Blockquote: 'quote', FencedCode: 'codeblock' };
 const inlineStyles = {
   StrongEmphasis: 'cm-md-strong', Emphasis: 'cm-md-em', Link: 'cm-md-link', Strikethrough: 'cm-md-strike', Highlight: 'cm-md-highlight',
-  InlineCode: 'cm-md-code', Subscript: 'cm-md-sub', Superscript: 'cm-md-sup', FootnoteRef: 'cm-md-fnref',
+  InlineCode: 'cm-md-code', Subscript: 'cm-md-sub', Superscript: 'cm-md-sup',
 };
 const markNodes = new Set(['EmphasisMark', 'LinkMark', 'URL', 'LinkTitle', 'StrikethroughMark', 'HighlightMark', 'CodeMark', 'SubscriptMark', 'SuperscriptMark']);
 
@@ -90,11 +90,12 @@ class Rule extends WidgetType {
   ignoreEvent() { return false; }
 }
 
-class EmojiGlyph extends WidgetType {
-  constructor(glyph) { super(); this.glyph = glyph; }
-  eq(other) { return other.glyph === this.glyph; }
+class Glyph extends WidgetType {
+  constructor(glyph, className = '') { super(); this.glyph = glyph; this.className = className; }
+  eq(other) { return other.glyph === this.glyph && other.className === this.className; }
   toDOM() {
     const glyph = document.createElement('span');
+    glyph.className = this.className;
     glyph.textContent = this.glyph;
     return glyph;
   }
@@ -156,6 +157,7 @@ function decorate(view, emoji) {
       enter: node => {
         const name = node.name;
         if (inMedia(node.from)) return false;
+        if (name === 'Link' && node.from === state.doc.lineAt(node.from).from && footnoteDefinition.test(state.doc.lineAt(node.from).text)) return false;
         if (styles[name]) {
           marks.push(styles[name].range(node.from, node.to));
         } else if (markNodes.has(name)) {
@@ -192,7 +194,10 @@ function decorate(view, emoji) {
           markLine(node.from, lines.Directive);
         } else if (name === 'Emoji') {
           const glyph = emoji[state.doc.sliceString(node.from + 1, node.to - 1)];
-          if (glyph && !touches(selection, node.from, node.to)) marks.push(Decoration.replace({ widget: new EmojiGlyph(glyph) }).range(node.from, node.to));
+          if (glyph && !touches(selection, node.from, node.to)) marks.push(Decoration.replace({ widget: new Glyph(glyph) }).range(node.from, node.to));
+        } else if (name === 'FootnoteRef') {
+          if (!touches(selection, node.from, node.to))
+            marks.push(Decoration.replace({ widget: new Glyph(state.doc.sliceString(node.from + 2, node.to - 1), 'cm-md-fnref') }).range(node.from, node.to));
         } else if (name === 'Escape') {
           if (!touches(selection, node.from, node.to)) marks.push(hidden.range(node.from, node.from + 1));
         }
