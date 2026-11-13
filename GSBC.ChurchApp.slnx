@@ -217,6 +217,7 @@
   </Folder>
   <Folder Name="/tests/Features/News/">
     <Project Path="tests/Features/News/GSBC.ChurchApp.Features.News.Api.Tests/GSBC.ChurchApp.Features.News.Api.Tests.csproj" />
+    <Project Path="tests/Features/News/GSBC.ChurchApp.Features.News.Client.Tests/GSBC.ChurchApp.Features.News.Client.Tests.csproj" />
   </Folder>
   <Folder Name="/tests/Features/Prayer/">
     <Project Path="tests/Features/Prayer/GSBC.ChurchApp.Features.Prayer.Api.Tests/GSBC.ChurchApp.Features.Prayer.Api.Tests.csproj" />

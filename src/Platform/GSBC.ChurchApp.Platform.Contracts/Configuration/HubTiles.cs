@@ -123,7 +123,7 @@ public static class TileTones
     public static readonly TileTone LiveSoft = new("live-soft", "Pale accent", "live", "ink", false);
     private static readonly TileTone Live = new("live", "Accent", "live", "on-live", true);
     public static readonly TileTone MarkerSoft = new("marker-soft", "Pale highlight", "marker", "ink", false);
-    private static readonly TileTone Marker = new("marker", "Highlight", "marker", "on-marker", true);
+    public static readonly TileTone Marker = new("marker", "Highlight", "marker", "on-marker", true);
 
     public static readonly IReadOnlyList<TileTone> All = [Sand, Raised, Masthead, Primary, LiveSoft, Live, MarkerSoft, Marker];
 

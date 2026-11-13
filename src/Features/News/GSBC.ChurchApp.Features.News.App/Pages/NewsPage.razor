@@ -4,6 +4,7 @@
 @inject IEnumerable<INewsSource> Sources
 @inject NavigationManager Navigation
 @inject IAccess Access
+@inject NewsLastLooked LastLooked
 
 <Page Title="News">
     <Masthead Title="News" Note="From the church and the ministries you're in" />
@@ -43,6 +44,8 @@
     private const ChangeKind Reload = ChangeKind.Reconnected | ChangeKind.Session | ChangeKind.Access | ChangeKind.Outbox;
 
     private static readonly IReadOnlyList<TabOption<string>> Tabs = [new(NewsWords.ChurchTab, "The church"), new(NewsWords.YoursTab, "Your ministries")];
+
+    protected override async Task OnInitializedAsync() => await LastLooked.LookedAsync();
 
     private IReadOnlyList<string> Feeds => [.. News.Feeds, .. Sources.SelectMany(source => source.Feeds)];
 

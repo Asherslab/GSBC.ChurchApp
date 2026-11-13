@@ -6,6 +6,7 @@
     {
         <button type="button" class="hub-tile__hit" aria-label="@Spoken" @onclick="OpenAsync"></button>
     }
+    @Banner
     @if (Shape is TileShape.Picture or TileShape.Behind or TileShape.Beside)
     {
         <span class="hub-tile__picture">
@@ -105,6 +106,7 @@
     [Parameter] public RenderFragment? Cover { get; set; }
     [Parameter] public RenderFragment? Action { get; set; }
     [Parameter] public RenderFragment? ChildContent { get; set; }
+    [Parameter] public RenderFragment? Banner { get; set; }
     [Parameter] public string? Class { get; set; }
     [Parameter] public TileShape? Layout { get; set; }
     [Parameter] public bool GoBeside { get; set; }

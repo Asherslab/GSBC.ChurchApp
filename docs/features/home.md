@@ -30,6 +30,20 @@ week has *How many to show*).
   - **Latest sermon** (`hub.sermon`, owned by Sermons since 2026-11-05): real. The newest sermon (or, in the *Where
     you're up to* layout, the one you're part-way through) with its picture and a play button that starts it in the
     player; the admin canvas shows the real newest one through `Sermons.Latest` ([sermons.md](sermons.md)).
+  - **News** (`hub.news`, owned by News since 2026-11-13): real. Church news from the store, in one of three layouts
+    the owner picked together on the decision page (`.impeccable/mocks/news-tile/`: "i love all three of A, B, and C,
+    give me all three as variants/layouts of the tile"):
+    - *Front page* (the default): the newest post with its picture (behind it at 1 × 1, beside it one row tall, above it
+      when taller); at 2 × 2 the post before it on a line underneath, which opens that post.
+    - *What's new*: how many posts are new since this phone last opened News (each post in the last week before the
+      first time), with an unread dot and the newest headline; it opens the News tab. The last look is kept on the phone
+      (`NewsLastLooked`, local preferences), not synced; the admin canvas counts the last week.
+    - *Headlines*: the title with *All news*, then the newest three (or one more per extra row) with the time posted
+      today or the day; the newest alone at 1 × 1.
+    - **Urgent today** takes the tile in every layout, as at the top of the News page: a marker band across a front
+      page with room for it (2 × 2 and bigger), otherwise the post itself in Highlight.
+    - With no news it shows its title and "Nothing new yet". Its picture setting isn't used: the posts bring their own.
+    - `HubTile` gained a `Banner` slot for the urgent band. Option D on the decision page, no tile at all, was declined.
   - **Waiting for their feature** (`WaitingTiles`, in Configuration until the feature exists): Sunday bulletin (date, the year's theme and verse), This week (the next
     gatherings from the church's weekly rhythm) and Outreach day (its live "outreach is on" state comes
     with Outreach) show sample content. When Sermons (and so on) is built, it takes its kind and view into

@@ -1,0 +1,59 @@
+{
+  "title": "A News tile for Home: does it earn one, and what does it show?",
+  "question": "Each sketch is dev's real Home (the sermon, bulletin, prayer and the rest) with the News tile placed under the latest sermon, in brand light, brand dark on a day a post is urgent, and the 2026 theme, plus every other size on the right. Dev has no news posts yet, so the posts are samples. My recommendation: A, the front page in miniature. It's the only one that gives Home something it doesn't already have: a fresh picture from church life each week. B repeats the Notifications tile and C repeats This week's look. If none of them earns its place, D (no tile) is an honest choice too. Whichever you pick, a post marked urgent today takes the tile over, as it does at the top of the News page. Worth knowing: the app's News icon is almost the same drawing as the bulletin's.",
+  "seed": "seed:2851a64fd7eba071",
+  "options": [
+    {
+      "id": "front-page",
+      "kind": "assigned",
+      "kicker": "THE ROLL",
+      "label": "A: A front page in miniature",
+      "thesis": "The newest post leads with its picture and headline; at 2 × 2 the one before it sits under a line. Tapping opens that post. The picture sits beside the headline when the tile is one row tall, and behind it in a single cell. A post urgent today takes a marker band across the top.",
+      "palette": ["#2a3d5e", "#ffffff", "#e7ae74", "#00776d"],
+      "materials": ["Card tone, like the sermon", "picture first", "a second headline under a hairline", "marker band when urgent"],
+      "viewport": "Under the latest sermon, a 2 × 2 card: the Christmas post's picture, its headline and 'Church office · 2 hours ago', then 'Holiday program volunteers needed · Yesterday'.",
+      "risk": "It leans on pictures: a week of posts without one falls back to words on the card, and two big picture cards (the sermon and News) stacked together could feel heavy.",
+      "html": ".impeccable/mocks/news-tile/a-front-page.html",
+      "htmlFrame": "1440x900"
+    },
+    {
+      "id": "quiet-until-urgent",
+      "kind": "dealt",
+      "label": "B: Quiet until it matters",
+      "thesis": "A small, sand-coloured tile: how many posts are new since you last opened News, and the newest headline. On a day a post is urgent it turns marker-orange and shows that post.",
+      "palette": ["#f4efe7", "#18233a", "#e7ae74", "#2a3d5e"],
+      "materials": ["Soft tone", "unread dot and count", "turns Highlight when urgent", "no pictures"],
+      "viewport": "Under the sermon, a 2 × 1 row: '• 2 new in News' over the newest headline, with the News icon at the end.",
+      "risk": "It does what the Notifications tile already does (a count and the newest), and 'new since you last looked' is a new thing for the phone to remember.",
+      "html": ".impeccable/mocks/news-tile/b-quiet-until-urgent.html",
+      "htmlFrame": "1440x900"
+    },
+    {
+      "id": "headlines",
+      "kind": "dealt",
+      "label": "C: Headlines",
+      "thesis": "A short list of the newest three headlines with when each was posted and 'All news' beside the title, drawn like This week's agenda; an urgent post goes first with Today.",
+      "palette": ["#ffffff", "#18233a", "#00776d", "#e7ae74"],
+      "materials": ["Card tone", "the agenda's list rows", "All news link", "Today pill"],
+      "viewport": "Under the sermon, a full-width card 'News · All news ›' with three rows: 2h, Yesterday, Monday.",
+      "risk": "It looks like This week, so Home gets two lists that are hard to tell apart, and long headlines are cut short at one-cell widths.",
+      "html": ".impeccable/mocks/news-tile/c-headlines.html",
+      "htmlFrame": "1440x900"
+    },
+    {
+      "id": "no-tile",
+      "kind": "grounded",
+      "label": "D: It doesn't earn a tile",
+      "thesis": "Home stays as it is. News is a tab one tap away, a post that sends a notification already shows on the Notifications tile, and staff who want a door to News can add a plain tile that opens it.",
+      "palette": ["#2a3d5e", "#ffffff", "#f4efe7", "#00776d"],
+      "materials": ["nothing new to build", "the Notifications tile", "a plain tile opening News"],
+      "viewport": "Dev's Home unchanged; on the right, the Notifications tile with a church news post and a plain 'Church news' tile.",
+      "risk": "Home never shows a picture from church life, and a post sent without a notification doesn't appear on Home at all.",
+      "html": ".impeccable/mocks/news-tile/d-no-tile.html",
+      "htmlFrame": "1440x900"
+    }
+  ],
+  "reroll": true,
+  "steer": true,
+  "buildPath": { "value": "code" }
+}
