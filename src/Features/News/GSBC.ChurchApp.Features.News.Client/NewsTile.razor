@@ -1,0 +1,156 @@
+@using GSBC.ChurchApp.Features.News.Contracts
+@using GSBC.ChurchApp.Platform.Client.News
+@using GSBC.ChurchApp.Platform.Contracts.Configuration
+@using GSBC.ChurchApp.Platform.Contracts.Content
+@using GSBC.ChurchApp.Platform.Contracts.Media
+@using GSBC.ChurchApp.Platform.Icons
+@using GSBC.ChurchApp.Platform.Ui.Surfaces
+@inject INewsReads News
+@inject TimeProvider Clock
+@inject IServiceProvider Services
+
+<LiveData TValue="NewsTileContent" Load="LoadAsync" Feeds="News.Feeds" Remember="@($"news.tile.{Entry.Placement?.Id}")">
+    <ChildContent>@Drawn(context.Value)</ChildContent>
+    <Loading>@Drawn(null)</Loading>
+    <Failed>@Drawn(null)</Failed>
+</LiveData>
+
+@code {
+    private const int LongestLine = 120;
+
+    [CascadingParameter] public HubContext Hub { get; set; } = HubContext.Still;
+    [Parameter, EditorRequired] public required ArrangedSurface Entry { get; set; }
+
+    private DateTime Now => Clock.GetUtcNow().UtcDateTime;
+
+    private TileLook Look => TileLook.Of(NewsTiles.News, Entry.Values) with { Image = null };
+
+    private TileVariant Variant => NewsTiles.News.VariantFor(Look, Hub.Columns);
+
+    private TileSpan Span => new(Math.Min(Look.Columns, Hub.Columns), Look.Rows);
+
+    private string Id => Entry.Placement?.Id ?? "";
+
+    private async Task<NewsTileContent> LoadAsync()
+    {
+        IReadOnlyList<NewsPost> published = await News.PublishedAsync();
+        DateTime? lastLooked = Services.GetService(typeof(NewsLastLooked)) is NewsLastLooked looked ? await looked.LoadAsync() : null;
+        return NewsTileContent.Of(published.Where(post => post.State == NewsState.Published).Select(NewsWords.Item), Now, lastLooked);
+    }
+
+    private RenderFragment Drawn(NewsTileContent? content)
+    {
+        if (content is null)
+            return @<HubTile Look="Look" Title="@Look.Title" PlacementId="@Id" />;
+        if (content.IsEmpty)
+            return @<HubTile Look="Look" Title="@Look.Title" Lines="@(["Nothing new yet"])" PlacementId="@Id" />;
+        return Variant.Key switch
+        {
+            NewsTiles.WhatsNew => WhatsNew(content),
+            NewsTiles.Headlines => Headlines(content),
+            _ => FrontPage(content),
+        };
+    }
+
+    private RenderFragment FrontPage(NewsTileContent content)
+    {
+        bool big = Span is { Columns: > 1, Rows: > 1 };
+        if (content.Lead is not { } lead)
+            return Urgent(content.Urgent!);
+        if (content.Urgent is { } urgent && !big)
+            return Urgent(urgent);
+
+        RenderFragment? banner = content.Urgent is { } today ? Banner(today) : null;
+        RenderFragment? next = big && content.Newest.Skip(1).FirstOrDefault() is { } second ? Entries([second], urgentToday: false) : null;
+        IReadOnlyList<string> lines = [big ? Posted(lead) : Ago(lead)];
+        if (lead.Picture is not { } picture)
+            return @<HubTile Look="Look" Title="@lead.Title" Lines="lines" Href="@Open(lead)" PlacementId="@Id" Banner="banner" Class="hub-tile--news">@next</HubTile>;
+
+        TileShape shape = Span switch
+        {
+            { Columns: 1, Rows: 1 } => TileShape.Behind,
+            { Rows: 1 } => TileShape.Beside,
+            _ => TileShape.Picture,
+        };
+        RenderFragment cover = @<MediaImage Media="picture" Size="@(Span.Columns > 1 ? MediaSizeName.ForPhones : MediaSizeName.Thumbnail)" Alt="" Class="hub-tile__image" />;
+        return @<HubTile Look="@(Look with { Icon = "" })" Layout="shape" Title="@lead.Title" Lines="lines" Href="@Open(lead)" PlacementId="@Id" Cover="cover" Banner="banner"
+                         Class="hub-tile--news">@next</HubTile>;
+    }
+
+    private RenderFragment WhatsNew(NewsTileContent content)
+    {
+        if (content.Urgent is { } urgent)
+            return Urgent(urgent);
+        if (content.New == 0 || content.Lead is not { } newest)
+            return @<HubTile Look="Look" Title="@Look.Title" Lines="@(["Nothing new since you last looked"])" PlacementId="@Id" />;
+
+        if (Span is { Columns: 1, Rows: 1 })
+            return @<HubTile Look="Look" Title="@($"{content.New} new")" Lines="[Look.Title]" Unread="true" PlacementId="@Id" />;
+        IReadOnlyList<string> lines = Span.Rows == 1 ? [newest.Title] : [newest.Title, Ago(newest)];
+        return @<HubTile Look="Look" Title="@($"{content.New} new in {Look.Title}")" Lines="lines" Unread="true" PlacementId="@Id" />;
+    }
+
+    private RenderFragment Headlines(NewsTileContent content)
+    {
+        List<NewsItem> items = [.. content.UrgentToday, .. content.Newest];
+        if (Span is { Columns: 1, Rows: 1 })
+            return content.Urgent is { } urgent
+                ? Urgent(urgent)
+                : @<HubTile Look="@(Look with { Icon = "" })" Title="@items[0].Title" Lines="[Ago(items[0])]" Href="@Open(items[0])" PlacementId="@Id" />;
+
+        int shown = Span.Rows == 1 ? 3 : Span.Rows + 1;
+        return @<HubTile Look="@(Look with { Icon = "" })" Layout="TileShape.Square" Title="@Look.Title" Go="All news" GoBeside="@(Span.Columns > 1)"
+                         Class="hub-tile--list hub-tile--headlines" PlacementId="@Id">
+            @Entries(items.Take(shown).ToList(), urgentToday: content.UrgentToday.Count > 0)
+        </HubTile>;
+    }
+
+    private RenderFragment Entries(IReadOnlyList<NewsItem> items, bool urgentToday) =>
+        @<span class="hub-list">
+            @foreach (NewsItem item in items)
+            {
+                bool urgent = urgentToday && item.Urgent && ChurchTime.DayOf(item.PostedAt) == ChurchTime.DayOf(Now);
+                <HubListEntry @key="item.Id" Href="@Open(item)" Spoken="@($"{item.Title}. {Ago(item)}")" PlacementId="@Id">
+                    <span class="hub-list__when">@Day(item)</span>
+                    <span class="hub-list__what">
+                        @if (urgent)
+                        {
+                            <span class="pill">Today</span>
+                        }
+                        @item.Title
+                    </span>
+                </HubListEntry>
+            }
+        </span>;
+
+    private RenderFragment Urgent(NewsItem item) =>
+        @<HubTile Look="@(Look with { Tone = TileTones.Marker, Icon = AppIcons.News, IconTone = "" })" Title="@item.Title" Lines="[Today(item)]"
+                  Href="@Open(item)" PlacementId="@Id" />;
+
+    private RenderFragment Banner(NewsItem item) =>
+        @<HubListEntry Href="@Open(item)" Spoken="@($"Today: {item.Title}")" PlacementId="@Id" Class="hub-tile__banner">
+            <Icon Name="@AppIcons.News" Size="IconSize.Small" />
+            <span class="hub-tile__banner-words">Today: @item.Title</span>
+        </HubListEntry>;
+
+    private static string Open(NewsItem item) => NewsDestinations.PostPath(item.Id);
+
+    private string Ago(NewsItem item)
+    {
+        string ago = ChurchDates.Ago(item.PostedAt, Now);
+        return char.ToUpperInvariant(ago[0]) + ago[1..];
+    }
+
+    private string Posted(NewsItem item) => item.From.Length > 0 ? $"From {item.From} · {Ago(item)}" : Ago(item);
+
+    private string Day(NewsItem item) => ChurchTime.DayOf(item.PostedAt) == ChurchTime.DayOf(Now)
+        ? ChurchDates.Time(ChurchTime.ToChurch(item.PostedAt))
+        : ChurchDates.Describe(item.PostedAt, DateLineStyle.Relative, withTime: false, Now);
+
+    private static string Today(NewsItem item)
+    {
+        string text = PlainText.Of(item.Body);
+        string excerpt = text.Length <= LongestLine ? text : text[..LongestLine].TrimEnd() + "…";
+        return excerpt.Length > 0 ? $"Today · {excerpt}" : "Today";
+    }
+}

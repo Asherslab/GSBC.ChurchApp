@@ -240,6 +240,7 @@ flowchart LR
         PeopleTests["Features.People.Api.Tests"]
         MinistriesTests["Features.Ministries.Api.Tests"]
         NewsTests["Features.News.Api.Tests"]
+        NewsClientTests["Features.News.Client.Tests"]
         PrayerTests["Features.Prayer.Api.Tests"]
         FeedbackTests["Features.Feedback.Api.Tests"]
         RostersTests["Features.Rosters.Api.Tests"]
@@ -382,6 +383,7 @@ flowchart LR
     SermonsImportTests --> SermonsImportApi & Testing
     EventsTests --> EventsApi & Testing
     EventsClientTests --> EventsClient
+    NewsClientTests --> NewsClient
     WebsiteTests --> HostsWebsite
     ReleaseNotesTests --> ReleaseNotesApp & ReleaseNotesGenerator
 ```
@@ -514,6 +516,7 @@ flowchart LR
 | `GSBC.ChurchApp.Features.Events.Api.Tests` | Unit: each repeat pattern's dates, breaks and dates not on, specials, the 30-day/12-month window, which feed each row goes in and with which audience, contact details, audiences together and when showing elsewhere widens them; only a publisher shows an event on a calendar that needs one or changes it once shown; this date only vs every date; a calendar for signed-in people can't be added or told to a signed-out phone; reading iCal (repeats, skipped and changed dates, other time zones) and asking with its ETag; addresses on private networks never read; writing calendar files; reminders due at 7 and 2 days and when they settle. Against Postgres: publishing sends a date leaving the window, or a calendar turning private, as deletes; Ask to publish reaches the publishers and publishing shows it; an editor can't reach another calendar's events; a copy on another calendar follows the home event; a private calendar's iCal file only through a valid link of someone it's for (not after their role goes, nor to a signed-out phone with a stale *Calendar added*); a reset link refused | No |
 | `GSBC.ChurchApp.Features.Ministries.Api.Tests` | Unit: ministries nest to any depth and can't loop; who sees each audience; joining follows the setting; a ministry without attendees posts only for everyone or its team; your place in words. Against Postgres: deleting a ministry moves its teams up and removes what's its own; a team-only post never reaches the phone of someone not on the team; a ministry, the directory and Life Groups open from a phone's store exactly as the server shows them | No |
 | `GSBC.ChurchApp.Features.News.Api.Tests` | Against Postgres: a draft never reaches readers and each audience gets its own feed; publishing tells people once, scheduled posts go out once even with two servers; writers can't publish or change what's published; deleting recalls the notification; a ministry's ask, a yes or no, its edits flowing through, and withdrawing it | No |
+| `GSBC.ChurchApp.Features.News.Client.Tests` | Unit tests, no I/O: Home's News tile counts posts after your last look at News as new (the last week before your first), and keeps a post urgent today apart from the newest | No |
 | `GSBC.ChurchApp.Features.Prayer.Api.Tests` | Unit: whose request it is; staff can hide a name but never show one. Against Postgres: nothing reaches the wall until staff show it, names stay off it, private requests reach only their person's feed, the wall's expiry, per-phone limits, deleting a request or an account | No |
 | `GSBC.ChurchApp.Features.Feedback.Api.Tests` | Unit: who may send and how many a day, when a closed ticket goes. Against Postgres: limits and blocks, a resent ticket stored once, closing deletes the files, deleting an account, the phone's data only for those who may read it | No |
 | `GSBC.ChurchApp.Features.Rosters.Api.Tests` | Unit: unmet requirements are flagged in words; who sees how much of a date; who may answer; an archived roster can't change; swaps only the ways allowed, and only an approved one waits for a leader; reminders and nudges come once. Against Postgres: a leader puts someone on over days away and missing requirements and sees it flagged; a parent answers for their child and nobody else can; each phone's row holds only what the ministry lets them see; forgetting someone takes them off dates to come | No |

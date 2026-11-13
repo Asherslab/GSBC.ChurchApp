@@ -38,6 +38,7 @@ public static class NewsApiExtensions
         services.AddFeed(new FeedDefinition(NewsFeeds.PrivatePosts, FeedAudience.EachRow));
         services.AddFeed(new FeedDefinition(NewsFeeds.Desk, FeedAudience.Holding(NewsPermissions.Write)));
         services.AddDestinations(NewsDestinations.All);
+        services.AddSurfaces(NewsTiles.Surfaces);
         return services;
     }
 
