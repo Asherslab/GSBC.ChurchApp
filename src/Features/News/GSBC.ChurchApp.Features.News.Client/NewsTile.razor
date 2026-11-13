@@ -159,8 +159,8 @@
             ({ TotalHours: < 1 }, _) => $"{(int)since.TotalMinutes} min ago",
             (_, 0) => (int)since.TotalHours == 1 ? "1 hour ago" : $"{(int)since.TotalHours} hours ago",
             (_, 1) => "Yesterday",
-            (_, < 7) => ChurchTime.ToChurch(item.PostedAt).ToString("dddd", CultureInfo.GetCultureInfo("en-AU")),
-            _ => ChurchTime.ToChurch(item.PostedAt).ToString("d MMM", CultureInfo.GetCultureInfo("en-AU")),
+            (_, < 7) => ChurchTime.ToChurch(item.PostedAt).ToString("dddd", CultureInfo.InvariantCulture),
+            _ => ChurchTime.ToChurch(item.PostedAt).ToString("d MMM", CultureInfo.InvariantCulture),
         };
     }
 
