@@ -9,6 +9,7 @@ namespace GSBC.ChurchApp.Features.Notifications.Contracts;
 [ProtoSerializable(typeof(Done))]
 [ProtoSerializable(typeof(InboxItem))]
 [ProtoSerializable(typeof(KindInfo))]
+[ProtoSerializable(typeof(KindPermission))]
 [ProtoSerializable(typeof(PreferenceItem))]
 [ProtoSerializable(typeof(MarkReadRequest))]
 [ProtoSerializable(typeof(RegisterDeviceRequest))]

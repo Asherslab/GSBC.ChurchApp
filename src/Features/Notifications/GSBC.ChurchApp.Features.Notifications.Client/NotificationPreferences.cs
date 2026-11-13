@@ -62,8 +62,11 @@ public sealed class NotificationPreferences(
     }
 
     private bool MayReceive(KindInfo kind) =>
-        kind.ForNode is not { } node
-        || (ScopeKind.TryParse(kind.ForScope ?? "", out ScopeKind scope) && access.CanSomewhere(new Permission(node, scope, "")));
+        kind.ForAny is { Count: > 0 } any ? any.Any(permission => CanSomewhere(permission.Node, permission.Scope))
+        : kind.ForNode is not { } node || CanSomewhere(node, kind.ForScope);
+
+    private bool CanSomewhere(string node, string? scope) =>
+        ScopeKind.TryParse(scope ?? "", out ScopeKind kind) && access.CanSomewhere(new Permission(node, kind, ""));
 
     private async Task<Dictionary<string, bool>> OnPhoneAsync(List<KindInfo> kinds)
     {
