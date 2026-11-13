@@ -219,6 +219,23 @@ beside `payload.json`) has the alternatives.
   message's actions.
 - **Typing indicators and presence** ("Sam is typing", who's here now).
 
+## Formatting in messages (owner, 2026-11-14)
+
+The owner: "chat messages should be able to use the markdown. But not offer all the buttons on mobile (since that will
+become massive). Keep the UI the same, just allow the markdown to work. (On desktop, if it fits well, allow the full or
+a subset of the toolbar)." And: "Don't worry about older messages. Nothings gone released yet."
+
+- **Typed Markdown shows formatted** in bubbles, in the app and the admin panel: bold, italic, strikethrough,
+  highlight, inline code and code blocks, links, lists and quotes ([rich-text.md](../architecture/rich-text.md),
+  `RichTextScope.Chat`). Headings, tables, card splits, lines across, footnotes and pictures stay as the text typed:
+  a chat keeps its own photos and files. Mentions still show as mentions inside formatted text.
+- **The composer is unchanged,** on the phone and the desk (*default (owner to review)*: a bar on the desk's composer
+  didn't fit well beside its attach and send buttons).
+- **Checked on send and edit:** a link the app can't open is refused, as in posts. Notifications, the chat list's last
+  line and a reply's quote show the words without the marks.
+- **Chat safety** shows messages formatted, with the words it found marked, and its search matches the words, not the
+  marks (`ChatReview`).
+
 ## Deleting
 
 - **A chat:** its leaders delete it (app or desk). Everyone loses it; the church keeps its messages and log.

@@ -9,8 +9,32 @@ and a live preview (a structured block model and a JavaScript WYSIWYG editor wer
 **Posts allow more** (2026-11-13, [news.md](../features/news.md)): a media line may name any file from the library, with an
 optional caption, `![alt](media:<id> "caption")`; pictures on consecutive lines are a gallery; a YouTube or Vimeo link on
 its own line, `![title](https://youtu.be/…)`, is a player rebuilt from the video's id alone. Each use says which kinds it
-takes (`RichTextMedia`): everything else still takes only pictures. Posts are written as blocks (`PostBlocks`,
-`PostEditor`) over the same text, so what is stored stays this format.
+takes (`RichTextMedia`): everything else still takes only pictures.
+
+**The format grew on 2026-11-14** ([news.md](../features/news.md), *One editor, everything in it*), in GFM's spelling
+where it has one:
+
+| Allowed | Written as |
+|---|---|
+| Headings, biggest first (the page title is above them) | `# `, `## `, `### ` (up to six; four and below look alike) |
+| Bold, italic, both | `**bold**`, `*italic*` or `_italic_`, `***both***` (and any nesting) |
+| Strikethrough, highlight | `~~gone~~`, `==look==` |
+| Code, inline and as a block (monospace, no colouring) | `` `code` ``, a fence of ```` ``` ```` or `~~~` |
+| Subscript, superscript | `H~2~O`, `x^2^` (no spaces inside) |
+| A line across | `---`, `***` or `___` on its own line |
+| Split into cards (ours) | `===` on its own line where a block starts; under text it stays text |
+| Tables | GFM pipes with a delimiter row; `:---`, `:---:`, `---:` align |
+| Footnotes | `[^label]` in the text and `[^label]: note` on a line of its own; numbered in the order used |
+| Emoji | the character itself, or a shortcode from `Emoji.Common` (`:pray:`) |
+
+**Our own additions are directives,** a line of its own: `::name{key=value key2="quoted value"}`. Reserved for the
+app's things (owner, 2026-11-14): `::event{id=…}`, `::sermon{id=…}`, `::ministry{id=…}`, `::lifegroup{id=…}`. They parse
+today as `DirectiveBlock` and the server refuses them ("isn't ready yet"), so nothing can be saved that a later app
+would misread; showing them is the next round. Any other name is refused.
+
+**Chats use a smaller scope** (`RichTextScope.Chat`): inline marks, links, lists, quotes and code blocks; headings,
+tables, card splits, lines, footnotes and pictures stay as typed text. A message's links are checked when it's sent
+(`RichTextRules.ChatProblems`).
 
 | Allowed | Written as |
 |---|---|
@@ -22,7 +46,7 @@ takes (`RichTextMedia`): everything else still takes only pictures. Posts are wr
 | Links | `[text](target)` |
 | Images from the media library, each on its own line | `![description](media:<media id>)` |
 
-Nothing else: no tables, colours, fonts, code, or HTML. Anything outside the subset (HTML included) is
+Before 2026-11-14 that was all; now see the table above. Still no colours, fonts or HTML. Anything outside the subset (HTML included) is
 shown as the plain text it is, so it can never run. `\` escapes a mark (`\*`).
 
 **Links** go only to `https://`, `mailto:`, `tel:` or a page in the app (`/events/12`). Anything else

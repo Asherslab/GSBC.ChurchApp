@@ -48,6 +48,7 @@ embedded/etc in them".
     list of blocks (text, a heading, a gallery with its caption, a video, a file), each moved by its handle or from its ⋯
     menu, with an Add row of Text, Picture, Video, Audio and File; who it's for, the notification and when sit on one row
     that opens their settings (`.impeccable/mocks/church-news/e-b-blocks.html`). The admin panel uses the same editor.
+    Replaced on 2026-11-14 by one editor (*One editor, everything in it*, below).
 
 ## Decided while building (2026-11-13)
 
@@ -113,6 +114,53 @@ miniature, quiet until it matters, headlines, and no tile at all. The owner: "i 
 three as variants/layouts of the tile". They are the tile's layouts (Front page by default, What's new, Headlines); see
 [home.md](home.md), *Tiles*.
 
+## One editor, everything in it (owner, 2026-11-14)
+
+The owner, with a screenshot of the block editor: "the add row doesn't feel a part of the editor, it feels like a
+different other thing ... i'd like all this to be done into the actual editor itself ... i don't actually see any
+reason that the extra cards on a post are needed anymore, just a title and proper markdown that lets you embed
+images/etc into it." Also: "photo embeds (use proper media upload/management component modal) ... same for videos.
+offer a different icon for an 'external' video ... same for files. audio we can skip", and "a decent amount of
+markdown ... plenty of it could be under a 'extras' dropdown".
+
+- **A post is a title and one `RichTextField`.** The blocks, their handles and the Add row are gone (`PostBlocks` and
+  `PostTextBlock` removed). Nothing needed converting: the stored Markdown already held every picture, gallery, video,
+  file and video link, and they now show in place. Audio in existing posts still plays; it isn't offered.
+- **The bar: formatting in it, one Insert button for everything else** (the owner's pick on the decision page,
+  `.impeccable/mocks/markdown-editor/b-insert-button.html`). A text style menu (Text, Heading 1, 2, 3), bold, italic,
+  strikethrough, highlight, bulleted and numbered lists, quote, link, code, and ⋯ for superscript and subscript; at
+  the right a navy **Insert** whose menu has *Pictures and media* (Picture, Video, Video link, File), *Layout* (Split
+  into cards, Line across, Table, Code block) and *In the text* (Footnote, Emoji). On the phone Insert comes first in
+  the bar, which slides sideways and sits on the keyboard, and opens a sheet of tiles; the style and ⋯ menus are
+  sheets too. Shortcuts: ⌘B, ⌘I, ⌘K, ⌘⇧X, ⌘⇧H, ⌘E, ⌘⌥0–3, ⌘⇧7, ⌘⇧8, ⌘⇧9.
+- **Interview (owner, 2026-11-14):** pictures chosen together sit as a gallery, as before ("A gallery, as now"); a
+  caption is typed right under its picture or video; headings work "the way that standard markdown works, more #
+  makes it smaller" (`#` is the biggest heading in a post, below its title).
+- **Pictures, videos and files come from Media's own window** (*Choose a picture*, *a video*, *a file*, with
+  Upload), the library on the desk and on the phone (online, as approved); on the phone Upload takes a photo from the
+  phone and it waits in the outbox with the save. A ministry post for its team uploads privately to the team, as
+  before. In the editor each shows in place (the picture, a video tile, a file row) with its caption under it, a
+  handle to drag it, *Add a picture beside it* (a gallery), *Replace* and *Take it out*; cut and paste moves it too.
+- **No ids in sight** (owner, 2026-11-14: "i don't want the media links to look super ugly in markdown ... handle that
+  invisibly ... something like ~/Main Photos/church-ministry.jpg"). The stored line keeps `media:<id>`, and the editor
+  never shows it: each file reads as its place in the library (`~/Main Photos/church-ministry.jpg`, from `MediaRef.Folder`,
+  set when it's chosen; files chosen before this show `~/name`).
+- **Split into cards** (owner, 2026-11-14: "we could use something similar to horizontal rule to specify a 'card split'
+  instead, e.g. `===`"): `===` on a line of its own where a block starts. Under a line of text it stays text (never a
+  setext heading). On the post page each part is separated by a sand bar across the page; a notification's line and a
+  list's excerpt come from the first part with text.
+- **The post page** (feedback #88, "incredibly barren looking"): *default (owner to review)*, as the owner went to bed
+  before answering the second question on the decision page. Built **A quiet band when there's no picture**
+  (`.impeccable/mocks/markdown-editor/p-a-band.html`): with no strip leading, the title sits on a navy band that
+  continues the top bar; then who and when, the text with real paragraph spacing and type scale, and the sand bar
+  between cards. The alternatives were *A reading page* (type only, a larger lead paragraph, dots between cards) and
+  *Each part a card* (the post on sand, one white card per part). Chosen because it gives the picture-less posts the
+  presence the owner asked for while matching the picture-led posts they already chose. The admin panel's *Preview
+  on a phone* shows the same.
+- **Not yet:** the owner's app-specific embeds (events, sermons, ministries, Life Groups) are the next round; their
+  spelling is reserved (*rich-text.md*). Emoji show as boxes in the dev Simulator only (it has no emoji font); phones
+  show them.
+
 ## How it's built
 
 - **News feature** (schema `news`): `posts` holds church news and ministries' posts in it (`source`, `source_id`).
@@ -127,14 +175,14 @@ three as variants/layouts of the tile". They are the tile's layouts (Front page 
 - **Ministries** reach it through `IChurchNews` (ask, share, changed, withdraw) and hear answers through
   `ISharedPostSource` (Platform.Api). Leaders' *Ask for church news* is in the post's settings; church news publishers
   put a post in or take it off from its ⋯ menu (`Leading.ShareToChurchNews`, `TakeOffChurchNews`).
-- **Posts as blocks:** `PostBlocks` (Platform.Contracts) turns a post's rich text into blocks and back; `PostEditor`
-  (Platform.Ui) edits them for both features; `PostView`, `MediaStrip`, `NewsList` and `NewsStory` read them. Files
+- **Writing a post:** `PostEditor` (Platform.Ui) is a title and a `RichTextField` for both features; `PostView`,
+  `MediaStrip`, `NewsList` and `NewsStory` read the same rich text. Files
   chosen on the phone wait in the outbox with the save and are named `media:upload-<sha256>` until the server swaps in
   the library's file (`UploadedMedia`); at the desk they upload when the post is saved.
 - **Your ministries** comes from the Ministries store through `INewsSource` (Platform.Client); the tab isn't shown to
   someone in no ministry.
 - **Tests:** `ChurchNewsTests` and `SharedMinistryPostTests` (News.Api.Tests), the ministry side and the plain-post
-  migration in Ministries.Api.Tests, `PostBlocksTests` and the rich text tests (Platform.Contracts.Tests),
+  migration in Ministries.Api.Tests, the rich text tests (`RichTextTests`, `RichTextFormatTests`, Platform.Contracts.Tests),
   `CancellationUrgencyTests` (Events).
 
 ## Not yet

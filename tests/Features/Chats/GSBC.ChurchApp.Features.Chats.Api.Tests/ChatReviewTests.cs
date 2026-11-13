@@ -53,6 +53,14 @@ public sealed class ChatReviewTests
         Assert.True(ChatReview.Matches(edited, new ReviewFilter(Words: "parents"), NoneReported, DayOf));
     }
 
+    [Fact]
+    public void SearchingMatchesTheWordsNotTheFormattingMarks()
+    {
+        CheckedMessage formatted = Message("bold", "Please **bring a** plate");
+
+        Assert.True(ChatReview.Matches(formatted, new ReviewFilter(Words: "bring a plate"), NoneReported, DayOf));
+    }
+
     private static DateOnly DayOf(DateTime at) => DateOnly.FromDateTime(at.AddHours(10));
 
     private static CheckedMessage Message(string id, string text, string deletedText = "") => new()
