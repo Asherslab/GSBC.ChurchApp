@@ -36,7 +36,7 @@
         <Notice Tone="NoticeTone.Warning" Text="@_problem" />
     </ChildContent>
     <Actions>
-        <SaveBar Block="true" Label="@(Draft.Id.Length == 0 ? MinistryWords.PostFor(Draft.Audience, Page.Ministry) : "Save")" Busy="_busy" OnSave="SaveAsync"
+        <SaveBar Label="@(Draft.Id.Length == 0 ? MinistryWords.PostFor(Draft.Audience, Page.Ministry) : "Save")" Busy="_busy" OnSave="SaveAsync" OnCancel="() => OpenChanged.InvokeAsync(false)" New="@(Draft.Id.Length == 0)"
                  Blocked="@(Draft.Title.Trim().Length == 0 ? "Give it a title to post it." : null)" />
     </Actions>
 </Sheet>

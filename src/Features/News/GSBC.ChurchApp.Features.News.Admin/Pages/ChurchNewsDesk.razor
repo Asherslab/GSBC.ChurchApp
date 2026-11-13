@@ -20,7 +20,7 @@
 </TitleBand>
 
 <LiveData @ref="_live" TValue="IReadOnlyList<NewsPost>" Load="News.DeskAsync" Feeds="DeskFeeds" FailedTitle="Can't load church news right now">
-    <Workbench FoldAside="true" AsideLabel="Show" DetailLabel="@(_writingNew ? "New post" : "The post")"
+    <Workbench FoldAside="true" AsideLabel="Show" DetailLabel="@(_writingNew ? "New post" : "The post")" Detail="@(_writingNew || Chosen(context.Value) is not null ? DetailOf(context.Value) : null)"
                Showing="@(_writingNew || Chosen(context.Value) is not null ? WorkbenchPane.Detail : WorkbenchPane.Main)">
         <Aside>
             <FilterChips TValue="string" Label="Show" Rail="true" Options="Filters(context.Value)" Value="@Filter(context.Value)" ValueChanged="filter => _filter = filter" />
@@ -32,20 +32,14 @@
                     @foreach (NewsPost post in shown)
                     {
                         <ListRow @key="post.Id" Title="@post.Title" Subtitle="@Line(post)" Current="@(post.Id == _chosen && !_writingNew)" OnClick="() => Choose(post.Id)">
-                            <Leading>
-                                @if (post.Picture is { } picture)
-                                {
-                                    <MediaImage Media="picture" Size="MediaSizeName.Thumbnail" Alt="" Class="news-pick__thumb" />
-                                }
-                                else
-                                {
-                                    <span class="news-pick__thumb news-pick__thumb--none" aria-hidden="true"><Icon Name="@AppIcons.News" /></span>
-                                }
-                            </Leading>
                             <TrailingContent>
                                 @if (Pill(post) is { } pill)
                                 {
                                     <Pill Tone="@pill.Tone">@pill.Words</Pill>
+                                }
+                                @if (post.Picture is { } picture)
+                                {
+                                    <MediaImage Media="picture" Size="MediaSizeName.Thumbnail" Alt="" Class="news-pick__thumb" />
                                 }
                             </TrailingContent>
                         </ListRow>
@@ -57,13 +51,25 @@
                 <EmptyState Icon="@AppIcons.News" Title="@EmptyTitle(context.Value)" Body="Posts show here as they're written, asked for, scheduled and published." />
             }
         </ChildContent>
-        <Detail>
+    </Workbench>
+</LiveData>
+
+<Sheet Open="_deleting" OpenChanged="open => _deleting = open" Title="@(_deletingShared ? "Take it off church news?" : "Delete this post?")"
+       Lead="@(_deletingShared ? "It stays in the ministry's news. Its notification is taken back from phones that haven't opened it." : "It goes from everyone's phone and its notification is taken back. This can't be undone.")">
+    <Actions>
+        <Button Variant="ButtonVariant.Danger" Busy="_busy" OnClick="DeleteAsync">@(_deletingShared ? "Take it off" : "Delete the post")</Button>
+        <Button Variant="ButtonVariant.Quiet" OnClick="() => _deleting = false">Keep it</Button>
+    </Actions>
+</Sheet>
+
+@code {
+    private RenderFragment DetailOf(IReadOnlyList<NewsPost> posts) => @<text>
             @if (_writingNew)
             {
                 <PaneHead Title="New post" Lead="Write it as blocks: add text, pictures, video, audio or a file, and move them by their handles." OnClose="() => _writingNew = false" />
                 <NewsPostForm @key="_newKey" Post="_newPost" OnSaved="SavedAsync" OnCancel="() => _writingNew = false" />
             }
-            else if (Chosen(context.Value) is { } post)
+            else if (Chosen(posts) is { } post)
             {
                 <PaneHead Title="@post.Title" Lead="@StateLine(post)" Actions="Actions(post)" OnClose="() => _chosen = null" />
                 @if (IsEditable(post))
@@ -94,23 +100,8 @@
                 }
                 <Notice Tone="NoticeTone.Warning" Text="@_problem" />
             }
-            else
-            {
-                <EmptyState Icon="@AppIcons.News" Title="Choose a post" Body="It opens here to read, change or answer." />
-            }
-        </Detail>
-    </Workbench>
-</LiveData>
+    </text>;
 
-<Sheet Open="_deleting" OpenChanged="open => _deleting = open" Title="@(_deletingShared ? "Take it off church news?" : "Delete this post?")"
-       Lead="@(_deletingShared ? "It stays in the ministry's news. Its notification is taken back from phones that haven't opened it." : "It goes from everyone's phone and its notification is taken back. This can't be undone.")">
-    <Actions>
-        <Button Variant="ButtonVariant.Danger" Busy="_busy" OnClick="DeleteAsync">@(_deletingShared ? "Take it off" : "Delete the post")</Button>
-        <Button Variant="ButtonVariant.Quiet" OnClick="() => _deleting = false">Keep it</Button>
-    </Actions>
-</Sheet>
-
-@code {
     private const string Asked = "asked", Writing = "writing", Scheduled = "scheduled", Published = "published", Kept = "kept";
 
     private static readonly IReadOnlyList<string> DeskFeeds = [NewsFeeds.Desk];

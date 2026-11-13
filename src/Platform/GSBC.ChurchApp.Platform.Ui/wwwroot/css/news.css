@@ -125,8 +125,8 @@
 
 .media-strip__count {
     position: absolute;
-    right: 12px;
-    bottom: 34px;
+    right: var(--space-md);
+    bottom: calc(var(--space-md) + 22px);
     padding: var(--space-3xs) var(--space-sm);
     border-radius: var(--radius-full);
     background: var(--video-shade);
@@ -194,8 +194,8 @@
 
 .post-block__remove {
     position: absolute;
-    top: 4px;
-    right: 4px;
+    top: var(--space-2xs);
+    right: var(--space-2xs);
     display: grid;
     place-items: center;
     width: 26px;
@@ -264,7 +264,6 @@
 
 .news-pick__thumb { width: 64px; height: 48px; flex: none; object-fit: cover; border-radius: var(--radius-inner); background: var(--sand-strong); }
 
-.news-pick__thumb--none { display: grid; place-items: center; color: var(--ink-3); }
 
 .news-desk__preview { max-width: 720px; }
 
