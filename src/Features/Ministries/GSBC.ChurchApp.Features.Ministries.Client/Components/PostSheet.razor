@@ -1,44 +1,64 @@
 @using GSBC.ChurchApp.Platform.Client.Uploads
 @using GSBC.ChurchApp.Platform.Contracts.Content
 @using GSBC.ChurchApp.Platform.Ui.News
+@using GSBC.ChurchApp.Platform.Ui.Surfaces
 @inject IMinistryWrites Ministries
 @inject FileUploads Uploads
 @inject TimeProvider Clock
 
-<UnsavedGuard Changed="() => Open" Editing="Draft" State="() => Shape" What="this post" />
+<UnsavedGuard Changed="() => OnAPage ? !Equals(Shape, _loadedShape) : Open" Editing="Draft" State="() => Shape" What="this post" />
 
-<Sheet Open="Open" OpenChanged="OpenChanged" Title="@(Draft.Id.Length > 0 ? "Change the post" : AboutASunday ? "Tell the group about a Sunday" : "New post")" Lead="@($"In {Page.Ministry.Name}.")">
-    <Tools>
-        @if (Draft.Id.Length > 0)
-        {
-            <Menu Label="More for this post" Items="More" />
-        }
-    </Tools>
-    <ChildContent>
-        @if (AboutASunday)
-        {
-            <SelectField Label="Which Sunday" Options="SundayChoices" Value="@Draft.Sunday" ValueChanged="value => Draft.Sunday = value" />
-            <ToggleRow Title="@SundayPosts.NoClass" Description="Coming up shows the Sunday struck through" Checked="Draft.NoClass" CheckedChanged="NoClassChanged" />
-        }
-        <PostEditor @ref="_editor" Title="@Draft.Title" TitleChanged="title => Draft.Title = title" Blocks="_blocks" OnChanged="() => _changes++"
-                    SettingsInline="true" SettingsTitle="Who it's for and telling them" SettingsSummary="@Summary">
-            <Settings>
-                <Segmented TValue="string" Label="Who it's for" ShowLabel="true" Stacked="true" Options="Audiences" Value="Draft.Audience" ValueChanged="value => Draft.Audience = value" />
-                <p class="ministry-who">@MinistryWords.WhoReads(Draft.Audience, Page.Ministry)</p>
-                <ToggleRow Title="Important" Description="Sends a notification to everyone it's for, straight away" @bind-Checked="Draft.Important" />
-                @if (Draft.Audience == Contracts.Audiences.Everyone && !MinistryLogic.IsHidden(Page.Ministry))
-                {
-                    <ToggleRow Title="Ask for church news" Description="Church staff can put it in the News tab for the whole church, saying it's from this ministry" @bind-Checked="Draft.AskWholeChurch" />
-                }
-            </Settings>
-        </PostEditor>
-        <Notice Tone="NoticeTone.Warning" Text="@_problem" />
-    </ChildContent>
-    <Actions>
-        <SaveBar Label="@(Draft.Id.Length == 0 ? MinistryWords.PostFor(Draft.Audience, Page.Ministry) : "Save")" Busy="_busy" OnSave="SaveAsync" OnCancel="() => OpenChanged.InvokeAsync(false)" New="@(Draft.Id.Length == 0)"
-                 Blocked="@(Draft.Title.Trim().Length == 0 ? "Give it a title to post it." : null)" />
-    </Actions>
-</Sheet>
+@if (OnAPage)
+{
+    <TitleBand Title="@Heading" BrowserTitle="@Heading" BackHref="@BackHref" BackText="@Page.Ministry.Name" Lead="@($"In {Page.Ministry.Name}. Write it as blocks: text, headings, pictures, video, audio or a file, moved by their handles.")">
+        <Actions>
+            @if (Draft.Id.Length > 0)
+            {
+                <Menu Label="More for this post" Items="More" />
+            }
+        </Actions>
+    </TitleBand>
+    <WritingDesk SettingsTitle="Who it's for and telling them" SettingsSummary="@Summary">
+        <ChildContent>
+            @Sunday
+            <PostEditor @ref="_editor" Title="@Draft.Title" TitleChanged="title => Draft.Title = title" Blocks="_blocks" OnChanged="() => _changes++" />
+            <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+        </ChildContent>
+        <Settings>
+            <Section Grouped="true" Title="Who it's for">@Audience</Section>
+            <Section Grouped="true" Title="Telling people">@Telling</Section>
+        </Settings>
+        <Preview>
+            <PhoneFrame Label="The post, as it will look in the ministry's News" OnRoute="">
+                <Section First="true"><PostView Title="@(Draft.Title.Trim().Length > 0 ? Draft.Title.Trim() : "Its title")" Content="@(_editor?.Content ?? PostBlocks.ToRichText(_blocks))" From="@Page.Ministry.Name" When="Just now" /></Section>
+            </PhoneFrame>
+        </Preview>
+        <Foot>@Saving</Foot>
+    </WritingDesk>
+}
+else
+{
+    <Sheet Open="Open" OpenChanged="OpenChanged" Title="@Heading" Lead="@($"In {Page.Ministry.Name}.")">
+        <Tools>
+            @if (Draft.Id.Length > 0)
+            {
+                <Menu Label="More for this post" Items="More" />
+            }
+        </Tools>
+        <ChildContent>
+            @Sunday
+            <PostEditor @ref="_editor" Title="@Draft.Title" TitleChanged="title => Draft.Title = title" Blocks="_blocks" OnChanged="() => _changes++"
+                        SettingsInline="true" SettingsTitle="Who it's for and telling them" SettingsSummary="@Summary">
+                <Settings>
+                    @Audience
+                    @Telling
+                </Settings>
+            </PostEditor>
+            <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+        </ChildContent>
+        <Actions>@Saving</Actions>
+    </Sheet>
+}
 
 <Sheet Open="_deleting" OpenChanged="open => _deleting = open" Title="Delete this post?" Lead="It goes from the news for everyone it was for. This can't be undone.">
     <ChildContent>
@@ -51,6 +71,37 @@
 </Sheet>
 
 @code {
+    private RenderFragment Sunday => @<text>
+        @if (AboutASunday)
+        {
+            <SelectField Label="Which Sunday" Options="SundayChoices" Value="@Draft.Sunday" ValueChanged="value => Draft.Sunday = value" />
+            <ToggleRow Title="@SundayPosts.NoClass" Description="Coming up shows the Sunday struck through" Checked="Draft.NoClass" CheckedChanged="NoClassChanged" />
+        }
+    </text>;
+
+    private RenderFragment Audience => @<text>
+        <Segmented TValue="string" Label="Who it's for" ShowLabel="@(!OnAPage)" Stacked="true" Options="Audiences" Value="Draft.Audience" ValueChanged="value => Draft.Audience = value" />
+        <p class="ministry-who">@MinistryWords.WhoReads(Draft.Audience, Page.Ministry)</p>
+    </text>;
+
+    private RenderFragment Telling => @<text>
+        <ToggleRow Title="Important" Description="Sends a notification to everyone it's for, straight away" @bind-Checked="Draft.Important" />
+        @if (Draft.Audience == Contracts.Audiences.Everyone && !MinistryLogic.IsHidden(Page.Ministry))
+        {
+            <ToggleRow Title="Ask for church news" Description="Church staff can put it in the News tab for the whole church, saying it's from this ministry" @bind-Checked="Draft.AskWholeChurch" />
+        }
+    </text>;
+
+    private RenderFragment Saving => @<text>
+        <SaveBar Label="@(Draft.Id.Length == 0 ? MinistryWords.PostFor(Draft.Audience, Page.Ministry) : "Save")" Busy="_busy" OnSave="SaveAsync" OnCancel="() => OpenChanged.InvokeAsync(false)" New="@(Draft.Id.Length == 0)"
+                 Blocked="@(Draft.Title.Trim().Length == 0 ? "Give it a title to post it." : null)" />
+    </text>;
+
+    private string Heading => Draft.Id.Length > 0 ? "Change the post" : AboutASunday ? "Tell the group about a Sunday" : "New post";
+
+    [Parameter] public bool OnAPage { get; set; }
+    [Parameter] public string BackHref { get; set; } = "";
+
     private bool _busy, _deleting;
     private string? _problem;
 
@@ -64,6 +115,7 @@
     private List<PostBlock> _blocks = [];
     private int _changes;
     private Post? _loadedFor;
+    private object? _loadedShape;
 
     private object Shape => (Draft.Title, _changes, Draft.Audience, Draft.Important, Draft.AskWholeChurch, Draft.Sunday, Draft.NoClass);
 
@@ -76,13 +128,14 @@
         if (_blocks.Count == 0)
             _blocks.Add(new PostBlock { Kind = PostBlockKind.Text });
         _changes = 0;
+        _loadedShape = Shape;
     }
 
     private string Summary => string.Join(" · ", new[]
     {
         MinistryWords.Short(Draft.Audience, Page.Ministry),
         Draft.Important ? "Notifies them" : "No notification",
-        Draft.AskWholeChurch && Draft.Audience == Contracts.Audiences.Everyone ? "Asks for church news" : "",
+        Draft is { AskWholeChurch: true, Audience: Contracts.Audiences.Everyone } ? "Asks for church news" : "",
     }.Where(part => part.Length > 0));
 
     private UploadTarget Target => Draft.Audience == Contracts.Audiences.Everyone
@@ -148,6 +201,7 @@
         try
         {
             await work();
+            _loadedShape = Shape;
             await OpenChanged.InvokeAsync(false);
             await OnSaved.InvokeAsync();
         }

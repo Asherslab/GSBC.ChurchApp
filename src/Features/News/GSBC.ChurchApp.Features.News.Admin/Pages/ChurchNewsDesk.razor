@@ -8,6 +8,7 @@
 @inject NewsWrites Writes
 @inject IAccess Access
 @inject TimeProvider Clock
+@inject NavigationManager Navigation
 
 <TitleBand Title="Church news" Lead="News for the whole church, in the app's News tab. A post can send a notification that opens it, and a ministry's post can be put in here too.">
     <Actions>
@@ -15,13 +16,13 @@
         {
             <Button Variant="ButtonVariant.Quiet" Icon="clock" Href="announcements">Earlier announcements</Button>
         }
-        <Button Icon="plus" OnClick="StartNew">New post</Button>
+        <Button Icon="plus" Href="news/write">New post</Button>
     </Actions>
 </TitleBand>
 
 <LiveData @ref="_live" TValue="IReadOnlyList<NewsPost>" Load="News.DeskAsync" Feeds="DeskFeeds" FailedTitle="Can't load church news right now">
-    <Workbench FoldAside="true" AsideLabel="Show" DetailLabel="@(_writingNew ? "New post" : "The post")" Detail="@(_writingNew || Chosen(context.Value) is not null ? DetailOf(context.Value) : null)"
-               Showing="@(_writingNew || Chosen(context.Value) is not null ? WorkbenchPane.Detail : WorkbenchPane.Main)">
+    <Workbench FoldAside="true" AsideLabel="Show" DetailLabel="The post" Detail="@(Chosen(context.Value) is not null ? DetailOf(context.Value) : null)"
+               Showing="@(Chosen(context.Value) is not null ? WorkbenchPane.Detail : WorkbenchPane.Main)">
         <Aside>
             <FilterChips TValue="string" Label="Show" Rail="true" Options="Filters(context.Value)" Value="@Filter(context.Value)" ValueChanged="filter => _filter = filter" />
         </Aside>
@@ -31,7 +32,7 @@
                 <ListGroup>
                     @foreach (NewsPost post in shown)
                     {
-                        <ListRow @key="post.Id" Title="@post.Title" Subtitle="@Line(post)" Current="@(post.Id == _chosen && !_writingNew)" OnClick="() => Choose(post.Id)">
+                        <ListRow @key="post.Id" Title="@post.Title" Subtitle="@Line(post)" Current="@(post.Id == _chosen)" OnClick="() => Open(post)">
                             <TrailingContent>
                                 @if (Pill(post) is { } pill)
                                 {
@@ -64,40 +65,28 @@
 
 @code {
     private RenderFragment DetailOf(IReadOnlyList<NewsPost> posts) => @<text>
-            @if (_writingNew)
+            @if (Chosen(posts) is { } post)
             {
-                <PaneHead Title="New post" Lead="Write it as blocks: add text, pictures, video, audio or a file, and move them by their handles." OnClose="() => _writingNew = false" />
-                <NewsPostForm @key="_newKey" Post="_newPost" OnSaved="SavedAsync" OnCancel="() => _writingNew = false" />
-            }
-            else if (Chosen(posts) is { } post)
-            {
-                <PaneHead Title="@post.Title" Lead="@StateLine(post)" Actions="Actions(post)" OnClose="() => _chosen = null" />
-                @if (IsEditable(post))
+                <PaneHead Title="@post.Title" Lead="@NewsWords.StateLine(post, Clock)" Actions="Actions(post)" OnClose="() => _chosen = null" />
+                @if (post.State is NewsState.Asked or NewsState.Declined && Access.Can(NewsPermissions.Publish))
                 {
-                    <NewsPostForm @key="post.Id" Post="post" OnSaved="SavedAsync" OnCancel="() => _chosen = null" />
+                    <Section Grouped="true" Title="@($"{post.From} asks for this to go in church news")"
+                             Lead="It shows in church news as it is in the ministry, and follows the ministry's changes.">
+                        <ChildContent>
+                            <ToggleRow Title="Send a notification" Description="Tells everyone with the app, opening the post" @bind-Checked="_tell" />
+                        </ChildContent>
+                        <Foot>
+                            <div class="news-desk__answer">
+                                <Button Variant="ButtonVariant.Quiet" Disabled="_busy" OnClick="() => AnswerAsync(post, yes: false)">Keep it in @post.From</Button>
+                                <Button Busy="_busy" OnClick="() => AnswerAsync(post, yes: true)">Put it in church news</Button>
+                            </div>
+                        </Foot>
+                    </Section>
                 }
-                else
-                {
-                    @if (post.State is NewsState.Asked or NewsState.Declined && Access.Can(NewsPermissions.Publish))
-                    {
-                        <Section Grouped="true" Title="@($"{post.From} asks for this to go in church news")"
-                                 Lead="It shows in church news as it is in the ministry, and follows the ministry's changes.">
-                            <ChildContent>
-                                <ToggleRow Title="Send a notification" Description="Tells everyone with the app, opening the post" @bind-Checked="_tell" />
-                            </ChildContent>
-                            <Foot>
-                                <div class="news-desk__answer">
-                                    <Button Variant="ButtonVariant.Quiet" Disabled="_busy" OnClick="() => AnswerAsync(post, yes: false)">Keep it in @post.From</Button>
-                                    <Button Busy="_busy" OnClick="() => AnswerAsync(post, yes: true)">Put it in church news</Button>
-                                </div>
-                            </Foot>
-                        </Section>
-                    }
-                    <div class="news-desk__preview">
-                        <PostView Title="@post.Title" Content="post.Body" From="@post.From" FromHref="@post.FromLink.TrimStart('/')" Author="@post.Author"
-                                  When="@When(post)" LinkPath="@post.LinkPath" LinkLabel="@post.LinkLabel" />
-                    </div>
-                }
+                <div class="news-desk__preview">
+                    <PostView Title="@post.Title" Content="post.Body" From="@post.From" FromHref="@post.FromLink.TrimStart('/')" Author="@post.Author"
+                              When="@When(post)" LinkPath="@post.LinkPath" LinkLabel="@post.LinkLabel" />
+                </div>
                 <Notice Tone="NoticeTone.Warning" Text="@_problem" />
             }
     </text>;
@@ -111,9 +100,7 @@
     private LiveData<IReadOnlyList<NewsPost>>? _live;
     private string? _filter;
     private string? _chosen;
-    private bool _writingNew, _deleting, _deletingShared, _busy, _tell = true;
-    private NewsPost _newPost = new();
-    private int _newKey;
+    private bool _deleting, _deletingShared, _busy, _tell = true;
     private string? _problem;
 
     [Parameter] public string? Id { get; set; }
@@ -122,17 +109,18 @@
 
     protected override void OnParametersSet()
     {
+        if (Opens is { Length: > 0 } opens)
+            Navigation.NavigateTo($"news/write?opens={Uri.EscapeDataString(opens)}", replace: true);
         _chosen ??= Id;
-        if (Opens is { Length: > 0 } opens && !_writingNew && _newPost.LinkPath.Length == 0)
-        {
-            StartNew();
-            _newPost.LinkPath = opens;
-        }
     }
 
-    private void StartNew() => (_newPost, _newKey, _writingNew, _problem) = (new NewsPost(), _newKey + 1, true, null);
-
-    private void Choose(string id) => (_chosen, _writingNew, _problem, _tell) = (id, false, null, true);
+    private void Open(NewsPost post)
+    {
+        if (IsEditable(post))
+            Navigation.NavigateTo($"news/{post.Id}/change");
+        else
+            (_chosen, _problem, _tell) = (post.Id, null, true);
+    }
 
     private NewsPost? Chosen(IReadOnlyList<NewsPost> posts) => posts.FirstOrDefault(post => post.Id == _chosen);
 
@@ -175,8 +163,7 @@
     private bool IsEditable(NewsPost post) =>
         !post.Shared && (Access.Can(NewsPermissions.Publish) || post.State is NewsState.Draft or NewsState.WaitingToPublish);
 
-    private string When(NewsPost post) =>
-        ChurchDates.Describe(NewsWords.PostedAt(post), DateLineStyle.Long, withTime: false, Clock.GetUtcNow().UtcDateTime) + (post.EditedAt is null ? "" : " · edited");
+    private string When(NewsPost post) => NewsWords.When(post, Clock);
 
     private string Line(NewsPost post) => post.State switch
     {
@@ -195,36 +182,20 @@
         _ => null,
     };
 
-    private string StateLine(NewsPost post) => post.State switch
-    {
-        NewsState.Published when post.Shared => $"From {post.From}, in church news. Change it in the ministry; the change shows here too.",
-        NewsState.Published => $"Published {When(post)}{(post.ToldAt is not null ? ", with a notification" : "")}.",
-        NewsState.Scheduled when post.PublishAt is { } at => $"Publishes by itself {ChurchDates.Describe(at, DateLineStyle.Long, withTime: true, Clock.GetUtcNow().UtcDateTime)}.",
-        NewsState.WaitingToPublish => $"{post.Author} asks for it to be published.",
-        NewsState.Asked => $"{post.From}'s leaders ask for it to go in church news.",
-        NewsState.Declined => $"Kept in {post.From}'s news{(post.AnsweredBy.Length > 0 ? $" by {post.AnsweredBy}" : "")}.",
-        _ => "Being written. Nobody sees it yet.",
-    };
-
     private IReadOnlyList<MenuItem> Actions(NewsPost post)
     {
         bool publishes = Access.Can(NewsPermissions.Publish);
         List<MenuItem> items = [];
+        if (IsEditable(post))
+            items.Add(this.Item("Change the post", () => Navigation.NavigateTo($"news/{post.Id}/change"), "pencil"));
         if (post.State is NewsState.Scheduled && publishes || post.State == NewsState.WaitingToPublish)
             items.Add(this.Item("Back to writing", () => RunAsync(() => Writes.BackToWritingAsync(post.Id)), "pencil",
                 post.State == NewsState.Scheduled ? "It won't publish until it's posted again" : "Nobody is asked to publish it any more"));
-        if (post.Shared && post.State == NewsState.Published && publishes)
+        if (post is { Shared: true, State: NewsState.Published } && publishes)
             items.Add(this.Item("Take it off church news…", () => (_deleting, _deletingShared) = (true, true), "trash-2", danger: true, startsGroup: true));
         else if (!post.Shared && (publishes || post.State is NewsState.Draft or NewsState.WaitingToPublish))
             items.Add(this.Item("Delete the post…", () => (_deleting, _deletingShared) = (true, false), "trash-2", danger: true, startsGroup: true));
         return items;
-    }
-
-    private async Task SavedAsync(NewsPost saved)
-    {
-        (_writingNew, _chosen) = (false, saved.Id);
-        if (_live is not null)
-            await _live.ReloadAsync();
     }
 
     private Task AnswerAsync(NewsPost post, bool yes) => RunAsync(() => Writes.AnswerAskAsync(post.Id, yes, yes && _tell));

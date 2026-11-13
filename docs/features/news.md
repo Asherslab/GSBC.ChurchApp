@@ -72,6 +72,39 @@ embedded/etc in them".
   the phone (`/ministries/{id}/news/{post}`) one tap from there. A post can't be a place of its own in the app yet.
 - **News is a starting tab** (Home, News, Sermons, More); staff move or remove it under App styling → Tab bar.
 
+## Writing on a page, and formatting as you type (owner, 2026-11-13)
+
+Feedback #83, #84 and #85 on the admin panel's *New post*, with an interview and two rounds on the decision page.
+
+- **Writing is a full page in the admin panel** (#83: "make new post a full page thing, not a sidebar"). *New post*
+  and opening any post you can change on the Church news desk open `/news/write` or `/news/{id}/change`; a
+  ministry's *New post*, changing its post and *Tell the group about a Sunday* open
+  `/ministries/{id}/news/write` or `/ministries/{id}/news/{post}/change`. The desk stays the list; ministries' asks
+  and shared posts still open in its pane, where they're answered rather than written.
+- **The post as a page, its settings beside it, and they fold away** (owner's pick on the decision page, with the
+  steer "allow collapsing settings"; `.impeccable/mocks/post-editor/b-page-and-side.html`). Folded, the settings sum
+  up in one line beside the tabs; under 1228px they sit under the post. Shared as `WritingDesk` (Platform.Ui). A new
+  post has no ⋯ menu in its title band: there is nothing to delete or take back to writing until it's saved.
+- **Preview on a phone is a tab** beside Write (owner: "tab it, like is often for markdown editors").
+- **Text formats as you type: live Markdown** (owner's pick of three on the decision page; "c is fine most likely,
+  but the important part there is it needs to be usable by staff that don't know markdown"). Bold looks bold and
+  lists look like lists; the marks show faintly only where the cursor is. The bar and ⌘B, ⌘I and ⌘K do everything,
+  typing `- `, `# ` or `> ` starts a list, heading or quote for those who know, and pasting from Word or Google Docs
+  keeps bold, italic, lists and links (everything else becomes plain text, and pasted symbols stay symbols). The
+  stored format is unchanged, so every existing post still works, and the server checks every save as before.
+  Built as `RichTextField` (Platform.Ui) on CodeMirror 6, vendored by `tools/editor` and loaded only when an editor
+  opens (about 100 KB gzipped). No maintained library hides the marks, so that part is ours (`rich-text-field.js`).
+- **One standard editor** (owner: "this editor ... will likely be used in more places, so will need to be a
+  standardised component ... especially needs to be mobile ready"). `RichTextField` is the shared component for
+  formatted text, with `Headings` for places that allow them; posts use it inside their blocks, which add pictures,
+  video, audio and files. On the phone its bar sits on the keyboard, with 44px buttons.
+- **The phone keeps its full-screen writing page and sheet** (owner, in the interview), with the new editor.
+- **Not moved yet:** events' *About* and *About this date*, a ministry's *About* and the app's formatted settings keep
+  `RichTextEditor` (the Markdown box with its preview) until the owner decides (owner: "we'll discuss that later").
+  Moving one is a swap of the component.
+- **Icons centred, blocks rounded** (#84, #85): the bar's buttons are drawn icons centred in 36px squares; blocks
+  take the 14px radius, shaded only while you're in them, with no field drawn inside the text block.
+
 ## A News tile on Home (2026-11-13)
 
 Owner, 2026-11-13: "do a small impeccable design pass for a proper news tile for the hub. not sure if it'll work or look

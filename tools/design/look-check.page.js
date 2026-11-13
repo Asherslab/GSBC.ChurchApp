@@ -337,7 +337,10 @@
     if (css.position === 'fixed') container = { element: null, edges: { left: 0, right: viewWidth, top: 0, bottom: innerHeight } };
     else if (stuckToBottom) {
       const parent = scrollParent(element);
-      const edges = parent === document.documentElement
+      const workArea = parent === document.documentElement ? element.closest('.admin-main')?.getBoundingClientRect() : null;
+      const edges = workArea
+        ? { left: workArea.left, right: workArea.right, top: 0, bottom: innerHeight }
+        : parent === document.documentElement
         ? { left: 0, right: viewWidth, top: 0, bottom: innerHeight }
         : (() => { const r = parent.getBoundingClientRect(); const e = inner(parent, r); return { ...e, right: e.left + parent.clientWidth, bottom: e.top + parent.clientHeight }; })();
       container = { element: parent, edges };

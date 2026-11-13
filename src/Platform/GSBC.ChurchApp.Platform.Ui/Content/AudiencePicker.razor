@@ -3,7 +3,10 @@
 @inject IServiceProvider Services
 
 <div class="field audience-picker">
-    <span class="field__label">@Label</span>
+    @if (ShowLabel)
+    {
+        <span class="field__label">@Label</span>
+    }
     <Segmented TValue="Reach" Label="@Label" Options="Reaches" Value="Current" ValueChanged="ChooseAsync" />
     @if (Current == Reach.Roles)
     {
@@ -24,6 +27,7 @@
     private bool _choosingRoles;
 
     [Parameter] public string Label { get; set; } = "Who sees it";
+    [Parameter] public bool ShowLabel { get; set; } = true;
     [Parameter, EditorRequired] public required string Value { get; set; }
     [Parameter] public EventCallback<string> ValueChanged { get; set; }
 

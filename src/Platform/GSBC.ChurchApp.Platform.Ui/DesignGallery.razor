@@ -271,6 +271,15 @@
             @<PostEditor Title="@_postTitle" TitleChanged="title => _postTitle = title" Blocks="_postBlocks" SettingsSummary="Everyone · Notification on · Now">
                 <Settings><p class="gallery__note">The feature's own settings go here.</p></Settings>
             </PostEditor>)
+        @Item("Formatted text: RichTextField", "Formats as you type: the bar, ⌘B, ⌘I and ⌘K, or - , # and > for those who know. The marks show faintly only where the cursor is. Pasting from Word or Google Docs keeps bold, lists and links. On the phone its bar sits on the keyboard.",
+            @<RichTextField @bind-Value="_formatted" Label="Sample text" Headings="true" />)
+        @Item("Writing on a page: WritingDesk", "The admin panel's page for writing: the work on a white page with Write and Preview on a phone tabs, its settings in a column that folds away, and the save bar at the foot.",
+            @<WritingDesk SettingsTitle="Who it's for" SettingsSummary="Everyone · Now">
+                <ChildContent><p class="gallery__note">The writing goes here.</p></ChildContent>
+                <Preview><p class="gallery__note">A preview goes here.</p></Preview>
+                <Settings><p class="gallery__note">The settings go here.</p></Settings>
+                <Foot><SaveBar Label="Post it" OnCancel="() => { }" New="true" /></Foot>
+            </WritingDesk>)
     </Section>
 
     <Section Title="Lists and boards" Lead="Rows for lists, a table when there are columns to compare, a board when things move through stages.">
@@ -424,6 +433,7 @@
         new("row", "Holiday program volunteers needed", new RichText { Markdown = "Three mornings in January." }, SamplePicture, Clock.GetUtcNow().UtcDateTime.AddDays(-1), null, "", "Kids ministry", "gallery"),
     ];
 
+    private string _formatted = "There's a place for everyone. **Bring a friend**.\n\n- Carols on the lawn\n- Christmas Eve";
     private string _postTitle = "Carols on the lawn";
 
     private readonly List<PostBlock> _postBlocks =

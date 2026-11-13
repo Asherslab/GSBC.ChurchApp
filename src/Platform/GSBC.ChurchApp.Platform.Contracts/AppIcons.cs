@@ -41,4 +41,11 @@ public static class AppIcons
     public const string Attach = "paperclip";
     public const string HideSidePane = "panel-right-close";
     public const string ShowSidePane = "panel-right-open";
+    public const string Bold = "bold";
+    public const string Italic = "italic";
+    public const string BulletedList = "list";
+    public const string NumberedList = "list-ordered";
+    public const string Quote = "quote";
+    public const string Link = "link";
+    public const string Heading = "heading";
 }

@@ -1,5 +1,6 @@
 using GSBC.ChurchApp.Features.News.Contracts;
 using GSBC.ChurchApp.Platform.Client.News;
+using GSBC.ChurchApp.Platform.Ui;
 
 namespace GSBC.ChurchApp.Features.News.Client;
 
@@ -23,5 +24,19 @@ public static class NewsWords
         NewsState.Asked => $"{post.From} asks for church news",
         NewsState.Declined => $"Kept in {post.From}'s news",
         _ => "",
+    };
+
+    public static string When(NewsPost post, TimeProvider clock) =>
+        ChurchDates.Describe(PostedAt(post), DateLineStyle.Long, withTime: false, clock.GetUtcNow().UtcDateTime) + (post.EditedAt is null ? "" : " · edited");
+
+    public static string StateLine(NewsPost post, TimeProvider clock) => post.State switch
+    {
+        NewsState.Published when post.Shared => $"From {post.From}, in church news. Change it in the ministry; the change shows here too.",
+        NewsState.Published => $"Published {When(post, clock)}{(post.ToldAt is not null ? ", with a notification" : "")}.",
+        NewsState.Scheduled when post.PublishAt is { } at => $"Publishes by itself {ChurchDates.Describe(at, DateLineStyle.Long, withTime: true, clock.GetUtcNow().UtcDateTime)}.",
+        NewsState.WaitingToPublish => $"{post.Author} asks for it to be published.",
+        NewsState.Asked => $"{post.From}'s leaders ask for it to go in church news.",
+        NewsState.Declined => $"Kept in {post.From}'s news{(post.AnsweredBy.Length > 0 ? $" by {post.AnsweredBy}" : "")}.",
+        _ => "Being written. Nobody sees it yet.",
     };
 }

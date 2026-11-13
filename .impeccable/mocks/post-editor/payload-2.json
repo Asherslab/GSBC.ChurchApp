@@ -1,0 +1,78 @@
+{
+  "title": "How text is written in a post",
+  "question": "Layout settled: the post as a page with its settings beside it, which fold away. Now the text itself, shown on the phone first (keyboard up, the format bar sitting on it with 44px buttons and Add). Whichever you pick becomes one standard editor in the shared components, in the gallery and the Pattern map, with a setting for what each place allows: text formatting only (a ministry's About, an event's description, later) or the full post with pictures, video, audio and files. Every option stores the same safe Markdown subset as today (never raw HTML), works offline (it's all on the phone; files wait in the outbox), and keeps existing posts working. Events' About this date stays as it is until you decide. My recommendation is (a), built on Tiptap: it does everything you asked of (c) for staff who don't know Markdown (the bar and ⌘B ⌘I ⌘K do everything, pasting from Word or Google Docs keeps bold, lists and links, typing - , # , > or **word** formats for those who know) but never shows a mark, and it's the most solid on iPhones. (c) needs its mark-hiding written by us (no maintained library does it), and pasting formatting into it means converting Word's HTML ourselves.",
+  "options": [
+    {
+      "id": "formatted",
+      "kind": "assigned",
+      "kicker": "MY RECOMMENDATION",
+      "label": "(a) Formats as you type, no marks ever",
+      "thesis": "Bold looks bold, lists look like lists; the bar, ⌘B ⌘I ⌘K, and typing - , # , > or **word** all format, and the marks never show. Stored as our Markdown.",
+      "palette": [
+        "#f4efe7",
+        "#ffffff",
+        "#2a3d5e",
+        "#00776d"
+      ],
+      "materials": [
+        "Tiptap (ProseMirror), MIT, maintained daily",
+        "about 100–150 KB, loaded only when writing",
+        "schema locked to our subset"
+      ],
+      "viewport": "The phone with the keyboard up: the title, Bring a friend in bold, the Welcome desk link, a bulleted list, a gallery; the format bar on the keyboard.",
+      "case": "Media: separate blocks as now. Paste from Word or Google Docs: bold, italic, lists and links kept, everything else dropped (Word's lists need a small fix-up). Safety: only our nodes can exist, so nothing else can be written or pasted; every save is checked by the same server rules. Phone: ProseMirror is the most mature editor on iOS, with a few open Tiptap issues to test on a real phone. Events: could move later.",
+      "risk": "A real dependency to keep up to date, and someone who wants to see the Markdown can't.",
+      "html": ".impeccable/mocks/post-editor/t-a-formatted-phone.html",
+      "htmlFrame": "390x844"
+    },
+    {
+      "id": "markdown",
+      "kind": "dealt",
+      "label": "(b) A Markdown editor, marks showing",
+      "thesis": "You see and can type **bold**, - lists and [links](…); the bar and shortcuts insert them, and Preview on a phone shows how it looks.",
+      "palette": [
+        "#f4efe7",
+        "#ffffff",
+        "#2a3d5e",
+        "#00776d"
+      ],
+      "materials": [
+        "CodeMirror 6, MIT, maintained",
+        "about 150–200 KB",
+        "marks always visible"
+      ],
+      "viewport": "The same, with ** marks, - bullets and the link's address showing, and the bar inserting marks.",
+      "case": "Media: separate blocks. Paste: plain text only, so Word or Google Docs formatting is lost. Safety: it's text, checked by the same rules. Phone: good. Events: could move later. Closest to today, with a better editor (syntax colouring, shortcuts).",
+      "risk": "Staff who don't know Markdown see symbols, which is what the owner wants to avoid.",
+      "html": ".impeccable/mocks/post-editor/t-b-markdown-phone.html",
+      "htmlFrame": "390x844"
+    },
+    {
+      "id": "live",
+      "kind": "dealt",
+      "label": "(c) Live Markdown, marks fade away",
+      "thesis": "It formats in place like (a), but the marks show faintly where the cursor is (Christmas Day here) and hide when you move on; the bar shows Bold as on, and shortcuts and paste work without typing a symbol.",
+      "palette": [
+        "#f4efe7",
+        "#ffffff",
+        "#2a3d5e",
+        "#00776d"
+      ],
+      "materials": [
+        "CodeMirror 6, MIT",
+        "our own hiding-the-marks part (no maintained one exists)",
+        "about 150–200 KB"
+      ],
+      "viewport": "Formatted text; Bold lit in the bar where the cursor is, with faint ** around Christmas Day there only.",
+      "case": "Media: separate blocks. Paste: we'd convert Word and Google Docs HTML into Markdown ourselves. Safety: it's text, checked by the same rules. Phone: CodeMirror is good on iOS, but our own hiding part needs real-phone testing. Events: could move later.",
+      "risk": "The most of ours to build and keep working, and a mark appearing under the cursor can still confuse someone who's never seen one.",
+      "html": ".impeccable/mocks/post-editor/t-c-live-phone.html",
+      "htmlFrame": "390x844"
+    }
+  ],
+  "reroll": true,
+  "steer": true,
+  "buildPath": {
+    "value": "code"
+  }
+}
