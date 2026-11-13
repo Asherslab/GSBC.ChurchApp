@@ -10,7 +10,8 @@ public enum RichTextMedia
     Audio = 4,
     Files = 8,
     VideoLinks = 16,
-    Posts = Pictures | Video | Audio | Files | VideoLinks,
+    Layout = 32,
+    Posts = Pictures | Video | Audio | Files | VideoLinks | Layout,
 }
 
 public static class RichTextRules

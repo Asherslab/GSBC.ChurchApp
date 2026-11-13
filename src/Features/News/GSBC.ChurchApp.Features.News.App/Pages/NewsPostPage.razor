@@ -23,7 +23,7 @@
             else
             {
                 <div class="section section--first">
-                    <PostView Title="@post.Title" Content="post.Body" From="@post.From" FromHref="@post.FromLink.TrimStart('/')" Author="@post.Author"
+                    <PostView Band="true" Title="@post.Title" Content="post.Body" From="@post.From" FromHref="@post.FromLink.TrimStart('/')" Author="@post.Author"
                               When="@When(post)" LinkPath="@post.LinkPath" LinkLabel="@post.LinkLabel">
                         <Status>
                             @if (NewsWords.State(post) is { Length: > 0 } state)

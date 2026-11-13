@@ -9,8 +9,10 @@ public readonly record struct EditorText(string Text, int Start, int End)
 
 public enum LineStyle
 {
-    Heading,
-    Subheading,
+    Text,
+    Heading1,
+    Heading2,
+    Heading3,
     Bullets,
     Numbers,
     Quote,
@@ -45,17 +47,56 @@ public static class RichTextEdits
         return new EditorText(text, start + 1, start + 1 + label.Length);
     }
 
-    public static EditorText Image(EditorText current, string mediaId, string alt)
+    public static EditorText Block(EditorText current, string block, int? caretInBlock = null)
     {
         string text = current.Text;
-        int at = current.End;
+        int lineEnd = text.IndexOf('\n', current.End);
+        int at = lineEnd < 0 ? text.Length : lineEnd;
+        int lineStart = current.End == 0 ? 0 : text.LastIndexOf('\n', current.End - 1) + 1;
+        if (text[lineStart..at].Trim().Length == 0)
+            at = lineStart;
         string before = at == 0 || text[..at].EndsWith("\n\n", StringComparison.Ordinal) ? "" : text[at - 1] == '\n' ? "\n" : "\n\n";
-        string image = $"![{alt.Replace("]", "", StringComparison.Ordinal)}]({LinkTargets.MediaScheme}{mediaId})";
         string after = at == text.Length ? "\n" : text[at..].StartsWith("\n\n", StringComparison.Ordinal) ? "" : text[at] == '\n' ? "\n" : "\n\n";
-        string inserted = before + image + after;
-        int caret = at + inserted.Length;
+        string inserted = before + block + after;
+        int caret = caretInBlock is { } inside ? at + before.Length + inside : at + inserted.Length;
         return new EditorText(text[..at] + inserted + text[at..], caret, caret);
     }
+
+    public static EditorText MediaLines(EditorText current, IEnumerable<string> lines) => Block(current, string.Join('\n', lines));
+
+    public static string MediaLine(string mediaId, string alt) =>
+        $"![{OneLine(alt).Replace("[", "", StringComparison.Ordinal).Replace("]", "", StringComparison.Ordinal)}]({LinkTargets.MediaScheme}{mediaId})";
+
+    public static string VideoLinkLine(VideoLink video, string caption) =>
+        $"![{OneLine(caption).Replace("[", "", StringComparison.Ordinal).Replace("]", "", StringComparison.Ordinal)}]({video.WatchUrl})";
+
+    public static EditorText Footnote(EditorText current)
+    {
+        string text = current.Text;
+        int number = 1;
+        while (text.Contains($"[^{number}]", StringComparison.Ordinal))
+            number++;
+        string reference = $"[^{number}]";
+        string withReference = text[..current.End] + reference + text[current.End..];
+        string definition = (withReference.EndsWith('\n') ? withReference.EndsWith("\n\n", StringComparison.Ordinal) ? "" : "\n" : "\n\n") + reference + ": ";
+        string result = withReference + definition;
+        return new EditorText(result, result.Length, result.Length);
+    }
+
+    public static EditorText Insert(EditorText current, string inserted)
+    {
+        string text = current.Text[..current.Start] + inserted + current.Text[current.End..];
+        int caret = current.Start + inserted.Length;
+        return new EditorText(text, caret, caret);
+    }
+
+    public static LineStyle StyleOf(string line) =>
+        line.StartsWith("### ", StringComparison.Ordinal) ? LineStyle.Heading3
+        : line.StartsWith("## ", StringComparison.Ordinal) ? LineStyle.Heading2
+        : line.StartsWith("# ", StringComparison.Ordinal) ? LineStyle.Heading1
+        : LineStyle.Text;
+
+    private static string OneLine(string text) => string.Join(' ', text.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries)).Trim();
 
     public static EditorText Lines(EditorText current, LineStyle style)
     {
@@ -66,7 +107,7 @@ public static class RichTextEdits
         lineEnd = lineEnd < 0 ? text.Length : lineEnd;
 
         string[] lines = text[first..lineEnd].Split('\n');
-        bool allStyled = lines.Any(line => line.Length > 0) && lines.All(line => line.Length == 0 || Styled(line, style));
+        bool allStyled = style != LineStyle.Text && lines.Any(line => line.Length > 0) && lines.All(line => line.Length == 0 || Styled(line, style));
         string[] restyled = lines.Select((line, index) => line.Length == 0 && lines.Length > 1
             ? line
             : allStyled ? Unstyled(line) : Prefix(style, index) + Unstyled(line)).ToArray();
@@ -96,8 +137,10 @@ public static class RichTextEdits
 
     private static string Prefix(LineStyle style, int index) => style switch
     {
-        LineStyle.Heading => "## ",
-        LineStyle.Subheading => "### ",
+        LineStyle.Text => "",
+        LineStyle.Heading1 => "# ",
+        LineStyle.Heading2 => "## ",
+        LineStyle.Heading3 => "### ",
         LineStyle.Bullets => "- ",
         LineStyle.Numbers => $"{index + 1}. ",
         _ => "> ",
@@ -105,8 +148,7 @@ public static class RichTextEdits
 
     private static bool Styled(string line, LineStyle style) => style switch
     {
-        LineStyle.Heading => line.StartsWith("## ", StringComparison.Ordinal),
-        LineStyle.Subheading => line.StartsWith("### ", StringComparison.Ordinal),
+        LineStyle.Heading1 or LineStyle.Heading2 or LineStyle.Heading3 => StyleOf(line) == style,
         LineStyle.Bullets => line.StartsWith("- ", StringComparison.Ordinal) || line.StartsWith("* ", StringComparison.Ordinal),
         LineStyle.Numbers => NumberPrefixLength(line) > 0,
         _ => line.StartsWith('>'),
@@ -114,7 +156,7 @@ public static class RichTextEdits
 
     private static string Unstyled(string line)
     {
-        foreach (string prefix in new[] { "### ", "## ", "- ", "* ", "> ", ">" })
+        foreach (string prefix in new[] { "###### ", "##### ", "#### ", "### ", "## ", "# ", "- ", "* ", "+ ", "> ", ">" })
         {
             if (line.StartsWith(prefix, StringComparison.Ordinal))
                 return line[prefix.Length..];

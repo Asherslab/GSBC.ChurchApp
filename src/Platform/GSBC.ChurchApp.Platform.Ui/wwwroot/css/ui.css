@@ -614,9 +614,6 @@ button.text-link:disabled { color: var(--ink-3); cursor: default; }
   .writing-desk--folded .writing-desk__side-title { display: block; }
   .writing-desk__fold, .writing-desk__summary { display: none; }
   .writing-desk__page { min-height: 0; border-radius: var(--radius); }
-  .writing-desk .post-editor__add { display: grid; grid-template-columns: repeat(auto-fill, minmax(8.5rem, 1fr)); }
-  .writing-desk .post-editor__add > .post-editor__chip { justify-content: center; }
-  .writing-desk .post-editor__add-label { grid-column: 1 / -1; }
   .writing-desk__foot, .writing-desk--folded .writing-desk__foot { padding-inline: var(--space-3xl); }
 }
 @media (max-width: 760px) {
@@ -807,7 +804,6 @@ button.text-link:disabled { color: var(--ink-3); cursor: default; }
 .data-table__table .cell-strong { white-space: nowrap; }
 .data-table__empty { padding: 8px 0; }
 @container data-table (max-width: 420px) { .data-table__table :is(th, th.num) { white-space: normal; } .data-table__table :is(th, td) { padding-inline: var(--space-sm); } .data-table__table :is(th, td):first-child { padding-left: var(--space-sm); } }
-
 
 .search-field { display: flex; align-items: center; gap: 8px; flex: 1 1 260px; max-width: 420px; min-height: 40px; padding: 0 12px; border-radius: var(--radius-field); background: var(--field); box-shadow: inset 0 0 0 1px var(--field-edge); color: var(--ink-3); }
 .search-field:focus-within { box-shadow: inset 0 0 0 2px var(--accent); }
@@ -1482,6 +1478,7 @@ span.stage-pipeline__stage { pointer-events: none; }
 .menu__label { overflow-wrap: break-word; }
 .menu__detail { color: var(--ink-2); font-size: var(--text-caption); font-weight: 400; line-height: 1.35; }
 .menu__rule { height: 1px; margin: var(--space-xs) var(--space-2xs); background: var(--line); }
+.menu__group { padding: var(--space-xs) var(--space-sm) var(--space-2xs); color: var(--ink-3); font-size: var(--text-micro); font-weight: 700; letter-spacing: 0.02em; }
 
 .date-field { align-content: start; min-width: 0; }
 .date-field__box { position: relative; }

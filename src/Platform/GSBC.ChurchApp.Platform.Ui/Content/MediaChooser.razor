@@ -1,10 +1,11 @@
 @using GSBC.ChurchApp.Platform.Client.Media
+@using GSBC.ChurchApp.Platform.Client.Uploads
 @using GSBC.ChurchApp.Platform.Contracts.Media
 @inject IServiceProvider Services
 
 @if (Picker is { } picker)
 {
-    <Sheet Open="true" OpenChanged="_ => OnCancel.InvokeAsync()" Wide="true" Title="@(FontsOnly ? "Choose a font file" : ImagesOnly ? "Choose a picture" : "Choose a file")">
+    <Sheet Open="true" OpenChanged="_ => OnCancel.InvokeAsync()" Wide="true" Title="@Title">
         @Render(picker)
     </Sheet>
 }
@@ -16,6 +17,16 @@
     [Parameter] public EventCallback<MediaRef> OnChosen { get; set; }
     [Parameter] public EventCallback OnCancel { get; set; }
     [Parameter] public IReadOnlyList<MediaRef>? Offered { get; set; }
+    [Parameter] public PickableFiles? Kinds { get; set; }
+    [Parameter] public UploadTarget? UploadTo { get; set; }
+
+    private string Title => FontsOnly ? "Choose a font file" : Kinds switch
+    {
+        PickableFiles.Videos => "Choose a video",
+        PickableFiles.Documents => "Choose a file",
+        PickableFiles.Pictures => "Choose a picture",
+        _ => ImagesOnly ? "Choose a picture" : "Choose a file",
+    };
 
     private MediaPicker? Picker => Services.GetService(typeof(MediaPicker)) as MediaPicker;
 
@@ -27,6 +38,10 @@
         builder.AddComponentParameter(3, MediaPicker.OnCancelParameter, EventCallback.Factory.Create(this, () => OnCancel.InvokeAsync()));
         builder.AddComponentParameter(4, MediaPicker.SizeParameter, Size);
         builder.AddComponentParameter(5, MediaPicker.FontsOnlyParameter, FontsOnly);
+        if (UploadTo is not null)
+            builder.AddComponentParameter(8, MediaPicker.UploadToParameter, UploadTo);
+        if (Kinds is not null)
+            builder.AddComponentParameter(7, MediaPicker.KindsParameter, Kinds);
         if (Offered is not null)
             builder.AddComponentParameter(6, MediaPicker.OfferedParameter, Offered);
         builder.CloseComponent();

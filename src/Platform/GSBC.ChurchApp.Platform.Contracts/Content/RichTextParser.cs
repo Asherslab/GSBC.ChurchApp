@@ -31,7 +31,7 @@ public static partial class RichTextParser
             {
                 blocks.Add(Code(fence, lines, ref index));
             }
-            else if (IsCardSplit(line) && (index == 0 || IsBlank(lines[index - 1])))
+            else if (IsCardSplit(line))
             {
                 blocks.Add(new CardSplitBlock());
                 index++;

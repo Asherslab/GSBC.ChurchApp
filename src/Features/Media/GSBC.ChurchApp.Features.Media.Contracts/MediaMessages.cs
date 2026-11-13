@@ -97,6 +97,7 @@ public enum MediaFilter
     Unused = 3,
     LargeOriginals = 4,
     Fonts = 5,
+    Videos = 6,
 }
 
 [ProtoContract]

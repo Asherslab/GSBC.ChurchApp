@@ -80,14 +80,16 @@ public sealed class RichTextFormatTests
         Assert.IsType<RuleBlock>(RichTextParser.Parse($"Above\n{line}\nBelow").Blocks[1]);
 
     [Fact]
-    public void ACardSplitNeedsABlankLineBeforeIt()
+    public void ACardSplitStartsABlockAndNeverUnderlinesText()
     {
         RichTextDocument split = RichTextParser.Parse("First part\n\n===\n\nSecond part");
         RichTextDocument underline = RichTextParser.Parse("Not a split\n===");
+        RichTextDocument afterHeading = RichTextParser.Parse("## Part one\n===\nPart two");
 
         Assert.IsType<CardSplitBlock>(split.Blocks[1]);
         Assert.Equal(2, split.Cards().Count);
         Assert.Single(underline.Cards());
+        Assert.Equal(2, afterHeading.Cards().Count);
         Assert.Equal("===", Text(Assert.IsType<ParagraphBlock>(Assert.Single(underline.Blocks)).Content[^1]));
     }
 

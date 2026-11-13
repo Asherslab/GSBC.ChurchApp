@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Components;
 
 namespace GSBC.ChurchApp.Platform.Ui;
 
-public sealed record MenuItem(string Label, EventCallback OnChoose, string? Icon = null, string? Detail = null, bool Checked = false, bool Danger = false, bool StartsGroup = false, bool Disabled = false);
+public sealed record MenuItem(string Label, EventCallback OnChoose, string? Icon = null, string? Detail = null, bool Checked = false, bool Danger = false, bool StartsGroup = false, bool Disabled = false, string? GroupTitle = null);
 
 public static class MenuItems
 {

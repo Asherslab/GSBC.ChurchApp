@@ -47,6 +47,7 @@
   --on-live: #ffffff;
   --marker: #e7ae74;
   --marker-ink: #8a5422;
+  --highlight: color-mix(in srgb, var(--marker) 42%, transparent);
   --on-marker: #2a1a08;
   --danger: #b4372f;
   --knob: #ffffff;
@@ -54,6 +55,7 @@
 
   --font: "Montserrat", -apple-system, system-ui, sans-serif;
   --font-masthead: var(--font);
+  --font-code: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   --masthead-weight: 700;
   --masthead-tracking: -0.03em;
 
@@ -138,6 +140,7 @@
   --live: #2ec4b6;
   --on-live: #062522;
   --marker-ink: #f0c493;
+  --highlight: color-mix(in srgb, var(--marker) 34%, transparent);
   --danger: #f08a80;
   --knob: #f2ede4;
   --bar: rgb(20 29 49 / 0.9);
