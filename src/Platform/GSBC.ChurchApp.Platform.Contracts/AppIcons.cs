@@ -39,4 +39,6 @@ public static class AppIcons
     public const string HelpImproveTheApp = "lightbulb";
     public const string Settings = "settings";
     public const string Attach = "paperclip";
+    public const string HideSidePane = "panel-right-close";
+    public const string ShowSidePane = "panel-right-open";
 }

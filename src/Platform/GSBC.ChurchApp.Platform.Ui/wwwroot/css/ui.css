@@ -303,8 +303,8 @@ button.text-link:disabled { color: var(--ink-3); cursor: default; }
 .paged__cover.paged--forward, .paged__page.paged--forward { animation: paged-in 260ms var(--ease-out) both; }
 .paged__cover.paged--back, .paged__page.paged--back { animation: paged-back 260ms var(--ease-out) both; }
 .paged__page { display: grid; gap: var(--stack); }
-.paged__dots { display: flex; justify-content: center; margin-top: 2px; }
-.paged__dot { width: 36px; height: var(--touch); padding: 0; border: 0; background: none; cursor: pointer; }
+.paged__dots { display: flex; flex-wrap: wrap; justify-content: center; min-width: 0; margin-top: 2px; }
+.paged__dot { width: clamp(24px, calc(100% / var(--dots, 1)), 36px); height: var(--touch); padding: 0; border: 0; background: none; cursor: pointer; }
 .paged__dot::before { content: ""; display: block; width: 8px; height: 8px; margin: auto; border-radius: var(--radius-full); background: var(--line); transition: width 240ms var(--ease-out), background-color 240ms var(--ease-out); }
 .paged__dot.is-current::before { width: 20px; background: var(--marker); }
 @keyframes paged-in { from { opacity: 0; transform: translateX(14px); } }
