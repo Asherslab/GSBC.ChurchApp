@@ -247,7 +247,7 @@
             if (_live is not null)
                 await _live.ReloadAsync();
         }
-        catch (Grpc.Core.RpcException exception)
+        catch (RpcException exception)
         {
             _problem = exception.Status.Detail;
         }

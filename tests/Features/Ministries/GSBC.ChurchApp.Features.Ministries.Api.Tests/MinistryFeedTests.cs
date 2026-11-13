@@ -401,7 +401,7 @@ public sealed class MinistryFeedTests : IAsyncLifetime
 
     private static bool Mentions(FeedChangeRecord row, MinistryRecord ministry) =>
         row.RecordId.Contains(ministry.Id.ToString(), StringComparison.Ordinal) || row.GroupKey == ministry.Id.ToString()
-        || Encoding.UTF8.GetString(row.Payload ?? []).Contains(ministry.Name, StringComparison.Ordinal);
+        || Encoding.UTF8.GetString(row.Payload).Contains(ministry.Name, StringComparison.Ordinal);
 
     private async Task AddAsync(IEnumerable<MinistryRecord> ministries, params PostRecord[] posts)
     {

@@ -236,7 +236,7 @@ internal sealed class MinistryLeadingService(
         CancellationToken cancellationToken = context.CancellationToken;
         MinistryRecord ministry = Existing(await views.TreeAsync(cancellationToken), request.MinistryId);
         Guid id = ParseId(request.Id);
-        if (await db.Posts.SingleOrDefaultAsync(post => post.Id == id && post.MinistryId == ministry.Id, cancellationToken) is { } post)
+        if (await db.Posts.SingleOrDefaultAsync(candidate => candidate.Id == id && candidate.MinistryId == ministry.Id, cancellationToken) is { } post)
         {
             await churchNews.WithdrawAsync(post, cancellationToken);
             db.Posts.Remove(post);

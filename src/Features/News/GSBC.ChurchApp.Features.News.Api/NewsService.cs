@@ -2,7 +2,6 @@ using System.Security.Claims;
 using Grpc.Core;
 using GSBC.ChurchApp.Features.News.Contracts;
 using GSBC.ChurchApp.Platform.Api.Access;
-using GSBC.ChurchApp.Platform.Api.Sync;
 using ProtoBuf.Grpc;
 
 namespace GSBC.ChurchApp.Features.News.Api;

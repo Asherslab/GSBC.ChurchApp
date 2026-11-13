@@ -2,7 +2,6 @@ using System.Diagnostics.CodeAnalysis;
 using GSBC.ChurchApp.Features.News.Contracts;
 using GSBC.ChurchApp.Platform.Client.Outbox;
 using GSBC.ChurchApp.Platform.Client.Uploads;
-using GSBC.ChurchApp.Platform.Contracts.Content;
 using GSBC.ChurchApp.Platform.Contracts.Media;
 using Microsoft.Extensions.DependencyInjection;
 

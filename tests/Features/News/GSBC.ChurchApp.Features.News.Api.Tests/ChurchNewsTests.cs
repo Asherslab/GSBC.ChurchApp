@@ -17,7 +17,7 @@ public sealed class ChurchNewsTests : NewsHost
     [Fact]
     public async Task ADraftNeverReachesReadersAndPublishingPutsItInTheFeedItsAudienceCanSee()
     {
-        NewsPost forEveryone = await WriteAsync(Draft("Carols on the lawn"));
+        NewsPost forEveryone = await WriteAsync(Draft());
         NewsPost forMembers = await WriteAsync(Draft("Members' meeting", Audience.SignedIn.Text));
 
         Assert.Empty(await LiveRowsAsync(NewsFeeds.Posts));

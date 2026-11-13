@@ -3,7 +3,6 @@ using GSBC.ChurchApp.Features.Ministries.Contracts;
 using GSBC.ChurchApp.Platform.Api.Access;
 using GSBC.ChurchApp.Platform.Api.Chats;
 using GSBC.ChurchApp.Platform.Api.Hosting;
-using GSBC.ChurchApp.Platform.Api.Media;
 using GSBC.ChurchApp.Platform.Api.Ministries;
 using GSBC.ChurchApp.Platform.Api.News;
 using GSBC.ChurchApp.Platform.Api.People;

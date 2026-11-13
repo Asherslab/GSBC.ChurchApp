@@ -53,7 +53,7 @@ internal sealed class MinistryChurchNews(MinistriesDbContext db, MinistryViews v
 
     public async Task StateChangedAsync(Guid sourceId, SharedState state, CancellationToken cancellationToken)
     {
-        if (await db.Posts.SingleOrDefaultAsync(post => post.Id == sourceId, cancellationToken) is not { } post || post.ChurchNews == state)
+        if (await db.Posts.SingleOrDefaultAsync(candidate => candidate.Id == sourceId, cancellationToken) is not { } post || post.ChurchNews == state)
             return;
         post.ChurchNews = state;
         changes.Touch(post.MinistryId);
