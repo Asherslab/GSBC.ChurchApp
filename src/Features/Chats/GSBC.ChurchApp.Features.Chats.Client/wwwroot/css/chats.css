@@ -180,6 +180,10 @@
   .chat-desk { grid-template-columns: minmax(260px, 300px) minmax(0, 1fr); }
   .chat-desk--open.chat-desk--beside-open { grid-template-columns: minmax(240px, 280px) minmax(0, 1fr) minmax(280px, 320px); }
 }
+@media (max-width: 1200px) {
+  .chat-desk--open.chat-desk--beside-open { grid-template-columns: minmax(0, 1fr) minmax(280px, 320px); }
+  .chat-desk--open.chat-desk--beside-open .chat-desk__list { display: none; }
+}
 @media (max-width: 900px) {
   .chat-desk, .chat-desk--open.chat-desk--beside-open { grid-template-columns: minmax(0, 1fr); height: calc(100dvh - 56px); }
   .chat-desk__list { border-right: 0; }

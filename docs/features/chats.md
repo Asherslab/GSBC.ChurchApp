@@ -193,6 +193,9 @@ beside `payload.json`) has the alternatives.
    **The pane's toggle is a panel arrow, not a cog** (owner, 2026-11-13, #77: "make that more of a collapse arrow, not an
    odd looking settings button"): it points into the pane to hide it and out to show it, and says *Hide* or *Show chat
    settings* to screen readers. The phone keeps its cog, which opens the chat's settings page.
+   At 1200px wide and under, showing the pane steps the chat list aside (as a workbench's `FoldAside` does), so the
+   conversation keeps its width; hiding the pane brings the list back. Before this (2026-11-13), the three panes
+   squeezed the conversation to a word a line at 1024px.
    **A message's actions at a desk end on their last item** (owner, 2026-11-13, #76): the popover uses the menu's rows,
    so there is no rule or gap under Delete, and Delete (or *Delete, as a leader*) comes last after a rule, after
    *Report this message*. The phone's sheet lists them in the same order.
