@@ -43,6 +43,13 @@ public static class RichTextRules
         return problems.Distinct().ToList();
     }
 
+    public static IReadOnlyList<string> ChatProblems(string text) =>
+        RichTextParser.Parse(text, RichTextScope.Chat).Links
+            .Where(href => !LinkTargets.IsSafe(href))
+            .Distinct()
+            .Select(href => $"'{Shortened(href)}' isn't a link the app can open. Use https://, mailto: or tel:, or a page in the app such as /events.")
+            .ToList();
+
     public static MediaRef? FirstPicture(RichText content) =>
         RichTextParser.Parse(content.Markdown).MediaIds.Select(content.MediaById).FirstOrDefault(media => media is { IsImage: true });
 

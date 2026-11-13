@@ -181,6 +181,10 @@
     color: var(--accent);
 }
 
+.rich-text blockquote > :last-child {
+    margin-bottom: 0;
+}
+
 .rich-text-figure {
     margin: 1em 0;
 }
@@ -980,4 +984,10 @@
 .rich-text-field--phone .rich-text-field__insert {
     order: -1;
     margin-left: 0;
+}
+
+.rich-text-field--phone .rich-text-field__bar {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
 }

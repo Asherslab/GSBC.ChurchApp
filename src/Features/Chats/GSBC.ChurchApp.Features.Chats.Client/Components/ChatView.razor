@@ -1,3 +1,5 @@
+@using GSBC.ChurchApp.Platform.Contracts.Content
+@using GSBC.ChurchApp.Platform.Ui.Content
 @inject IChats Store
 @inject TimeProvider Clock
 @inject Shell Shell
@@ -131,17 +133,21 @@
                                 else
                                 {
                                     <ChatAttachments Attachments="message.Attachments" From="@(mine ? "You" : message.SenderName)" />
-                                    @foreach ((string text, bool mention, bool you) in ChatMentions.Split(message, card))
-                                    {
-                                        if (mention)
-                                        {
-                                            <span class="chat-mention @(you ? "chat-mention--you" : "")">@text</span>
-                                        }
-                                        else
-                                        {
-                                            @text
-                                        }
-                                    }
+                                    <RichTextView Content="@(new RichText { Markdown = message.Text })" Scope="RichTextScope.Chat" Class="chat-text">
+                                        <TextTemplate Context="run">
+                                            @foreach ((string text, bool mention, bool you) in ChatMentions.Split(run, message, card))
+                                            {
+                                                if (mention)
+                                                {
+                                                    <span class="chat-mention @(you ? "chat-mention--you" : "")">@text</span>
+                                                }
+                                                else
+                                                {
+                                                    @text
+                                                }
+                                            }
+                                        </TextTemplate>
+                                    </RichTextView>
                                 }
                             </ChildContent>
                         </MessageBubble>

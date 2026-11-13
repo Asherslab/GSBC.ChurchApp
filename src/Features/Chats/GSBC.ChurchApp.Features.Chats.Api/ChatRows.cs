@@ -1,3 +1,4 @@
+using GSBC.ChurchApp.Platform.Contracts.Content;
 using System.Globalization;
 using GSBC.ChurchApp.Features.Chats.Api.Data;
 using GSBC.ChurchApp.Features.Chats.Contracts;
@@ -80,7 +81,7 @@ internal static class ChatRows
 
     public static string Snippet(MessageRecord message)
     {
-        string text = message.Text.ReplaceLineEndings(" ").Trim();
+        string text = PlainText.OfChat(message.Text).ReplaceLineEndings(" ").Trim();
         if (text.Length == 0)
             return message.Attachments.Count switch
             {

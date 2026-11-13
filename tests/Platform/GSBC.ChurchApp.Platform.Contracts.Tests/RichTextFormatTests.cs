@@ -175,6 +175,26 @@ public sealed class RichTextFormatTests
         Assert.Equal(typed, PlainText.Of(PlainText.AsRichText(typed)));
     }
 
+    [Fact]
+    public void ChatsFormatTextButKeepHeadingsTablesCardsAndPicturesAsTyped()
+    {
+        RichTextDocument chat = RichTextParser.Parse("# Not a heading\n\n===\n\n| a | b |\n|---|---|\n\n**bold** and `code`\n\n- one\n- two\n\n![x](media:abc)", RichTextScope.Chat);
+
+        Assert.All(chat.Blocks, block => Assert.True(block is ParagraphBlock or ListBlock, block.GetType().Name));
+        Assert.Equal("# Not a heading", Text(Assert.IsType<ParagraphBlock>(chat.Blocks[0]).Content[0]));
+        Assert.Contains(chat.Blocks, block => block is ParagraphBlock { Content: [StrongRun, ..] });
+        Assert.Empty(chat.MediaIds);
+        Assert.Empty(chat.Problems);
+    }
+
+    [Fact]
+    public void AChatMessageWithALinkTheAppCannotOpenIsRefused()
+    {
+        Assert.Contains("isn't a link the app can open", Assert.Single(RichTextRules.ChatProblems("See [this](javascript:alert(1))")));
+        Assert.Empty(RichTextRules.ChatProblems("See [the roster](/ministries/12) and **bring a plate**"));
+        Assert.Equal("See the roster and bring a plate", PlainText.OfChat("See [the roster](/ministries/12) and **bring a plate**"));
+    }
+
     private static IReadOnlyList<Inline> Only(string markdown) =>
         Assert.IsType<ParagraphBlock>(Assert.Single(RichTextParser.Parse(markdown).Blocks)).Content;
 

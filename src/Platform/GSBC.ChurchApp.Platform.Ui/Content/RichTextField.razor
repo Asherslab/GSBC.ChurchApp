@@ -13,7 +13,7 @@
 @inject IServiceProvider Services
 
 <div class="rich-text-field @(Host.Desktop ? "" : "rich-text-field--phone") @Class" data-headings="@(Headings ? "true" : "false")">
-    <div class="rich-text-field__bar" role="toolbar" aria-label="Formatting" data-look-scroll="narrow">
+    <div class="rich-text-field__bar" role="toolbar" aria-label="Formatting" data-look-scroll>
         @if (Inserts.Count > 0)
         {
             @if (Host.Desktop)

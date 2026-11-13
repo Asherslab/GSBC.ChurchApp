@@ -12,10 +12,12 @@ public sealed class RichTextView : ComponentBase
     [Parameter] public string? Class { get; set; }
     [Parameter] public string About { get; set; } = "";
     [Parameter] public bool SkipLeadingMedia { get; set; }
+    [Parameter] public RichTextScope Scope { get; set; }
+    [Parameter] public RenderFragment<string>? TextTemplate { get; set; }
 
     protected override void BuildRenderTree(RenderTreeBuilder builder)
     {
-        RichTextDocument document = RichTextParser.Parse(Content.Markdown);
+        RichTextDocument document = RichTextParser.Parse(Content.Markdown, Scope);
         builder.OpenElement(0, "div");
         builder.AddAttribute(1, "class", Class is null ? "rich-text" : $"rich-text {Class}");
         IReadOnlyList<Block> blocks = SkipLeadingMedia && document.Blocks is [MediaBlock or GalleryBlock or EmbedBlock, ..] ? document.Blocks.Skip(1).ToList() : document.Blocks;
@@ -44,7 +46,7 @@ public sealed class RichTextView : ComponentBase
             AddBlock(builder, block);
     }
 
-    private static void AddFootnotes(RenderTreeBuilder builder, IReadOnlyList<Footnote> footnotes)
+    private void AddFootnotes(RenderTreeBuilder builder, IReadOnlyList<Footnote> footnotes)
     {
         if (footnotes.Count == 0)
             return;
@@ -100,7 +102,7 @@ public sealed class RichTextView : ComponentBase
         }
     }
 
-    private static void AddTable(RenderTreeBuilder builder, TableBlock table)
+    private void AddTable(RenderTreeBuilder builder, TableBlock table)
     {
         builder.OpenElement(70, "div");
         builder.AddAttribute(71, "class", "rich-text-table");
@@ -116,7 +118,7 @@ public sealed class RichTextView : ComponentBase
         builder.CloseElement();
     }
 
-    private static void AddRow(RenderTreeBuilder builder, TableBlock table, TableRow row, string cell)
+    private void AddRow(RenderTreeBuilder builder, TableBlock table, TableRow row, string cell)
     {
         builder.OpenElement(75, "tr");
         for (int column = 0; column < row.Cells.Count; column++)
@@ -146,19 +148,22 @@ public sealed class RichTextView : ComponentBase
         builder.CloseElement();
     }
 
-    private static void AddElement(RenderTreeBuilder builder, string element, IReadOnlyList<Inline> content)
+    private void AddElement(RenderTreeBuilder builder, string element, IReadOnlyList<Inline> content)
     {
         builder.OpenElement(40, element);
         AddInlines(builder, content);
         builder.CloseElement();
     }
 
-    private static void AddInlines(RenderTreeBuilder builder, IReadOnlyList<Inline> inlines)
+    private void AddInlines(RenderTreeBuilder builder, IReadOnlyList<Inline> inlines)
     {
         foreach (Inline inline in inlines)
         {
             switch (inline)
             {
+                case TextRun text when TextTemplate is not null:
+                    builder.AddContent(49, TextTemplate(text.Text));
+                    break;
                 case TextRun text:
                     builder.AddContent(50, text.Text);
                     break;
@@ -203,7 +208,7 @@ public sealed class RichTextView : ComponentBase
         }
     }
 
-    private static void AddLink(RenderTreeBuilder builder, LinkRun link)
+    private void AddLink(RenderTreeBuilder builder, LinkRun link)
     {
         LinkKind kind = LinkTargets.KindOf(link.Href);
         if (kind == LinkKind.Unsafe)

@@ -8,6 +8,8 @@ public static class PlainText
 
     public static string Of(RichText content) => TextOf(RichTextParser.Parse(content.Markdown).Blocks);
 
+    public static string OfChat(string text) => TextOf(RichTextParser.Parse(text, RichTextScope.Chat).Blocks);
+
     public static string Opening(RichText content) =>
         RichTextParser.Parse(content.Markdown).Cards().Select(TextOf).FirstOrDefault(text => text.Length > 0) ?? "";
 

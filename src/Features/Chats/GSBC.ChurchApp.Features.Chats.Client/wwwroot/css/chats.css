@@ -21,6 +21,18 @@
 .chat-mention--you { padding: 0 var(--space-3xs); border-radius: var(--radius-inner); background: color-mix(in srgb, var(--accent) 14%, transparent); }
 .bubble-row--mine .chat-mention { color: var(--on-primary); text-decoration: underline; }
 
+.chat-text { line-height: inherit; white-space: normal; }
+
+.chat-text :is(p, ul, ol, pre, blockquote) { margin: 0 0 var(--space-xs); }
+
+.chat-text blockquote { padding-left: var(--space-sm); }
+
+.bubble-row--mine .chat-text a { color: inherit; text-decoration: underline; }
+
+.bubble-row--mine .chat-text :is(code, .rich-text-code, mark) { background: color-mix(in srgb, var(--on-primary) 18%, transparent); color: inherit; }
+
+.bubble-row--mine .chat-text blockquote { border-left-color: color-mix(in srgb, var(--on-primary) 45%, transparent); color: inherit; }
+
 
 .chat-status { display: inline-flex; align-items: center; gap: var(--space-2xs); font-size: var(--text-pill); font-weight: 600; color: var(--ink-3); }
 .chat-status.btn--link { gap: var(--space-2xs); color: var(--ink-3); }
@@ -94,7 +106,7 @@
 .chat-checked__head strong { color: var(--ink); }
 .chat-checked__menu { margin-left: auto; }
 .chat-checked__quote { margin: 0; font-size: var(--text-caption); color: var(--ink-3); }
-.chat-checked__text { margin: 0; white-space: pre-wrap; }
+.chat-checked__text { margin: 0; }
 .chat-checked__text mark { padding: 0 var(--space-3xs); border-radius: var(--radius-inner); background: color-mix(in srgb, var(--marker) 45%, transparent); color: inherit; }
 .chat-checked__versions { margin: 0; font-size: var(--text-caption); color: var(--ink-2); }
 .chat-checked__event { display: flex; gap: var(--space-xs); justify-content: center; align-items: center; margin: 0; font-size: var(--text-caption); color: var(--ink-2); }

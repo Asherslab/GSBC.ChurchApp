@@ -4,6 +4,12 @@ using System.Text.RegularExpressions;
 
 namespace GSBC.ChurchApp.Platform.Contracts.Content;
 
+public enum RichTextScope
+{
+    Full,
+    Chat,
+}
+
 public static partial class RichTextParser
 {
     public const string CardSplit = "===";
@@ -14,10 +20,11 @@ public static partial class RichTextParser
     private const int MaximumHrefLength = 2_000;
     private const int LargestHeading = 6;
 
-    public static RichTextDocument Parse(string markdown)
+    public static RichTextDocument Parse(string markdown, RichTextScope scope = RichTextScope.Full)
     {
         string[] lines = markdown.Replace("\r\n", "\n").Replace('\r', '\n').Split('\n');
-        Collector collector = new(FootnoteDefinitions(lines));
+        bool full = scope == RichTextScope.Full;
+        Collector collector = new(full ? FootnoteDefinitions(lines) : [], scope);
         List<Block> blocks = [];
         int index = 0;
         while (index < lines.Length)
@@ -30,6 +37,10 @@ public static partial class RichTextParser
             else if (Fence.Of(line) is { } fence)
             {
                 blocks.Add(Code(fence, lines, ref index));
+            }
+            else if (!full)
+            {
+                blocks.Add(ChatBlock(lines, ref index, collector));
             }
             else if (IsCardSplit(line))
             {
@@ -81,6 +92,16 @@ public static partial class RichTextParser
         return new RichTextDocument(blocks, collector.Links, collector.MediaIds, collector.Videos, collector.Problems) { Footnotes = collector.Footnotes() };
     }
 
+    private static Block ChatBlock(string[] lines, ref int index, Collector collector)
+    {
+        string line = lines[index];
+        if (IsQuote(line))
+            return Quote(lines, ref index, collector);
+        if (ListMarker.Of(line) is { Indent: < NestedIndent })
+            return List(lines, ref index, collector);
+        return Paragraph(lines, ref index, collector);
+    }
+
     public static bool IsCardSplit(string line)
     {
         string trimmed = line.Trim();
@@ -90,7 +111,7 @@ public static partial class RichTextParser
     private static ParagraphBlock Paragraph(string[] lines, ref int index, Collector collector)
     {
         List<string> paragraph = [lines[index++].Trim()];
-        while (index < lines.Length && !IsBlank(lines[index]) && !StartsBlock(lines[index]) && !collector.IsDefinitionLine(index))
+        while (index < lines.Length && !IsBlank(lines[index]) && !collector.StartsBlock(lines[index]) && !collector.IsDefinitionLine(index))
             paragraph.Add(lines[index++].Trim());
         return new ParagraphBlock(InlineParser.ParseLines(paragraph, collector));
     }
@@ -429,8 +450,14 @@ public static partial class RichTextParser
         }
     }
 
-    private sealed class Collector(Dictionary<string, (int Line, List<string> Text)> definitions)
+    private sealed class Collector(Dictionary<string, (int Line, List<string> Text)> definitions, RichTextScope scope)
     {
+        public bool Full => scope == RichTextScope.Full;
+
+        public bool StartsBlock(string line) => Full
+            ? RichTextParser.StartsBlock(line)
+            : IsQuote(line) || ListMarker.Of(line) is { Indent: < NestedIndent } || Fence.Of(line) is not null;
+
         private readonly HashSet<int> _definitionLines = DefinitionLines(definitions);
         private readonly List<string> _referenced = [];
 
@@ -576,7 +603,8 @@ public static partial class RichTextParser
 
                     if (character == '!' && position + 1 < end && text[position + 1] == '[' && TryLink(position + 1, end, out _, out _, out int imageEnd))
                     {
-                        collector.Problems.Add("Pictures and files have to come from the media library, and videos from YouTube or Vimeo, each on a line of its own.");
+                        if (collector.Full)
+                            collector.Problems.Add("Pictures and files have to come from the media library, and videos from YouTube or Vimeo, each on a line of its own.");
                         pending.Append(text, position, imageEnd - position);
                         position = imageEnd;
                         continue;
