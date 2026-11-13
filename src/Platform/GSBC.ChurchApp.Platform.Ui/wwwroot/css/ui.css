@@ -591,12 +591,14 @@ button.text-link:disabled { color: var(--ink-3); cursor: default; }
 .writing-desk__write { display: grid; gap: var(--space-md); }
 .writing-desk__write[hidden] { display: none; }
 .writing-desk__preview { display: grid; justify-items: center; padding-top: var(--space-sm); }
-.writing-desk__side { grid-area: side; position: sticky; top: 0; align-self: start; display: grid; align-content: start; gap: var(--space-md); max-height: calc(100dvh - var(--foot-h)); overflow-y: auto; scrollbar-width: thin; padding: var(--space-xl) var(--space-xl) var(--space-2xl); }
+.writing-desk__side { grid-area: side; position: sticky; top: 0; align-self: start; display: grid; align-content: start; gap: var(--space-md); max-height: calc(100dvh - var(--foot-h)); overflow-y: auto; scrollbar-width: thin; padding: var(--space-xl) var(--space-xl) calc(var(--foot-h) + var(--space-4xl) + var(--space-2xl)); }
 .writing-desk__side-head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-sm); min-height: 36px; }
 .writing-desk__side-title { margin: 0; color: var(--ink-2); font-size: var(--text-caption); font-weight: 700; }
 .writing-desk__settings { display: grid; gap: var(--space-md); }
 .writing-desk__settings > .section { margin: 0; }
 .writing-desk__settings .section__group { display: grid; gap: var(--space-lg); }
+.writing-desk__settings .field__input { text-overflow: ellipsis; }
+.writing-desk__preview .phone-frame__status, .writing-desk__preview .phone-frame .topbar { color: var(--ink); }
 .writing-desk--folded .writing-desk__side { padding-inline: var(--space-sm); }
 .writing-desk--folded .writing-desk__side-head { justify-content: center; }
 .writing-desk--folded :is(.writing-desk__side-title, .writing-desk__settings) { display: none; }
@@ -612,6 +614,8 @@ button.text-link:disabled { color: var(--ink-3); cursor: default; }
   .writing-desk--folded .writing-desk__side-title { display: block; }
   .writing-desk__fold, .writing-desk__summary { display: none; }
   .writing-desk__page { min-height: 0; border-radius: var(--radius); }
+  .writing-desk .post-editor__add { display: grid; grid-template-columns: repeat(auto-fill, minmax(8.5rem, 1fr)); }
+  .writing-desk .post-editor__add .post-editor__chip { justify-content: center; }
   .writing-desk__foot, .writing-desk--folded .writing-desk__foot { padding-inline: var(--space-3xl); }
 }
 @media (max-width: 760px) {

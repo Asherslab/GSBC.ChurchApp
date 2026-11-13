@@ -117,7 +117,7 @@
                 <PostTextBlock Block="block" OnChanged="ChangedAsync" />
                 break;
             case PostBlockKind.Heading:
-                <TextField Label="@(block.Smaller ? "Subheading" : "Heading")" Value="@block.Text" ValueChanged="text => SetAsync(() => block.Text = text)" MaxLength="120" />
+                <TextField Label="@(block.Smaller ? "Subheading" : "Heading")" Placeholder="@(block.Smaller ? "Subheading" : "Heading")" Value="@block.Text" ValueChanged="text => SetAsync(() => block.Text = text)" MaxLength="120" />
                 break;
             case PostBlockKind.VideoLink:
                 <TextField Label="YouTube or Vimeo link" Value="@block.Link" ValueChanged="link => SetAsync(() => block.Link = link)" Type="url"
@@ -285,7 +285,7 @@
 
     private const long LargestUpload = 2L * 1024 * 1024 * 1024;
 
-    private static string? RowClass(PostBlock block) => block.Kind == PostBlockKind.Heading ? "post-block-row--heading" : null;
+    private static string? RowClass(PostBlock block) => block.Kind == PostBlockKind.Heading ? block.Smaller ? "post-block-row--heading post-block-row--smaller" : "post-block-row--heading" : null;
 
     private static string Describe(PostBlock block) => block.Kind switch
     {

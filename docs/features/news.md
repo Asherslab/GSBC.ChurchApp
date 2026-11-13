@@ -83,7 +83,8 @@ Feedback #83, #84 and #85 on the admin panel's *New post*, with an interview and
   and shared posts still open in its pane, where they're answered rather than written.
 - **The post as a page, its settings beside it, and they fold away** (owner's pick on the decision page, with the
   steer "allow collapsing settings"; `.impeccable/mocks/post-editor/b-page-and-side.html`). Folded, the settings sum
-  up in one line beside the tabs; under 1228px they sit under the post. Shared as `WritingDesk` (Platform.Ui).
+  up in one line beside the tabs; under 1228px they sit under the post. Shared as `WritingDesk` (Platform.Ui). A new
+  post has no ⋯ menu in its title band: there is nothing to delete or take back to writing until it's saved.
 - **Preview on a phone is a tab** beside Write (owner: "tab it, like is often for markdown editors").
 - **Text formats as you type: live Markdown** (owner's pick of three on the decision page; "c is fine most likely,
   but the important part there is it needs to be usable by staff that don't know markdown"). Bold looks bold and

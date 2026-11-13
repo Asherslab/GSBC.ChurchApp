@@ -24,6 +24,7 @@ class Bullet extends WidgetType {
 const hidden = Decoration.replace({});
 const faint = Decoration.mark({ class: 'cm-md-mark' });
 const bullet = Decoration.replace({ widget: new Bullet() });
+const blank = Decoration.line({ class: 'cm-md-blank' });
 const styles = {
   StrongEmphasis: Decoration.mark({ class: 'cm-md-strong' }),
   Emphasis: Decoration.mark({ class: 'cm-md-em' }),
@@ -86,6 +87,14 @@ function decorate(view) {
         }
       },
     });
+  }
+  for (const { from, to } of view.visibleRanges) {
+    for (let position = from; position <= to;) {
+      const line = state.doc.lineAt(position);
+      if (line.length === 0 && line.number > 1 && line.number < state.doc.lines && !(selection && touches(selection, line.from, line.to)) && !lineMarks.has(line.from))
+        lineMarks.set(line.from, blank);
+      position = line.to + 1;
+    }
   }
   const builder = new RangeSetBuilder();
   const all = [...marks, ...[...lineMarks].map(([from, decoration]) => decoration.range(from))];

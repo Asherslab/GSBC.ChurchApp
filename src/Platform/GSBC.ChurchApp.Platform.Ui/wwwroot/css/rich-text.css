@@ -389,6 +389,16 @@
     text-indent: -1.2em;
 }
 
+.rich-text-field .cm-line.cm-md-blank {
+    line-height: 0.7;
+}
+
+@media (max-width: 480px) {
+    .rich-text-field .rich-text-field__tool {
+        width: 32px;
+    }
+}
+
 .cm-md-bullet {
     display: inline-block;
     width: 1.2em;

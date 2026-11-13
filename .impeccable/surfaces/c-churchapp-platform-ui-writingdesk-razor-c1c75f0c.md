@@ -21,7 +21,7 @@ Owner's feedback #83, #84, #85 and the interview and two decision-page picks, 20
 
 ## Direction contract
 
-seed: 5b4558f5c4aad0a8 (surface, operate; the owner chose "The post as a page, its settings beside it" with the steer
+Picks: on the surface round (operate) the owner chose "The post as a page, its settings beside it" with the steer
 "allow collapsing settings", then text editing (c) "Live Markdown, marks fade away" on round 2)
 
 THESIS: Writing is a page, not a pane. The post sits as a white page on sand at a reading width, its settings open in a
@@ -35,12 +35,12 @@ STORY: Staff open New post, type the title and the text, press B or ⌘B, paste 
 add a gallery, check who and when in the column (or fold it and read the summary beside the tabs), look at Preview on
 a phone, Post.
 
-FIRST VIEWPORT: Title band "New post" with ‹ Church news and the ⋯ menu; under it the sand desk: the page (Write and
+FIRST VIEWPORT: Title band "New post" with ‹ Church news and, once the post exists, the ⋯ menu (a new post has nothing in it to do: no delete, no back to writing); under it the sand desk: the page (Write and
 Preview on a phone tabs, the title in headline type, the first text block with its bar, the Add row) and the 360px
 settings column (its head with the fold arrow, Who it's for, Telling people, When, A link); Cancel bottom left and Post
 bottom right in the column's foot.
 
-FORM: page-and-side, third on the ordered list, plus fold; text as live Markdown on CodeMirror 6 (our own mark hiding).
+FORM: seed:5b4558f5c4aad0a8 · page-and-side, third on the ordered list, plus fold; text as live Markdown on CodeMirror 6 (our own mark hiding).
 Signature: the marks that fade away, and the settings column that folds into a one-line summary.
 
 FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, DESIGN.md, and every shipping raster carrying its provenance
