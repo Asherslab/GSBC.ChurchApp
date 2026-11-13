@@ -1,7 +1,8 @@
 @inject IMinistryReads Reads
 @inject TimeProvider Clock
 
-<ToggleRow Title="Show in Life Groups" Description="It's listed with the Life Groups in the app, wherever it sits" Checked="Shows" CheckedChanged="ShowsChanged" />
+<ToggleRow Title="Show in Life Groups" Description="@(Blocked ?? "It's listed with the Life Groups in the app, wherever it sits")" Checked="Shows" CheckedChanged="ShowsChanged"
+           Disabled="Blocked is not null" Muted="Blocked is not null" />
 @if (Shows)
 {
     <LiveData TValue="LifeGroupsPage" Load="Reads.LifeGroupsAsync" Feeds="Reads.Feeds" Remember="ministries.life-groups" FailedTitle="Can't load the Life Groups' Sundays right now">
@@ -13,6 +14,7 @@
 @code {
     [Parameter] public bool Shows { get; set; }
     [Parameter] public EventCallback<bool> ShowsChanged { get; set; }
+    [Parameter] public string? Blocked { get; set; }
     [Parameter] public string RoundId { get; set; } = "";
     [Parameter] public EventCallback<string> RoundIdChanged { get; set; }
 

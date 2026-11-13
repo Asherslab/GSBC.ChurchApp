@@ -24,6 +24,8 @@ internal sealed class MinistryMover(MinistriesDbContext db, MinistryChanges chan
             Gain = await ChangesAsync(effects.Joining, [.. still, .. leaving], cancellationToken),
             Leaves = [.. effects.LeavesGathering],
             Joins = [.. effects.JoinsGathering],
+            HiddenBy = !tree.IsHidden(ministry.Id) && effects.HiddenBy is { } hiding ? hiding.Name : "",
+            ShownAgain = tree.IsHidden(ministry.Id) && effects.HiddenBy is null && !ministry.Hidden,
         };
     }
 
@@ -80,7 +82,7 @@ internal sealed class MinistryMover(MinistriesDbContext db, MinistryChanges chan
 
 internal sealed record MoveEffects(
     IReadOnlyList<MinistryRecord> Leaving, IReadOnlyList<MinistryRecord> Joining, IReadOnlyList<Guid> Staying,
-    IReadOnlyList<string> LeavesGathering, IReadOnlyList<string> JoinsGathering)
+    IReadOnlyList<string> LeavesGathering, IReadOnlyList<string> JoinsGathering, MinistryRecord? HiddenBy)
 {
     public static MoveEffects Of(MinistryTree tree, MinistryRecord ministry, MinistryRecord? under)
     {
@@ -103,6 +105,6 @@ internal sealed record MoveEffects(
             before.Where(old => then.All(next => next.Id != old.Id)).ToList(),
             then.Where(next => before.All(old => old.Id != next.Id)).ToList(),
             before.Where(old => then.Any(next => next.Id == old.Id)).Select(old => old.Id).ToList(),
-            leaves, joins);
+            leaves, joins, ministry.Hidden ? null : after.HiddenBy(ministry.Id));
     }
 }

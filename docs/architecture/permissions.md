@@ -106,6 +106,10 @@ be a permission held at one place (`Audience.HoldingAt`, written `permission:<no
 team calendar is for `ministries.team.view` at that ministry; `Viewer.Of(grants)` checks it, and Events treats it as
 private everywhere (who sees it, *Tell people*, the weekly digest).
 
+**Seeing a hidden thing** (2026-11-13, for Ministries). A hidden ministry is published per row for
+`permission:ministries.hidden.view@ministry:<place>`, at it and every ministry under it, and the ministry roles carry the
+node, so who sees it is the people in it ([ministries.md](../features/ministries.md), *Hidden ministries*).
+
 **Holding a role** (2026-11-04). Compiling someone's grants also gives them a global
 `roles.held.<role id>` grant for each role they hold and each role it includes (`RoleMembership`), so
 "people in a role" can be an audience checked like any permission (Home's tiles use it). The node isn't

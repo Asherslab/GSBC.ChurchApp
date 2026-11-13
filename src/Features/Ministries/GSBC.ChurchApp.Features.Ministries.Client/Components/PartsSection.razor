@@ -1,7 +1,7 @@
 @implements IDisposable
 @inject IMinistryWrites Ministries
 
-<Section Title="Its tabs" Lead="Drag a tab by its handle, or use its ⋯ menu, to change the order people see. About is always first." Grouped="true">
+<Section Title="Its tabs" Lead="Drag a tab by its handle, or use its More menu, to change the order people see. About is always first." Grouped="true">
     <ChildContent>
         <ReorderList TItem="MinistryPart" Items="Parts" Key="part => part.Key" Name="part => part.Name" Label="@($"{MinistryWords.Possessive(Page.Ministry.Name)} tabs, in order")"
                      OnReordered="ReorderAsync">

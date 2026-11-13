@@ -21,6 +21,8 @@ public static class MinistryLogic
         : roles.Contains(Roles.Attendee) ? "You come along"
         : "";
 
+    public static bool IsHidden(MinistryDetails ministry) => ministry.Hidden || ministry.HiddenBy.Length > 0;
+
     public static bool IsOn(MinistryDetails ministry, string part) => MinistryParts.IsOn(ministry.PartsOff, part);
 
     private static string Names(IReadOnlyCollection<string> names) =>

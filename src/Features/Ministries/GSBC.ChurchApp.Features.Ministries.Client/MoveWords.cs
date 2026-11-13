@@ -16,6 +16,10 @@ public static class MoveWords
             lines.Add($"It joins {MinistryWords.Names(preview.Joins)}.");
         if (preview.Leaves.Count > 0)
             lines.Add($"It leaves {MinistryWords.Names(preview.Leaves)}.");
+        if (preview.HiddenBy.Length > 0)
+            lines.Add($"It will be hidden, as {preview.HiddenBy} is: only its own people and staff will see it.");
+        if (preview.ShownAgain)
+            lines.Add("It won't be hidden any more: everyone will see it.");
         lines.Add("Its own people, posts, files and calendars stay as they are.");
         return string.Join(" ", lines);
     }

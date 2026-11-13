@@ -23,7 +23,7 @@ public static class MinistriesApiExtensions
 
     internal static readonly IReadOnlyList<string> LeaderPatterns =
     [
-        MinistriesPermissions.TeamViewNode, MinistriesPermissions.AttendeesViewNode, MinistriesPermissions.ParentsViewNode,
+        MinistriesPermissions.TeamViewNode, MinistriesPermissions.AttendeesViewNode, MinistriesPermissions.ParentsViewNode, MinistriesPermissions.SeeHiddenNode,
         MinistriesPermissions.PostNode, MinistriesPermissions.PeopleNode, MinistriesPermissions.SettingsNode,
         EditCalendarsNode, PublishCalendarsNode, ManageChatsNode, CheckChatsNode,
     ];
@@ -52,15 +52,15 @@ public static class MinistriesApiExtensions
             LeaderPatterns, AssignableBy: givers, AppliesToChildren: true, Feature: RoleFeatures.Ministries, Kits: [RoleKits.Pictures]));
         services.AddSystemRole(new SystemRole(MinistriesPermissions.TeamRole, "Team",
             "On this ministry's team: sees what it shares with its team, attendees and parents", ScopeKind.Ministry,
-            [MinistriesPermissions.TeamViewNode, MinistriesPermissions.AttendeesViewNode, MinistriesPermissions.ParentsViewNode],
+            [MinistriesPermissions.TeamViewNode, MinistriesPermissions.AttendeesViewNode, MinistriesPermissions.ParentsViewNode, MinistriesPermissions.SeeHiddenNode],
             AssignableBy: givers, Feature: RoleFeatures.Ministries));
         services.AddSystemRole(new SystemRole(MinistriesPermissions.AttendeeRole, "Attendee",
             "Comes along to this ministry: sees what it shares with its attendees. Their parents see it too", ScopeKind.Ministry,
-            [MinistriesPermissions.AttendeesViewNode], AssignableBy: givers, Feature: RoleFeatures.Ministries,
+            [MinistriesPermissions.AttendeesViewNode, MinistriesPermissions.SeeHiddenNode], AssignableBy: givers, Feature: RoleFeatures.Ministries,
             Through: [new RoleThrough(PeopleParentRole, MinistriesPermissions.AttendeesParentRole)]));
         services.AddSystemRole(new SystemRole(MinistriesPermissions.AttendeesParentRole, "Attendee's parent",
             "A parent of someone who comes along: sees what the ministry shares with attendees and parents", ScopeKind.Ministry,
-            [MinistriesPermissions.AttendeesViewNode, MinistriesPermissions.ParentsViewNode], AssignableBy: [], Hidden: true));
+            [MinistriesPermissions.AttendeesViewNode, MinistriesPermissions.ParentsViewNode, MinistriesPermissions.SeeHiddenNode], AssignableBy: [], Hidden: true));
         services.AddSystemRole(new SystemRole(MinistriesPermissions.ManagerRole, "Ministries Manager",
             "Creates and deletes the church's ministries and does everything a leader can in every one of them", ScopeKind.Global,
             ["ministries.*"], Feature: RoleFeatures.Ministries, Kits: [RoleKits.Pictures]));
@@ -71,7 +71,7 @@ public static class MinistriesApiExtensions
         services.AddFeed(new FeedDefinition(MinistriesFeeds.Ministries, FeedAudience.Public));
         foreach (string feed in MinistriesFeeds.OnPhones)
             services.AddFeed(new FeedDefinition(feed, FeedAudience.Public));
-        foreach (string feed in new[] { MinistriesFeeds.PrivatePosts, MinistriesFeeds.PrivateFiles, MinistriesFeeds.PrivateCalendars, MinistriesFeeds.People })
+        foreach (string feed in new[] { MinistriesFeeds.PrivateDirectory, MinistriesFeeds.PrivatePosts, MinistriesFeeds.PrivateFiles, MinistriesFeeds.PrivateCalendars, MinistriesFeeds.People })
             services.AddFeed(new FeedDefinition(feed, FeedAudience.EachRow));
         services.AddFeed(new FeedDefinition(MinistriesFeeds.Yours, FeedAudience.OwnRecords));
         services.AddDestinations(MinistriesDestinations.All);
