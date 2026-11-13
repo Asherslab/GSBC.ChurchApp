@@ -8,11 +8,7 @@ else if (Ministry.ShowsInLifeGroups)
 }
 else
 {
-    <ToggleRow Title="Hidden from everyone else" Description="Only its own people and staff see it" Checked="Ministry.Hidden" CheckedChanged="HiddenChanged" />
-}
-@if (MinistryLogic.IsHidden(Ministry))
-{
-    <p class="ministry-who">@MinistryWords.WhoSeesHidden(Ministry.Name)</p>
+    <ToggleRow Title="Hidden from everyone else" Description="@(Ministry.Hidden ? MinistryWords.WhoSeesHidden : MinistryWords.HidesFromEveryoneElse)" Checked="Ministry.Hidden" CheckedChanged="HiddenChanged" />
 }
 
 @code {
