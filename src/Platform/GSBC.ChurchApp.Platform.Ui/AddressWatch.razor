@@ -1,0 +1,12 @@
+@implements IDisposable
+@inject NavigationManager Navigation
+
+@code {
+    [Parameter, EditorRequired] public EventCallback Changed { get; set; }
+
+    protected override void OnInitialized() => Navigation.LocationChanged += Moved;
+
+    private void Moved(object? sender, LocationChangedEventArgs args) => InvokeAsync(() => Changed.InvokeAsync());
+
+    public void Dispose() => Navigation.LocationChanged -= Moved;
+}

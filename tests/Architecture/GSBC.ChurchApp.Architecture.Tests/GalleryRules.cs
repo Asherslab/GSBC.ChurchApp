@@ -22,6 +22,7 @@ public sealed class GalleryRules
         ["EditScope"] = "tells an unsaved-changes guard that something changed",
         ["LiveData"] = "loads data from a feed; the gallery has no feeds",
         ["RefreshOn"] = "reloads when feeds change; nothing to see",
+        ["AddressWatch"] = "tells a page its address moved; nothing to see",
         ["UnsavedGuard"] = "asks before leaving with unsaved changes; nothing to see",
         ["News/PostTextBlock"] = "one text block of PostEditor, shown in it",
         ["ModuleRouter"] = "routes pages",
