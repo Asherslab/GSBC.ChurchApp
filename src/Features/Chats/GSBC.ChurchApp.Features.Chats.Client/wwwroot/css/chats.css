@@ -144,7 +144,7 @@
 .chat-desk__list .row--unread .row__title { padding-left: 0; }
 .chat-desk__list .row--unread .row__unread { display: none; }
 .chat-desk__list .row__trail > .icon { display: none; }
-.chat-desk__list .row { padding-inline-end: var(--space-lg); }
+.chat-desk__list .row { padding-inline: var(--space-lg); }
 .chat-desk__list .row__trail { align-self: flex-start; }
 .chat-group { margin: var(--space-lg) var(--space-lg) var(--space-2xs); font-size: var(--text-label); font-weight: 700; color: var(--ink-2); }
 .chat-group:first-of-type { margin-top: var(--space-sm); }
