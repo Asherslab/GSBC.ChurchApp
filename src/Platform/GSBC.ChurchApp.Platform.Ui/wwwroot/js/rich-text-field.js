@@ -25,6 +25,8 @@ const hidden = Decoration.replace({});
 const faint = Decoration.mark({ class: 'cm-md-mark' });
 const bullet = Decoration.replace({ widget: new Bullet() });
 const blank = Decoration.line({ class: 'cm-md-blank' });
+const blankInList = Decoration.line({ class: 'cm-md-blank-in-list' });
+const listLine = /^\s*(?:[-*]|\d{1,3}[.)])\s/;
 const styles = {
   StrongEmphasis: Decoration.mark({ class: 'cm-md-strong' }),
   Emphasis: Decoration.mark({ class: 'cm-md-em' }),
@@ -92,7 +94,7 @@ function decorate(view) {
     for (let position = from; position <= to;) {
       const line = state.doc.lineAt(position);
       if (line.length === 0 && line.number > 1 && line.number < state.doc.lines && !(selection && touches(selection, line.from, line.to)) && !lineMarks.has(line.from))
-        lineMarks.set(line.from, blank);
+        lineMarks.set(line.from, listLine.test(state.doc.line(line.number - 1).text) && listLine.test(state.doc.line(line.number + 1).text) ? blankInList : blank);
       position = line.to + 1;
     }
   }

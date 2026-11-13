@@ -321,3 +321,9 @@
 .post-block--heading .field__input { min-height: 0; padding: var(--space-2xs) 0; border-radius: 0; background: none; box-shadow: none; font-size: var(--text-title-lg); font-weight: 700; letter-spacing: -0.01em; }
 
 .post-block-row--smaller .post-block--heading .field__input { font-size: var(--text-lead); }
+
+@media (max-width: 480px) {
+    .post-editor__blocks .reorder__row { gap: var(--space-2xs); }
+    .post-editor__blocks .reorder__grip { width: 28px; }
+    .post-editor__blocks .reorder__trail .btn--icon { width: 32px; }
+}

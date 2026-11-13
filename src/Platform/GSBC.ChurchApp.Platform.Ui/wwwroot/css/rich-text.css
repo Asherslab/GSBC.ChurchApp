@@ -393,6 +393,10 @@
     line-height: 0.7;
 }
 
+.rich-text-field .cm-line.cm-md-blank-in-list {
+    line-height: 0.2;
+}
+
 @media (max-width: 480px) {
     .rich-text-field .rich-text-field__tool {
         width: 32px;
