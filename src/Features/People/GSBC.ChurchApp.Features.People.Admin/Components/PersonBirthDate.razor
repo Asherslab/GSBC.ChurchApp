@@ -48,10 +48,10 @@
 
     private static string BornLine(PersonFamily family, DateOnly today) => family.BirthDate switch
     {
-        { } born when Ages.IsMinor(WireDates.FromWire(born), today) => $"Born {born:d MMM yyyy} · {PeopleWords.Age(born, today)} years old, under 18",
-        { } born => $"Born {born:d MMM yyyy} · {PeopleWords.Age(born, today)} years old",
+        { } born when Ages.IsMinor(WireDates.FromWire(born), today) => $"{born:d MMM yyyy} · {PeopleWords.Age(born, today)} years old, under 18",
+        { } born => $"{born:d MMM yyyy} · {PeopleWords.Age(born, today)} years old",
         null when family.SaysAdult => "Says they're 18 or older",
-        null => "No birth date",
+        null => "Not given",
     };
 
     private void Start(PersonFamily family)

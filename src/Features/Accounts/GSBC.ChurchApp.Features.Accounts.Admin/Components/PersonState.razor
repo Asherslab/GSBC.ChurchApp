@@ -33,5 +33,11 @@ else
     [Parameter, EditorRequired] public required PersonInfo Person { get; set; }
     [Parameter] public InvitationInfo? Invitation { get; set; }
 
-    private bool Expired => Invitation is { } invitation && invitation.ExpiresAt <= Clock.GetUtcNow().UtcDateTime;
+    private bool Expired => HasExpired(Invitation, Clock);
+
+    public static bool NeedsStaff(PersonInfo person, InvitationInfo? invitation, TimeProvider clock) =>
+        person.Disabled || invitation is { Held: true } || HasExpired(invitation, clock);
+
+    private static bool HasExpired(InvitationInfo? invitation, TimeProvider clock) =>
+        invitation is { Held: false } && invitation.ExpiresAt <= clock.GetUtcNow().UtcDateTime;
 }

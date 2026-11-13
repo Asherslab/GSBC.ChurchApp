@@ -189,10 +189,10 @@ Through `IPersonData` when an account is deleted:
   one grouped *Your family* (asks to answer, children with age, sign-in and how they're reached, *Add a child*), *Your parents* (for
   a young person, or anyone with parents or asks), *Blue card and training*. A child opens a sheet: sign-in code, how
   to reach them, details, another parent, remove or stop looking after.
-- **Admin, a person's page:** their birth date and age sit under their name, beside their email (`PersonBirthDate`, a
-  `PersonFact`), with *Change* (or *Add it*) opening a small sheet, for anyone who may change their family (owner, #37,
+- **Admin, a person's page:** their birth date and age are a row of their Profile, under their email (`PersonBirthDate`, a
+  `PersonFact` labelled *Birth date*; moved from under their name, #81, 2026-11-13), with *Change* (or *Add it*) opening a small sheet, for anyone who may change their family (owner, #37,
   2026-11-12: the birth date isn't a family fact). *Family* and *Safeguarding* tabs (`PersonTab`) beside Roles and
-  Account. Family: how ministries reach a young person, what's waiting, children, parents, the shared `PersonFinder` to link.
+  Profile. Family: how ministries reach a young person, what's waiting, children, parents, the shared `PersonFinder` to link.
   Safeguarding: flags, the card and training as fields (read-only when they come from Safe Ministry Check, with the
   record, how it was linked, its status and Unlink), linking to a Safe Ministry Check record, a preview of the card.
 - **Admin, People → Safeguarding:** the flagged list, with a line saying when Safe Ministry Check last synced.

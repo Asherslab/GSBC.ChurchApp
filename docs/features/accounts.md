@@ -47,7 +47,7 @@ when the link stops working (expired ones stay listed until the cleanup removes 
 `Accounts.ResendInvitation` (`accounts.manage`) replaces the link with a new 7-day one and emails it;
 `Accounts.WithdrawInvitation` (`accounts.manage`) stops the link and deletes the account that was never
 set up, as the cleanup would a week later. The admin panel's People shows them under the *Invited*
-filter, with both actions on the person's page (Account tab), and an invitation still waiting after two days, or
+filter, with both actions on the person's page (Profile tab), and an invitation still waiting after two days, or
 expired, reaches Home's *Needs you* (`InvitationsOfficeWeek`, for holders of `accounts.manage`).
 
 **Adding someone without inviting them** (owner, 2026-11-10: "create an account for somebody without sending the invite
@@ -89,7 +89,7 @@ doesn't reveal who has an account) emails a code when allowed. Staff can issue o
 Recovering never removes existing passkeys; the person removes lost ones afterwards, on Account → Security.
 
 **Deleting an account** (owner, 2026-11-09: "yes staff can delete, also let people delete their own account? no reason
-not to"). `Accounts.DeleteAccount(userId)` (`accounts.manage`, from the person's page on People (Account tab), never your own) and
+not to"). `Accounts.DeleteAccount(userId)` (`accounts.manage`, from the person's page on People (Profile tab), never your own) and
 `Accounts.DeleteMyAccount` (signed in, at the end of the Account page in the app and the admin panel). Both ask first and
 say it can't be undone (`AccountDeletionWords`).
 
@@ -143,9 +143,13 @@ one shared component in Accounts.Client:
 
 ## A person's page (2026-11-09)
 
-People lists everyone; choosing someone opens their page (`/people/{id}`): their email, account state and
-whether they have a passkey and joined date, and tabs. Accounts owns the page, its **Account** tab (recovery link,
-invitation, turning the account off, deleting it) and **Activity** (`accounts.manage`, as before); other features add tabs through `PersonTab`
+People lists everyone; choosing someone opens their page (`/people/{id}`): their name in the heading (with a pill
+only when their account needs something: turned off, not invited yet, invited, no passkey, email not confirmed), and
+tabs. Accounts owns the page, its **Profile** tab, first (owner, #81, 2026-11-13: "make a profile page or something for
+DOB, joined and etc. put email under there, name, etc, will likely add more later"): *Their details* (name, email,
+then every `PersonFact` other features add, each with a label, such as People's birth date and age with *Change*) and
+*Their account* (state, passkey, joined, the invitation, the recovery link, and More: turning the account off,
+deleting it), each a settings-group card; and **Activity** (`accounts.manage`, as before); other features add tabs through `PersonTab`
 (Platform.Client): Access adds **Roles** and **What they can do** ([access.md](access.md#admin-screens)), People adds
 **Family** and **Safeguarding** ([people.md](people.md)).
 `/people?person={id}` (the office week's links) goes to the page.

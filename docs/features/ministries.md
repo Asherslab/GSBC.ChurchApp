@@ -160,7 +160,9 @@ files or calendars anywhere: not the list of ministries, search (destinations), 
   hidden, so only its own people, the leaders above it and staff see this"). Asking to send a post to the whole church
   still goes to staff, who decide.
 - **Default (owner to review): where the switch is.** *Hidden from everyone else* is a switch in The details, beside
-  *Show in Life Groups*, saved with Save, with a sand note saying exactly who still sees it (picked by the station over
+  *Show in Life Groups*, saved with Save. While it's on, the switch's own line says exactly who still sees it and that
+  only they can join or ask (owner, #80, 2026-11-13: "lot of jumping around when you click the hidden switch"; nothing is
+  inserted above or below it any more) (picked by the station over
   its own group that changes straight away, and a ⋯ menu item asking once: The details already says it's "what people
   see about it, how they join, and where it shows", and a Save guards a change that hides a whole ministry).
 - **How it's marked** for those who can see it: a *Hidden* pill with the crossed-out eye (`AppIcons.Hidden`) on the

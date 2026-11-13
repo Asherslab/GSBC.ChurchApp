@@ -8,7 +8,7 @@ per environment at go-live and then **deleted** (below).
 
 - "We do need an import tool for when we do go to production, but it needs to pull *all* the sermons/etc off the site
   (not the 100 or so that the rss feed allows)."
-- An **admin page in its own removable module**, *Import from the website*. Staff run it on production themselves, see
+- An **admin page in its own removable module**, *Import sermons*. Staff run it on production themselves, see
   its progress, and can run it again safely: it skips what's already there.
 - It **copies everything** into our storage (audio, series pictures, sermon pictures, speaker photos), deduplicated like
   all media, so nothing depends on the old website afterwards.

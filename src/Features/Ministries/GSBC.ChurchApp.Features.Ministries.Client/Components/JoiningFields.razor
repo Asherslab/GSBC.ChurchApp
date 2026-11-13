@@ -5,10 +5,6 @@
     <Segmented TValue="string" Label="Coming along" ShowLabel="true" Stacked="true"
                Hint="Attendees are the people it's for. How does someone start coming? Parents join for their children."
                Options="AttendOptions" Value="AttendJoin" ValueChanged="AttendJoinChanged" />
-    @if (Hidden)
-    {
-        <p class="field__hint">While it's hidden, only people who can already see it can join or ask. Everyone else is added by its leaders.</p>
-    }
 </div>
 
 @code {
@@ -31,5 +27,4 @@
     [Parameter] public EventCallback<string> TeamJoinChanged { get; set; }
     [Parameter, EditorRequired] public required string AttendJoin { get; set; }
     [Parameter] public EventCallback<string> AttendJoinChanged { get; set; }
-    [Parameter] public bool Hidden { get; set; }
 }
