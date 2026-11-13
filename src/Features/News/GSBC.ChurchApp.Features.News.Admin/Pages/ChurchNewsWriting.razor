@@ -1,0 +1,104 @@
+@page "/news/write"
+@page "/news/{Id}/change"
+@using GSBC.ChurchApp.Platform.Icons
+@inject OnlineNews News
+@inject NewsWrites Writes
+@inject IAccess Access
+@inject NavigationManager Navigation
+@inject TimeProvider Clock
+
+<LiveData TValue="EditedPost" Load="LoadAsync" Feeds="DeskFeeds" FailedTitle="Can't load this post right now">
+    @if ((_writing ??= context.Value.Post) is { } post && Access.Can(NewsPermissions.Write))
+    {
+        <TitleBand Title="@(Id is null ? "New post" : "Change the post")" BrowserTitle="@(Id is null ? "New post" : post.Title)" BackHref="news" BackText="Church news"
+                   Lead="@(Id is null ? "Write it as blocks: text, headings, pictures, video, audio or a file, moved by their handles." : context.Value.Post is { } latest ? NewsWords.StateLine(latest, Clock) : "This post has just been deleted.")">
+            <Actions>
+                @if (context.Value.Post is { } latest && Actions(latest) is { Count: > 0 } actions)
+                {
+                    <Menu Label="More for this post" Items="actions" />
+                }
+            </Actions>
+            <LeadContent>
+                <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+            </LeadContent>
+        </TitleBand>
+        <NewsPostForm @key="post.Id" Post="post" OnAPage="true" OnSaved="_ => Navigation.NavigateTo(Back)" OnCancel="() => Navigation.NavigateTo(Back)" />
+    }
+    else
+    {
+        <TitleBand Title="Church news" BackHref="news" BackText="Church news" />
+        <EmptyState Icon="@AppIcons.News" Title="This post isn't here any more" Body="It may have been deleted, or it's a ministry's post you change in the ministry." />
+    }
+</LiveData>
+
+<Sheet Open="_deleting" OpenChanged="open => _deleting = open" Title="Delete this post?"
+       Lead="It goes from everyone's phone and its notification is taken back. This can't be undone.">
+    <Actions>
+        <Button Variant="ButtonVariant.Danger" Busy="_busy" OnClick="DeleteAsync">Delete the post</Button>
+        <Button Variant="ButtonVariant.Quiet" OnClick="() => _deleting = false">Keep it</Button>
+    </Actions>
+</Sheet>
+
+@code {
+    private static readonly IReadOnlyList<string> DeskFeeds = [NewsFeeds.Desk];
+
+    private bool _deleting, _busy;
+    private NewsPost? _writing;
+    private string? _problem;
+
+    [Parameter] public string? Id { get; set; }
+
+    [SupplyParameterFromQuery] public string? Opens { get; set; }
+
+    private const string Back = "news";
+
+    private sealed record EditedPost(NewsPost? Post);
+
+    private async Task<EditedPost> LoadAsync()
+    {
+        if (Id is null)
+            return new EditedPost(new NewsPost { LinkPath = Opens ?? "" });
+        NewsPost? post = (await News.DeskAsync()).FirstOrDefault(post => post.Id == Id);
+        return new EditedPost(post is { Shared: false } ? post : null);
+    }
+
+    private IReadOnlyList<MenuItem> Actions(NewsPost post)
+    {
+        if (post.Id.Length == 0)
+            return [];
+        bool publishes = Access.Can(NewsPermissions.Publish);
+        List<MenuItem> items = [];
+        if (post.State is NewsState.Scheduled && publishes || post.State == NewsState.WaitingToPublish)
+            items.Add(this.Item("Back to writing", () => RunAsync(() => Writes.BackToWritingAsync(post.Id)), "pencil",
+                post.State == NewsState.Scheduled ? "It won't publish until it's posted again" : "Nobody is asked to publish it any more"));
+        if (publishes || post.State is NewsState.Draft or NewsState.WaitingToPublish)
+            items.Add(this.Item("Delete the post…", () => { _deleting = true; }, "trash-2", danger: true, startsGroup: true));
+        return items;
+    }
+
+    private async Task DeleteAsync()
+    {
+        if (Id is not { } id)
+            return;
+        await RunAsync(() => Writes.DeleteAsync(id));
+        if (_problem is null)
+            Navigation.NavigateTo(Back);
+    }
+
+    private async Task RunAsync(Func<Task> work)
+    {
+        (_busy, _problem) = (true, null);
+        try
+        {
+            await work();
+        }
+        catch (RpcException exception)
+        {
+            _problem = exception.Status.Detail;
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+}

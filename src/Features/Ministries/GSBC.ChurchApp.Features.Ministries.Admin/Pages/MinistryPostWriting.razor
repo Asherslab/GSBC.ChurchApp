@@ -1,0 +1,37 @@
+@page "/ministries/{Id}/news/write"
+@page "/ministries/{Id}/news/{PostId}/change"
+@inject OnlineMinistries Ministries
+@inject NavigationManager Navigation
+
+<LiveData TValue="MinistryPage" Load="() => Ministries.MinistryAsync(Id)" Feeds="Ministries.Feeds" FailedTitle="Can't load this ministry right now">
+    @if ((_page ??= context.Value) is { } page && (_draft ??= DraftIn(page)) is { } draft)
+    {
+        <PostSheet OnAPage="true" Open="true" OpenChanged="_ => Navigation.NavigateTo(Back)" Page="page" Draft="draft" BackHref="@Back" />
+    }
+    else
+    {
+        <TitleBand Title="The post" BackHref="@Back" BackText="Back to the ministry" />
+        <EmptyState Icon="megaphone" Title="This post isn't here any more" Body="It may have been deleted, or you may no longer post for this ministry." />
+    }
+</LiveData>
+
+@code {
+    private MinistryPage? _page;
+    private Post? _draft;
+
+    [Parameter] public required string Id { get; set; }
+    [Parameter] public string? PostId { get; set; }
+
+    [SupplyParameterFromQuery] public string? Sunday { get; set; }
+
+    private string Back => $"ministries/{Id}/{MinistriesPlaces.News}";
+
+    private Post? DraftIn(MinistryPage page)
+    {
+        if (page.You.MayPostFor.Count == 0)
+            return null;
+        if (PostId is null)
+            return Sunday is { Length: > 0 } sunday ? PostSheet.DraftForSunday(page, sunday) : PostSheet.DraftOf(null, page);
+        return page.Posts.FirstOrDefault(post => post.Id == PostId && post.From.Length == 0) is { } post ? PostSheet.DraftOf(post, page) : null;
+    }
+}

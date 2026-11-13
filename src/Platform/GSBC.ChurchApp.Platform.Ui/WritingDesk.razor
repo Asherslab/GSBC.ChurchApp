@@ -1,0 +1,47 @@
+@using GSBC.ChurchApp.Platform.Icons
+
+<div class="writing-desk @(_folded ? "writing-desk--folded" : "")">
+    <div class="writing-desk__main">
+        <div class="writing-desk__page">
+            <TabStrip TValue="bool" Label="Write or preview" Options="Views" Value="_previewing" ValueChanged="previewing => _previewing = previewing">
+                <Trailing>
+                    @if (_folded && Settings is not null)
+                    {
+                        <button type="button" class="writing-desk__summary" @onclick="() => _folded = false">@SettingsSummary</button>
+                    }
+                </Trailing>
+            </TabStrip>
+            <div class="writing-desk__write" hidden="@_previewing">@ChildContent</div>
+            @if (_previewing)
+            {
+                <div class="writing-desk__preview">@Preview</div>
+            }
+        </div>
+    </div>
+    @if (Settings is not null)
+    {
+        <aside class="writing-desk__side" aria-label="@SettingsTitle">
+            <div class="writing-desk__side-head">
+                <h2 class="writing-desk__side-title">@SettingsTitle</h2>
+                <Button Variant="ButtonVariant.Quiet" Icon="@(_folded ? AppIcons.ShowSidePane : AppIcons.HideSidePane)" Class="writing-desk__fold"
+                        AriaLabel="@($"{(_folded ? "Show" : "Hide")} {SettingsTitle.ToLowerInvariant()}")" Tooltip="@(_folded ? $"Show {SettingsTitle.ToLowerInvariant()}" : "Hide these to give the writing more room")"
+                        Expanded="!_folded" OnClick="() => _folded = !_folded" />
+            </div>
+            <div class="writing-desk__settings">@Settings</div>
+        </aside>
+    }
+    <div class="writing-desk__foot">@Foot</div>
+</div>
+
+@code {
+    private static readonly IReadOnlyList<TabOption<bool>> Views = [new(false, "Write"), new(true, "Preview on a phone")];
+
+    private bool _previewing, _folded;
+
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+    [Parameter] public RenderFragment? Preview { get; set; }
+    [Parameter] public RenderFragment? Settings { get; set; }
+    [Parameter] public string SettingsTitle { get; set; } = "Settings";
+    [Parameter] public string SettingsSummary { get; set; } = "";
+    [Parameter] public RenderFragment? Foot { get; set; }
+}

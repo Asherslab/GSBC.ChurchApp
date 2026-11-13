@@ -1,5 +1,6 @@
 @inject TimeProvider Clock
 @inject MinistryLinks Links
+@inject NavigationManager Navigation
 
 <Section First="true">
     @if (Page.You.MayPostFor.Count > 0)
@@ -44,7 +45,13 @@
     [Parameter, EditorRequired] public required MinistryPage Page { get; set; }
     [Parameter] public EventCallback OnChanged { get; set; }
 
-    private void Open(Post? post) => (_draft, _open) = (PostSheet.DraftOf(post, Page), true);
+    private void Open(Post? post)
+    {
+        if (Links.WritesOnAPage)
+            Navigation.NavigateTo(MinistryLinks.Writing(Page.Ministry.Id, post?.Id));
+        else
+            (_draft, _open) = (PostSheet.DraftOf(post, Page), true);
+    }
 
     private RenderFragment Item(Post post) => @<text>
         @if (post.Sunday.Length > 0)

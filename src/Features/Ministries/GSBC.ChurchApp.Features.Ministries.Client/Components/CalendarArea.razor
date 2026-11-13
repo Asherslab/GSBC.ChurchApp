@@ -4,6 +4,7 @@
 @inject MinistryLookups Lookups
 @inject IServiceProvider Services
 @inject TimeProvider Clock
+@inject NavigationManager Navigation
 
 @if (Tools)
 {
@@ -176,7 +177,14 @@
         this.Item($"Unlink {calendar.Name}…", () => { (_unlinking, _problem) = (calendar, null); }, "x", "The calendar itself isn't changed", danger: true),
     ];
 
-    private void TellAboutASunday() => (_post, _telling) = (PostSheet.DraftForSunday(Page, SundayPosts.UpcomingSundays(Page, Clock)[0]), true);
+    private void TellAboutASunday()
+    {
+        string sunday = SundayPosts.UpcomingSundays(Page, Clock)[0];
+        if (Links.WritesOnAPage)
+            Navigation.NavigateTo(MinistryLinks.Writing(Page.Ministry.Id, sunday: sunday));
+        else
+            (_post, _telling) = (PostSheet.DraftForSunday(Page, sunday), true);
+    }
 
     private async Task OpenLinking(ILinkableCalendars linkable)
     {

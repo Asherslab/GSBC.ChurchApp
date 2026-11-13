@@ -208,6 +208,7 @@ button.module-nav__link { width: 100%; border: 0; background: none; font-family:
 .sheet__actions > :last-child:not(:first-child) { margin-right: auto; }
 .admin-main > .preview-window, .admin-main > :is(.workbench, .chat-desk):first-child { margin: -28px -40px -64px; }
 .admin-main > .workbench:not(:first-child) { margin: 0 -40px -64px; border-top: 1px solid var(--line); }
+.admin-main > .writing-desk:not(:first-child) { margin: 0 -40px -64px; border-top: 1px solid var(--line); }
 .admin-main > .workbench:not(:first-child) > .workbench__main { padding-inline: calc(var(--space-3xl) + var(--space-sm)); }
 .admin-main > .tab-strip + .workbench { border-top: 0; }
 
@@ -344,6 +345,7 @@ code, .patterns { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-s
     .admin-main > .workbench:not(:first-child) > .workbench__main { padding-inline: var(--gutter); }
     .admin-main > :is(.workbench, .preview-window), .admin-main > :is(.workbench, .preview-window, .chat-desk):first-child, .sign-in-stage { margin: -20px calc(-1 * var(--gutter)) -48px; }
     .admin-main > .workbench:not(:first-child) { margin: 0 calc(-1 * var(--gutter)) -48px; }
+    .admin-main > .writing-desk:not(:first-child) { margin: 0 calc(-1 * var(--gutter)) -48px; }
     .sign-in-stage { min-height: calc(100vh - 56px); }
 }
 

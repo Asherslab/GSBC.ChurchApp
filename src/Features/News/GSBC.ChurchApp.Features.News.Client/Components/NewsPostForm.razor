@@ -4,59 +4,109 @@
 @using GSBC.ChurchApp.Platform.Contracts.Content
 @using GSBC.ChurchApp.Platform.Ui.Content
 @using GSBC.ChurchApp.Platform.Ui.News
+@using GSBC.ChurchApp.Platform.Ui.Surfaces
 @inject NewsWrites Writes
 @inject IAccess Access
 @inject TimeProvider Clock
 
 <UnsavedGuard Changed="() => Changed" Editing="Post" State="() => Shape" What="this post" />
 
-<div class="news-form">
-    <PostEditor @ref="_editor" Title="@_title" TitleChanged="title => _title = title" Blocks="_blocks" OnChanged="() => _changes++"
-                SettingsSummary="@Summary">
+@if (OnAPage)
+{
+    <WritingDesk SettingsTitle="Who it's for and telling them" SettingsSummary="@Summary">
+        <ChildContent>
+            <PostEditor @ref="_editor" Title="@_title" TitleChanged="title => _title = title" Blocks="_blocks" OnChanged="() => _changes++" />
+            <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+        </ChildContent>
         <Settings>
-            <AudiencePicker Label="Who it's for" Value="@_audience" ValueChanged="audience => _audience = audience" />
-            @if (Post.ToldAt is { } told)
-            {
-                <p class="news-form__note">Its notification went @ChurchDates.Describe(told, DateLineStyle.Relative, withTime: true, Clock.GetUtcNow().UtcDateTime).</p>
-            }
-            else
-            {
-                <ToggleRow Title="Send a notification" Description="It opens the post. People who turned church news off don't get it." @bind-Checked="_tell" />
-                @if (_tell)
-                {
-                    <TextField Label="What it says" Value="@_tellTitle" ValueChanged="text => _tellTitle = text" Placeholder="@_title" MaxLength="120"
-                               Hint="Leave it empty to use the title" />
-                    <TextField Label="Its line" Value="@_tellBody" ValueChanged="text => _tellBody = text" Multiline="true" MaxLength="240"
-                               Hint="Leave it empty to use the start of the post" />
-                    <ToggleRow Title="Urgent" Description="Buzzes phones in quiet hours too, for something people need to know now" @bind-Checked="_urgent" />
-                }
-            }
-            <TextField Label="A link at the end (optional)" Value="@_linkPath" ValueChanged="path => _linkPath = path" Type="url" Placeholder="/events or https://…"
-                       Hint="A page in the app, such as an event, or a web address" Problem="@LinkProblem" />
-            @if (_linkPath.Trim().Length > 0)
-            {
-                <TextField Label="The link's words" Value="@_linkLabel" ValueChanged="label => _linkLabel = label" Placeholder="Open it" MaxLength="40" />
-            }
+            <Section Grouped="true" Title="Who it's for">
+                <AudiencePicker Label="Who it's for" ShowLabel="false" Value="@_audience" ValueChanged="audience => _audience = audience" />
+            </Section>
+            <Section Grouped="true" Title="Telling people">@Telling</Section>
             @if (MayPublish && Post.State is not NewsState.Published)
             {
-                <Segmented TValue="bool" Label="When" ShowLabel="true" Options="WhenOptions" Value="_later" ValueChanged="later => _later = later" />
-                @if (_later)
-                {
-                    <DateTimeField Label="Publish it at" Value="@_publishAt" ValueChanged="value => _publishAt = value" Problem="@LaterProblem" />
-                }
+                <Section Grouped="true" Title="When">@Timing</Section>
             }
+            <Section Grouped="true" Title="A link at the end">@Linking</Section>
         </Settings>
-    </PostEditor>
-    <Notice Tone="NoticeTone.Warning" Text="@_problem" />
-    <SaveBar Label="@SaveLabel" Busy="_busy" OnSave="SaveAsync" OnCancel="OnCancel" New="@(Post.Id.Length == 0)" Blocked="@Blocked">
-        @if (Post.Id.Length > 0 && MayPublish && Post.State is NewsState.Draft or NewsState.WaitingToPublish)
-        {
-            <Button Variant="ButtonVariant.Quiet" Disabled="_busy" OnClick="TryAsync">Send to my phone</Button>
-        }
-    </SaveBar>
-</div>
+        <Preview>
+            <PhoneFrame Label="The post, as it will look in the app's News" OnRoute="news">
+                <Section First="true"><PostView Title="@(_title.Trim().Length > 0 ? _title.Trim() : "Its title")" Content="Draft" Author="@Post.Author" When="Just now" LinkPath="@_linkPath.Trim()" LinkLabel="@_linkLabel.Trim()" /></Section>
+            </PhoneFrame>
+        </Preview>
+        <Foot>@Saving</Foot>
+    </WritingDesk>
+}
+else
+{
+    <div class="news-form">
+        <PostEditor @ref="_editor" Title="@_title" TitleChanged="title => _title = title" Blocks="_blocks" OnChanged="() => _changes++"
+                    SettingsSummary="@Summary">
+            <Settings>
+                <AudiencePicker Label="Who it's for" Value="@_audience" ValueChanged="audience => _audience = audience" />
+                @Telling
+                @Linking
+                @if (MayPublish && Post.State is not NewsState.Published)
+                {
+                    @Timing
+                }
+            </Settings>
+        </PostEditor>
+        <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+        @Saving
+    </div>
+}
 
 @code {
+    private RenderFragment Telling => @<text>
+        @if (Post.ToldAt is { } told)
+        {
+            <p class="news-form__note">Its notification went @ChurchDates.Describe(told, DateLineStyle.Relative, withTime: true, Clock.GetUtcNow().UtcDateTime).</p>
+        }
+        else
+        {
+            <ToggleRow Title="Send a notification" Description="It opens the post. People who turned church news off don't get it." @bind-Checked="_tell" />
+            @if (_tell)
+            {
+                <TextField Label="What it says" Value="@_tellTitle" ValueChanged="text => _tellTitle = text" Placeholder="@_title" MaxLength="120"
+                           Hint="Leave it empty to use the title" />
+                <TextField Label="Its line" Value="@_tellBody" ValueChanged="text => _tellBody = text" Multiline="true" MaxLength="240"
+                           Hint="Leave it empty to use the start of the post" />
+                <ToggleRow Title="Urgent" Description="Buzzes phones in quiet hours too, for something people need to know now" @bind-Checked="_urgent" />
+            }
+        }
+    </text>;
+
+    private RenderFragment Linking => @<text>
+        <TextField Label="@(OnAPage ? "Link to (optional)" : "A link at the end (optional)")" Value="@_linkPath" ValueChanged="path => _linkPath = path" Type="url" Placeholder="/events or https://…"
+                   Hint="A page in the app, such as an event, or a web address" Problem="@LinkProblem" />
+        @if (_linkPath.Trim().Length > 0)
+        {
+            <TextField Label="The link's words" Value="@_linkLabel" ValueChanged="label => _linkLabel = label" Placeholder="Open it" MaxLength="40" />
+        }
+    </text>;
+
+    private RenderFragment Timing => @<text>
+        <Segmented TValue="bool" Label="When" ShowLabel="@(!OnAPage)" Options="WhenOptions" Value="_later" ValueChanged="later => _later = later" />
+        @if (_later)
+        {
+            <DateTimeField Label="Publish it at" Value="@_publishAt" ValueChanged="value => _publishAt = value" Problem="@LaterProblem" />
+        }
+    </text>;
+
+    private RenderFragment Saving => @<text>
+        <SaveBar Label="@SaveLabel" Busy="_busy" OnSave="SaveAsync" OnCancel="OnCancel" New="@(Post.Id.Length == 0)" Blocked="@Blocked">
+            @if (Post.Id.Length > 0 && MayPublish && Post.State is NewsState.Draft or NewsState.WaitingToPublish)
+            {
+                <Button Variant="ButtonVariant.Quiet" Disabled="_busy" OnClick="TryAsync">Send to my phone</Button>
+            }
+        </SaveBar>
+    </text>;
+
+    [Parameter] public bool OnAPage { get; set; }
+
+    private RichText Draft => _editor?.Content ?? PostBlocks.ToRichText(_blocks);
+
     private const string LocalFormat = "yyyy-MM-ddTHH:mm";
     private static readonly string[] LocalFormats = [LocalFormat, "yyyy-MM-ddTHH:mm:ss"];
 

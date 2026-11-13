@@ -1,0 +1,44 @@
+{
+  "title": "Writing a post in the admin panel, as a full page",
+  "question": "New post (and opening any post on the Church news desk or a ministry's News) becomes its own page: the post's blocks at a reading width, Write and Preview on a phone as tabs (your answer), Cancel bottom left and Post bottom right. Where should who it's for, the notification, when and the link go? A second question, how text editing itself should work, follows on this page after you pick.",
+  "options": [
+    {
+      "id": "settings-on-top",
+      "kind": "assigned",
+      "kicker": "THE ROLL",
+      "label": "Who, when and telling along the top",
+      "thesis": "Four summary tiles across the top (Who it's for, Notification, When, Link at the end), each opening its settings in place; the post below at a 760px reading width with Write and Preview tabs; the save bar across the foot.",
+      "palette": ["#ffffff", "#f4efe7", "#2a3d5e", "#00776d"],
+      "materials": ["summary tiles", "Write / Preview tabs", "blocks at reading width", "sticky save bar"],
+      "viewport": "New post: the four tiles, then Write chosen, the title, a text block formatted in place, a gallery, the Add row; Cancel and Post for everyone at the foot.",
+      "risk": "Settings are summaries you open one by one, so checking them all is four clicks.",
+      "html": ".impeccable/mocks/post-editor/a-settings-on-top.html"
+    },
+    {
+      "id": "page-and-side",
+      "kind": "dealt",
+      "label": "The post as a page, its settings beside it",
+      "thesis": "The post sits as a white page on sand at a 760px reading width with Write and Preview tabs; every setting is open in a column on the right (Who it's for, Send a notification, When, A link at the end), with Cancel and Post at that column's foot.",
+      "palette": ["#f4efe7", "#ffffff", "#2a3d5e", "#00776d"],
+      "materials": ["page on sand", "settings column, all open", "save bar in the column"],
+      "viewport": "The page with Write chosen, title, text block, gallery, heading and Add row; on the right the four settings groups and Cancel / Post for everyone.",
+      "risk": "The busiest of the three, and on a laptop the page narrows to make room for the column.",
+      "html": ".impeccable/mocks/post-editor/b-page-and-side.html"
+    },
+    {
+      "id": "tabs",
+      "kind": "dealt",
+      "label": "A tab for each part",
+      "thesis": "Three tabs across the top: Write, Preview on a phone, and Who, when and telling (its tab summing them up); the post alone at a 720px width while writing, and the save bar at the foot repeating the summary beside Post.",
+      "palette": ["#ffffff", "#f4efe7", "#2a3d5e", "#00776d"],
+      "materials": ["three tabs", "post alone while writing", "summary beside Post"],
+      "viewport": "Write chosen, the post centred: title, text block, gallery, heading, Add row; Everyone · Notification on · Now beside Post for everyone.",
+      "risk": "The settings are out of sight while writing, so a wrong audience is easier to miss.",
+      "html": ".impeccable/mocks/post-editor/c-tabs.html"
+    }
+  ],
+  "reroll": true,
+  "steer": true,
+  "followup": true,
+  "buildPath": { "value": "code" }
+}
