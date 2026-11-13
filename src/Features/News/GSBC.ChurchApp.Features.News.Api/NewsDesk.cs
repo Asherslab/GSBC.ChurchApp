@@ -8,6 +8,7 @@ using GSBC.ChurchApp.Platform.Contracts.Configuration;
 using GSBC.ChurchApp.Platform.Contracts.Content;
 using GSBC.ChurchApp.Platform.Contracts.Media;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace GSBC.ChurchApp.Features.News.Api;
 
@@ -15,7 +16,7 @@ internal sealed record Writer(Guid Id, bool MayPublish);
 
 internal sealed class NewsDesk(
     NewsDbContext db, NewsPublisher publisher, NewsTelling telling, IMediaReferences media, IMediaSystemFolders folders, IPeopleIndex people,
-    IEnumerable<ISharedPostSource> sources, TimeProvider time)
+    IServiceProvider services, TimeProvider time)
 {
     private DateTime Now => time.GetUtcNow().UtcDateTime;
 
@@ -138,7 +139,8 @@ internal sealed class NewsDesk(
 
     private async Task TellSourceAsync(PostRecord post, SharedState state, CancellationToken cancellationToken)
     {
-        if (post is { Source: { } source, SourceId: { } sourceId } && sources.FirstOrDefault(candidate => candidate.Source == source) is { } owner)
+        if (post is { Source: { } source, SourceId: { } sourceId }
+            && services.GetServices<ISharedPostSource>().FirstOrDefault(candidate => candidate.Source == source) is { } owner)
             await owner.StateChangedAsync(sourceId, state, cancellationToken);
     }
 

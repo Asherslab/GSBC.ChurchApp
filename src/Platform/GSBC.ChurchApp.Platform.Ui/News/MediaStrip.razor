@@ -6,7 +6,7 @@
 @if (Frames.Count > 0)
 {
     <div class="media-strip">
-        <div class="media-strip__track" @ref="_track" tabindex="0" aria-label="@($"{Frames.Count} pictures and videos")">
+        <div class="media-strip__track" @ref="_track" tabindex="0" data-look-scroll aria-label="@($"{Frames.Count} pictures and videos")">
             @foreach ((StripFrame frame, int index) in Frames.Select((frame, index) => (frame, index)))
             {
                 <figure class="media-strip__frame" @key="index" aria-label="@($"{index + 1} of {Frames.Count}")">

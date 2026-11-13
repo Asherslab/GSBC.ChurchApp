@@ -20,7 +20,7 @@
 </TitleBand>
 
 <LiveData @ref="_live" TValue="IReadOnlyList<NewsPost>" Load="News.DeskAsync" Feeds="DeskFeeds" FailedTitle="Can't load church news right now">
-    <Workbench Class="news-desk" FoldAside="true" AsideLabel="Show" DetailLabel="@(_writingNew ? "New post" : "The post")"
+    <Workbench FoldAside="true" AsideLabel="Show" DetailLabel="@(_writingNew ? "New post" : "The post")"
                Showing="@(_writingNew || Chosen(context.Value) is not null ? WorkbenchPane.Detail : WorkbenchPane.Main)">
         <Aside>
             <FilterChips TValue="string" Label="Show" Rail="true" Options="Filters(context.Value)" Value="@Filter(context.Value)" ValueChanged="filter => _filter = filter" />
@@ -28,30 +28,29 @@
         <ChildContent>
             @if (Shown(context.Value) is { Count: > 0 } shown)
             {
-                <div class="news-desk__list" role="listbox" aria-label="Church news posts">
+                <ListGroup>
                     @foreach (NewsPost post in shown)
                     {
-                        bool chosen = post.Id == _chosen && !_writingNew;
-                        <button type="button" role="option" aria-selected="@chosen" class="news-pick @(chosen ? "is-selected" : "")" @key="post.Id" @onclick="() => Choose(post.Id)">
-                            @if (post.Picture is { } picture)
-                            {
-                                <MediaImage Media="picture" Size="MediaSizeName.Thumbnail" Alt="" Class="news-pick__thumb" />
-                            }
-                            else
-                            {
-                                <span class="news-pick__thumb news-pick__thumb--none" aria-hidden="true"><Icon Name="@AppIcons.News" /></span>
-                            }
-                            <span class="news-pick__words">
-                                <strong>@post.Title</strong>
-                                <span>@Line(post)</span>
+                        <ListRow @key="post.Id" Title="@post.Title" Subtitle="@Line(post)" Current="@(post.Id == _chosen && !_writingNew)" OnClick="() => Choose(post.Id)">
+                            <Leading>
+                                @if (post.Picture is { } picture)
+                                {
+                                    <MediaImage Media="picture" Size="MediaSizeName.Thumbnail" Alt="" Class="news-pick__thumb" />
+                                }
+                                else
+                                {
+                                    <span class="news-pick__thumb news-pick__thumb--none" aria-hidden="true"><Icon Name="@AppIcons.News" /></span>
+                                }
+                            </Leading>
+                            <TrailingContent>
                                 @if (Pill(post) is { } pill)
                                 {
-                                    <span class="news-pick__pills"><Pill Tone="@pill.Tone">@pill.Words</Pill></span>
+                                    <Pill Tone="@pill.Tone">@pill.Words</Pill>
                                 }
-                            </span>
-                        </button>
+                            </TrailingContent>
+                        </ListRow>
                     }
-                </div>
+                </ListGroup>
             }
             else
             {

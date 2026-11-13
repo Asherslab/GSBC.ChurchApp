@@ -125,7 +125,7 @@
                         {
                             <span class="post-block__thumb" @key="picture.Id">
                                 <MediaImage Media="picture" Size="MediaSizeName.Thumbnail" Alt="@picture.AltText" />
-                                <button type="button" class="post-block__remove" aria-label="@($"Take out {Name(picture)}")" @onclick="() => RemovePictureAsync(block, picture)"><Icon Name="x" Size="IconSize.Small" /></button>
+                                <button type="button" class="post-block__remove" data-look-bleed aria-label="@($"Take out {Name(picture)}")" @onclick="() => RemovePictureAsync(block, picture)"><Icon Name="x" Size="IconSize.Small" /></button>
                             </span>
                         }
                         @Pick("Add", "plus", PickableFiles.Pictures, multiple: true, into: block)

@@ -23,6 +23,7 @@ public sealed class GalleryRules
         ["LiveData"] = "loads data from a feed; the gallery has no feeds",
         ["RefreshOn"] = "reloads when feeds change; nothing to see",
         ["UnsavedGuard"] = "asks before leaving with unsaved changes; nothing to see",
+        ["News/PostTextBlock"] = "one text block of PostEditor, shown in it",
         ["ModuleRouter"] = "routes pages",
         ["ModuleNav"] = "the admin sidebar, on every admin page",
         ["JumpTo"] = "the admin panel's ⌘K search, on every admin page",

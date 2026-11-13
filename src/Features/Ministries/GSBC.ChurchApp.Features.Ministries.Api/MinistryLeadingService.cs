@@ -219,7 +219,7 @@ internal sealed class MinistryLeadingService(
         if (tellNow)
             await notifications.RaiseAsync(new Notification(
                 MinistriesNotifications.Important, NotificationAudience.Holding(ImportantReaders(post.Audience), ministry.Id.ToString()),
-                $"{ministry.Name}: {post.Title}", Shortened(post.Body), $"/ministries/{ministry.Id}/news/{post.Id}",
+                $"{ministry.Name}: {post.Title}", Shortened(post.Body), $"/ministries/{ministry.Id}/news",
                 Subject: $"ministries/posts/{post.Id:N}", ScopeId: ministry.Id.ToString()) { Actor = me }, cancellationToken);
         return MinistryViews.Post(post);
     }

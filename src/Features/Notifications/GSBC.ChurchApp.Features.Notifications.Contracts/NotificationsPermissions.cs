@@ -10,7 +10,7 @@ public static class NotificationsPermissions
     public const string SenderRole = "announcements-sender";
 
     public static readonly Permission Write =
-        new(WriteNode, ScopeKind.Global, "Write announcements, try them on their own phone, and ask for them to be sent", area: "Announcements", opensAdminArea: true);
+        new(WriteNode, ScopeKind.Global, "See the announcements sent before church news", area: "Announcements");
 
     public static readonly Permission Send =
         new(SendNode, ScopeKind.Global, "Send, schedule and recall announcements to everyone", area: "Announcements");
