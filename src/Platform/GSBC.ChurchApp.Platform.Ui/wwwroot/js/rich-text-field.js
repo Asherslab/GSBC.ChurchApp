@@ -103,6 +103,8 @@ class Glyph extends WidgetType {
 }
 
 const hidden = Decoration.replace({});
+const collapsed = Decoration.mark({ class: 'cm-md-hidden' });
+const quietMark = Decoration.mark({ class: 'cm-md-mark' });
 const faint = Decoration.mark({ class: 'cm-md-mark' });
 const blankLine = Decoration.line({ class: 'cm-md-blank' });
 const blankInList = Decoration.line({ class: 'cm-md-blank-in-list' });
@@ -163,7 +165,7 @@ function decorate(view, emoji) {
         } else if (markNodes.has(name)) {
           const parent = node.node.parent;
           if (parent && styles[parent.name] && node.from < node.to)
-            marks.push((touches(selection, parent.from, parent.to) ? faint : hidden).range(node.from, node.to));
+            marks.push((touches(selection, parent.from, parent.to) ? faint : collapsed).range(node.from, node.to));
         } else if (lines[name] && name.startsWith('ATXHeading')) {
           markLine(node.from, lines[name]);
           const mark = node.node.getChild('HeaderMark');
@@ -184,9 +186,16 @@ function decorate(view, emoji) {
           const last = state.doc.lineAt(node.to);
           lineMarks.set(first.from, lines.Fence);
           if (last.number > first.number && /^\s*(`{3,}|~{3,})\s*$/.test(last.text)) lineMarks.set(last.from, lines.Fence);
+          if (!touches(selection, node.from, node.to)) {
+            for (let child = node.node.firstChild; child; child = child.nextSibling) {
+              if ((child.name === 'CodeMark' || child.name === 'CodeInfo') && child.from < child.to) marks.push(collapsed.range(child.from, child.to));
+            }
+          }
           return false;
         } else if (name === 'Table') {
           markLines(node.from, node.to, lines.Table);
+        } else if (name === 'TableDelimiter') {
+          marks.push(quietMark.range(node.from, node.to));
         } else if (name === 'HorizontalRule' || name === 'CardSplit') {
           markLine(node.from, lines.Rule);
           if (!touches(selection, node.from, node.to)) marks.push(Decoration.replace({ widget: new Rule(name === 'CardSplit') }).range(node.from, node.to));
@@ -199,7 +208,7 @@ function decorate(view, emoji) {
           if (!touches(selection, node.from, node.to))
             marks.push(Decoration.replace({ widget: new Glyph(state.doc.sliceString(node.from + 2, node.to - 1), 'cm-md-fnref') }).range(node.from, node.to));
         } else if (name === 'Escape') {
-          if (!touches(selection, node.from, node.to)) marks.push(hidden.range(node.from, node.from + 1));
+          if (!touches(selection, node.from, node.to)) marks.push(collapsed.range(node.from, node.from + 1));
         }
       },
     });

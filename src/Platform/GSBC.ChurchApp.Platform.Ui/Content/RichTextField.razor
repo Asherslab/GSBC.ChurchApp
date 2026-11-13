@@ -114,7 +114,7 @@
                     {
                         <button type="button" class="rich-text-sheet__tile" @onclick="() => FromSheetAsync(choice.Action)">
                             <Icon Name="@choice.Icon" />
-                            <span>@choice.Short</span>
+                            <span>@choice.Label</span>
                         </button>
                     }
                 </div>
@@ -183,7 +183,7 @@
 
     private sealed record Choosing(PickableFiles Kinds, string Mode, int At);
 
-    private sealed record InsertChoice(string Group, string Label, string Short, string Icon, string? Detail, Func<Task> Action);
+    private sealed record InsertChoice(string Group, string Label, string Icon, string? Detail, Func<Task> Action);
 
     private static class Format
     {
@@ -218,18 +218,18 @@
 
     private IReadOnlyList<InsertChoice> Inserts =>
     [
-        .. Allowed.HasFlag(RichTextMedia.Pictures) ? [new InsertChoice("Pictures and media", "Picture", "Picture", AppIcons.Picture, "From the library or upload", () => Choose(PickableFiles.Pictures))] : Array.Empty<InsertChoice>(),
-        .. Allowed.HasFlag(RichTextMedia.Video) ? [new InsertChoice("Pictures and media", "Video", "Video", AppIcons.Video, "Uploaded", () => Choose(PickableFiles.Videos))] : Array.Empty<InsertChoice>(),
-        .. Allowed.HasFlag(RichTextMedia.VideoLinks) ? [new InsertChoice("Pictures and media", "Video link", "Video link", AppIcons.VideoLink, "YouTube, Vimeo", () => OpenPanel(Panel.VideoLink))] : Array.Empty<InsertChoice>(),
-        .. Allowed.HasFlag(RichTextMedia.Files) ? [new InsertChoice("Pictures and media", "File", "File", AppIcons.File, null, () => Choose(PickableFiles.Documents))] : Array.Empty<InsertChoice>(),
+        .. Allowed.HasFlag(RichTextMedia.Pictures) ? [new InsertChoice("Pictures and media", "Picture", AppIcons.Picture, "From the library or upload", () => Choose(PickableFiles.Pictures))] : Array.Empty<InsertChoice>(),
+        .. Allowed.HasFlag(RichTextMedia.Video) ? [new InsertChoice("Pictures and media", "Video", AppIcons.Video, "Uploaded", () => Choose(PickableFiles.Videos))] : Array.Empty<InsertChoice>(),
+        .. Allowed.HasFlag(RichTextMedia.VideoLinks) ? [new InsertChoice("Pictures and media", "Video link", AppIcons.VideoLink, "YouTube, Vimeo", () => OpenPanel(Panel.VideoLink))] : Array.Empty<InsertChoice>(),
+        .. Allowed.HasFlag(RichTextMedia.Files) ? [new InsertChoice("Pictures and media", "File", AppIcons.File, null, () => Choose(PickableFiles.Documents))] : Array.Empty<InsertChoice>(),
         .. Allowed.HasFlag(RichTextMedia.Layout)
             ? [
-                new InsertChoice("Layout", "Split into cards", "Cards", AppIcons.CardSplit, null, () => BlockAsync(RichTextParser.CardSplit)),
-                new InsertChoice("Layout", "Line across", "Line", AppIcons.LineAcross, null, () => BlockAsync("---")),
-                new InsertChoice("Layout", "Table", "Table", AppIcons.Table, null, () => BlockAsync("| Heading | Heading |\n| --- | --- |\n| Text | Text |", 2)),
-                new InsertChoice("Layout", "Code block", "Code", AppIcons.CodeBlock, null, () => BlockAsync("```\n\n```", 4)),
-                new InsertChoice("In the text", "Footnote", "Footnote", AppIcons.Footnote, null, FootnoteAsync),
-                new InsertChoice("In the text", "Emoji", "Emoji", AppIcons.Emoji, null, () => OpenPanel(Panel.Emoji)),
+                new InsertChoice("Layout", "Split into cards", AppIcons.CardSplit, null, () => BlockAsync(RichTextParser.CardSplit)),
+                new InsertChoice("Layout", "Line across", AppIcons.LineAcross, null, () => BlockAsync("---")),
+                new InsertChoice("Layout", "Table", AppIcons.Table, null, () => BlockAsync("| Heading | Heading |\n| --- | --- |\n| Text | Text |", 2)),
+                new InsertChoice("Layout", "Code block", AppIcons.CodeBlock, null, () => BlockAsync("```\n\n```", 4)),
+                new InsertChoice("In the text", "Footnote", AppIcons.Footnote, null, FootnoteAsync),
+                new InsertChoice("In the text", "Emoji", AppIcons.Emoji, null, () => OpenPanel(Panel.Emoji)),
             ]
             : Array.Empty<InsertChoice>(),
     ];

@@ -37,7 +37,7 @@ type a caption under the picture, add === for a second card, look at Preview on 
 FIRST VIEWPORT: Writing page: Write / Preview tabs, Title, the bar (Text ▾ | B I S H | lists quote link code ⋯ ...
 Insert), the editor showing formatted text. Phone post page: navy band with the title, who and when, the text.
 
-FORM: seed:cdfdb7061f3d951d1974dabd1ed30149 · insert-button (dealt), with band post page (seed same, followup).
+FORM: seed:ca4abc76845a49bd · insert-button (dealt), with band post page (seed same, followup).
 Signature: media in place in the text, each with its caption line and its library path (`~/Main Photos/x.jpg`).
 
 FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict and DESIGN.md

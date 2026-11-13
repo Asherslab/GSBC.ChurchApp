@@ -1002,3 +1002,20 @@
 .rich-text-field .cm-line.cm-md-blank:has(+ .cm-md-rule-line) {
     line-height: 0.4;
 }
+
+.cm-md-hidden {
+    display: none;
+}
+
+.rich-text-field .cm-line.cm-md-fence:not(:has(.cm-md-mark)) {
+    padding-block: 0;
+    line-height: 0.6;
+}
+
+.rich-text-field--phone .rich-text-field__insert,
+.keyboard-open .rich-text-field:focus-within .rich-text-field__insert {
+    position: sticky;
+    left: 0;
+    z-index: 1;
+    box-shadow: 0 0 0 var(--space-xs) var(--surface);
+}
