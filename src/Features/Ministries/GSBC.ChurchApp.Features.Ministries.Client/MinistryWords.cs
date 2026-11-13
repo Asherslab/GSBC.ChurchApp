@@ -36,10 +36,10 @@ public static class MinistryWords
     public const string HidesFromEveryoneElse = "Only its own people and staff see it";
 
     public const string WhoSeesHidden =
-        "Only its team, its attendees and their parents, the leaders above it and staff who look after ministries see it. "
-        + "Nobody else finds it in ministries, search or Home, so only they can join or ask; its leaders add anyone else. The ministries under it are hidden too.";
+        "Only its team, attendees and their parents, the leaders above it and ministry staff can see it or ask to join; "
+        + "leaders add anyone else. The ministries under it are hidden too.";
 
-    public static string HiddenBecause(string above) => $"Hidden, because {above} is. {WhoSeesHidden}";
+    public static string HiddenBecause(string above) => $"Hidden, because {above} is. Only its own people and staff see it.";
 
     public static string Short(string audience, MinistryDetails ministry) =>
         audience == Audiences.Everyone && MinistryLogic.IsHidden(ministry) ? "Everyone who sees it" : Short(audience);

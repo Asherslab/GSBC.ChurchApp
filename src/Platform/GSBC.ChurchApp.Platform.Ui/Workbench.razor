@@ -29,7 +29,7 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (!firstRender)
+        if (!firstRender || Narrow)
             return;
         await using IJSObjectReference module = await JS.InvokeAsync<IJSObjectReference>("import", "./_content/GSBC.ChurchApp.Platform.Ui/js/workbench.js");
         _fit = await module.InvokeAsync<IJSObjectReference>("fitRecord", _root);

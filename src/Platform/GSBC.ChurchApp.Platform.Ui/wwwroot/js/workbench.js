@@ -12,11 +12,13 @@ export function fitRecord(workbench) {
   resized.observe(workbench);
   addEventListener('scroll', schedule, { passive: true, capture: true });
   addEventListener('resize', schedule);
-  new MutationObserver(schedule).observe(workbench, { childList: true });
+  const changed = new MutationObserver(schedule);
+  changed.observe(workbench, { childList: true });
   fit();
   return {
     dispose() {
       resized.disconnect();
+      changed.disconnect();
       removeEventListener('scroll', schedule, { capture: true });
       removeEventListener('resize', schedule);
       cancelAnimationFrame(frame);

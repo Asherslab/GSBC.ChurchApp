@@ -4,6 +4,7 @@
 @inject AccountsOfficeClient Office
 @inject IAccess Access
 @inject NavigationManager Navigation
+@inject TimeProvider Clock
 @inject IEnumerable<PersonTab> ContributedTabs
 @inject IEnumerable<PersonFact> ContributedFacts
 
@@ -17,7 +18,10 @@
     {
         <TitleBand Title="@person.DisplayName" BackHref="people" BackText="People">
             <LeadContent>
-                <PersonState Person="person" Invitation="context.Value.Invitation" ShowReady="false" />
+                @if (PersonState.NeedsStaff(person, context.Value.Invitation, Clock))
+                {
+                    <PersonState Person="person" Invitation="context.Value.Invitation" />
+                }
             </LeadContent>
         </TitleBand>
 
