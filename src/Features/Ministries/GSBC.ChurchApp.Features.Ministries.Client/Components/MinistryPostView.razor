@@ -1,0 +1,155 @@
+@using GSBC.ChurchApp.Platform.Contracts.Content
+@using GSBC.ChurchApp.Platform.Contracts.News
+@using GSBC.ChurchApp.Platform.Ui.News
+@inject IMinistryReads Reads
+@inject IMinistryWrites Writes
+@inject IAccess Access
+@inject TimeProvider Clock
+@inject NavigationManager Navigation
+
+<LiveData @ref="_live" @key="@($"{MinistryId}/{PostId}")" TValue="MinistryPage" Load="() => Reads.MinistryAsync(MinistryId)" Feeds="Reads.Feeds"
+          Remember="@($"ministries.page.{MinistryId}")" FailedTitle="Can't load this post right now">
+    @{
+        MinistryPage loaded = context.Value;
+        Post? post = loaded.Posts.FirstOrDefault(each => each.Id == PostId);
+        string newsTab = MinistriesPlaces.Of(MinistryId, MinistriesPlaces.News);
+    }
+    <Page Title="@(post?.Title ?? loaded.Ministry.Name)" BackHref="@newsTab" BackLabel="@loaded.Ministry.Name" TopBar="TopBarStyle.Solid">
+        <Actions>
+            @if (post is not null && Actions(loaded, post) is { Count: > 0 } actions)
+            {
+                <Menu Label="More for this post" Items="actions" />
+            }
+        </Actions>
+        <ChildContent>
+            @if (post is null)
+            {
+                <Section First="true">
+                    <EmptyState Icon="@AppIcons.News" Title="This post isn't here any more" Body="@($"It may have been deleted. {loaded.Ministry.Name}'s other news is in its News tab.")" />
+                </Section>
+            }
+            else
+            {
+                <div class="section section--first">
+                    <WaitingToSend MethodsUnder="@MinistryMethods.Under" Describe="MinistryMethods.Describe" First="true" />
+                    <PostView Title="@post.Title" Content="ContentOf(post)" From="@(post.From.Length > 0 ? post.From : loaded.Ministry.Name)" FromHref="@newsTab"
+                              Author="@post.Author" When="@When(post)">
+                        <Status>
+                            <span class="post-view__status">
+                                @if (post.Important)
+                                {
+                                    <Pill Tone="PillTone.Marker">Important</Pill>
+                                }
+                                @if (ChurchNewsStates.Line(post.ChurchNews) is { Length: > 0 } line)
+                                {
+                                    <Pill Tone="PillTone.Accent">@line</Pill>
+                                }
+                                <Pill Tone="PillTone.Quiet">@MinistryWords.Short(post.Audience, loaded.Ministry)</Pill>
+                            </span>
+                        </Status>
+                    </PostView>
+                </div>
+            }
+        </ChildContent>
+    </Page>
+    @if (post is not null)
+    {
+        <PostSheet Open="_changing" OpenChanged="open => _changing = open" Page="loaded" Draft="_draft" OnSaved="() => _live!.ReloadAsync()" />
+    }
+</LiveData>
+
+<Sheet Open="_sharing" OpenChanged="open => _sharing = open" Title="@(_taking ? "Take it off church news?" : "Put it in church news?")"
+       Lead="@(_taking ? "It stays in the ministry's news." : "Everyone sees it in News as it is here, saying where it's from. The ministry's changes follow it there.")">
+    <ChildContent>
+        @if (!_taking)
+        {
+            <ToggleRow Title="Send a notification" Description="Tells everyone with the app, opening the post" @bind-Checked="_tell" />
+        }
+        <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+    </ChildContent>
+    <Actions>
+        <Button Block="true" Variant="@(_taking ? ButtonVariant.Danger : ButtonVariant.Primary)" Busy="_busy" OnClick="ShareAsync">@(_taking ? "Take it off" : "Put it in church news")</Button>
+        <Button Block="true" Variant="ButtonVariant.Quiet" OnClick="() => _sharing = false">Not now</Button>
+    </Actions>
+</Sheet>
+
+<Sheet Open="_deleting" OpenChanged="open => _deleting = open" Title="Delete this post?"
+       Lead="@(_shown?.ChurchNews == ChurchNewsStates.Shared ? "It goes from this ministry's news and from church news. This can't be undone." : "It goes from the news for everyone it was for. This can't be undone.")">
+    <ChildContent>
+        <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+    </ChildContent>
+    <Actions>
+        <Button Block="true" Variant="ButtonVariant.Danger" Busy="_busy" OnClick="DeleteAsync">Delete the post</Button>
+        <Button Block="true" Variant="ButtonVariant.Quiet" OnClick="() => _deleting = false">Keep it</Button>
+    </Actions>
+</Sheet>
+
+@code {
+    private LiveData<MinistryPage>? _live;
+    private Post _draft = new();
+    private Post? _shown;
+    private bool _changing, _sharing, _taking, _deleting, _busy, _tell = true;
+    private string? _problem;
+
+    [Parameter, EditorRequired] public required string MinistryId { get; set; }
+    [Parameter, EditorRequired] public required string PostId { get; set; }
+
+    private static RichText ContentOf(Post post) => post.Content ?? PlainText.AsRichText(post.Body);
+
+    private string When(Post post) =>
+        ChurchDates.Describe(post.PostedAt, DateLineStyle.Long, withTime: false, Clock.GetUtcNow().UtcDateTime) + (post.EditedAt is null ? "" : " · edited");
+
+    private IReadOnlyList<MenuItem> Actions(MinistryPage page, Post post)
+    {
+        _shown = post;
+        List<MenuItem> items = [];
+        bool mine = post.From.Length == 0 && page.You.MayPostFor.Count > 0;
+        if (mine)
+            items.Add(this.Item("Change the post", () => (_draft, _changing) = (PostSheet.DraftOf(post, page), true), "pencil"));
+        if (Access.Can(ChurchNews.Publishing) && post.From.Length == 0 && post.Audience == Audiences.Everyone && !MinistryLogic.IsHidden(page.Ministry))
+            items.Add(post.ChurchNews == ChurchNewsStates.Shared
+                ? this.Item("Take it off church news…", () => Share(taking: true), "megaphone")
+                : this.Item("Put it in church news…", () => Share(taking: false), "megaphone",
+                    detail: post.ChurchNews == ChurchNewsStates.Asked ? "Its leaders asked for this" : null));
+        if (mine)
+            items.Add(this.Item("Delete the post…", () => (_deleting, _problem) = (true, null), "trash-2", danger: true, startsGroup: true));
+        return items;
+    }
+
+    private void Share(bool taking) => (_taking, _sharing, _problem) = (taking, true, null);
+
+    private Task ShareAsync() => RunAsync(async post =>
+    {
+        if (_taking)
+            await Writes.TakeOffChurchNewsAsync(MinistryId, post.Id);
+        else
+            await Writes.ShareToChurchNewsAsync(MinistryId, post.Id, _tell);
+        _sharing = false;
+    });
+
+    private Task DeleteAsync() => RunAsync(async post =>
+    {
+        await Writes.DeletePostAsync(MinistryId, post.Id);
+        _deleting = false;
+        Navigation.NavigateTo(MinistriesPlaces.Of(MinistryId, MinistriesPlaces.News));
+    });
+
+    private async Task RunAsync(Func<Post, Task> work)
+    {
+        if (_shown is null)
+            return;
+        (_busy, _problem) = (true, null);
+        try
+        {
+            await work(_shown);
+        }
+        catch (RpcException exception)
+        {
+            _problem = MinistryLookups.Problem(exception);
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+}

@@ -58,8 +58,8 @@ public sealed class MinistryRuleTests
     {
         Assert.Equal([Audiences.Everyone, Audiences.Team], MinistryLogic.PostableAudiences(Joining.None));
         Assert.Equal(Audiences.All, MinistryLogic.PostableAudiences(Joining.Ask));
-        Assert.NotNull(MinistryRules.WhyNotPost("Pick up by 8:30", "", Audiences.Parents, MinistryLogic.PostableAudiences(Joining.None)));
-        Assert.Null(MinistryRules.WhyNotPost("Pick up by 8:30", "", Audiences.Parents, MinistryLogic.PostableAudiences(Joining.Open)));
+        Assert.NotNull(MinistryRules.WhyNotPost("Pick up by 8:30", new(), Audiences.Parents, MinistryLogic.PostableAudiences(Joining.None)));
+        Assert.Null(MinistryRules.WhyNotPost("Pick up by 8:30", new(), Audiences.Parents, MinistryLogic.PostableAudiences(Joining.Open)));
     }
 
     [Fact]

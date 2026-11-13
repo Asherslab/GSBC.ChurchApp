@@ -10,6 +10,7 @@ using GSBC.ChurchApp.Features.Media.Admin;
 using GSBC.ChurchApp.Features.Ministries.Admin;
 using GSBC.ChurchApp.Features.Notifications.Admin;
 using GSBC.ChurchApp.Features.People.Admin;
+using GSBC.ChurchApp.Features.News.Admin;
 using GSBC.ChurchApp.Features.Prayer.Admin;
 using GSBC.ChurchApp.Features.Rosters.Admin;
 using GSBC.ChurchApp.Features.Sermons.Admin;
@@ -52,6 +53,7 @@ builder.Services
     .AddAccessAdmin(modules)
     .AddPeopleAdmin(modules)
     .AddMinistriesAdmin(modules)
+    .AddNewsAdmin(modules)
     .AddPrayerAdmin(modules)
     .AddFeedbackAdmin(modules)
     .AddRostersAdmin(modules)

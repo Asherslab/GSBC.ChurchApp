@@ -23,6 +23,9 @@ public sealed class MediaUploadRequests : IUploadRequests
     {
         PickableFiles.Pictures => $"{fileName} isn't a picture this app can use. Choose a JPEG, PNG, WebP or GIF.",
         PickableFiles.PicturesAndVideos => $"{fileName} isn't a picture or video this app can send. Choose a screenshot, photo or screen recording.",
+        PickableFiles.Videos => $"{fileName} isn't a video this app can send. Choose an MP4 or a phone's video (MOV).",
+        PickableFiles.Audio => $"{fileName} isn't a recording this app can send. Choose an MP3 or M4A.",
+        PickableFiles.Documents => $"{fileName} isn't a file this app can send. Choose a PDF.",
         _ => $"{fileName} isn't a picture or PDF this app can use.",
     };
 
@@ -47,6 +50,9 @@ public sealed class MediaUploadRequests : IUploadRequests
     {
         PickableFiles.Pictures => MediaTypes.Accepted.Where(IsPicture),
         PickableFiles.PicturesAndVideos => [.. MediaTypes.Accepted.Where(IsPicture), MediaTypes.Mp4, MediaTypes.QuickTime],
+        PickableFiles.Videos => [MediaTypes.Mp4, MediaTypes.QuickTime],
+        PickableFiles.Audio => [MediaTypes.Mp3, MediaTypes.M4a],
+        PickableFiles.Documents => ["application/pdf"],
         _ => MediaTypes.Accepted.Where(type => !MediaTypes.IsFont(type)),
     };
 

@@ -1,0 +1,47 @@
+{
+  "title": "Church news: the News page on the phone (your steer)",
+  "question": "Following your steer: the newest post leads with its picture like a front page, the rest are rows with their picture at the side, and a Your ministries tab shows the combined news of every ministry you're in (it isn't there for someone in no ministry). Three ways to put that together; the next two rounds (reading one post, and writing one) follow straight after.",
+  "options": [
+    {
+      "id": "pictures-left",
+      "kind": "assigned",
+      "kicker": "THE ROLL",
+      "label": "Tabs under the masthead, pictures at the left",
+      "thesis": "The church and Your ministries as the app's underline tabs, sticky under the top bar; the lead post's picture runs the width, then rows with a square picture at the left and From … under each.",
+      "palette": ["#2a3d5e", "#ffffff", "#00776d", "#e7ae74"],
+      "materials": ["sticky underline tabs with a count", "16:9 lead picture", "76px square pictures at the left", "From … in deep aqua"],
+      "viewport": "Scrolled a little: Your ministries chosen (3 new), the lead post from Youth, then rows from Kids ministry and Music, each with its picture at the left.",
+      "risk": "A row with no picture loses its left edge alignment, so posts without one sit flush with the text column.",
+      "html": ".impeccable/mocks/church-news/r-a-ministries-tab.html",
+      "htmlFrame": "390x844"
+    },
+    {
+      "id": "lead-and-pair",
+      "kind": "dealt",
+      "label": "A lead, two side by side, then rows",
+      "thesis": "Like a newspaper's front: the lead post wide, the next two posts with pictures side by side, then the rest as rows with their picture at the right.",
+      "palette": ["#2a3d5e", "#ffffff", "#00776d", "#e7ae74"],
+      "materials": ["lead story", "two-up pair of 4:3 pictures", "rows with pictures at the right"],
+      "viewport": "The church chosen: the Christmas lead, Baptisms and Youth camp side by side, then Holiday program volunteers as a row.",
+      "risk": "The pair needs two posts with pictures near the top; with fewer it falls back to rows, so the page changes shape week to week.",
+      "html": ".impeccable/mocks/church-news/r-b-lead-and-pair.html",
+      "htmlFrame": "390x844"
+    },
+    {
+      "id": "today-first",
+      "kind": "dealt",
+      "label": "What's urgent today first, then the lead",
+      "thesis": "A post sent as urgent today sits above everything on a marker band; then the lead post with its picture, then rows with the picture at the right.",
+      "palette": ["#2a3d5e", "#ffffff", "#e7ae74", "#00776d"],
+      "materials": ["marker band for today's urgent post", "lead story", "rows with pictures at the right"],
+      "viewport": "The church chosen: Building works (Today) on the marker band, the Christmas lead, then Baptisms as a row with its picture at the right.",
+      "risk": "An urgent post leaves the band at the end of its day, so it moves down the list overnight.",
+      "html": ".impeccable/mocks/church-news/r-c-today-first.html",
+      "htmlFrame": "390x844"
+    }
+  ],
+  "reroll": true,
+  "steer": true,
+  "followup": true,
+  "buildPath": { "value": "code" }
+}

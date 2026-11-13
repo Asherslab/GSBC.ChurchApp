@@ -36,6 +36,7 @@ namespace GSBC.ChurchApp.Features.Ministries.Contracts;
 [ProtoSerializable(typeof(LinkParentRequest))]
 [ProtoSerializable(typeof(PostSave))]
 [ProtoSerializable(typeof(ItemRef))]
+[ProtoSerializable(typeof(ChurchNewsShare))]
 [ProtoSerializable(typeof(FileSave))]
 [ProtoSerializable(typeof(MinistrySave))]
 [ProtoSerializable(typeof(PartsSave))]

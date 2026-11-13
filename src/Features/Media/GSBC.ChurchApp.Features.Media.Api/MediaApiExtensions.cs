@@ -30,6 +30,7 @@ public static class MediaApiExtensions
         services.AddDestinations(MediaDestinations.All);
         services.AddDestinationSource<MediaDestinationSource>();
         services.AddPermissions(MediaPermissions.All);
+        services.AddPermissions([PostMedia.LargeUploads]);
         services.AddFeed(new FeedDefinition(MediaFeeds.Library, FeedAudience.Holding(MediaPermissions.View)));
         services.AddRoleKit(new RoleKit(RoleKits.Pictures, [MediaPermissions.ViewNode, MediaPermissions.UploadNode]));
         services.AddSystemRole(new SystemRole("media-viewer", "Media Viewer", "See the media library: every uploaded picture and file",
@@ -42,6 +43,9 @@ public static class MediaApiExtensions
             ScopeKind.Global,
             [MediaPermissions.ViewNode, MediaPermissions.UploadNode, MediaPermissions.DeleteNode, MediaPermissions.OrganiseNode, MediaPermissions.UploadFontsNode],
             Feature: RoleFeatures.Media));
+        services.AddSystemRole(new SystemRole("large-uploads", "Large uploads",
+            "Add video and audio up to 2 GB to news posts; everyone else who posts can add up to 100 MB", ScopeKind.Global,
+            [PostMedia.LargeUploadsNode], Feature: RoleFeatures.Media));
         services.AddHttpClient<GoogleFonts>(client => client.DefaultRequestHeaders.UserAgent.ParseAdd(GoogleFonts.BrowserAgent));
         services.AddScoped<FontsService>();
         services.AddMediaSystemArea(FontsService.Area);

@@ -31,6 +31,12 @@ public interface IMinistryLeadingService
     [Requires(MinistriesPermissions.PostNode)]
     ValueTask<Done> DeletePostAsync(ItemRef request, CallContext context = default);
 
+    [SignedIn]
+    ValueTask<Post> ShareToChurchNewsAsync(ChurchNewsShare request, CallContext context = default);
+
+    [SignedIn]
+    ValueTask<Post> TakeOffChurchNewsAsync(ItemRef request, CallContext context = default);
+
     [Requires(MinistriesPermissions.PostNode)]
     ValueTask<FileItem> SaveFileAsync(FileSave request, CallContext context = default);
 

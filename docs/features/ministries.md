@@ -114,6 +114,13 @@ reminder.**
 they belong to a ministry); how long the church wants anything kept if "forever" changes; the shape of the
 auditors' coordination chat. (Blue card and training data from Safe Ministry Check: built 2026-11-10.)
 
+## Church news and rich posts (2026-11-13)
+
+A ministry post is written in blocks with pictures, galleries, video, audio and files, and has its own page on the phone
+(`/ministries/{id}/news/{post}`). *Ask to send it to the whole church* became *Ask for church news*; church news staff
+put a post for everyone into church news (or take it off) from its ⋯ menu, and the ministry's edits follow it there.
+See [news.md](news.md).
+
 ## Hidden ministries (#73, built 2026-11-13)
 
 The owner, 2026-11-12: "Most and almost all our ministries should be public, and no reason people can't see them, but

@@ -1,6 +1,9 @@
 @using GSBC.ChurchApp.Platform.Client.People
 @using GSBC.ChurchApp.Platform.Contracts.Media
 @using GSBC.ChurchApp.Platform.Ui.Content
+@using GSBC.ChurchApp.Platform.Client.News
+@using GSBC.ChurchApp.Platform.Contracts.Content
+@using GSBC.ChurchApp.Platform.Ui.News
 @inject TimeProvider Clock
 @inject UiHost Host
 
@@ -255,6 +258,21 @@
             @<ThemeSwatches Palette="brand" />)
     </Section>
 
+    <Section Title="News" Lead="Church news and ministry news, read and written the same way on the phone and the desk.">
+        @Item("A page of news: NewsList", "What's urgent today on a marker band, the newest post leading with its picture, then rows with the picture at the side.",
+            @<NewsList Items="SampleNews" />)
+        @Item("One story: NewsStory", "A row of news, its picture at the side. NewsList uses it in its three shapes.",
+            @<NewsStory Title="Holiday program volunteers needed" Href="gallery" Excerpt="Three mornings in January." From="Kids ministry" When="Yesterday" Picture="SamplePicture" />)
+        @Item("A post's pictures and videos: MediaStrip", "Leads a post: swipe through what it holds, tap a picture to see it bigger.",
+            @<MediaStrip Content="SamplePost" About="Carols on the lawn" />)
+        @Item("Reading one post: PostView", "Its strip, title, who posted it and when, the text, and its link at the end.",
+            @<PostView Title="Carols on the lawn" Content="SamplePost" From="Music" FromHref="gallery" When="Thursday 13 November" LinkPath="/events" LinkLabel="See it in the calendar" />)
+        @Item("Writing a post: PostEditor", "Blocks you add and move by their handles, an Add row, and one row for who it's for and telling them.",
+            @<PostEditor Title="@_postTitle" TitleChanged="title => _postTitle = title" Blocks="_postBlocks" SettingsSummary="Everyone · Notification on · Now">
+                <Settings><p class="gallery__note">The feature's own settings go here.</p></Settings>
+            </PostEditor>)
+    </Section>
+
     <Section Title="Lists and boards" Lead="Rows for lists, a table when there are columns to compare, a board when things move through stages.">
         @Item("Rows: ListGroup and ListRow", "Title, one line under it, and where it goes.",
             @<ListGroup>
@@ -343,7 +361,7 @@
                 <Skeleton Count="2" />
                 <Skeleton Shape="SkeletonShape.Lines" Count="3" />
             </div>)
-        @Item("A notification as people see it: LockScreenProof", "Before sending an announcement.",
+        @Item("A notification as people see it: LockScreenProof", "Before a church news post sends its notification.",
             @<LockScreenProof Title="Family games night" Body="This Friday in the hall, 6pm. Bring a plate to share." />)
     </Section>
 
@@ -386,6 +404,34 @@
 
 @code {
     private const string SampleMinistry = "Kids Ministries";
+
+    private const string SampleSvg = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='1200' height='675'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%23e7ae74'/><stop offset='1' stop-color='%232a3d5e'/></linearGradient></defs><rect width='1200' height='675' fill='url(%23g)'/></svg>";
+
+    private static readonly MediaRef SamplePicture = new() { Id = "sample-picture", ContentType = "image/svg+xml", Url = SampleSvg, AltText = "A sample picture", Width = 1200, Height = 675 };
+
+    private static readonly MediaRef SampleSecond = new() { Id = "sample-second", ContentType = "image/svg+xml", Url = SampleSvg, AltText = "Another sample picture", Width = 1200, Height = 675 };
+
+    private static readonly RichText SamplePost = new()
+    {
+        Markdown = "![A sample picture](media:sample-picture \"Last year's carols\")\n![Another sample picture](media:sample-second)\n\nBring a **picnic rug** and a torch.\n\n## What's on\n\n- Carols at 6pm\n- The kids' choir at 7",
+        Media = [SamplePicture, SampleSecond],
+    };
+
+    private IReadOnlyList<NewsItem> SampleNews =>
+    [
+        new("today", "The car park is closed on Sunday", new RichText { Markdown = "Park on the street or in the school grounds." }, null, Clock.GetUtcNow().UtcDateTime, null, "", "", "gallery", Urgent: true),
+        new("lead", "Carols on the lawn", SamplePost, SamplePicture, Clock.GetUtcNow().UtcDateTime.AddHours(-3), null, "", "", "gallery"),
+        new("row", "Holiday program volunteers needed", new RichText { Markdown = "Three mornings in January." }, SamplePicture, Clock.GetUtcNow().UtcDateTime.AddDays(-1), null, "", "Kids ministry", "gallery"),
+    ];
+
+    private string _postTitle = "Carols on the lawn";
+
+    private readonly List<PostBlock> _postBlocks =
+    [
+        new() { Kind = PostBlockKind.Text, Text = "Bring a **picnic rug** and a torch." },
+        new() { Kind = PostBlockKind.Heading, Text = "What's on" },
+        new() { Kind = PostBlockKind.Pictures, Media = [SamplePicture, SampleSecond], Caption = "Last year's carols" },
+    ];
     private const string Drawing = """<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M8 12h8"/></svg>""";
 
     private static readonly IReadOnlyList<SamplePerson> People =

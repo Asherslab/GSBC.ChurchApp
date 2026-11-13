@@ -1,0 +1,53 @@
+@using GSBC.ChurchApp.Platform.Contracts.Media
+@using GSBC.ChurchApp.Platform.Icons
+
+<a class="news-story news-story--@Shape.ToString().ToLowerInvariant()" href="@Href">
+    @if (Shape == NewsStoryShape.Today)
+    {
+        <span class="news-story__icon" aria-hidden="true"><Icon Name="@AppIcons.News" /></span>
+    }
+    else if (Shape == NewsStoryShape.Lead && Picture is not null)
+    {
+        <MediaImage Media="Picture" Alt="" Class="news-story__picture" />
+    }
+    <span class="news-story__text">
+        <span class="news-story__title">@Title</span>
+        @if (Excerpt.Length > 0)
+        {
+            <span class="news-story__excerpt">@(Shape == NewsStoryShape.Today ? $"Today · {Excerpt}" : Excerpt)</span>
+        }
+        @if (Shape != NewsStoryShape.Today)
+        {
+            <span class="news-story__meta">
+                @if (From.Length > 0)
+                {
+                    <span class="news-story__from"><Icon Name="@AppIcons.Ministries" />From @From</span>
+                }
+                @if (Status.Length > 0)
+                {
+                    <span class="news-story__status">@Status</span>
+                }
+                <span>@When</span>
+            </span>
+        }
+    </span>
+    @if (Shape == NewsStoryShape.Row && Picture is not null)
+    {
+        <MediaImage Media="Picture" Size="MediaSizeName.Thumbnail" Alt="" Class="news-story__thumb" />
+    }
+    @if (Shape == NewsStoryShape.Today)
+    {
+        <Icon Name="chevron-right" />
+    }
+</a>
+
+@code {
+    [Parameter, EditorRequired] public required string Title { get; set; }
+    [Parameter, EditorRequired] public required string Href { get; set; }
+    [Parameter] public string Excerpt { get; set; } = "";
+    [Parameter] public MediaRef? Picture { get; set; }
+    [Parameter] public string From { get; set; } = "";
+    [Parameter] public string When { get; set; } = "";
+    [Parameter] public string Status { get; set; } = "";
+    [Parameter] public NewsStoryShape Shape { get; set; }
+}

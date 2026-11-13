@@ -1,3 +1,4 @@
+using GSBC.ChurchApp.Platform.Contracts.Content;
 using GSBC.ChurchApp.Platform.Contracts.Tiers;
 using ProtoBuf;
 
@@ -166,6 +167,9 @@ public sealed class Post
     [ProtoMember(13)] public bool New { get; set; }
     [ProtoMember(14)] public string Sunday { get; set; } = "";
     [ProtoMember(15)] public bool NoClass { get; set; }
+    [ProtoMember(16)] public RichText? Content { get; set; }
+    [ProtoMember(17)] public string ChurchNews { get; set; } = "";
+    [ProtoMember(18)] public bool TellChurch { get; set; }
 }
 
 [ProtoContract]
@@ -340,6 +344,17 @@ public sealed class PostSave : IScopedRequest
 {
     [ProtoMember(1)] public string MinistryId { get; set; } = "";
     [ProtoMember(2, IsRequired = true)] public Post Post { get; set; } = new();
+    [ProtoMember(3)] public List<string> Uploaded { get; set; } = [];
+
+    public string ScopeId => MinistryId;
+}
+
+[ProtoContract]
+public sealed class ChurchNewsShare : IScopedRequest
+{
+    [ProtoMember(1)] public string MinistryId { get; set; } = "";
+    [ProtoMember(2)] public string Id { get; set; } = "";
+    [ProtoMember(3)] public bool Tell { get; set; }
 
     public string ScopeId => MinistryId;
 }

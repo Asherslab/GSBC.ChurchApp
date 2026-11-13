@@ -36,6 +36,7 @@ internal sealed class MinistriesFeedUpkeep(
         try
         {
             await using AsyncServiceScope scope = scopes.CreateAsyncScope();
+            await scope.ServiceProvider.GetRequiredService<MinistryChurchNews>().KeepUpAsync(stoppingToken);
             await scope.ServiceProvider.GetRequiredService<MinistriesPublisher>().PublishAsync(stoppingToken);
         }
         catch (Exception exception) when (!stoppingToken.IsCancellationRequested)

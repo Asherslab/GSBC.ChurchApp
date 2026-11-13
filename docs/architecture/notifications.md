@@ -444,6 +444,14 @@ phone" with the settings' own list (`NotificationSettings`, reused) and **Done**
 
 ## Staff announcements (decision 5)
 
+**Replaced by church news** (owner, 2026-11-13: "announcements is replacing them ... what would have been an
+announcement with no link to anything, will now just be a news post, with a notification sent out linking to the news
+post"). What staff send now is a church news post whose notification opens it ([news.md](../features/news.md)); the
+kind keeps the key `notifications.announcement`, renamed *Church news*. The compose page is gone: Announcements is now
+*Earlier announcements*, read only, where a sent one can still be recalled and a scheduled one cancelled. The Writer and
+Sender roles became Church news Writer and Publisher. `INotifications` gained `RecallAsync(subject)` (a deleted post's
+notification is taken back) and `ReachAsync(audience)`. The rest of this section describes the page as it was.
+
 - **An announcement** (`notifications.announcements`): title, body (plain text; push can't show rich
   text), an optional link (a place in the app, chosen from Places in the app's list with
   `PlaceField` ([destinations.md](destinations.md)), or the web), who it's for, urgent or not, and its state:

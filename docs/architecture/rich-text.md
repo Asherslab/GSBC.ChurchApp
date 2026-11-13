@@ -6,6 +6,12 @@ and a live preview (a structured block model and a JavaScript WYSIWYG editor wer
 
 ## What it allows
 
+**Posts allow more** (2026-11-13, [news.md](../features/news.md)): a media line may name any file from the library, with an
+optional caption, `![alt](media:<id> "caption")`; pictures on consecutive lines are a gallery; a YouTube or Vimeo link on
+its own line, `![title](https://youtu.be/…)`, is a player rebuilt from the video's id alone. Each use says which kinds it
+takes (`RichTextMedia`): everything else still takes only pictures. Posts are written as blocks (`PostBlocks`,
+`PostEditor`) over the same text, so what is stored stays this format.
+
 | Allowed | Written as |
 |---|---|
 | Paragraphs, with single line breaks kept | Text separated by a blank line |

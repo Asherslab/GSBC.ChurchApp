@@ -26,10 +26,14 @@ public static class RichTextParser
                 blocks.Add(new HeadingBlock(level, InlineParser.Parse(line[(level + 1)..].Trim(), collector)));
                 index++;
             }
-            else if (ImageOf(line.Trim(), collector) is { } image)
+            else if (EmbedOf(line.Trim(), collector) is { } embed)
             {
-                blocks.Add(image);
+                blocks.Add(embed);
                 index++;
+            }
+            else if (MediaOf(line.Trim(), collector) is { } media)
+            {
+                blocks.Add(MediaRun(media, lines, ref index, collector));
             }
             else if (IsQuote(line))
             {
@@ -45,7 +49,7 @@ public static class RichTextParser
             }
         }
 
-        return new RichTextDocument(blocks, collector.Links, collector.ImageIds, collector.Problems);
+        return new RichTextDocument(blocks, collector.Links, collector.MediaIds, collector.Videos, collector.Problems);
     }
 
     private static ParagraphBlock Paragraph(string[] lines, ref int index, Collector collector)
@@ -134,7 +138,7 @@ public static class RichTextParser
     }
 
     private static bool StartsBlock(string line) =>
-        HeadingLevel(line) is not null || IsQuote(line) || ListMarker.Of(line) is { Indent: < NestedIndent } || IsImageLine(line.Trim());
+        HeadingLevel(line) is not null || IsQuote(line) || ListMarker.Of(line) is { Indent: < NestedIndent } || IsMediaLine(line.Trim()) || IsEmbedLine(line.Trim());
 
     private static int? HeadingLevel(string line) =>
         line.StartsWith("### ", StringComparison.Ordinal) ? 3 : line.StartsWith("## ", StringComparison.Ordinal) ? 2 : null;
@@ -143,22 +147,56 @@ public static class RichTextParser
 
     private static bool IsBlank(string line) => string.IsNullOrWhiteSpace(line);
 
-    private static bool IsImageLine(string line) =>
+    private static bool IsMediaLine(string line) =>
         line.StartsWith("![", StringComparison.Ordinal) && line.EndsWith(')') && line.Contains("](" + LinkTargets.MediaScheme, StringComparison.Ordinal);
 
-    private static ImageBlock? ImageOf(string line, Collector collector)
+    private static bool IsEmbedLine(string line) =>
+        line.StartsWith("![", StringComparison.Ordinal) && line.EndsWith(')') && line.Contains("](https://", StringComparison.Ordinal);
+
+    private static Block MediaRun(MediaBlock first, string[] lines, ref int index, Collector collector)
     {
-        if (!IsImageLine(line))
+        List<MediaBlock> run = [first];
+        index++;
+        while (index < lines.Length && MediaOf(lines[index].Trim(), collector) is { } next)
+        {
+            run.Add(next);
+            index++;
+        }
+        return run.Count == 1 ? first : new GalleryBlock(run);
+    }
+
+    private static MediaBlock? MediaOf(string line, Collector collector)
+    {
+        if (!IsMediaLine(line))
             return null;
 
         int split = line.IndexOf("](" + LinkTargets.MediaScheme, StringComparison.Ordinal);
         string alt = line[2..split];
-        string id = line[(split + 2 + LinkTargets.MediaScheme.Length)..^1].Trim();
-        if (alt.Contains(']') || id.Length == 0 || id.Any(character => char.IsWhiteSpace(character) || character is '(' or ')'))
+        string target = line[(split + 2 + LinkTargets.MediaScheme.Length)..^1].Trim();
+        int quote = target.IndexOf(" \"", StringComparison.Ordinal);
+        string id = quote < 0 ? target : target[..quote].Trim();
+        string caption = quote < 0 ? "" : target[(quote + 1)..];
+        if (caption.Length > 0 && (caption.Length < 2 || !caption.EndsWith('"')))
+            return null;
+        if (alt.Contains(']') || id.Length == 0 || id.Any(character => char.IsWhiteSpace(character) || character is '(' or ')' or '"'))
             return null;
 
-        collector.ImageIds.Add(id);
-        return new ImageBlock(id, alt.Trim());
+        collector.MediaIds.Add(id);
+        return new MediaBlock(id, alt.Trim(), caption.Length == 0 ? "" : caption[1..^1].Trim());
+    }
+
+    private static EmbedBlock? EmbedOf(string line, Collector collector)
+    {
+        if (!IsEmbedLine(line))
+            return null;
+
+        int split = line.IndexOf("](", StringComparison.Ordinal);
+        string title = line[2..split];
+        if (title.Contains(']') || VideoLink.Of(line[(split + 2)..^1]) is not { } video)
+            return null;
+
+        collector.Videos.Add(video);
+        return new EmbedBlock(video, title.Trim());
     }
 
     private sealed record ListMarker(int Indent, bool Ordered, int Number, string Content)
@@ -182,7 +220,8 @@ public static class RichTextParser
     private sealed class Collector
     {
         public List<string> Links { get; } = [];
-        public List<string> ImageIds { get; } = [];
+        public List<string> MediaIds { get; } = [];
+        public List<VideoLink> Videos { get; } = [];
         public List<string> Problems { get; } = [];
     }
 
@@ -237,7 +276,7 @@ public static class RichTextParser
 
                     if (character == '!' && position + 1 < end && text[position + 1] == '[' && TryLink(position + 1, end, out _, out _, out int imageEnd))
                     {
-                        collector.Problems.Add("Images have to come from the media library, each on a line of its own.");
+                        collector.Problems.Add("Pictures and files have to come from the media library, and videos from YouTube or Vimeo, each on a line of its own.");
                         pending.Append(text, position, imageEnd - position);
                         position = imageEnd;
                         continue;

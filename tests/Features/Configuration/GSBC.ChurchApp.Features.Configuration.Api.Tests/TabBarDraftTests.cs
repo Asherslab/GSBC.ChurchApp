@@ -39,6 +39,6 @@ public sealed class TabBarDraftTests : ConfigurationHost
             .Select(placement => new StoredPlacement(placement.Id, placement.Surface, placement.Order, placement.Hidden, placement.Audience, placement.StartsAt,
                 placement.EndsAt, placement.Values.ToDictionary(value => value.Key, value => value.Value), 1))
             .ToList();
-        Assert.Equal(["Home", "Sermons"], TabBar.For(SurfaceLayout.ShownTo(TabBarSurfaces.All.Surfaces, live, Viewer.Anonymous, Clock.GetUtcNow().UtcDateTime)).Select(tab => tab.Word));
+        Assert.Equal(["Home", "News", "Sermons"], TabBar.For(SurfaceLayout.ShownTo(TabBarSurfaces.All.Surfaces, live, Viewer.Anonymous, Clock.GetUtcNow().UtcDateTime)).Select(tab => tab.Word));
     }
 }

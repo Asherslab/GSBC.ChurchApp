@@ -11,7 +11,7 @@ public sealed class TabBarTests
     [Fact]
     public void WithNothingPublishedThePhoneHasTheTabsItAlwaysHad()
     {
-        Assert.Equal(["Home", "Sermons"], Words(For(Visitor)));
+        Assert.Equal(["Home", "News", "Sermons"], Words(For(Visitor)));
     }
 
     [Fact]
@@ -19,15 +19,15 @@ public sealed class TabBarTests
     {
         StoredPlacement[] stored =
         [
-            Tab("calendar", "/week", "Calendar", order: 150),
+            Tab("calendar", "/week", "Calendar", order: 120),
             Tab("give", "/give", "Give", order: 300),
             Tab("groups", "/life-groups", "Groups", order: 400, audience: Audience.SignedIn),
             Tab("prayer", "/prayer", "Prayer", order: 500),
         ];
 
-        Assert.Equal(["Home", "Calendar", "Sermons", "Give"], Words(For(Visitor, stored)));
-        Assert.Equal(["Home", "Calendar", "Sermons", "Give"], Words(For(Member, stored)));
-        Assert.Equal(["Home", "Calendar", "Sermons", "Prayer"], Words(For(Visitor, stored[0], stored[3])));
+        Assert.Equal(["Home", "Calendar", "News", "Sermons"], Words(For(Visitor, stored)));
+        Assert.Equal(["Home", "Calendar", "News", "Sermons"], Words(For(Member, stored)));
+        Assert.Equal(["Home", "News", "Sermons", "Give"], Words(For(Visitor, stored[1..])));
     }
 
     [Fact]
@@ -35,6 +35,7 @@ public sealed class TabBarTests
     {
         StoredPlacement[] stored =
         [
+            Hidden(TabBarSurfaces.News),
             Hidden(TabBarSurfaces.Sermons),
             Tab("groups", "/life-groups", "Groups", order: 300, audience: Audience.SignedIn),
             Tab("visit", "/visit", "Visit us", order: 400, endsAt: Now),
@@ -54,13 +55,13 @@ public sealed class TabBarTests
             Tab("again", "/", "Start", order: 20),
         ];
 
-        Assert.Equal(["Home", "Calendar", "Sermons"], Words(For(Visitor, stored)));
+        Assert.Equal(["Home", "Calendar", "News", "Sermons"], Words(For(Visitor, stored)));
     }
 
     [Fact]
     public void ThePlaceTwiceForOnePersonIsOneTab()
     {
-        Assert.Equal(["Home", "Sermons"], Words(For(Visitor, Tab("again", "/sermons", "Listen", order: 300))));
+        Assert.Equal(["Home", "News", "Sermons"], Words(For(Visitor, Tab("again", "/sermons", "Listen", order: 300))));
     }
 
     private static IReadOnlyList<AppTab> For(Viewer viewer, params StoredPlacement[] stored) =>

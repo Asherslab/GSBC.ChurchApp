@@ -1,9 +1,122 @@
 @page "/announcements"
 @page "/announcements/{Id}"
+@using GSBC.ChurchApp.Features.Notifications.Contracts
+@using GSBC.ChurchApp.Platform.Client.Access
+@inject AnnouncementsClient Announcements
+@inject IAccess Access
+@inject TimeProvider Clock
 
-<AnnouncementsDesk Id="@Id" OpensPlace="@Opens" />
+<TitleBand Title="Earlier announcements" Lead="What the office sent before church news. Notices for the church are church news posts now, each able to send a notification.">
+    <Actions>
+        <Button Icon="megaphone" Href="news">Church news</Button>
+    </Actions>
+</TitleBand>
+
+<LiveData @ref="_live" TValue="IReadOnlyList<Announcement>" Load="Announcements.ListAsync" Feeds="DeskFeeds" FailedTitle="Can't load announcements right now">
+    <Workbench DetailLabel="The announcement" Showing="@(_chosen is null ? WorkbenchPane.Main : WorkbenchPane.Detail)">
+        <ChildContent>
+            @if (context.Value.Count == 0)
+            {
+                <EmptyState Icon="megaphone" Title="No announcements" Body="Nothing was sent before church news." />
+            }
+            else
+            {
+                <DataTable TItem="Announcement" Label="Earlier announcements" Items="Newest(context.Value)" Columns="Columns" Key="announcement => announcement.Id"
+                           Selected="Chosen(context.Value)" SelectedChanged="announcement => _chosen = announcement.Id" />
+            }
+        </ChildContent>
+        <Detail>
+            @if (Chosen(context.Value) is { } announcement)
+            {
+                <PaneHead Title="@announcement.Title" Lead="@StateLine(announcement)" Actions="Actions(announcement)" OnClose="() => _chosen = null" />
+                <p class="announcement-history__message">@announcement.Body</p>
+                <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+            }
+            else
+            {
+                <EmptyState Icon="megaphone" Title="Choose an announcement" Body="What it said, who it reached and who read it show here." />
+            }
+        </Detail>
+    </Workbench>
+</LiveData>
+
+<Sheet Open="_recalling" OpenChanged="open => _recalling = open" Title="Recall this announcement?"
+       Lead="It leaves the app's notifications on every phone. A notification already shown on a lock screen can't be taken back. It stays here as a record.">
+    <Actions>
+        <Button Variant="ButtonVariant.Danger" Busy="_busy" OnClick="() => RunAsync(id => Announcements.RecallAsync(id))">Recall it</Button>
+        <Button Variant="ButtonVariant.Quiet" OnClick="() => _recalling = false">Keep it</Button>
+    </Actions>
+</Sheet>
 
 @code {
+    private const string Sent = "Sent";
+    private const string Recalled = "Recalled";
+    private const string Scheduled = "Scheduled";
+
+    private static readonly IReadOnlyList<string> DeskFeeds = [NotificationsFeeds.Announcements];
+
+    private LiveData<IReadOnlyList<Announcement>>? _live;
+    private string? _chosen;
+    private bool _recalling, _busy;
+    private string? _problem;
+
     [Parameter] public string? Id { get; set; }
-    [SupplyParameterFromQuery] public string? Opens { get; set; }
+
+    protected override void OnParametersSet() => _chosen ??= Id;
+
+    private Announcement? Chosen(IReadOnlyList<Announcement> all) => all.FirstOrDefault(announcement => announcement.Id == _chosen);
+
+    private static IReadOnlyList<Announcement> Newest(IReadOnlyList<Announcement> all) =>
+        all.OrderByDescending(announcement => announcement.SentAt ?? announcement.SendAt ?? announcement.UpdatedAt).ToList();
+
+    private IReadOnlyList<TableColumn<Announcement>> Columns =>
+    [
+        new("Announcement", announcement => @<span class="cell-strong">@announcement.Title</span>, announcement => announcement.Title),
+        new("When", announcement => @<span>@When(announcement)</span>, announcement => announcement.SentAt ?? announcement.SendAt),
+        new("Phones", announcement => @<span>@announcement.ReachedPhones</span>, announcement => announcement.ReachedPhones, "cell-number"),
+        new("Read by", announcement => @<span>@announcement.ReadBy</span>, announcement => announcement.ReadBy, "cell-number"),
+    ];
+
+    private IReadOnlyList<MenuItem> Actions(Announcement announcement) =>
+    [
+        .. announcement.State == Scheduled && Access.Can(NotificationsPermissions.Send)
+            ? [this.Item("Don't send it", () => RunAsync(id => Announcements.CancelAsync(id)), "circle-off", "It was scheduled before church news")]
+            : Array.Empty<MenuItem>(),
+        .. announcement.State == Sent && Access.Can(NotificationsPermissions.Send)
+            ? [this.Item("Recall…", () => (_recalling, _problem) = (true, null), "circle-off", "It leaves the app's notifications on every phone", danger: true, startsGroup: true)]
+            : Array.Empty<MenuItem>(),
+    ];
+
+    private string When(Announcement announcement) =>
+        (announcement.SentAt ?? announcement.SendAt) is { } at ? ChurchDates.Describe(at, DateLineStyle.Short, withTime: true, Clock.GetUtcNow().UtcDateTime) : "Not sent";
+
+    private string StateLine(Announcement announcement) => announcement.State switch
+    {
+        Recalled => $"Recalled by {announcement.RecalledBy ?? "someone who has since left"}. It reached about {announcement.ReachedPhones} phones first.",
+        Sent => $"Sent {When(announcement)} to about {announcement.ReachedPhones} phones; {announcement.ReadBy} people have read it.",
+        Scheduled => $"Scheduled for {When(announcement)}.",
+        _ => "Never sent.",
+    };
+
+    private async Task RunAsync(Func<string, Task> work)
+    {
+        if (_chosen is not { } id)
+            return;
+        (_busy, _problem) = (true, null);
+        try
+        {
+            await work(id);
+            _recalling = false;
+            if (_live is not null)
+                await _live.ReloadAsync();
+        }
+        catch (Grpc.Core.RpcException exception)
+        {
+            _problem = exception.Status.Detail;
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
 }

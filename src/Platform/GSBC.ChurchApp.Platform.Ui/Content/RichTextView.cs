@@ -1,5 +1,4 @@
 using GSBC.ChurchApp.Platform.Contracts.Content;
-using GSBC.ChurchApp.Platform.Contracts.Media;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Rendering;
 
@@ -9,13 +8,16 @@ public sealed class RichTextView : ComponentBase
 {
     [Parameter, EditorRequired] public required RichText Content { get; set; }
     [Parameter] public string? Class { get; set; }
+    [Parameter] public string About { get; set; } = "";
+    [Parameter] public bool SkipLeadingMedia { get; set; }
 
     protected override void BuildRenderTree(RenderTreeBuilder builder)
     {
         RichTextDocument document = RichTextParser.Parse(Content.Markdown);
         builder.OpenElement(0, "div");
         builder.AddAttribute(1, "class", Class is null ? "rich-text" : $"rich-text {Class}");
-        foreach (Block block in document.Blocks)
+        IEnumerable<Block> blocks = SkipLeadingMedia && document.Blocks is [MediaBlock or GalleryBlock or EmbedBlock, ..] ? document.Blocks.Skip(1) : document.Blocks;
+        foreach (Block block in blocks)
             AddBlock(builder, block);
         builder.CloseElement();
     }
@@ -39,8 +41,12 @@ public sealed class RichTextView : ComponentBase
                     AddElement(builder, "p", paragraph.Content);
                 builder.CloseElement();
                 break;
-            case ImageBlock image when Content.MediaById(image.MediaId) is { IsImage: true } media:
-                AddImage(builder, media, image.Alt);
+            case MediaBlock or GalleryBlock or EmbedBlock:
+                builder.OpenComponent<RichTextMediaBlock>(30);
+                builder.AddComponentParameter(31, nameof(RichTextMediaBlock.Block), block);
+                builder.AddComponentParameter(32, nameof(RichTextMediaBlock.Content), Content);
+                builder.AddComponentParameter(33, nameof(RichTextMediaBlock.About), About);
+                builder.CloseComponent();
                 break;
         }
     }
@@ -58,18 +64,6 @@ public sealed class RichTextView : ComponentBase
                 AddList(builder, nested);
             builder.CloseElement();
         }
-        builder.CloseElement();
-    }
-
-    private static void AddImage(RenderTreeBuilder builder, MediaRef media, string alt)
-    {
-        builder.OpenElement(30, "figure");
-        builder.AddAttribute(31, "class", "rich-text-figure");
-        builder.OpenComponent<MediaImage>(32);
-        builder.AddComponentParameter(33, nameof(MediaImage.Media), media);
-        builder.AddComponentParameter(34, nameof(MediaImage.Alt), alt.Length > 0 ? alt : media.AltText);
-        builder.AddComponentParameter(35, nameof(MediaImage.Class), "rich-text-image");
-        builder.CloseComponent();
         builder.CloseElement();
     }
 

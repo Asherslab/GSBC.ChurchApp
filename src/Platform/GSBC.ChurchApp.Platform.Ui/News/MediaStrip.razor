@@ -1,0 +1,119 @@
+@using GSBC.ChurchApp.Platform.Contracts.Content
+@using GSBC.ChurchApp.Platform.Contracts.Media
+@implements IAsyncDisposable
+@inject IJSRuntime Js
+
+@if (Frames.Count >= LeastForAStrip)
+{
+    <div class="media-strip">
+        <div class="media-strip__track" @ref="_track" tabindex="0" data-look-scroll aria-label="@($"{Frames.Count} pictures and videos")">
+            @foreach ((StripFrame frame, int index) in Frames.Select((frame, index) => (frame, index)))
+            {
+                <figure class="media-strip__frame" @key="index" aria-label="@($"{index + 1} of {Frames.Count}")">
+                    @if (frame.Video is { } video)
+                    {
+                        <VideoEmbed YouTubeId="@video.Id" Title="@(frame.Caption.Length > 0 ? frame.Caption : About)" />
+                    }
+                    else if (frame.Media is { IsVideo: true } clip)
+                    {
+                        <MediaVideo Media="clip" Label="@frame.Caption" Class="media-strip__media" />
+                    }
+                    else if (frame.Media is { } picture)
+                    {
+                        <PictureOpen Label="@($"Open {Describe(frame)}")" OnOpen="() => Open(picture)" Class="media-strip__open">
+                            <MediaImage Media="picture" Alt="@frame.Caption" Class="media-strip__media" />
+                        </PictureOpen>
+                    }
+                </figure>
+            }
+        </div>
+        @if (Frames.Count > 1)
+        {
+            <span class="media-strip__count" aria-hidden="true">@(_shown + 1) of @Frames.Count</span>
+            <span class="media-strip__dots" aria-hidden="true">
+                @for (int dot = 0; dot < Frames.Count; dot++)
+                {
+                    <span class="@(dot == _shown ? "is-on" : "")"></span>
+                }
+            </span>
+        }
+    </div>
+    <PictureViewer @bind-Open="_viewing" @bind-Index="_viewingAt" Pictures="Pictures" Noun="Picture" About="@About" />
+}
+
+@code {
+    private ElementReference _track;
+    private IJSObjectReference? _module;
+    private IJSObjectReference? _watch;
+    private DotNetObjectReference<MediaStrip>? _receiver;
+    private int _shown;
+    private bool _viewing;
+    private int _viewingAt;
+
+    [Parameter, EditorRequired] public required RichText Content { get; set; }
+    [Parameter] public string About { get; set; } = "";
+
+    private sealed record StripFrame(MediaRef? Media, VideoLink? Video, string Caption);
+
+    private IReadOnlyList<StripFrame> Frames { get; set; } = [];
+
+    private IReadOnlyList<MediaRef> Pictures => Frames.Select(frame => frame.Media).OfType<MediaRef>().Where(media => media.IsImage).ToList();
+
+    public const int LeastForAStrip = 2;
+
+    public static bool Leads(RichText content) => FramesOf(content).Count >= LeastForAStrip;
+
+    protected override void OnParametersSet() => Frames = FramesOf(Content);
+
+    private static IReadOnlyList<StripFrame> FramesOf(RichText content) =>
+        RichTextParser.Parse(content.Markdown).Blocks.SelectMany(block => block switch
+        {
+            GalleryBlock gallery => gallery.Items.Select(item => Frame(content, item)),
+            MediaBlock single => [Frame(content, single)],
+            EmbedBlock { Video.Site: VideoSite.YouTube } embed => [new StripFrame(null, embed.Video, embed.Title)],
+            _ => [],
+        }).OfType<StripFrame>().ToList();
+
+    private static StripFrame? Frame(RichText content, MediaBlock block) =>
+        content.MediaById(block.MediaId) is { } media && (media.IsImage || media.IsVideo)
+            ? new StripFrame(media, null, block.Caption.Length > 0 ? block.Caption : block.Alt)
+            : null;
+
+    private void Open(MediaRef picture) => (_viewingAt, _viewing) = (Math.Max(0, Pictures.ToList().FindIndex(each => each.Id == picture.Id)), true);
+
+    private static string Describe(StripFrame frame) => frame.Caption.Length > 0 ? frame.Caption : frame.Media?.FileName ?? "the picture";
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_watch is not null || Frames.Count < 2)
+            return;
+        _module ??= await Js.InvokeAsync<IJSObjectReference>("import", "./_content/GSBC.ChurchApp.Platform.Ui/js/media-strip.js");
+        _receiver ??= DotNetObjectReference.Create(this);
+        _watch = await _module.InvokeAsync<IJSObjectReference>("watch", _track, _receiver);
+    }
+
+    [JSInvokable]
+    public void Shown(int index)
+    {
+        _shown = Math.Clamp(index, 0, Math.Max(0, Frames.Count - 1));
+        StateHasChanged();
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        try
+        {
+            if (_watch is not null)
+            {
+                await _watch.InvokeVoidAsync("dispose");
+                await _watch.DisposeAsync();
+            }
+            if (_module is not null)
+                await _module.DisposeAsync();
+        }
+        catch (JSDisconnectedException)
+        {
+        }
+        _receiver?.Dispose();
+    }
+}

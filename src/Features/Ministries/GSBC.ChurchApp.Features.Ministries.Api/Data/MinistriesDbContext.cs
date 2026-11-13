@@ -39,6 +39,8 @@ public sealed class MinistriesDbContext(DbContextOptions<MinistriesDbContext> op
             entity.ToTable("posts");
             entity.HasKey(post => post.Id);
             entity.Property(post => post.Id).ValueGeneratedNever();
+            entity.Property(post => post.Content).HasColumnType("jsonb");
+            entity.Property(post => post.ChurchNews).HasConversion<string>().HasMaxLength(20);
             entity.HasIndex(post => new { post.MinistryId, post.PostedAt });
         });
         modelBuilder.Entity<FileRecord>(entity =>

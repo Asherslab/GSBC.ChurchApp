@@ -56,6 +56,10 @@ public interface INotifications
 
     Task SettleAsync(string subject, CancellationToken cancellationToken);
 
+    Task RecallAsync(string subject, CancellationToken cancellationToken) => Task.CompletedTask;
+
+    Task<NotificationReach> ReachAsync(NotificationAudience audience, CancellationToken cancellationToken) => Task.FromResult(new NotificationReach(0, 0));
+
     Task CollectAsync(NotificationDigestItem item, CancellationToken cancellationToken);
 
     Task ForgetDigestAsync(NotificationKind kind, string group, CancellationToken cancellationToken);
@@ -73,5 +77,7 @@ internal sealed class NoNotifications : INotifications
 
     public Task ForgetDigestAsync(NotificationKind kind, string group, CancellationToken cancellationToken) => Task.CompletedTask;
 }
+
+public sealed record NotificationReach(int People, int Phones);
 
 public sealed record NotificationKindSet(IReadOnlyList<NotificationKind> Kinds);

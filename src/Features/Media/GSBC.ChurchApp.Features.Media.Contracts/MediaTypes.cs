@@ -22,11 +22,16 @@ public static class MediaTypes
     {
         [Mp4] = "mp4",
         [QuickTime] = "mov",
+        [Mp3] = "mp3",
+        [M4a] = "m4a",
+        ["audio/x-m4a"] = "m4a",
         [Sqlite] = "sqlite",
     };
 
     public const string Mp4 = "video/mp4";
     public const string QuickTime = "video/quicktime";
+    public const string Mp3 = "audio/mpeg";
+    public const string M4a = "audio/mp4";
     private const string Sqlite = "application/vnd.sqlite3";
 
     public static bool IsFont(string contentType) => contentType.StartsWith("font/", StringComparison.OrdinalIgnoreCase);
@@ -54,6 +59,8 @@ public static class MediaTypes
     {
         ".mov" => QuickTime,
         ".mp4" or ".m4v" => Mp4,
+        ".mp3" => Mp3,
+        ".m4a" => M4a,
         _ => null,
     };
 

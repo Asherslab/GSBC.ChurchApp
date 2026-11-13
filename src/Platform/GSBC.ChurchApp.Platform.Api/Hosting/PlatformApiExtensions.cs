@@ -7,6 +7,7 @@ using GSBC.ChurchApp.Platform.Api.Email;
 using GSBC.ChurchApp.Platform.Api.Installs;
 using GSBC.ChurchApp.Platform.Api.Media;
 using GSBC.ChurchApp.Platform.Api.Ministries;
+using GSBC.ChurchApp.Platform.Api.News;
 using GSBC.ChurchApp.Platform.Api.Notifications;
 using GSBC.ChurchApp.Platform.Api.People;
 using GSBC.ChurchApp.Platform.Api.RateLimiting;
@@ -64,6 +65,7 @@ public static class PlatformApiExtensions
         services.TryAddScoped<IFamilies, NoFamilies>();
         services.TryAddScoped<ISafeguardingStandings, NoSafeguardingStandings>();
         services.TryAddScoped<IMinistryFacts, NoMinistryFacts>();
+        services.TryAddScoped<IChurchNews, NoChurchNews>();
         services.TryAddScoped<IRosterableEvents, NoRosterableEvents>();
         services.TryAddScoped<IPermissionHolders, NoPermissionHolders>();
         services.TryAddScoped<IChatPlaces, NoChatPlaces>();

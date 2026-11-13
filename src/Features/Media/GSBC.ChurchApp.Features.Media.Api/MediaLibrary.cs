@@ -24,7 +24,7 @@ internal sealed class MediaLibrary(
     public async Task<UploadTicket> BeginUploadAsync(ClaimsPrincipal user, Guid? install, BeginUploadRequest request, CancellationToken cancellationToken)
     {
         AreaUpload? area = await MayUploadAsync(user, install, request.Area, request.AreaScopeId, cancellationToken);
-        CheckAreaFile(area?.Area, request.ContentType, request.Bytes);
+        CheckAreaFile(area?.Area, request.ContentType, request.Bytes, await MayUploadLargeAsync(user, cancellationToken));
         if (area is { Access: not null })
             request.PrivateTo = new MediaAudience { Permission = area.Area.Audience.Node, ScopeId = area.ScopeId };
         else if (area is not null && MediaTypes.IsFont(request.ContentType))
@@ -78,7 +78,7 @@ internal sealed class MediaLibrary(
 
     private sealed record AreaUpload(MediaSystemArea Area, string ScopeId, IMediaAreaAccess? Access);
 
-    internal static void CheckAreaFile(MediaSystemArea? area, string contentType, long bytes)
+    internal static void CheckAreaFile(MediaSystemArea? area, string contentType, long bytes, bool mayUploadLarge = false)
     {
         if (area?.Files is not { } files)
         {
@@ -89,11 +89,17 @@ internal sealed class MediaLibrary(
 
         AreaFileType type = files.FirstOrDefault(file => string.Equals(file.ContentType, contentType, StringComparison.OrdinalIgnoreCase))
             ?? throw Invalid($"'{contentType}' files can't be added here. Use one of: {string.Join(", ", files.Select(file => file.ContentType))}.");
-        if (bytes > type.LargestBytes)
-            throw Invalid($"That file is {MediaSize(bytes)}; files here can be up to {MediaSize(type.LargestBytes)}.");
+        if (bytes > type.LargestFor(mayUploadLarge))
+            throw Invalid(type.LargerWith is not null && !mayUploadLarge && bytes <= type.LargestWithIt
+                ? $"That file is {MediaSize(bytes)}; you can add up to {MediaSize(type.LargestBytes)}. Church staff with Large uploads can add up to {MediaSize(type.LargestWithIt)}."
+                : $"That file is {MediaSize(bytes)}; files here can be up to {MediaSize(type.LargestFor(mayUploadLarge))}.");
     }
 
-    private static string MediaSize(long bytes) => bytes >= 1024 * 1024 ? $"{bytes / (1024 * 1024)} MB" : $"{Math.Max(1, bytes / 1024)} KB";
+    private async Task<bool> MayUploadLargeAsync(ClaimsPrincipal user, CancellationToken cancellationToken) =>
+        user.Identity?.IsAuthenticated == true && await access.IsAllowedAsync(user, PostMedia.LargeUploadsNode, null, cancellationToken);
+
+    private static string MediaSize(long bytes) =>
+        bytes >= 1024L * 1024 * 1024 ? $"{bytes / (1024d * 1024 * 1024):0.#} GB" : bytes >= 1024 * 1024 ? $"{bytes / (1024 * 1024)} MB" : $"{Math.Max(1, bytes / 1024)} KB";
 
     internal static void CheckUpload(BeginUploadRequest request, bool knownAudience, bool amongAudience, bool mayUploadFonts)
     {
@@ -131,7 +137,7 @@ internal sealed class MediaLibrary(
 
         try
         {
-            CheckAreaFile(pending.Area is { } areaKey ? folders.Area(areaKey) : null, pending.ContentType, content.Bytes);
+            CheckAreaFile(pending.Area is { } areaKey ? folders.Area(areaKey) : null, pending.ContentType, content.Bytes, await MayUploadLargeAsync(user, cancellationToken));
         }
         catch (RpcException)
         {

@@ -25,6 +25,12 @@ level above it (2026-11-09). **Media Viewer** holds `media.view`, and Media decl
 upload) that editing roles in other features bring. The library page is in the admin panel; the upload
 and library components live in Media.Client, so a phone page is a page change, not a rewrite.
 
+**Post media** (2026-11-13, [news.md](news.md)): church news posts (`news` area) and ministry posts (`ministry-posts`)
+take pictures, PDFs, MP4 and QuickTime video and MP3 and M4A audio (`PostMedia.Types`): pictures up to 25 MB, the rest
+up to 100 MB, or 2 GB for holders of `media.uploads.large`, given by the new *Large uploads* role (owner: "allow a
+certain role that allows larger upload sizes for longer videos"). An area's file type can now allow a larger size to
+holders of a permission (`AreaFileType.LargerWith`).
+
 ## Folders (owner, 2026-11-04)
 
 The owner's request: "a folder structure or something similar will be needed... moving things around

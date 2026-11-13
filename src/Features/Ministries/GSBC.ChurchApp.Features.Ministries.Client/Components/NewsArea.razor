@@ -1,4 +1,5 @@
 @inject TimeProvider Clock
+@inject MinistryLinks Links
 
 <Section First="true">
     @if (Page.You.MayPostFor.Count > 0)
@@ -17,7 +18,11 @@
             @foreach (Post post in Page.Posts.Where(post => post.Audience == audience))
             {
                 bool mine = post.From.Length == 0 && Page.You.MayPostFor.Count > 0;
-                @if (mine)
+                @if (Links.PostPages)
+                {
+                    <a class="ministry-item ministry-item--link" id="@($"post-{post.Id}")" @key="post.Id" href="@MinistryLinks.Post(post.MinistryId, post.Id)">@Item(post)</a>
+                }
+                else if (mine)
                 {
                     <button type="button" class="ministry-item" id="@($"post-{post.Id}")" @key="post.Id" @onclick="() => Open(post)">@Item(post)</button>
                 }
@@ -69,7 +74,7 @@
             <span>@MinistryWords.Ago(post.PostedAt, Clock.GetUtcNow().UtcDateTime)@(post.EditedAt is null ? "" : " · edited")</span>
             @if (post.WholeChurch.Length > 0)
             {
-                <span>@post.WholeChurch</span>
+                <span class="ministry-item__church">@post.WholeChurch</span>
             }
         </span>
     </text>;

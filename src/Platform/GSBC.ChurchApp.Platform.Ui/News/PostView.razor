@@ -1,0 +1,61 @@
+@using GSBC.ChurchApp.Platform.Contracts.Content
+@using GSBC.ChurchApp.Platform.Icons
+@using GSBC.ChurchApp.Platform.Ui.Content
+@inject Shell Shell
+
+<article class="post-view">
+    <MediaStrip Content="Content" About="@Title" />
+    <header class="post-view__head">
+        <h1 class="post-view__title">@Title</h1>
+        <p class="post-view__meta">
+            @if (From.Length > 0)
+            {
+                @if (FromHref.Length > 0)
+                {
+                    <a class="post-view__from" href="@FromHref"><Icon Name="@AppIcons.Ministries" />@From</a>
+                }
+                else
+                {
+                    <span class="post-view__from"><Icon Name="@AppIcons.Ministries" />@From</span>
+                }
+            }
+            @if (Author.Length > 0)
+            {
+                <span>@Author</span>
+            }
+            <span>@When</span>
+        </p>
+        @Status
+    </header>
+    @if (!Content.IsEmpty)
+    {
+        <RichTextView Content="Content" Class="post-view__body" About="@Title" SkipLeadingMedia="MediaStrip.Leads(Content)" />
+    }
+    @if (LinkPath.Length > 0)
+    {
+        <div class="post-view__link">
+            @if (LinkTargets.KindOf(LinkPath) == LinkKind.InApp)
+            {
+                <Button Block="true" Icon="@AppIcons.PlacesInTheApp" Href="@LinkTargets.InAppRoute(LinkPath)">@LinkLabel</Button>
+            }
+            else
+            {
+                <Button Block="true" Icon="external-link" OnClick="() => Shell.OpenExternalAsync(LinkPath)">@LinkLabel</Button>
+            }
+        </div>
+    }
+    @ChildContent
+</article>
+
+@code {
+    [Parameter, EditorRequired] public required string Title { get; set; }
+    [Parameter, EditorRequired] public required RichText Content { get; set; }
+    [Parameter] public string Author { get; set; } = "";
+    [Parameter] public string From { get; set; } = "";
+    [Parameter] public string FromHref { get; set; } = "";
+    [Parameter] public string When { get; set; } = "";
+    [Parameter] public string LinkPath { get; set; } = "";
+    [Parameter] public string LinkLabel { get; set; } = "";
+    [Parameter] public RenderFragment? Status { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}

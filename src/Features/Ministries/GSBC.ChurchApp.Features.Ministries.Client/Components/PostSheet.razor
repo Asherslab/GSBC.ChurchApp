@@ -1,4 +1,8 @@
+@using GSBC.ChurchApp.Platform.Client.Uploads
+@using GSBC.ChurchApp.Platform.Contracts.Content
+@using GSBC.ChurchApp.Platform.Ui.News
 @inject IMinistryWrites Ministries
+@inject FileUploads Uploads
 @inject TimeProvider Clock
 
 <UnsavedGuard Changed="() => Open" Editing="Draft" State="() => Shape" What="this post" />
@@ -16,19 +20,22 @@
             <SelectField Label="Which Sunday" Options="SundayChoices" Value="@Draft.Sunday" ValueChanged="value => Draft.Sunday = value" />
             <ToggleRow Title="@SundayPosts.NoClass" Description="Coming up shows the Sunday struck through" Checked="Draft.NoClass" CheckedChanged="NoClassChanged" />
         }
-        <TextField Label="Title" @bind-Value="Draft.Title" MaxLength="120" Required="true" />
-        <TextField Label="What to say" @bind-Value="Draft.Body" Multiline="true" MaxLength="4000" />
-        <Segmented TValue="string" Label="Who it's for" ShowLabel="true" Stacked="true" Options="Audiences" Value="Draft.Audience" ValueChanged="value => Draft.Audience = value" />
-        <p class="ministry-who">@MinistryWords.WhoReads(Draft.Audience, Page.Ministry)</p>
-        <ToggleRow Title="Important" Description="Sends a notification to everyone it's for, straight away" @bind-Checked="Draft.Important" />
-        @if (Draft is { Audience: Contracts.Audiences.Everyone, Important: true })
-        {
-            <ToggleRow Title="Ask to send it to the whole church" Description="Church staff decide, as for any announcement" @bind-Checked="Draft.AskWholeChurch" />
-        }
+        <PostEditor @ref="_editor" Title="@Draft.Title" TitleChanged="title => Draft.Title = title" Blocks="_blocks" OnChanged="() => _changes++"
+                    SettingsInline="true" SettingsTitle="Who it's for and telling them" SettingsSummary="@Summary">
+            <Settings>
+                <Segmented TValue="string" Label="Who it's for" ShowLabel="true" Stacked="true" Options="Audiences" Value="Draft.Audience" ValueChanged="value => Draft.Audience = value" />
+                <p class="ministry-who">@MinistryWords.WhoReads(Draft.Audience, Page.Ministry)</p>
+                <ToggleRow Title="Important" Description="Sends a notification to everyone it's for, straight away" @bind-Checked="Draft.Important" />
+                @if (Draft.Audience == Contracts.Audiences.Everyone && !MinistryLogic.IsHidden(Page.Ministry))
+                {
+                    <ToggleRow Title="Ask for church news" Description="Church staff can put it in the News tab for the whole church, saying it's from this ministry" @bind-Checked="Draft.AskWholeChurch" />
+                }
+            </Settings>
+        </PostEditor>
         <Notice Tone="NoticeTone.Warning" Text="@_problem" />
     </ChildContent>
     <Actions>
-        <SaveBar Block="true" Label="@(Draft.Id.Length == 0 ? MinistryWords.PostFor(Draft.Audience, Page.Ministry) : "Save")" Busy="_busy" OnSave="SaveAsync"
+        <SaveBar Label="@(Draft.Id.Length == 0 ? MinistryWords.PostFor(Draft.Audience, Page.Ministry) : "Save")" Busy="_busy" OnSave="SaveAsync" OnCancel="() => OpenChanged.InvokeAsync(false)" New="@(Draft.Id.Length == 0)"
                  Blocked="@(Draft.Title.Trim().Length == 0 ? "Give it a title to post it." : null)" />
     </Actions>
 </Sheet>
@@ -53,7 +60,34 @@
     [Parameter, EditorRequired] public required Post Draft { get; set; }
     [Parameter] public EventCallback OnSaved { get; set; }
 
-    private object Shape => (Draft.Title, Draft.Body, Draft.Audience, Draft.Important, Draft.AskWholeChurch, Draft.Sunday, Draft.NoClass);
+    private PostEditor? _editor;
+    private List<PostBlock> _blocks = [];
+    private int _changes;
+    private Post? _loadedFor;
+
+    private object Shape => (Draft.Title, _changes, Draft.Audience, Draft.Important, Draft.AskWholeChurch, Draft.Sunday, Draft.NoClass);
+
+    protected override void OnParametersSet()
+    {
+        if (ReferenceEquals(_loadedFor, Draft))
+            return;
+        _loadedFor = Draft;
+        _blocks = PostBlocks.Of(Draft.Content ?? PlainText.AsRichText(Draft.Body));
+        if (_blocks.Count == 0)
+            _blocks.Add(new PostBlock { Kind = PostBlockKind.Text });
+        _changes = 0;
+    }
+
+    private string Summary => string.Join(" · ", new[]
+    {
+        MinistryWords.Short(Draft.Audience, Page.Ministry),
+        Draft.Important ? "Notifies them" : "No notification",
+        Draft.AskWholeChurch && Draft.Audience == Contracts.Audiences.Everyone ? "Asks for church news" : "",
+    }.Where(part => part.Length > 0));
+
+    private UploadTarget Target => Draft.Audience == Contracts.Audiences.Everyone
+        ? new UploadTarget(Area: MinistryFileArea.PostsKey, AreaScopeId: Page.Ministry.Id)
+        : new UploadTarget(PrivateTo: MinistriesPermissions.TeamViewNode, PrivateToScope: Page.Ministry.Id, Area: MinistryFileArea.PostsKey, AreaScopeId: Page.Ministry.Id);
 
     private IReadOnlyList<SegmentOption<string>> Audiences =>
         Page.You.MayPostFor.Select(audience => new SegmentOption<string>(audience, MinistryWords.Short(audience, Page.Ministry))).ToList();
@@ -80,13 +114,24 @@
 
     public static Post DraftOf(Post? post, MinistryPage page, string? audience = null) => new()
     {
-        Id = post?.Id ?? "", Title = post?.Title ?? "", Body = post?.Body ?? "", Important = post?.Important ?? false,
+        Id = post?.Id ?? "", Title = post?.Title ?? "", Body = post?.Body ?? "", Content = post?.Content, Important = post?.Important ?? false,
+        AskWholeChurch = post?.ChurchNews is ChurchNewsStates.Asked or ChurchNewsStates.Shared,
         Sunday = post?.Sunday ?? "", NoClass = post?.NoClass ?? false,
         Audience = post?.Audience ?? (audience is not null && page.You.MayPostFor.Contains(audience) ? audience
             : page.You.MayPostFor.Contains(Contracts.Audiences.Team) ? Contracts.Audiences.Team : page.You.MayPostFor.FirstOrDefault() ?? ""),
     };
 
-    private Task SaveAsync() => RunAsync(() => Ministries.SavePostAsync(Page.Ministry.Id, Draft));
+    private Task SaveAsync() => RunAsync(async () =>
+    {
+        if (_editor is not null && await _editor.UploadChosenAsync(Target) is { } problem)
+            throw new RpcException(new Status(StatusCode.FailedPrecondition, problem));
+        Draft.Content = _editor?.Content ?? PostBlocks.ToRichText(_blocks);
+        Draft.Body = PlainText.Of(Draft.Content);
+        List<QueuedUpload> uploads = (_editor?.WaitingFiles() ?? [])
+            .Select(media => Uploads.For(media, MediaSlot.Id(MinistryFileArea.UploadedInPostSave), Target with { AltText = media.AltText }))
+            .OfType<QueuedUpload>().ToList();
+        await Ministries.SavePostAsync(Page.Ministry.Id, Draft, uploads);
+    });
 
     private IReadOnlyList<MenuItem> More =>
         [this.Item("Delete the post…", () => _deleting = true, "trash-2", danger: true)];

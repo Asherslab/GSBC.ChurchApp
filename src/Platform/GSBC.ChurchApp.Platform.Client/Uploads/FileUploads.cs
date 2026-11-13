@@ -59,6 +59,8 @@ public sealed class FileUploads(IFileShelf shelf, IServiceProvider services)
         return Placeholder(kept, "");
     }
 
+    public string? HashOf(MediaRef media) => media.Url is { } preview && _kept.TryGetValue(preview, out StagedFile? file) && file.Sha256.Length > 0 ? file.Sha256 : null;
+
     public static bool IsWaiting(MediaRef? media) => media is { Id.Length: 0, Key.Length: 0, Url.Length: > 0 };
 
     public QueuedUpload? For(MediaRef? media, MediaSlot slot, UploadTarget? target = null) =>

@@ -43,6 +43,113 @@
     border-radius: var(--radius-inner);
 }
 
+.rich-text-figure figcaption,
+.rich-text-gallery figcaption {
+    margin-top: var(--space-xs);
+    font-size: var(--text-caption);
+    line-height: 1.4;
+    color: var(--ink-2);
+}
+
+.rich-text-figure .picture-open {
+    display: block;
+    width: 100%;
+}
+
+.rich-text-video,
+.rich-text-figure--embed .video-embed {
+    display: block;
+    width: 100%;
+    border-radius: var(--radius-inner);
+    background: var(--video-ground);
+}
+
+.rich-text-gallery {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-xs);
+}
+
+.rich-text-gallery[data-count="3"] > :first-child {
+    grid-column: 1 / -1;
+}
+
+.rich-text-gallery__item {
+    margin: 0;
+    min-width: 0;
+}
+
+.rich-text-gallery__item .picture-open {
+    display: block;
+    width: 100%;
+}
+
+.rich-text-gallery__picture {
+    display: block;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 4 / 3;
+    object-fit: cover;
+    border-radius: var(--radius-inner);
+}
+
+.rich-text-gallery[data-count="3"] > :first-child .rich-text-gallery__picture {
+    aspect-ratio: 16 / 9;
+}
+
+.rich-text-audio {
+    display: grid;
+    gap: var(--space-sm);
+    padding: var(--space-md) var(--space-md);
+    border-radius: var(--radius-inner);
+    background: var(--sand);
+}
+
+.rich-text-audio__title {
+    font-size: var(--text-row);
+    font-weight: 600;
+}
+
+.rich-text-file {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    min-height: var(--row);
+    padding: var(--space-sm) var(--space-md);
+    border-radius: var(--radius-inner);
+    background: var(--sand);
+    color: var(--ink);
+    text-decoration: none;
+}
+
+.rich-text-file__icon {
+    display: grid;
+    place-items: center;
+    width: 34px;
+    height: 34px;
+    flex: none;
+    border-radius: var(--radius-tile);
+    background: color-mix(in srgb, var(--live) 16%, transparent);
+    color: var(--accent);
+}
+
+.rich-text-file__text {
+    display: grid;
+    flex: 1;
+    min-width: 0;
+}
+
+.rich-text-file__name {
+    font-size: var(--text-row);
+    font-weight: 600;
+    overflow-wrap: anywhere;
+}
+
+.rich-text-file__weight {
+    font-size: var(--text-caption);
+    color: var(--ink-2);
+}
+
 .rich-text-editor {
     display: grid;
     gap: 8px;

@@ -49,7 +49,7 @@ public sealed class RichTextTests
 
         Assert.Empty(RichTextRules.ProblemsWith(new RichText { Markdown = "![The hall](media:photo)", Media = [photo] }));
         Assert.Contains("isn't in the media library", Assert.Single(RichTextRules.ProblemsWith(new RichText { Markdown = "![The hall](media:other)", Media = [photo] })));
-        Assert.Contains("isn't an image", Assert.Single(RichTextRules.ProblemsWith(new RichText { Markdown = "![Notes](media:notes)", Media = [notes] })));
+        Assert.Contains("isn't a picture", Assert.Single(RichTextRules.ProblemsWith(new RichText { Markdown = "![Notes](media:notes)", Media = [notes] })));
         Assert.Contains("on a line of its own", Assert.Single(RichTextRules.ProblemsWith(new RichText { Markdown = "Look ![x](https://tracker.example/p.gif) here" })));
     }
 
@@ -91,9 +91,79 @@ public sealed class RichTextTests
                 Assert.True(list.Items[0].Nested?.Ordered);
             },
             block => Assert.Equal(2, Assert.IsType<QuoteBlock>(block).Paragraphs.Count),
-            block => Assert.Equal(("hall", "The hall"), (Assert.IsType<ImageBlock>(block).MediaId, ((ImageBlock)block).Alt)),
+            block => Assert.Equal(("hall", "The hall"), (Assert.IsType<MediaBlock>(block).MediaId, ((MediaBlock)block).Alt)),
             block => Assert.Equal("# not a heading, *not italic*", Assert.IsType<TextRun>(Assert.Single(Assert.IsType<ParagraphBlock>(block).Content)).Text));
     }
+
+    [Fact]
+    public void PostsCarryCaptionedPicturesGalleriesVideoAudioFilesAndVideoLinks()
+    {
+        RichText post = new()
+        {
+            Markdown = """
+                ![The choir](media:choir "Carols on the lawn")
+                ![The lawn](media:lawn)
+                ![Candles](media:candles "Lit at 7pm")
+
+                ![Camp highlights](media:camp)
+
+                ![The talk](media:talk "Saturday night")
+
+                ![Registration form](media:form)
+
+                ![Christmas Eve](https://youtu.be/dQw4w9WgXcQ)
+                """,
+            Media = [Picture("choir"), Picture("lawn"), Picture("candles"), Kind("camp", "video/mp4"), Kind("talk", "audio/mpeg"), Kind("form", "application/pdf")],
+        };
+
+        RichTextDocument document = RichTextParser.Parse(post.Markdown);
+
+        Assert.Empty(RichTextRules.ProblemsWith(post, allowed: RichTextMedia.Posts));
+        Assert.Collection(document.Blocks,
+            block => Assert.Equal(
+                [("choir", "Carols on the lawn"), ("lawn", ""), ("candles", "Lit at 7pm")],
+                Assert.IsType<GalleryBlock>(block).Items.Select(item => (item.MediaId, item.Caption))),
+            block => Assert.Equal("camp", Assert.IsType<MediaBlock>(block).MediaId),
+            block => Assert.Equal("Saturday night", Assert.IsType<MediaBlock>(block).Caption),
+            block => Assert.Equal("Registration form", Assert.IsType<MediaBlock>(block).Alt),
+            block => Assert.Equal(new VideoLink(VideoSite.YouTube, "dQw4w9WgXcQ"), Assert.IsType<EmbedBlock>(block).Video));
+    }
+
+    [Fact]
+    public void OnlyPicturesGoWhereOnlyPicturesAreAllowed()
+    {
+        RichText withVideo = new() { Markdown = "![Camp](media:camp)\n\n![Eve](https://vimeo.com/76979871)", Media = [Kind("camp", "video/mp4")] };
+
+        IReadOnlyList<string> problems = RichTextRules.ProblemsWith(withVideo);
+
+        Assert.Contains(problems, problem => problem.Contains("isn't a picture"));
+        Assert.Contains(problems, problem => problem.Contains("Videos can't be shown in here"));
+    }
+
+    [Theory]
+    [InlineData("https://youtube.com.evil.example/watch?v=dQw4w9WgXcQ")]
+    [InlineData("http://www.youtube.com/watch?v=dQw4w9WgXcQ")]
+    [InlineData("https://www.youtube.com/watch?v=dQw4w9WgXcQ\"><script>")]
+    [InlineData("https://vimeo.com/76979871/../../evil")]
+    [InlineData("https://tracker.example/p.gif")]
+    public void OnlyYouTubeAndVimeoLinksBecomePlayers(string link)
+    {
+        RichTextDocument document = RichTextParser.Parse($"![Video]({link})");
+
+        Assert.Empty(document.Videos);
+        Assert.Contains(document.Problems, problem => problem.Contains("on a line of its own"));
+    }
+
+    [Theory]
+    [InlineData("https://www.youtube.com/watch?v=dQw4w9WgXcQ&t=30", "https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ?rel=0&playsinline=1")]
+    [InlineData("https://m.youtube.com/shorts/dQw4w9WgXcQ", "https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ?rel=0&playsinline=1")]
+    [InlineData("https://vimeo.com/76979871", "https://player.vimeo.com/video/76979871?dnt=1")]
+    public void APlayerIsBuiltFromTheVideosIdOnly(string link, string player) =>
+        Assert.Equal(player, VideoLink.Of(link)?.PlayerUrl);
+
+    private static MediaRef Picture(string id) => Kind(id, "image/jpeg");
+
+    private static MediaRef Kind(string id, string contentType) => new() { Id = id, ContentType = contentType, FileName = id };
 
     [Fact]
     public void TextThatNeverClosesItsMarksStillParsesQuickly()

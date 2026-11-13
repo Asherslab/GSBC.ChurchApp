@@ -1,0 +1,316 @@
+@using GSBC.ChurchApp.Platform.Client.Uploads
+@using GSBC.ChurchApp.Platform.Contracts.Content
+@using GSBC.ChurchApp.Platform.Contracts.Media
+@using GSBC.ChurchApp.Platform.Ui.Content
+@inject FileUploads Uploads
+@inject IServiceProvider Services
+
+<div class="post-editor">
+    <TextField Label="Title" Value="@Title" ValueChanged="TitleChangedAsync" MaxLength="120" Required="true" />
+
+    @if (Blocks.Count > 0)
+    {
+        <ReorderList TItem="PostBlock" Items="Blocks" Key="block => block.Key" Name="Describe" Label="The post, block by block" OnReordered="ReorderedAsync"
+                     More="BlockActions" Class="post-editor__blocks" RowClass="RowClass">
+            <ItemTemplate Context="block">
+                @BlockBody(block)
+            </ItemTemplate>
+        </ReorderList>
+    }
+    else
+    {
+        <p class="post-editor__empty">Add text, a heading, pictures, video, audio or a file. Move them by their handles.</p>
+    }
+
+    <div class="post-editor__add" role="group" aria-label="Add to the post">
+        <span class="post-editor__add-label">Add</span>
+        <button type="button" class="post-editor__chip" @onclick="() => AddAsync(new PostBlock { Kind = PostBlockKind.Text })"><Icon Name="notebook-pen" Size="IconSize.Small" />Text</button>
+        <button type="button" class="post-editor__chip" @onclick="() => AddAsync(new PostBlock { Kind = PostBlockKind.Heading })"><Icon Name="bulletin" Size="IconSize.Small" />Heading</button>
+        @Pick("Picture", "image", PickableFiles.Pictures, multiple: true, into: null)
+        @Pick("Video", "video", PickableFiles.Videos, multiple: false, into: null)
+        <button type="button" class="post-editor__chip" @onclick="() => AddAsync(new PostBlock { Kind = PostBlockKind.VideoLink })"><Icon Name="link" Size="IconSize.Small" />Video link</button>
+        @Pick("Audio", "mic", PickableFiles.Audio, multiple: false, into: null)
+        @Pick("File", "file", PickableFiles.Documents, multiple: false, into: null)
+    </div>
+    <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+
+    @if (Settings is not null && SettingsInline)
+    {
+        <section class="post-editor__inline-settings" aria-label="@SettingsTitle">
+            <span class="post-text__shown-label">@SettingsTitle</span>
+            @Settings
+        </section>
+    }
+    else if (Settings is not null)
+    {
+        <button type="button" class="post-editor__settings" aria-label="@($"{SettingsTitle}: {SettingsSummary}")" @onclick="() => _settings = true">
+            <Icon Name="users" />
+            <span class="post-editor__settings-text">@SettingsSummary</span>
+            <Icon Name="chevron-right" Size="IconSize.Small" />
+        </button>
+    }
+    @foreach (string problem in Problems)
+    {
+        <small class="message">@problem</small>
+    }
+</div>
+
+@if (Settings is not null && !SettingsInline)
+{
+    <Sheet Open="_settings" OpenChanged="open => _settings = open" Title="@SettingsTitle">
+        <ChildContent>@Settings</ChildContent>
+        <Actions>
+            <Button Block="true" OnClick="() => _settings = false">Done</Button>
+        </Actions>
+    </Sheet>
+}
+
+@code {
+    private readonly Dictionary<string, MediaRef> _waiting = [];
+    private readonly Dictionary<string, ChosenFile> _chosen = [];
+    private const long LargestPreview = 8L * 1024 * 1024;
+    private bool _settings;
+    private string? _problem;
+
+    [Parameter, EditorRequired] public required string Title { get; set; }
+    [Parameter] public EventCallback<string> TitleChanged { get; set; }
+    [Parameter, EditorRequired] public required List<PostBlock> Blocks { get; set; }
+    [Parameter] public EventCallback OnChanged { get; set; }
+    [Parameter] public RenderFragment? Settings { get; set; }
+    [Parameter] public string SettingsTitle { get; set; } = "Who, when and telling people";
+    [Parameter] public string SettingsSummary { get; set; } = "";
+    [Parameter] public bool SettingsInline { get; set; }
+
+    public RichText Content => PostBlocks.ToRichText(Blocks);
+
+    public IReadOnlyList<MediaRef> WaitingFiles()
+    {
+        HashSet<string> used = [.. Content.Media.Select(media => media.Id)];
+        return _waiting.Where(entry => used.Contains(entry.Key)).Select(entry => entry.Value).ToList();
+    }
+
+    private IReadOnlyList<string> Problems => RichTextRules.ProblemsWith(Content, allowed: RichTextMedia.Posts);
+
+    private bool Queues => Uploads.CanQueue;
+
+    private IDirectUploads? Direct => Services.GetService(typeof(IDirectUploads)) as IDirectUploads;
+
+    private RenderFragment Pick(string label, string icon, PickableFiles kinds, bool multiple, PostBlock? into) => @<text>
+        @if (Queues)
+        {
+            <FilePick Label="@label" Kinds="kinds" Multiple="multiple" Limit="@(multiple ? 12 : 1)" Class="post-editor__chip" OnPicked="media => PickedAsync(media, into)">
+                <Icon Name="@icon" Size="IconSize.Small" />@(context ? "Adding…" : label)
+            </FilePick>
+        }
+        else if (Direct is not null)
+        {
+            <FilePick Label="@label" Kinds="kinds" Multiple="multiple" Limit="@(multiple ? 12 : 1)" Class="post-editor__chip" OnChosen="chosen => KeepChosenAsync(chosen, into)">
+                <Icon Name="@icon" Size="IconSize.Small" />@(context ? "Adding…" : label)
+            </FilePick>
+        }
+    </text>;
+
+    private RenderFragment BlockBody(PostBlock block) => @<div class="post-block post-block--@block.Kind.ToString().ToLowerInvariant()">
+        @switch (block.Kind)
+        {
+            case PostBlockKind.Text:
+                <PostTextBlock Block="block" OnChanged="ChangedAsync" />
+                break;
+            case PostBlockKind.Heading:
+                <TextField Label="@(block.Smaller ? "Subheading" : "Heading")" Value="@block.Text" ValueChanged="text => SetAsync(() => block.Text = text)" MaxLength="120" />
+                break;
+            case PostBlockKind.VideoLink:
+                <TextField Label="YouTube or Vimeo link" Value="@block.Link" ValueChanged="link => SetAsync(() => block.Link = link)" Type="url"
+                           Hint="@(block.Link.Trim().Length == 0 ? "Paste the video's address" : VideoLink.Of(block.Link) is { } video ? $"A {video.SiteName} video. It plays when the phone is online." : "That isn't a YouTube or Vimeo video's address.")" />
+                <TextField Label="Caption" Value="@block.Caption" ValueChanged="caption => SetAsync(() => block.Caption = caption)" MaxLength="200" />
+                break;
+            default:
+                <span class="post-block__label"><Icon Name="@KindIcon(block.Kind)" Size="IconSize.Small" />@KindLabel(block)</span>
+                @if (block.Kind == PostBlockKind.Pictures)
+                {
+                    <div class="post-block__thumbs">
+                        @foreach (MediaRef picture in block.Media)
+                        {
+                            <span class="post-block__thumb" @key="picture.Id">
+                                <MediaImage Media="picture" Size="MediaSizeName.Thumbnail" Alt="@picture.AltText" />
+                                <button type="button" class="post-block__remove" data-look-bleed aria-label="@($"Take out {Name(picture)}")" @onclick="() => RemovePictureAsync(block, picture)"><Icon Name="x" Size="IconSize.Small" /></button>
+                            </span>
+                        }
+                        @Pick("Add", "plus", PickableFiles.Pictures, multiple: true, into: block)
+                    </div>
+                }
+                else if (block.Kind == PostBlockKind.Video && block.Media.FirstOrDefault() is { } clip)
+                {
+                    <MediaVideo Media="clip" Label="@Name(clip)" Class="post-block__video" />
+                }
+                else if (block.Media.FirstOrDefault() is { } file)
+                {
+                    <span class="post-block__file">@Name(file) · @MediaSizes.Weight(file.Bytes)</span>
+                }
+                <TextField Label="@(block.Kind == PostBlockKind.Audio ? "What it is" : "Caption")" Value="@block.Caption"
+                           ValueChanged="caption => SetAsync(() => block.Caption = caption)" MaxLength="200" />
+                break;
+        }
+    </div>;
+
+    private IReadOnlyList<MenuItem> BlockActions(PostBlock block) =>
+    [
+        .. block.Kind == PostBlockKind.Heading
+            ? [this.Item(block.Smaller ? "Make it a heading" : "Make it a subheading", () => SetAsync(() => block.Smaller = !block.Smaller), "bulletin", startsGroup: true)]
+            : Array.Empty<MenuItem>(),
+        this.Item("Take it out", () => RemoveAsync(block), "trash-2", danger: true, startsGroup: true),
+    ];
+
+    private async Task TitleChangedAsync(string title)
+    {
+        Title = title;
+        await TitleChanged.InvokeAsync(title);
+    }
+
+    private Task AddAsync(PostBlock block)
+    {
+        Blocks.Add(block);
+        return ChangedAsync();
+    }
+
+    private Task RemoveAsync(PostBlock block)
+    {
+        Blocks.Remove(block);
+        return ChangedAsync();
+    }
+
+    private Task RemovePictureAsync(PostBlock block, MediaRef picture)
+    {
+        block.Media.Remove(picture);
+        if (block.Media.Count == 0)
+            Blocks.Remove(block);
+        return ChangedAsync();
+    }
+
+    private Task ReorderedAsync(IReadOnlyList<PostBlock> order)
+    {
+        List<PostBlock> ordered = [.. order];
+        Blocks.Clear();
+        Blocks.AddRange(ordered);
+        return ChangedAsync();
+    }
+
+    private Task SetAsync(Action change)
+    {
+        change();
+        return ChangedAsync();
+    }
+
+    private Task ChangedAsync() => OnChanged.InvokeAsync();
+
+    private Task PickedAsync(MediaRef media, PostBlock? into)
+    {
+        string id = UploadedMedia.PlaceholderId(Uploads.HashOf(media) ?? Guid.NewGuid().ToString("N"));
+        _waiting[id] = media;
+        return PlaceAsync(new MediaRef
+        {
+            Id = id, ContentType = media.ContentType, Bytes = media.Bytes, Url = media.Url, FileName = media.FileName, AltText = media.AltText,
+        }, into);
+    }
+
+    private async Task KeepChosenAsync(IReadOnlyList<ChosenFile> chosen, PostBlock? into)
+    {
+        _problem = null;
+        foreach (ChosenFile file in chosen)
+        {
+            string id = $"chosen-{Guid.NewGuid():N}";
+            _chosen[id] = file;
+            await PlaceAsync(new MediaRef
+            {
+                Id = id, ContentType = file.ContentType, Bytes = file.File.Size, FileName = file.File.Name, Url = await PreviewAsync(file),
+            }, into);
+        }
+    }
+
+    private static async Task<string?> PreviewAsync(ChosenFile file)
+    {
+        if (!file.ContentType.StartsWith("image/", StringComparison.Ordinal) || file.File.Size > LargestPreview)
+            return null;
+        await using Stream content = file.File.OpenReadStream(LargestPreview);
+        using MemoryStream copy = new();
+        await content.CopyToAsync(copy);
+        return $"data:{file.ContentType};base64,{Convert.ToBase64String(copy.ToArray())}";
+    }
+
+    public async Task<string?> UploadChosenAsync(UploadTarget target)
+    {
+        if (Direct is not { } direct)
+            return null;
+        foreach ((string id, ChosenFile file) in _chosen.ToList())
+        {
+            PostBlock? holder = Blocks.FirstOrDefault(block => block.Media.Any(media => media.Id == id));
+            if (holder is null)
+            {
+                _chosen.Remove(id);
+                continue;
+            }
+            try
+            {
+                await using Stream content = file.File.OpenReadStream(maxAllowedSize: LargestUpload);
+                MediaRef sent = await direct.UploadAsync(content, file.File.Name, file.ContentType, file.File.Size, target);
+                int at = holder.Media.FindIndex(media => media.Id == id);
+                holder.Media[at] = sent;
+                _chosen.Remove(id);
+            }
+            catch (Exception exception) when (exception is Grpc.Core.RpcException or IOException or HttpRequestException)
+            {
+                return exception is Grpc.Core.RpcException rpc ? rpc.Status.Detail : $"{file.File.Name} couldn't be added: {exception.Message}";
+            }
+        }
+        return null;
+    }
+
+    private Task PlaceAsync(MediaRef media, PostBlock? into)
+    {
+        PostBlockKind kind = PostBlocks.KindOf(media);
+        if (into is { Kind: PostBlockKind.Pictures } && kind == PostBlockKind.Pictures)
+            into.Media.Add(media);
+        else if (kind == PostBlockKind.Pictures && Blocks is [.., { Kind: PostBlockKind.Pictures } last] && _addingTo == last.Key)
+            last.Media.Add(media);
+        else
+        {
+            PostBlock block = new() { Kind = kind, Media = [media] };
+            Blocks.Add(block);
+            _addingTo = kind == PostBlockKind.Pictures ? block.Key : null;
+        }
+        return ChangedAsync();
+    }
+
+    private string? _addingTo;
+
+    private const long LargestUpload = 2L * 1024 * 1024 * 1024;
+
+    private static string? RowClass(PostBlock block) => block.Kind == PostBlockKind.Heading ? "post-block-row--heading" : null;
+
+    private static string Describe(PostBlock block) => block.Kind switch
+    {
+        PostBlockKind.Text => "text",
+        PostBlockKind.Heading => block.Smaller ? "subheading" : "heading",
+        PostBlockKind.Pictures => block.Media.Count > 1 ? "gallery" : "picture",
+        PostBlockKind.VideoLink => "video link",
+        _ => block.Kind.ToString().ToLowerInvariant(),
+    };
+
+    private static string KindLabel(PostBlock block) => block.Kind switch
+    {
+        PostBlockKind.Pictures => block.Media.Count > 1 ? $"Gallery · {block.Media.Count} pictures" : "Picture",
+        PostBlockKind.Video => "Video",
+        PostBlockKind.Audio => "Audio",
+        _ => "File to download",
+    };
+
+    private static string KindIcon(PostBlockKind kind) => kind switch
+    {
+        PostBlockKind.Pictures => "images",
+        PostBlockKind.Video => "video",
+        PostBlockKind.Audio => "mic",
+        _ => "file",
+    };
+
+    private static string Name(MediaRef media) => media.AltText.Length > 0 ? media.AltText : media.FileName;
+}

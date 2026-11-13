@@ -23,6 +23,9 @@ public enum PickableFiles
     Pictures,
     PicturesAndDocuments,
     PicturesAndVideos,
+    Videos,
+    Audio,
+    Documents,
 }
 
 public sealed record QueuedCall(string Method, byte[] Request);

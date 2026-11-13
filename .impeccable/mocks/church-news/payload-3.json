@@ -1,0 +1,46 @@
+{
+  "title": "Church news: writing a post on the phone",
+  "question": "The last one. Staff and ministry leaders write posts on the phone and in the admin panel with the same editor (the admin panel gets a wider version of whichever you pick). Pictures, video, audio and files upload through the outbox, so a post can be written offline and sends when the phone is back online. How should writing one feel?",
+  "options": [
+    {
+      "id": "settings-first",
+      "kind": "assigned",
+      "kicker": "THE ROLL",
+      "label": "Who, when and telling first, then the words",
+      "thesis": "One page in grouped settings: who it's for, the notification (on, with its words and Urgent), when, then the title and the text with a format bar and an Add button for pictures, video, audio and files.",
+      "palette": ["#f3efe8", "#ffffff", "#2a3d5e", "#00776d"],
+      "materials": ["inset groups on sand", "format bar with Add", "Cancel and Post at the foot"],
+      "viewport": "New post: Who it's for (Everyone), Tell people with the notification on, When (Now or Later), then the post's title.",
+      "risk": "The words, the main thing, start below the fold.",
+      "html": ".impeccable/mocks/church-news/e-a-settings-first.html",
+      "htmlFrame": "390x844"
+    },
+    {
+      "id": "blocks",
+      "kind": "dealt",
+      "label": "The post as blocks you add and move",
+      "thesis": "The post is a list of blocks (text, a heading, a gallery with its caption, a video, a file), each dragged by its handle or changed from its ⋯ menu, with an Add row of Text, Picture, Video, Audio and File; who, when and telling sit on one row that opens its settings.",
+      "palette": ["#ffffff", "#2a3d5e", "#00776d", "#f3efe8"],
+      "materials": ["block cards with handles", "Add chips", "settings summary row"],
+      "viewport": "Title, then a text block, a heading, a gallery of three with its caption (chosen), a YouTube video, the Add row and Everyone · Notification on · Now.",
+      "risk": "The most to build, and long text is split across blocks rather than written in one go.",
+      "html": ".impeccable/mocks/church-news/e-b-blocks.html",
+      "htmlFrame": "390x844"
+    },
+    {
+      "id": "two-steps",
+      "kind": "dealt",
+      "label": "Two steps: write it, then send it",
+      "thesis": "Step 1 is only the words: title, a Write and See it switch, the format bar with Add. Next goes to step 2: who it's for, the notification with a lock-screen preview, and when.",
+      "palette": ["#ffffff", "#2a3d5e", "#00776d", "#f3efe8"],
+      "materials": ["Step 1 of 2", "Write and See it switch", "format bar with Add", "Next in the top bar"],
+      "viewport": "Step 1 of 2: the title, Write chosen, the format bar and the text with its marks, Next at the top right.",
+      "risk": "Two pages to post a quick notice, and the text shows its marks (## and ![…]) while writing.",
+      "html": ".impeccable/mocks/church-news/e-c-two-steps.html",
+      "htmlFrame": "390x844"
+    }
+  ],
+  "reroll": true,
+  "steer": true,
+  "buildPath": { "value": "code" }
+}

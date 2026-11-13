@@ -1,0 +1,130 @@
+@using GSBC.ChurchApp.Platform.Client.Audio
+@using GSBC.ChurchApp.Platform.Client.Media
+@using GSBC.ChurchApp.Platform.Contracts.Content
+@using GSBC.ChurchApp.Platform.Contracts.Media
+@inject IMediaFiles Files
+@inject Shell Shell
+
+@switch (Block)
+{
+    case GalleryBlock gallery:
+        <figure class="rich-text-figure">
+            <div class="rich-text-gallery" data-count="@Math.Min(gallery.Items.Count, 4)">
+                @foreach ((MediaBlock item, int index) in Found(gallery.Items).Select((item, index) => (item, index)))
+                {
+                    <div class="rich-text-gallery__item">
+                        <PictureOpen Label="@($"Open {Describe(item)}")" OnOpen="() => Open(index)">
+                            <MediaImage Media="Media(item)" Alt="@Describe(item)" Size="MediaSizeName.Thumbnail" Class="rich-text-gallery__picture" />
+                        </PictureOpen>
+                    </div>
+                }
+            </div>
+            @if (gallery.Items[0].Caption.Length > 0)
+            {
+                <figcaption>@gallery.Items[0].Caption</figcaption>
+            }
+        </figure>
+        <PictureViewer @bind-Open="_viewing" @bind-Index="_viewingAt" Pictures="Pictures(gallery.Items)" Noun="Picture" About="@About" />
+        break;
+    case MediaBlock single when Content.MediaById(single.MediaId) is { } media:
+        <figure class="rich-text-figure rich-text-figure--@KindName(media)">
+            @switch (RichTextRules.KindOf(media))
+            {
+                case RichTextMedia.Pictures:
+                    <PictureOpen Label="@($"Open {Describe(single)}")" OnOpen="() => Open(0)">
+                        <MediaImage Media="media" Alt="@Describe(single)" Class="rich-text-image" />
+                    </PictureOpen>
+                    <PictureViewer @bind-Open="_viewing" @bind-Index="_viewingAt" Pictures="[media]" Noun="Picture" About="@About" />
+                    break;
+                case RichTextMedia.Video:
+                    <MediaVideo Media="media" Label="@Describe(single)" Class="rich-text-video" />
+                    break;
+                case RichTextMedia.Audio:
+                    @if (_audio is not null)
+                    {
+                        <div class="rich-text-audio">
+                            <span class="rich-text-audio__title">@Describe(single)</span>
+                            <AudioPreview Item="_audio" />
+                        </div>
+                    }
+                    break;
+                default:
+                    <a class="rich-text-file" href="@_download" target="_blank" rel="noopener noreferrer" download="@media.FileName">
+                        <span class="rich-text-file__icon"><Icon Name="file" /></span>
+                        <span class="rich-text-file__text">
+                            <span class="rich-text-file__name">@Describe(single)</span>
+                            <span class="rich-text-file__weight">@FileLine(media)</span>
+                        </span>
+                        <Icon Name="download" />
+                    </a>
+                    break;
+            }
+            @if (single.Caption.Length > 0)
+            {
+                <figcaption>@single.Caption</figcaption>
+            }
+        </figure>
+        break;
+    case EmbedBlock embed:
+        <figure class="rich-text-figure rich-text-figure--embed">
+            @if (embed.Video.Site == VideoSite.YouTube)
+            {
+                <VideoEmbed YouTubeId="@embed.Video.Id" Title="@Titled(embed)" />
+            }
+            else
+            {
+                <div class="video-embed">
+                    <button type="button" class="video-embed__poster" aria-label="@($"Watch {Titled(embed)} on {embed.Video.SiteName}")" @onclick="() => Shell.OpenExternalAsync(embed.Video.WatchUrl)">
+                        <span class="video-embed__play" aria-hidden="true"><Icon Name="play" /></span>
+                    </button>
+                </div>
+            }
+            @if (embed.Title.Length > 0)
+            {
+                <figcaption>@embed.Title</figcaption>
+            }
+        </figure>
+        break;
+}
+
+@code {
+    private bool _viewing;
+    private int _viewingAt;
+    private string? _download;
+    private AudioItem? _audio;
+    private string? _resolvedFor;
+
+    [Parameter, EditorRequired] public required Block Block { get; set; }
+    [Parameter, EditorRequired] public required RichText Content { get; set; }
+    [Parameter] public string About { get; set; } = "";
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (Block is not MediaBlock single || Content.MediaById(single.MediaId) is not { } media || media.IsImage || media.IsVideo || media.Key == _resolvedFor)
+            return;
+        _resolvedFor = media.Key;
+        string? source = await Files.SourceOfAsync(media);
+        _download = source;
+        _audio = media.IsAudio && source is not null ? new AudioItem(media.Id, source, Describe(single), About, About, null, 0) : null;
+    }
+
+    private void Open(int index) => (_viewingAt, _viewing) = (index, true);
+
+    private IEnumerable<MediaBlock> Found(IReadOnlyList<MediaBlock> items) => items.Where(item => Content.MediaById(item.MediaId) is { IsImage: true });
+
+    private IReadOnlyList<MediaRef> Pictures(IReadOnlyList<MediaBlock> items) => Found(items).Select(Media).ToList();
+
+    private MediaRef Media(MediaBlock item) => Content.MediaById(item.MediaId)!;
+
+    private string Describe(MediaBlock item) => item.Alt.Length > 0 ? item.Alt : Content.MediaById(item.MediaId)?.AltText is { Length: > 0 } alt ? alt : Content.MediaById(item.MediaId)?.FileName ?? "";
+
+    private static string Titled(EmbedBlock embed) => embed.Title.Length > 0 ? embed.Title : $"the video on {embed.Video.SiteName}";
+
+    private static string KindName(MediaRef media) => RichTextRules.KindOf(media).ToString().ToLowerInvariant();
+
+    private static string FileLine(MediaRef media)
+    {
+        string extension = Path.GetExtension(media.FileName).TrimStart('.').ToUpperInvariant();
+        return extension.Length > 0 ? $"{extension} · {MediaSizes.Weight(media.Bytes)}" : MediaSizes.Weight(media.Bytes);
+    }
+}

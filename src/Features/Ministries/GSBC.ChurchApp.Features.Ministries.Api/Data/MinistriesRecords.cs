@@ -1,3 +1,5 @@
+using GSBC.ChurchApp.Platform.Api.News;
+
 namespace GSBC.ChurchApp.Features.Ministries.Api.Data;
 
 public sealed class MinistryRecord
@@ -59,6 +61,8 @@ public sealed class PostRecord
     public DateTime PostedAt { get; set; }
     public DateTime? EditedAt { get; set; }
     public DateTime? WholeChurchAskedAt { get; set; }
+    public string? Content { get; set; }
+    public SharedState ChurchNews { get; set; }
     public DateOnly? Sunday { get; set; }
     public bool NoClass { get; set; }
 }

@@ -271,6 +271,16 @@ namespace GSBC.ChurchApp.Features.Ministries.Api.Data.Migrations
                         .HasColumnType("text")
                         .HasColumnName("body");
 
+                    b.Property<string>("ChurchNews")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("church_news");
+
+                    b.Property<string>("Content")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("content");
+
                     b.Property<DateTime?>("EditedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("edited_at");

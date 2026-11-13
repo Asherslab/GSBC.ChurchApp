@@ -39,6 +39,16 @@
 
 button.ministry-item { cursor: pointer; }
 
+a.ministry-item--link { text-decoration: none; -webkit-tap-highlight-color: transparent; }
+
+a.ministry-item--link .ministry-item__body {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  white-space: normal;
+}
+
 .ministry-item__title {
   display: block;
   font-size: var(--text-row);
@@ -66,6 +76,11 @@ button.ministry-item { cursor: pointer; }
 
 .ministry-item__important {
   color: var(--marker-ink);
+  font-weight: 600;
+}
+
+.ministry-item__church {
+  color: var(--accent);
   font-weight: 600;
 }
 

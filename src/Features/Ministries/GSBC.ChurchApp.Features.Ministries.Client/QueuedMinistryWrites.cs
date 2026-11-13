@@ -37,18 +37,26 @@ public sealed class QueuedMinistryWrites(IOutbox outbox, HeldParts held) : IMini
     public Task LinkParentAsync(string ministryId, string childId, string parentId) =>
         SendAsync(MinistryMethods.LinkParent, new LinkParentRequest { MinistryId = ministryId, ChildId = childId, ParentId = parentId });
 
-    public Task SavePostAsync(string ministryId, Post post)
+    public Task SavePostAsync(string ministryId, Post post, IReadOnlyList<QueuedUpload>? uploads = null)
     {
         Post sent = MinistriesContractsModel.Instance.DeepClone(post);
-        return SendAsync(MinistryMethods.SavePost, new PostSave { MinistryId = ministryId, Post = Minted(sent, sent.Id, id => (sent.Id, sent.New) = (id, true)) });
+        return SendAsync(MinistryMethods.SavePost, new PostSave { MinistryId = ministryId, Post = Minted(sent, sent.Id, id => (sent.Id, sent.New) = (id, true)) },
+            uploads ?? []);
     }
+
+    public Task ShareToChurchNewsAsync(string ministryId, string postId, bool tell) =>
+        SendAsync(MinistryMethods.ShareToChurchNews, new ChurchNewsShare { MinistryId = ministryId, Id = postId, Tell = tell });
+
+    public Task TakeOffChurchNewsAsync(string ministryId, string postId) =>
+        SendAsync(MinistryMethods.TakeOffChurchNews, new ItemRef { MinistryId = ministryId, Id = postId });
 
     public Task DeletePostAsync(string ministryId, string id) => SendAsync(MinistryMethods.DeletePost, new ItemRef { MinistryId = ministryId, Id = id });
 
     public Task SaveFileAsync(string ministryId, FileItem file, QueuedUpload? upload = null)
     {
         FileItem sent = MinistriesContractsModel.Instance.DeepClone(file);
-        return SendAsync(MinistryMethods.SaveFile, new FileSave { MinistryId = ministryId, File = Minted(sent, sent.Id, id => (sent.Id, sent.New) = (id, true)) }, upload);
+        return SendAsync(MinistryMethods.SaveFile, new FileSave { MinistryId = ministryId, File = Minted(sent, sent.Id, id => (sent.Id, sent.New) = (id, true)) },
+            upload is null ? [] : [upload]);
     }
 
     public Task DeleteFileAsync(string ministryId, string id) => SendAsync(MinistryMethods.DeleteFile, new ItemRef { MinistryId = ministryId, Id = id });
@@ -113,10 +121,10 @@ public sealed class QueuedMinistryWrites(IOutbox outbox, HeldParts held) : IMini
         return item;
     }
 
-    private async Task SendAsync<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] T>(string method, T request, QueuedUpload? upload = null)
+    private async Task SendAsync<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] T>(string method, T request, IReadOnlyList<QueuedUpload>? uploads = null)
     {
         using MemoryStream body = new();
         MinistriesContractsModel.Instance.Serialize(body, request);
-        await outbox.EnqueueAsync(method, body.ToArray(), upload is null ? [] : [upload]);
+        await outbox.EnqueueAsync(method, body.ToArray(), uploads ?? []);
     }
 }

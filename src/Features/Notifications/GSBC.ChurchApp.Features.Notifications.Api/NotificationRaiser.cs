@@ -138,12 +138,20 @@ internal sealed class NotificationRaiser(
             signal.Wake();
     }
 
-    public async Task<(int People, int Phones)> ReachAsync(NotificationAudience audience, CancellationToken cancellationToken)
+    public async Task RecallAsync(string subject, CancellationToken cancellationToken)
+    {
+        List<Guid> raised = await db.Notifications.Where(record => record.Subject == subject && record.RecalledAt == null)
+            .Select(record => record.Id).ToListAsync(cancellationToken);
+        foreach (Guid notificationId in raised)
+            await RecallAsync(notificationId, cancellationToken);
+    }
+
+    public async Task<NotificationReach> ReachAsync(NotificationAudience audience, CancellationToken cancellationToken)
     {
         Recipients recipients = await NotificationRules.RecipientsAsync(
             new Notification(AnnouncementNotifications.Announcement, audience, "", "") { Actor = null }, holders, people, cancellationToken);
         List<Device> devices = await DevicesAsync(recipients, cancellationToken);
-        return (recipients.People.Count, devices.Count);
+        return new NotificationReach(recipients.People.Count, devices.Count);
     }
 
     private async Task<Dictionary<(string Feed, string RecordId), long>> RowVersionsAsync(

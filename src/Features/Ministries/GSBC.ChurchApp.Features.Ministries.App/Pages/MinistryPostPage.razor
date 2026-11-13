@@ -1,0 +1,8 @@
+@page "/ministries/{Id}/news/{Post}"
+
+<MinistryPostView MinistryId="@Id" PostId="@Post" />
+
+@code {
+    [Parameter] public string Id { get; set; } = "";
+    [Parameter] public string Post { get; set; } = "";
+}

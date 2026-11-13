@@ -46,8 +46,8 @@ day (mocks and review in `.impeccable/mocks/decision/roles/`):
 | | Calendar Publisher | `events.edit`, `events.publish` everywhere | pictures |
 | | Calendar Manager | `events.calendars.manage`, edit and publish everywhere | pictures |
 | | Digest Maker | `events.digest` | |
-| Announcements | Announcements Writer | `notifications.announcements.write` | |
-| | Announcements Sender | write and `send` | |
+| Church news | Church news Writer (was Announcements Writer, 2026-11-13) | `news.write`, earlier announcements | pictures |
+| | Church news Publisher (was Announcements Sender) | write, `news.publish`, recall earlier announcements | pictures |
 | App | App Editor | `config.{hub,appearance,tabs}.edit`, `config.drafts.preview` everywhere | pictures |
 | | App Publisher | `config.*` | pictures |
 | Media | Media Viewer | `media.view` | |

@@ -139,6 +139,15 @@ flowchart LR
         MinistriesClient["Features.Ministries.Client"]
         MinistriesApi["Features.Ministries.Api"]
         MinistriesContracts["Features.Ministries.Contracts"]
+    end
+
+    subgraph News["Features / News"]
+        NewsApp["Features.News.App"]
+        NewsAdmin["Features.News.Admin"]
+        NewsClient["Features.News.Client"]
+        NewsApi["Features.News.Api"]
+        NewsContracts["Features.News.Contracts"]
+    end
 
     subgraph Prayer["Features / Prayer"]
         PrayerApp["Features.Prayer.App"]
@@ -146,7 +155,6 @@ flowchart LR
         PrayerClient["Features.Prayer.Client"]
         PrayerApi["Features.Prayer.Api"]
         PrayerContracts["Features.Prayer.Contracts"]
-    end
     end
 
     subgraph Feedback["Features / Feedback"]
@@ -231,6 +239,7 @@ flowchart LR
         NotificationsTests["Features.Notifications.Api.Tests"]
         PeopleTests["Features.People.Api.Tests"]
         MinistriesTests["Features.Ministries.Api.Tests"]
+        NewsTests["Features.News.Api.Tests"]
         PrayerTests["Features.Prayer.Api.Tests"]
         FeedbackTests["Features.Feedback.Api.Tests"]
         RostersTests["Features.Rosters.Api.Tests"]
@@ -247,10 +256,10 @@ flowchart LR
     HostsAppHost --> HostsApi & HostsGateway & HostsMigrator & HostsWebsite
     HostsWebsite --> SermonsClient & EventsClient
     HostsGateway --> HostsAdmin & AccountsGateway & EventsGateway
-    HostsApp --> AccountsApp & AccessClient & PeopleApp & MinistriesApp & PrayerApp & FeedbackApp & RostersApp & ConfigurationApp & PlatformUi & MediaClient & ReleaseNotesApp & AnalyticsApp & NotificationsApp & SermonsApp & EventsApp
-    HostsAdmin --> PlatformUi & AccountsAdmin & AccessAdmin & PeopleAdmin & MinistriesAdmin & PrayerAdmin & FeedbackAdmin & RostersAdmin & ConfigurationAdmin & MediaAdmin & AnalyticsAdmin & NotificationsAdmin & SermonsAdmin & SermonsImportAdmin & EventsAdmin
-    HostsApi --> AccountsApi & AccessApi & PeopleApi & MinistriesApi & PrayerApi & FeedbackApi & RostersApi & ConfigurationApi & MediaApi & AnalyticsApi & NotificationsApi & SermonsApi & SermonsImportApi & EventsApi & PlatformApi
-    HostsMigrator --> PlatformData & AccountsData & AccessApi & PeopleApi & MinistriesApi & PrayerApi & FeedbackApi & RostersApi & ConfigurationApi & MediaApi & AnalyticsApi & NotificationsApi & SermonsApi & SermonsImportApi & EventsApi
+    HostsApp --> AccountsApp & AccessClient & PeopleApp & MinistriesApp & NewsApp & PrayerApp & FeedbackApp & RostersApp & ConfigurationApp & PlatformUi & MediaClient & ReleaseNotesApp & AnalyticsApp & NotificationsApp & SermonsApp & EventsApp
+    HostsAdmin --> PlatformUi & AccountsAdmin & AccessAdmin & PeopleAdmin & MinistriesAdmin & NewsAdmin & PrayerAdmin & FeedbackAdmin & RostersAdmin & ConfigurationAdmin & MediaAdmin & AnalyticsAdmin & NotificationsAdmin & SermonsAdmin & SermonsImportAdmin & EventsAdmin
+    HostsApi --> AccountsApi & AccessApi & PeopleApi & MinistriesApi & NewsApi & PrayerApi & FeedbackApi & RostersApi & ConfigurationApi & MediaApi & AnalyticsApi & NotificationsApi & SermonsApi & SermonsImportApi & EventsApi & PlatformApi
+    HostsMigrator --> PlatformData & AccountsData & AccessApi & PeopleApi & MinistriesApi & NewsApi & PrayerApi & FeedbackApi & RostersApi & ConfigurationApi & MediaApi & AnalyticsApi & NotificationsApi & SermonsApi & SermonsImportApi & EventsApi
     HostsApp --> AccountsApp & AccessClient & PeopleApp & MinistriesApp & ChatsApp & ConfigurationApp & PlatformUi & MediaClient & ReleaseNotesApp & AnalyticsApp & NotificationsApp & SermonsApp & EventsApp
     HostsAdmin --> PlatformUi & AccountsAdmin & AccessAdmin & PeopleAdmin & MinistriesAdmin & ChatsAdmin & ConfigurationAdmin & MediaAdmin & AnalyticsAdmin & NotificationsAdmin & SermonsAdmin & SermonsImportAdmin & EventsAdmin
     HostsApi --> AccountsApi & AccessApi & PeopleApi & MinistriesApi & ChatsApi & ConfigurationApi & MediaApi & AnalyticsApi & NotificationsApi & SermonsApi & SermonsImportApi & EventsApi & PlatformApi
@@ -300,6 +309,12 @@ flowchart LR
     MinistriesClient --> MinistriesContracts & PlatformClient & PlatformUi & PlatformCommon
     MinistriesApi --> MinistriesContracts & PlatformApi & PlatformCommon
     MinistriesContracts --> PlatformContracts
+
+    NewsApp --> NewsClient
+    NewsAdmin --> NewsClient
+    NewsClient --> NewsContracts & PlatformClient & PlatformUi & PlatformCommon
+    NewsApi --> NewsContracts & PlatformApi & PlatformCommon
+    NewsContracts --> PlatformContracts
 
     PrayerApp --> PrayerClient
     PrayerAdmin --> PrayerClient
@@ -358,6 +373,7 @@ flowchart LR
     NotificationsTests --> NotificationsApi & Testing
     PeopleTests --> PeopleApi & Testing
     MinistriesTests --> MinistriesApi & MinistriesClient & Testing
+    NewsTests --> NewsApi & Testing
     PrayerTests --> PrayerApi & Testing
     FeedbackTests --> FeedbackApi & Testing
     RostersTests --> RostersApi & Testing
@@ -441,6 +457,11 @@ flowchart LR
 | `GSBC.ChurchApp.Features.Chats.App` | The phone's pages: `/chats` and `/chats/{id}` | Yes |
 | `GSBC.ChurchApp.Features.Chats.Admin` | The admin panel's Chats (your own chats on a computer) and Chat safety: reports, chats you may check (reading one is logged with a reason), paused people and the checks log | Yes |
 | `GSBC.ChurchApp.Features.Ministries.Admin` | The admin panel's Ministries page (the tree beside the chosen ministry) and Life Groups set-up for staff | Yes |
+| `GSBC.ChurchApp.Features.News.Contracts` | The `News` service (save, publish or schedule, ask to publish, answer a ministry's ask, delete, try on my phone, the desk and reach), the post message, the `news.posts`, `news.posts.private` and `news.desk` feeds, places, notification kinds and the `news.*` permission nodes | Yes |
+| `GSBC.ChurchApp.Features.News.Api` | Church news (schema `news`): drafts, scheduled and published posts with their notification, ministries' posts shared in through `IChurchNews` (asked, shared, kept in the ministry), recalling a deleted post's notification, the Church news Writer and Publisher roles that took over the announcement roles | No |
+| `GSBC.ChurchApp.Features.News.Client` | The phone's church news reader (its store) and the admin panel's (online), writes through `IWrites` and the outbox with files waiting to upload | Yes |
+| `GSBC.ChurchApp.Features.News.App` | The phone's pages: `/news` (the church, and your ministries' news), `/news/{id}` | Yes |
+| `GSBC.ChurchApp.Features.News.Admin` | The admin panel's Church news desk | Yes |
 | `GSBC.ChurchApp.Features.Prayer.Contracts` | The `Prayer` (app writes) and `Pastoral` (staff) services, request, wall and inbox messages, the `prayer.wall`, `prayer.mine` and `prayer.inbox` feeds, the Hub tile, places, notification kinds and the `prayer.*` permission nodes | Yes |
 | `GSBC.ChurchApp.Features.Prayer.Api` | Prayer requests (schema `prayer`): sending from the app (rate-limited per phone), the pastoral team's notes and follow-up, the moderated prayer wall and its expiry, "I prayed", keeping requests a year; dev sample requests | No |
 | `GSBC.ChurchApp.Features.Prayer.Client` | The phone's prayer store reader and outbox writes (with what this phone sent kept on it), the wall row, the Hub tile, and the pastoral gRPC calls for the admin panel | Yes |
@@ -492,6 +513,7 @@ flowchart LR
 | `GSBC.ChurchApp.Platform.Api.Tests` | Against a real Postgres (in a container): Sync's pruning, compaction and resets converge every phone, and a phone from another database or ahead of it starts again; the admin panel's live watch hears only what it may see, catches up after a drop, and a stream ends with its sign-in; queued email waits out its backoff and then goes | No |
 | `GSBC.ChurchApp.Features.Events.Api.Tests` | Unit: each repeat pattern's dates, breaks and dates not on, specials, the 30-day/12-month window, which feed each row goes in and with which audience, contact details, audiences together and when showing elsewhere widens them; only a publisher shows an event on a calendar that needs one or changes it once shown; this date only vs every date; a calendar for signed-in people can't be added or told to a signed-out phone; reading iCal (repeats, skipped and changed dates, other time zones) and asking with its ETag; addresses on private networks never read; writing calendar files; reminders due at 7 and 2 days and when they settle. Against Postgres: publishing sends a date leaving the window, or a calendar turning private, as deletes; Ask to publish reaches the publishers and publishing shows it; an editor can't reach another calendar's events; a copy on another calendar follows the home event; a private calendar's iCal file only through a valid link of someone it's for (not after their role goes, nor to a signed-out phone with a stale *Calendar added*); a reset link refused | No |
 | `GSBC.ChurchApp.Features.Ministries.Api.Tests` | Unit: ministries nest to any depth and can't loop; who sees each audience; joining follows the setting; a ministry without attendees posts only for everyone or its team; your place in words. Against Postgres: deleting a ministry moves its teams up and removes what's its own; a team-only post never reaches the phone of someone not on the team; a ministry, the directory and Life Groups open from a phone's store exactly as the server shows them | No |
+| `GSBC.ChurchApp.Features.News.Api.Tests` | Against Postgres: a draft never reaches readers and each audience gets its own feed; publishing tells people once, scheduled posts go out once even with two servers; writers can't publish or change what's published; deleting recalls the notification; a ministry's ask, a yes or no, its edits flowing through, and withdrawing it | No |
 | `GSBC.ChurchApp.Features.Prayer.Api.Tests` | Unit: whose request it is; staff can hide a name but never show one. Against Postgres: nothing reaches the wall until staff show it, names stay off it, private requests reach only their person's feed, the wall's expiry, per-phone limits, deleting a request or an account | No |
 | `GSBC.ChurchApp.Features.Feedback.Api.Tests` | Unit: who may send and how many a day, when a closed ticket goes. Against Postgres: limits and blocks, a resent ticket stored once, closing deletes the files, deleting an account, the phone's data only for those who may read it | No |
 | `GSBC.ChurchApp.Features.Rosters.Api.Tests` | Unit: unmet requirements are flagged in words; who sees how much of a date; who may answer; an archived roster can't change; swaps only the ways allowed, and only an approved one waits for a leader; reminders and nudges come once. Against Postgres: a leader puts someone on over days away and missing requirements and sees it flagged; a parent answers for their child and nobody else can; each phone's row holds only what the ministry lets them see; forgetting someone takes them off dates to come | No |

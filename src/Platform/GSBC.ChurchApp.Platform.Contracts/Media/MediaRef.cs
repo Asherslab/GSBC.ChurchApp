@@ -23,6 +23,8 @@ public sealed class MediaRef
 
     [JsonIgnore] public bool IsVideo => ContentType.StartsWith("video/", StringComparison.Ordinal);
 
+    [JsonIgnore] public bool IsAudio => ContentType.StartsWith("audio/", StringComparison.Ordinal);
+
     [JsonIgnore] public bool IsFont => ContentType.StartsWith("font/", StringComparison.Ordinal);
 
     public MediaRef At(MediaSizeName size)
