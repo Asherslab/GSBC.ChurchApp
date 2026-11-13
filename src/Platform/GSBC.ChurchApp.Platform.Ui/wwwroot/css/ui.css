@@ -602,7 +602,7 @@ button.text-link:disabled { color: var(--ink-3); cursor: default; }
 .writing-desk--folded .writing-desk__side { padding-inline: var(--space-sm); }
 .writing-desk--folded .writing-desk__side-head { justify-content: center; }
 .writing-desk--folded :is(.writing-desk__side-title, .writing-desk__settings) { display: none; }
-.writing-desk__foot { grid-area: foot; position: sticky; bottom: 0; z-index: 3; min-height: var(--foot-h); padding: var(--space-md) var(--space-xl) var(--space-lg); border-top: 1px solid var(--line); background: var(--page); }
+.writing-desk__foot { grid-area: foot; position: sticky; bottom: 0; z-index: 3; padding: var(--space-md) var(--space-xl) var(--space-lg); border-top: 1px solid var(--line); background: var(--page); }
 .writing-desk--folded .writing-desk__foot { padding-inline: var(--space-3xl); }
 .gallery__sample > .writing-desk { min-height: 0; border-radius: var(--radius); overflow: hidden; }
 .gallery__sample > .writing-desk .writing-desk__side, .gallery__sample > .writing-desk .writing-desk__foot { position: static; }
@@ -614,7 +614,8 @@ button.text-link:disabled { color: var(--ink-3); cursor: default; }
   .writing-desk--folded .writing-desk__side-title { display: block; }
   .writing-desk__fold, .writing-desk__summary { display: none; }
   .writing-desk__page { min-height: 0; border-radius: var(--radius); }
-  .writing-desk .post-editor__add { display: grid; grid-template-columns: repeat(auto-fill, minmax(8.5rem, 1fr)); justify-items: start; }
+  .writing-desk .post-editor__add { display: grid; grid-template-columns: repeat(auto-fill, minmax(8.5rem, 1fr)); }
+  .writing-desk .post-editor__add > .post-editor__chip { justify-content: center; }
   .writing-desk .post-editor__add-label { grid-column: 1 / -1; }
   .writing-desk__foot, .writing-desk--folded .writing-desk__foot { padding-inline: var(--space-3xl); }
 }
