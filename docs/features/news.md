@@ -72,6 +72,14 @@ embedded/etc in them".
   the phone (`/ministries/{id}/news/{post}`) one tap from there. A post can't be a place of its own in the app yet.
 - **News is a starting tab** (Home, News, Sermons, More); staff move or remove it under App styling → Tab bar.
 
+## A News tile on Home (2026-11-13)
+
+Owner, 2026-11-13: "do a small impeccable design pass for a proper news tile for the hub. not sure if it'll work or look
+good, but it might". The decision page (`.impeccable/mocks/news-tile/`) put four directions on dev's Home: a front page in
+miniature, quiet until it matters, headlines, and no tile at all. The owner: "i love all three of A, B, and C, give me all
+three as variants/layouts of the tile". They are the tile's layouts (Front page by default, What's new, Headlines); see
+[home.md](home.md), *Tiles*.
+
 ## How it's built
 
 - **News feature** (schema `news`): `posts` holds church news and ministries' posts in it (`source`, `source_id`).

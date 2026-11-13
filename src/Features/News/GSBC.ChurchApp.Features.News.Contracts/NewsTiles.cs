@@ -5,7 +5,7 @@ namespace GSBC.ChurchApp.Features.News.Contracts;
 
 public static class NewsTiles
 {
-    public const string FrontPage = "front-page";
+    private const string FrontPage = "front-page";
     public const string WhatsNew = "whats-new";
     public const string Headlines = "headlines";
 

@@ -1,4 +1,4 @@
-@using GSBC.ChurchApp.Features.News.Contracts
+@using System.Globalization
 @using GSBC.ChurchApp.Platform.Client.News
 @using GSBC.ChurchApp.Platform.Contracts.Configuration
 @using GSBC.ChurchApp.Platform.Contracts.Content
@@ -61,7 +61,7 @@
             return Urgent(urgent);
 
         RenderFragment? banner = content.Urgent is { } today ? Banner(today) : null;
-        RenderFragment? next = big && content.Newest.Skip(1).FirstOrDefault() is { } second ? Entries([second], urgentToday: false) : null;
+        RenderFragment? next = big && content.Newest.Skip(1).FirstOrDefault() is { } second ? Entries([second], urgentToday: false, "hub-list--after") : null;
         IReadOnlyList<string> lines = [big ? Posted(lead) : Ago(lead)];
         if (lead.Picture is not { } picture)
             return @<HubTile Look="Look" Title="@lead.Title" Lines="lines" Href="@Open(lead)" PlacementId="@Id" Banner="banner" Class="hub-tile--news">@next</HubTile>;
@@ -86,6 +86,11 @@
 
         if (Span is { Columns: 1, Rows: 1 })
             return @<HubTile Look="Look" Title="@($"{content.New} new")" Lines="[Look.Title]" Unread="true" PlacementId="@Id" />;
+        if (Span is { Columns: > 1, Rows: > 1 })
+        {
+            string more = content.New > 1 ? $" · {content.New - 1} more new" : "";
+            return @<HubTile Look="Look" Title="@newest.Title" Lines="@([Ago(newest) + more])" Go="Read it" Href="@Open(newest)" Unread="true" PlacementId="@Id" />;
+        }
         IReadOnlyList<string> lines = Span.Rows == 1 ? [newest.Title] : [newest.Title, Ago(newest)];
         return @<HubTile Look="Look" Title="@($"{content.New} new in {Look.Title}")" Lines="lines" Unread="true" PlacementId="@Id" />;
     }
@@ -98,20 +103,20 @@
                 ? Urgent(urgent)
                 : @<HubTile Look="@(Look with { Icon = "" })" Title="@items[0].Title" Lines="[Ago(items[0])]" Href="@Open(items[0])" PlacementId="@Id" />;
 
-        int shown = Span.Rows == 1 ? 3 : Span.Rows + 1;
-        return @<HubTile Look="@(Look with { Icon = "" })" Layout="TileShape.Square" Title="@Look.Title" Go="All news" GoBeside="@(Span.Columns > 1)"
+        int shown = Span.Rows == 1 ? 3 : Span.Columns > 1 ? Span.Rows * 2 + 1 : Span.Rows + 1;
+        return @<HubTile Look="@(Look with { Icon = "" })" Layout="TileShape.Square" Title="@Look.Title" Go="All news" GoBeside="true"
                          Class="hub-tile--list hub-tile--headlines" PlacementId="@Id">
             @Entries(items.Take(shown).ToList(), urgentToday: content.UrgentToday.Count > 0)
         </HubTile>;
     }
 
-    private RenderFragment Entries(IReadOnlyList<NewsItem> items, bool urgentToday) =>
-        @<span class="hub-list">
+    private RenderFragment Entries(IReadOnlyList<NewsItem> items, bool urgentToday, string? style = null) =>
+        @<span class="hub-list @style">
             @foreach (NewsItem item in items)
             {
                 bool urgent = urgentToday && item.Urgent && ChurchTime.DayOf(item.PostedAt) == ChurchTime.DayOf(Now);
                 <HubListEntry @key="item.Id" Href="@Open(item)" Spoken="@($"{item.Title}. {Ago(item)}")" PlacementId="@Id">
-                    <span class="hub-list__when">@Day(item)</span>
+                    <span class="hub-list__when">@(urgent ? "Today" : Since(item))</span>
                     <span class="hub-list__what">
                         @if (urgent)
                         {
@@ -131,6 +136,7 @@
         @<HubListEntry Href="@Open(item)" Spoken="@($"Today: {item.Title}")" PlacementId="@Id" Class="hub-tile__banner">
             <Icon Name="@AppIcons.News" Size="IconSize.Small" />
             <span class="hub-tile__banner-words">Today: @item.Title</span>
+            <Icon Name="chevron-right" Size="IconSize.Small" />
         </HubListEntry>;
 
     private static string Open(NewsItem item) => NewsDestinations.PostPath(item.Id);
@@ -143,9 +149,20 @@
 
     private string Posted(NewsItem item) => item.From.Length > 0 ? $"From {item.From} · {Ago(item)}" : Ago(item);
 
-    private string Day(NewsItem item) => ChurchTime.DayOf(item.PostedAt) == ChurchTime.DayOf(Now)
-        ? ChurchDates.Time(ChurchTime.ToChurch(item.PostedAt))
-        : ChurchDates.Describe(item.PostedAt, DateLineStyle.Relative, withTime: false, Now);
+    private string Since(NewsItem item)
+    {
+        TimeSpan since = Now - item.PostedAt;
+        int daysAgo = ChurchTime.DayOf(Now).DayNumber - ChurchTime.DayOf(item.PostedAt).DayNumber;
+        return (since, daysAgo) switch
+        {
+            ({ TotalMinutes: < 1 }, _) => "Just now",
+            ({ TotalHours: < 1 }, _) => $"{(int)since.TotalMinutes} min ago",
+            (_, 0) => (int)since.TotalHours == 1 ? "1 hour ago" : $"{(int)since.TotalHours} hours ago",
+            (_, 1) => "Yesterday",
+            (_, < 7) => ChurchTime.ToChurch(item.PostedAt).ToString("dddd", CultureInfo.GetCultureInfo("en-AU")),
+            _ => ChurchTime.ToChurch(item.PostedAt).ToString("d MMM", CultureInfo.GetCultureInfo("en-AU")),
+        };
+    }
 
     private static string Today(NewsItem item)
     {

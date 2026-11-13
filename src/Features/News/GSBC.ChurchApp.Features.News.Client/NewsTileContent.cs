@@ -5,7 +5,7 @@ namespace GSBC.ChurchApp.Features.News.Client;
 
 public sealed record NewsTileContent(IReadOnlyList<NewsItem> UrgentToday, IReadOnlyList<NewsItem> Newest, int New)
 {
-    public static readonly TimeSpan NewBeforeFirstLook = TimeSpan.FromDays(7);
+    private static readonly TimeSpan NewBeforeFirstLook = TimeSpan.FromDays(7);
 
     public NewsItem? Urgent => UrgentToday.FirstOrDefault();
 
