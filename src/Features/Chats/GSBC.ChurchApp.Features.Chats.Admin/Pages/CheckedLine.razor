@@ -1,3 +1,5 @@
+@using GSBC.ChurchApp.Platform.Contracts.Content
+@using GSBC.ChurchApp.Platform.Ui.Content
 @{ ChatMessage message = Found.Message; }
 @if (message.Kind == MessageKinds.Event)
 {
@@ -32,17 +34,21 @@ else
         }
         @if (Said.Length > 0)
         {
-            <p class="chat-checked__text">@foreach ((string text, bool found) in ChatReview.Marks(Said, Words))
-                {
-                    if (found)
+            <RichTextView Content="@(new RichText { Markdown = Said })" Scope="RichTextScope.Chat" Class="chat-checked__text">
+                <TextTemplate Context="run">
+                    @foreach ((string text, bool found) in ChatReview.Marks(run, Words))
                     {
-                        <mark>@text</mark>
+                        if (found)
+                        {
+                            <mark>@text</mark>
+                        }
+                        else
+                        {
+                            @text
+                        }
                     }
-                    else
-                    {
-                        @text
-                    }
-                }</p>
+                </TextTemplate>
+            </RichTextView>
         }
         <ChatAttachments Attachments="message.Attachments" From="@message.SenderName" />
         @if (Found.Versions.Count > 1)

@@ -18,6 +18,7 @@ public sealed class MediaRef
     [ProtoMember(10)] public string FileName { get; set; } = "";
     [ProtoMember(11)] public MediaSizeName Version { get; set; }
     [ProtoMember(12)] public List<MediaSize> Sizes { get; set; } = [];
+    [ProtoMember(13)] public string Folder { get; set; } = "";
 
     [JsonIgnore] public bool IsImage => ContentType.StartsWith("image/", StringComparison.Ordinal);
 

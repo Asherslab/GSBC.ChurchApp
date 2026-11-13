@@ -10,7 +10,7 @@
 
 @if (OnAPage)
 {
-    <TitleBand Title="@Heading" BrowserTitle="@Heading" BackHref="@BackHref" BackText="@Page.Ministry.Name" Lead="@($"In {Page.Ministry.Name}. Write it as blocks: text, headings, pictures, video, audio or a file, moved by their handles.")">
+    <TitleBand Title="@Heading" BrowserTitle="@Heading" BackHref="@BackHref" BackText="@Page.Ministry.Name" Lead="@($"In {Page.Ministry.Name}. A title and the post. Pictures, video, files and more are under Insert.")">
         <Actions>
             @if (Draft.Id.Length > 0)
             {
@@ -21,7 +21,7 @@
     <WritingDesk SettingsTitle="Who it's for and telling them" SettingsSummary="@Summary">
         <ChildContent>
             @Sunday
-            <PostEditor @ref="_editor" Title="@Draft.Title" TitleChanged="title => Draft.Title = title" Blocks="_blocks" OnChanged="() => _changes++" />
+            <PostEditor @ref="_editor" Title="@Draft.Title" TitleChanged="title => Draft.Title = title" Body="_body" BodyChanged="BodyChanged" UploadTo="Target" />
             <Notice Tone="NoticeTone.Warning" Text="@_problem" />
         </ChildContent>
         <Settings>
@@ -30,7 +30,7 @@
         </Settings>
         <Preview>
             <PhoneFrame Label="The post, as it will look in the ministry's News" OnRoute="">
-                <Section First="true"><PostView Title="@(Draft.Title.Trim().Length > 0 ? Draft.Title.Trim() : "Its title")" Content="@(_editor?.Content ?? PostBlocks.ToRichText(_blocks))" From="@Page.Ministry.Name" When="Just now" /></Section>
+                <Section First="true"><PostView Band="true" Title="@(Draft.Title.Trim().Length > 0 ? Draft.Title.Trim() : "Its title")" Content="_body" From="@Page.Ministry.Name" When="Just now" /></Section>
             </PhoneFrame>
         </Preview>
         <Foot>@Saving</Foot>
@@ -47,7 +47,7 @@ else
         </Tools>
         <ChildContent>
             @Sunday
-            <PostEditor @ref="_editor" Title="@Draft.Title" TitleChanged="title => Draft.Title = title" Blocks="_blocks" OnChanged="() => _changes++"
+            <PostEditor @ref="_editor" Title="@Draft.Title" TitleChanged="title => Draft.Title = title" Body="_body" BodyChanged="BodyChanged" UploadTo="Target"
                         SettingsInline="true" SettingsTitle="Who it's for and telling them" SettingsSummary="@Summary">
                 <Settings>
                     @Audience
@@ -112,7 +112,7 @@ else
     [Parameter] public EventCallback OnSaved { get; set; }
 
     private PostEditor? _editor;
-    private List<PostBlock> _blocks = [];
+    private RichText _body = new();
     private int _changes;
     private Post? _loadedFor;
     private object? _loadedShape;
@@ -124,9 +124,7 @@ else
         if (ReferenceEquals(_loadedFor, Draft))
             return;
         _loadedFor = Draft;
-        _blocks = PostBlocks.Of(Draft.Content ?? PlainText.AsRichText(Draft.Body));
-        if (_blocks.Count == 0)
-            _blocks.Add(new PostBlock { Kind = PostBlockKind.Text });
+        _body = Draft.Content ?? PlainText.AsRichText(Draft.Body);
         _changes = 0;
         _loadedShape = Shape;
     }
@@ -176,15 +174,19 @@ else
 
     private Task SaveAsync() => RunAsync(async () =>
     {
-        if (_editor is not null && await _editor.UploadChosenAsync(Target) is { } problem)
-            throw new RpcException(new Status(StatusCode.FailedPrecondition, problem));
-        Draft.Content = _editor?.Content ?? PostBlocks.ToRichText(_blocks);
+        Draft.Content = _body;
         Draft.Body = PlainText.Of(Draft.Content);
         List<QueuedUpload> uploads = (_editor?.WaitingFiles() ?? [])
             .Select(media => Uploads.For(media, MediaSlot.Id(MinistryFileArea.UploadedInPostSave), Target with { AltText = media.AltText }))
             .OfType<QueuedUpload>().ToList();
         await Ministries.SavePostAsync(Page.Ministry.Id, Draft, uploads);
     });
+
+    private void BodyChanged(RichText body)
+    {
+        _body = body;
+        _changes++;
+    }
 
     private IReadOnlyList<MenuItem> More =>
         [this.Item("Delete the post…", () => _deleting = true, "trash-2", danger: true)];

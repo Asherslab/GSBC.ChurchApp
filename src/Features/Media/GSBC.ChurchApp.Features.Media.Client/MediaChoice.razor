@@ -15,8 +15,8 @@
     </div>
     @if (_uploading && PhoneUpload)
     {
-        <FilePick Box="true" Label="@(ImagesOnly ? "Choose a picture" : "Choose a picture or PDF")" Hint="From this phone. It's sent with your save, as soon as the phone is online."
-                  ImagesOnly="ImagesOnly" OnPicked="media => OnPick.InvokeAsync(media)" />
+        <FilePick Box="true" Label="@UploadLabel" Hint="From this phone. It's sent with your save, as soon as the phone is online."
+                  ImagesOnly="ImagesOnly" Kinds="Kinds" OnPicked="media => OnPick.InvokeAsync(media)" />
     }
     else if (_uploading && DirectUpload is { } direct)
     {
@@ -28,7 +28,7 @@
         <div class="media-choice__grid" role="listbox" aria-label="Pictures on this phone">
             @foreach (MediaRef media in here)
             {
-                @Choice(media, "Works offline")
+                @Choice(media, "Works offline", media.Folder)
             }
         </div>
         <p class="media-choice__where">The whole library</p>
@@ -56,7 +56,7 @@
                     <div class="media-choice__grid" role="listbox" aria-label="@(FontsOnly ? "Font files" : ImagesOnly ? "Pictures" : "Files")">
                         @foreach (MediaItemInfo item in shown)
                         {
-                            @Choice(item.Media!, Searching ? $"In {tree.Value.PathName(item.FolderId)}" : MediaWords.UsedIn(item.Uses))
+                            @Choice(item.Media!, Searching ? $"In {tree.Value.PathName(item.FolderId)}" : MediaWords.UsedIn(item.Uses), FolderOf(tree.Value, item.FolderId))
                         }
                     </div>
                     @if (context.Value.HasMore)
@@ -66,7 +66,7 @@
                 }
                 else
                 {
-                    <EmptyState Icon="image" Title="@(Searching ? "Nothing matches" : FontsOnly ? (_folderId is null ? "No font files here" : "No font files in this folder") : _folderId is null ? (ImagesOnly ? "No pictures yet" : "No files yet") : (ImagesOnly ? "No pictures in this folder" : "This folder is empty"))"
+                    <EmptyState Icon="image" Title="@(Searching ? "Nothing matches" : FontsOnly ? (_folderId is null ? "No font files here" : "No font files in this folder") : _folderId is null ? $"No {Noun}s yet" : $"No {Noun}s in this folder")"
                                 Body="@(Searching ? "Try another word." : FontsOnly ? "Upload the church's font file, or open the folder it's in. Only use a font the church is licensed to use in an app." : _folderId is null ? "Upload one, and it's kept in Media for any tile or page." : "Open another folder, or upload one into this folder.")" />
                 }
             </LiveData>
@@ -105,12 +105,47 @@
     [Parameter] public bool FontsOnly { get; set; }
     [Parameter] public MediaSizeName Size { get; set; } = MediaSizeName.ForPhones;
     [Parameter] public IReadOnlyList<MediaRef>? Offered { get; set; }
+    [Parameter] public PickableFiles? Kinds { get; set; }
+    [Parameter] public UploadTarget? UploadTo { get; set; }
 
-    private IReadOnlyList<MediaRef>? OnThisPhone => Offered?.Where(media => !FontsOnly && (!ImagesOnly || media.IsImage) && (_query.Length == 0 || NameOf(media).Contains(_query, StringComparison.CurrentCultureIgnoreCase))).ToList();
+    private IReadOnlyList<MediaRef>? OnThisPhone => Offered?.Where(media => !FontsOnly && Fits(media) && (_query.Length == 0 || NameOf(media).Contains(_query, StringComparison.CurrentCultureIgnoreCase))).ToList();
 
-    private RenderFragment Choice(MediaRef media, string line)
+    private bool Fits(MediaRef media) => Kinds switch
+    {
+        PickableFiles.Videos => media.IsVideo,
+        PickableFiles.Documents => !media.IsImage && !media.IsVideo,
+        PickableFiles.Pictures => media.IsImage,
+        _ => !ImagesOnly || media.IsImage,
+    };
+
+    private MediaFilter Filter => FontsOnly ? MediaFilter.Fonts : Kinds switch
+    {
+        PickableFiles.Videos => MediaFilter.Videos,
+        PickableFiles.Documents => MediaFilter.Documents,
+        PickableFiles.Pictures => MediaFilter.Pictures,
+        _ => ImagesOnly ? MediaFilter.Pictures : MediaFilter.All,
+    };
+
+    private string Noun => Kinds switch
+    {
+        PickableFiles.Videos => "video",
+        PickableFiles.Documents => "file",
+        _ => ImagesOnly || Kinds == PickableFiles.Pictures ? "picture" : "file",
+    };
+
+    private string UploadLabel => Kinds switch
+    {
+        PickableFiles.Videos => "Choose a video",
+        PickableFiles.Documents => "Choose a file",
+        _ => ImagesOnly ? "Choose a picture" : "Choose a picture or PDF",
+    };
+
+    private static string FolderOf(FolderMap map, string? folderId) => string.Join("/", map.PathTo(folderId).Select(folder => folder.Name));
+
+    private RenderFragment Choice(MediaRef media, string line, string folder)
     {
         bool on = media.Id == _selected?.Id;
+        media.Folder = folder;
         return @<button type="button" role="option" aria-selected="@(on ? "true" : "false")" class="media-choice__item @(on ? "media-choice__item--on" : "")"
                         @onclick="() => _selected = media" @ondblclick="() => OnPick.InvokeAsync(media)">
             <span class="media-choice__thumb">
@@ -120,7 +155,7 @@
                 }
                 else
                 {
-                    <Icon Name="file" />
+                    <Icon Name="@(media.IsVideo ? "video" : "file")" />
                 }
                 @if (on)
                 {
@@ -139,16 +174,18 @@
     private RenderFragment RenderDirect(MediaDirectUpload direct) => builder =>
     {
         builder.OpenComponent(0, direct.Component);
-        builder.AddComponentParameter(1, MediaDirectUpload.LabelParameter, FontsOnly ? "Choose a font file (.woff2, .woff, .ttf or .otf)" : ImagesOnly ? "Choose a picture" : "Choose a picture or PDF");
+        builder.AddComponentParameter(1, MediaDirectUpload.LabelParameter, FontsOnly ? "Choose a font file (.woff2, .woff, .ttf or .otf)" : UploadLabel);
         builder.AddComponentParameter(2, MediaDirectUpload.FontsOnlyParameter, FontsOnly);
         builder.AddComponentParameter(3, MediaDirectUpload.FolderIdParameter, Searching ? null : _folderId);
         builder.AddComponentParameter(4, MediaDirectUpload.OnUploadedParameter, EventCallback.Factory.Create<UploadedMedia>(this, UploadedAsync));
+        if (UploadTo?.PrivateTo is { } permission)
+            builder.AddComponentParameter(5, MediaDirectUpload.PrivateToParameter, new MediaAudience { Permission = permission, ScopeId = UploadTo.PrivateToScope ?? "" });
         builder.CloseComponent();
     };
 
     private bool Searching => _query.Length > 0;
 
-    private string FindLabel => FontsOnly ? "Find a font file in every folder" : ImagesOnly ? "Find a picture in every folder" : "Find a file in every folder";
+    private string FindLabel => FontsOnly ? "Find a font file in every folder" : $"Find a {Noun} in every folder";
 
     protected override async Task OnInitializedAsync() => _folderId = await Memory.LastFolderAsync();
 
@@ -169,7 +206,7 @@
         {
             FolderId = Searching ? null : _folderId,
             Search = _query,
-            Filter = FontsOnly ? MediaFilter.Fonts : ImagesOnly ? MediaFilter.Pictures : MediaFilter.All,
+            Filter = Filter,
             Take = _wanted,
         });
         page.Items.RemoveAll(item => item.Media is null);

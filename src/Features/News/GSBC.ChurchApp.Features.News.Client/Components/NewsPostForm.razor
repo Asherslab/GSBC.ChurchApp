@@ -15,7 +15,7 @@
 {
     <WritingDesk SettingsTitle="Who it's for and telling them" SettingsSummary="@Summary">
         <ChildContent>
-            <PostEditor @ref="_editor" Title="@_title" TitleChanged="title => _title = title" Blocks="_blocks" OnChanged="() => _changes++" />
+            <PostEditor @ref="_editor" Title="@_title" TitleChanged="title => _title = title" Body="_body" BodyChanged="BodyChanged" UploadTo="Target" />
             <Notice Tone="NoticeTone.Warning" Text="@_problem" />
         </ChildContent>
         <Settings>
@@ -31,7 +31,7 @@
         </Settings>
         <Preview>
             <PhoneFrame Label="The post, as it will look in the app's News" OnRoute="news">
-                <Section First="true"><PostView Title="@(_title.Trim().Length > 0 ? _title.Trim() : "Its title")" Content="Draft" Author="@Post.Author" When="Just now" LinkPath="@_linkPath.Trim()" LinkLabel="@_linkLabel.Trim()" /></Section>
+                <Section First="true"><PostView Band="true" Title="@(_title.Trim().Length > 0 ? _title.Trim() : "Its title")" Content="Draft" Author="@Post.Author" When="Just now" LinkPath="@_linkPath.Trim()" LinkLabel="@_linkLabel.Trim()" /></Section>
             </PhoneFrame>
         </Preview>
         <Foot>@Saving</Foot>
@@ -40,7 +40,7 @@
 else
 {
     <div class="news-form">
-        <PostEditor @ref="_editor" Title="@_title" TitleChanged="title => _title = title" Blocks="_blocks" OnChanged="() => _changes++"
+        <PostEditor @ref="_editor" Title="@_title" TitleChanged="title => _title = title" Body="_body" BodyChanged="BodyChanged" UploadTo="Target"
                     SettingsSummary="@Summary">
             <Settings>
                 <AudiencePicker Label="Who it's for" Value="@_audience" ValueChanged="audience => _audience = audience" />
@@ -105,7 +105,7 @@ else
 
     [Parameter] public bool OnAPage { get; set; }
 
-    private RichText Draft => _editor?.Content ?? PostBlocks.ToRichText(_blocks);
+    private RichText Draft => _body;
 
     private const string LocalFormat = "yyyy-MM-ddTHH:mm";
     private static readonly string[] LocalFormats = [LocalFormat, "yyyy-MM-ddTHH:mm:ss"];
@@ -113,7 +113,7 @@ else
     private static readonly IReadOnlyList<SegmentOption<bool>> WhenOptions = [new(false, "Now"), new(true, "Later")];
 
     private PostEditor? _editor;
-    private List<PostBlock> _blocks = [];
+    private RichText _body = new();
     private string _title = "", _audience = "", _tellTitle = "", _tellBody = "", _linkPath = "", _linkLabel = "", _publishAt = "";
     private bool _tell, _urgent, _later, _busy;
     private int _changes;
@@ -138,9 +138,7 @@ else
             return;
         _loadedFor = Post;
         (_id, _sent) = (Post.Id.Length > 0 ? Post.Id : Guid.CreateVersion7().ToString(), false);
-        _blocks = PostBlocks.Of(Post.Body);
-        if (_blocks.Count == 0)
-            _blocks.Add(new PostBlock { Kind = PostBlockKind.Text });
+        _body = Post.Body;
         (_title, _audience) = (Post.Title, Post.Audience.Length > 0 ? Post.Audience : Audience.Everyone.Text);
         bool isNew = Post.Id.Length == 0;
         (_tell, _tellTitle, _tellBody, _urgent) = (isNew || Post.Tell, Post.TellTitle, Post.TellBody, Post.Urgent);
@@ -189,15 +187,13 @@ else
 
     private NewsPost Wanted() => new()
     {
-        Id = _id, New = Post.Id.Length == 0 && !_sent, Title = _title.Trim(), Body = _editor?.Content ?? PostBlocks.ToRichText(_blocks), Audience = _audience,
+        Id = _id, New = Post.Id.Length == 0 && !_sent, Title = _title.Trim(), Body = _body, Audience = _audience,
         Tell = _tell, TellTitle = _tellTitle.Trim(), TellBody = _tellBody.Trim(), Urgent = _tell && _urgent,
         LinkPath = _linkPath.Trim(), LinkLabel = _linkLabel.Trim(),
     };
 
     private Task SaveAsync() => RunAsync(async () =>
     {
-        if (await UploadedAsync() is { } problem)
-            throw new Grpc.Core.RpcException(new Grpc.Core.Status(Grpc.Core.StatusCode.FailedPrecondition, problem));
         NewsPost saved = await Writes.SaveAsync(Wanted(), _editor?.WaitingFiles() ?? []);
         _sent = true;
         if (Post.State is not NewsState.Published)
@@ -211,12 +207,14 @@ else
         await OnSaved.InvokeAsync(saved);
     });
 
-    private async Task<string?> UploadedAsync() => _editor is null ? null : await _editor.UploadChosenAsync(Target);
+    private void BodyChanged(RichText body)
+    {
+        _body = body;
+        _changes++;
+    }
 
     private Task TryAsync() => RunAsync(async () =>
     {
-        if (await UploadedAsync() is { } problem)
-            throw new Grpc.Core.RpcException(new Grpc.Core.Status(Grpc.Core.StatusCode.FailedPrecondition, problem));
         NewsPost saved = await Writes.SaveAsync(Wanted(), _editor?.WaitingFiles() ?? []);
         _sent = true;
         await Writes.TryOnMyPhoneAsync(saved.Id);

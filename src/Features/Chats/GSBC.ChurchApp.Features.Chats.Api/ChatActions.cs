@@ -1,3 +1,4 @@
+using GSBC.ChurchApp.Platform.Contracts.Content;
 using GSBC.ChurchApp.Features.Chats.Api.Data;
 using GSBC.ChurchApp.Features.Chats.Contracts;
 using GSBC.ChurchApp.Platform.Api.Access;
@@ -157,6 +158,8 @@ internal sealed class ChatActions(
         string text = request.Text.Trim();
         if (text.Length > ChatLimits.TextLength)
             throw ChatErrors.Invalid($"Keep a message to {ChatLimits.TextLength} characters.");
+        if (RichTextRules.ChatProblems(text) is [var linkProblem, ..])
+            throw ChatErrors.Invalid(linkProblem);
         if (request.Attachments.Count > ChatLimits.AttachmentsPerMessage)
             throw ChatErrors.Invalid($"Send up to {ChatLimits.AttachmentsPerMessage} photos or files at a time.");
         if (text.Length == 0 && request.Attachments.Count == 0)
@@ -189,6 +192,8 @@ internal sealed class ChatActions(
             throw ChatErrors.Invalid("Write something, or delete the message instead.");
         if (text.Length > ChatLimits.TextLength)
             throw ChatErrors.Invalid($"Keep a message to {ChatLimits.TextLength} characters.");
+        if (RichTextRules.ChatProblems(text) is [var linkProblem, ..])
+            throw ChatErrors.Invalid(linkProblem);
         if (text == message.Text)
             return;
 

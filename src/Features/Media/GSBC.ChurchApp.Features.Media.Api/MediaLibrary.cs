@@ -390,6 +390,7 @@ internal sealed class MediaLibrary(
         MediaFilter.Pictures => items.Where(item => item.ContentType.StartsWith("image/")),
         MediaFilter.Documents => items.Where(item => !item.ContentType.StartsWith("image/")),
         MediaFilter.Fonts => items.Where(item => item.ContentType.StartsWith("font/")),
+        MediaFilter.Videos => items.Where(item => item.ContentType.StartsWith("video/")),
         MediaFilter.Unused => items.Where(item => !db.Uses.Any(use => use.MediaId == item.Id)),
         MediaFilter.LargeOriginals => items.Where(item => item.OriginalRemovedAt == null && item.Bytes > MediaTypes.LargeOriginalBytes
             && db.Renditions.Any(rendition => rendition.MediaId == item.Id)),

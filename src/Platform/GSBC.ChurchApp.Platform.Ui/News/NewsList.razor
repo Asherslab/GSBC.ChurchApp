@@ -31,7 +31,7 @@
 
     private static string Excerpt(NewsItem item)
     {
-        string text = PlainText.Of(item.Body);
+        string text = PlainText.Opening(item.Body);
         return text.Length <= LongestExcerpt ? text : text[..LongestExcerpt].TrimEnd() + "…";
     }
 }

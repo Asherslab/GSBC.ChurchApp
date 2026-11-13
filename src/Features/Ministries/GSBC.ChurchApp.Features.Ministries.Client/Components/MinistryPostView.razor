@@ -32,7 +32,7 @@
             {
                 <div class="section section--first">
                     <WaitingToSend MethodsUnder="@MinistryMethods.Under" Describe="MinistryMethods.Describe" First="true" />
-                    <PostView Title="@post.Title" Content="ContentOf(post)" From="@(post.From.Length > 0 ? post.From : loaded.Ministry.Name)" FromHref="@newsTab"
+                    <PostView Band="true" Title="@post.Title" Content="ContentOf(post)" From="@(post.From.Length > 0 ? post.From : loaded.Ministry.Name)" FromHref="@newsTab"
                               Author="@post.Author" When="@When(post)">
                         <Status>
                             <span class="post-view__status">

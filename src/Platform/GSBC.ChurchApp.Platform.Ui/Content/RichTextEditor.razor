@@ -8,8 +8,8 @@
     <div class="rich-text-toolbar" role="toolbar" aria-label="Formatting">
         <button type="button" data-action="bold" title="Bold (⌘B)" aria-label="Bold" @onclick='() => WrapAsync("**", "bold text")'><strong>B</strong></button>
         <button type="button" data-action="italic" title="Italic (⌘I)" aria-label="Italic" @onclick='() => WrapAsync("*", "italic text")'><em>I</em></button>
-        <button type="button" title="Heading" @onclick="() => LinesAsync(LineStyle.Heading)">Heading</button>
-        <button type="button" title="Subheading" @onclick="() => LinesAsync(LineStyle.Subheading)">Subheading</button>
+        <button type="button" title="Heading" @onclick="() => LinesAsync(LineStyle.Heading2)">Heading</button>
+        <button type="button" title="Subheading" @onclick="() => LinesAsync(LineStyle.Heading3)">Subheading</button>
         <button type="button" title="Bulleted list" aria-label="Bulleted list" @onclick="() => LinesAsync(LineStyle.Bullets)">• List</button>
         <button type="button" title="Numbered list" aria-label="Numbered list" @onclick="() => LinesAsync(LineStyle.Numbers)">1. List</button>
         <button type="button" title="Quote" @onclick="() => LinesAsync(LineStyle.Quote)">Quote</button>
@@ -147,7 +147,7 @@
         _choosingImage = false;
         if (_media.All(known => known.Id != media.Id))
             _media.Add(media);
-        await ApplyAsync(RichTextEdits.Image(_beforePanel, media.Id, media.AltText));
+        await ApplyAsync(RichTextEdits.MediaLines(_beforePanel, [RichTextEdits.MediaLine(media.Id, media.AltText)]));
     }
 
     private async Task<EditorText> CurrentAsync()

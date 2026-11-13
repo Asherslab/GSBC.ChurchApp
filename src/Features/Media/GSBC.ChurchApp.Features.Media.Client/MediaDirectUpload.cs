@@ -8,6 +8,7 @@ public sealed class MediaDirectUpload([DynamicallyAccessedMembers(DynamicallyAcc
     public const string FontsOnlyParameter = "FontsOnly";
     public const string FolderIdParameter = "FolderId";
     public const string OnUploadedParameter = "OnUploaded";
+    public const string PrivateToParameter = "PrivateTo";
 
     [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
     public Type Component { get; } = component;

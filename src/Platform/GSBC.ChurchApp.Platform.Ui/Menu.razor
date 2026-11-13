@@ -29,6 +29,10 @@
                 {
                     <div class="menu__rule" role="separator"></div>
                 }
+                @if (item.GroupTitle is not null)
+                {
+                    <div class="menu__group" aria-hidden="true">@item.GroupTitle</div>
+                }
                 <button type="button" role="@(item.Checked ? "menuitemradio" : "menuitem")" aria-checked="@(item.Checked ? "true" : null)" disabled="@item.Disabled"
                         class="menu__item @(item.Danger ? "menu__item--danger" : "")" tabindex="@(at == _active ? 0 : -1)" @ref="_items[at]" @onclick="() => ChooseAsync(item)">
                     <span class="menu__lead">

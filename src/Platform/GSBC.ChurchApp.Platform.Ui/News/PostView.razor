@@ -5,8 +5,17 @@
 
 <article class="post-view">
     <MediaStrip Content="Content" About="@Title" />
+    @if (Banded)
+    {
+        <div class="post-view__band">
+            <h1 class="post-view__title">@Title</h1>
+        </div>
+    }
     <header class="post-view__head">
-        <h1 class="post-view__title">@Title</h1>
+        @if (!Banded)
+        {
+            <h1 class="post-view__title">@Title</h1>
+        }
         <p class="post-view__meta">
             @if (From.Length > 0)
             {
@@ -58,4 +67,14 @@
     [Parameter] public string LinkLabel { get; set; } = "";
     [Parameter] public RenderFragment? Status { get; set; }
     [Parameter] public RenderFragment? ChildContent { get; set; }
+    [Parameter] public bool Band { get; set; }
+
+    private bool Banded => Band && !MediaStrip.Leads(Content) && !OpensWithAPicture;
+
+    private bool OpensWithAPicture => RichTextParser.Parse(Content.Markdown).Blocks.FirstOrDefault() switch
+    {
+        MediaBlock single => Content.MediaById(single.MediaId) is { IsImage: true },
+        GalleryBlock => true,
+        _ => false,
+    };
 }

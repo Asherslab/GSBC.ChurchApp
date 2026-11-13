@@ -70,7 +70,7 @@ public sealed class RichTextTests
             > that the Lord is good.
 
             ![The hall](media:hall)
-            # not a heading, \*not italic\*
+            #not a heading, \*not italic\*
             """);
 
         Assert.Collection(document.Blocks,
@@ -92,7 +92,7 @@ public sealed class RichTextTests
             },
             block => Assert.Equal(2, Assert.IsType<QuoteBlock>(block).Paragraphs.Count),
             block => Assert.Equal(("hall", "The hall"), (Assert.IsType<MediaBlock>(block).MediaId, ((MediaBlock)block).Alt)),
-            block => Assert.Equal("# not a heading, *not italic*", Assert.IsType<TextRun>(Assert.Single(Assert.IsType<ParagraphBlock>(block).Content)).Text));
+            block => Assert.Equal("#not a heading, *not italic*", Assert.IsType<TextRun>(Assert.Single(Assert.IsType<ParagraphBlock>(block).Content)).Text));
     }
 
     [Fact]

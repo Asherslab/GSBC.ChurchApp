@@ -4,7 +4,9 @@ namespace GSBC.ChurchApp.Features.Chats.Client;
 
 public static class ChatMentions
 {
-    public static IEnumerable<(string Text, bool Mention, bool You)> Split(ChatMessage message, ChatCard card)
+    public static IEnumerable<(string Text, bool Mention, bool You)> Split(ChatMessage message, ChatCard card) => Split(message.Text, message, card);
+
+    public static IEnumerable<(string Text, bool Mention, bool You)> Split(string text, ChatMessage message, ChatCard card)
     {
         List<(string Tag, string Id)> tags = message.Mentions
             .Select(id => (Person: card.People.FirstOrDefault(person => person.Id == id), Id: id))
@@ -12,7 +14,6 @@ public static class ChatMentions
             .Select(found => ($"@{found.Person!.Name}", found.Id))
             .OrderByDescending(tag => tag.Item1.Length)
             .ToList();
-        string text = message.Text;
         int at = 0;
         while (at < text.Length)
         {

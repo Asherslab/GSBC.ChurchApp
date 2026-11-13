@@ -1,76 +1,288 @@
 @using System.Globalization
+@using System.Text.Json
+@using GSBC.ChurchApp.Platform.Client.Media
+@using GSBC.ChurchApp.Platform.Client.Uploads
 @using GSBC.ChurchApp.Platform.Contracts.Content
+@using GSBC.ChurchApp.Platform.Contracts.Media
 @using GSBC.ChurchApp.Platform.Icons
 @implements IAsyncDisposable
 @inject IJSRuntime JS
+@inject IMediaFiles Files
+@inject FileUploads Uploads
+@inject UiHost Host
+@inject IServiceProvider Services
 
-<div class="rich-text-field @Class" data-headings="@(Headings ? "true" : "false")">
-    <div class="rich-text-field__bar" role="toolbar" aria-label="Formatting" data-look-scroll="narrow">
-        @Tool(Format.Bold, AppIcons.Bold, "Bold", "⌘B")
-        @Tool(Format.Italic, AppIcons.Italic, "Italic", "⌘I")
+<div class="rich-text-field @(Host.Desktop ? "" : "rich-text-field--phone") @Class" data-headings="@(Headings ? "true" : "false")">
+    <div class="rich-text-field__bar" role="toolbar" aria-label="Formatting" data-look-scroll data-look-bleed>
+        @if (Inserts.Count > 0)
+        {
+            @if (Host.Desktop)
+            {
+                <Menu Label="Insert" Text="Insert" Icon="@AppIcons.Insert" Variant="ButtonVariant.Primary" Small="true" Items="InsertItems()" Class="rich-text-field__insert" />
+            }
+            else
+            {
+                <Button Small="true" Icon="@AppIcons.Insert" Class="rich-text-field__insert" AriaLabel="Insert" OnClick="() => _sheet = Sheet.Insert">Insert</Button>
+            }
+        }
         @if (Headings)
         {
-            @Tool(Format.Heading, AppIcons.Heading, "Heading", null)
+            @if (Host.Desktop)
+            {
+                <Menu Label="Text style" Text="@StyleName(_style)" Icon="@null" Chevron="true" Small="true" AlignStart="true" Items="StyleItems()" Class="rich-text-field__style" />
+            }
+            else
+            {
+                @Tool(Format.Style, AppIcons.Heading, "Text style", null, pressed: _style != LineStyle.Text, open: true)
+            }
+            <span class="rich-text-field__divider" aria-hidden="true"></span>
         }
-        @Tool(Format.Bullets, AppIcons.BulletedList, "Bulleted list", null)
-        @Tool(Format.Numbers, AppIcons.NumberedList, "Numbered list", null)
-        @Tool(Format.Quote, AppIcons.Quote, "Quote", null)
+        @Tool(Format.Bold, AppIcons.Bold, "Bold", "⌘B")
+        @Tool(Format.Italic, AppIcons.Italic, "Italic", "⌘I")
+        @Tool(Format.Strike, AppIcons.Strikethrough, "Strikethrough", "⌘⇧X")
+        @Tool(Format.Highlight, AppIcons.Highlight, "Highlight", "⌘⇧H")
+        <span class="rich-text-field__divider" aria-hidden="true"></span>
+        @Tool(Format.Bullets, AppIcons.BulletedList, "Bulleted list", "⌘⇧8")
+        @Tool(Format.Numbers, AppIcons.NumberedList, "Numbered list", "⌘⇧7")
+        @Tool(Format.Quote, AppIcons.Quote, "Quote", "⌘⇧9")
         @Tool(Format.Link, AppIcons.Link, "Link", "⌘K")
-        @if (Tools is not null)
+        @Tool(Format.Code, AppIcons.Code, "Code", "⌘E")
+        @if (Host.Desktop)
         {
-            <span class="rich-text-field__gap"></span>
-            @Tools
+            <Menu Label="More formatting" Small="true" Items="MoreItems()" />
+        }
+        else
+        {
+            @Tool(Format.More, AppIcons.More, "More formatting", null, pressed: false, open: true)
         }
     </div>
-    @if (_linking)
+    @if (_panel == Panel.Link)
     {
         <div class="rich-text-panel">
             <TextField Label="Link to" Value="@_href" ValueChanged="href => _href = href" Type="url" Placeholder="https://…, /events, mailto:… or tel:…"
                        Problem="@(_href.Trim().Length > 0 && !LinkTargets.IsSafe(_href.Trim()) ? "Use a link starting with https://, mailto: or tel:, or a page in the app such as /events." : null)" />
             <div class="rich-text-panel__actions">
-                <Button Variant="ButtonVariant.Quiet" Small="true" OnClick="() => _linking = false">Cancel</Button>
+                <Button Variant="ButtonVariant.Quiet" Small="true" OnClick="ClosePanel">Cancel</Button>
                 <Button Small="true" Disabled="@(!LinkTargets.IsSafe(_href.Trim()))" OnClick="AddLinkAsync">Add the link</Button>
+            </div>
+        </div>
+    }
+    else if (_panel == Panel.VideoLink)
+    {
+        <div class="rich-text-panel">
+            <TextField Label="YouTube or Vimeo link" Value="@_href" ValueChanged="href => _href = href" Type="url" Placeholder="https://www.youtube.com/watch?v=…"
+                       Problem="@(_href.Trim().Length > 0 && VideoLink.Of(_href) is null ? "That isn't a YouTube or Vimeo video's address." : null)"
+                       Hint="It plays in the post when the phone is online." />
+            <div class="rich-text-panel__actions">
+                <Button Variant="ButtonVariant.Quiet" Small="true" OnClick="ClosePanel">Cancel</Button>
+                <Button Small="true" Disabled="@(VideoLink.Of(_href) is null)" OnClick="AddVideoLinkAsync">Add the video</Button>
+            </div>
+        </div>
+    }
+    else if (_panel == Panel.Emoji)
+    {
+        <div class="rich-text-panel rich-text-panel--emoji" role="group" aria-label="Emoji">
+            <div class="rich-text-emoji">
+                @foreach ((string shortcode, string character) in Emoji.Common)
+                {
+                    <button type="button" class="rich-text-emoji__item" aria-label="@shortcode.Replace('_', ' ')" title="@(":" + shortcode + ":")" @onclick="() => InsertTextAsync(character)">@character</button>
+                }
+            </div>
+            <div class="rich-text-panel__actions">
+                <Button Variant="ButtonVariant.Quiet" Small="true" OnClick="ClosePanel">Done</Button>
             </div>
         </div>
     }
     <div class="rich-text-field__editor" @ref="_host"></div>
 </div>
 
+@if (_choosing is { } choosing)
+{
+    <MediaChooser ImagesOnly="@(choosing.Kinds == PickableFiles.Pictures)" Kinds="choosing.Kinds" UploadTo="UploadTo" OnChosen="ChosenAsync" OnCancel="() => _choosing = null" />
+}
+
+@if (!Host.Desktop)
+{
+    <Sheet Open="_sheet != Sheet.None" OpenChanged="open => _sheet = open ? _sheet : Sheet.None" Title="@SheetTitle">
+        @if (_sheet == Sheet.Insert)
+        {
+            @foreach (IGrouping<string, InsertChoice> group in Inserts.GroupBy(choice => choice.Group))
+            {
+                <p class="rich-text-sheet__group">@group.Key</p>
+                <div class="rich-text-sheet__tiles">
+                    @foreach (InsertChoice choice in group)
+                    {
+                        <button type="button" class="rich-text-sheet__tile" @onclick="() => FromSheetAsync(choice.Action)">
+                            <Icon Name="@choice.Icon" />
+                            <span>@choice.Label</span>
+                        </button>
+                    }
+                </div>
+            }
+        }
+        else
+        {
+            <div class="rich-text-sheet__rows">
+                @foreach (MenuItem item in _sheet == Sheet.Style ? StyleItems() : MoreItems())
+                {
+                    <button type="button" class="rich-text-sheet__row @(item.Checked ? "is-on" : "")" aria-pressed="@(item.Checked ? "true" : "false")" @onclick="() => FromSheetAsync(() => item.OnChoose.InvokeAsync())">
+                        <Icon Name="@(item.Icon ?? AppIcons.PlainText)" />
+                        <span>@item.Label</span>
+                        @if (item.Detail is not null)
+                        {
+                            <small>@item.Detail</small>
+                        }
+                    </button>
+                }
+            </div>
+        }
+    </Sheet>
+}
+
 @code {
+    private readonly Dictionary<string, MediaRef> _waiting = [];
+    private readonly List<MediaRef> _media = [];
     private ElementReference _host;
     private IJSObjectReference? _module;
     private IJSObjectReference? _editor;
     private DotNetObjectReference<RichTextField>? _self;
     private string _markdown = "";
     private HashSet<string> _active = [];
-    private bool _linking;
+    private LineStyle _style = LineStyle.Text;
+    private Panel _panel;
+    private Sheet _sheet;
     private string _href = "";
-    private EditorText _beforeLink;
+    private EditorText _before;
+    private Choosing? _choosing;
+    private string _sentMedia = "";
 
-    [Parameter, EditorRequired] public required string Value { get; set; }
-    [Parameter] public EventCallback<string> ValueChanged { get; set; }
+    [Parameter, EditorRequired] public required RichText Content { get; set; }
+    [Parameter] public EventCallback<RichText> ContentChanged { get; set; }
+    [Parameter] public RichTextMedia Allowed { get; set; }
     [Parameter] public string Label { get; set; } = "Text";
-    [Parameter] public string Placeholder { get; set; } = "Write here. Bold, lists, quotes and links are in the bar.";
+    [Parameter] public string Placeholder { get; set; } = "Write here. Formatting is in the bar, and pictures, video and files are under Insert.";
     [Parameter] public bool Headings { get; set; }
-    [Parameter] public RenderFragment? Tools { get; set; }
     [Parameter] public string? Class { get; set; }
+    [Parameter] public UploadTarget? UploadTo { get; set; }
+
+    private enum Panel
+    {
+        None,
+        Link,
+        VideoLink,
+        Emoji,
+    }
+
+    private enum Sheet
+    {
+        None,
+        Insert,
+        Style,
+        More,
+    }
+
+    private sealed record Choosing(PickableFiles Kinds, string Mode, int At);
+
+    private sealed record InsertChoice(string Group, string Label, string Icon, string? Detail, Func<Task> Action);
 
     private static class Format
     {
-        public const string Bold = "bold", Italic = "italic", Heading = "heading", Bullets = "bullets", Numbers = "numbers", Quote = "quote", Link = "link";
+        public const string Bold = "bold", Italic = "italic", Strike = "strike", Highlight = "highlight", Code = "code", Sub = "sub", Sup = "sup",
+            Bullets = "bullets", Numbers = "numbers", Quote = "quote", Link = "link", Text = "text", H1 = "h1", H2 = "h2", H3 = "h3",
+            Style = "style", More = "more";
     }
 
-    private RenderFragment Tool(string format, string icon, string name, string? shortcut) =>
+    private static readonly IReadOnlyDictionary<string, (string Marker, string Placeholder)> Wraps = new Dictionary<string, (string, string)>
+    {
+        [Format.Bold] = ("**", "bold text"),
+        [Format.Italic] = ("*", "italic text"),
+        [Format.Strike] = ("~~", "struck out"),
+        [Format.Highlight] = ("==", "highlighted"),
+        [Format.Code] = ("`", "code"),
+        [Format.Sub] = ("~", "2"),
+        [Format.Sup] = ("^", "2"),
+    };
+
+    public IReadOnlyList<MediaRef> WaitingFiles()
+    {
+        HashSet<string> used = [.. RichTextParser.Parse(_markdown).MediaIds];
+        return _waiting.Where(entry => used.Contains(entry.Key)).Select(entry => entry.Value).ToList();
+    }
+
+    private string SheetTitle => _sheet switch
+    {
+        Sheet.Insert => "Insert",
+        Sheet.Style => "Text style",
+        _ => "More formatting",
+    };
+
+    private IReadOnlyList<InsertChoice> Inserts =>
+    [
+        .. Allowed.HasFlag(RichTextMedia.Pictures) ? [new InsertChoice("Pictures and media", "Picture", AppIcons.Picture, "From the library or upload", () => Choose(PickableFiles.Pictures))] : Array.Empty<InsertChoice>(),
+        .. Allowed.HasFlag(RichTextMedia.Video) ? [new InsertChoice("Pictures and media", "Video", AppIcons.Video, "Uploaded", () => Choose(PickableFiles.Videos))] : Array.Empty<InsertChoice>(),
+        .. Allowed.HasFlag(RichTextMedia.VideoLinks) ? [new InsertChoice("Pictures and media", "Video link", AppIcons.VideoLink, "YouTube, Vimeo", () => OpenPanel(Panel.VideoLink))] : Array.Empty<InsertChoice>(),
+        .. Allowed.HasFlag(RichTextMedia.Files) ? [new InsertChoice("Pictures and media", "File", AppIcons.File, null, () => Choose(PickableFiles.Documents))] : Array.Empty<InsertChoice>(),
+        .. Allowed.HasFlag(RichTextMedia.Layout)
+            ? [
+                new InsertChoice("Layout", "Split into cards", AppIcons.CardSplit, null, () => BlockAsync(RichTextParser.CardSplit)),
+                new InsertChoice("Layout", "Line across", AppIcons.LineAcross, null, () => BlockAsync("---")),
+                new InsertChoice("Layout", "Table", AppIcons.Table, null, () => BlockAsync("| Heading | Heading |\n| --- | --- |\n| Text | Text |", 2)),
+                new InsertChoice("Layout", "Code block", AppIcons.CodeBlock, null, () => BlockAsync("```\n\n```", 4)),
+                new InsertChoice("In the text", "Footnote", AppIcons.Footnote, null, FootnoteAsync),
+                new InsertChoice("In the text", "Emoji", AppIcons.Emoji, null, () => OpenPanel(Panel.Emoji)),
+            ]
+            : Array.Empty<InsertChoice>(),
+    ];
+
+    private IReadOnlyList<MenuItem> InsertItems()
+    {
+        List<MenuItem> items = [];
+        string? group = null;
+        foreach (InsertChoice choice in Inserts)
+        {
+            items.Add(new MenuItem(choice.Label, EventCallback.Factory.Create(this, choice.Action), choice.Icon, choice.Detail, StartsGroup: choice.Group != group, GroupTitle: choice.Group != group ? choice.Group : null));
+            group = choice.Group;
+        }
+        return items;
+    }
+
+    private IReadOnlyList<MenuItem> StyleItems() =>
+    [
+        this.Item("Text", () => FormatAsync(Format.Text), AppIcons.PlainText, @checked: _style == LineStyle.Text),
+        this.Item("Heading 1", () => FormatAsync(Format.H1), AppIcons.Heading, @checked: _style == LineStyle.Heading1),
+        this.Item("Heading 2", () => FormatAsync(Format.H2), AppIcons.Heading, @checked: _style == LineStyle.Heading2),
+        this.Item("Heading 3", () => FormatAsync(Format.H3), AppIcons.Heading, @checked: _style == LineStyle.Heading3),
+    ];
+
+    private IReadOnlyList<MenuItem> MoreItems() =>
+    [
+        this.Item("Superscript", () => FormatAsync(Format.Sup), AppIcons.Superscript, "x²", @checked: _active.Contains(Format.Sup)),
+        this.Item("Subscript", () => FormatAsync(Format.Sub), AppIcons.Subscript, "H₂O", @checked: _active.Contains(Format.Sub)),
+    ];
+
+    private static string StyleName(LineStyle style) => style switch
+    {
+        LineStyle.Heading1 => "Heading 1",
+        LineStyle.Heading2 => "Heading 2",
+        LineStyle.Heading3 => "Heading 3",
+        _ => "Text",
+    };
+
+    private RenderFragment Tool(string format, string icon, string name, string? shortcut, bool? pressed = null, bool open = false) =>
         @<Button Variant="ButtonVariant.Quiet" Small="true" Icon="@icon" Class="rich-text-field__tool" AriaLabel="@name" Tooltip="@(shortcut is null ? name : $"{name} ({shortcut})")"
-                 Pressed="@(format == Format.Link ? _linking : _active.Contains(format))" OnClick="() => FormatAsync(format)" />;
+                 Pressed="@(open ? null : pressed ?? (format == Format.Link ? _panel == Panel.Link : _active.Contains(format)))" Expanded="@(open ? false : null)" OnClick="() => FormatAsync(format)" />;
 
     protected override async Task OnParametersSetAsync()
     {
-        if (Value == _markdown)
-            return;
-        _markdown = Value;
-        if (_editor is not null)
-            await _editor.InvokeVoidAsync("setValue", _markdown);
+        foreach (MediaRef media in Content.Media.Where(media => _media.All(known => known.Id != media.Id)))
+            _media.Add(media);
+        if (Content.Markdown != _markdown)
+        {
+            _markdown = Content.Markdown;
+            if (_editor is not null)
+                await _editor.InvokeVoidAsync("setValue", _markdown);
+        }
+        await SendMediaAsync();
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -79,7 +291,87 @@
             return;
         _self = DotNetObjectReference.Create(this);
         _module = await JS.InvokeAsync<IJSObjectReference>("import", "./_content/GSBC.ChurchApp.Platform.Ui/js/rich-text-field.js");
-        _editor = await _module.InvokeAsync<IJSObjectReference>("attach", _host, _self, _markdown, Label, Placeholder);
+        string emoji = Json(writer =>
+        {
+            foreach ((string code, string character) in Emoji.Common)
+                writer.WriteString(code, character);
+        });
+        _editor = await _module.InvokeAsync<IJSObjectReference>("attach", _host, _self, _markdown, Label, Placeholder, emoji);
+        _sentMedia = "";
+        await SendMediaAsync();
+    }
+
+    private async Task SendMediaAsync()
+    {
+        if (_editor is null)
+            return;
+        List<(MediaRef Media, string? Url)> shown = [];
+        foreach (MediaRef media in _media)
+            shown.Add((media, media.IsImage ? await SourceOfAsync(media) : null));
+        string json = Json(writer =>
+        {
+            foreach ((MediaRef media, string? url) in shown)
+            {
+                writer.WriteStartObject(media.Id);
+                writer.WriteString("kind", RichTextRules.KindOf(media) switch
+                {
+                    RichTextMedia.Pictures => "picture",
+                    RichTextMedia.Video => "video",
+                    RichTextMedia.Audio => "audio",
+                    _ => "file",
+                });
+                writer.WriteString("url", url);
+                writer.WriteString("name", media.AltText.Length > 0 ? media.AltText : media.FileName);
+                writer.WriteString("path", PathOf(media));
+                writer.WriteString("size", FileLine(media));
+                writer.WriteEndObject();
+            }
+        });
+        if (json == _sentMedia)
+            return;
+        _sentMedia = json;
+        await _editor.InvokeVoidAsync("setMedia", json);
+    }
+
+    private static string Json(Action<Utf8JsonWriter> write)
+    {
+        using MemoryStream buffer = new();
+        using (Utf8JsonWriter writer = new(buffer))
+        {
+            writer.WriteStartObject();
+            write(writer);
+            writer.WriteEndObject();
+        }
+        return System.Text.Encoding.UTF8.GetString(buffer.ToArray());
+    }
+
+    private async Task<string?> SourceOfAsync(MediaRef media)
+    {
+        if (media.Url is { } url && url.StartsWith("data:", StringComparison.Ordinal))
+            return url;
+        try
+        {
+            return await Files.SourceOfAsync(media.At(MediaSizeName.ForPhones)) ?? media.Url;
+        }
+        catch (Exception exception) when (exception is Grpc.Core.RpcException or HttpRequestException or JSException)
+        {
+            return media.Url;
+        }
+    }
+
+    private string PathOf(MediaRef media)
+    {
+        if (_waiting.ContainsKey(media.Id))
+            return $"On this phone: {media.FileName}. It's sent with your save.";
+        string name = media.FileName.Length > 0 ? media.FileName : media.AltText;
+        return media.Folder.Length > 0 ? $"~/{media.Folder}/{name}" : $"~/{name}";
+    }
+
+    private static string FileLine(MediaRef media)
+    {
+        string extension = Path.GetExtension(media.FileName).TrimStart('.').ToUpperInvariant();
+        string weight = media.Bytes > 0 ? MediaSizes.Weight(media.Bytes) : "";
+        return string.Join(" · ", new[] { extension, weight }.Where(part => part.Length > 0));
     }
 
     [JSInvokable]
@@ -88,13 +380,16 @@
         if (markdown == _markdown)
             return;
         _markdown = markdown;
-        await ValueChanged.InvokeAsync(markdown);
+        await ContentChanged.InvokeAsync(Current());
     }
+
+    private RichText Current() => RichTextRules.WithOnlyUsedMedia(new RichText { Markdown = _markdown, Media = [.. _media] });
 
     [JSInvokable]
     public Task FormatsAsync(string formats)
     {
         _active = [.. formats.Split(',', StringSplitOptions.RemoveEmptyEntries)];
+        _style = _active.Contains(Format.H1) ? LineStyle.Heading1 : _active.Contains(Format.H2) ? LineStyle.Heading2 : _active.Contains(Format.H3) ? LineStyle.Heading3 : LineStyle.Text;
         StateHasChanged();
         return Task.CompletedTask;
     }
@@ -103,26 +398,59 @@
     public string PastedAsync(string tree) => PastedText.FromJson(tree, Headings);
 
     [JSInvokable]
+    public Task MediaWantedAsync(string mode, int at)
+    {
+        _choosing = new Choosing(mode == "add" ? PickableFiles.Pictures : KindAt(at), mode, at);
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+    private PickableFiles KindAt(int at)
+    {
+        string before = _markdown[..Math.Clamp(at, 0, _markdown.Length)];
+        int lineEnd = _markdown.IndexOf('\n', before.Length);
+        string line = _markdown[(before.LastIndexOf('\n') + 1)..(lineEnd < 0 ? _markdown.Length : lineEnd)].Trim();
+        return RichTextParser.Parse(line).MediaIds.FirstOrDefault() is { } id && _media.FirstOrDefault(media => media.Id == id) is { } media
+            ? media.IsVideo ? PickableFiles.Videos : media.IsImage ? PickableFiles.Pictures : PickableFiles.Documents
+            : PickableFiles.Pictures;
+    }
+
+    [JSInvokable]
     public async Task FormatAsync(string format)
     {
         if (_editor is null)
             return;
         switch (format)
         {
-            case Format.Bold or Format.Italic:
-                if (!await _editor.InvokeAsync<bool>("toggleOff", format))
-                    await ApplyAsync(RichTextEdits.Wrap(await CurrentAsync(), format == Format.Bold ? "**" : "*", format == Format.Bold ? "bold text" : "italic text"));
+            case Format.Style:
+                _sheet = Sheet.Style;
+                StateHasChanged();
+                break;
+            case Format.More:
+                _sheet = Sheet.More;
+                StateHasChanged();
                 break;
             case Format.Link:
-                _beforeLink = await CurrentAsync();
-                string selected = _beforeLink.Selected.Trim();
-                (_href, _linking) = (LinkTargets.IsSafe(selected) ? selected : "", !_linking);
-                StateHasChanged();
+                if (_panel == Panel.Link)
+                {
+                    ClosePanel();
+                    break;
+                }
+                await OpenPanel(Panel.Link);
+                string selected = _before.Selected.Trim();
+                _href = LinkTargets.IsSafe(selected) ? selected : "";
+                break;
+            case var wrap when Wraps.TryGetValue(wrap, out (string Marker, string Placeholder) marks):
+                if (!await _editor.InvokeAsync<bool>("toggleOff", format))
+                    await ApplyAsync(RichTextEdits.Wrap(await CurrentAsync(), marks.Marker, marks.Placeholder));
                 break;
             default:
                 await ApplyAsync(RichTextEdits.Lines(await CurrentAsync(), format switch
                 {
-                    Format.Heading => LineStyle.Heading,
+                    Format.Text => LineStyle.Text,
+                    Format.H1 => LineStyle.Heading1,
+                    Format.H2 => LineStyle.Heading2,
+                    Format.H3 => LineStyle.Heading3,
                     Format.Numbers => LineStyle.Numbers,
                     Format.Quote => LineStyle.Quote,
                     _ => LineStyle.Bullets,
@@ -131,11 +459,69 @@
         }
     }
 
+    private async Task FromSheetAsync(Func<Task> action)
+    {
+        _sheet = Sheet.None;
+        await action();
+    }
+
+    private async Task OpenPanel(Panel panel)
+    {
+        _before = await CurrentAsync();
+        _href = "";
+        _panel = panel;
+        StateHasChanged();
+    }
+
+    private void ClosePanel() => _panel = Panel.None;
+
+    private async Task Choose(PickableFiles kinds)
+    {
+        _before = await CurrentAsync();
+        _choosing = new Choosing(kinds, "insert", 0);
+    }
+
+    private async Task ChosenAsync(MediaRef chosen)
+    {
+        Choosing? choosing = _choosing;
+        _choosing = null;
+        if (choosing is null || _editor is null)
+            return;
+        MediaRef media = chosen;
+        if (Uploads.HashOf(chosen) is { } hash)
+        {
+            string id = UploadedMedia.PlaceholderId(hash);
+            _waiting[id] = chosen;
+            media = new MediaRef { Id = id, ContentType = chosen.ContentType, Bytes = chosen.Bytes, Url = chosen.Url, FileName = chosen.FileName, AltText = chosen.AltText };
+        }
+        _media.RemoveAll(known => known.Id == media.Id);
+        _media.Add(media);
+        await SendMediaAsync();
+        string line = RichTextEdits.MediaLine(media.Id, media.AltText.Length > 0 ? media.AltText : media.FileName);
+        if (choosing.Mode == "insert")
+            await ApplyAsync(RichTextEdits.MediaLines(_before, [line]));
+        else
+            await _editor.InvokeVoidAsync("placeMedia", choosing.Mode, choosing.At, line);
+    }
+
     private async Task AddLinkAsync()
     {
-        _linking = false;
-        await ApplyAsync(RichTextEdits.Link(_beforeLink, _href.Trim(), "link text"));
+        ClosePanel();
+        await ApplyAsync(RichTextEdits.Link(_before, _href.Trim(), "link text"));
     }
+
+    private async Task AddVideoLinkAsync()
+    {
+        ClosePanel();
+        if (VideoLink.Of(_href) is { } video)
+            await ApplyAsync(RichTextEdits.Block(_before, RichTextEdits.VideoLinkLine(video, "")));
+    }
+
+    private async Task InsertTextAsync(string text) => await ApplyAsync(RichTextEdits.Insert(await CurrentAsync(), text));
+
+    private async Task BlockAsync(string block, int? caret = null) => await ApplyAsync(RichTextEdits.Block(await CurrentAsync(), block, caret));
+
+    private async Task FootnoteAsync() => await ApplyAsync(RichTextEdits.Footnote(await CurrentAsync()));
 
     private async Task<EditorText> CurrentAsync()
     {

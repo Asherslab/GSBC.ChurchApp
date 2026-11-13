@@ -48,4 +48,21 @@ public static class AppIcons
     public const string Quote = "quote";
     public const string Link = "link";
     public const string Heading = "heading";
+    public const string Strikethrough = "strikethrough";
+    public const string Highlight = "highlighter";
+    public const string Code = "code";
+    public const string CodeBlock = "square-code";
+    public const string Table = "table";
+    public const string Superscript = "superscript";
+    public const string Subscript = "subscript";
+    public const string Footnote = "asterisk";
+    public const string CardSplit = "rows";
+    public const string LineAcross = "separator";
+    public const string Picture = "image-plus";
+    public const string Video = "video";
+    public const string VideoLink = "monitor-play";
+    public const string File = "file";
+    public const string Emoji = "smile";
+    public const string Insert = "plus";
+    public const string PlainText = "type";
 }

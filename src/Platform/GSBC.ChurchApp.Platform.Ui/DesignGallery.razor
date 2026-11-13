@@ -267,12 +267,12 @@
             @<MediaStrip Content="SamplePost" About="Carols on the lawn" />)
         @Item("Reading one post: PostView", "Its strip, title, who posted it and when, the text, and its link at the end.",
             @<PostView Title="Carols on the lawn" Content="SamplePost" From="Music" FromHref="gallery" When="Thursday 13 November" LinkPath="/events" LinkLabel="See it in the calendar" />)
-        @Item("Writing a post: PostEditor", "Blocks you add and move by their handles, an Add row, and one row for who it's for and telling them.",
-            @<PostEditor Title="@_postTitle" TitleChanged="title => _postTitle = title" Blocks="_postBlocks" SettingsSummary="Everyone · Notification on · Now">
+        @Item("Writing a post: PostEditor", "A title and one editor: formatting in the bar, pictures, video, files, cards and tables under Insert, each shown in place with its caption; and one row for who it's for and telling them.",
+            @<PostEditor Title="@_postTitle" TitleChanged="title => _postTitle = title" @bind-Body="_postBody" SettingsSummary="Everyone · Notification on · Now">
                 <Settings><p class="gallery__note">The feature's own settings go here.</p></Settings>
             </PostEditor>)
-        @Item("Formatted text: RichTextField", "Formats as you type: the bar, ⌘B, ⌘I and ⌘K, or - , # and > for those who know. The marks show faintly only where the cursor is. Pasting from Word or Google Docs keeps bold, lists and links. On the phone its bar sits on the keyboard.",
-            @<RichTextField @bind-Value="_formatted" Label="Sample text" Headings="true" />)
+        @Item("Formatted text: RichTextField", "Formats as you type: the bar and its shortcuts, or Markdown for those who know. The marks show faintly only where the cursor is. Each place says what it allows: this one is formatting only, so Insert holds just the layout and emoji. On the phone its bar sits on the keyboard.",
+            @<RichTextField @bind-Content="_formatted" Label="Sample text" Headings="true" Allowed="RichTextMedia.Layout" />)
         @Item("Writing on a page: WritingDesk", "The admin panel's page for writing: the work on a white page with Write and Preview on a phone tabs, its settings in a column that folds away, and the save bar at the foot.",
             @<WritingDesk SettingsTitle="Who it's for" SettingsSummary="Everyone · Now">
                 <ChildContent><p class="gallery__note">The writing goes here.</p></ChildContent>
@@ -433,15 +433,14 @@
         new("row", "Holiday program volunteers needed", new RichText { Markdown = "Three mornings in January." }, SamplePicture, Clock.GetUtcNow().UtcDateTime.AddDays(-1), null, "", "Kids ministry", "gallery"),
     ];
 
-    private string _formatted = "There's a place for everyone. **Bring a friend**.\n\n- Carols on the lawn\n- Christmas Eve";
+    private RichText _formatted = new() { Markdown = "There's a place for everyone. **Bring a friend**, ==bring a plate==.\n\n1. Carols on the lawn\n2. Christmas Eve\n\n---\n\n| When | What |\n| --- | --- |\n| 6pm | Carols |" };
     private string _postTitle = "Carols on the lawn";
 
-    private readonly List<PostBlock> _postBlocks =
-    [
-        new() { Kind = PostBlockKind.Text, Text = "Bring a **picnic rug** and a torch." },
-        new() { Kind = PostBlockKind.Heading, Text = "What's on" },
-        new() { Kind = PostBlockKind.Pictures, Media = [SamplePicture, SampleSecond], Caption = "Last year's carols" },
-    ];
+    private RichText _postBody = new()
+    {
+        Markdown = $"Bring a **picnic rug** and a torch.\n\n## What's on\n\n![Carols](media:{SamplePicture.Id} \"Last year's carols\")\n![Candles](media:{SampleSecond.Id})\n\n===\n\nSet-up starts at 4pm[^1].\n\n[^1]: Gloves are in the shed.",
+        Media = [SamplePicture, SampleSecond],
+    };
     private const string Drawing = """<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M8 12h8"/></svg>""";
 
     private static readonly IReadOnlyList<SamplePerson> People =

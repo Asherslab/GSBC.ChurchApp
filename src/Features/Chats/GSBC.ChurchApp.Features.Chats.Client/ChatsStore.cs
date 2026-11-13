@@ -1,3 +1,4 @@
+using GSBC.ChurchApp.Platform.Contracts.Content;
 using System.Diagnostics.CodeAnalysis;
 using GSBC.ChurchApp.Features.Chats.Contracts;
 using GSBC.ChurchApp.Platform.Client.Feeds;
@@ -128,7 +129,7 @@ public sealed class ChatsStore(ILocalFeeds feeds, IOutbox outbox, ILocalPreferen
         PendingSends pending = await PendingAsync();
         pending.Sends.Add(new PendingSend
         {
-            OutboxId = id, Message = message, At = time.GetUtcNow().UtcDateTime, ReplyName = replyTo?.SenderName ?? "", ReplySnippet = replyTo?.Text ?? "",
+            OutboxId = id, Message = message, At = time.GetUtcNow().UtcDateTime, ReplyName = replyTo?.SenderName ?? "", ReplySnippet = replyTo is null ? "" : PlainText.OfChat(replyTo.Text),
             Waiting = picked.Select(media => new Attachment { Name = media.FileName, ContentType = media.ContentType, Bytes = media.Bytes, Media = media }).ToList(),
         });
         await SaveAsync(pending);

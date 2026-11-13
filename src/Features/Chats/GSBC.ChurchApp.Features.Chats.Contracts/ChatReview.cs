@@ -1,3 +1,5 @@
+using GSBC.ChurchApp.Platform.Contracts.Content;
+
 namespace GSBC.ChurchApp.Features.Chats.Contracts;
 
 public static class ReviewOnly
@@ -116,5 +118,6 @@ public static class ChatReview
         || found.Versions.Any(version => Contains(version.Text, words))
         || found.Message.Attachments.Any(attachment => Contains(attachment.Name, words));
 
-    private static bool Contains(string text, string words) => text.Contains(words, StringComparison.OrdinalIgnoreCase);
+    private static bool Contains(string text, string words) =>
+        text.Contains(words, StringComparison.OrdinalIgnoreCase) || PlainText.OfChat(text).Contains(words, StringComparison.OrdinalIgnoreCase);
 }

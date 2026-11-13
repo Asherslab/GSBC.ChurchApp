@@ -1,3 +1,4 @@
+using GSBC.ChurchApp.Platform.Contracts.Content;
 using Grpc.Core;
 using GSBC.ChurchApp.Features.Chats.Contracts;
 using GSBC.ChurchApp.Platform.Client.Online;
@@ -69,7 +70,7 @@ public sealed class OnlineChats(ChannelBase channel, IDirectUploads uploads, Cli
         PendingSend send = new()
         {
             OutboxId = message.ClientId, Message = message, At = time.GetUtcNow().UtcDateTime, ReplyName = replyTo?.SenderName ?? "",
-            ReplySnippet = replyTo?.Text ?? "", Waiting = attachments,
+            ReplySnippet = replyTo is null ? "" : PlainText.OfChat(replyTo.Text), Waiting = attachments,
         };
         _sending.Add(send);
         await DeliverAsync(send);
