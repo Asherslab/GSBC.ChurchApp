@@ -11,7 +11,7 @@
 <UnsavedGuard Changed="() => Changed" Editing="Post" State="() => Shape" What="this post" />
 
 <div class="news-form">
-    <PostEditor @ref="_editor" Title="@_title" TitleChanged="title => _title = title" Blocks="_blocks" OnChanged="() => _changes++" Target="Target"
+    <PostEditor @ref="_editor" Title="@_title" TitleChanged="title => _title = title" Blocks="_blocks" OnChanged="() => _changes++"
                 SettingsSummary="@Summary">
         <Settings>
             <AudiencePicker Label="Who it's for" Value="@_audience" ValueChanged="audience => _audience = audience" />
@@ -146,6 +146,8 @@
 
     private Task SaveAsync() => RunAsync(async () =>
     {
+        if (await UploadedAsync() is { } problem)
+            throw new Grpc.Core.RpcException(new Grpc.Core.Status(Grpc.Core.StatusCode.FailedPrecondition, problem));
         NewsPost saved = await Writes.SaveAsync(Wanted(), _editor?.WaitingFiles() ?? []);
         _sent = true;
         if (Post.State is not NewsState.Published)
@@ -159,8 +161,12 @@
         await OnSaved.InvokeAsync(saved);
     });
 
+    private async Task<string?> UploadedAsync() => _editor is null ? null : await _editor.UploadChosenAsync(Target);
+
     private Task TryAsync() => RunAsync(async () =>
     {
+        if (await UploadedAsync() is { } problem)
+            throw new Grpc.Core.RpcException(new Grpc.Core.Status(Grpc.Core.StatusCode.FailedPrecondition, problem));
         NewsPost saved = await Writes.SaveAsync(Wanted(), _editor?.WaitingFiles() ?? []);
         _sent = true;
         await Writes.TryOnMyPhoneAsync(saved.Id);

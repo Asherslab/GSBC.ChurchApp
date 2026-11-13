@@ -61,6 +61,8 @@
 
 @code {
     private readonly Dictionary<string, MediaRef> _waiting = [];
+    private readonly Dictionary<string, ChosenFile> _chosen = [];
+    private const long LargestPreview = 8L * 1024 * 1024;
     private bool _settings;
     private string? _problem;
 
@@ -68,7 +70,6 @@
     [Parameter] public EventCallback<string> TitleChanged { get; set; }
     [Parameter, EditorRequired] public required List<PostBlock> Blocks { get; set; }
     [Parameter] public EventCallback OnChanged { get; set; }
-    [Parameter, EditorRequired] public required UploadTarget Target { get; set; }
     [Parameter] public RenderFragment? Settings { get; set; }
     [Parameter] public string SettingsTitle { get; set; } = "Who, when and telling people";
     [Parameter] public string SettingsSummary { get; set; } = "";
@@ -96,7 +97,7 @@
         }
         else if (Direct is not null)
         {
-            <FilePick Label="@label" Kinds="kinds" Multiple="multiple" Limit="@(multiple ? 12 : 1)" Class="post-editor__chip" OnChosen="chosen => UploadAsync(chosen, into)">
+            <FilePick Label="@label" Kinds="kinds" Multiple="multiple" Limit="@(multiple ? 12 : 1)" Class="post-editor__chip" OnChosen="chosen => KeepChosenAsync(chosen, into)">
                 <Icon Name="@icon" Size="IconSize.Small" />@(context ? "Adding…" : label)
             </FilePick>
         }
@@ -205,23 +206,56 @@
         }, into);
     }
 
-    private async Task UploadAsync(IReadOnlyList<ChosenFile> chosen, PostBlock? into)
+    private async Task KeepChosenAsync(IReadOnlyList<ChosenFile> chosen, PostBlock? into)
     {
         _problem = null;
-        if (Direct is not { } direct)
-            return;
         foreach (ChosenFile file in chosen)
         {
+            string id = $"chosen-{Guid.NewGuid():N}";
+            _chosen[id] = file;
+            await PlaceAsync(new MediaRef
+            {
+                Id = id, ContentType = file.ContentType, Bytes = file.File.Size, FileName = file.File.Name, Url = await PreviewAsync(file),
+            }, into);
+        }
+    }
+
+    private static async Task<string?> PreviewAsync(ChosenFile file)
+    {
+        if (!file.ContentType.StartsWith("image/", StringComparison.Ordinal) || file.File.Size > LargestPreview)
+            return null;
+        await using Stream content = file.File.OpenReadStream(LargestPreview);
+        using MemoryStream copy = new();
+        await content.CopyToAsync(copy);
+        return $"data:{file.ContentType};base64,{Convert.ToBase64String(copy.ToArray())}";
+    }
+
+    public async Task<string?> UploadChosenAsync(UploadTarget target)
+    {
+        if (Direct is not { } direct)
+            return null;
+        foreach ((string id, ChosenFile file) in _chosen.ToList())
+        {
+            PostBlock? holder = Blocks.FirstOrDefault(block => block.Media.Any(media => media.Id == id));
+            if (holder is null)
+            {
+                _chosen.Remove(id);
+                continue;
+            }
             try
             {
                 await using Stream content = file.File.OpenReadStream(maxAllowedSize: LargestUpload);
-                await PlaceAsync(await direct.UploadAsync(content, file.File.Name, file.ContentType, file.File.Size, Target), into);
+                MediaRef sent = await direct.UploadAsync(content, file.File.Name, file.ContentType, file.File.Size, target);
+                int at = holder.Media.FindIndex(media => media.Id == id);
+                holder.Media[at] = sent;
+                _chosen.Remove(id);
             }
             catch (Exception exception) when (exception is Grpc.Core.RpcException or IOException or HttpRequestException)
             {
-                _problem = exception is Grpc.Core.RpcException rpc ? rpc.Status.Detail : $"{file.File.Name} couldn't be added: {exception.Message}";
+                return exception is Grpc.Core.RpcException rpc ? rpc.Status.Detail : $"{file.File.Name} couldn't be added: {exception.Message}";
             }
         }
+        return null;
     }
 
     private Task PlaceAsync(MediaRef media, PostBlock? into)

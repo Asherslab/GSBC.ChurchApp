@@ -29,7 +29,7 @@
     </header>
     @if (!Content.IsEmpty)
     {
-        <RichTextView Content="Content" Class="post-view__body" About="@Title" SkipLeadingMedia="MediaStrip.CountIn(Content) > 0" />
+        <RichTextView Content="Content" Class="post-view__body" About="@Title" SkipLeadingMedia="MediaStrip.Leads(Content)" />
     }
     @if (LinkPath.Length > 0)
     {

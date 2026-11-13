@@ -266,7 +266,7 @@
         @Item("Reading one post: PostView", "Its strip, title, who posted it and when, the text, and its link at the end.",
             @<PostView Title="Carols on the lawn" Content="SamplePost" From="Music" FromHref="gallery" When="Thursday 13 November" LinkPath="/events" LinkLabel="See it in the calendar" />)
         @Item("Writing a post: PostEditor", "Blocks you add and move by their handles, an Add row, and one row for who it's for and telling them.",
-            @<PostEditor Title="@_postTitle" TitleChanged="title => _postTitle = title" Blocks="_postBlocks" Target="UploadTarget.Public" SettingsSummary="Everyone · Notification on · Now">
+            @<PostEditor Title="@_postTitle" TitleChanged="title => _postTitle = title" Blocks="_postBlocks" SettingsSummary="Everyone · Notification on · Now">
                 <Settings><p class="gallery__note">The feature's own settings go here.</p></Settings>
             </PostEditor>)
     </Section>
@@ -359,7 +359,7 @@
                 <Skeleton Count="2" />
                 <Skeleton Shape="SkeletonShape.Lines" Count="3" />
             </div>)
-        @Item("A notification as people see it: LockScreenProof", "Before sending an announcement.",
+        @Item("A notification as people see it: LockScreenProof", "Before a church news post sends its notification.",
             @<LockScreenProof Title="Family games night" Body="This Friday in the hall, 6pm. Bring a plate to share." />)
     </Section>
 

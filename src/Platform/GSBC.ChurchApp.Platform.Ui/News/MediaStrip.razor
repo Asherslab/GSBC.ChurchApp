@@ -3,7 +3,7 @@
 @implements IAsyncDisposable
 @inject IJSRuntime Js
 
-@if (Frames.Count > 0)
+@if (Frames.Count >= LeastForAStrip)
 {
     <div class="media-strip">
         <div class="media-strip__track" @ref="_track" tabindex="0" data-look-scroll aria-label="@($"{Frames.Count} pictures and videos")">
@@ -59,7 +59,9 @@
 
     private IReadOnlyList<MediaRef> Pictures => Frames.Select(frame => frame.Media).OfType<MediaRef>().Where(media => media.IsImage).ToList();
 
-    public static int CountIn(RichText content) => FramesOf(content).Count;
+    public const int LeastForAStrip = 2;
+
+    public static bool Leads(RichText content) => FramesOf(content).Count >= LeastForAStrip;
 
     protected override void OnParametersSet() => Frames = FramesOf(Content);
 

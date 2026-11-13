@@ -22,7 +22,7 @@
             <ToggleRow Title="@SundayPosts.NoClass" Description="Coming up shows the Sunday struck through" Checked="Draft.NoClass" CheckedChanged="NoClassChanged" />
         }
         <PostEditor @ref="_editor" Title="@Draft.Title" TitleChanged="title => Draft.Title = title" Blocks="_blocks" OnChanged="() => _changes++"
-                    Target="Target" SettingsTitle="Who it's for and telling them" SettingsSummary="@Summary">
+                    SettingsTitle="Who it's for and telling them" SettingsSummary="@Summary">
             <Settings>
                 <Segmented TValue="string" Label="Who it's for" ShowLabel="true" Stacked="true" Options="Audiences" Value="Draft.Audience" ValueChanged="value => Draft.Audience = value" />
                 <p class="ministry-who">@MinistryWords.WhoReads(Draft.Audience, Page.Ministry)</p>
@@ -122,14 +122,16 @@
             : page.You.MayPostFor.Contains(Contracts.Audiences.Team) ? Contracts.Audiences.Team : page.You.MayPostFor.FirstOrDefault() ?? ""),
     };
 
-    private Task SaveAsync() => RunAsync(() =>
+    private Task SaveAsync() => RunAsync(async () =>
     {
+        if (_editor is not null && await _editor.UploadChosenAsync(Target) is { } problem)
+            throw new RpcException(new Status(StatusCode.FailedPrecondition, problem));
         Draft.Content = _editor?.Content ?? PostBlocks.ToRichText(_blocks);
         Draft.Body = PlainText.Of(Draft.Content);
         List<QueuedUpload> uploads = (_editor?.WaitingFiles() ?? [])
             .Select(media => Uploads.For(media, MediaSlot.Id(MinistryFileArea.UploadedInPostSave), Target with { AltText = media.AltText }))
             .OfType<QueuedUpload>().ToList();
-        return Ministries.SavePostAsync(Page.Ministry.Id, Draft, uploads);
+        await Ministries.SavePostAsync(Page.Ministry.Id, Draft, uploads);
     });
 
     private IReadOnlyList<MenuItem> More =>

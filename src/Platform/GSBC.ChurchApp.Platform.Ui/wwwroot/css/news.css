@@ -61,6 +61,7 @@
 .news-story__picture {
     display: block;
     width: 100%;
+    height: auto;
     aspect-ratio: 16 / 9;
     object-fit: cover;
     border-radius: var(--radius);
@@ -214,7 +215,7 @@
 
 .post-text__tools button { min-width: 36px; }
 
-.post-text__input { min-height: 96px; }
+.post-text__input { min-height: 96px; field-sizing: content; max-height: 60vh; }
 
 .post-editor__add { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-xs); }
 
@@ -276,3 +277,20 @@
 .news-form__note { margin: 0; color: var(--ink-2); font-size: var(--text-caption); }
 
 .post-text { gap: var(--space-xs); }
+
+.post-editor__chip.add-row {
+    width: auto;
+    min-height: 36px;
+    padding: 0 var(--space-md);
+    border-top: 0;
+    border-radius: var(--radius-full);
+    background: var(--field);
+    color: var(--ink);
+    font-size: var(--text-caption);
+}
+
+.post-editor__chip.add-row:hover { color: var(--ink); background: var(--fill-on-surface); }
+
+.post-block__thumbs .post-editor__chip.add-row { justify-content: center; aspect-ratio: 1; min-height: 0; padding: 0; border-radius: var(--radius-inner); }
+
+.section--first > .post-view > .media-strip:first-child { margin-top: calc(-1 * var(--section-first)); }
