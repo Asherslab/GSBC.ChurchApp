@@ -179,10 +179,14 @@ navigate to chats through ministries in admin, a nicely laid out dedicated chat 
 
 ### Defaults (owner to review)
 
-Chosen tonight on the owner's "use best option this time"; the decision page (`.impeccable/mocks/desktop-chats/`, sketches
+Chosen overnight on the owner's "use best option this time"; the decision page (`.impeccable/mocks/desktop-chats/`, sketches
 beside `payload.json`) has the alternatives.
 
-1. **Layout: three panes** (the list, the conversation, the chat's settings and people). Alternatives on the page: a
+1. **Layout: three panes** (the list, the conversation, the chat's settings and people). **Confirmed by the owner,
+   2026-11-13:** "three panes - make sure it's clear which chats belong to what ministry / etc". So the list is grouped
+   under each ministry's name (the ministry with the newest message first), every row says what kind of chat it is
+   ("Team · group chat", "Parents · leaders post", "Asking to join"), and the open chat's heading says it again
+   ("Kids Ministries · Team · group chat · 3 people"). Alternatives on the page: a
    column of your ministries first, then that ministry's chats (one more click, mostly empty for people in two or three
    ministries); several chats open side by side (narrow columns, a new way of working the phone doesn't have). Under
    1360px wide the settings pane folds away and the cog brings it back; at phone width one pane shows at a time.

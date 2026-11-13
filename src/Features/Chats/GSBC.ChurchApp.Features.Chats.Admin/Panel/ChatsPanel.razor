@@ -22,8 +22,8 @@ else
                 <h1 class="chat-desk__title">Chats</h1>
                 <SearchField Label="Search your chats" Placeholder="Search chats" Value="@_search" ValueChanged="value => _search = value" />
             </div>
-            <ChatsList Search="@_search" Current="@Id" ShowHint="false" />
-            <p class="hint chat-desk__hint">Chats from every ministry you're in, newest first. To start one, open its ministry's Chats tab. Church staff can check messages in chats.</p>
+            <ChatsList Search="@_search" Current="@Id" ShowHint="false" ByMinistry="true" />
+            <p class="hint chat-desk__hint">Chats from every ministry you're in, the newest ministry first. To start one, open its ministry's Chats tab. Church staff can check messages in chats.</p>
         </section>
         @if (Id is null)
         {

@@ -279,7 +279,7 @@
     private void ShowSeen(ChatMessage message) => _seen = message;
 
     private static string PanelLead(ChatCard card) =>
-        card.MinistryName.Length > 0 && card.Kind != ChatKinds.Ask ? $"{card.MinistryName} · {ChatText.Who(card)}" : ChatText.Who(card);
+        card.MinistryName.Length > 0 && card.Kind != ChatKinds.Ask ? $"{card.MinistryName} · {ChatText.Kind(card)} · {ChatText.People(card)}" : ChatText.Who(card);
 
     private async Task OpenSettings()
     {

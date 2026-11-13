@@ -15,6 +15,13 @@ public static class ChatText
         _ => "Chosen people",
     };
 
+    public static string Kind(ChatCard card) => card.Kind switch
+    {
+        ChatKinds.Ask => "Asking to join",
+        ChatKinds.Channel => $"{Audience(card.Audience)} · leaders post",
+        _ => $"{Audience(card.Audience)} · group chat",
+    };
+
     public static string Icon(ChatCard card) => card.Kind switch
     {
         ChatKinds.Channel => "megaphone",
@@ -40,10 +47,15 @@ public static class ChatText
         return $"{sender}: {card.LastPreview}";
     }
 
-    public static string Who(ChatCard card)
+    public static string People(ChatCard card)
     {
         int people = card.People.Count(person => person.Role != ChatRoles.ParentReader && person.State == ChatStates.Active);
-        string count = people == 1 ? "1 person" : $"{people} people";
+        return people == 1 ? "1 person" : $"{people} people";
+    }
+
+    public static string Who(ChatCard card)
+    {
+        string count = People(card);
         if (card.YourRole == ChatRoles.ParentReader && card.ForChildren.Count > 0)
             return $"{First(card.ForChildren[0].Name)}'s chat · you can read it";
         return card.Kind switch

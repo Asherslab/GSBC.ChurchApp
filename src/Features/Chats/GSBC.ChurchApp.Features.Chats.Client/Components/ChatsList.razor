@@ -17,36 +17,28 @@
     }
     else
     {
-        <ListGroup>
-            @foreach (ChatSummary chat in chats)
+        @if (ByMinistry)
+        {
+            @foreach (IGrouping<string, ChatSummary> ministry in chats.GroupBy(chat => chat.Card.MinistryName))
             {
-                ChatCard card = chat.Card;
-                if (chat.WaitingForYou)
-                {
-                    <ListRow Title="@($"{card.Name} wants {Names(card.AwaitingYourConsent)}")" Subtitle="@($"{card.MinistryName} · read why and say yes or not now")"
-                             Icon="users" IconTone="RowTone.Warm" Unread="true" Chevron="true" Href="@ChatsDestinations.Chat(card.Id)" Current="@(card.Id == Current)" Class="chat-row--waiting" />
-                }
-                else
-                {
-                    <ListRow Title="@ChatText.Title(card)" Subtitle="@Subtitle(card)" Icon="@ChatText.Icon(card)" IconTone="ChatText.Tone(card)"
-                             Unread="@(chat.Unread > 0 && !card.Muted)" Href="@ChatsDestinations.Chat(card.Id)" Current="@(card.Id == Current)">
-                        <TrailingContent>
-                            <span class="chat-row__end">
-                                <span class="chat-row__time">@ChatText.When(card.LastAt ?? card.CreatedAt, Clock.GetUtcNow().UtcDateTime)</span>
-                                @if (chat.Unread > 0 && !card.Muted)
-                                {
-                                    <span class="chat-row__count">@(chat.Unread > 99 ? "99+" : chat.Unread)</span>
-                                }
-                                else if (card.Muted)
-                                {
-                                    <Icon Name="bell-off" Size="IconSize.Small" />
-                                }
-                            </span>
-                        </TrailingContent>
-                    </ListRow>
-                }
+                <h2 class="chat-group">@(ministry.Key.Length > 0 ? ministry.Key : "Other chats")</h2>
+                <ListGroup>
+                    @foreach (ChatSummary chat in ministry)
+                    {
+                        @Row(chat)
+                    }
+                </ListGroup>
             }
-        </ListGroup>
+        }
+        else
+        {
+            <ListGroup>
+                @foreach (ChatSummary chat in chats)
+                {
+                    @Row(chat)
+                }
+            </ListGroup>
+        }
         @if (ShowHint)
         {
             <p class="hint">@Hint</p>
@@ -60,6 +52,35 @@
     [Parameter] public string Search { get; set; } = "";
     [Parameter] public string? Current { get; set; }
     [Parameter] public bool ShowHint { get; set; } = true;
+    [Parameter] public bool ByMinistry { get; set; }
+
+    private RenderFragment Row(ChatSummary chat) => @<text>
+        @{ ChatCard card = chat.Card; }
+        @if (chat.WaitingForYou)
+        {
+            <ListRow Title="@($"{card.Name} wants {Names(card.AwaitingYourConsent)}")" Subtitle="@($"{card.MinistryName} · read why and say yes or not now")"
+                     Icon="users" IconTone="RowTone.Warm" Unread="true" Chevron="true" Href="@ChatsDestinations.Chat(card.Id)" Current="@(card.Id == Current)" Class="chat-row--waiting" />
+        }
+        else
+        {
+            <ListRow Title="@ChatText.Title(card)" Subtitle="@Subtitle(card)" Icon="@ChatText.Icon(card)" IconTone="ChatText.Tone(card)"
+                     Unread="@(chat.Unread > 0 && !card.Muted)" Href="@ChatsDestinations.Chat(card.Id)" Current="@(card.Id == Current)">
+                <TrailingContent>
+                    <span class="chat-row__end">
+                        <span class="chat-row__time">@ChatText.When(card.LastAt ?? card.CreatedAt, Clock.GetUtcNow().UtcDateTime)</span>
+                        @if (chat.Unread > 0 && !card.Muted)
+                        {
+                            <span class="chat-row__count">@(chat.Unread > 99 ? "99+" : chat.Unread)</span>
+                        }
+                        else if (card.Muted)
+                        {
+                            <Icon Name="bell-off" Size="IconSize.Small" />
+                        }
+                    </span>
+                </TrailingContent>
+            </ListRow>
+        }
+    </text>;
 
     private string Remembered => MinistryId is null ? ChatsStore.Remembered : $"{ChatsStore.Remembered}.{MinistryId}";
 
@@ -76,6 +97,8 @@
         string preview = ChatText.Preview(card);
         if (card.YourRole == ChatRoles.ParentReader && card.ForChildren.Count > 0)
             return $"For {ChatText.First(card.ForChildren[0].Name)} · {preview}";
+        if (ByMinistry)
+            return $"{ChatText.Kind(card)} · {preview}";
         if (MinistryId is not null)
             return card.Kind == ChatKinds.Channel ? $"Leaders post · {preview}" : $"{ChatText.Audience(card.Audience)} · {preview}";
         return card.MinistryName.Length > 0 && card.Kind != ChatKinds.Ask ? $"{card.MinistryName} · {preview}" : preview;
