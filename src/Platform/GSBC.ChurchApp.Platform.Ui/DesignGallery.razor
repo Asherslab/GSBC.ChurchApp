@@ -514,7 +514,7 @@
         new("Name", person => @<span class="cell-strong">@person.Name</span>, person => person.Name),
         new("Email", person => @<span class="quiet">@person.Email</span>, Class: "optional"),
         new("Account", person => @<span class="quiet">@person.Account</span>),
-        new("Joined", person => @<span>@person.Joined</span>, Class: "num"),
+        new("Joined", person => @<span>@person.Joined</span>, Class: "num optional"),
     ];
 
     private IReadOnlyList<MenuItem> RecordActions =>

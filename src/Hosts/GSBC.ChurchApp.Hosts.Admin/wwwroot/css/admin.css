@@ -208,6 +208,8 @@ button.module-nav__link { width: 100%; border: 0; background: none; font-family:
 .sheet__actions > :last-child:not(:first-child) { margin-right: auto; }
 .admin-main > .preview-window, .admin-main > :is(.workbench, .chat-desk):first-child { margin: -28px -40px -64px; }
 .admin-main > .workbench:not(:first-child) { margin: 0 -40px -64px; border-top: 1px solid var(--line); }
+.admin-main > .workbench:not(:first-child) > .workbench__main { padding-inline: calc(var(--space-3xl) + var(--space-sm)); }
+.admin-main > .tab-strip + .workbench { border-top: 0; }
 
 .title-band {
     display: flex;
@@ -238,6 +240,10 @@ button.module-nav__link { width: 100%; border: 0; background: none; font-family:
 .office-task__title { color: var(--ink); font-size: var(--text-row); font-weight: 600; text-decoration: none; }
 .office-task__title:hover { text-decoration: underline; text-underline-offset: 3px; }
 .office-task__detail, .office-area__summary { color: var(--ink-2); font-size: var(--text-caption); }
+.office-task__detail .date-line { white-space: nowrap; }
+.office-task { flex-wrap: wrap; }
+.office-task__text { flex-basis: 12rem; }
+.office-task > .btn { margin-left: auto; }
 .office-area { color: inherit; text-decoration: none; transition: background-color 160ms var(--ease-out); }
 .office-area:hover { background: color-mix(in srgb, var(--sand) 60%, transparent); }
 .office-area__title { font-size: var(--text-row); font-weight: 600; }
@@ -332,6 +338,7 @@ code, .patterns { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-s
         box-shadow: 0 18px 32px var(--scrim);
     }
     .admin-main { --gutter: var(--space-lg); padding: 20px var(--gutter) 48px; }
+    .admin-main > .workbench:not(:first-child) > .workbench__main { padding-inline: var(--gutter); }
     .admin-main > :is(.workbench, .preview-window), .admin-main > :is(.workbench, .preview-window, .chat-desk):first-child, .sign-in-stage { margin: -20px calc(-1 * var(--gutter)) -48px; }
     .admin-main > .workbench:not(:first-child) { margin: 0 calc(-1 * var(--gutter)) -48px; }
     .sign-in-stage { min-height: calc(100vh - 56px); }
@@ -339,7 +346,13 @@ code, .patterns { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-s
 
 @media (max-width: 760px) {
     .admin-main > .workbench > :is(.workbench__aside, .workbench__main, .workbench__detail) { padding-inline: var(--gutter); }
+    .admin-main > .workbench:not(:first-child) > :is(.workbench__aside, .workbench__main, .workbench__detail) { padding-top: var(--space-lg); }
+    .admin-main > .workbench:first-child > :is(.workbench__aside, .workbench__main, .workbench__detail) { padding-top: var(--space-xl); }
+    .admin-main :is(.row--selected, .agenda-row--highlight) { margin-inline: calc(-1 * var(--space-sm)); padding-inline: var(--space-sm); width: calc(100% + 2 * var(--space-sm)); }
     .admin-main > .workbench > .workbench__main > .data-table { margin-inline: calc(-1 * var(--gutter)); }
+    .admin-main > .workbench > .workbench__main > .data-table > .data-table__toolbar { padding-inline: var(--gutter); }
+    .admin-main > .workbench > .workbench__main > .data-table .data-table__table :is(th, td):first-child { padding-left: var(--gutter); }
+    .admin-main > .workbench > .workbench__main > .data-table .data-table__table :is(th, td):last-child { padding-right: var(--gutter); }
 }
 
 button:not([class]),
@@ -417,6 +430,7 @@ input[type="checkbox"]:not([class]), input[type="radio"]:not([class]) { display:
   .section__group :is(.field:has(> input.field__input), .date-field):not(.ui-pair *) { max-width: calc((100% - var(--stack)) / 2); }
 }
 .section--grouped > .section__foot { margin: 0; padding: var(--space-md) var(--space-xl); border-top: 1px solid var(--line); border-radius: 0 0 var(--radius) var(--radius); background: color-mix(in srgb, var(--sand) 55%, var(--surface)); }
+.section--grouped > .section__foot .btn--quiet { background: var(--page); }
 .page:has(> .section--grouped) { background: none; }
 .link-code { margin: 18px 0 6px; font-size: var(--text-display); font-weight: 700; letter-spacing: 0.12em; font-variant-numeric: tabular-nums; }
 
@@ -483,3 +497,5 @@ input[type="checkbox"]:not([class]), input[type="radio"]:not([class]) { display:
 .account-menu__who strong { font-size: var(--text-row); }
 .account-menu__who span { color: var(--ink-2); font-size: var(--text-caption); overflow-wrap: anywhere; }
 .account-menu__scheme { padding: 0 var(--space-xs); }
+
+.admin-main .gallery__intro { padding-inline: 0; }

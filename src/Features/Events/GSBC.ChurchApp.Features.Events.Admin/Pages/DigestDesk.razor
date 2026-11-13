@@ -65,7 +65,7 @@
     private RenderFragment Drawn() => _draft is not { } draft ? @<text></text> : @<text>
         <TitleBand Title="Weekly digest" BackHref="@CalendarBack" BackText="Calendar"
                    Lead="What's next at Good Shepherd, made from the calendar: its one-off events, specials and breaks. Untick what you'd leave out, drag to reorder and reword anything for the digest. The calendar itself doesn't change." />
-        <Workbench DetailLabel="The chosen item and the preview">
+        <Workbench DetailLabel="The chosen item and the preview" Showing="@(Chosen(draft) is null ? WorkbenchPane.Main : WorkbenchPane.Detail)">
         <ChildContent>
             <SaveStatus State="_save" SavedText="@(draft.SavedAt is null ? "Saves as you change it" : "Saved")" Detail="@SentLine(draft)" Retry="SaveNowAsync" />
 

@@ -4,7 +4,7 @@
 <section class="office-rail @(Days > WeekLength ? "office-rail--fortnight" : "")" aria-labelledby="@_headingId">
     <h2 class="visually-hidden" id="@_headingId">@Heading</h2>
     @{ IReadOnlyList<Placed> placed = Layout(); }
-    <div class="office-rail__grid" style="--days: @Days; --rows: @(Math.Max(placed.Count == 0 ? 1 : placed.Max(item => item.Row), 1))">
+    <div class="office-rail__grid" data-look-scroll style="--days: @Days; --rows: @(Math.Max(placed.Count == 0 ? 1 : placed.Max(item => item.Row), 1))">
         @for (int day = 0; day < Days; day++)
         {
             DateTime date = First.AddDays(day);

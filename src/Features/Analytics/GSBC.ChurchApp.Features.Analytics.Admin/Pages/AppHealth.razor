@@ -39,7 +39,7 @@
 
     [Parameter] public Guid? Id { get; set; }
 
-    private string Lead => $"Errors from the app, the admin panel and the server, for whoever builds the app. A kind of error is kept until it hasn't happened for 30 days.";
+    private string Lead => "Errors from the app, the admin panel and the server, for whoever builds the app. A kind of error is kept until it hasn't happened for 30 days.";
 
     private Task<HealthOverview> LoadAsync() => Health.GetOverviewAsync(_days).AsTask();
 
@@ -64,18 +64,20 @@
     [
         new("What", kind => @<span class="role-name"><span class="cell-strong">@HealthWords.ShortType(kind.ExceptionType)</span>@if (kind.NativeCrash) {<Pill Tone="PillTone.Quiet" Icon="alert">Crash</Pill>}@if (kind.OnlyDevelopmentBuilds) {<Pill Tone="PillTone.Accent">Dev builds</Pill>}</span>, kind => HealthWords.ShortType(kind.ExceptionType)),
         new("Where", kind => @<span class="quiet health-where">@HealthWords.ShortFrame(kind.Where)</span>, null, "optional"),
-        new("From", kind => @<span class="quiet">@HealthWords.Origin(kind.Origin)</span>, kind => HealthWords.Origin(kind.Origin)),
+        new("From", kind => @<span class="quiet">@HealthWords.Origin(kind.Origin)</span>, kind => HealthWords.Origin(kind.Origin), "optional"),
         new($"Times in {_days} days", kind => @<span>@kind.Count</span>, kind => kind.Count, "num"),
-        new("Last seen", kind => @<span class="quiet">@When(kind.LastSeen)</span>, kind => kind.LastSeen, "num"),
+        new("Last seen", kind => @<span class="quiet">@When(kind.LastSeen)</span>, kind => kind.LastSeen, "num optional"),
     ];
 
     private IReadOnlyList<TableColumn<FailedCallSummary>> CallColumns =>
     [
-        new("Call", call => @<span class="cell-strong health-where">@HealthWords.Method(call.Method)</span>, call => call.Method),
+        new("Call", call => @<span class="cell-strong health-where">@foreach (string part in AtDots(HealthWords.Method(call.Method))){<wbr />@part}</span>, call => call.Method),
         new("Result", call => @<span class="quiet">@HealthWords.Status(call.Status)</span>, call => HealthWords.Status(call.Status)),
         new("Seen by", call => @<span class="quiet">@HealthWords.Origin(call.Origin)</span>, call => HealthWords.Origin(call.Origin), "optional"),
         new($"Times in {_days} days", call => @<span>@call.Count</span>, call => call.Count, "num"),
     ];
+
+    private static IEnumerable<string> AtDots(string name) => name.Split('.').Select((part, index) => index == 0 ? part : "." + part);
 
     private static string CallKey(FailedCallSummary call) => $"{call.Origin}|{call.Method}|{call.Status}";
 

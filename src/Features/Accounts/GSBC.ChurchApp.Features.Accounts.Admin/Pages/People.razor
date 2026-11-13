@@ -2,7 +2,6 @@
 @using Grpc.Core
 @using GSBC.ChurchApp.Platform.Client.Access
 @implements IDisposable
-@inject AccountsClient Accounts
 @inject AccountsOfficeClient Office
 @inject IAccess Access
 @inject NavigationManager Navigation
@@ -78,7 +77,7 @@
     private IReadOnlyList<TableColumn<PersonInfo>> Columns =>
     [
         new("Name", person => @<span class="cell-strong">@person.DisplayName</span>, person => person.DisplayName),
-        new("Email", person => @<span class="quiet truncate" title="@person.Email">@person.Email</span>, person => person.Email),
+        new("Email", person => @<span class="quiet truncate" title="@person.Email">@person.Email</span>, person => person.Email, "optional"),
         new("Account", person => @<PersonState Person="person" Invitation="@_invitations.GetValueOrDefault(person.Id)" />, person => StateOrder(person)),
         new("Joined", person => @<DateLine At="person.CreatedAt" Style="DateLineStyle.Short" />, person => person.CreatedAt, "num optional"),
     ];

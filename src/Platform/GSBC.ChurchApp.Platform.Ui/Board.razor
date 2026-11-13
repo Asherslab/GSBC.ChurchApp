@@ -1,7 +1,7 @@
 @typeparam TItem
 @typeparam TColumn
 
-<div class="board @(Compact ? "board--compact" : "") @Class" role="list" aria-label="@Label">
+<div class="board @(Compact ? "board--compact" : "") @Class" data-look-scroll role="list" aria-label="@Label">
     @for (int index = 0; index < Columns.Count; index++)
     {
         BoardColumn<TColumn> column = Columns[index];

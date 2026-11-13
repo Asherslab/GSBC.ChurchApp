@@ -127,3 +127,36 @@ Docker must be running. CI runs the full suite on every push, the same way.
 Projects run in parallel, and so do test classes within a project; tests within a class run one after
 another. A project's time is roughly its slowest class, plus 15 seconds when it needs S3. A test that
 takes more than a second or two is worth a look: usually it waits on something it could be told about.
+
+## Looking at the pages: the look check
+
+`tools/design/look-check.sh` is a headless pass over the whole admin panel, run from a worktree whose AppHost runs
+beside main's (`Dev__PortOffset`, AGENTS.md). Run it before merging anything people see; it takes about four
+minutes and exits 1 when it flags something.
+
+```bash
+tools/design/look-check.sh                         # every page, light and dark, at 1440, 1024 and 390
+tools/design/look-check.sh --only '^chats'         # the pages whose path matches
+tools/design/look-check.sh --base http://localhost:5500 --out /tmp/look   # another offset; where the report goes
+```
+
+It signs in with a virtual passkey as a test Owner it makes in the worktree's own database (`e2e+look@example.com`,
+which also leads every ministry, so pages that show only your own things have something on them; never the main
+checkout's database), and keeps that account's key and session in `~/.cache/gsbc-look-check/`. It visits every
+sidebar entry, each page's tabs, a record opened from each list and one page under each, and writes a report
+(`index.html`, every screenshot, the flagged ones marked) and `findings.json`. It flags:
+
+- text, icons or controls closer than 8px to the edge of their pane, card or the window, or to a pane beside them,
+  and a filled box that stops just short of the window's edge;
+- the page, or a pane, wider than its space;
+- text cut off by a box that hides it, where no ellipsis or line clamp was meant;
+- boxes or lines of text that overlap;
+- a sticky or foot bar that isn't flush with its container's edges.
+
+Something meant to break a rule says so in its markup: `data-look-bleed` (meant to touch an edge),
+`data-look-scroll` (meant to scroll sideways; `data-look-scroll="narrow"` only at 760px and under),
+`data-look-overlap`, `data-look-clip`. Previews of the phone inside the admin panel (`.phone-frame`) are skipped.
+
+It can't judge what only eyes can: a column squeezed to a word per line, a tab alone on a line, a label wrapping
+badly, alignment between neighbours. So the look-over in the station bar still applies: open the screenshots
+yourself, then give them to a fresh reviewer with the list.

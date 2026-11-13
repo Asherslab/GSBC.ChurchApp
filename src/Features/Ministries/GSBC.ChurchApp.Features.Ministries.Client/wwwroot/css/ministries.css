@@ -209,6 +209,7 @@ button.ministry-item { cursor: pointer; }
 @media (max-width: 900px) {
   .ministry-desk { grid-template-columns: minmax(0, 1fr); }
   .ministry-tree { position: static; }
+  .ministry-desk > :last-child > .empty:only-child { display: none; }
 }
 
 
@@ -236,6 +237,7 @@ button.ministry-item { cursor: pointer; }
 
 
 .lg-card { padding: 14px var(--space-lg); border-radius: var(--radius); background: var(--surface); box-shadow: inset 0 0 0 1px var(--line); }
+.board:has(.lg-card) .board__col:not(.board__col--folded) { min-width: 200px; }
 .lg-card--next { outline: 2px solid var(--marker); outline-offset: 2px; }
 .lg-card--nowon { box-shadow: inset 0 0 0 1.5px var(--accent); }
 .lg-card__head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-sm); }

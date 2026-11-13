@@ -1,4 +1,5 @@
 .health-where { overflow-wrap: anywhere; }
+.data-table__table .cell-strong.health-where { white-space: normal; overflow-wrap: normal; }
 .health-title { overflow-wrap: anywhere; }
 .health-code { font-family: ui-monospace, "SF Mono", Menlo, monospace; overflow-wrap: anywhere; }
 .health-frames { display: grid; gap: 6px; margin: 8px 0 0; padding: 0 0 0 20px; font-size: var(--text-caption); }
@@ -13,3 +14,4 @@
 .insights-quiet { margin: 0; color: var(--ink-3); font-size: var(--text-caption); }
 .insights-top { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 22px 32px; }
 .insights-devices summary { margin-bottom: 14px; padding: 10px 0; color: var(--ink); font-size: var(--text-row); cursor: pointer; }
+@container data-table (max-width: 420px) { .data-table__table .cell-strong.health-where { overflow-wrap: anywhere; } }

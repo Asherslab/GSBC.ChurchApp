@@ -12,7 +12,7 @@
 </TitleBand>
 
 <LiveData @ref="_live" TValue="DeskView" Feeds="DeskFeeds" Load="LoadAsync" FailedTitle="Can't load sermons right now">
-    <Workbench Class="sermons-desk" FoldAside="true" AsideLabel="Find a sermon" DetailLabel="@(_uploading ? "Upload a sermon" : "The sermon")">
+    <Workbench Class="sermons-desk" FoldAside="true" AsideLabel="Find a sermon" DetailLabel="@(_uploading ? "Upload a sermon" : "The sermon")" Showing="@(_uploading ? WorkbenchPane.Detail : WorkbenchPane.Main)">
         <Aside>
             <div class="sermons-desk__find">
                 <SearchField Label="Find a sermon" Placeholder="Title, speaker or series" Value="@_query" ValueChanged="SearchAsync" />

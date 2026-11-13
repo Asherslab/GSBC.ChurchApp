@@ -74,6 +74,7 @@
 .sermons-desk__list { display: grid; align-content: start; gap: var(--space-3xs); margin: 0 calc(-1 * var(--space-sm)); }
 .sermons-desk .sermon-check__head { grid-template-columns: 112px minmax(0, 1fr) auto; gap: var(--space-lg); }
 .sermons-desk .sermon-check__fields { grid-template-columns: minmax(0, 1fr); }
+@container sermon-check (max-width: 400px) { .sermons-desk .sermon-check__intro { grid-column: 1 / -1; grid-row: 2; } .sermons-desk .sermon-check__menu { grid-column: 3; grid-row: 1; } }
 
 .sermon-pick { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 64px; padding: 10px 12px; border: 0; border-radius: var(--radius-field); background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; -webkit-appearance: none; appearance: none; }
 .sermon-pick:hover { background: color-mix(in srgb, var(--selected-fill) 55%, transparent); }
@@ -86,7 +87,7 @@
 .sermon-pick__pills { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 2px; }
 
 
-.sermon-check { display: grid; gap: 22px; }
+.sermon-check { container: sermon-check / inline-size; display: grid; gap: 22px; }
 .sermon-check__head { display: grid; grid-template-columns: minmax(220px, 320px) minmax(0, 1fr) auto; gap: 20px; align-items: start; }
 .sermon-check__art { border-radius: var(--radius); }
 .sermon-check__menu { justify-self: end; }
