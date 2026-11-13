@@ -174,7 +174,7 @@
 .bubble:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .chat-actions { position: absolute; bottom: 100%; left: 0; width: 340px; margin-bottom: var(--space-2xs); }
 .bubble-row--mine .chat-actions { right: 0; left: auto; }
-.chat-actions .chat-react-row { margin: var(--space-2xs) var(--space-2xs) 0; }
+.chat-actions .chat-react-row { margin: 0; background: var(--fill-on-surface); }
 
 @media (max-width: 1360px) {
   .chat-desk { grid-template-columns: minmax(260px, 300px) minmax(0, 1fr); }
