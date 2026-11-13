@@ -19,7 +19,7 @@
         <TextField Label="Title" @bind-Value="Draft.Title" MaxLength="120" Required="true" />
         <TextField Label="What to say" @bind-Value="Draft.Body" Multiline="true" MaxLength="4000" />
         <Segmented TValue="string" Label="Who it's for" ShowLabel="true" Stacked="true" Options="Audiences" Value="Draft.Audience" ValueChanged="value => Draft.Audience = value" />
-        <p class="ministry-who">@MinistryWords.WhoReads(Draft.Audience, Page.Ministry.Name)</p>
+        <p class="ministry-who">@MinistryWords.WhoReads(Draft.Audience, Page.Ministry)</p>
         <ToggleRow Title="Important" Description="Sends a notification to everyone it's for, straight away" @bind-Checked="Draft.Important" />
         @if (Draft is { Audience: Contracts.Audiences.Everyone, Important: true })
         {
@@ -28,7 +28,7 @@
         <Notice Tone="NoticeTone.Warning" Text="@_problem" />
     </ChildContent>
     <Actions>
-        <SaveBar Block="true" Label="@(Draft.Id.Length == 0 ? MinistryWords.PostFor(Draft.Audience) : "Save")" Busy="_busy" OnSave="SaveAsync"
+        <SaveBar Block="true" Label="@(Draft.Id.Length == 0 ? MinistryWords.PostFor(Draft.Audience, Page.Ministry) : "Save")" Busy="_busy" OnSave="SaveAsync"
                  Blocked="@(Draft.Title.Trim().Length == 0 ? "Give it a title to post it." : null)" />
     </Actions>
 </Sheet>
@@ -56,7 +56,7 @@
     private object Shape => (Draft.Title, Draft.Body, Draft.Audience, Draft.Important, Draft.AskWholeChurch, Draft.Sunday, Draft.NoClass);
 
     private IReadOnlyList<SegmentOption<string>> Audiences =>
-        Page.You.MayPostFor.Select(audience => new SegmentOption<string>(audience, MinistryWords.Short(audience))).ToList();
+        Page.You.MayPostFor.Select(audience => new SegmentOption<string>(audience, MinistryWords.Short(audience, Page.Ministry))).ToList();
 
     private bool AboutASunday => Draft.Sunday.Length > 0;
 

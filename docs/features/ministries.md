@@ -1,6 +1,6 @@
 # Ministries
 
-Status: wave 2, the screens, built 2026-11-12 (*Wave 2*, below); the owner's answers of 2026-11-11/12 built 2026-11-12 (*Wave 1: the owner's answers*, below); Stage 3 (rosters) built 2026-11-11, below; Stage 2 (ministries, team and attendees, joining, audiences, posts, files, calendars, Life Groups) built 2026-11-10, below; Stage 1 (People) built 2026-11-10, in [people.md](people.md); interviewed 2026-11-10 (below, supersedes the draft); draft 2026-10-30; not built yet (Home has sample *Ministries* and *Life Groups* tiles that open *coming soon*); areas separated into tabs 2026-10-31; who sees each module chosen per
+Status: hidden ministries built 2026-11-13 (*Hidden ministries*, below); wave 2, the screens, built 2026-11-12 (*Wave 2*, below); the owner's answers of 2026-11-11/12 built 2026-11-12 (*Wave 1: the owner's answers*, below); Stage 3 (rosters) built 2026-11-11, below; Stage 2 (ministries, team and attendees, joining, audiences, posts, files, calendars, Life Groups) built 2026-11-10, below; Stage 1 (People) built 2026-11-10, in [people.md](people.md); interviewed 2026-11-10 (below, supersedes the draft); draft 2026-10-30; not built yet (Home has sample *Ministries* and *Life Groups* tiles that open *coming soon*); areas separated into tabs 2026-10-31; who sees each module chosen per
 ministry 2026-10-31. Extends [SPEC.md](../../SPEC.md), where v1's "Groups" line ("ministries,
 each with a contact or 'I'm interested' button") was the placeholder. A POC is in the PWA spike
 (`spikes/app-poc`, More → Ministries and a Hub tile). Everything in it is sample data.
@@ -113,6 +113,59 @@ reminder.**
 **Open from the interview:** direct messages (who may message whom, whether DMs are auditable and by whom, whether
 they belong to a ministry); how long the church wants anything kept if "forever" changes; the shape of the
 auditors' coordination chat. (Blue card and training data from Safe Ministry Check: built 2026-11-10.)
+
+## Hidden ministries (#73, built 2026-11-13)
+
+The owner, 2026-11-12: "Most and almost all our ministries should be public, and no reason people can't see them, but
+some don't need to be in public eye to clutter things. E.g. church staff 'ministry', accounting, etc." The owner was
+asleep when it was built and said to choose the best option and give feedback after (2026-11-13), so every choice below
+is a **default (owner to review)**. The decision page is `.impeccable/mocks/hidden-ministries/`.
+
+**Who sees a hidden ministry.** Its team, its attendees and the parents who see through them, the leaders and admins of
+the ministries above it, and staff with *Ministries Manager* (or the Owner). Nobody else sees its name, details, posts,
+files or calendars anywhere: not the list of ministries, search (destinations), Home tiles, Life Groups or joining.
+
+- **Through Access, not a list** (AGENTS.md). A new permission, `ministries.hidden.view` (*See a hidden ministry, and what
+  it shares with everyone who can see it*), is in the Leader, Admin, Team, Attendee and Attendee's parent roles, and
+  Ministries Manager has it through `ministries.*`. A hidden ministry's directory entry and everything it shares with
+  everyone are published to `ministries.directory.private` and the private posts, files and calendars feeds, one row per
+  place for `permission:ministries.hidden.view@ministry:<place>`, at the ministry itself and at every ministry under it.
+  So someone on a team under a hidden ministry also sees the one above it (as team posts already flow down), and Sync's
+  per-row audience keeps every other phone from receiving even its name. When someone's grants change, those feeds reset
+  for them (*Feeds respect permissions*), so a phone drops a hidden ministry when its person leaves.
+- **The server's own reads** (the admin panel's directory, a ministry's page, Life Groups, joining) check the same
+  permission with `MinistryViews.MaySeeMinistry`; to anyone else a hidden ministry answers "That ministry isn't here any
+  more", as if it didn't exist. Nobody outside it can ask to join; its leaders add people directly.
+- **Default (owner to review): ministries under it are hidden too, always.** A ministry is hidden when it or any ministry
+  above it is (`MinistryTree.IsHidden`); one under a hidden ministry shows the switch on and locked, saying which ministry
+  hides it. *Alternative:* let a ministry under a hidden one be shown on its own, which would put it at the top of the
+  list with no parent for outsiders; dropped as confusing for something rare.
+- **Default (owner to review): its calendars for everyone become for its people.** Hiding a ministry changes the audience
+  of each of its own calendars that was for everyone to `ministries.hidden.view` at that ministry (so Calendar, iCal
+  links and the website stop showing them to everyone), and showing it again changes them back. Its team, attendee and
+  parent calendars don't change. A calendar for everyone (from anywhere) can still be linked into a hidden ministry: the
+  link is seen only by its people, and the calendar stays everyone's. Moving a ministry under or out of a hidden one does
+  the same, and the move's preview says so. *Alternative:* leave its calendars public, which would show "Accounts" to
+  everyone in Calendar.
+- **Default (owner to review): Life Groups are never hidden.** The owner said Life Groups are for choosing side by side,
+  so a ministry shown in Life Groups can't be hidden, a hidden ministry (or one under it) can't be shown in Life Groups,
+  and a Life Group can't move under a hidden ministry. In Settings both switches stay, and the one that can't apply is
+  greyed with the reason ("A Life Group is listed for everyone, so it can't be hidden").
+- **Joining** keeps its choices, but only people who can already see a hidden ministry can join or ask, so Settings
+  says so under them, and its line in the list of ministries says "Hidden" with no join line. The post, file and
+  calendar sheets call the everyone choice "Everyone who sees it" in a hidden ministry.
+- **Chats don't change.** A ministry's chats are only ever for its own people, so a hidden ministry's chats work as
+  before; chat auditors still see them.
+- **Posting for everyone** in a hidden ministry reaches everyone who can see it; the post sheet says so ("Accounts is
+  hidden, so only its own people, the leaders above it and staff see this"). Asking to send a post to the whole church
+  still goes to staff, who decide.
+- **Default (owner to review): where the switch is.** *Hidden from everyone else* is a switch in The details, beside
+  *Show in Life Groups*, saved with Save, with a sand note saying exactly who still sees it (picked by the station over
+  its own group that changes straight away, and a ⋯ menu item asking once: The details already says it's "what people
+  see about it, how they join, and where it shows", and a Save guards a change that hides a whole ministry).
+- **How it's marked** for those who can see it: a *Hidden* pill with the crossed-out eye (`AppIcons.Hidden`) on the
+  ministry's masthead, "Hidden" first in its line in the app's list of ministries, and the crossed-out eye after its name
+  in the admin panel's tree.
 
 ## Wave 2: the screens (2026-11-12)
 
@@ -554,6 +607,7 @@ Sync*), so a ministry or Life Group opens at once, offline too.
   | Feed | Audience | What |
   |---|---|---|
   | `ministries.directory` | Everyone | Each ministry's details and leaders |
+  | `ministries.directory.private` | Each row: `ministries.hidden.view` at the ministry or one under it | A hidden ministry's details and leaders (2026-11-13) |
   | `ministries.posts`, `.files`, `.calendars` | Everyone | What's for everyone |
   | `ministries.posts.private`, `.files.private`, `.calendars.private` | Each row: its audience at its ministry | Team, attendee and parent posts, files and calendars. A team post is also written once per ministry under it, for that ministry's team, since teams below see their parents' team posts |
   | `ministries.rounds`, `.sessions`, `.sitting-out`, `.lifegroups` | Everyone | Life Groups sets, each group's Sundays, groups not on a set, the calendar they show in |

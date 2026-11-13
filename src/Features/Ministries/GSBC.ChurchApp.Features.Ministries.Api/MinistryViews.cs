@@ -34,6 +34,9 @@ internal sealed class MinistryViews(
             node => grants.IsAllowed(Permission(node), ministryId.ToString()),
             node => tree.Below(ministryId).Any(below => grants.IsAllowed(Permission(node), below.Id.ToString())));
 
+    public static bool MaySeeMinistry(GrantSet grants, MinistryTree tree, Guid ministryId) =>
+        !tree.IsHidden(ministryId) || tree.SeenFrom(ministryId).Any(place => Holds(grants, MinistriesPermissions.SeeHidden, place));
+
     public async Task<IReadOnlyList<string>> RolesAsync(Guid userId, Guid ministryId, CancellationToken cancellationToken)
     {
         List<string> held = [];
@@ -179,14 +182,20 @@ internal sealed class MinistryViews(
         _ => Audiences.Everyone,
     };
 
-    public static Audience CalendarAudience(string audience, Guid ministryId) =>
-        Audiences.NodeOf(audience) is { } node ? Audience.HoldingAt(node, Scope.Of(ScopeKind.Ministry, ministryId.ToString())) : Audience.Everyone;
+    public static Audience CalendarAudience(string audience, Guid ministryId, bool hidden) =>
+        Audiences.NodeOf(audience) is { } node ? Audience.HoldingAt(node, Scope.Of(ScopeKind.Ministry, ministryId.ToString()))
+        : hidden ? SeesHidden(ministryId)
+        : Audience.Everyone;
+
+    public static Audience SeesHidden(Guid ministryId) =>
+        Audience.HoldingAt(MinistriesPermissions.SeeHiddenNode, Scope.Of(ScopeKind.Ministry, ministryId.ToString()));
 
     private static Permission Permission(string node) =>
         MinistriesPermissions.All.FirstOrDefault(permission => permission.Node == node) ?? new Permission(node, ScopeKind.Ministry, node);
 
-    public static MinistryDetails Details(MinistryRecord ministry) => new()
+    public static MinistryDetails Details(MinistryRecord ministry, MinistryTree? tree = null) => new()
     {
+        Hidden = ministry.Hidden, HiddenBy = tree?.HiddenBy(ministry.Id)?.Name ?? "",
         Id = ministry.Id.ToString(), ParentId = ministry.ParentId?.ToString() ?? "", Name = ministry.Name,
         Summary = ministry.Summary, About = ministry.About, Meets = ministry.Meets, WhoFor = ministry.WhoFor, Colour = ministry.Colour,
         Icon = ministry.Icon, TeamJoin = ministry.TeamJoin, AttendJoin = ministry.AttendJoin, RoundId = ministry.RoundId?.ToString() ?? "",
@@ -195,8 +204,9 @@ internal sealed class MinistryViews(
         ChatStarters = ChatStarters.IsValid(ministry.ChatStarters) ? ministry.ChatStarters : ChatStarters.Leaders,
     };
 
-    public static MinistrySummary Summary(MinistryRecord ministry, string yours = "", string latest = "", int waiting = 0) => new()
+    public static MinistrySummary Summary(MinistryRecord ministry, MinistryTree tree, string yours = "", string latest = "", int waiting = 0) => new()
     {
+        Hidden = tree.IsHidden(ministry.Id),
         Id = ministry.Id.ToString(), ParentId = ministry.ParentId?.ToString() ?? "", Name = ministry.Name,
         Summary = ministry.Summary, Meets = ministry.Meets, Colour = ministry.Colour, Icon = ministry.Icon, TeamJoin = ministry.TeamJoin,
         AttendJoin = ministry.AttendJoin, Order = ministry.Order, Yours = yours, RoundId = ministry.RoundId?.ToString() ?? "",

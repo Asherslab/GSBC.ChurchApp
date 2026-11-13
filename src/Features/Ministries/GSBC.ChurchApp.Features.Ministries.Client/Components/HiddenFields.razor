@@ -1,0 +1,21 @@
+@if (Ministry.HiddenBy.Length > 0)
+{
+    <ToggleRow Title="Hidden from everyone else" Description="@MinistryWords.HiddenBecause(Ministry.HiddenBy)" Checked="true" Disabled="true" />
+}
+else if (Ministry.ShowsInLifeGroups)
+{
+    <ToggleRow Title="Hidden from everyone else" Description="A Life Group is listed for everyone, so it can't be hidden" Checked="false" Disabled="true" Muted="true" />
+}
+else
+{
+    <ToggleRow Title="Hidden from everyone else" Description="Only its own people and staff see it" Checked="Ministry.Hidden" CheckedChanged="HiddenChanged" />
+}
+@if (MinistryLogic.IsHidden(Ministry))
+{
+    <p class="ministry-who">@MinistryWords.WhoSeesHidden(Ministry.Name)</p>
+}
+
+@code {
+    [Parameter, EditorRequired] public required MinistryDetails Ministry { get; set; }
+    [Parameter] public EventCallback<bool> HiddenChanged { get; set; }
+}

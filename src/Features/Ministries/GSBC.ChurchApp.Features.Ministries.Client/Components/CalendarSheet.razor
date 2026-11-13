@@ -27,7 +27,7 @@
 
     private IReadOnlyList<SegmentOption<string>> Audiences =>
         (Page.Ministry.AttendJoin == Joining.None ? [Contracts.Audiences.Everyone, Contracts.Audiences.Team] : Contracts.Audiences.All)
-        .Select(audience => new SegmentOption<string>(audience, MinistryWords.Short(audience))).ToList();
+        .Select(audience => new SegmentOption<string>(audience, MinistryWords.Short(audience, Page.Ministry))).ToList();
 
     private string DefaultName => Draft.Audience switch
     {

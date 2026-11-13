@@ -59,11 +59,13 @@
     private static string Line(MinistrySummary ministry, int hidden)
     {
         List<string> parts = [];
+        if (ministry.Hidden)
+            parts.Add("Hidden");
         if (ministry.ShowsInLifeGroups)
             parts.Add("Life Group");
         if (ministry.Summary.Length > 0)
             parts.Add(ministry.Summary);
-        parts.Add(hidden > 0 ? $"{MinistryWords.Ministries(hidden)} under it" : MinistryWords.JoinLine(ministry));
+        parts.Add(hidden > 0 ? $"{MinistryWords.Ministries(hidden)} under it" : ministry.Hidden ? "" : MinistryWords.JoinLine(ministry));
         return string.Join(" · ", parts.Where(part => part.Length > 0));
     }
 }

@@ -60,3 +60,16 @@ Builds on the Pattern map; no new world. One decision round, two questions, both
   ministry's ⋯ menu, Workbench for the admin People tab.
 
 FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, DESIGN.md, and every shipping raster carrying its provenance
+
+## Hidden ministries (2026-11-13, #73): `.impeccable/mocks/hidden-ministries/`
+
+Builds on the Pattern map; no new world. One decision round on the page (key 0c5ebefc), three sketches: a switch in The
+details saved with Save (THE ROLL), its own *Who sees it* group that changes straight away, and a ⋯ menu item asking
+once. The owner was asleep and asked stations to build their best option and review in the morning, so the station built
+THE ROLL without a pick: `HiddenFields` (a `ToggleRow` beside *Show in Life Groups*, offered only when the ministry isn't
+one; locked on, naming the ministry above, when that one hides it) and a sand `ministry-who` note naming exactly who
+still sees it. Marked for those who see it: a masthead `Pill` with `AppIcons.Hidden` ("Hidden"), "Hidden" first in the
+directory line, and the crossed-out eye in ink-3 after the name in the admin tree.
+- FORM: a surface-scope local extension of Settings (operate); seed: none (unavailable).
+
+FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, DESIGN.md, and every shipping raster carrying its provenance

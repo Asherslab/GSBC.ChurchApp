@@ -211,9 +211,16 @@ public sealed class StoredMinistries(ILocalFeeds feeds, IAccess access, TimeProv
         Id = ministry.Id, ParentId = ministry.ParentId, Name = ministry.Name, Summary = ministry.Summary, Meets = ministry.Meets, Colour = ministry.Colour,
         Icon = ministry.Icon, TeamJoin = ministry.TeamJoin, AttendJoin = ministry.AttendJoin, Order = ministry.Order, Yours = yours, RoundId = ministry.RoundId,
         ShowsInLifeGroups = ministry.ShowsInLifeGroups, Latest = latest, Waiting = waiting, MayAddUnder = mayAddUnder,
+        Hidden = MinistryLogic.IsHidden(ministry),
     };
 
-    private async Task<MinistryMap> MapAsync() => new(await AllAsync<MinistryCard>(MinistriesFeeds.Directory));
+    private async Task<MinistryMap> MapAsync()
+    {
+        List<MinistryCard> cards = await AllAsync<MinistryCard>(MinistriesFeeds.Directory);
+        if (access.SignedIn)
+            cards.AddRange(await AllAsync<MinistryCard>(MinistriesFeeds.PrivateDirectory));
+        return new MinistryMap(cards.DistinctBy(card => card.Ministry.Id));
+    }
 
     private async Task<YourMinistries?> YoursAsync() =>
         access.SignedIn ? (await AllAsync<YourMinistries>(MinistriesFeeds.Yours)).FirstOrDefault() : null;

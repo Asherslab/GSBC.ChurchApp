@@ -16,8 +16,10 @@
                 <TextField Label="Who it's for" @bind-Value="Details.WhoFor" MaxLength="140" />
             </div>
             <JoiningFields TeamJoin="@Details.TeamJoin" TeamJoinChanged="value => Details.TeamJoin = value"
-                           AttendJoin="@Details.AttendJoin" AttendJoinChanged="value => Details.AttendJoin = value" />
-            <LifeGroupsFields Shows="Details.ShowsInLifeGroups" ShowsChanged="value => Details.ShowsInLifeGroups = value" RoundId="@Details.RoundId" RoundIdChanged="value => Details.RoundId = value" />
+                           AttendJoin="@Details.AttendJoin" AttendJoinChanged="value => Details.AttendJoin = value" Hidden="MinistryLogic.IsHidden(Details)" />
+            <LifeGroupsFields Shows="Details.ShowsInLifeGroups" ShowsChanged="value => Details.ShowsInLifeGroups = value" RoundId="@Details.RoundId" RoundIdChanged="value => Details.RoundId = value"
+                              Blocked="@(MinistryLogic.IsHidden(Details) ? "A hidden ministry isn't listed in Life Groups, which everyone sees" : null)" />
+            <HiddenFields Ministry="Details" HiddenChanged="value => Details.Hidden = value" />
             <Notice Tone="NoticeTone.Warning" Text="@_problem" />
         </div>
     </ChildContent>
@@ -79,14 +81,14 @@
     }
 
     private static bool Same(MinistryDetails one, MinistryDetails other) =>
-        (one.Name, one.Summary, one.About, one.Meets, one.WhoFor, one.TeamJoin, one.AttendJoin, one.ShowsInLifeGroups, one.RoundId)
-        == (other.Name, other.Summary, other.About, other.Meets, other.WhoFor, other.TeamJoin, other.AttendJoin, other.ShowsInLifeGroups, other.RoundId);
+        (one.Name, one.Summary, one.About, one.Meets, one.WhoFor, one.TeamJoin, one.AttendJoin, one.ShowsInLifeGroups, one.RoundId, one.Hidden)
+        == (other.Name, other.Summary, other.About, other.Meets, other.WhoFor, other.TeamJoin, other.AttendJoin, other.ShowsInLifeGroups, other.RoundId, other.Hidden);
 
     private static MinistryDetails Copy(MinistryDetails from) => new()
     {
         Id = from.Id, ParentId = from.ParentId, Name = from.Name, Summary = from.Summary, About = from.About, Meets = from.Meets,
         WhoFor = from.WhoFor, Colour = from.Colour, Icon = from.Icon, TeamJoin = from.TeamJoin, AttendJoin = from.AttendJoin, RoundId = from.RoundId,
-        ShowsInLifeGroups = from.ShowsInLifeGroups, Order = from.Order,
+        ShowsInLifeGroups = from.ShowsInLifeGroups, Order = from.Order, Hidden = from.Hidden, HiddenBy = from.HiddenBy,
     };
 
     private Task SaveAsync() =>

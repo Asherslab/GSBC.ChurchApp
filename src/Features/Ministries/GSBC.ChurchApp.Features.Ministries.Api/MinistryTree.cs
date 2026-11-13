@@ -41,6 +41,12 @@ internal sealed class MinistryTree(IEnumerable<MinistryRecord> ministries)
         _byId.Values.Where(ministry => ministry.ShowsInLifeGroups)
             .OrderBy(group => group.Order).ThenBy(group => group.Name, StringComparer.CurrentCulture).ToList();
 
+    public bool IsHidden(Guid id) => Find(id) is { } ministry && (ministry.Hidden || HiddenBy(id) is not null);
+
+    public MinistryRecord? HiddenBy(Guid id) => Above(id).FirstOrDefault(above => above.Hidden);
+
+    public IReadOnlyList<Guid> SeenFrom(Guid id) => [id, .. Below(id).Select(below => below.Id)];
+
     public bool WouldLoop(Guid id, Guid? newParent) =>
         newParent is { } parent && (parent == id || Below(id).Any(child => child.Id == parent));
 }

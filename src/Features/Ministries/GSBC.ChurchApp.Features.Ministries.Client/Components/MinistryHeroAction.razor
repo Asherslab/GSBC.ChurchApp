@@ -2,6 +2,10 @@
 {
     <Pill Tone="PillTone.Masthead" Icon="check">@yours</Pill>
 }
+@if (MinistryLogic.IsHidden(Page.Ministry))
+{
+    <Pill Tone="PillTone.Masthead" Icon="@AppIcons.Hidden">Hidden</Pill>
+}
 @if (!Page.You.SignedIn)
 {
     @if (JoinChoices.AnyOpen(Page) || Page.Ministry.TeamJoin != Joining.Invite)

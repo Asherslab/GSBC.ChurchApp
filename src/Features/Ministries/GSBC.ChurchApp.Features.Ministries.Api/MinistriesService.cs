@@ -41,8 +41,8 @@ internal sealed class MinistriesService(
             .ToDictionary(group => group.Key, group => group.Count);
         return new MinistryDirectory
         {
-            Ministries = tree.All.OrderBy(ministry => ministry.Order).ThenBy(ministry => ministry.Name, StringComparer.CurrentCulture)
-                .Select(ministry => MayAddUnder(MinistryViews.Summary(ministry, yours.GetValueOrDefault(ministry.Id) ?? "", latest.GetValueOrDefault(ministry.Id) ?? "",
+            Ministries = tree.All.Where(ministry => MinistryViews.MaySeeMinistry(grants, tree, ministry.Id)).OrderBy(ministry => ministry.Order).ThenBy(ministry => ministry.Name, StringComparer.CurrentCulture)
+                .Select(ministry => MayAddUnder(MinistryViews.Summary(ministry, tree, yours.GetValueOrDefault(ministry.Id) ?? "", latest.GetValueOrDefault(ministry.Id) ?? "",
                     waiting.GetValueOrDefault(ministry.Id)), ministry, grants))
                 .ToList(),
             MayCreate = grants.IsAllowed(MinistriesPermissions.Create),
@@ -60,13 +60,13 @@ internal sealed class MinistriesService(
         CancellationToken cancellationToken = context.CancellationToken;
         Guid? me = Me(context);
         MinistryTree tree = await views.TreeAsync(cancellationToken);
-        MinistryRecord ministry = Existing(tree, request.MinistryId);
         GrantSet grants = await views.GrantsAsync(me, cancellationToken);
+        MinistryRecord ministry = Seen(tree, request.MinistryId, grants);
         MinistryPage page = new()
         {
-            Ministry = MinistryViews.Details(ministry),
+            Ministry = MinistryViews.Details(ministry, tree),
             Leaders = await views.LeadersAsync(tree, ministry.Id, cancellationToken),
-            SubMinistries = tree.ChildrenOf(ministry.Id).Select(child => MinistryViews.Summary(child)).ToList(),
+            SubMinistries = tree.ChildrenOf(ministry.Id).Where(child => MinistryViews.MaySeeMinistry(grants, tree, child.Id)).Select(child => MinistryViews.Summary(child, tree)).ToList(),
             Path = tree.Above(ministry.Id).Reverse().Select(above => new Crumb { Id = above.Id.ToString(), Name = above.Name }).ToList(),
             Posts = await views.PostsAsync(tree, ministry.Id, grants, cancellationToken),
             Files = await views.FilesAsync(tree, ministry.Id, grants, cancellationToken),
@@ -98,9 +98,9 @@ internal sealed class MinistriesService(
         CancellationToken cancellationToken = context.CancellationToken;
         Guid? me = Me(context);
         MinistryTree tree = await views.TreeAsync(cancellationToken);
-        IReadOnlyList<MinistryRecord> groups = tree.LifeGroups();
-        List<Guid> groupIds = groups.Select(group => group.Id).ToList();
         GrantSet grants = await views.GrantsAsync(me, cancellationToken);
+        IReadOnlyList<MinistryRecord> groups = tree.LifeGroups().Where(group => MinistryViews.MaySeeMinistry(grants, tree, group.Id)).ToList();
+        List<Guid> groupIds = groups.Select(group => group.Id).ToList();
         Dictionary<Guid, string> yours = me is { } person ? await YoursAsync(person, groups, grants, cancellationToken) : [];
         List<SitOutRecord> sitOuts = await db.SitOuts.AsNoTracking().Where(sitOut => groupIds.Contains(sitOut.GroupId)).ToListAsync(cancellationToken);
         return new LifeGroupsPage
@@ -109,7 +109,7 @@ internal sealed class MinistriesService(
             SittingOut = sitOuts.Select(sitOut => MinistryViews.SittingOut(sitOut, null, tree)).ToList(),
             Rounds = (await db.Rounds.AsNoTracking().ToListAsync(cancellationToken))
                 .OrderBy(round => round.Sundays.DefaultIfEmpty().Min()).Select(MinistryViews.Round).ToList(),
-            Groups = groups.Select(group => MinistryViews.Summary(group, yours.GetValueOrDefault(group.Id) ?? "")).ToList(),
+            Groups = groups.Select(group => MinistryViews.Summary(group, tree, yours.GetValueOrDefault(group.Id) ?? "")).ToList(),
             MayPlan = grants.IsAllowed(MinistriesPermissions.PlanLifeGroups),
             Under = groups.Select(group => group.ParentId).OfType<Guid>().Distinct().Select(tree.Find).OfType<MinistryRecord>()
                 .Select(parent => new Crumb { Id = parent.Id.ToString(), Name = parent.Name }).ToList(),
@@ -128,7 +128,7 @@ internal sealed class MinistriesService(
             throw Invalid($"Keep the note to {LongestNote} characters.");
 
         MinistryTree tree = await views.TreeAsync(cancellationToken);
-        MinistryRecord ministry = Existing(tree, request.MinistryId);
+        MinistryRecord ministry = Seen(tree, request.MinistryId, await views.GrantsAsync(me, cancellationToken));
         string role = request.As == Places.Team ? Roles.Team : Roles.Attendee;
         if ((await views.RolesAsync(person, ministry.Id, cancellationToken)).Contains(role))
             return new JoinOutcome { Joined = true, Words = "Already in." };
@@ -407,7 +407,15 @@ internal sealed class MinistriesService(
     public static MinistryRecord Existing(MinistryTree tree, string ministryId) =>
         Guid.TryParse(ministryId, out Guid id) && tree.Find(id) is { } ministry
             ? ministry
-            : throw new RpcException(new Status(StatusCode.NotFound, "That ministry isn't here any more."));
+            : throw NotHere();
+
+    public static MinistryRecord Seen(MinistryTree tree, string ministryId, GrantSet grants)
+    {
+        MinistryRecord ministry = Existing(tree, ministryId);
+        return MinistryViews.MaySeeMinistry(grants, tree, ministry.Id) ? ministry : throw NotHere();
+    }
+
+    private static RpcException NotHere() => new(new Status(StatusCode.NotFound, "That ministry isn't here any more."));
 
     public static Guid? Me(CallContext context)
     {
