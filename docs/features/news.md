@@ -41,3 +41,6 @@ embedded/etc in them".
    **Picked** (the owner's pick on the re-rolled hand): *What's urgent today first, then the lead*. A post sent as urgent
    today sits above everything on a marker band; then the newest post leads with its picture; then rows with the
    picture at the right (`.impeccable/mocks/church-news/r-c-today-first.html`).
+9. **Reading one post** (owner's pick on the decision page, 2026-11-13: *Its pictures and videos lead, as a strip*): the
+   post's pictures and videos lead at the top as one swipeable strip (1 of 5); then the title, who posted it and when,
+   and the text, where each still shows in place (`.impeccable/mocks/church-news/p-a-strip.html`).

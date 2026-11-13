@@ -1,0 +1,47 @@
+{
+  "title": "Church news: reading one post",
+  "question": "A post now carries headings, lists, quotes, links, pictures with captions, galleries, video and audio, files to download, and a link button (here, See it in the calendar). The same page shows a ministry's post too, saying which ministry it's from. How should one post read on the phone? The admin panel shows the same post beside its editor.",
+  "options": [
+    {
+      "id": "strip",
+      "kind": "assigned",
+      "kicker": "THE ROLL",
+      "label": "Its pictures and videos lead, as a strip",
+      "thesis": "Every picture and video in the post leads at the top as one swipeable strip (1 of 5); the words follow, and each still shows in place in the text.",
+      "palette": ["#2a3d5e", "#ffffff", "#00776d", "#e7ae74"],
+      "materials": ["edge-to-edge 4:3 strip", "count and dots", "title at title size", "65ch body"],
+      "viewport": "Top bar with back to News, the strip at 1 of 5, dots, then the title, who posted it and when, and the start of the text.",
+      "risk": "A post with one picture shows it twice (top and in the text) unless the strip only gathers posts with several.",
+      "html": ".impeccable/mocks/church-news/p-a-strip.html",
+      "htmlFrame": "390x844"
+    },
+    {
+      "id": "cover",
+      "kind": "dealt",
+      "label": "The first picture as its cover",
+      "thesis": "The post's first picture fills the top behind the bar, with the title and who posted it set over its dark lower edge; a post with no picture opens on the navy masthead instead.",
+      "palette": ["#1b2a44", "#ffffff", "#00776d", "#e7ae74"],
+      "materials": ["full-bleed 3:4 cover", "dark gradient under the title", "white title over the picture"],
+      "viewport": "The cover picture under a clear top bar, the title and Church office · Thursday 13 November over it, then the text.",
+      "risk": "Light pictures need the gradient to keep the title readable, and a tall cover pushes the words below the fold.",
+      "html": ".impeccable/mocks/church-news/p-b-cover.html",
+      "htmlFrame": "390x844"
+    },
+    {
+      "id": "article",
+      "kind": "dealt",
+      "label": "An article, picture first",
+      "thesis": "A plain article: the first picture inside the margins with rounded corners, then the title, who posted it and when, and the text with everything in place.",
+      "palette": ["#2a3d5e", "#ffffff", "#00776d", "#e7ae74"],
+      "materials": ["navy top bar", "16:9 picture at the inner radius", "hairline-free reading column"],
+      "viewport": "Navy top bar with back to News, the picture, the title, Church office · Thursday 13 November, then the text.",
+      "risk": "Calm and familiar, but the least like the church's own bulletin of the three.",
+      "html": ".impeccable/mocks/church-news/p-c-article.html",
+      "htmlFrame": "390x844"
+    }
+  ],
+  "reroll": true,
+  "steer": true,
+  "followup": true,
+  "buildPath": { "value": "code" }
+}

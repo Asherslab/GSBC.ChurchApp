@@ -85,4 +85,13 @@ public sealed class NewsReach
 }
 
 [ProtoContract]
+public sealed class DeskRequest;
+
+[ProtoContract]
+public sealed class NewsList
+{
+    [ProtoMember(1)] public List<NewsPost> Posts { get; set; } = [];
+}
+
+[ProtoContract]
 public sealed class Done;

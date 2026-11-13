@@ -1,0 +1,129 @@
+@page "/news/{Id:guid}"
+@inject INewsReads News
+@inject NewsWrites Writes
+@inject IAccess Access
+@inject TimeProvider Clock
+@inject NavigationManager Navigation
+
+<LiveData TValue="ShownPost" Load="LoadAsync" Feeds="News.Feeds" ReloadOn="Reload" Remember="@($"news.post.{Id}")">
+    <Page Title="@(context.Value.Post?.Title ?? "News")" BackHref="news" BackLabel="News" TopBar="TopBarStyle.Solid">
+        <Actions>
+            @if (context.Value.Post is { } shown && Actions(shown) is { Count: > 0 } actions)
+            {
+                <Menu Label="More for this post" Items="actions" />
+            }
+        </Actions>
+        <ChildContent>
+            @if (context.Value.Post is not { } post)
+            {
+                <Section First="true">
+                    <EmptyState Icon="@AppIcons.News" Title="This post isn't here any more" Body="It may have been taken down. Other news is on the News page." />
+                </Section>
+            }
+            else
+            {
+                <div class="section section--first">
+                    <PostView Title="@post.Title" Content="post.Body" From="@post.From" FromHref="@post.FromLink.TrimStart('/')" Author="@post.Author"
+                              When="@When(post)" LinkPath="@post.LinkPath" LinkLabel="@post.LinkLabel">
+                        <Status>
+                            @if (NewsWords.State(post) is { Length: > 0 } state)
+                            {
+                                <Pill Tone="PillTone.Marker">@state</Pill>
+                            }
+                        </Status>
+                        <ChildContent>
+                            @if (post.State == NewsState.Asked && Access.Can(NewsPermissions.Publish))
+                            {
+                                <Card Class="news-ask" Title="@($"{post.From} asks for this to go in church news")">
+                                    <p>@(post.AskedBy.Length > 0 ? $"{post.AskedBy} asked." : "") It shows in church news as it is here, and follows the ministry's changes.</p>
+                                    <ToggleRow Title="Send a notification" Description="Tells everyone with the app, opening this post" @bind-Checked="_tell" />
+                                    <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+                                    <div class="news-ask__actions">
+                                        <Button Block="true" Busy="_busy" OnClick="() => AnswerAsync(post, yes: true)">Put it in church news</Button>
+                                        <Button Block="true" Variant="ButtonVariant.Quiet" Disabled="_busy" OnClick="() => AnswerAsync(post, yes: false)">Keep it in @post.From</Button>
+                                    </div>
+                                </Card>
+                            }
+                        </ChildContent>
+                    </PostView>
+                </div>
+            }
+        </ChildContent>
+    </Page>
+</LiveData>
+
+<Sheet Open="_deleting" OpenChanged="open => _deleting = open" Title="@(_shown?.Shared == true ? "Take it off church news?" : "Delete this post?")"
+       Lead="@(_shown?.Shared == true ? $"It stays in {_shown.From}'s news. Its notification is taken back from phones that haven't opened it." : "It goes from everyone's phone, and its notification is taken back. This can't be undone.")">
+    <ChildContent>
+        <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+    </ChildContent>
+    <Actions>
+        <Button Block="true" Variant="ButtonVariant.Danger" Busy="_busy" OnClick="DeleteAsync">@(_shown?.Shared == true ? "Take it off" : "Delete the post")</Button>
+        <Button Block="true" Variant="ButtonVariant.Quiet" OnClick="() => _deleting = false">Keep it</Button>
+    </Actions>
+</Sheet>
+
+@code {
+    private const ChangeKind Reload = ChangeKind.Reconnected | ChangeKind.Session | ChangeKind.Access | ChangeKind.Outbox;
+
+    private NewsPost? _shown;
+    private bool _deleting, _busy, _tell = true;
+    private string? _problem;
+
+    [Parameter] public Guid Id { get; set; }
+
+    private sealed record ShownPost(NewsPost? Post);
+
+    private async Task<ShownPost> LoadAsync()
+    {
+        string id = Id.ToString();
+        _shown = (await News.PublishedAsync()).FirstOrDefault(post => post.Id == id) ?? (await News.DeskAsync()).FirstOrDefault(post => post.Id == id);
+        return new ShownPost(_shown);
+    }
+
+    private string When(NewsPost post) =>
+        ChurchDates.Describe(NewsWords.PostedAt(post), DateLineStyle.Long, withTime: false, Clock.GetUtcNow().UtcDateTime) + (post.EditedAt is null ? "" : " · edited");
+
+    private IReadOnlyList<MenuItem> Actions(NewsPost post)
+    {
+        bool publishes = Access.Can(NewsPermissions.Publish);
+        bool mayChange = !post.Shared && (publishes || post.State is NewsState.Draft or NewsState.WaitingToPublish) && Access.Can(NewsPermissions.Write);
+        List<MenuItem> items = [];
+        if (mayChange)
+            items.Add(this.Item("Change the post", () => Navigation.NavigateTo($"news/{post.Id}/change"), "pencil"));
+        if (post.Shared && publishes && post.State == NewsState.Published)
+            items.Add(this.Item("Take it off church news…", () => (_deleting, _problem) = (true, null), "trash-2", danger: true, startsGroup: true));
+        else if (mayChange)
+            items.Add(this.Item("Delete the post…", () => (_deleting, _problem) = (true, null), "trash-2", danger: true, startsGroup: true));
+        return items;
+    }
+
+    private async Task AnswerAsync(NewsPost post, bool yes) => await RunAsync(() => Writes.AnswerAskAsync(post.Id, yes, yes && _tell));
+
+    private async Task DeleteAsync()
+    {
+        if (_shown is null)
+            return;
+        await RunAsync(() => Writes.DeleteAsync(_shown.Id));
+        if (_problem is null)
+            Navigation.NavigateTo("news");
+    }
+
+    private async Task RunAsync(Func<Task> work)
+    {
+        (_busy, _problem) = (true, null);
+        try
+        {
+            await work();
+            _deleting = false;
+        }
+        catch (Exception exception) when (exception is Grpc.Core.RpcException or InvalidOperationException)
+        {
+            _problem = exception is Grpc.Core.RpcException rpc ? rpc.Status.Detail : exception.Message;
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+}

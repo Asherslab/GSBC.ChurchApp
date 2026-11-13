@@ -29,5 +29,8 @@ public interface INewsService
     ValueTask<NewsPost> AnswerAskAsync(AskAnswer request, CallContext context = default);
 
     [SignedIn]
+    ValueTask<NewsList> DeskAsync(DeskRequest request, CallContext context = default);
+
+    [SignedIn]
     ValueTask<NewsReach> ReachAsync(ReachRequest request, CallContext context = default);
 }

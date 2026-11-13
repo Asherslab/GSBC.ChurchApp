@@ -39,6 +39,9 @@ public static class RichTextRules
         return problems.Distinct().ToList();
     }
 
+    public static MediaRef? FirstPicture(RichText content) =>
+        RichTextParser.Parse(content.Markdown).MediaIds.Select(content.MediaById).FirstOrDefault(media => media is { IsImage: true });
+
     public static RichTextMedia KindOf(MediaRef media) =>
         media.IsImage ? RichTextMedia.Pictures
         : media.IsVideo ? RichTextMedia.Video

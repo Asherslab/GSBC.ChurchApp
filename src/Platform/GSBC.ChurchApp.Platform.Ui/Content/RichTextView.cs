@@ -9,13 +9,15 @@ public sealed class RichTextView : ComponentBase
     [Parameter, EditorRequired] public required RichText Content { get; set; }
     [Parameter] public string? Class { get; set; }
     [Parameter] public string About { get; set; } = "";
+    [Parameter] public bool SkipLeadingMedia { get; set; }
 
     protected override void BuildRenderTree(RenderTreeBuilder builder)
     {
         RichTextDocument document = RichTextParser.Parse(Content.Markdown);
         builder.OpenElement(0, "div");
         builder.AddAttribute(1, "class", Class is null ? "rich-text" : $"rich-text {Class}");
-        foreach (Block block in document.Blocks)
+        IEnumerable<Block> blocks = SkipLeadingMedia && document.Blocks is [MediaBlock or GalleryBlock or EmbedBlock, ..] ? document.Blocks.Skip(1) : document.Blocks;
+        foreach (Block block in blocks)
             AddBlock(builder, block);
         builder.CloseElement();
     }

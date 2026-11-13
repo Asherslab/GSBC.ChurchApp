@@ -42,11 +42,7 @@ internal static class NewsRules
 
     public static RichText BodyOf(PostRecord post) => ContentJson.TryRead(post.Body, out RichText? body) ? body! : new RichText();
 
-    public static MediaRef? PictureOf(RichText body)
-    {
-        IReadOnlyList<string> used = RichTextParser.Parse(body.Markdown).MediaIds;
-        return used.Select(body.MediaById).FirstOrDefault(media => media is { IsImage: true });
-    }
+    public static MediaRef? PictureOf(RichText body) => RichTextRules.FirstPicture(body);
 
     public static string TellTitleOf(PostRecord post) => post.TellTitle.Trim().Length > 0 ? post.TellTitle.Trim() : post.Title;
 

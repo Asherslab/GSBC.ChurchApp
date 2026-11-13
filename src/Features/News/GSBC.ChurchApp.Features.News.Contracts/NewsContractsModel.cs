@@ -14,4 +14,6 @@ namespace GSBC.ChurchApp.Features.News.Contracts;
 [ProtoSerializable(typeof(AskAnswer))]
 [ProtoSerializable(typeof(ReachRequest))]
 [ProtoSerializable(typeof(NewsReach))]
+[ProtoSerializable(typeof(DeskRequest))]
+[ProtoSerializable(typeof(NewsList))]
 public partial class NewsContractsModel : TypeModel;

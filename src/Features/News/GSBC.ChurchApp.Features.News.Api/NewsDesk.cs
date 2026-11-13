@@ -231,6 +231,9 @@ internal sealed class NewsDesk(
             _ => SharedState.Asked,
         });
 
+    public async Task<IReadOnlyList<NewsPost>> ListAsync(CancellationToken cancellationToken) =>
+        (await db.Posts.AsNoTracking().OrderByDescending(post => post.PublishedAt ?? post.ChangedAt).ToListAsync(cancellationToken)).Select(NewsRules.View).ToList();
+
     public async Task PublishDueAsync(CancellationToken cancellationToken)
     {
         DateTime now = Now;

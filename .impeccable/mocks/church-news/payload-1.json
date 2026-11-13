@@ -1,0 +1,47 @@
+{
+  "title": "Church news: the News page on the phone",
+  "question": "From your answers: church news replaces announcements (a post can send a notification, on by default, that opens the post), each post picks who it's for (Everyone by default), video and audio can be linked or uploaded, and leaders ask while staff share a ministry's post into church news. Now the News page itself. All three put News on the tab bar from the start (Home, News, Sermons, Calendar, More), and staff can still move it in App tabs. Two more quick rounds follow on this page: reading one post, and writing one on the phone.",
+  "options": [
+    {
+      "id": "front-page",
+      "kind": "assigned",
+      "kicker": "THE ROLL",
+      "label": "A front page, pictures leading",
+      "thesis": "The newest post leads with its picture full width; posts with a picture follow as picture stories, posts without one as short text items between them.",
+      "palette": ["#2a3d5e", "#ffffff", "#00776d", "#e7ae74"],
+      "materials": ["navy masthead", "16:9 pictures at the card radius", "hairline-divided stories", "'From Kids ministry' line"],
+      "viewport": "News masthead, the lead story's picture and headline, then a text-only item from a ministry and an urgent item marked Today.",
+      "risk": "Without pictures it reads as a plain list, and a week of picture posts makes the page long to scroll.",
+      "html": ".impeccable/mocks/church-news/a-front-page.html",
+      "htmlFrame": "390x844"
+    },
+    {
+      "id": "church-and-yours",
+      "kind": "dealt",
+      "label": "One News: the church, and your ministries",
+      "thesis": "A switch on the masthead shows church news or the news of every ministry you're in, so one tab holds all the news meant for you.",
+      "palette": ["#2a3d5e", "#ffffff", "#00776d", "#e7ae74"],
+      "materials": ["segmented switch on the masthead", "rows with a square picture at the right", "count of new ministry posts"],
+      "viewport": "News masthead with The church and Your ministries (3 new), then reading rows, each with a small picture where the post has one.",
+      "risk": "Ministry news then lives in two places (here and the ministry's own News tab), and a visitor in no ministry sees a switch with nothing behind it.",
+      "html": ".impeccable/mocks/church-news/b-church-and-yours.html",
+      "htmlFrame": "390x844"
+    },
+    {
+      "id": "whats-new",
+      "kind": "dealt",
+      "label": "What's new, as a list",
+      "thesis": "Compact rows like the notifications list: what's new since you last looked comes first with an orange dot, then Earlier.",
+      "palette": ["#2a3d5e", "#ffffff", "#e7ae74", "#00776d"],
+      "materials": ["New and Earlier sections", "unread dots", "icon tiles: church, ministry, urgent", "time at the right"],
+      "viewport": "News masthead saying 3 new since you last looked, the New section with three dotted rows, then Earlier.",
+      "risk": "Quick to scan but plain: pictures only show once a post is opened, so it feels more like an inbox than the church's news.",
+      "html": ".impeccable/mocks/church-news/c-whats-new.html",
+      "htmlFrame": "390x844"
+    }
+  ],
+  "reroll": true,
+  "steer": true,
+  "followup": true,
+  "buildPath": { "value": "code" }
+}

@@ -36,6 +36,12 @@ internal sealed class NewsService(NewsDesk desk, NewsTelling telling, IAccessEva
     public async ValueTask<NewsPost> AnswerAskAsync(AskAnswer request, CallContext context = default) =>
         await desk.AnswerAsync(await WriterAsync(context), NewsDesk.ParseId(request.Id), request.Yes, request.Tell, context.CancellationToken);
 
+    public async ValueTask<NewsList> DeskAsync(DeskRequest request, CallContext context = default)
+    {
+        await WriterAsync(context);
+        return new NewsList { Posts = [.. await desk.ListAsync(context.CancellationToken)] };
+    }
+
     public async ValueTask<NewsReach> ReachAsync(ReachRequest request, CallContext context = default)
     {
         await WriterAsync(context);

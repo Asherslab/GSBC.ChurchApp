@@ -1,0 +1,37 @@
+@using GSBC.ChurchApp.Platform.Client.News
+@using GSBC.ChurchApp.Platform.Contracts.Content
+@inject TimeProvider Clock
+
+<div class="news-front">
+    @foreach (NewsItem item in Arranged.Today)
+    {
+        <NewsStory @key="item.Id" Shape="NewsStoryShape.Today" Title="@item.Title" Href="@item.Href" Excerpt="@Excerpt(item)" />
+    }
+    @if (Arranged.Lead is { } lead)
+    {
+        <NewsStory @key="lead.Id" Shape="NewsStoryShape.Lead" Title="@lead.Title" Href="@lead.Href" Excerpt="@Excerpt(lead)" Picture="lead.Picture"
+                   From="@lead.From" Status="@lead.Status" When="@When(lead)" />
+    }
+    @foreach (NewsItem item in Arranged.Rest)
+    {
+        <NewsStory @key="item.Id" Title="@item.Title" Href="@item.Href" Excerpt="@Excerpt(item)" Picture="item.Picture" From="@item.From"
+                   Status="@item.Status" When="@When(item)" />
+    }
+</div>
+
+@code {
+    private const int LongestExcerpt = 160;
+
+    [Parameter, EditorRequired] public required IReadOnlyList<NewsItem> Items { get; set; }
+
+    private NewsArrangement Arranged => NewsArrangement.Of(Items, Clock.GetUtcNow().UtcDateTime);
+
+    private string When(NewsItem item) =>
+        ChurchDates.Describe(item.PostedAt, DateLineStyle.Relative, withTime: false, Clock.GetUtcNow().UtcDateTime) + (item.EditedAt is null ? "" : " · edited");
+
+    private static string Excerpt(NewsItem item)
+    {
+        string text = PlainText.Of(item.Body);
+        return text.Length <= LongestExcerpt ? text : text[..LongestExcerpt].TrimEnd() + "…";
+    }
+}

@@ -98,6 +98,20 @@ public sealed class StoredMinistries(ILocalFeeds feeds, IAccess access, TimeProv
         return calendar;
     }
 
+    public async Task<YourNews> YourNewsAsync()
+    {
+        YourMinistries? yours = await YoursAsync();
+        if (yours is null || yours.Places.Count == 0)
+            return YourNews.None;
+        MinistryMap map = await MapAsync();
+        List<string> places = yours.Places.Select(place => place.MinistryId)
+            .Where(id => map.Find(id) is { } card && MinistryLogic.IsOn(card.Ministry, MinistryParts.News)).Distinct().ToList();
+        List<Post> posts = (await ItemsAsync<Post>(MinistriesFeeds.Posts, MinistriesFeeds.PrivatePosts, places))
+            .Where(post => places.Contains(post.MinistryId) && MaySee(map, post.Audience, post.MinistryId))
+            .OrderByDescending(post => post.PostedAt).Take(MostPosts).ToList();
+        return new YourNews(places.Count > 0, posts.Select(post => (post, map.Find(post.MinistryId)!.Ministry.Name)).ToList());
+    }
+
     public async Task<LifeGroupsPage> LifeGroupsAsync()
     {
         MinistryMap map = await MapAsync();

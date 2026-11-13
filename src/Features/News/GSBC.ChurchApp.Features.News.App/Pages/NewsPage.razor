@@ -1,0 +1,56 @@
+@page "/news"
+@page "/news/yours"
+@inject INewsReads News
+@inject IEnumerable<INewsSource> Sources
+@inject NavigationManager Navigation
+@inject IAccess Access
+
+<Page Title="News">
+    <Masthead Title="News" Note="From the church and the ministries you're in" />
+    <LiveData TValue="NewsHome" Load="() => NewsHome.LoadAsync(News, Sources)" Feeds="Feeds" ReloadOn="Reload" Remember="news.home">
+        @if (context.Value.InMinistries)
+        {
+            <TabStrip TValue="string" Label="Whose news" Options="Tabs" Value="@Tab" Sticky="true" Href="Address" />
+        }
+        <Section First="true">
+            @if (Tab == NewsWords.ChurchTab && Access.Can(NewsPermissions.Write))
+            {
+                <div class="news-tools">
+                    <Button Block="true" Icon="plus" Href="news/write">New post</Button>
+                    @if (context.Value.Waiting > 0)
+                    {
+                        <ListGroup>
+                            <ListRow Title="@Waiting(context.Value.Waiting)" Subtitle="Drafts, posts waiting to be published and ministries' asks" Icon="clock"
+                                     IconTone="RowTone.Warm" Chevron="true" Href="news/desk" />
+                        </ListGroup>
+                    }
+                </div>
+            }
+            @if (Shown(context.Value).Count == 0)
+            {
+                <EmptyState Icon="@AppIcons.News" Title="No news yet"
+                            Body="@(Tab == NewsWords.ChurchTab ? "News for the whole church shows here when it's posted." : "News from the ministries you're part of shows here.")" />
+            }
+            else
+            {
+                <NewsList Items="Shown(context.Value)" />
+            }
+        </Section>
+    </LiveData>
+</Page>
+
+@code {
+    private const ChangeKind Reload = ChangeKind.Reconnected | ChangeKind.Session | ChangeKind.Access | ChangeKind.Outbox;
+
+    private static readonly IReadOnlyList<TabOption<string>> Tabs = [new(NewsWords.ChurchTab, "The church"), new(NewsWords.YoursTab, "Your ministries")];
+
+    private IReadOnlyList<string> Feeds => [.. News.Feeds, .. Sources.SelectMany(source => source.Feeds)];
+
+    private string Tab => Navigation.ToBaseRelativePath(Navigation.Uri).Split('?')[0].TrimEnd('/') == "news/yours" ? NewsWords.YoursTab : NewsWords.ChurchTab;
+
+    private static string Address(string tab) => tab == NewsWords.YoursTab ? "news/yours" : "news";
+
+    private IReadOnlyList<NewsItem> Shown(NewsHome home) => Tab == NewsWords.YoursTab && home.InMinistries ? home.Yours : home.Church;
+
+    private static string Waiting(int count) => count == 1 ? "1 post to look at" : $"{count} posts to look at";
+}
