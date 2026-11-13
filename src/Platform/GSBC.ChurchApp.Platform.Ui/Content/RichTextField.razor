@@ -1,0 +1,174 @@
+@using System.Globalization
+@using GSBC.ChurchApp.Platform.Contracts.Content
+@using GSBC.ChurchApp.Platform.Icons
+@implements IAsyncDisposable
+@inject IJSRuntime JS
+
+<div class="rich-text-field @Class" data-headings="@(Headings ? "true" : "false")">
+    <div class="rich-text-field__bar" role="toolbar" aria-label="Formatting">
+        @Tool(Format.Bold, AppIcons.Bold, "Bold", "⌘B")
+        @Tool(Format.Italic, AppIcons.Italic, "Italic", "⌘I")
+        @if (Headings)
+        {
+            @Tool(Format.Heading, AppIcons.Heading, "Heading", null)
+        }
+        @Tool(Format.Bullets, AppIcons.BulletedList, "Bulleted list", null)
+        @Tool(Format.Numbers, AppIcons.NumberedList, "Numbered list", null)
+        @Tool(Format.Quote, AppIcons.Quote, "Quote", null)
+        @Tool(Format.Link, AppIcons.Link, "Link", "⌘K")
+        @if (Tools is not null)
+        {
+            <span class="rich-text-field__gap"></span>
+            @Tools
+        }
+    </div>
+    @if (_linking)
+    {
+        <div class="rich-text-panel">
+            <TextField Label="Link to" Value="@_href" ValueChanged="href => _href = href" Type="url" Placeholder="https://…, /events, mailto:… or tel:…"
+                       Problem="@(_href.Trim().Length > 0 && !LinkTargets.IsSafe(_href.Trim()) ? "Use a link starting with https://, mailto: or tel:, or a page in the app such as /events." : null)" />
+            <div class="rich-text-panel__actions">
+                <Button Variant="ButtonVariant.Quiet" Small="true" OnClick="() => _linking = false">Cancel</Button>
+                <Button Small="true" Disabled="@(!LinkTargets.IsSafe(_href.Trim()))" OnClick="AddLinkAsync">Add the link</Button>
+            </div>
+        </div>
+    }
+    <div class="rich-text-field__editor" @ref="_host"></div>
+</div>
+
+@code {
+    private ElementReference _host;
+    private IJSObjectReference? _module;
+    private IJSObjectReference? _editor;
+    private DotNetObjectReference<RichTextField>? _self;
+    private string _markdown = "";
+    private HashSet<string> _active = [];
+    private bool _linking;
+    private string _href = "";
+    private EditorText _beforeLink;
+
+    [Parameter, EditorRequired] public required string Value { get; set; }
+    [Parameter] public EventCallback<string> ValueChanged { get; set; }
+    [Parameter] public string Label { get; set; } = "Text";
+    [Parameter] public string Placeholder { get; set; } = "Write here. Bold, lists, quotes and links are in the bar.";
+    [Parameter] public bool Headings { get; set; }
+    [Parameter] public RenderFragment? Tools { get; set; }
+    [Parameter] public string? Class { get; set; }
+
+    private static class Format
+    {
+        public const string Bold = "bold", Italic = "italic", Heading = "heading", Bullets = "bullets", Numbers = "numbers", Quote = "quote", Link = "link";
+    }
+
+    private RenderFragment Tool(string format, string icon, string name, string? shortcut) =>
+        @<Button Variant="ButtonVariant.Quiet" Small="true" Icon="@icon" Class="rich-text-field__tool" AriaLabel="@name" Tooltip="@(shortcut is null ? name : $"{name} ({shortcut})")"
+                 Pressed="@(format == Format.Link ? _linking : _active.Contains(format))" OnClick="() => FormatAsync(format)" />;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (Value == _markdown)
+            return;
+        _markdown = Value;
+        if (_editor is not null)
+            await _editor.InvokeVoidAsync("setValue", _markdown);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+            return;
+        _self = DotNetObjectReference.Create(this);
+        _module = await JS.InvokeAsync<IJSObjectReference>("import", "./_content/GSBC.ChurchApp.Platform.Ui/js/rich-text-field.js");
+        _editor = await _module.InvokeAsync<IJSObjectReference>("attach", _host, _self, _markdown, Label, Placeholder);
+    }
+
+    [JSInvokable]
+    public async Task ChangedAsync(string markdown)
+    {
+        if (markdown == _markdown)
+            return;
+        _markdown = markdown;
+        await ValueChanged.InvokeAsync(markdown);
+    }
+
+    [JSInvokable]
+    public Task FormatsAsync(string formats)
+    {
+        _active = [.. formats.Split(',', StringSplitOptions.RemoveEmptyEntries)];
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+    [JSInvokable]
+    public string PastedAsync(string tree) => PastedText.FromJson(tree, Headings);
+
+    [JSInvokable]
+    public async Task FormatAsync(string format)
+    {
+        if (_editor is null)
+            return;
+        switch (format)
+        {
+            case Format.Bold or Format.Italic:
+                if (!await _editor.InvokeAsync<bool>("toggleOff", format))
+                    await ApplyAsync(RichTextEdits.Wrap(await CurrentAsync(), format == Format.Bold ? "**" : "*", format == Format.Bold ? "bold text" : "italic text"));
+                break;
+            case Format.Link:
+                _beforeLink = await CurrentAsync();
+                string selected = _beforeLink.Selected.Trim();
+                (_href, _linking) = (LinkTargets.IsSafe(selected) ? selected : "", !_linking);
+                StateHasChanged();
+                break;
+            default:
+                await ApplyAsync(RichTextEdits.Lines(await CurrentAsync(), format switch
+                {
+                    Format.Heading => LineStyle.Heading,
+                    Format.Numbers => LineStyle.Numbers,
+                    Format.Quote => LineStyle.Quote,
+                    _ => LineStyle.Bullets,
+                }));
+                break;
+        }
+    }
+
+    private async Task AddLinkAsync()
+    {
+        _linking = false;
+        await ApplyAsync(RichTextEdits.Link(_beforeLink, _href.Trim(), "link text"));
+    }
+
+    private async Task<EditorText> CurrentAsync()
+    {
+        if (_editor is null)
+            return new EditorText(_markdown, _markdown.Length, _markdown.Length);
+        string text = await _editor.InvokeAsync<string>("text");
+        string[] range = (await _editor.InvokeAsync<string>("selection")).Split(',');
+        int start = Math.Clamp(int.Parse(range[0], CultureInfo.InvariantCulture), 0, text.Length);
+        int end = Math.Clamp(int.Parse(range[1], CultureInfo.InvariantCulture), start, text.Length);
+        return new EditorText(text, start, end);
+    }
+
+    private async Task ApplyAsync(EditorText edited)
+    {
+        if (_editor is not null)
+            await _editor.InvokeVoidAsync("apply", edited.Text, edited.Start, edited.End);
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        try
+        {
+            if (_editor is not null)
+            {
+                await _editor.InvokeVoidAsync("dispose");
+                await _editor.DisposeAsync();
+            }
+            if (_module is not null)
+                await _module.DisposeAsync();
+        }
+        catch (JSDisconnectedException)
+        {
+        }
+        _self?.Dispose();
+    }
+}

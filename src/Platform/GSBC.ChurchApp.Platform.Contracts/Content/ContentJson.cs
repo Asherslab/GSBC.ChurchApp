@@ -8,6 +8,7 @@ namespace GSBC.ChurchApp.Platform.Contracts.Content;
 [JsonSerializable(typeof(RichText))]
 [JsonSerializable(typeof(MediaRef))]
 [JsonSerializable(typeof(CustomFont))]
+[JsonSerializable(typeof(PastedNode))]
 internal sealed partial class ContentJsonContext : JsonSerializerContext;
 
 public static class ContentJson
@@ -17,6 +18,8 @@ public static class ContentJson
     public static string Write(MediaRef media) => JsonSerializer.Serialize(media, ContentJsonContext.Default.MediaRef);
 
     public static string Write(CustomFont font) => JsonSerializer.Serialize(font, ContentJsonContext.Default.CustomFont);
+
+    public static bool TryRead(string json, out PastedNode? pasted) => TryRead(json, ContentJsonContext.Default.PastedNode, out pasted);
 
     public static bool TryRead(string json, out CustomFont? font) => TryRead(json, ContentJsonContext.Default.CustomFont, out font);
 

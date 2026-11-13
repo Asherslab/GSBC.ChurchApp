@@ -6,7 +6,7 @@
 @inject IServiceProvider Services
 
 <div class="post-editor">
-    <TextField Label="Title" Value="@Title" ValueChanged="TitleChangedAsync" MaxLength="120" Required="true" />
+    <TextField Label="Title" Value="@Title" ValueChanged="TitleChangedAsync" MaxLength="120" Required="true" Placeholder="Give it a title" />
 
     @if (Blocks.Count > 0)
     {
@@ -37,7 +37,7 @@
     @if (Settings is not null && SettingsInline)
     {
         <section class="post-editor__inline-settings" aria-label="@SettingsTitle">
-            <span class="post-text__shown-label">@SettingsTitle</span>
+            <span class="post-editor__inline-label">@SettingsTitle</span>
             @Settings
         </section>
     }
