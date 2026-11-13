@@ -66,7 +66,7 @@
 
 .rich-text mark {
     padding: 0 0.12em;
-    border-radius: 3px;
+    border-radius: calc(var(--radius-inner) / 2);
     background: var(--highlight);
     color: inherit;
 }
@@ -83,7 +83,7 @@
 
 .rich-text code {
     padding: 0.1em 0.35em;
-    border-radius: 5px;
+    border-radius: calc(var(--radius-inner) / 2);
     background: var(--sand);
     font-family: var(--font-code);
     font-size: 0.88em;
@@ -661,13 +661,13 @@
 }
 
 .cm-md-highlight {
-    border-radius: 3px;
+    border-radius: calc(var(--radius-inner) / 2);
     background: var(--highlight);
 }
 
 .cm-md-code {
     padding: 0.05em 0.3em;
-    border-radius: 5px;
+    border-radius: calc(var(--radius-inner) / 2);
     background: var(--sand);
     font-family: var(--font-code);
     font-size: 0.88em;
