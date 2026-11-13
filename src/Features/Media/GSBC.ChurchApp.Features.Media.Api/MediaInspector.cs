@@ -48,6 +48,8 @@ internal static class MediaInspector
         "font/ttf" => header.StartsWith((ReadOnlySpan<byte>)[0x00, 0x01, 0x00, 0x00]) || header.StartsWith("true"u8),
         "font/otf" => header.StartsWith("OTTO"u8),
         "video/mp4" or "video/quicktime" => header.Length >= 12 && header[4..8].SequenceEqual("ftyp"u8),
+        "audio/mp4" or "audio/x-m4a" => header.Length >= 12 && header[4..8].SequenceEqual("ftyp"u8),
+        "audio/mpeg" => header.StartsWith("ID3"u8) || (header.Length >= 2 && header[0] == 0xFF && (header[1] & 0xE0) == 0xE0),
         "application/vnd.sqlite3" => header.StartsWith("SQLite format 3\0"u8),
         _ => false,
     };

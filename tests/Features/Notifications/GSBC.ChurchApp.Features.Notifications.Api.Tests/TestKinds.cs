@@ -40,5 +40,5 @@ internal static class TestKinds
         Digest: new NotificationDigest("A new notice today", "{0} new notices today", "Read them in Music.", DigestSchedule.Daily(new TimeOnly(12, 0))));
 
     public static NotificationKindCatalog Catalog =>
-        new([new NotificationKindSet([Notice, NewPasskey, ChatMessage, RosterSwap, NewSermon, NewInSeries, Prayed, NewNotices, .. AnnouncementNotifications.All])]);
+        new([new NotificationKindSet([Notice, NewPasskey, ChatMessage, RosterSwap, NewSermon, NewInSeries, Prayed, NewNotices, AnnouncementNotifications.Announcement, .. AnnouncementNotifications.All])]);
 }

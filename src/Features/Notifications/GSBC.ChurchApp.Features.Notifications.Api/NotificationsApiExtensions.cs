@@ -48,12 +48,6 @@ public static class NotificationsApiExtensions
         services.AddPermissions(NotificationsPermissions.All);
         services.AddDestinations(NotificationsDestinations.All);
         services.AddSurfaces(NotificationsTiles.Surfaces);
-        services.AddSystemRole(new SystemRole(NotificationsPermissions.WriterRole, "Announcements Writer",
-            "Write announcements, try them on their own phone, and ask for them to be sent", ScopeKind.Global,
-            [NotificationsPermissions.WriteNode], Feature: RoleFeatures.Announcements));
-        services.AddSystemRole(new SystemRole(NotificationsPermissions.SenderRole, "Announcements Sender",
-            "Write announcements, and send and schedule them to everyone", ScopeKind.Global,
-            [NotificationsPermissions.WriteNode, NotificationsPermissions.SendNode], Feature: RoleFeatures.Announcements, Replaces: ["announcer"]));
         services.AddFeed(new FeedDefinition(NotificationsFeeds.Inbox, FeedAudience.OwnRecords));
         services.AddFeed(new FeedDefinition(NotificationsFeeds.Preferences, FeedAudience.OwnRecords));
         services.AddFeed(new FeedDefinition(NotificationsFeeds.Public, FeedAudience.Public));

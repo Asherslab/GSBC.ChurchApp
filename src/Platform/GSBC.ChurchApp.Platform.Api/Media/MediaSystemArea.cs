@@ -6,4 +6,7 @@ public sealed record MediaSystemArea(
     string Key, string Name, string Caption, Permission Audience, bool StaffDeleteUnused = false, Permission? Uploaders = null,
     IReadOnlyList<AreaFileType>? Files = null);
 
-public sealed record AreaFileType(string ContentType, long LargestBytes);
+public sealed record AreaFileType(string ContentType, long LargestBytes, Permission? LargerWith = null, long LargestWithIt = 0)
+{
+    public long LargestFor(bool holdsLargerWith) => LargerWith is not null && holdsLargerWith ? Math.Max(LargestBytes, LargestWithIt) : LargestBytes;
+}

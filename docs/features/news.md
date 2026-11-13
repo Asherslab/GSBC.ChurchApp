@@ -34,3 +34,7 @@ embedded/etc in them".
 7. **Leaders ask, staff share.** A ministry post's *Ask to send it to the whole church* becomes *Ask for church news*; staff
    who publish church news see the asks and share a post with one tap, or say no. They can also share any for-everyone post
    without an ask.
+8. **The News page** (decision page, 2026-11-13; the owner re-rolled the first hand with a steer): "pictures lead like
+   front page for top post, other post move to image on side. include tab for your ministries (combined feed), hide tabs if
+   person has no ministries". The newest post leads with its picture; the rest are rows with their picture at the side; a
+   *Your ministries* tab gathers the news of every ministry you're in, and the tabs aren't shown to someone in no ministry.
