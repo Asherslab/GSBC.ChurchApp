@@ -584,7 +584,7 @@ button.text-link:disabled { color: var(--ink-3); cursor: default; }
 .writing-desk { --side: 360px; --foot-h: 76px; display: grid; grid-template-columns: minmax(0, 1fr) var(--side); grid-template-rows: 1fr auto; grid-template-areas: "main side" "main foot"; min-height: 100dvh; background: linear-gradient(to left, var(--page) var(--side), var(--line) var(--side), var(--line) calc(var(--side) + 1px), var(--sand) calc(var(--side) + 1px)); }
 .writing-desk--folded { --side: 64px; grid-template-areas: "main side" "foot foot"; }
 .writing-desk__main { grid-area: main; min-width: 0; padding: var(--space-2xl) var(--space-3xl) 0; }
-.writing-desk__page { max-width: 760px; min-height: calc(100% - var(--space-2xl)); margin: 0 auto; padding: var(--space-xs) var(--space-3xl) var(--space-4xl); border-radius: var(--radius) var(--radius) 0 0; background: var(--page); box-shadow: 0 0 0 1px var(--line), var(--lift); }
+.writing-desk__page { max-width: 800px; min-height: calc(100% - var(--space-2xl)); margin: 0 auto; padding: var(--space-xs) var(--space-2xl) var(--space-4xl); border-radius: var(--radius) var(--radius) 0 0; background: var(--page); box-shadow: 0 0 0 1px var(--line), var(--lift); }
 .writing-desk__page > .tab-strip { margin-bottom: var(--space-xl); }
 .writing-desk__summary { margin-left: auto; padding: 0; border: 0; background: none; color: var(--accent); font: inherit; font-size: var(--text-caption); font-weight: 600; cursor: pointer; }
 .writing-desk__summary:hover { text-decoration: underline; text-underline-offset: 3px; }
@@ -596,6 +596,7 @@ button.text-link:disabled { color: var(--ink-3); cursor: default; }
 .writing-desk__side-title { margin: 0; color: var(--ink-2); font-size: var(--text-caption); font-weight: 700; }
 .writing-desk__settings { display: grid; gap: var(--space-md); }
 .writing-desk__settings > .section { margin: 0; }
+.writing-desk__settings .section__group { display: grid; gap: var(--space-lg); }
 .writing-desk--folded .writing-desk__side { padding-inline: var(--space-sm); }
 .writing-desk--folded .writing-desk__side-head { justify-content: center; }
 .writing-desk--folded :is(.writing-desk__side-title, .writing-desk__settings) { display: none; }

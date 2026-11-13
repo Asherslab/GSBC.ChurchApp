@@ -191,7 +191,7 @@
         if (post.State is NewsState.Scheduled && publishes || post.State == NewsState.WaitingToPublish)
             items.Add(this.Item("Back to writing", () => RunAsync(() => Writes.BackToWritingAsync(post.Id)), "pencil",
                 post.State == NewsState.Scheduled ? "It won't publish until it's posted again" : "Nobody is asked to publish it any more"));
-        if (post.Shared && post.State == NewsState.Published && publishes)
+        if (post is { Shared: true, State: NewsState.Published } && publishes)
             items.Add(this.Item("Take it off church news…", () => (_deleting, _deletingShared) = (true, true), "trash-2", danger: true, startsGroup: true));
         else if (!post.Shared && (publishes || post.State is NewsState.Draft or NewsState.WaitingToPublish))
             items.Add(this.Item("Delete the post…", () => (_deleting, _deletingShared) = (true, false), "trash-2", danger: true, startsGroup: true));

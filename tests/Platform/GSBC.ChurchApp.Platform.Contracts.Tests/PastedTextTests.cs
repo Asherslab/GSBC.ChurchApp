@@ -23,9 +23,9 @@ public sealed class PastedTextTests
     [Fact]
     public void WordsListParagraphsBecomeAListWithoutTheirBulletCharacters()
     {
-        PastedNode item(string text) => Node("li", new PastedNode("marker", Text: "·"), Text(text));
+        PastedNode Item(string text) => Node("li", new PastedNode("marker", Text: "·"), Text(text));
 
-        Assert.Equal("- Carols\n- Christmas Eve", Pasted(false, item("Carols"), item("Christmas Eve")));
+        Assert.Equal("- Carols\n- Christmas Eve", Pasted(false, Item("Carols"), Item("Christmas Eve")));
     }
 
     [Fact]

@@ -311,3 +311,5 @@
 .writing-desk .post-editor__blocks .reorder__row:focus-within { background: var(--field); }
 
 .writing-desk .post-editor > .field .field__input { padding-inline: 0; border-radius: 0; background: none; box-shadow: inset 0 -1px 0 var(--line); font-size: var(--text-headline); font-weight: 700; letter-spacing: -0.015em; }
+
+.writing-desk .post-editor__add-label { flex-basis: 100%; margin-bottom: var(--space-3xs); }

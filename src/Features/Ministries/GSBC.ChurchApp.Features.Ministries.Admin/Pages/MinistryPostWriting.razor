@@ -32,6 +32,6 @@
             return null;
         if (PostId is null)
             return Sunday is { Length: > 0 } sunday ? PostSheet.DraftForSunday(page, sunday) : PostSheet.DraftOf(null, page);
-        return page.Posts.FirstOrDefault(post => post.Id == PostId && post.From.Length == 0) is { } post ? PostSheet.DraftOf(post, page) : null;
+        return page.Posts.FirstOrDefault(candidate => candidate.Id == PostId && candidate.From.Length == 0) is { } post ? PostSheet.DraftOf(post, page) : null;
     }
 }

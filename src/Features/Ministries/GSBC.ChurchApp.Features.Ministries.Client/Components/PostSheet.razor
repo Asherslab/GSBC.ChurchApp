@@ -135,7 +135,7 @@ else
     {
         MinistryWords.Short(Draft.Audience, Page.Ministry),
         Draft.Important ? "Notifies them" : "No notification",
-        Draft.AskWholeChurch && Draft.Audience == Contracts.Audiences.Everyone ? "Asks for church news" : "",
+        Draft is { AskWholeChurch: true, Audience: Contracts.Audiences.Everyone } ? "Asks for church news" : "",
     }.Where(part => part.Length > 0));
 
     private UploadTarget Target => Draft.Audience == Contracts.Audiences.Everyone

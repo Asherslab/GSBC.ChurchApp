@@ -147,7 +147,7 @@ public static partial class PastedText
         string trimmed = inner.Trim();
         if (trimmed.Length == 0 || trimmed.Contains('\n') || trimmed.StartsWith(marker, StringComparison.Ordinal))
             return inner;
-        string before = inner[..(inner.Length - inner.TrimStart().Length)];
+        string before = inner[..^inner.TrimStart().Length];
         string after = inner[inner.TrimEnd().Length..];
         return before + marker + trimmed + marker + after;
     }

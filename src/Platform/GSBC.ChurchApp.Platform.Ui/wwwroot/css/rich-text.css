@@ -256,9 +256,16 @@
 
 .rich-text-field__bar {
     display: flex;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     align-items: center;
     gap: var(--space-2xs);
+    min-width: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+
+.rich-text-field__bar > * {
+    flex: none;
 }
 
 .rich-text-field__gap {
@@ -278,9 +285,11 @@
     line-height: 1;
 }
 
-.rich-text-field .rich-text-field__tool:hover {
-    background: var(--fill-on-surface);
-    color: var(--ink);
+@media (hover: hover) {
+    .rich-text-field .rich-text-field__tool:hover {
+        background: var(--fill-on-surface);
+        color: var(--ink);
+    }
 }
 
 .rich-text-field .rich-text-field__tool[aria-pressed="true"] {
@@ -394,7 +403,7 @@
     right: 0;
     bottom: var(--kb, 0px);
     z-index: 30;
-    flex-wrap: nowrap;
+    justify-content: space-between;
     padding: var(--space-xs) var(--space-sm);
     border-top: 1px solid var(--line);
     background: var(--surface);

@@ -13,7 +13,7 @@
         <TitleBand Title="@(Id is null ? "New post" : "Change the post")" BrowserTitle="@(Id is null ? "New post" : post.Title)" BackHref="news" BackText="Church news"
                    Lead="@(Id is null ? "Write it as blocks: text, headings, pictures, video, audio or a file, moved by their handles." : context.Value.Post is { } latest ? NewsWords.StateLine(latest, Clock) : "This post has just been deleted.")">
             <Actions>
-                @if (context.Value.Post is { } latest && Actions(latest) is { Count: > 0 } actions)
+                @if (context.Value.Post is { } current && Actions(current) is { Count: > 0 } actions)
                 {
                     <Menu Label="More for this post" Items="actions" />
                 }

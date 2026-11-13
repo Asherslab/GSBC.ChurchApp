@@ -5,7 +5,7 @@
 @inject IJSRuntime JS
 
 <div class="rich-text-field @Class" data-headings="@(Headings ? "true" : "false")">
-    <div class="rich-text-field__bar" role="toolbar" aria-label="Formatting">
+    <div class="rich-text-field__bar" role="toolbar" aria-label="Formatting" data-look-scroll="narrow">
         @Tool(Format.Bold, AppIcons.Bold, "Bold", "⌘B")
         @Tool(Format.Italic, AppIcons.Italic, "Italic", "⌘I")
         @if (Headings)

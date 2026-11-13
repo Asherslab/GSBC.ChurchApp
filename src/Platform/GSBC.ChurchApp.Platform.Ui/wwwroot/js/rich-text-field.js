@@ -222,6 +222,7 @@ export function attach(host, field, value, label, placeholderText) {
         livePreview,
         history(),
         EditorView.lineWrapping,
+        EditorView.scrollMargins.of(() => ({ bottom: document.documentElement.classList.contains('keyboard-open') ? 72 : 16 })),
         EditorView.contentAttributes.of({ 'aria-label': label, 'aria-multiline': 'true', autocapitalize: 'sentences', spellcheck: 'true' }),
         placeholder(placeholderText),
         EditorView.inputHandler.of(headingFromHash),
