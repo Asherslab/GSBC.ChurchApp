@@ -14,14 +14,17 @@ namespace GSBC.ChurchApp.Features.News.Api;
 internal sealed record Writer(Guid Id, bool MayPublish);
 
 internal sealed class NewsDesk(
-    NewsDbContext db, NewsPublisher publisher, NewsTelling telling, IMediaReferences media, IMediaSystemFolders folders, IPeopleIndex people, TimeProvider time)
+    NewsDbContext db, NewsPublisher publisher, NewsTelling telling, IMediaReferences media, IMediaSystemFolders folders, IPeopleIndex people,
+    IEnumerable<ISharedPostSource> sources, TimeProvider time)
 {
     private DateTime Now => time.GetUtcNow().UtcDateTime;
 
     public static string MediaOwner(Guid id) => $"news/posts/{id}";
 
-    public async Task<NewsPost> SaveAsync(Writer writer, NewsPost wanted, CancellationToken cancellationToken)
+    public async Task<NewsPost> SaveAsync(Writer writer, NewsPost wanted, CancellationToken cancellationToken, IReadOnlyList<string>? uploaded = null)
     {
+        if (uploaded is { Count: > 0 })
+            wanted.Body = UploadedMedia.Resolve(wanted.Body, await media.VerifyAsync(uploaded.Select(id => new MediaRef { Id = id }).ToList(), cancellationToken));
         if (NewsRules.WhyNot(wanted) is { } problem)
             throw Invalid(problem);
         Guid id = ParseId(wanted.Id);
@@ -130,6 +133,13 @@ internal sealed class NewsDesk(
         if (!writer.MayPublish && !NewsRules.WritersMayChange(post))
             throw Refused("Only someone who publishes church news can delete it once it's scheduled or published.");
         await RemoveAsync(post, cancellationToken);
+        await TellSourceAsync(post, SharedState.None, cancellationToken);
+    }
+
+    private async Task TellSourceAsync(PostRecord post, SharedState state, CancellationToken cancellationToken)
+    {
+        if (post is { Source: { } source, SourceId: { } sourceId } && sources.FirstOrDefault(candidate => candidate.Source == source) is { } owner)
+            await owner.StateChangedAsync(sourceId, state, cancellationToken);
     }
 
     public async Task RemoveAsync(PostRecord post, CancellationToken cancellationToken)
@@ -166,6 +176,7 @@ internal sealed class NewsDesk(
             await db.SaveChangesAsync(cancellationToken);
             await telling.SettleAsync(post.Id, cancellationToken);
         }
+        await TellSourceAsync(post, yes ? SharedState.Shared : SharedState.Declined, cancellationToken);
         await telling.AnsweredAsync(post, yes, writer.Id, cancellationToken);
         return NewsRules.View(post);
     }

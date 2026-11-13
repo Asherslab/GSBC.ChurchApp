@@ -9,6 +9,8 @@ using GSBC.ChurchApp.Platform.Api.Calendars;
 using GSBC.ChurchApp.Platform.Api.Notifications;
 using GSBC.ChurchApp.Platform.Api.People;
 using GSBC.ChurchApp.Platform.Contracts.Configuration;
+using GSBC.ChurchApp.Platform.Contracts.Content;
+using GSBC.ChurchApp.Platform.Contracts.News;
 using GSBC.ChurchApp.Platform.Permissions;
 using Microsoft.EntityFrameworkCore;
 using ProtoBuf.Grpc;
@@ -29,6 +31,9 @@ internal sealed class MinistryLeadingService(
     IKeptRegularEvents keptEvents,
     INotifications notifications,
     MinistryFileMedia fileMedia,
+    MinistryPostMedia postMedia,
+    MinistryChurchNews churchNews,
+    IAccessEvaluator access,
     TimeProvider time) : IMinistryLeadingService
 {
     private const int MostFound = 12;
@@ -181,8 +186,10 @@ internal sealed class MinistryLeadingService(
         MinistryRecord ministry = Existing(await views.TreeAsync(cancellationToken), request.MinistryId);
         TurnedOn(ministry, MinistryParts.News);
         Post wanted = request.Post;
-        if (MinistryRules.WhyNotPost(wanted.Title, wanted.Body, wanted.Audience, MinistryLogic.PostableAudiences(ministry.AttendJoin)) is { } problem)
+        RichText content = await postMedia.ResolvedAsync(wanted.Content ?? PlainText.AsRichText(wanted.Body), request.Uploaded, cancellationToken);
+        if (MinistryRules.WhyNotPost(wanted.Title, content, wanted.Audience, MinistryLogic.PostableAudiences(ministry.AttendJoin)) is { } problem)
             throw Invalid(problem);
+        content = await postMedia.VerifiedAsync(content, wanted.Audience, cancellationToken);
         DateOnly? sunday = wanted.Sunday.Length == 0 ? null : await SundayOfAsync(ministry, wanted.Sunday, cancellationToken);
 
         Guid? chosenId = wanted.New ? ParseId(wanted.Id) : null;
@@ -201,17 +208,18 @@ internal sealed class MinistryLeadingService(
         else
             post.EditedAt = Now;
         bool tellNow = wanted.Important && (isNew || !post.Important);
-        (post.Title, post.Body, post.Audience, post.Important) = (wanted.Title.Trim(), wanted.Body.Trim(), wanted.Audience, wanted.Important);
+        (post.Title, post.Body, post.Content, post.Audience, post.Important) =
+            (wanted.Title.Trim(), PlainText.Of(content), ContentJson.Write(content), wanted.Audience, wanted.Important);
         (post.Sunday, post.NoClass) = (sunday, sunday is not null && wanted.NoClass);
-        if (wanted.AskWholeChurch && post.WholeChurchAskedAt is null)
-            post.WholeChurchAskedAt = Now;
+        await churchNews.AfterSaveAsync(post, ministry, await views.TreeAsync(cancellationToken), wanted.AskWholeChurch, me, cancellationToken);
         changes.Touch(ministry.Id);
         await db.SaveChangesAsync(cancellationToken);
+        await postMedia.UseAsync(post, content, ministry, cancellationToken);
 
         if (tellNow)
             await notifications.RaiseAsync(new Notification(
                 MinistriesNotifications.Important, NotificationAudience.Holding(ImportantReaders(post.Audience), ministry.Id.ToString()),
-                $"{ministry.Name}: {post.Title}", Shortened(post.Body), $"/ministries/{ministry.Id}/news",
+                $"{ministry.Name}: {post.Title}", Shortened(post.Body), $"/ministries/{ministry.Id}/news/{post.Id}",
                 Subject: $"ministries/posts/{post.Id:N}", ScopeId: ministry.Id.ToString()) { Actor = me }, cancellationToken);
         return MinistryViews.Post(post);
     }
@@ -228,11 +236,54 @@ internal sealed class MinistryLeadingService(
         CancellationToken cancellationToken = context.CancellationToken;
         MinistryRecord ministry = Existing(await views.TreeAsync(cancellationToken), request.MinistryId);
         Guid id = ParseId(request.Id);
-        await db.Posts.Where(post => post.Id == id && post.MinistryId == ministry.Id).ExecuteDeleteAsync(cancellationToken);
+        if (await db.Posts.SingleOrDefaultAsync(post => post.Id == id && post.MinistryId == ministry.Id, cancellationToken) is { } post)
+        {
+            await churchNews.WithdrawAsync(post, cancellationToken);
+            db.Posts.Remove(post);
+        }
         await notifications.SettleAsync($"ministries/posts/{id:N}", cancellationToken);
         changes.Touch(ministry.Id);
         await db.SaveChangesAsync(cancellationToken);
+        await postMedia.ReleaseAsync(id, cancellationToken);
         return new Done();
+    }
+
+    public async ValueTask<Post> ShareToChurchNewsAsync(ChurchNewsShare request, CallContext context = default)
+    {
+        CancellationToken cancellationToken = context.CancellationToken;
+        Guid me = await ChurchNewsPublisherAsync(context);
+        MinistryTree tree = await views.TreeAsync(cancellationToken);
+        MinistryRecord ministry = Existing(tree, request.MinistryId);
+        PostRecord post = await PostAsync(ministry, request.Id, cancellationToken);
+        await churchNews.ShareAsync(post, ministry, tree, me, request.Tell, cancellationToken);
+        changes.Touch(ministry.Id);
+        await db.SaveChangesAsync(cancellationToken);
+        return MinistryViews.Post(post);
+    }
+
+    public async ValueTask<Post> TakeOffChurchNewsAsync(ItemRef request, CallContext context = default)
+    {
+        CancellationToken cancellationToken = context.CancellationToken;
+        await ChurchNewsPublisherAsync(context);
+        MinistryRecord ministry = Existing(await views.TreeAsync(cancellationToken), request.MinistryId);
+        PostRecord post = await PostAsync(ministry, request.Id, cancellationToken);
+        await churchNews.WithdrawAsync(post, cancellationToken);
+        changes.Touch(ministry.Id);
+        await db.SaveChangesAsync(cancellationToken);
+        return MinistryViews.Post(post);
+    }
+
+    private async Task<PostRecord> PostAsync(MinistryRecord ministry, string id, CancellationToken cancellationToken) =>
+        await db.Posts.SingleOrDefaultAsync(post => post.Id == ParseId(id) && post.MinistryId == ministry.Id, cancellationToken)
+        ?? throw new RpcException(new Status(StatusCode.NotFound, "That post was deleted."));
+
+    private async Task<Guid> ChurchNewsPublisherAsync(CallContext context)
+    {
+        ClaimsPrincipal user = context.ServerCallContext!.GetHttpContext().User;
+        Guid me = SignedIn(context);
+        return await access.IsAllowedAsync(user, ChurchNews.PublishNode, null, context.CancellationToken)
+            ? me
+            : throw new RpcException(new Status(StatusCode.PermissionDenied, "Only church staff who publish church news can do that."));
     }
 
     public async ValueTask<FileItem> SaveFileAsync(FileSave request, CallContext context = default)

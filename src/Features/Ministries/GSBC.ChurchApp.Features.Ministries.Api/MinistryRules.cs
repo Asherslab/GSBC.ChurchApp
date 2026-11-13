@@ -1,5 +1,6 @@
 using GSBC.ChurchApp.Features.Ministries.Api.Data;
 using GSBC.ChurchApp.Features.Ministries.Contracts;
+using GSBC.ChurchApp.Platform.Contracts.Content;
 
 namespace GSBC.ChurchApp.Features.Ministries.Api;
 
@@ -30,12 +31,12 @@ internal static class MinistryRules
 
     public static bool NeedsParentsYes(string place, bool minor, bool askingForThemselves) => place == Places.Team && minor && askingForThemselves;
 
-    public static string? WhyNotPost(string title, string body, string audience, IReadOnlyCollection<string> mayPostFor)
+    public static string? WhyNotPost(string title, RichText body, string audience, IReadOnlyCollection<string> mayPostFor)
     {
         if (title.Trim().Length is 0 or > LongestTitle)
             return $"Give it a title of up to {LongestTitle} characters.";
-        if (body.Trim().Length > LongestText)
-            return $"Keep it to {LongestText} characters.";
+        if (RichTextRules.ProblemsWith(body, allowed: RichTextMedia.Posts) is [var problem, ..])
+            return problem;
         if (!Audiences.IsValid(audience))
             return "Choose who it's for.";
         return mayPostFor.Contains(audience) ? null : "This ministry can't post to that audience.";

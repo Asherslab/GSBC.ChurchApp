@@ -10,12 +10,15 @@ using GSBC.ChurchApp.Platform.Api.Calendars;
 using GSBC.ChurchApp.Platform.Api.Ministries;
 using GSBC.ChurchApp.Platform.Api.Notifications;
 using GSBC.ChurchApp.Platform.Contracts.Notifications;
+using GSBC.ChurchApp.Platform.Api.News;
 using GSBC.ChurchApp.Platform.Api.People;
 using GSBC.ChurchApp.Platform.Api.Sync;
 using GSBC.ChurchApp.Platform.Client.Access;
 using GSBC.ChurchApp.Platform.Client.Feeds;
 using GSBC.ChurchApp.Platform.Common;
 using GSBC.ChurchApp.Platform.Contracts.Configuration;
+using GSBC.ChurchApp.Platform.Contracts.Content;
+using GSBC.ChurchApp.Platform.Contracts.News;
 using GSBC.ChurchApp.Platform.Data;
 using GSBC.ChurchApp.Platform.Permissions;
 using GSBC.ChurchApp.Testing;
@@ -54,6 +57,9 @@ public sealed class MinistryFeedTests : IAsyncLifetime
         _visitor = _people.Add("Olly");
     }
 
+    private readonly KeptPostMedia _media = new();
+    private readonly RecordedChurchNews _churchNews = new();
+
     private static CancellationToken Cancel => TestContext.Current.CancellationToken;
 
     public async ValueTask InitializeAsync()
@@ -76,8 +82,12 @@ public sealed class MinistryFeedTests : IAsyncLifetime
             .AddScoped<MinistryChanges>()
             .AddScoped<MinistriesPublisher>()
             .AddScoped<MinistriesService>()
+            .AddSingleton<IChurchNews>(_churchNews)
+            .AddScoped(_ => new MinistryPostMedia(_media, _media, _media))
+            .AddScoped<MinistryChurchNews>()
             .AddScoped(provider => new MinistryLeadingService(provider.GetRequiredService<MinistriesDbContext>(), provider.GetRequiredService<MinistryViews>(),
-                provider.GetRequiredService<MinistryChanges>(), null!, null!, _roles, _people, _people, _calendars, new KeptInSundays(), _told, null!, _clock))
+                provider.GetRequiredService<MinistryChanges>(), null!, null!, _roles, _people, _people, _calendars, new KeptInSundays(), _told, null!,
+                provider.GetRequiredService<MinistryPostMedia>(), provider.GetRequiredService<MinistryChurchNews>(), provider.GetRequiredService<IAccessEvaluator>(), _clock))
             .AddMinistriesData()
             .AddSyncData()
             .BuildServiceProvider();
@@ -180,6 +190,73 @@ public sealed class MinistryFeedTests : IAsyncLifetime
 
         Post onThePhone = Assert.Single((await (await PhoneOfAsync(_visitor)).Ministries.MinistryAsync(_band.Id.ToString())).Posts);
         Assert.Equal((sunday, true), (onThePhone.Sunday, onThePhone.NoClass));
+    }
+
+    [Fact]
+    public async Task APostKeepsItsFormattingOnThePhoneAndOlderAppsGetItsPlainText()
+    {
+        Post saved = await SavePostAsync(_leader, _youth, NewPost("Lunch after church", Audiences.Everyone, "**Bring** a plate, see [the roster](/events)."));
+
+        Assert.Equal("Bring a plate, see the roster.", saved.Body);
+        Post onThePhone = Assert.Single((await (await PhoneOfAsync(_visitor)).Ministries.MinistryAsync(_youth.Id.ToString())).Posts, post => post.Id == saved.Id);
+        Assert.Equal("**Bring** a plate, see [the roster](/events).", onThePhone.Content?.Markdown);
+    }
+
+    [Fact]
+    public async Task ALeadersAskGoesToChurchNewsOnlyForAPostForEveryoneAndLeavesWhenItStopsBeingOne()
+    {
+        Post teamOnly = await SavePostAsync(_leader, _youth, NewPost("Leaders' meeting", Audiences.Team, ask: true));
+        Assert.Empty(_churchNews.Calls);
+        Assert.Equal(ChurchNewsStates.None, teamOnly.ChurchNews);
+
+        Post asked = await SavePostAsync(_leader, _youth, NewPost("Holiday program", Audiences.Everyone, ask: true));
+        Assert.Equal(("ask", Guid.Parse(asked.Id)), (_churchNews.Calls[^1].What, _churchNews.Calls[^1].SourceId));
+        Assert.Equal(("Youth", "/ministries/" + _youth.Id + "/news"), (_churchNews.Calls[^1].Post!.FromName, _churchNews.Calls[^1].Post!.Link));
+        Assert.Equal(ChurchNewsStates.Asked, asked.ChurchNews);
+
+        asked.New = false;
+        asked.Audience = Audiences.Team;
+        Post narrowed = await SavePostAsync(_leader, _youth, asked);
+
+        Assert.Equal(("withdraw", Guid.Parse(asked.Id)), (_churchNews.Calls[^1].What, _churchNews.Calls[^1].SourceId));
+        Assert.Equal(ChurchNewsStates.None, narrowed.ChurchNews);
+    }
+
+    [Fact]
+    public async Task OnlyChurchNewsPublishersShareAMinistrysPostAndDeletingItTakesItOutOfChurchNews()
+    {
+        Guid staff = Guid.CreateVersion7();
+        _grants[staff] = new GrantSet([new Grant(PermissionPattern.Parse(ChurchNews.PublishNode), Scope.Global)]);
+        Post post = await SavePostAsync(_leader, _youth, NewPost("Holiday program", Audiences.Everyone));
+
+        await using (AsyncServiceScope scope = _services.CreateAsyncScope())
+        {
+            MinistryLeadingService leading = scope.ServiceProvider.GetRequiredService<MinistryLeadingService>();
+            ChurchNewsShare share = new() { MinistryId = _youth.Id.ToString(), Id = post.Id, Tell = true };
+            RpcException refused = await Assert.ThrowsAsync<RpcException>(async () => await leading.ShareToChurchNewsAsync(share, Call(_leader)));
+            Assert.Equal(StatusCode.PermissionDenied, refused.StatusCode);
+
+            Post shared = await leading.ShareToChurchNewsAsync(share, Call(staff));
+            Assert.Equal(ChurchNewsStates.Shared, shared.ChurchNews);
+
+            await leading.DeletePostAsync(new ItemRef { MinistryId = _youth.Id.ToString(), Id = post.Id }, Call(_leader));
+        }
+
+        Assert.Equal(["share", "withdraw"], _churchNews.Calls.Select(call => call.What));
+    }
+
+    private static Post NewPost(string title, string audience, string text = "", bool ask = false) => new()
+    {
+        Id = Guid.NewGuid().ToString(), New = true, Title = title, Audience = audience, Content = new RichText { Markdown = text }, AskWholeChurch = ask,
+    };
+
+    private async Task<Post> SavePostAsync(Guid person, MinistryRecord ministry, Post post)
+    {
+        await using AsyncServiceScope scope = _services.CreateAsyncScope();
+        Post saved = await scope.ServiceProvider.GetRequiredService<MinistryLeadingService>()
+            .SavePostAsync(new PostSave { MinistryId = ministry.Id.ToString(), Post = post }, Call(person));
+        await scope.ServiceProvider.GetRequiredService<MinistriesPublisher>().PublishAsync(Cancel);
+        return saved;
     }
 
     [Fact]

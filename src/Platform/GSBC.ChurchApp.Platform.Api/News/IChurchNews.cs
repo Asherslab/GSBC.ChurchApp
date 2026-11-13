@@ -39,3 +39,10 @@ internal sealed class NoChurchNews : IChurchNews
     public Task<IReadOnlyDictionary<Guid, SharedState>> StatesAsync(string source, IReadOnlyCollection<Guid> sourceIds, CancellationToken cancellationToken) =>
         Task.FromResult<IReadOnlyDictionary<Guid, SharedState>>(new Dictionary<Guid, SharedState>());
 }
+
+public interface ISharedPostSource
+{
+    string Source { get; }
+
+    Task StateChangedAsync(Guid sourceId, SharedState state, CancellationToken cancellationToken);
+}

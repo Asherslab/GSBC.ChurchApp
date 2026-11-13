@@ -10,7 +10,7 @@ namespace GSBC.ChurchApp.Features.News.Api;
 internal sealed class NewsService(NewsDesk desk, NewsTelling telling, IAccessEvaluator access) : INewsService
 {
     public async ValueTask<NewsPost> SaveAsync(NewsSave request, CallContext context = default) =>
-        await desk.SaveAsync(await WriterAsync(context), request.Post, context.CancellationToken);
+        await desk.SaveAsync(await WriterAsync(context), request.Post, context.CancellationToken, request.Uploaded);
 
     public async ValueTask<NewsPost> PublishAsync(PublishRequest request, CallContext context = default) =>
         await desk.PublishAsync(await WriterAsync(context), NewsDesk.ParseId(request.Id), request.At, context.CancellationToken);

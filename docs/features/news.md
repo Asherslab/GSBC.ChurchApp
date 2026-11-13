@@ -38,3 +38,6 @@ embedded/etc in them".
    front page for top post, other post move to image on side. include tab for your ministries (combined feed), hide tabs if
    person has no ministries". The newest post leads with its picture; the rest are rows with their picture at the side; a
    *Your ministries* tab gathers the news of every ministry you're in, and the tabs aren't shown to someone in no ministry.
+   **Picked** (the owner's pick on the re-rolled hand): *What's urgent today first, then the lead*. A post sent as urgent
+   today sits above everything on a marker band; then the newest post leads with its picture; then rows with the
+   picture at the right (`.impeccable/mocks/church-news/r-c-today-first.html`).

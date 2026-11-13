@@ -19,16 +19,18 @@ public static class PlainText
     public static string Escaped(string text)
     {
         StringBuilder markdown = new(text.Length + 16);
-        foreach (string line in text.Replace("\r\n", "\n").Split('\n'))
+        string[] lines = text.Replace("\r\n", "\n").Split('\n');
+        foreach ((string line, int number) in lines.Select((line, number) => (line, number)))
         {
-            if (markdown.Length > 0)
+            if (number > 0)
                 markdown.Append('\n');
             string trimmed = line.TrimStart();
             markdown.Append(line, 0, line.Length - trimmed.Length);
+            int numberEnd = NumberedItemEnd(trimmed);
             for (int index = 0; index < trimmed.Length; index++)
             {
                 char character = trimmed[index];
-                if (Marks.Contains(character) || (index == 0 && StartsNumberedItem(trimmed)) || (character == '+' && index == 0))
+                if (Marks.Contains(character) || index == numberEnd)
                     markdown.Append('\\');
                 markdown.Append(character);
             }
@@ -36,12 +38,12 @@ public static class PlainText
         return markdown.ToString();
     }
 
-    private static bool StartsNumberedItem(string line)
+    private static int NumberedItemEnd(string line)
     {
         int digits = 0;
         while (digits < line.Length && char.IsAsciiDigit(line[digits]))
             digits++;
-        return digits > 0 && digits + 1 < line.Length && line[digits] is '.' or ')' && line[digits + 1] == ' ';
+        return digits > 0 && digits + 1 < line.Length && line[digits] == '.' && line[digits + 1] == ' ' ? digits : -1;
     }
 
     private static void AddBlock(StringBuilder text, Block block)

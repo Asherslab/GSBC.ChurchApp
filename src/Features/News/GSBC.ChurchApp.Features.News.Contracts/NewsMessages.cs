@@ -47,6 +47,7 @@ public sealed class NewsPost
 public sealed class NewsSave
 {
     [ProtoMember(1, IsRequired = true)] public NewsPost Post { get; set; } = new();
+    [ProtoMember(2)] public List<string> Uploaded { get; set; } = [];
 }
 
 [ProtoContract]

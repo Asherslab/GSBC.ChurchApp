@@ -6,6 +6,8 @@ using GSBC.ChurchApp.Platform.Api.People;
 using GSBC.ChurchApp.Platform.Contracts.Configuration;
 using GSBC.ChurchApp.Platform.Permissions;
 using Microsoft.EntityFrameworkCore;
+using GSBC.ChurchApp.Platform.Api.News;
+using GSBC.ChurchApp.Platform.Contracts.Content;
 
 namespace GSBC.ChurchApp.Features.Ministries.Api;
 
@@ -213,12 +215,28 @@ internal sealed class MinistryViews(
         ShowsInLifeGroups = ministry.ShowsInLifeGroups, Latest = latest, Waiting = waiting,
     };
 
-    public static Post Post(PostRecord post, string from = "") => new()
+    public static Post Post(PostRecord post, string from = "")
     {
-        Id = post.Id.ToString(), MinistryId = post.MinistryId.ToString(), Title = post.Title, Body = post.Body, Audience = post.Audience,
-        Important = post.Important, Author = post.AuthorName, PostedAt = post.PostedAt, EditedAt = post.EditedAt, From = from,
-        WholeChurch = post.WholeChurchAskedAt is null ? "" : "Asked to send to the whole church",
-        Sunday = post.Sunday?.ToString("yyyy-MM-dd") ?? "", NoClass = post.NoClass,
+        RichText content = ContentOf(post);
+        string churchNews = StateOf(post.ChurchNews);
+        return new Post
+        {
+            Id = post.Id.ToString(), MinistryId = post.MinistryId.ToString(), Title = post.Title, Body = PlainText.Of(content), Content = content,
+            Audience = post.Audience, Important = post.Important, Author = post.AuthorName, PostedAt = post.PostedAt, EditedAt = post.EditedAt, From = from,
+            ChurchNews = churchNews, WholeChurch = ChurchNewsStates.Line(churchNews), AskWholeChurch = churchNews is ChurchNewsStates.Asked or ChurchNewsStates.Shared,
+            Sunday = post.Sunday?.ToString("yyyy-MM-dd") ?? "", NoClass = post.NoClass,
+        };
+    }
+
+    public static RichText ContentOf(PostRecord post) =>
+        post.Content is { } json && ContentJson.TryRead(json, out RichText? content) ? content! : PlainText.AsRichText(post.Body);
+
+    private static string StateOf(SharedState state) => state switch
+    {
+        SharedState.Asked => ChurchNewsStates.Asked,
+        SharedState.Shared => ChurchNewsStates.Shared,
+        SharedState.Declined => ChurchNewsStates.Declined,
+        _ => ChurchNewsStates.None,
     };
 
     public static FileItem File(FileRecord file, string from = "") => new()
