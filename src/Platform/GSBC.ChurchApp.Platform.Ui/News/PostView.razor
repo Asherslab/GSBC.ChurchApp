@@ -69,5 +69,12 @@
     [Parameter] public RenderFragment? ChildContent { get; set; }
     [Parameter] public bool Band { get; set; }
 
-    private bool Banded => Band && !MediaStrip.Leads(Content);
+    private bool Banded => Band && !MediaStrip.Leads(Content) && !OpensWithAPicture;
+
+    private bool OpensWithAPicture => RichTextParser.Parse(Content.Markdown).Blocks.FirstOrDefault() switch
+    {
+        MediaBlock single => Content.MediaById(single.MediaId) is { IsImage: true },
+        GalleryBlock => true,
+        _ => false,
+    };
 }

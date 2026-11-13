@@ -13,7 +13,7 @@
 @inject IServiceProvider Services
 
 <div class="rich-text-field @(Host.Desktop ? "" : "rich-text-field--phone") @Class" data-headings="@(Headings ? "true" : "false")">
-    <div class="rich-text-field__bar" role="toolbar" aria-label="Formatting" data-look-scroll>
+    <div class="rich-text-field__bar" role="toolbar" aria-label="Formatting" data-look-scroll data-look-bleed>
         @if (Inserts.Count > 0)
         {
             @if (Host.Desktop)
@@ -248,10 +248,10 @@
 
     private IReadOnlyList<MenuItem> StyleItems() =>
     [
-        this.Item("Text", () => FormatAsync(Format.Text), AppIcons.PlainText, "⌘⌥0", @checked: _style == LineStyle.Text),
-        this.Item("Heading 1", () => FormatAsync(Format.H1), AppIcons.Heading, "⌘⌥1", @checked: _style == LineStyle.Heading1),
-        this.Item("Heading 2", () => FormatAsync(Format.H2), AppIcons.Heading, "⌘⌥2", @checked: _style == LineStyle.Heading2),
-        this.Item("Heading 3", () => FormatAsync(Format.H3), AppIcons.Heading, "⌘⌥3", @checked: _style == LineStyle.Heading3),
+        this.Item("Text", () => FormatAsync(Format.Text), AppIcons.PlainText, @checked: _style == LineStyle.Text),
+        this.Item("Heading 1", () => FormatAsync(Format.H1), AppIcons.Heading, @checked: _style == LineStyle.Heading1),
+        this.Item("Heading 2", () => FormatAsync(Format.H2), AppIcons.Heading, @checked: _style == LineStyle.Heading2),
+        this.Item("Heading 3", () => FormatAsync(Format.H3), AppIcons.Heading, @checked: _style == LineStyle.Heading3),
     ];
 
     private IReadOnlyList<MenuItem> MoreItems() =>

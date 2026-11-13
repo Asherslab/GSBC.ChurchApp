@@ -21,7 +21,7 @@
 
 .rich-text ul,
 .rich-text ol {
-    padding-left: 1.35em;
+    padding-left: 1.6em;
 }
 
 .rich-text li + li,
@@ -416,8 +416,9 @@
     position: sticky;
     top: 0;
     z-index: 5;
-    padding: var(--space-2xs) 0;
+    padding: var(--space-2xs) 0 var(--space-xs);
     background: var(--surface);
+    box-shadow: 0 1px 0 var(--line);
 }
 
 .rich-text-field__bar .menu__panel {
@@ -441,7 +442,7 @@
 }
 
 .rich-text-field__style .btn {
-    min-width: 8.5rem;
+    min-width: 7.5rem;
     justify-content: space-between;
 }
 
@@ -697,6 +698,7 @@
 }
 
 .rich-text-field .cm-line.cm-md-fence {
+    padding-block: var(--space-2xs);
     color: var(--ink-3);
 }
 
@@ -756,14 +758,14 @@
     display: grid;
     gap: var(--space-xs);
     position: relative;
-    margin: var(--space-xs) 0;
-    padding: var(--space-xs);
-    border-radius: var(--radius);
+    margin: var(--space-sm) 0;
+    border-radius: var(--radius-inner);
     cursor: pointer;
 }
 
 .cm-media--selected {
-    box-shadow: 0 0 0 2px var(--accent);
+    outline: 2px solid var(--accent);
+    outline-offset: var(--space-2xs);
 }
 
 .cm-media__frame {
@@ -858,8 +860,8 @@
 
 .cm-media__tools {
     position: absolute;
-    top: var(--space-md);
-    right: var(--space-md);
+    top: var(--space-sm);
+    right: var(--space-sm);
     display: flex;
     gap: var(--space-2xs);
     padding: var(--space-3xs);
@@ -990,4 +992,13 @@
     flex-wrap: nowrap;
     overflow-x: auto;
     scrollbar-width: none;
+}
+
+.rich-text-field .cm-line.cm-md-rule-line {
+    padding-block: var(--space-2xs);
+}
+
+.rich-text-field .cm-line.cm-md-rule-line + .cm-line.cm-md-blank,
+.rich-text-field .cm-line.cm-md-blank:has(+ .cm-md-rule-line) {
+    line-height: 0.4;
 }
