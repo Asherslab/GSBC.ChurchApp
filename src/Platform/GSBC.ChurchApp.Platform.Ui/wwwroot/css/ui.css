@@ -224,6 +224,7 @@ button.text-link:disabled { color: var(--ink-3); cursor: default; }
 .pull { position: relative; --pull: 0px; --pull-n: 0; }
 .pull__content { transform: translateY(var(--pull)); transition: transform 280ms var(--ease-out); }
 .pull.is-pulling .pull__content { transition: none; }
+.keyboard-open .pull__content { transform: none; }
 .pull__indicator {
   position: absolute;
   top: calc(var(--sat) + var(--top-h) - 30px);

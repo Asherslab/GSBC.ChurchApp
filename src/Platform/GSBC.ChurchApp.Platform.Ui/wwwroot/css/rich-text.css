@@ -376,18 +376,16 @@
 }
 
 .rich-text-field .cm-line.cm-md-li {
-    padding-left: 1.4em;
-    text-indent: -1.4em;
+    padding-left: 1.2em;
+    text-indent: -1.2em;
 }
 
 .cm-md-bullet {
     display: inline-block;
-    width: 1em;
+    width: 1.2em;
     color: var(--ink);
-    font-size: 1.3em;
-    line-height: 1;
+    font-weight: 700;
     text-indent: 0;
-    vertical-align: -0.08em;
 }
 
 .keyboard-open .rich-text-field:focus-within .rich-text-field__bar {

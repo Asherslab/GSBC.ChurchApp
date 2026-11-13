@@ -78,9 +78,8 @@ function decorate(view) {
           markLine(node.from, lines.ListItem);
           const ordered = node.node.parent?.parent?.name === 'OrderedList';
           if (!ordered) {
-            const end = trailingSpace(state, node.to);
-            marks.push((touches(selection, node.from, node.to) ? faint : bullet).range(node.from, node.to));
-            if (end > node.to) marks.push(Decoration.mark({ class: 'cm-md-gap' }).range(node.to, end));
+            const active = touches(selection, node.from, node.to);
+            marks.push((active ? faint : bullet).range(node.from, active ? node.to : trailingSpace(state, node.to)));
           }
         } else if (name === 'Escape') {
           if (!touches(selection, node.from, node.to)) marks.push(hidden.range(node.from, node.from + 1));
