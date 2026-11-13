@@ -104,6 +104,14 @@ Feedback #83, #84 and #85 on the admin panel's *New post*, with an interview and
 - **Icons centred, blocks rounded** (#84, #85): the bar's buttons are drawn icons centred in 36px squares; blocks
   take the 14px radius, shaded only while you're in them, with no field drawn inside the text block.
 
+## A News tile on Home (2026-11-13)
+
+Owner, 2026-11-13: "do a small impeccable design pass for a proper news tile for the hub. not sure if it'll work or look
+good, but it might". The decision page (`.impeccable/mocks/news-tile/`) put four directions on dev's Home: a front page in
+miniature, quiet until it matters, headlines, and no tile at all. The owner: "i love all three of A, B, and C, give me all
+three as variants/layouts of the tile". They are the tile's layouts (Front page by default, What's new, Headlines); see
+[home.md](home.md), *Tiles*.
+
 ## How it's built
 
 - **News feature** (schema `news`): `posts` holds church news and ministries' posts in it (`source`, `source_id`).

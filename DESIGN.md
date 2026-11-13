@@ -1658,13 +1658,18 @@ picture hides the Picture field (`HubTileKind.UsesPicture`); today every kind us
 | Outreach day | Invitation | any | 1 × 1: icon and title; one row: a row with the line; taller: a poster with "Find a route" | always |
 | | Just a link | any | icon and title | never |
 | | Picture behind / above / beside | as for Link tiles | the invitation and its line, "Find a route" when taller | with a picture, as for Link tiles |
+| News (church news from the store; the posts bring their own pictures, so the tile's Picture field isn't used) | Front page | any | the newest post's headline and when ("2 hours ago"; "From Kids ministry · 2 hours ago" for a ministry's post at 2 × 2) with its picture: behind at 1 × 1, beside at one row, above when taller; 2 × 2 adds the post before it on one line under a hairline, opening that post; a post without a picture keeps the tile's icon and words | always |
+| | What's new | any | posts new since this phone last opened News, with an unread dot: 1 × 1 "2 new" over the title; 2 × 1 "2 new in News" over the newest headline; 1 × 2 adds when; 2 × 2 the newest headline, "2 hours ago · 1 more new" and "Read it"; with none new, "Nothing new since you last looked" | never |
+| | Headlines | any | 1 × 1: the newest headline alone, when under it; bigger: the title with "All news" beside it over agenda rows, three at one row or 1 × 2, five at 2 × 2 (one more per extra row, two at two columns), each headline up to two lines (one at 240px wide and over) | never |
+| | (urgent today) | | takes the tile in every layout, as at the top of the News page: a Front page of 2 × 2 or bigger keeps its lead and gains a marker band "Today: …" across its top (`HubTile`'s `Banner`); anything smaller, and What's new, becomes the post itself in Highlight with the News icon and "Today · " and its first words; Headlines lists it first, "Today" in the when column and a Today pill before the headline | |
+| | (no news) | | the tile's title and "Nothing new yet", any layout | |
 
 In the editor a layout that doesn't suit the tile stays listed but greyed, and its caption says why instead of
 what it draws: "Needs a wider tile", "Needs a taller tile", "Needs a bigger tile", or "Needs a picture: choose
 one under Picture". The automatic choice reads "Best for this size (now Picture beside)", naming what it picks.
 
 Recorded on the decision pages but not built: This week as a day strip, the sermon series card, Outreach's map
-card (needs real routes). The pages are in `.impeccable/mocks/decision/hub-variants/<kind>/`.
+card (needs real routes), and News as no tile at all (declined; `.impeccable/mocks/news-tile/`). The pages are in `.impeccable/mocks/decision/hub-variants/<kind>/`.
 
 ### Home masthead
 Home's masthead is the compact one: the safe area plus 40px above (not 56px), 18px below, the title "Good Shepherd" kept on one line at the display size or 10.5% of the screen width, whichever is smaller, and under it one line, 8px down, holding today's date as the beige note beside the sync indicator on the masthead. Home has no section tabs. The top bar is clear over the masthead, so the status bar sits on navy, and turns solid with the title after 44px of scroll; the admin canvas's phone does the same at 44px.
@@ -1682,6 +1687,8 @@ Home's masthead is the compact one: the safe area plus 40px above (not 56px), 18
 - **Agenda inside a tile:** hairline-ruled entries, a 5.4rem tabular time column at row size and 700 in primary (the text colour on solid tones), the day under it in caption. A date that isn't on reads "Not on" in the time column, its title at 400 in the tile's secondary ink. On the phone each entry is its own button above the tile's hit area, opening that date's page and pressing to 55%; the rest of the tile, its heading included, opens the calendar.
 - **Ministries and Life Groups tiles:** both say something about you once they can. Ministries: when you're in any, "Your ministries" with up to two lines ("Impact Kids: newest post title", or the name and your place); otherwise the staff's title and words. Life Groups: in a group now, "Your Life Group" and "Name · Room, 9am"; with new groups coming, the staff's title over "New groups from 1 February"; otherwise the staff's words.
 - **Unread dots inside a tile:** the newest titles at row size and 600, 8px apart, each one line with an ellipsis after its 9px dot.
+- **Banner:** `HubTile`'s `Banner` slot is a strip across the top of the tile, above its picture, that opens its own target (a `HubListEntry` with `hub-tile__banner`). It is marker with on-marker, 8 by 12px padding, caption size at 700: a small icon, words on one line that end in an ellipsis, then a small chevron. A picture tile's corner mark moves down to 48px under it. Only News's urgent band uses it.
+- **Date after the title:** `hub-list--after` is for a single "what came before" row under a tile's lead (News's Front page at 2 × 2): the title takes the line, ellipsized, and the date follows it, quiet, at caption size and 400 in the secondary ink. Lists of several (Headlines) keep the agenda's when-first column, at caption size, with ages: "Just now", "46 min ago", "3 hours ago", "Yesterday", the weekday within the week, then "9 Nov".
 
 ### Hub canvas (signature)
 Home arranged on the desk, on App styling's phone inside a draft: the phone column is the canvas, and the panel beside it holds the Home screen controls or the chosen tile's settings.
@@ -1830,7 +1837,7 @@ the admin panel for tokens, type and the shared components. The admin shell, the
 | Phone preview | `PhoneFrame`, `PhoneDevice` | A true-size device with status bar, cutout and tab bar, scaled to fit its space; an optional palette |
 | Lock-screen proof | `LockScreenProof` | Title, body, `TimeSensitive`, the date line, and a caption slot |
 | Home and surfaces | `HomeScreen`, `SurfaceViews` | The one way Home and the admin preview draw surfaces |
-| Hub grid and tiles | `HubTiles`, `HubTile`, `HubIcon`, `HubTileViews` | The grid packs tiles by `HubGrid` (2 to 4 columns, up to 4 rows); `HubTile` draws a `TileShape` in a `TileTones` tone; each kind's view picks its `TileVariant` |
+| Hub grid and tiles | `HubTiles`, `HubTile`, `HubIcon`, `HubTileViews` | The grid packs tiles by `HubGrid` (2 to 4 columns, up to 4 rows); `HubTile` draws a `TileShape` in a `TileTones` tone, with an optional `Banner` strip across its top; each kind's view picks its `TileVariant` |
 | Hub canvas | `StylingPhone`, `HomePanel`, `TileSettings`, `AddTileSheet`, `HubLibrary` (Configuration Client) | Arranging, sizing and recolouring tiles in a draft; the Home screen panel; the settings panel with swatches, the layout picker and the contrast warning. `hub-canvas.js` carries the live drag and a port of `HubGrid`'s packing |
 | App styling | `StylingWorkspace`, `StylingPhone`, `PreviewChips`, `StylingOverview`, `ColoursPanel`, `HomePanel`, `TabsPanel`, `DraftsMenu`, `DraftListing` (Configuration Client), `ThemeSwatches` (Platform.Ui) | The page, the phone with the Hub and Tab bar canvases, the preview chips, the panel's parts and the Drafts menu; styled in `drafts.css` |
 | Choose several | `ChipPicker` | `Items`, `Chosen`, `Text`, an optional `Detail`, `Placeholder`, `Empty`; matches starting with the search come first |

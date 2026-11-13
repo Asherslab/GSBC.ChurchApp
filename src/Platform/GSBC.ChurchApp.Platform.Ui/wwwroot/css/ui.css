@@ -1153,6 +1153,22 @@ button.text-link:disabled { color: var(--ink-3); cursor: default; }
 .hub-list__when small { display: block; margin-top: 1px; font-size: var(--text-caption); font-weight: 400; color: var(--tile-ink-2); }
 .hub-list__what { display: block; font-size: var(--text-row); font-weight: 600; line-height: 1.3; }
 .hub-tile--dark .hub-list__entry { border-top-color: color-mix(in srgb, var(--tile-ink) 18%, transparent); }
+.hub-list__entry.hub-tile__banner { display: flex; flex: none; align-items: center; gap: var(--space-sm); padding: var(--space-sm) var(--space-md); border: 0; background: var(--marker); color: var(--on-marker); font-size: var(--text-caption); font-weight: 700; line-height: 1.3; }
+.hub-tile__banner-words { flex: 1; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.hub-tile__banner ~ .hub-tile__corner { top: 48px; }
+.hub-tile--news:is(.hub-tile--behind, .hub-tile--beside) .hub-tile__title { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.hub-tile--news.hub-tile--picture .hub-list { margin-top: var(--space-sm); }
+.hub-tile--news .hub-list__entry:last-child { padding-bottom: 0; }
+.hub-tile--news .hub-list__what { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.hub-list--after .hub-list__entry { display: flex; align-items: baseline; gap: var(--space-md); }
+.hub-list--after .hub-list__what { flex: 1; min-width: 0; }
+.hub-list--after .hub-list__when { order: 1; flex: none; font-size: var(--text-caption); font-weight: 400; color: var(--tile-ink-2); }
+.hub-tile--headlines .hub-list__when { font-size: var(--text-caption); }
+.hub-tile--news.hub-tile--behind .hub-tile__picture::after { background: linear-gradient(to bottom, transparent 15%, color-mix(in srgb, var(--fade) 88%, transparent) 72%); }
+.hub-tile--headlines .hub-list__what { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+@container (min-width: 240px) { .hub-tile--headlines .hub-list__what { display: block; white-space: nowrap; text-overflow: ellipsis; } }
+.hub-tile--headlines .hub-list__what .pill { margin-right: var(--space-xs); }
+@container (max-width: 200px) { .hub-tile--news.hub-tile--picture .hub-tile__title { -webkit-line-clamp: 3; } }
 .hub-tile--dark .hub-list__when { color: var(--tile-ink); }
 
 .hub-cover { position: absolute; inset: 0; display: grid; place-items: center; background: var(--masthead); color: var(--on-masthead); }

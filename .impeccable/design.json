@@ -1167,6 +1167,8 @@
       "narrowTile": "at 112px or less: no lines, title at label size, 12px padding",
       "smallTile": "at 200px or less: play disc 40px in the top corner, trailing icon hidden on picture and beside, agenda time stacked above the event, unread-dot titles up to 2 lines",
       "posterIcon": "52px when the poster is 240px wide or more",
+      "banner": "HubTile Banner slot: a strip across the top, its own target; background var(--marker), color var(--on-marker), padding 8px 12px, caption size 700, icon, one-line ellipsized words, chevron; a corner mark under it sits at top 48px",
+      "listAfter": "hub-list--after: one row with the title first (ellipsized) and the date after it at caption size, 400, var(--tile-ink-2); lists of several keep the when-first column",
       "canvasGlide": "200ms cubic-bezier(0.2, 0.8, 0.2, 1) after a 110ms dwell; landing slot outline 2px dashed var(--marker) on marker at 12%; column guides ink at 18% only while dragging",
       "tones": [
         "sand",
