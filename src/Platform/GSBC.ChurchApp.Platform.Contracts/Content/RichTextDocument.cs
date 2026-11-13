@@ -1,6 +1,7 @@
 namespace GSBC.ChurchApp.Platform.Contracts.Content;
 
-public sealed record RichTextDocument(IReadOnlyList<Block> Blocks, IReadOnlyList<string> Links, IReadOnlyList<string> ImageIds, IReadOnlyList<string> Problems);
+public sealed record RichTextDocument(
+    IReadOnlyList<Block> Blocks, IReadOnlyList<string> Links, IReadOnlyList<string> MediaIds, IReadOnlyList<VideoLink> Videos, IReadOnlyList<string> Problems);
 
 public abstract record Block;
 
@@ -14,7 +15,11 @@ public sealed record ListItem(IReadOnlyList<Inline> Content, ListBlock? Nested);
 
 public sealed record QuoteBlock(IReadOnlyList<ParagraphBlock> Paragraphs) : Block;
 
-public sealed record ImageBlock(string MediaId, string Alt) : Block;
+public sealed record MediaBlock(string MediaId, string Alt, string Caption = "") : Block;
+
+public sealed record GalleryBlock(IReadOnlyList<MediaBlock> Items) : Block;
+
+public sealed record EmbedBlock(VideoLink Video, string Title) : Block;
 
 public abstract record Inline;
 
