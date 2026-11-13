@@ -5,12 +5,17 @@
 @page "/chats/check/{ChatId}"
 @inject NavigationManager Navigation
 
+<AddressWatch Changed="Redirect" />
+
 @code {
     [Parameter] public string? ChatId { get; set; }
 
-    protected override void OnInitialized()
+    protected override void OnInitialized() => Redirect();
+
+    private void Redirect()
     {
         string path = Navigation.ToBaseRelativePath(Navigation.Uri);
-        Navigation.NavigateTo("chat-safety" + path["chats".Length..], replace: true);
+        if (path.StartsWith("chats/", StringComparison.Ordinal))
+            Navigation.NavigateTo("chat-safety" + path["chats".Length..], replace: true);
     }
 }

@@ -8,6 +8,7 @@
 @inject IAccess Access
 
 <PageTitle>Prayer · Good Shepherd admin</PageTitle>
+<AddressWatch Changed="AddressChanged" />
 
 <TitleBand Title="Prayer" Lead="Requests from the app. Only the pastoral team reads them, and the prayer wall shows only what you share." />
 
@@ -100,9 +101,17 @@
     protected override void OnParametersSet()
     {
         _selectedId ??= OpenId ?? RequestId;
-        if (_tab is null && Navigation.ToBaseRelativePath(Navigation.Uri).StartsWith(PrayerDestinations.Approve.TrimStart('/'), StringComparison.Ordinal))
+        if (_tab is null && AtApprove)
             _tab = Tab.ForTheWall;
     }
+
+    private void AddressChanged()
+    {
+        if (AtApprove)
+            _tab = Tab.ForTheWall;
+    }
+
+    private bool AtApprove => Navigation.ToBaseRelativePath(Navigation.Uri).StartsWith(PrayerDestinations.Approve.TrimStart('/'), StringComparison.Ordinal);
 
     private Task<Inbox> LoadAsync() => Pastoral.InboxAsync(_query);
 
