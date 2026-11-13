@@ -36,6 +36,9 @@ public static class RichTextRules
         }
         if (document.Videos.Count > 0 && !allowed.HasFlag(RichTextMedia.VideoLinks))
             problems.Add("Videos can't be shown in here. Link to the video instead.");
+        problems.AddRange(document.Directives.Select(directive => RichTextParser.ReservedDirectives.Contains(directive.Name)
+            ? $"Showing {DirectiveNoun(directive.Name)} in here isn't ready yet. Link to it instead."
+            : $"'{RichTextParser.DirectivePrefix}{directive.Name}' isn't something the app can show."));
         return problems.Distinct().ToList();
     }
 
@@ -57,6 +60,14 @@ public static class RichTextRules
             Media = content.Media.Where(media => used.Contains(media.Id)).DistinctBy(media => media.Id).ToList(),
         };
     }
+
+    private static string DirectiveNoun(string name) => name switch
+    {
+        "event" => "an event",
+        "sermon" => "a sermon",
+        "ministry" => "a ministry",
+        _ => "a Life Group",
+    };
 
     private static string Shortened(string href) => href.Length <= 60 ? href : href[..57] + "…";
 }

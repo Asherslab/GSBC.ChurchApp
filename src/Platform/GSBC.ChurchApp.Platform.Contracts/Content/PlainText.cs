@@ -4,12 +4,17 @@ namespace GSBC.ChurchApp.Platform.Contracts.Content;
 
 public static class PlainText
 {
-    private const string Marks = "\\*_[]()!#>-`";
+    private const string Marks = "\\*_[]()!#>-+`~=^|:";
 
-    public static string Of(RichText content)
+    public static string Of(RichText content) => TextOf(RichTextParser.Parse(content.Markdown).Blocks);
+
+    public static string Opening(RichText content) =>
+        RichTextParser.Parse(content.Markdown).Cards().Select(TextOf).FirstOrDefault(text => text.Length > 0) ?? "";
+
+    private static string TextOf(IEnumerable<Block> blocks)
     {
         StringBuilder text = new();
-        foreach (Block block in RichTextParser.Parse(content.Markdown).Blocks)
+        foreach (Block block in blocks)
             AddBlock(text, block);
         return text.ToString().Trim();
     }
@@ -60,6 +65,11 @@ public static class PlainText
                 foreach (ParagraphBlock paragraph in quote.Paragraphs)
                     AddLine(text, paragraph.Content);
                 break;
+            case TableBlock table:
+                foreach (TableRow row in table.Rows.Prepend(table.Header))
+                    foreach (IReadOnlyList<Inline> cell in row.Cells)
+                        AddLine(text, cell);
+                break;
             case ListBlock list:
                 foreach (ListItem item in list.Items)
                 {
@@ -87,11 +97,26 @@ public static class PlainText
                 case TextRun run:
                     text.Append(run.Text);
                     break;
-                case StrongRun strong:
-                    AddInlines(text, strong.Content);
+                case StrongRun { Content: var content }:
+                    AddInlines(text, content);
                     break;
-                case EmphasisRun emphasis:
-                    AddInlines(text, emphasis.Content);
+                case EmphasisRun { Content: var content }:
+                    AddInlines(text, content);
+                    break;
+                case StrikeRun { Content: var content }:
+                    AddInlines(text, content);
+                    break;
+                case HighlightRun { Content: var content }:
+                    AddInlines(text, content);
+                    break;
+                case SubscriptRun { Content: var content }:
+                    AddInlines(text, content);
+                    break;
+                case SuperscriptRun { Content: var content }:
+                    AddInlines(text, content);
+                    break;
+                case CodeRun code:
+                    text.Append(code.Text);
                     break;
                 case LinkRun link:
                     AddInlines(text, link.Content);

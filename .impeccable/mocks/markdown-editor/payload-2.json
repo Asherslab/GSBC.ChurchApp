@@ -1,0 +1,46 @@
+{
+  "title": "Reading a post on the phone",
+  "question": "Bar settled: one Insert button. Now the post page itself (feedback #88: \"incredibly barren looking\"). Every option fixes the basics: real space between paragraphs, a proper type scale, headings that look like headings, highlight, strikethrough, footnotes gathered at the end. A post with pictures still leads with them (the strip, as you picked on 13 November); these show a post with no picture at the top, the barren case. The difference is the top of the page and how a split into cards (=== on its own line) reads.",
+  "options": [
+    {
+      "id": "band",
+      "kind": "assigned",
+      "kicker": "THE ROLL",
+      "label": "A quiet band when there's no picture",
+      "thesis": "With no picture to lead, the top is a navy band carrying where it's from (Church news or the ministry) and the title; who wrote it and when sit under it, then the text. A split into cards is a sand bar across the page between the parts.",
+      "palette": ["#2a3d5e", "#ffffff", "#f4efe7", "#00776d"],
+      "materials": ["branded band in place of a picture", "author row", "sand bar between cards"],
+      "viewport": "Church news band with the title, Church office · Saturday 14 November, the text with a list and quote, a sand bar, then Helping on the day.",
+      "risk": "Every picture-less post gets the same navy top, so they can look alike.",
+      "html": ".impeccable/mocks/markdown-editor/p-a-band.html",
+      "htmlFrame": "390x844"
+    },
+    {
+      "id": "reading-page",
+      "kind": "dealt",
+      "label": "A reading page",
+      "thesis": "Type carries it: a small accent kicker (Church news · Sat 14 Nov), a large title, the author row over a hairline, the first paragraph a little larger as a lead. A split into cards is a short row of dots with space around it.",
+      "palette": ["#ffffff", "#2a3d5e", "#00776d", "#e7ae74"],
+      "materials": ["kicker and large title", "lead paragraph", "dotted break between cards"],
+      "viewport": "Kicker, the title over two lines, the author row, the lead paragraph, the list and quote, three dots, then Helping on the day.",
+      "risk": "The quietest; a short post is still mostly white.",
+      "html": ".impeccable/mocks/markdown-editor/p-b-reading-page.html",
+      "htmlFrame": "390x844"
+    },
+    {
+      "id": "cards",
+      "kind": "dealt",
+      "label": "Each part a card",
+      "thesis": "The post sits on sand: a heading card (a navy-to-teal stripe, where it's from, the title, the author) and then each part of the post its own white card, pictures running to the card's edges. === starts a new card.",
+      "palette": ["#f4efe7", "#ffffff", "#2a3d5e", "#00776d"],
+      "materials": ["sand ground", "heading card with stripe", "one card per part"],
+      "viewport": "The heading card, a card with the opening text, list and quote, the next card starting Helping on the day with its picture.",
+      "risk": "A post without splits is one long card, and the cards add a frame around everything.",
+      "html": ".impeccable/mocks/markdown-editor/p-c-cards.html",
+      "htmlFrame": "390x844"
+    }
+  ],
+  "reroll": true,
+  "steer": true,
+  "buildPath": { "value": "code" }
+}

@@ -50,7 +50,7 @@ internal static class NewsRules
     {
         if (post.TellBody.Trim().Length > 0)
             return post.TellBody.Trim();
-        string text = PlainText.Of(BodyOf(post));
+        string text = PlainText.Opening(BodyOf(post));
         return text.Length <= LongestTell ? text : text[..(LongestTell - 1)].TrimEnd() + "…";
     }
 

@@ -166,7 +166,7 @@
 
     private static string Today(NewsItem item)
     {
-        string text = PlainText.Of(item.Body);
+        string text = PlainText.Opening(item.Body);
         string excerpt = text.Length <= LongestLine ? text : text[..LongestLine].TrimEnd() + "…";
         return excerpt.Length > 0 ? $"Today · {excerpt}" : "Today";
     }

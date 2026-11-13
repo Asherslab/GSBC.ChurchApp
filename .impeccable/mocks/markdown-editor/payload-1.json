@@ -1,0 +1,47 @@
+{
+  "title": "The editor's bar: one editor, everything in it",
+  "question": "A post becomes a title and one editor (your words: no separate cards, no Add row). Pictures, videos and files go in from the bar, through Media's Choose a picture window (with Upload), and show in place with their caption typed under them; several chosen together make a gallery. The bar gains strikethrough, highlight, code and heading sizes (# to ### as in Markdown); the rarer things (code block, table, line across, split into cards, footnote, superscript, subscript, emoji) go under Extras. How should the bar be arranged, on the desk and on the phone's keyboard? Every option does the same things with the same shortcuts (⌘B, ⌘I, ⌘K, ⌘⇧X strikethrough, ⌘⇧H highlight, ⌘E code); only where they sit differs. Places that allow formatting only (later: a ministry's About) hide the adding part.",
+  "options": [
+    {
+      "id": "words-for-adding",
+      "kind": "assigned",
+      "kicker": "THE ROLL",
+      "label": "Formatting on top, what you add underneath in words",
+      "thesis": "The bar has two rows: formatting as icons (a Text / Heading menu, B I S highlight, lists, quote, link, code), and under it Add: Picture, Video, Video link, File in words, with Extras at the right end. On the phone one row sits on the keyboard and slides sideways, the adding buttons in words after the formatting.",
+      "palette": ["#f4efe7", "#ffffff", "#2a3d5e", "#00776d"],
+      "materials": ["two-row bar", "media named in words", "Extras menu at the end", "one sliding row on the phone"],
+      "viewport": "New post: the title, the bar (formatting row, Add row), Extras open, the text with a highlighted phrase, a picture chosen in place with Replace and Remove, a file row, a card split, a heading.",
+      "risk": "The tallest bar of the three, and on the phone the media buttons are off to the right until you slide.",
+      "html": ".impeccable/mocks/markdown-editor/a-words-for-adding.html",
+      "htmlFrame": "1440x900"
+    },
+    {
+      "id": "insert-button",
+      "kind": "dealt",
+      "label": "Formatting in the bar, one Insert button for everything else",
+      "thesis": "One row: a style menu (Text, Heading 1–3), B I S highlight, lists, quote, link, code, and ⋯ for superscript and subscript; at the right a navy Insert button whose menu holds Pictures and media, Layout (split into cards, line across, table, code block) and In the text (footnote, emoji). On the phone the keyboard bar has + first, opening an Insert sheet of big tiles.",
+      "palette": ["#f4efe7", "#ffffff", "#2a3d5e", "#00776d"],
+      "materials": ["single row", "navy Insert button", "grouped Insert menu", "Insert sheet on the phone"],
+      "viewport": "New post with the cursor in a heading (the style menu reads Heading 2) and the Insert menu open; on the phone the Insert sheet over the keyboard.",
+      "risk": "Adding a picture is always two taps, and the media buttons aren't visible until you open Insert.",
+      "html": ".impeccable/mocks/markdown-editor/b-insert-button.html",
+      "htmlFrame": "1440x900"
+    },
+    {
+      "id": "icons-and-two-rows",
+      "kind": "dealt",
+      "label": "Every tool an icon in one row; Aa and Add on the phone",
+      "thesis": "One compact row of icons, each named on hover: heading sizes, B I S highlight code, lists, quote, link, then Picture, Video, Video link, File and Split into cards, with ⋯ Extras at the end. On the phone the keyboard bar switches between Aa (formatting) and Add (pictures, video, files, cards, table), so each half fits without sliding.",
+      "palette": ["#f4efe7", "#ffffff", "#2a3d5e", "#00776d"],
+      "materials": ["one icon row", "tooltips name each tool", "Aa / Add switch on the phone"],
+      "viewport": "New post with the Heading menu (Text, Heading 1, 2, 3 with their # marks) and Extras open; on the phone the bar switched to Add.",
+      "risk": "Icons only: the picture, video and video-link icons are easy to mix up until you've used them once.",
+      "html": ".impeccable/mocks/markdown-editor/c-icons-and-two-rows.html",
+      "htmlFrame": "1440x900"
+    }
+  ],
+  "reroll": true,
+  "steer": true,
+  "followup": true,
+  "buildPath": { "value": "code" }
+}
