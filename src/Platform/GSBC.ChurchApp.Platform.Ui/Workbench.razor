@@ -1,4 +1,7 @@
-<div class="workbench @(Narrow ? "workbench--narrow" : "") @(Aside is null ? "workbench--no-aside" : "") @(Detail is null ? "workbench--no-detail" : "") @(FoldAside ? "workbench--fold-aside" : "") @Class" data-showing="@Shown.ToString().ToLowerInvariant()">
+@implements IAsyncDisposable
+@inject IJSRuntime JS
+
+<div @ref="_root" class="workbench @(Narrow ? "workbench--narrow" : "") @(Aside is null ? "workbench--no-aside" : "") @(Detail is null ? "workbench--no-detail" : "") @(FoldAside ? "workbench--fold-aside" : "") @Class" data-showing="@Shown.ToString().ToLowerInvariant()">
     @if (Aside is not null)
     {
         <aside class="workbench__aside" aria-label="@AsideLabel">@Aside</aside>
@@ -20,6 +23,31 @@
     [Parameter] public bool FoldAside { get; set; }
     [Parameter] public string? Class { get; set; }
     [Parameter] public WorkbenchPane? Showing { get; set; }
+
+    private ElementReference _root;
+    private IJSObjectReference? _fit;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+            return;
+        await using IJSObjectReference module = await JS.InvokeAsync<IJSObjectReference>("import", "./_content/GSBC.ChurchApp.Platform.Ui/js/workbench.js");
+        _fit = await module.InvokeAsync<IJSObjectReference>("fitRecord", _root);
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_fit is null)
+            return;
+        try
+        {
+            await _fit.InvokeVoidAsync("dispose");
+            await _fit.DisposeAsync();
+        }
+        catch (JSDisconnectedException)
+        {
+        }
+    }
 
     private WorkbenchPane Shown => Showing ?? (Detail is null ? WorkbenchPane.Main : WorkbenchPane.Detail);
 }

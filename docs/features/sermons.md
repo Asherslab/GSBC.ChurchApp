@@ -32,7 +32,7 @@ the old website (Tithe.ly) any more, and nothing in Sermons knows it existed.
   sermon*), video, picture, audio. Staff edit them directly; there is no website value beside a correction.
 - **A series has one picture and a speaker one photo,** chosen from Media (or removed).
 - **Ids are random** (UUIDv7) for what is made here; the import derives its ids (see [sermons-import.md](sermons-import.md)).
-- **Bringing the old website's sermons across** is a one-off admin page in its own module, *Import from the website*,
+- **Bringing the old website's sermons across** is a one-off admin page in its own module, *Import sermons* (named *Import from the website* until 2026-11-13, when it wrapped in the sidebar),
   deleted after go-live: [sermons-import.md](sermons-import.md). It copies every sermon (not just the ~100 the RSS feed
   lists), with its audio and pictures, into our storage.
 - **Dev and UAT were wiped of the website's sermons** by the migration `SermonsAppOnly`: every sermon read from the
@@ -355,7 +355,7 @@ Before sermons are used for real:
    with it.
 4. **Optional:** `Sermons:Podcast:ImageUrl` (the 3000 × 3000 podcast cover) and `Sermons:Podcast:Email` in the API's
    configuration; they aren't secrets.
-5. **Bringing the website's sermons across:** run *Import from the website* once on each environment
+5. **Bringing the website's sermons across:** run *Import sermons* once on each environment
    ([sermons-import.md](sermons-import.md)).
 
 ## Status (2026-11-09)

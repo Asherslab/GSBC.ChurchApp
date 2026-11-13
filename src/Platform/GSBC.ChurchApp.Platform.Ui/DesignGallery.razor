@@ -5,7 +5,10 @@
 @inject UiHost Host
 
 <div class="gallery">
-    <p class="gallery__intro">Every shared building block, live, with sample names. Each says when to use it; DESIGN.md's pattern map says the same. @(Host.Desktop ? "The phone shows this page too, drawn for the phone." : "The admin panel shows this page too, drawn for a desk.")</p>
+    @if (!Host.Desktop)
+    {
+        <p class="gallery__intro">Every shared building block, live, with sample names. Each says when to use it; DESIGN.md's pattern map says the same. The admin panel shows this page too, drawn for a desk.</p>
+    }
 
     <Section First="true" Title="Colours and type" Lead="The tokens every component draws with. Light or dark is under Choosing.">
         <div class="gallery__palette">

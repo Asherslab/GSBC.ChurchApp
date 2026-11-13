@@ -117,7 +117,7 @@ a { color: var(--accent); }
 .module-nav__problem { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; margin: 0; padding: 8px 10px; border-radius: var(--radius-inner); background: var(--masthead-chip); color: var(--on-masthead); font-size: var(--text-caption); }
 .module-nav__problem button { padding: 0; border: 0; background: none; color: var(--masthead-note); font: inherit; font-weight: 700; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
 .module-nav__problem button:focus-visible { outline-color: var(--marker); }
-.module-nav__area-pages .module-nav__link { padding-left: 24px; }
+.module-nav__area-pages .module-nav__link { gap: 8px; padding-left: 16px; }
 
 .module-nav__row { position: relative; }
 
@@ -266,6 +266,7 @@ button.module-nav__link { width: 100%; border: 0; background: none; font-family:
 .facts:has(> .fact) { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 28px; font-size: inherit; }
 .facts:has(> .fact) > .fact { border-top: 1px solid var(--line); }
 .facts:has(> .fact) dd { color: var(--ink-2); }
+@media (max-width: 760px) { .facts:has(> .fact) { grid-template-columns: minmax(0, 1fr); } }
 
 
 .activity { display: grid; margin: 0; padding: 0; list-style: none; font-size: var(--text-caption); }
@@ -431,6 +432,7 @@ input[type="checkbox"]:not([class]), input[type="radio"]:not([class]) { display:
 }
 .section--grouped > .section__foot { margin: 0; padding: var(--space-md) var(--space-xl); border-top: 1px solid var(--line); border-radius: 0 0 var(--radius) var(--radius); background: color-mix(in srgb, var(--sand) 55%, var(--surface)); }
 .section--grouped > .section__foot .btn--quiet { background: var(--page); }
+.workbench__detail .section--grouped > .section__foot { position: sticky; bottom: 0; z-index: 1; }
 .page:has(> .section--grouped) { background: none; }
 .link-code { margin: 18px 0 6px; font-size: var(--text-display); font-weight: 700; letter-spacing: 0.12em; font-variant-numeric: tabular-nums; }
 
@@ -466,9 +468,7 @@ input[type="checkbox"]:not([class]), input[type="radio"]:not([class]) { display:
 .open-card__where { display: block; color: var(--ink-2); font-size: var(--text-caption); }
 .open-card__body { max-width: 52ch; margin: 0; color: var(--ink-2); }
 
-.person-page__lead { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 16px; margin: 0; color: var(--ink-2); font-size: var(--text-caption); }
 .person-born { display: inline-flex; align-items: baseline; gap: var(--space-xs); }
-.person-page__account { max-width: 640px; }
 
 .person-roles { display: grid; grid-template-columns: minmax(0, 1fr) minmax(300px, 400px); align-items: start; gap: 40px; max-width: 1280px; }
 .person-roles__main { display: grid; gap: 12px; min-width: 0; }

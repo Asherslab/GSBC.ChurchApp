@@ -2,7 +2,7 @@
 @inject NavigationManager Navigation
 @inject Shell Shell
 
-<div @ref="_strip" class="tab-strip @(Sticky ? "tab-strip--sticky" : "")" role="@(Href is null ? "tablist" : null)" aria-label="@Label">
+<div @ref="_strip" class="tab-strip @(Sticky ? "tab-strip--sticky" : "")" role="@(Href is null ? "tablist" : null)" aria-label="@Label" data-look-scroll="narrow">
     @foreach (TabOption<TValue> option in Options)
     {
         bool selected = EqualityComparer<TValue>.Default.Equals(option.Value, Value);

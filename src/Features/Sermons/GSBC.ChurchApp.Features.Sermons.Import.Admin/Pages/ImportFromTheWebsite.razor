@@ -1,7 +1,7 @@
 @page "/sermons-import"
 @inject SermonsImportClient Import
 
-<TitleBand Title="Import from the website" BackHref="sermons" BackText="Sermons"
+<TitleBand Title="Import sermons" BackHref="sermons" BackText="Sermons"
            Lead="Brings every sermon on the old website into the app: its audio, pictures, series, speaker, passage and video. It runs on the server, so you can close this page. Running it again skips what's already here." />
 
 <LiveData @ref="_live" TValue="ImportProgress" Feeds="ProgressFeeds" Load="() => Import.ProgressAsync().AsTask()" FailedTitle="Can't show the import right now">
