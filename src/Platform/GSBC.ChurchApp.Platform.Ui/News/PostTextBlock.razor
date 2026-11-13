@@ -25,6 +25,13 @@
     }
     <textarea class="rich-text-input post-text__input" @ref="_textarea" value="@Block.Text" @oninput="TypedAsync" rows="@Rows" aria-label="@Label"
               placeholder="Write here. Bold, lists, quotes and links are in the bar above."></textarea>
+    @if (HasMarks)
+    {
+        <div class="post-text__shown" aria-label="How it looks">
+            <span class="post-text__shown-label">How it looks</span>
+            <RichTextView Content="new RichText { Markdown = Block.Text }" />
+        </div>
+    }
 </div>
 
 @code {
@@ -38,6 +45,9 @@
     [Parameter, EditorRequired] public required PostBlock Block { get; set; }
     [Parameter] public EventCallback OnChanged { get; set; }
     [Parameter] public string Label { get; set; } = "Text";
+
+    private bool HasMarks => RichTextParser.Parse(Block.Text) is { } parsed
+        && (parsed.Blocks.Any(block => block is not ParagraphBlock) || parsed.Blocks.OfType<ParagraphBlock>().Any(paragraph => paragraph.Content.Any(run => run is not TextRun and not LineBreakRun)));
 
     private int Rows => Math.Clamp(Block.Text.Count(character => character == '\n') + 3, 3, 14);
 

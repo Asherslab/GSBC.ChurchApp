@@ -35,7 +35,14 @@
     </div>
     <Notice Tone="NoticeTone.Warning" Text="@_problem" />
 
-    @if (Settings is not null)
+    @if (Settings is not null && SettingsInline)
+    {
+        <section class="post-editor__inline-settings" aria-label="@SettingsTitle">
+            <span class="post-text__shown-label">@SettingsTitle</span>
+            @Settings
+        </section>
+    }
+    else if (Settings is not null)
     {
         <button type="button" class="post-editor__settings" aria-label="@($"{SettingsTitle}: {SettingsSummary}")" @onclick="() => _settings = true">
             <Icon Name="users" />
@@ -49,7 +56,7 @@
     }
 </div>
 
-@if (Settings is not null)
+@if (Settings is not null && !SettingsInline)
 {
     <Sheet Open="_settings" OpenChanged="open => _settings = open" Title="@SettingsTitle">
         <ChildContent>@Settings</ChildContent>
@@ -73,6 +80,7 @@
     [Parameter] public RenderFragment? Settings { get; set; }
     [Parameter] public string SettingsTitle { get; set; } = "Who, when and telling people";
     [Parameter] public string SettingsSummary { get; set; } = "";
+    [Parameter] public bool SettingsInline { get; set; }
 
     public RichText Content => PostBlocks.ToRichText(Blocks);
 

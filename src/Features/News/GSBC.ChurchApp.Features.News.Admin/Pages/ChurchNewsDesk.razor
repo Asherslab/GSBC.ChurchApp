@@ -72,10 +72,6 @@
                 }
                 else
                 {
-                    <div class="news-desk__preview">
-                        <PostView Title="@post.Title" Content="post.Body" From="@post.From" FromHref="@post.FromLink.TrimStart('/')" Author="@post.Author"
-                                  When="@When(post)" LinkPath="@post.LinkPath" LinkLabel="@post.LinkLabel" />
-                    </div>
                     @if (post.State is NewsState.Asked or NewsState.Declined && Access.Can(NewsPermissions.Publish))
                     {
                         <Section Grouped="true" Title="@($"{post.From} asks for this to go in church news")"
@@ -91,6 +87,10 @@
                             </Foot>
                         </Section>
                     }
+                    <div class="news-desk__preview">
+                        <PostView Title="@post.Title" Content="post.Body" From="@post.From" FromHref="@post.FromLink.TrimStart('/')" Author="@post.Author"
+                                  When="@When(post)" LinkPath="@post.LinkPath" LinkLabel="@post.LinkLabel" />
+                    </div>
                 }
                 <Notice Tone="NoticeTone.Warning" Text="@_problem" />
             }

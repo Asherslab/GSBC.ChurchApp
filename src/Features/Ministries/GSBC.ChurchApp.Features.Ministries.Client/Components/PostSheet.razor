@@ -22,7 +22,7 @@
             <ToggleRow Title="@SundayPosts.NoClass" Description="Coming up shows the Sunday struck through" Checked="Draft.NoClass" CheckedChanged="NoClassChanged" />
         }
         <PostEditor @ref="_editor" Title="@Draft.Title" TitleChanged="title => Draft.Title = title" Blocks="_blocks" OnChanged="() => _changes++"
-                    SettingsTitle="Who it's for and telling them" SettingsSummary="@Summary">
+                    SettingsInline="true" SettingsTitle="Who it's for and telling them" SettingsSummary="@Summary">
             <Settings>
                 <Segmented TValue="string" Label="Who it's for" ShowLabel="true" Stacked="true" Options="Audiences" Value="Draft.Audience" ValueChanged="value => Draft.Audience = value" />
                 <p class="ministry-who">@MinistryWords.WhoReads(Draft.Audience, Page.Ministry)</p>

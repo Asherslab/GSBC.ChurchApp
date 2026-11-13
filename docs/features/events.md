@@ -209,7 +209,8 @@ all four on 2026-11-08):
 31. **Changing a shown event is quiet,** but it's marked **Changed** for a few days with what changed ("Now in
     the Fellowship Area"). Beside Save, **Tell people** offers a notification that opens the event, to everyone
     who has its calendar. Cancelling one date works the same way: it shows as not on, with *Tell people*
-    offered.
+    offered. **Told on the day itself, a date that's off is urgent** and skips quiet hours (owner, 2026-11-13: "service
+    cancellations should be urgent if it's same day, always"; `EventEditingService.IsCancelledToday`).
 
 ### The phone and the admin panel (owner, 2026-11-08)
 

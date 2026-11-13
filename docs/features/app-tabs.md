@@ -4,7 +4,7 @@ The app's tab bar is chosen by staff in the admin panel, in a draft, the way the
 ([home.md](home.md)), and published to phones without a release. Asked for by the owner on 2026-11-08
 while designing Events ([events.md](events.md), decision 34): whether the calendar is a tab is the
 church's choice. Built on Configuration's surfaces and drafts ([drafts.md](../architecture/drafts.md));
-there is no store of its own. Until staff publish a change, the tabs are what they were: Home, Sermons, More.
+there is no store of its own. Until staff publish a change, the tabs are Home, News, Sermons and More (News joined the starting tabs on 2026-11-13 with church news, [news.md](news.md)).
 
 ## What people can do
 

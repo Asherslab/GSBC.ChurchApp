@@ -1,6 +1,7 @@
 using GSBC.ChurchApp.Features.Ministries.Client.Components;
 using GSBC.ChurchApp.Features.Ministries.Contracts;
 using GSBC.ChurchApp.Platform.Client.Destinations;
+using GSBC.ChurchApp.Platform.Client.Media;
 using GSBC.ChurchApp.Platform.Client.Modules;
 using GSBC.ChurchApp.Platform.Client.Scopes;
 using GSBC.ChurchApp.Platform.Ui.Surfaces;
@@ -19,6 +20,8 @@ public static class MinistriesClientExtensions
             .AddSingleton<StoredMinistries>()
             .AddSingleton<IMinistryReads>(provider => provider.GetRequiredService<StoredMinistries>())
             .AddNewsSource<MinistryNewsSource>()
+            .AddMediaPrefetch(_ => MinistryPostMedia.Prefetch(MinistriesFeeds.Posts))
+            .AddMediaPrefetch(_ => MinistryPostMedia.Prefetch(MinistriesFeeds.PrivatePosts))
             .AddSingleton<IMinistryWrites, QueuedMinistryWrites>()
             .AddSingleton<IMinistryPeopleWrites, MinistryPeopleWrites>();
 
