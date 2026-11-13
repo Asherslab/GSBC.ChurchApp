@@ -1,7 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-email="${1:?usage: make-owner.sh <email of someone who has already signed up>}"
+usage="usage: make-owner.sh <email of someone who has already signed up> [--lead-every-ministry]"
+email="${1:?$usage}"
+lead=false
+case "${2:-}" in
+  "") ;;
+  --lead-every-ministry) lead=true ;;
+  *) echo "$usage"; exit 1 ;;
+esac
 
 if [ -n "${DATABASE_URL:-}" ]; then
   psql() { command psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -q "$@"; }
@@ -13,20 +20,29 @@ else
   psql() { docker exec -i "$container" sh -c 'PGPASSWORD="$POSTGRES_PASSWORD" exec psql -h localhost -U postgres -d churchapp -v ON_ERROR_STOP=1 -q "$@"' psql "$@"; }
 fi
 
-result="$(psql -t -A -v email="$email" <<'SQL'
+result="$(psql -t -A -v email="$email" -v lead="$lead" <<'SQL'
 WITH person AS (SELECT id FROM accounts.users WHERE normalized_email = upper(:'email')),
      owner AS (SELECT id FROM access.roles WHERE system_key = 'owner'),
      made AS (
        INSERT INTO access.assignments (id, user_id, role_id, scope_object_id, source, expires_at, created_at, created_by)
        SELECT gen_random_uuid(), person.id, owner.id, NULL, 'Bootstrap', NULL, now(), NULL FROM person, owner
        WHERE NOT EXISTS (SELECT 1 FROM access.assignments a WHERE a.user_id = person.id AND a.role_id = owner.id)
+       RETURNING 1),
+     leader AS (SELECT id FROM access.roles WHERE system_key = 'ministry-leader'),
+     led AS (
+       INSERT INTO access.assignments (id, user_id, role_id, scope_object_id, source, expires_at, created_at, created_by)
+       SELECT gen_random_uuid(), person.id, leader.id, m.id::text, 'Manual', NULL, now(), NULL
+       FROM person, leader, ministries.ministries m
+       WHERE :'lead' = 'true' AND m.archived_at IS NULL
+         AND NOT EXISTS (SELECT 1 FROM access.assignments a WHERE a.user_id = person.id AND a.role_id = leader.id AND a.scope_object_id = m.id::text)
        RETURNING 1)
-SELECT (SELECT count(*) FROM person) || ' ' || (SELECT count(*) FROM owner) || ' ' || (SELECT count(*) FROM made);
+SELECT (SELECT count(*) FROM led) || ' ' || (SELECT count(*) FROM person) || ' ' || (SELECT count(*) FROM owner) || ' ' || (SELECT count(*) FROM made);
 NOTIFY gsbc_access_changes;
 SQL
 )"
 
-read -r people owners made <<< "$result"
+read -r led people owners made <<< "$result"
 if [ "$people" = 0 ]; then echo "Nobody has signed up with $email yet."; exit 1; fi
 if [ "$owners" = 0 ]; then echo "The Owner role doesn't exist yet: start the API once so it can set up roles."; exit 1; fi
 if [ "$made" = 0 ]; then echo "$email is already an Owner."; else echo "$email is now an Owner."; fi
+if [ "$lead" = true ]; then echo "$email now leads $led more ministries."; fi
