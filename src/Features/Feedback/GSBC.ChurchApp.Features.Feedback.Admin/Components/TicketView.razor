@@ -43,7 +43,7 @@
             <div class="ticket__main">
                 @if (ticket.Attachments.Count > 0)
                 {
-                    <div class="ticket__pictures" aria-label="Screenshots and videos">
+                    <div class="ticket__pictures" data-look-scroll aria-label="Screenshots and videos">
                         @foreach (MediaRef media in ticket.Attachments)
                         {
                             <figure class="ticket__picture">

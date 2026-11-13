@@ -60,7 +60,7 @@
         new("Person", flagged => @<span class="cell-strong">@flagged.Name</span>),
         new("What", flagged => @<span>@flagged.Words</span>),
         new("Status", flagged => @<Pill Tone="@Tone(flagged.Kind)">@KindWords(flagged.Kind)</Pill>),
-        new("When", flagged => @<span class="quiet">@When(flagged, today)</span>, null, "num"),
+        new("When", flagged => @<span class="quiet">@When(flagged, today)</span>, null, "num optional"),
     ];
 
     private static PillTone Tone(string kind) => kind switch

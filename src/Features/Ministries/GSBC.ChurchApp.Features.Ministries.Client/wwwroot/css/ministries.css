@@ -209,6 +209,7 @@ button.ministry-item { cursor: pointer; }
 @media (max-width: 900px) {
   .ministry-desk { grid-template-columns: minmax(0, 1fr); }
   .ministry-tree { position: static; }
+  .ministry-desk > :last-child > .empty:only-child { display: none; }
 }
 
 

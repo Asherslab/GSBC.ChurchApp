@@ -323,6 +323,8 @@ a.whats-next-card__title:active { opacity: 0.7; }
 .digest-desk__phone--small { height: 340px; }
 .digest-desk__email { display: grid; justify-items: center; height: 520px; overflow: hidden; }
 .digest-desk__foot { position: sticky; bottom: 0; z-index: 2; display: grid; gap: 8px; margin-top: 12px; padding: 12px 0 4px; background: var(--page); box-shadow: 0 -12px 16px -12px color-mix(in srgb, var(--ink) 18%, transparent); }
+.workbench__detail > .digest-desk__foot { margin-inline: calc(-1 * var(--space-2xl)); padding-inline: var(--space-2xl); padding-bottom: var(--space-lg); }
+@media (max-width: 760px) { .workbench__detail > .digest-desk__foot { margin-inline: calc(-1 * var(--gutter)); padding-inline: var(--gutter); } }
 .digest-email { display: block; flex: none; border: 0; border-radius: var(--radius-field); background: var(--sand); }
 .digest-desk__send { display: flex; flex-wrap: wrap; gap: 8px; }
 .digest-desk__send .btn { flex: 1 1 auto; }

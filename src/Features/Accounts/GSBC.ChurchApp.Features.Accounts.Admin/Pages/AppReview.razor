@@ -67,7 +67,7 @@
     private IReadOnlyList<TableColumn<ReviewCodeInfo>> Columns =>
     [
         new("Label", item => @<span class="cell-strong">@item.Label</span>, item => item.Label),
-        new("Demo account", item => @<span class="quiet truncate">@(AccountOf(item)?.Email ?? "Removed")</span>, item => AccountOf(item)?.Email),
+        new("Demo account", item => @<span class="quiet truncate">@(AccountOf(item)?.Email ?? "Removed")</span>, item => AccountOf(item)?.Email, "optional"),
         new("State", item => @<ReviewCodeState Code="item" />, item => ReviewCodeState.Order(item)),
         new("Uses", item => @<span>@item.Uses</span>, item => item.Uses, "num"),
         new("Made", item => @<DateLine At="item.CreatedAt" Style="DateLineStyle.Short" />, item => item.CreatedAt, "num optional"),
