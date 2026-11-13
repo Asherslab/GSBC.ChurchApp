@@ -1,7 +1,7 @@
 @implements IAsyncDisposable
 @inject IJSRuntime JS
 
-<div class="composer @Class">
+<div class="composer @Class" @ref="_root">
     @Above
     <div class="composer__bar">
         @Attach
@@ -32,6 +32,7 @@
     [Parameter] public bool EnterSends { get; set; }
     [Parameter] public EventCallback OnEscape { get; set; }
 
+    private ElementReference _root;
     private ElementReference _field;
     private IJSObjectReference? _keys;
     private DotNetObjectReference<Composer>? _self;
@@ -40,11 +41,11 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (!firstRender || !EnterSends)
+        if (!firstRender)
             return;
         _self = DotNetObjectReference.Create(this);
         await using IJSObjectReference module = await JS.InvokeAsync<IJSObjectReference>("import", "./_content/GSBC.ChurchApp.Platform.Ui/js/composer.js");
-        _keys = await module.InvokeAsync<IJSObjectReference>("enterSends", _field, _self);
+        _keys = await module.InvokeAsync<IJSObjectReference>("attach", _root, _field, _self, EnterSends);
     }
 
     [JSInvokable]
