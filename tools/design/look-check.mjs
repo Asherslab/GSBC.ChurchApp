@@ -48,6 +48,7 @@ const settle = page => page.evaluate(async limit => {
       if (!loading && performance.now() - changed > 400) break;
     }
     await document.fonts.ready;
+    await Promise.race([Promise.all(document.getAnimations().filter(animation => animation.effect?.getComputedTiming().iterations !== Infinity).map(animation => animation.finished.catch(() => {}))), new Promise(resolve => setTimeout(resolve, 1500))]);
     await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
   } finally {
     observer.disconnect();
@@ -141,7 +142,7 @@ const signIn = async browser => {
   throw new Error(`Couldn't sign up a test account on ${base}/account. Is this worktree's AppHost running with Accounts__Passkeys__RelyingPartyId=localhost?`);
 };
 
-const recordSelector = '.workbench__main :is(a.row, button.row, tbody tr, .board-card, a.card, button.card)';
+const recordSelector = ':is(.workbench__main, .admin-main > :not(.workbench)) :is(a.row, button.row, tbody tr[aria-selected], .board-card, a.card, button.card, .ministry-tree__item, [role=option], .media-card__open)';
 
 const discover = async page => {
   await go(page, '/');
@@ -151,6 +152,15 @@ const discover = async page => {
   const extra = args.extra.split(',').map(path => path.trim().replace(/^\//, '')).filter(Boolean);
   const queue = [...new Set([...sidebar, 'account', ...extra])].map(path => ({ path, depth: 0 }));
   const seen = new Set(queue.map(item => item.path));
+  const shapes = new Set();
+  const shapeOf = path => path.split('?')[0].replace(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|\b\d+\b/gi, ':id');
+  const enqueue = (path, depth) => {
+    if (seen.has(path) || depth > 3) return;
+    seen.add(path);
+    if (path.includes(':') || shapes.has(shapeOf(path))) return;
+    shapes.add(shapeOf(path));
+    queue.push({ path, depth });
+  };
   const shots = [];
   while (queue.length) {
     const { path, depth } = queue.shift();
@@ -158,28 +168,24 @@ const discover = async page => {
     const current = (await page.evaluate(() => location.pathname)).replace(/^\//, '');
     if (current !== path && seen.has(current)) continue;
     shots.push({ path, steps: [] });
-    const found = await page.evaluate(() => ({
+    const found = await page.evaluate(path => ({
       links: [...document.querySelectorAll('.admin-main .tab-strip a.tab-strip__tab[href]')].map(link => new URL(link.href).pathname.replace(/^\//, '')),
+      child: [...document.querySelectorAll('.admin-main a[href]')].map(link => new URL(link.href)).filter(url => url.origin === location.origin).map(url => url.pathname.replace(/^\//, '')).find(href => href.startsWith(path + '/') && href.length > path.length + 1),
       tabs: [...document.querySelectorAll('.admin-main [role=tab]')].map((tab, index) => ({ tab: index, label: tab.innerText.trim().split('\n')[0], selected: tab.getAttribute('aria-selected') === 'true' })).filter(tab => !tab.selected),
-      workbench: !!document.querySelector('.workbench__main'),
-      open: !!document.querySelector('.workbench__detail'),
-    }));
-    for (const link of found.links) {
-      if (seen.has(link) || depth >= 3) continue;
-      seen.add(link);
-      queue.push({ path: link, depth: depth + 1 });
-    }
+      open: !!document.querySelector('.workbench__detail :is(.pane-head, form, .section)'),
+    }), path);
+    for (const link of found.links) enqueue(link, depth + 1);
+    if (found.child) enqueue(found.child, depth + 1);
     for (const { tab, label } of found.tabs) shots.push({ path, steps: [{ tab, label }] });
-    if (found.workbench && !found.open && depth < 3) {
+    if (!found.open && depth < 3) {
       const record = page.locator(recordSelector).first();
       if (await record.count()) {
         await record.click().catch(() => {});
         await settle(page);
         const opened = (await page.evaluate(() => location.pathname + location.search)).replace(/^\//, '');
-        if (opened !== path && !seen.has(opened)) {
-          seen.add(opened);
-          queue.push({ path: opened, depth: depth + 1 });
-        } else if (opened === path && await page.locator('.workbench__detail').count()) {
+        if (opened !== path) {
+          enqueue(opened, depth + 1);
+        } else if (await page.locator('.workbench__detail :is(.pane-head, form, .section), .admin-main .pane-head').count()) {
           shots.push({ path, steps: [{ record: true }] });
         }
       }
@@ -225,11 +231,14 @@ const run = async (browser, storageState, variant, shots, results) => {
       } else {
         await go(page, shot.path);
       }
+      const target = step => step.tab !== undefined ? page.locator('.admin-main [role=tab]').nth(step.tab) : page.locator(recordSelector).first();
+      let reachable = true;
       for (const step of shot.steps) {
-        if (step.tab !== undefined) await page.locator('.admin-main [role=tab]').nth(step.tab).click();
-        if (step.record) await page.locator(recordSelector).first().click();
+        if (!(await target(step).isVisible())) { reachable = false; break; }
+        await target(step).click();
         await settle(page);
       }
+      if (!reachable) continue;
       const result = await page.evaluate(`(${analyse})(${JSON.stringify({ gutter, skip: args.skip })})`);
       await page.screenshot({ path: join(out, 'shots', name + '.png') });
       if (result.findings.length) {

@@ -85,6 +85,7 @@
     const seen = visibleSides(element);
     if (seen.size === 0) continue;
     const control = element.matches('button, a[href], [role=button], [role=tab], label') && rect.width < 200;
+    if (element.parentElement?.closest('button, [role=button]')) { if (seen.size === 4 && !control) atomic.add(element); continue; }
     if (control) { if (seen.size === 4) atomic.add(element); continue; }
     const pill = parseFloat(style(element).borderTopLeftRadius) >= Math.min(rect.width, rect.height) / 2 - 1;
     const band = rect.width >= 300 && rect.width >= (element.parentElement?.getBoundingClientRect().width ?? 0) * 0.9;
@@ -226,6 +227,8 @@
             consider(distance, describe(provider.element), 'box');
             continue;
           }
+          const layers = [pinned(leaf.element), pinned(provider.element)];
+          if (layers[0] !== layers[1] && layers.some(layer => layer && overlapsHorizontally(layer.getBoundingClientRect(), provider.rect) > 1 && overlapsHorizontally(layer.getBoundingClientRect(), rect) > 1)) continue;
           if (!provider.sides.has(opposites[side]) || leaf.element === provider.element || provider.element.contains(leaf.element) || leaf.element.contains(provider.element)) continue;
           const r = provider.rect;
           const distance = side === 'left' ? rect.left - r.right : side === 'right' ? r.left - rect.right : side === 'top' ? rect.top - r.bottom : r.top - rect.bottom;
@@ -247,6 +250,15 @@
         break;
       }
     }
+  }
+
+  for (const element of all) {
+    if (visibleSides(element).size < 4 || optedOut(element, 'data-look-bleed') || scrollsSideways(element)) continue;
+    const rect = element.getBoundingClientRect();
+    if (clipsOf(element).some(clip => { const edges = clip.getBoundingClientRect(); return rect.left < edges.left - tolerance || rect.right > edges.right + tolerance; })) continue;
+    const gaps = { left: rect.left, right: viewWidth - rect.right };
+    const near = Object.entries(gaps).find(([, gap]) => gap > tolerance && gap < gutter - tolerance);
+    if (near) add({ check: 'edge', side: near[0], distance: Math.round(near[1] * 10) / 10, what: describe(element), text: 'a filled box stops just short of the window edge', against: 'the window', rect: box(rect) });
   }
 
   const textLines = leaves.filter(leaf => leaf.kind === 'text').flatMap(leaf => leaf.live.map(rect => ({ leaf, rect })));
@@ -343,7 +355,7 @@
     add({ check: 'bar', what: describe(element), text: off.map(([side, gap]) => `${Math.round(gap)}px ${gap > 0 ? 'short of' : 'past'} the ${side} edge`).join(', '), against: container.element ? describe(container.element) : 'the window', rect: box(rect) });
   }
 
-  const broken = [...document.querySelectorAll('.empty-state')].map(textOf).find(text => /stopped working|isn't part of your role|Sign in to see this/.test(text));
+  const broken = [...document.querySelectorAll('.empty')].map(textOf).find(text => /stopped working|isn't part of your role|Sign in to see this/.test(text));
   if (broken) add({ check: 'broken', what: 'the page', text: broken, against: '', rect: box({ left: 0, top: 0, width: viewWidth, height: 40 }) });
 
   return { findings, scheme: document.documentElement.dataset.scheme ?? '', height: root.scrollHeight };
