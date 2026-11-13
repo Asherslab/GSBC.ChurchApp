@@ -10,7 +10,7 @@ public static class PrayerNotifications
     public static readonly NotificationKind WaitingForWall = new(
         "prayer.wall.waiting", "A prayer request asks to be on the prayer wall", "Prayer", Waits: true, For: [PrayerPermissions.Wall], Opens: new("/prayer/approve"));
 
-    public static readonly DigestSchedule PrayedForSchedule = new(
+    private static readonly DigestSchedule PrayedForSchedule = new(
         [TimeSpan.FromMinutes(15), TimeSpan.FromMinutes(30), TimeSpan.FromMinutes(45), TimeSpan.FromHours(1), TimeSpan.FromHours(3), TimeSpan.FromHours(6)],
         new TimeOnly(12, 0));
 

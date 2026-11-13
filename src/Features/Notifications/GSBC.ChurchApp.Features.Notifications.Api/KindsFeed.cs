@@ -24,7 +24,7 @@ internal sealed class KindsFeed(IServiceScopeFactory scopes, NotificationKindCat
         }
     }
 
-    public static async Task PublishAsync(NotificationsDbContext db, NotificationKindCatalog kinds, CancellationToken cancellationToken)
+    private static async Task PublishAsync(NotificationsDbContext db, NotificationKindCatalog kinds, CancellationToken cancellationToken)
     {
         Dictionary<string, FeedChangeRecord> published = (await db.FeedChanges.AsNoTracking()
                 .Where(change => change.Feed == NotificationsFeeds.Kinds)
