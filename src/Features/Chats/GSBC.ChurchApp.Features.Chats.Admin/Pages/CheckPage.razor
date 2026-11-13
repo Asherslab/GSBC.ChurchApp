@@ -46,7 +46,7 @@
                 IReadOnlyList<ReviewLine> lines = ChatReview.Lines(check.Chat.Messages, _filter, reported, _opened, DayOf);
                 int matches = lines.OfType<ReviewMessage>().Count(line => line.Match);
             }
-            <Workbench AsideLabel="Find in the chat" Class="chat-review-bench">
+            <Workbench AsideLabel="Find in the chat" Class="chat-review-bench" Showing="WorkbenchPane.Main">
                 <Aside>
                     <SearchField Label="Find words in the chat" Placeholder="Find words" Value="@_filter.Words" ValueChanged="words => Narrow(_filter with { Words = words })" />
                     <div class="chat-review__who">

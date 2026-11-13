@@ -14,7 +14,7 @@
 </TitleBand>
 
 <LiveData @ref="_live" TValue="Lists" Feeds="ListFeeds" Load="LoadAsync" FailedTitle="Can't load series and speakers right now">
-    <Workbench Class="series-desk" DetailLabel="@(_speaker is null ? "The series" : "The speaker")">
+    <Workbench Class="series-desk" DetailLabel="@(_speaker is null ? "The series" : "The speaker")" Showing="@(_series is null && _speaker is null ? WorkbenchPane.Main : WorkbenchPane.Detail)">
         <ChildContent>
             <TabStrip TValue="Tab" Label="Series or speakers" Options="Tabs" Value="_tab" ValueChanged="tab => _tab = tab" />
             @if (_tab == Tab.Series)
