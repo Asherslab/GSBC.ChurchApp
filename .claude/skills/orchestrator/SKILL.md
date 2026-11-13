@@ -99,6 +99,7 @@ dotnet run --no-build --project src/Hosts/GSBC.ChurchApp.Hosts.AppHost --launch-
 - Building while the AppHost runs serves broken admin files: stop, build, test, then start again.
 - **Conflicts:** usually DESIGN.md or docs where two stations each added a sentence; keep both. In code, read both
   sides; a feature's registration file often needs both entries.
+- **Before you merge, look:** open the station's after-screenshots yourself (and the owner's feedback screenshots it fixes) and check them against the station bar's look list. Never merge UI on the report's word; the owner found the desktop chat list's icons touching the edge in the station's own screenshot (2026-11-13).
 - **Before you report:** check the release note exists in `changelog/unreleased/` with `added:` and the
   Changed/Where/Try parts; `git grep` the merge for real names or emails that crept into docs or fixtures (the repo is
   public); for anything web-facing, check it through Cloudflare (below).
