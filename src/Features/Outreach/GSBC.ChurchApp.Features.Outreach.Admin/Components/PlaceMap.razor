@@ -6,8 +6,9 @@
 @inject OutreachMapsClient Maps
 @inject StreetGraphLoader Graphs
 
+<LiveData TValue="RegionList" Feeds="Feeds" Load="Maps.RegionsAsync" FailedTitle="Can't load the map right now">
 <div class="place-map">
-    @if (_region is { } region)
+    @if (RegionFor(context.Value) is { } region)
     {
         <MapView @ref="_map" Class="place-map__map" Source="@MapSource.Url(region.Map.Url, region.Attribution)" Label="@Label"
                  Areas="@Shapes" Markers="@Pins" Frame="@Framed" Centre="@Middle" Zoom="16" OnTap="TapAsync" />
@@ -19,11 +20,12 @@
                 : "Click the letterbox. The nearest one on that side of the street is chosen.")</p>
         }
     }
-    else if (_missing)
+    else
     {
         <p class="field__hint">There's no map here yet. Add a map area under Settings to see places on the map.</p>
     }
 </div>
+</LiveData>
 
 @code {
     [Parameter, EditorRequired] public required string Label { get; set; }
@@ -36,7 +38,6 @@
     private MapView? _map;
     private OutreachRegion? _region;
     private StreetGraph? _graph;
-    private bool _missing;
     private MapPoint? _placed;
 
     private MapPoint? Middle => Point ?? (Area is { Count: > 0 } area ? new MapPoint(area.Average(point => point.Lat), area.Average(point => point.Lon)) : null);
@@ -47,15 +48,15 @@
 
     private IReadOnlyList<MapMarker> Pins => (_placed ?? Point) is { } point ? [new MapMarker(point, MapMarkerKind.Pin)] : [];
 
-    protected override async Task OnParametersSetAsync()
+    private static readonly IReadOnlyList<string> Feeds = [OutreachMapsFeeds.Regions];
+
+    private OutreachRegion? RegionFor(RegionList list)
     {
-        if (_region is not null)
-            return;
-        List<OutreachRegion> regions = (await Maps.RegionsAsync()).Regions;
+        List<OutreachRegion> regions = list.Regions;
         _region = Middle is { } middle
             ? regions.FirstOrDefault(region => Inside(region.Core, middle)) ?? regions.FirstOrDefault(region => Inside(region.Bounds, middle)) ?? regions.FirstOrDefault()
-            : regions.FirstOrDefault();
-        _missing = _region is null;
+            : regions.FirstOrDefault(found => found.Id == _region?.Id) ?? regions.FirstOrDefault();
+        return _region;
     }
 
     private static bool Inside(MapBounds bounds, MapPoint point) =>

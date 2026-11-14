@@ -35,7 +35,7 @@
                     <SelectField Label="Region" Options="@shown.Regions.Select(region => new FieldOption(region.Id, region.Name)).ToList()" Value="@shown.Region.Id"
                                  ValueChanged="ChooseRegionAsync" />
                 }
-                <div class="outreach-coverage__legend">
+                <div>
                     <p class="outreach-coverage__label">When it was last done</p>
                     <div class="outreach-coverage__ramp" aria-hidden="true"></div>
                     <p class="outreach-coverage__ramp-key"><span>This week</span><span>@Weeks(view.RestDays / 2)</span><span>@Weeks(view.RestDays): open again</span></p>
