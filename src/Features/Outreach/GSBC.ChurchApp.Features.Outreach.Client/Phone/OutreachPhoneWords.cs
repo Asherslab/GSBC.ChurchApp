@@ -84,7 +84,7 @@ public static class OutreachPhoneWords
 
     public static string AllDone(StartChoice start) => $"The nearest good start is the {start.Street} area, {Distance(start.Metres)} away.";
 
-    public static string Side(bool houses) => houses ? "Houses on your left" : "No letterboxes on this stretch";
+    public static string Side(bool houses) => houses ? "Houses on your left" : "Nothing to deliver here";
 
     public static string Turn(SavedStep from, SavedStep to)
     {
@@ -105,7 +105,7 @@ public static class OutreachPhoneWords
         return $"Then {way} {to.Title}";
     }
 
-    public static string Remaining(int letterboxesLeft) => letterboxesLeft <= 0 ? "Done" : $"{Letterboxes(letterboxesLeft)} to go";
+    public static string Remaining(int letterboxesLeft) => letterboxesLeft <= 0 ? "done" : $"{OutreachWords.Count(letterboxesLeft)} to go";
 
     public static string Walked(DateTime utc) => ChurchTime.ToChurch(utc).ToString("ddd d MMM", English);
 

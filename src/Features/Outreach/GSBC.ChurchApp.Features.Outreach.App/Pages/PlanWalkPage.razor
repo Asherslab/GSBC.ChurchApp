@@ -14,7 +14,7 @@
         }
         @if (plan.Source is not null)
         {
-            <MapView Class="outreach-plan-map" Source="plan.Source" Label="Your walk on the map" Lines="plan.Lines" Markers="plan.Markers" Frame="plan.Frame"
+            <MapView Class="outreach-plan-map" Source="plan.Source" Label="Your walk on the map" Lines="plan.Lines" Markers="plan.Markers" Frame="plan.Frame" You="plan.You"
                      Centre="@(plan.StartPoint is { } at ? new MapPoint(at.Lat, at.Lon) : null)" Zoom="15" OnTap="PinAsync" />
         }
         @switch (plan.State)
@@ -72,8 +72,11 @@
 @code {
     private const ChangeKind Reload = ChangeKind.Reconnected | ChangeKind.Session;
     private const int MostMatches = 12;
+    private const string DistanceKey = "distance";
     private static readonly IReadOnlyList<SegmentOption<string>> LengthOptions =
-        [.. WalkLength.Times.Concat(WalkLength.Distances).Select(length => new SegmentOption<string>(length.Label, length.Label))];
+        [.. WalkLength.Times.Select(length => new SegmentOption<string>(length.Label, length.Label)), new SegmentOption<string>(DistanceKey, "Distance")];
+    private static readonly IReadOnlyList<SegmentOption<string>> DistanceOptions =
+        [.. WalkLength.Distances.Select(length => new SegmentOption<string>(length.Label, length.Label))];
     private static readonly IReadOnlyList<SegmentOption<WalkMode>> ModeOptions =
         [new(WalkMode.Letterbox, "Letterboxes"), new(WalkMode.Doorknock, "Doorknocking")];
 
@@ -186,7 +189,11 @@
             <Button Block="true" Icon="footprints" Disabled="@(!mayStart || _starting)" OnClick="() => StartAsync(plan)">Start the walk</Button>
         </Section>
         <Section Title="Change the walk">
-            <Segmented TValue="string" Label="How long" ShowLabel="true" Options="LengthOptions" Value="@_length.Label" ValueChanged="ChangeLengthAsync" />
+            <Segmented TValue="string" Label="How long" ShowLabel="true" Options="LengthOptions" Value="@(_length.ByTime ? _length.Label : DistanceKey)" ValueChanged="ChangeLengthAsync" />
+            @if (!_length.ByTime)
+            {
+                <Segmented TValue="string" Label="How far" Options="DistanceOptions" Value="@_length.Label" ValueChanged="ChangeLengthAsync" />
+            }
             <Segmented TValue="WalkMode" Label="What you're doing" ShowLabel="true" Options="ModeOptions" Value="_mode" ValueChanged="ChangeModeAsync" />
             @if (doorknock)
             {
@@ -243,7 +250,7 @@
 
     private Task ChangeLengthAsync(string label)
     {
-        _length = WalkLength.Times.Concat(WalkLength.Distances).First(length => length.Label == label);
+        _length = label == DistanceKey ? WalkLength.Distances[1] : WalkLength.Times.Concat(WalkLength.Distances).First(length => length.Label == label);
         _takeHop = false;
         return ReloadAsync();
     }
@@ -298,7 +305,9 @@
     };
 
     private static string DaylightNote(OutreachSettings settings, DateTime now, bool doorknock) =>
-        doorknock
+        WalkPlanning.BeforeDaylight(settings, now)
+            ? $"It's dark until about {OutreachPhoneWords.Clock(WalkPlanning.DaylightStarts(settings, now))}. Outreach is for daylight, so plan this for later."
+        : doorknock
             ? $"Doorknocking is for daylight, until {OutreachPhoneWords.Clock(WalkPlanning.DaylightEnds(settings, now))}. Try a shorter walk, or another day."
             : $"This walk would finish after {OutreachPhoneWords.Clock(WalkPlanning.DaylightEnds(settings, now))}, when it's getting dark. Try a shorter walk.";
 

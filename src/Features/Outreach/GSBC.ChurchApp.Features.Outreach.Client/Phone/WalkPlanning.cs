@@ -85,6 +85,12 @@ public static class WalkPlanning
         return start.Date == end.Date && start.TimeOfDay >= opens && end.TimeOfDay <= closes;
     }
 
+    public static bool BeforeDaylight(OutreachSettings settings, DateTime utc) =>
+        ChurchTime.ToChurch(utc).TimeOfDay < TimeSpan.FromMinutes(settings.DaylightStartsMinute);
+
+    public static DateTime DaylightStarts(OutreachSettings settings, DateTime utc) =>
+        ChurchTime.ToUtc(ChurchTime.ToChurch(utc).Date + TimeSpan.FromMinutes(settings.DaylightStartsMinute));
+
     public static DateTime DaylightEnds(OutreachSettings settings, DateTime utc) =>
         ChurchTime.ToUtc(ChurchTime.ToChurch(utc).Date + TimeSpan.FromMinutes(settings.DaylightEndsMinute));
 

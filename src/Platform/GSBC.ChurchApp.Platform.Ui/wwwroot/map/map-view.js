@@ -3,6 +3,8 @@ import { PMTiles, Protocol } from "./vendor/pmtiles.mjs";
 import { mapStyle } from "./map-style.js";
 import maplibreCss from "./vendor/maplibre-gl.css.mjs";
 
+maplibregl.setWorkerUrl(new URL("./vendor/maplibre-gl-worker.mjs", import.meta.url).href);
+
 const protocol = new Protocol();
 maplibregl.addProtocol("pmtiles", protocol.tile);
 
@@ -154,7 +156,12 @@ export async function create(element, optionsJson, receiver) {
     set("you", { type: "FeatureCollection", features: [{ type: "Feature", properties: { radius }, geometry: { type: "Point", coordinates: you.point } }] });
   };
 
-  map.on("load", () => Object.entries(data).forEach(([name, value]) => map.getSource(name)?.setData(value)));
+  let framed = null;
+  const fit = (b) => map.fitBounds([[b.west, b.south], [b.east, b.north]], { padding: b.padding ?? 40, duration: 0, maxZoom: b.maxZoom ?? 17 });
+  map.on("load", () => {
+    Object.entries(data).forEach(([name, value]) => map.getSource(name)?.setData(value));
+    if (framed) fit(framed);
+  });
   map.on("zoomend", drawYou);
   map.on("click", (e) => receiver?.invokeMethodAsync("OnTap", e.lngLat.lat, e.lngLat.lng));
   map.on("dragstart", () => {
@@ -187,8 +194,9 @@ export async function create(element, optionsJson, receiver) {
       if (on && you) map.easeTo({ center: you.point, zoom: Math.max(map.getZoom(), 17), duration: 600 });
     },
     fit: (json) => {
-      const b = JSON.parse(json);
-      map.fitBounds([[b.west, b.south], [b.east, b.north]], { padding: b.padding ?? 40, duration: 0, maxZoom: b.maxZoom ?? 17 });
+      framed = JSON.parse(json);
+      map.resize();
+      fit(framed);
     },
     centre: (lat, lon, zoom) => map.jumpTo({ center: [lon, lat], zoom: zoom ?? map.getZoom() }),
     resize: () => map.resize(),
