@@ -5,7 +5,7 @@
 @inject TimeProvider Clock
 @inject NavigationManager Navigation
 
-<LiveData TValue="ShownPost" Load="LoadAsync" Feeds="News.Feeds" ReloadOn="Reload" Remember="@($"news.post.{Id}")">
+<LiveData @key="Id" TValue="ShownPost" Load="LoadAsync" Feeds="News.Feeds" ReloadOn="Reload" Remember="@($"news.post.{Id}")">
     <Page Title="@(context.Value.Post?.Title ?? "News")" BackHref="news" BackLabel="News" TopBar="TopBarStyle.Solid">
         <Actions>
             @if (context.Value.Post is { } shown && Actions(shown) is { Count: > 0 } actions)

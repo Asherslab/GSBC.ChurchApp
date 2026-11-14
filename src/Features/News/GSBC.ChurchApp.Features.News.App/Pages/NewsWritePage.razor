@@ -12,7 +12,7 @@
         }
         else
         {
-            <LiveData TValue="EditedPost" Load="LoadAsync" Feeds="News.Feeds" Remember="@($"news.write.{Id}")">
+            <LiveData @key="Id" TValue="EditedPost" Load="LoadAsync" Feeds="News.Feeds" Remember="@($"news.write.{Id}")">
                 @if (context.Value.Post is { } post)
                 {
                     <NewsPostForm Post="post" OnSaved="saved => Navigation.NavigateTo(NewsWords.Href(saved.Id))" OnCancel="() => Navigation.NavigateTo(Back)" />

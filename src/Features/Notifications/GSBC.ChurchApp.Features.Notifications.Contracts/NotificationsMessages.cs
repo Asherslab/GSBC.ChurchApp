@@ -38,6 +38,14 @@ public sealed class KindInfo
     [ProtoMember(6)] public string? PerScope { get; set; }
     [ProtoMember(7)] public string? ForNode { get; set; }
     [ProtoMember(8)] public string? ForScope { get; set; }
+    [ProtoMember(9)] public List<KindPermission> ForAny { get; set; } = [];
+}
+
+[ProtoContract]
+public sealed class KindPermission
+{
+    [ProtoMember(1)] public string Node { get; set; } = "";
+    [ProtoMember(2)] public string Scope { get; set; } = "";
 }
 
 [ProtoContract]

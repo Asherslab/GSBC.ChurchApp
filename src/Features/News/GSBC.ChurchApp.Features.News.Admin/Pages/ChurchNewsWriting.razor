@@ -7,7 +7,7 @@
 @inject NavigationManager Navigation
 @inject TimeProvider Clock
 
-<LiveData TValue="EditedPost" Load="LoadAsync" Feeds="DeskFeeds" FailedTitle="Can't load this post right now">
+<LiveData @key="Id" TValue="EditedPost" Load="LoadAsync" Feeds="DeskFeeds" FailedTitle="Can't load this post right now">
     @if ((_writing ??= context.Value.Post) is { } post && Access.Can(NewsPermissions.Write))
     {
         <TitleBand Title="@(Id is null ? "New post" : "Change the post")" BrowserTitle="@(Id is null ? "New post" : post.Title)" BackHref="news" BackText="Church news"

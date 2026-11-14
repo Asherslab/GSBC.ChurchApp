@@ -8,7 +8,7 @@
 @inject IEnumerable<PersonTab> ContributedTabs
 @inject IEnumerable<PersonFact> ContributedFacts
 
-<LiveData @ref="_live" TValue="PersonView" Feeds="[AccountsFeeds.People]" Load="LoadAsync" FailedTitle="Can't load this person right now">
+<LiveData @key="Id" @ref="_live" TValue="PersonView" Feeds="[AccountsFeeds.People]" Load="LoadAsync" FailedTitle="Can't load this person right now">
     @if (context.Value.Person is not { } person)
     {
         <TitleBand Title="Not here" BackHref="people" BackText="People" />

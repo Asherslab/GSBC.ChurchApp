@@ -3,7 +3,7 @@
 @inject OnlineMinistries Ministries
 @inject NavigationManager Navigation
 
-<LiveData TValue="MinistryPage" Load="() => Ministries.MinistryAsync(Id)" Feeds="Ministries.Feeds" FailedTitle="Can't load this ministry right now">
+<LiveData @key="@($"{Id}/{PostId}")" TValue="MinistryPage" Load="() => Ministries.MinistryAsync(Id)" Feeds="Ministries.Feeds" FailedTitle="Can't load this ministry right now">
     @if ((_page ??= context.Value) is { } page && (_draft ??= DraftIn(page)) is { } draft)
     {
         <PostSheet OnAPage="true" Open="true" OpenChanged="_ => Navigation.NavigateTo(Back)" Page="page" Draft="draft" BackHref="@Back" />

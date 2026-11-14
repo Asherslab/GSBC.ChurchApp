@@ -25,10 +25,10 @@ internal static class TestKinds
 
     public static readonly Permission HearSeries = new("sermons.series.receive", ScopeKind.SermonSeries, "Hear of new sermons in a series");
 
-    public static readonly NotificationKind NewSermon = new("sermons.new", "A new sermon is out", "Sermons", For: HearNew);
+    public static readonly NotificationKind NewSermon = new("sermons.new", "A new sermon is out", "Sermons", For: [HearNew]);
 
     public static readonly NotificationKind NewInSeries = new("sermons.series.new", "A series you follow has a new sermon", "Sermons",
-        PerScope: ScopeKind.SermonSeries, For: HearSeries);
+        PerScope: ScopeKind.SermonSeries, For: [HearSeries]);
 
     public static readonly Permission ChangePrayerSettings = new("prayer.settings.change", ScopeKind.Global, "Choose when people hear that someone prayed");
 
