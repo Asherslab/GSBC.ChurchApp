@@ -1,0 +1,101 @@
+@inject WalkSession Walk
+@inject Shell Shell
+
+<UnsavedGuard Changed="() => Open && _followUp && (_name.Trim().Length > 0 || _contact.Trim().Length > 0 || _note.Trim().Length > 0)"
+              State="() => (_name, _contact, _note, _consent)" What="this follow-up" />
+
+<Sheet Open="Open" OpenChanged="CloseAsync" Title="@(_followUp ? "They'd like someone to follow up" : _hostile ? "They want nothing to do with it" : "At this door")"
+       Lead="@Lead">
+    <ChildContent>
+        @if (_followUp)
+        {
+            <ToggleRow Title="They agreed to be contacted" Description="Only then are their first name and contact kept, for the outreach leaders." Checked="_consent" CheckedChanged="on => _consent = on" />
+            @if (_consent)
+            {
+                <TextField Label="First name" MaxLength="OutreachRules.LongestFirstName" AutoComplete="off" @bind-Value="_name" />
+                <TextField Label="Phone or email" MaxLength="OutreachRules.LongestContact" AutoComplete="off" AutoCapitalize="off" @bind-Value="_contact" />
+                <TextField Label="Anything to pass on (optional)" Multiline="true" MaxLength="OutreachRules.LongestNote" @bind-Value="_note" />
+            }
+        }
+        else if (_hostile)
+        {
+            <p class="outreach-note">This is for someone who wants absolutely nothing to do with it, not someone who was just busy or short. The church won't knock or letterbox here again unless staff clear it.</p>
+        }
+        else
+        {
+            <div class="outreach-doors">
+                <Button Block="true" Variant="ButtonVariant.Quiet" OnClick="() => RecordAsync(DoorOutcomeKind.NoAnswer)">Knocked, no answer</Button>
+                <Button Block="true" Variant="ButtonVariant.Quiet" OnClick="() => RecordAsync(DoorOutcomeKind.Spoke)">Spoke with them</Button>
+                <Button Block="true" Variant="ButtonVariant.Quiet" OnClick="() => _followUp = true">Spoke, and they'd like a follow-up</Button>
+                <Button Block="true" Variant="ButtonVariant.Quiet" OnClick="() => _hostile = true">They want nothing to do with it</Button>
+            </div>
+        }
+    </ChildContent>
+    <Actions>
+        @if (_followUp)
+        {
+            <SaveBar Block="true" Label="@(_consent ? "Send to the outreach leaders" : "Count the conversation")" Busy="_busy" OnSave="FollowUpAsync" OnCancel="Back" CancelLabel="Back" Blocked="@Blocked" />
+        }
+        else if (_hostile)
+        {
+            <SaveBar Block="true" Label="Don't come back here" Busy="_busy" OnSave="() => RecordAsync(DoorOutcomeKind.Hostile)" OnCancel="Back" CancelLabel="Back" />
+        }
+    </Actions>
+</Sheet>
+
+@code {
+    private bool _followUp;
+    private bool _hostile;
+    private bool _consent;
+    private bool _busy;
+    private string _name = "";
+    private string _contact = "";
+    private string _note = "";
+
+    [Parameter] public bool Open { get; set; }
+    [Parameter] public EventCallback<bool> OpenChanged { get; set; }
+
+    private string Lead => Walk.NearestAddress(out NearestBox found) is { } address
+        ? address.Label.Length > 0 ? $"Near {address.Label}." : "The door nearest you."
+        : found == NearestBox.NoFix ? "The app needs your location to know which door." : "There's no home near you on this street.";
+
+    private string? Blocked => _consent && (_name.Trim().Length == 0 || _contact.Trim().Length == 0) ? "Add their first name and how to reach them." : null;
+
+    private Task FollowUpAsync() => RecordAsync(_consent ? DoorOutcomeKind.FollowUp : DoorOutcomeKind.Spoke);
+
+    private async Task RecordAsync(DoorOutcomeKind outcome)
+    {
+        _busy = true;
+        try
+        {
+            await Walk.DoorAsync(outcome, _name, _contact, _note, _consent);
+            await Shell.HapticAsync();
+            Reset();
+            await OpenChanged.InvokeAsync(false);
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private void Back()
+    {
+        _followUp = false;
+        _hostile = false;
+    }
+
+    private void Reset()
+    {
+        Back();
+        _consent = false;
+        _name = _contact = _note = "";
+    }
+
+    private Task CloseAsync(bool open)
+    {
+        if (!open)
+            Reset();
+        return OpenChanged.InvokeAsync(open);
+    }
+}
