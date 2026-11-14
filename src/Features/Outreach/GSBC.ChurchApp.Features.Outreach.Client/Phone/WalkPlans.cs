@@ -1,5 +1,4 @@
 using GSBC.ChurchApp.Features.Outreach.Contracts;
-using GSBC.ChurchApp.Features.Outreach.Maps.Contracts;
 using GSBC.ChurchApp.Features.Outreach.Routing;
 using GSBC.ChurchApp.Platform.Common;
 using GSBC.ChurchApp.Platform.Ui.Maps;

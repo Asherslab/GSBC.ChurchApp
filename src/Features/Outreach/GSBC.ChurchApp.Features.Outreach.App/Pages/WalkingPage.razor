@@ -79,7 +79,7 @@
                 <p class="outreach-now__side">@OutreachPhoneWords.Side(now.Step.Delivers) · @OutreachPhoneWords.Remaining(now.Step.Letterboxes - now.Done)</p>
                 @if (next is not null)
                 {
-                    <p class="outreach-now__next"><Icon Name="chevron-right" />@OutreachPhoneWords.Turn(now.Step, next.Step) · @next.Step.Letterboxes</p>
+                    <p class="outreach-now__next"><Icon Name="@OutreachPhoneWords.TurnIcon(now.Step, next.Step)" />@OutreachPhoneWords.Turn(now.Step, next.Step) · @next.Step.Letterboxes</p>
                 }
             }
         </header>

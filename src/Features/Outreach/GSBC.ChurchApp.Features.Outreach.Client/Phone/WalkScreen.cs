@@ -34,7 +34,7 @@ public sealed class WalkScreen(WalkSession walk, OutreachStore store, RegionMaps
         OutreachRegion? region = now.Regions.FirstOrDefault(candidate => candidate.Id == state.RegionId);
         MapSource? source = region is null ? null : regions.SourceFor(await regions.OnPhoneAsync(region));
         WalkProgress? progress = walk.Progress;
-        List<MapLine> lines = [.. state.Steps.Select((step, index) => new MapLine(
+        List<MapLine> lines = [.. walk.Graph is { } graph ? OutreachNearby.WalkedLines(now, graph, state.Campaigns) : [], .. state.Steps.Select((step, index) => new MapLine(
             [.. step.Line.Select(point => new MapPoint(point[0], point[1]))],
             !step.Delivers ? MapLineStyle.Connector
             : progress is not null && index < progress.Steps.Count && progress.Steps[index].Share >= WalkSession.StepDoneShare ? MapLineStyle.WalkDone
@@ -47,7 +47,7 @@ public sealed class WalkScreen(WalkSession walk, OutreachStore store, RegionMaps
                 MarkerKind.Check => MapMarkerKind.Check,
                 _ => MapMarkerKind.Skip,
             }, (MarkerKind)marker.Kind is MarkerKind.NoJunkMail or MarkerKind.DontLetterbox ? marker.Label : null))];
-        MapFrame frame = MapFrame.Around(state.Steps.SelectMany(step => step.Line).Select(point => new MapPoint(point[0], point[1])), 32, 17);
+        MapFrame frame = MapFrame.Around(state.Steps.SelectMany(step => step.Line).Select(point => new MapPoint(point[0], point[1])), 32);
         MapYou? you = progress?.You is { } at ? new MapYou(new MapPoint(at.Lat, at.Lon), progress.Accuracy) : null;
         List<Campaign> carried = [.. state.Campaigns.Select(now.CampaignOf).OfType<Campaign>()];
         bool tracking = state.Tracking && (await location.StateAsync()).Running || state.Paused;

@@ -61,6 +61,7 @@ public sealed class WalkSession(
     private const double NearestBoxMetres = 35;
     private const string SkippedPrefix = "skipped:";
     private static readonly TimeSpan SendEvery = TimeSpan.FromSeconds(90);
+    private static readonly TimeSpan RecentFix = TimeSpan.FromMinutes(2);
 
     private readonly SemaphoreSlim _working = new(1, 1);
     private WalkState? _state;
@@ -110,6 +111,7 @@ public sealed class WalkSession(
         if (_state is { Finished: false })
             throw new InvalidOperationException("A walk is already on.");
         LocationFixes before = await location.FixesAsync(long.MaxValue);
+        long from = await RecentFixAsync(before.Latest);
         WalkState state = new()
         {
             WalkId = Guid.NewGuid().ToString(),
@@ -126,8 +128,8 @@ public sealed class WalkSession(
             PlannedSeconds = (int)Math.Round(start.Summary.Time.TotalSeconds),
             Bundles = start.Summary.BundlesToTake,
             Steps = WalkState.StepsOf(start.Summary),
-            FixFrom = before.Latest,
-            FixLatest = before.Latest,
+            FixFrom = from,
+            FixLatest = from,
             WithPartner = start.WithPartner,
             LastSentAt = time.GetUtcNow().UtcDateTime,
         };
@@ -225,16 +227,6 @@ public sealed class WalkSession(
     {
         int? box = NearestLetterbox(out found);
         return box is { } letterbox && _graph is not null && _region is not null ? EngineInputs.Address(_graph, _region.Id, letterbox) : null;
-    }
-
-    public AddressPoint? AddressAt(RoutingPoint point)
-    {
-        if (_graph is null || _region is null)
-            return null;
-        Flat flat = _graph.Projection.ToFlat(point);
-        return _graph.Index.Nearest(flat, NearestBoxMetres) is { } position && Closest(position) is { } box
-            ? EngineInputs.Address(_graph, _region.Id, box)
-            : null;
     }
 
     public async Task<string?> NoJunkMailAsync()
@@ -354,6 +346,14 @@ public sealed class WalkSession(
 
     public int LetterboxesOf(IReadOnlySet<int> walkedSteps) =>
         _progress?.Steps.Where(step => walkedSteps.Contains(step.Index)).Sum(step => Math.Max(step.Done, step.Share >= StepDoneShare ? step.Step.Letterboxes : 0)) ?? 0;
+
+    private async Task<long> RecentFixAsync(long latest)
+    {
+        if (latest <= 0)
+            return latest;
+        LocationFix? last = (await location.FixesAsync(latest - 1)).Fixes.LastOrDefault();
+        return last is not null && time.GetUtcNow() - last.At <= RecentFix ? latest - 1 : latest;
+    }
 
     private async Task PrepareAsync(WalkState state)
     {

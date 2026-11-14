@@ -86,7 +86,7 @@
     private const ChangeKind Reload = ChangeKind.Reconnected | ChangeKind.Session | ChangeKind.Access | ChangeKind.Outbox;
     private const string DistanceKey = "distance";
     private static readonly IReadOnlyList<SegmentOption<string>> LengthOptions =
-        [.. WalkLength.Times.Select(length => new SegmentOption<string>(length.Label, length.Label)), new SegmentOption<string>(DistanceKey, "Distance")];
+        [.. WalkLength.Times.Select(length => new SegmentOption<string>(length.Label, length.Label)), new(DistanceKey, "Distance")];
     private static readonly IReadOnlyList<SegmentOption<string>> DistanceOptions =
         [.. WalkLength.Distances.Select(length => new SegmentOption<string>(length.Label, length.Label))];
 

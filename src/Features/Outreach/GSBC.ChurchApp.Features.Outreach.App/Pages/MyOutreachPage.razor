@@ -3,7 +3,6 @@
 
 <Page Title="My outreach" BackHref="@OutreachLinks.Home" BackLabel="Outreach">
     <Masthead Title="My outreach" Note="Your walks, on this phone and wherever you're signed in" />
-    <WaitingToSend MethodsUnder="@OutreachMethods.Under" Describe="OutreachMethods.Describe" First="true" />
     <LiveData TValue="MyOutreachView" Load="Mine.LoadAsync" Feeds="MyOutreach.Feeds" ReloadOn="Reload">
         @{
             MyOutreachView view = context.Value;
@@ -18,7 +17,19 @@
         }
         else
         {
-            <Section First="true">
+            @if (view.Waiting + view.Failed > 0)
+            {
+                <Section First="true">
+                    <div class="outreach-waiting">
+                        <p>@Waiting(view)</p>
+                        @if (view.Failed > 0)
+                        {
+                            <Button Small="true" Variant="ButtonVariant.Quiet" Icon="refresh" OnClick="Mine.RetryAsync">Try again</Button>
+                        }
+                    </div>
+                </Section>
+            }
+            <Section First="@(view.Waiting + view.Failed == 0)">
                 <p class="outreach-figures__big">@OutreachPhoneWords.Letterboxes(view.Letterboxes)</p>
                 <p class="outreach-figures__line">@Totals(view)</p>
             </Section>
@@ -50,6 +61,11 @@
 
 @code {
     private const ChangeKind Reload = ChangeKind.Reconnected | ChangeKind.Session | ChangeKind.Access | ChangeKind.Outbox;
+
+    private static string Waiting(MyOutreachView view) =>
+        view.Failed > 0
+            ? $"{OutreachWords.Plural(view.Failed, "change", "changes")} from your walks couldn't be sent yet. They're kept on this phone."
+            : $"{OutreachWords.Plural(view.Waiting, "change", "changes")} from your walks {(view.Waiting == 1 ? "is" : "are")} waiting for signal. They send by themselves.";
 
     private static string Totals(MyOutreachView view)
     {

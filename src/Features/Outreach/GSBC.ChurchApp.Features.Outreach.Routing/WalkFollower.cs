@@ -27,6 +27,7 @@ public sealed record FollowerSettings
 
 public sealed class WalkFollower(StreetGraph graph, FollowerSettings? settings = null)
 {
+    private const int BreakStreet = -2;
     private const double MinSigmaMetres = 8;
     private const double SearchFactor = 2.5;
     private const double MinSearchMetres = 20;
@@ -105,7 +106,8 @@ public sealed class WalkFollower(StreetGraph graph, FollowerSettings? settings =
         List<Sample> samples = Densify();
         _walked = 0;
         for (int i = 1; i < samples.Count; i++)
-            _walked += Flat.Distance(samples[i - 1].Point, samples[i].Point);
+            if (!IsBreak(samples[i - 1]) && !IsBreak(samples[i]))
+                _walked += Flat.Distance(samples[i - 1].Point, samples[i].Point);
         List<Sample> matched = Match(samples);
         List<SideStretch> found = [];
         int start = 0;
@@ -120,6 +122,8 @@ public sealed class WalkFollower(StreetGraph graph, FollowerSettings? settings =
         return Subtract(Merge(found.Where(s => graph.Street(s.Street).CanDeliver)), _skipped);
     }
 
+    private static bool IsBreak(Sample sample) => sample.Street == BreakStreet;
+
     private List<Sample> Densify()
     {
         List<Sample> samples = [];
@@ -133,7 +137,7 @@ public sealed class WalkFollower(StreetGraph graph, FollowerSettings? settings =
                 double seconds = Math.Max((_fixes[i].At - _fixes[i - 1].At).TotalSeconds, 1);
                 if (gap > _settings.StraightGapMetres)
                 {
-                    samples.Add(new Sample(default, 0, true, -2));
+                    samples.Add(new Sample(default, 0, true, BreakStreet));
                     if (gap <= _settings.LongestGapMetres && Bridge(before, point, seconds) is { } bridge)
                     {
                         samples.RemoveAt(samples.Count - 1);
@@ -202,7 +206,7 @@ public sealed class WalkFollower(StreetGraph graph, FollowerSettings? settings =
         for (int i = 0; i < samples.Count; i++)
         {
             Sample sample = samples[i];
-            if (sample.Street == -2)
+            if (IsBreak(sample))
             {
                 matched.Add(sample);
                 previous = -1;
@@ -244,9 +248,9 @@ public sealed class WalkFollower(StreetGraph graph, FollowerSettings? settings =
     private double? Heading(List<Sample> samples, int i)
     {
         int back = i, ahead = i;
-        while (back > 0 && samples[back - 1].Street != -2 && Flat.Distance(samples[back - 1].Point, samples[i].Point) < HeadingWindowMetres)
+        while (back > 0 && !IsBreak(samples[back - 1]) && Flat.Distance(samples[back - 1].Point, samples[i].Point) < HeadingWindowMetres)
             back--;
-        while (ahead < samples.Count - 1 && samples[ahead + 1].Street != -2 && Flat.Distance(samples[ahead + 1].Point, samples[i].Point) < HeadingWindowMetres)
+        while (ahead < samples.Count - 1 && !IsBreak(samples[ahead + 1]) && Flat.Distance(samples[ahead + 1].Point, samples[i].Point) < HeadingWindowMetres)
             ahead++;
         Flat move = samples[ahead].Point - samples[back].Point;
         return move.Length < HeadingWindowMetres / 2 ? null : move.Bearing;

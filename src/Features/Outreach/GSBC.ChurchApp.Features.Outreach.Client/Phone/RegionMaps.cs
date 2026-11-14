@@ -19,7 +19,7 @@ public sealed record RegionOnPhone(OutreachRegion Region, KeptFile? Map, KeptFil
     public long Bytes => Region.Map.Bytes + Region.Streets.Bytes;
 
     public double Fraction => Map is null || Streets is null ? 0
-        : (double)(Map.Fraction * Region.Map.Bytes + Streets.Fraction * Region.Streets.Bytes) / Math.Max(1, Bytes);
+        : (Map.Fraction * Region.Map.Bytes + Streets.Fraction * Region.Streets.Bytes) / Math.Max(1, Bytes);
 }
 
 public sealed class RegionMaps(IKeptFiles kept, ILocalPreferences preferences)
