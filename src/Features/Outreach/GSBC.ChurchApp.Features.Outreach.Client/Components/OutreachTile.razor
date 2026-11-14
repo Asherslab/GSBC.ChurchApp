@@ -1,0 +1,33 @@
+@using GSBC.ChurchApp.Platform.Contracts.Configuration
+@using GSBC.ChurchApp.Platform.Ui.Surfaces
+@inject IServiceProvider Services
+@inject TimeProvider Clock
+
+@if (Services.GetService(typeof(OutreachStore)) is OutreachStore store)
+{
+    <LiveData TValue="OutreachNow" Load="store.LoadAsync" Feeds="OutreachStore.Feeds" Remember="outreach.tile">
+        <ChildContent>@Drawn(context.Value)</ChildContent>
+        <Loading>@Drawn(null)</Loading>
+        <Failed>@Drawn(null)</Failed>
+    </LiveData>
+}
+else
+{
+    @Drawn(null)
+}
+
+@code {
+    [CascadingParameter] public HubContext Hub { get; set; } = HubContext.Still;
+    [Parameter, EditorRequired] public required ArrangedSurface Entry { get; set; }
+
+    private RenderFragment Drawn(OutreachNow? now)
+    {
+        TileLook look = TileLook.Of(OutreachTiles.Outreach, Entry.Values);
+        TileVariant variant = OutreachTiles.Outreach.VariantFor(look, Hub.Columns);
+        DateTime utc = Clock.GetUtcNow().UtcDateTime;
+        IReadOnlyList<string> lines = now is not null && OutreachDays.On(now, utc) is { } day
+            ? [OutreachPhoneWords.DayOn(day), OutreachPhoneWords.RoutesClaimed(OutreachDays.Claimed(now, day), now.RoutesOf(day.Id).Count())]
+            : [look.Text];
+        return @<HubTile Look="@(variant.Key == TileVariants.WordsKey ? look with { Image = null } : look)" Layout="WordsTileView.ShapeOf(variant)" Title="@look.Title" Lines="lines" PlacementId="@Entry.Placement?.Id" />;
+    }
+}
