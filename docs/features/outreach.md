@@ -579,6 +579,12 @@ Open for the owner:
   map? That is a server-rendered page or a public data path on the gateway, which AGENTS.md needs your yes for. Today it
   shows the existing "get the app" page.
 - **Android:** the background location and kept files are iOS only; Android's data layer is still a stub.
+- **Design, left open after two review rounds** (impeccable's finish reviewer, 2026-11-15): day routes are rows, not the
+  line of stops the end of a walk uses; the walking screen keeps the tab bar (the shell has no per-page way to hide it)
+  and leaves a band above it; the "Your walk is on" card has no chevron; the plan map's skip markers are unlabelled dots;
+  My outreach shows what's waiting in one line with Try again (Discard per change stays in More → Storage).
+- **Tested on the Simulator only:** App Attest can't run there, so every outreach write was refused by the dev backend
+  (as designed); the pieces, marks and claims queue correctly. The first real-phone walk is the end-to-end check.
 
 ## Outreach days
 

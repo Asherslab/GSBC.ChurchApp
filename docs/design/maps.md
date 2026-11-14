@@ -88,9 +88,13 @@ the admin panel. It follows light and dark by itself.
 - **Areas** (`MapArea`): a polygon in its colour at 12% with an edge.
 - **Markers** (`MapMarker`): `Start`, `Pin`, `Meeting` (with a label), and from zoom 15 `NoJunkMail`, `DontLetterbox`, `Skip`,
   `Check` (small dots; the first two labelled from zoom 17).
-- **You** (`MapYou`): the orange dot with its accuracy ring; `Follow` keeps it in the middle until someone drags the map
-  (`OnStoppedFollowing`).
-- `Frame` fits the map to a box once; `OnTap` gives the point tapped (dropping a pin). Its attribution sits under it.
+- **You** (`MapYou`): the orange dot with its accuracy ring.
+- **Where it looks:** with `Follow`, the map centres on you (at zoom 17 or closer) and moves with you; if you are outside
+  its `Frame` (not yet at the walk), it fits the frame widened to take you in instead. The first drag stops it (`OnStoppedFollowing`), and setting `Follow` again brings it back. Otherwise
+  `Frame` fits the map to a box, again whenever the box changes, or `Centre` and `Zoom` place it. `Interactive="false"`
+  makes a still map (*Around you*).
+- `OnTap` gives the point tapped (dropping a pin); `Overlay` holds a control over the map (*Follow me*). Its
+  attribution sits under it.
 
 The libraries are vendored in `wwwroot/map/vendor` by `tools/outreach/map/vendor.mjs` (`npm install`, then
 `node vendor.mjs`), so the app never fetches them.

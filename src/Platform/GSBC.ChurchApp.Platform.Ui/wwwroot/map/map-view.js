@@ -158,7 +158,15 @@ export async function create(element, optionsJson, receiver) {
 
   let framed = null;
   const fit = (b) => map.fitBounds([[b.west, b.south], [b.east, b.north]], { padding: b.padding ?? 40, duration: 0, maxZoom: b.maxZoom ?? 17 });
-  const showYou = () => map.jumpTo({ center: you.point, zoom: Math.max(map.getZoom(), 17) });
+  const inside = (b, [lon, lat]) => lon >= b.west && lon <= b.east && lat >= b.south && lat <= b.north;
+  const showYou = () => {
+    if (framed && !inside(framed, you.point)) {
+      const [lon, lat] = you.point;
+      fit({ ...framed, west: Math.min(framed.west, lon), east: Math.max(framed.east, lon), south: Math.min(framed.south, lat), north: Math.max(framed.north, lat) });
+      return;
+    }
+    map.jumpTo({ center: you.point, zoom: Math.max(map.getZoom(), 17) });
+  };
   map.on("load", () => {
     Object.entries(data).forEach(([name, value]) => map.getSource(name)?.setData(value));
     if (following && you) showYou();
@@ -188,7 +196,8 @@ export async function create(element, optionsJson, receiver) {
     setYou: (json) => {
       you = json ? JSON.parse(json) : null;
       drawYou();
-      if (following && you) map.easeTo({ center: you.point, duration: 600 });
+      if (following && you && framed && !inside(framed, you.point)) showYou();
+      else if (following && you) map.easeTo({ center: you.point, duration: 600 });
     },
     follow: (on) => {
       following = on;

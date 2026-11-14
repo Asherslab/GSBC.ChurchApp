@@ -1024,7 +1024,7 @@ component, never a copy.
 | Formatted text | `RichTextField` | Live Markdown with one bar of quiet icons and a navy **Insert** at the right; each place says what it allows with `RichTextMedia`. Media and cards in place, each with a pill of tools above it (owner, 2026-11-13, 2026-11-14, #92, #93). `RichTextEditor` is the older field until places move (events moved, 2026-11-14). Detail: [posts.md](docs/design/posts.md), *Formatted text*. |
 | Something in the app inside a post | `AppCardFrame` (+ a feature's card via `AddAppCardView`) | An event, sermon, ministry or Life Group as a card in the writer's pick of *Side rule* (default), *Timetable line* or *Box* (owner, 2026-11-14), filled from the synced store; inserted from Insert → *From the app* (`AppCardPicker`). |
 | Writing on a page (admin) | `WritingDesk` | The work as a white page on sand (up to 800px) with Write and Preview on a phone tabs; settings in a 360px column on the right that folds; the save bar at the column's foot (owner, 2026-11-13). |
-| A map | `MapView` (Platform.Ui `Maps/`), drawing `mapStyle` (`wwwroot/map/map-style.js`) over a region's map file | The base map shows what bounds a walk (parks, places that aren't homes, main roads) with homes' streets white and quiet, no icons. Screens draw on top: the walk in deep aqua (bright aqua at night) with a white edge, streets walked recently in ink-3 at 45%, you in orange; attribution under every map. Detail: [maps.md](docs/design/maps.md). |
+| A map | `MapView` (Platform.Ui `Maps/`), drawing `mapStyle` (`wwwroot/map/map-style.js`) over a region's map file | The base map shows what bounds a walk (parks, places that aren't homes, main roads) with homes' streets white and quiet, no icons. Screens draw on top: the walk in deep aqua (bright aqua at night) with a white edge, streets walked recently in ink-3 at 45%, you in orange; attribution under every map. A map that follows you keeps you in the middle until it is dragged (then a quiet *Follow me* on it); otherwise it frames what it shows. Detail: [maps.md](docs/design/maps.md). |
 | Spacing | `--space-*`, `--section`, `--section-first`, `--stack`, `--gutter`, `--after-tabs` | No new raw pixel spacing. |
 
 **Rules for the workflow** (every station):
@@ -1199,7 +1199,7 @@ file for what you touch:
 | [ministries.md](docs/design/ministries.md) | A ministry's page, leading it, its roster, the Ministries desk, Life Groups |
 | [people.md](docs/design/people.md) | A person's page and roles, safeguarding, finding someone, families, the blue card |
 | [prayer.md](docs/design/prayer.md) | The Prayer desk, its settings, a prayer request's page |
-| [outreach.md](docs/design/outreach.md) | The Outreach page: campaigns, follow-ups, reports and settings |
+| [outreach.md](docs/design/outreach.md) | The Outreach page: campaigns, follow-ups, reports and settings; the walker's side on the phone |
 | [chats.md](docs/design/chats.md) | The chats desk and checking a chat |
 | [feedback.md](docs/design/feedback.md) | Send feedback on both sides, the Feedback board |
 | [media.md](docs/design/media.md) | The media library |
