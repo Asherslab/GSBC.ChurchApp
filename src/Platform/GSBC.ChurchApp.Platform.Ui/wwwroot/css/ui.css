@@ -1472,6 +1472,7 @@ span.stage-pipeline__stage { pointer-events: none; }
 .menu__item { display: flex; align-items: flex-start; gap: var(--space-sm); min-height: var(--touch); padding: var(--space-sm) var(--space-sm); border: 0; border-radius: var(--radius-inner); background: none; color: var(--ink); font: inherit; font-size: var(--text-row); font-weight: 600; text-align: left; cursor: pointer; }
 .menu__item:not(:has(.menu__detail)) { align-items: center; }
 .menu__item:hover, .menu__item:focus-visible { background: var(--selected-fill); outline: none; }
+.menu__panel:hover .menu__item:focus-visible:not(:hover) { background: none; }
 .menu__item:disabled { color: var(--ink-3); cursor: default; background: none; }
 .menu__item--danger { color: var(--danger); }
 .menu__lead { display: grid; place-items: center; width: 18px; height: 1.3em; flex: none; color: var(--accent); }
