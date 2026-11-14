@@ -1085,6 +1085,8 @@ Detail of where each role is used: [foundations.md](docs/design/foundations.md),
 - **Danger**: only what has failed or run out (a run-out safeguarding item, a failing check, danger actions, a field's
   problem line). Due soon stays the marker.
 - **Beige**: text on navy only.
+- **Map land** (`--map-land`): the base map's ground in each scheme; outreach coverage fades into it as a street's rest
+  period ends.
 
 ### Named Rules
 **The Roles Not Hexes Rule.** Components use the semantic roles, never a palette hex: every role is redefined by

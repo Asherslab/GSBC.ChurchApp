@@ -28,28 +28,32 @@ The settings in the work area, each group a `Section Grouped` card with short fi
 - **Leaving with changes** asks first (`UnsavedGuard`), on Settings and on a campaign.
 
 ## Coverage
-The map (`MapView` over the region's map file) fills the work area to the left; a 360px rail is ruled off on the right,
-where every workbench keeps its record. It is the shared `MapDesk`. The pane, top to bottom: Campaign (and Region when there are several), the
+The map (`MapView` over the region's map file) fills the work area to the left; the pane is ruled off on the right,
+where every workbench keeps its record (460px, 380px at 1360px and under). It is the shared `MapDesk`. The pane, top to bottom: Campaign (and Region when there are several), the
 legend (with a dashed red key when areas are skipped), two quiet `StatTile`s (streets done of the region's, share of
-its letterboxes), and *Show on the map* as two `ToggleRow`s with what each draws. The pane's foot holds the chosen
-streets (title, sides, letterboxes, when done), Clear and *Mark as not done*, or the undo line.
+its letterboxes), and *Show on the map* as two `ToggleRow`s, each titled by what it draws with its count ("No junk mail
+and hostile (12)", "Places outreach skips (3)"). The pane's foot holds the chosen streets (title, sides, letterboxes,
+when done), Clear and *Mark as not done in* the campaign, the undo line, or with nothing chosen a hint saying how to
+choose.
 - **The ramp** is the signature: covered sides are drawn in deep aqua (bright aqua at night) fading to the map's own
   ground (`--map-land`, the base map's land colour in each scheme) as the rest period ends (`MapLineStyle.Covered` with an
   age), and the legend is the same ramp with "This week",
   half the rest period and "open again". Each side is drawn 3.5 m off the centre line, so a half-done street shows which.
-- **Choosing:** a click picks a street, drawn in navy; *Draw round streets* (floating top left on the map) turns on the
-  lasso (`MapSketch`), and the drawn area shows dashed in navy. The chosen streets' sides, letterboxes and when they
-  were done read under its title, then Clear (quiet, left) and *Mark as not done* (right). Marking applies at once and a
-  status line under it offers *Undo*.
+- **Choosing:** a click picks a street, drawn in navy; *Draw round streets* (quiet, floating top left on the map) turns
+  on the lasso (`MapSketch`) and becomes the primary *Stop drawing* with a hint beside it ("Drag a loop round the
+  streets. Escape stops."); the drawn area shows dashed in navy. The chosen streets' sides, letterboxes and when they
+  were done read under its title, then Clear (quiet, left) and *Mark as not done in* the campaign's name (right).
+  Marking applies at once and a status line in its place offers *Undo*.
 - **Exclusion areas** draw in danger at 12% with a dashed edge (`MapArea Dashed`); Don't letterbox, No junk mail and hostile marks are the
   map's own markers.
 - At 760px and under, MapDesk puts the pane under the map.
 
 ## Numbers
-Two rows of `FilterChips` (when; which campaign), four `StatTile`s with the change on the period before, then two
-columns (one at 1272px and under): *Letterboxes* (a `TrendLine` with the period before dashed) and *Outreach days*
-(a `DataTable`: the day over its campaign, letterboxes, km, walkers, conversations), and *Walkers* (a `RankedList` of
-those counted by name, then one quiet line for everyone else).
+Two rows of `FilterChips` (when; which campaign), four `StatTile`s (letterboxes, walked, walks, conversations) with the
+change on the period before, then two columns (one at 1272px and under): the main one holds *Letterboxes* (a `TrendLine`
+with the period before dashed) over *Outreach days* (a `DataTable`: the day over its campaign, letterboxes, km, walkers,
+conversations); the narrow one (280 to 360px) holds *Walkers* (a `RankedList` of those counted by name, then one quiet
+line for everyone else).
 
 ## Places
 A `Workbench` with a rail (`FilterChips Rail`: Everything, Areas, Addresses, No junk mail, Hostile, with counts, and a
