@@ -1,0 +1,18 @@
+.outreach-desk__name { display: inline-flex; flex-wrap: wrap; align-items: center; gap: var(--space-xs); font-weight: 600; }
+.outreach-desk__totals { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-md); margin: 0 0 var(--space-2xl); }
+.outreach-desk__totals .stat-tile__value { font-variant-numeric: tabular-nums; }
+.outreach-desk__note { margin: 0 0 var(--stack); color: var(--ink); font-size: var(--text-body); line-height: 1.55; white-space: pre-line; overflow-wrap: anywhere; }
+.outreach-desk__actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-sm); margin: var(--space-sm) 0 var(--stack); }
+.outreach-settings { margin-top: var(--after-tabs); padding-bottom: var(--section); }
+.outreach-settings .section__group { display: grid; gap: var(--stack); }
+.outreach-desk__edit { display: grid; gap: var(--stack); }
+.outreach-desk__edit > .pane-head { margin-bottom: var(--space-xs); }
+.outreach-desk__edit > .outreach-desk__note, .outreach-desk__edit > .outreach-desk__actions { margin: 0; }
+.outreach-desk__edit > .outreach-desk__totals { margin: 0 0 var(--space-sm); padding-bottom: var(--space-xl); border-bottom: 1px solid var(--line); }
+.outreach-desk__edit > .facts, .outreach-desk__edit > .facts:has(> .fact) { grid-template-columns: minmax(0, 1fr); margin: 0; }
+.outreach-desk__decide { display: grid; gap: var(--space-sm); }
+.outreach-desk__decide .outreach-desk__actions { margin: 0; }
+.outreach-desk__decide .outreach-desk__actions > * { flex: 1 1 0; }
+.outreach-desk__totals .stat-tile__label { color: var(--ink-2); font-size: var(--text-caption); font-weight: 400; }
+.outreach-desk__cell { display: grid; gap: var(--space-3xs); }
+.outreach-desk__sub { color: var(--ink-3); font-size: var(--text-caption); }

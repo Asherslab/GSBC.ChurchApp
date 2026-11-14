@@ -1,0 +1,165 @@
+@inject OutreachDeskClient Outreach
+@inject IAccess Access
+
+<UnsavedGuard Changed="() => Changed" What="the outreach settings" Save="SaveBeforeLeavingAsync" />
+
+<LiveData @ref="_live" TValue="OutreachDesk" Feeds="Feeds" Load="LoadAsync" FailedTitle="Can't load the outreach settings right now">
+    <OutreachHead Tab="OutreachTab.Settings" FollowUps="context.Value.OpenFollowUps" Reports="context.Value.NewReports" />
+    <div class="outreach-settings">
+        <Section Grouped="true" Title="Rest period and what's kept" Lead="How long a street counts as done, and how long what walkers mark is kept.">
+            <ChildContent>
+                <div class="ui-pair ui-pair--wide">
+                    <TextField Label="Rest period" Type="number" @bind-Value="_form.RestDays" Disabled="ReadOnly" Hint="Days a street stays done before walks send people there again. 91 is about three months." />
+                    <TextField Label="No junk mail kept for" Type="number" @bind-Value="_form.NoJunkMailKeptDays" Disabled="ReadOnly" Hint="Days, unless a walker marks it again." />
+                </div>
+                <TextField Label="Follow-ups kept for" Type="number" @bind-Value="_form.FollowUpsKeptDays" Disabled="ReadOnly" Hint="Days after one is marked followed up. Their name and contact go with it." />
+            </ChildContent>
+            <Foot>@Footer(SettingsGroup.Keeping)</Foot>
+        </Section>
+        <Section Grouped="true" Title="How long a walk takes" Lead="The pace and times every route is planned with, on the phone and for outreach days.">
+            <ChildContent>
+                <div class="ui-pair ui-pair--wide">
+                    <TextField Label="Walking pace" Type="number" @bind-Value="_form.WalkingKmh" Disabled="ReadOnly" Hint="Kilometres an hour." />
+                    <TextField Label="Bundle size" Type="number" @bind-Value="_form.BundleSize" Disabled="ReadOnly" Hint="Letterboxes in a bundle of tracts." />
+                </div>
+                <div class="ui-pair ui-pair--wide">
+                    <TextField Label="A house's letterbox" Type="number" @bind-Value="_form.HouseSeconds" Disabled="ReadOnly" Hint="Seconds." />
+                    <TextField Label="A unit's letterbox" Type="number" @bind-Value="_form.UnitSeconds" Disabled="ReadOnly" Hint="Seconds." />
+                </div>
+                <div class="ui-pair ui-pair--wide">
+                    <TextField Label="A house's door" Type="number" @bind-Value="_form.DoorSeconds" Disabled="ReadOnly" Hint="Seconds, when doorknocking." />
+                    <TextField Label="A unit's door" Type="number" @bind-Value="_form.UnitDoorSeconds" Disabled="ReadOnly" Hint="Seconds, when doorknocking." />
+                </div>
+            </ChildContent>
+            <Foot>@Footer(SettingsGroup.Times)</Foot>
+        </Section>
+        <Section Grouped="true" Title="Daylight and pairs" Lead="Walks are offered only between these times.">
+            <ChildContent>
+                <div class="ui-pair ui-pair--wide">
+                    <TimeField Label="From" @bind-Value="_form.DaylightStarts" Disabled="ReadOnly" />
+                    <TimeField Label="Until" @bind-Value="_form.DaylightEnds" Disabled="ReadOnly" />
+                </div>
+                <ToggleRow Title="Doorknock in pairs" @bind-Checked="_form.DoorknockInPairs" Disabled="ReadOnly"
+                           Description="A doorknocking walk starts only once the walker says someone is with them." />
+            </ChildContent>
+            <Foot>@Footer(SettingsGroup.Daylight)</Foot>
+        </Section>
+        <Section Grouped="true" Title="Walking between streets" Lead="Streets with no homes are walked only to get somewhere. These keep those stretches short.">
+            <ChildContent>
+                <div class="ui-pair ui-pair--wide">
+                    <TextField Label="Furthest to the first street" Type="number" @bind-Value="_form.MaxApproachMetres" Disabled="ReadOnly" Hint="Metres. Past it, the app says the streets nearby are done and suggests a better start." />
+                    <TextField Label="Longest stretch without homes" Type="number" @bind-Value="_form.MaxConnectorLegMetres" Disabled="ReadOnly" Hint="Metres in one go." />
+                </div>
+                <div class="ui-pair ui-pair--wide">
+                    <TextField Label="Stretches without homes in a route" Type="number" @bind-Value="_form.MaxConnectorTotalMetres" Disabled="ReadOnly" Hint="Metres in all, before a planned route is flagged for review." />
+                    <TextField Label="Joining streets when splitting an area" Type="number" @bind-Value="_form.SplitJoinMetres" Disabled="ReadOnly" Hint="Metres." />
+                </div>
+                <TextField Label="Longest walk a walker can add" Type="number" @bind-Value="_form.MaxHopMetres" Disabled="ReadOnly" Hint="Metres, to reach more streets when the ones nearby run out." />
+            </ChildContent>
+            <Foot>@Footer(SettingsGroup.Between)</Foot>
+        </Section>
+        <Section Grouped="true" Title="Telling walkers about the length" Lead="When a walk can't be as long as asked, the app says so under its figures.">
+            <ChildContent>
+                <div class="ui-pair ui-pair--wide">
+                    <TextField Label="Say it's short below" Type="number" @bind-Value="_form.ShortOfPercent" Disabled="ReadOnly" Hint="Per cent of what was asked." />
+                    <TextField Label="Say it's long above" Type="number" @bind-Value="_form.LongOfPercent" Disabled="ReadOnly" Hint="Per cent of what was asked." />
+                </div>
+            </ChildContent>
+            <Foot>@Footer(SettingsGroup.Length)</Foot>
+        </Section>
+        <Section Grouped="true" Title="What counts as a walk" Lead="A walk faster or longer than this is kept but marks no streets done.">
+            <ChildContent>
+                <div class="ui-pair ui-pair--wide">
+                    <TextField Label="Fastest" Type="number" @bind-Value="_form.FastestKmh" Disabled="ReadOnly" Hint="Kilometres an hour, from start to finish." />
+                    <TextField Label="Longest" Type="number" @bind-Value="_form.LongestWalkKm" Disabled="ReadOnly" Hint="Kilometres." />
+                </div>
+            </ChildContent>
+            <Foot>@Footer(SettingsGroup.Counting)</Foot>
+        </Section>
+    </div>
+</LiveData>
+
+@code {
+    private static readonly IReadOnlyList<string> Feeds = [OutreachFeeds.Desk, OutreachFeeds.Settings];
+
+    [Parameter, EditorRequired] public required string Scope { get; set; }
+
+    private LiveData<OutreachDesk>? _live;
+    private OutreachSettings _stored = OutreachDefaults.Settings();
+    private SettingsForm _form = SettingsForm.Of(OutreachDefaults.Settings());
+    private SettingsGroup? _busy, _saved, _failed;
+    private string? _problem;
+
+    private bool ReadOnly => !Access.Can(OutreachPermissions.Settings, Scope.Length == 0 ? null : Scope);
+
+    private bool Changed => !_form.Same(SettingsForm.Of(_stored));
+
+    private bool ChangedIn(SettingsGroup group) => !_form.Same(group, SettingsForm.Of(_stored));
+
+    private RenderFragment Footer(SettingsGroup group) => ReadOnly
+        ? @<p class="field__hint">Only outreach leaders can change these.</p>
+        : @<text>
+            <Notice Tone="NoticeTone.Warning" Text="@(_failed == group ? _problem : null)" />
+            <SaveBar Label="Save" Busy="@(_busy == group)" OnSave="() => SaveAsync(group)" OnCancel="() => Reset(group)"
+                     State="SaveBar.For(ChangedIn(group), _saved == group)" Blocked="@(ChangedIn(group) ? Proposed(group).Problem : null)" />
+        </text>;
+
+    private async Task<OutreachDesk> LoadAsync()
+    {
+        OutreachDesk desk = await Outreach.DeskAsync(Scope);
+        SettingsForm arrived = SettingsForm.Of(desk.Settings);
+        foreach (SettingsGroup group in SettingsForm.Groups.Where(group => !ChangedIn(group)))
+            _form.Take(group, arrived);
+        _stored = desk.Settings;
+        return desk;
+    }
+
+    private SettingsForm Proposed(SettingsGroup group)
+    {
+        SettingsForm proposed = SettingsForm.Of(_stored);
+        proposed.Take(group, _form);
+        return proposed;
+    }
+
+    private void Reset(SettingsGroup group)
+    {
+        _form.Take(group, SettingsForm.Of(_stored));
+        _problem = null;
+    }
+
+    private async Task<bool> SaveBeforeLeavingAsync()
+    {
+        foreach (SettingsGroup group in SettingsForm.Groups.Where(ChangedIn).ToList())
+        {
+            if (Proposed(group).Problem is not null)
+                return false;
+            await SaveAsync(group);
+            if (_failed is not null)
+                return false;
+        }
+        return true;
+    }
+
+    private async Task SaveAsync(SettingsGroup group)
+    {
+        if (Proposed(group).Settings(_stored) is not { } settings)
+            return;
+        (_busy, _failed, _problem) = (group, null, null);
+        try
+        {
+            await Outreach.SaveSettingsAsync(Scope, settings);
+            _stored = settings;
+            _saved = group;
+            if (_live is not null)
+                await _live.ReloadAsync();
+        }
+        catch (RpcException exception)
+        {
+            (_failed, _problem) = (group, exception.Status.Detail);
+        }
+        finally
+        {
+            _busy = null;
+        }
+    }
+}

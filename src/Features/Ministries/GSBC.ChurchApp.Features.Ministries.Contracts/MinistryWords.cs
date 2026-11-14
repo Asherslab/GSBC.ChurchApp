@@ -5,7 +5,7 @@ public static class MinistryNames
     public static string Possessive(string name) => name.EndsWith('s') ? $"{name}'" : $"{name}'s";
 }
 
-public sealed record MinistryPart(string Key, string Name, string Does, PartFromBelow? FromBelow = null);
+public sealed record MinistryPart(string Key, string Name, string Does, PartFromBelow? FromBelow = null, bool Tab = true);
 
 public sealed record PartFromBelow(string Title, string Does);
 
@@ -16,6 +16,7 @@ public static class MinistryParts
     public const string Files = "files";
     public const string Rosters = "rosters";
     public const string Chats = "chats";
+    public const string Outreach = "outreach";
 
     public static readonly IReadOnlyList<MinistryPart> All =
     [
@@ -28,7 +29,10 @@ public static class MinistryParts
         new(Files, "Files", "Documents and links for its people"),
         new(Rosters, "Roster", "Who's on for each date, with replies, swaps and the dates people are away"),
         new(Chats, "Chats", "Group chats and channels for its people, with the church's safeguarding rules"),
+        new(Outreach, "Outreach", "Runs the church's outreach: its leaders plan outreach days and routes, see what's been covered and follow people up", Tab: false),
     ];
+
+    public static IEnumerable<MinistryPart> WithoutTabs => All.Where(part => !part.Tab);
 
     public static readonly IReadOnlyList<string> OnWhenNew = [News, Calendar, Chats];
 
@@ -38,7 +42,7 @@ public static class MinistryParts
 
     public static List<string> Ordered(IEnumerable<string> partsOrder)
     {
-        List<string> keys = All.Select(part => part.Key).ToList();
+        List<string> keys = All.Where(part => part.Tab).Select(part => part.Key).ToList();
         return partsOrder.Where(keys.Contains).Distinct().Concat(keys).Distinct().ToList();
     }
 

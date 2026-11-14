@@ -46,6 +46,7 @@ internal sealed class SampleMinistries(IServiceScopeFactory scopes, IHostEnviron
             {
                 Id = Guid.CreateVersion7(), ParentId = parent, ShowsInLifeGroups = inLifeGroups, Name = name, Summary = summary, About = about, Meets = meets,
                 WhoFor = whoFor, Colour = colour, Icon = icon, TeamJoin = teamJoin, AttendJoin = attendJoin, Order = order++, CreatedAt = now, UpdatedAt = now,
+                PartsOff = [MinistryParts.Outreach],
             };
             db.Ministries.Add(ministry);
             db.FeedChanges.Add(new() { Feed = MinistriesFeeds.Ministries, RecordId = ministry.Id.ToString(), Version = now.Ticks });

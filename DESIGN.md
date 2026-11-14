@@ -1199,6 +1199,7 @@ file for what you touch:
 | [ministries.md](docs/design/ministries.md) | A ministry's page, leading it, its roster, the Ministries desk, Life Groups |
 | [people.md](docs/design/people.md) | A person's page and roles, safeguarding, finding someone, families, the blue card |
 | [prayer.md](docs/design/prayer.md) | The Prayer desk, its settings, a prayer request's page |
+| [outreach.md](docs/design/outreach.md) | The Outreach page: campaigns, follow-ups, reports and settings |
 | [chats.md](docs/design/chats.md) | The chats desk and checking a chat |
 | [feedback.md](docs/design/feedback.md) | Send feedback on both sides, the Feedback board |
 | [media.md](docs/design/media.md) | The media library |
