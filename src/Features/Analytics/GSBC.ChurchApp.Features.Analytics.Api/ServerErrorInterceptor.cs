@@ -1,5 +1,6 @@
 using Grpc.Core;
 using Grpc.Core.Interceptors;
+using GSBC.ChurchApp.Features.Analytics.Contracts;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -48,7 +49,7 @@ internal sealed class ServerErrorInterceptor(IServiceScopeFactory scopes, ILogge
             OperationCanceledException => (StatusCode.OK, null),
             _ => (StatusCode.Unknown, exception),
         };
-        if (status != StatusCode.OK)
+        if (FailedCalls.IsAFailure(status))
             _ = RecordAsync(context.Method, status, unexpected);
         return false;
     }

@@ -15,7 +15,6 @@ internal sealed class ErrorReporter(IServiceProvider services, AnalyticsConsent 
 {
     private static readonly TimeSpan GatherFor = TimeSpan.FromSeconds(3);
     private static readonly HashSet<StatusCode> NetworkStatuses = [StatusCode.Unavailable, StatusCode.DeadlineExceeded];
-    private static readonly HashSet<StatusCode> NotReportedByPhones = [StatusCode.Cancelled, StatusCode.Unauthenticated, StatusCode.PermissionDenied];
 
     private readonly Lock _lock = new();
     private readonly Dictionary<string, ErrorOccurrence> _errors = [];
@@ -54,7 +53,7 @@ internal sealed class ErrorReporter(IServiceProvider services, AnalyticsConsent 
 
     public void CallFailed(string method, StatusCode status)
     {
-        if (!consent.Enabled || NotReportedByPhones.Contains(status) || method == IDiagnosticsService.ReportMethod)
+        if (!consent.Enabled || !FailedCalls.IsAFailure(status) || method == IDiagnosticsService.ReportMethod)
             return;
         if (NetworkStatuses.Contains(status) && services.GetService<ClientSignals>() is { Online: false })
             return;

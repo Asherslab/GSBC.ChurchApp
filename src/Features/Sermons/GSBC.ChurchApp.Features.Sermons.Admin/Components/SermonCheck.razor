@@ -206,20 +206,22 @@
         }
     }
 
-    private async Task PutInSeriesAsync(string name)
+    private Task PutInSeriesAsync(string name) => SendAsync(async () =>
     {
         SeriesDetail series = Series.FirstOrDefault(existing => string.Equals(existing.Name, name, StringComparison.OrdinalIgnoreCase))
             ?? await Sermons.SaveSeriesAsync(new SeriesDetail { Name = name });
-        await SendAsync(new SermonCorrection { Id = Detail.Sermon.Id, SeriesId = series.Id }, next: false);
-    }
+        return new SermonCorrection { Id = Detail.Sermon.Id, SeriesId = series.Id };
+    }, next: false);
 
-    private async Task SendAsync(SermonCorrection correction, bool next)
+    private Task SendAsync(SermonCorrection correction, bool next) => SendAsync(() => Task.FromResult(correction), next);
+
+    private async Task SendAsync(Func<Task<SermonCorrection>> correction, bool next)
     {
         _busy = true;
         _problem = null;
         try
         {
-            SermonDetail saved = await Sermons.CorrectAsync(correction);
+            SermonDetail saved = await Sermons.CorrectAsync(await correction());
             _saved = true;
             await Saved.InvokeAsync(new SermonSaved(saved, next));
         }

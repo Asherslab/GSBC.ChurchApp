@@ -36,6 +36,7 @@
     {
         Task<RoleList> roles = Access.ListRolesAsync().AsTask();
         Task<Catalog> catalog = Access.ListCatalogAsync().AsTask();
+        await Task.WhenAll(roles, catalog);
         return new ToolData((await roles).Roles, await catalog);
     }
 

@@ -375,8 +375,13 @@ week" appears once two features report.
 2. **Failed gRPC calls are counted on both sides.** The API's own interceptor (in front of the tier
    check) counts every failed call by method and status per day; the phone and the admin panel also
    report failures the server can't see (the gateway, the tunnel, dropped trailers) and the ones
-   `LiveData` swallows. Phones don't report Unauthenticated, Permission denied or Cancelled (the server
-   counts the first two), nor network failures while offline.
+   `LiveData` swallows, but not network failures while offline.
+   **Only failures count** (owner, 2026-11-14: "review and clean up all the app health errors"): Unknown,
+   Internal, Unavailable, Deadline exceeded, Resource exhausted, Aborted, Unimplemented and Data loss
+   (`FailedCalls` in Analytics.Contracts). An answer the server gives on purpose isn't one: Not found (a draft
+   since published, a ministry deleted), Invalid argument and Failed precondition (a name taken, a code typed
+   wrong), Already exists, Out of range, Unauthenticated (signed out), Permission denied and Cancelled. A
+   screen that doesn't handle such an answer still shows up, as an error kind.
 3. **iOS native crashes now, through MetricKit**, not in phase 3. The plugin collects MetricKit's crash
    diagnostics on the next launch and C# reports them like any other error. Their frames are a binary
    and an offset; Xcode's Organizer has the same crashes symbolicated.

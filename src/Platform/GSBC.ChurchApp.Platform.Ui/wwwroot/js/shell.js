@@ -67,6 +67,13 @@ window.gsbcShell = (() => {
   edgeSwipe();
 
   const typing = 'input, textarea, select, [contenteditable]:not([contenteditable="false"])';
+  const ownKeyboardBar = '.composer, .rich-text-field';
+  const answersATap = `${typing}, button, a, label, summary, [role="button"], [tabindex]:not([tabindex="-1"]), .sheet-layer`;
+
+  const hideKeyboard = () => {
+    if (document.activeElement instanceof HTMLElement && document.activeElement.matches(typing)) document.activeElement.blur();
+    plugin('Keyboard')?.hide().catch(() => { });
+  };
 
   const keepFieldInView = () => {
     const field = document.activeElement;
@@ -105,6 +112,19 @@ window.gsbcShell = (() => {
     });
     document.addEventListener('pointerdown', (event) => accessoryBarFor(event.target), true);
     document.addEventListener('focusout', () => accessoryBarFor(null));
+
+    let tapAway = null;
+    document.addEventListener('pointerdown', (event) => {
+      const own = document.activeElement?.closest?.(ownKeyboardBar);
+      const target = event.target instanceof Element ? event.target : null;
+      tapAway = root.classList.contains('keyboard-open') && own && target && !own.contains(target) && !target.closest(answersATap)
+        ? { x: event.clientX, y: event.clientY }
+        : null;
+    }, true);
+    document.addEventListener('pointerup', (event) => {
+      if (tapAway && Math.hypot(event.clientX - tapAway.x, event.clientY - tapAway.y) < 10) hideKeyboard();
+      tapAway = null;
+    }, true);
   };
   followKeyboard();
 
@@ -117,6 +137,7 @@ window.gsbcShell = (() => {
 
   return {
     isNative,
+    hideKeyboard,
 
     fitToSpace(frame, width, height) {
       const bezel = 18;

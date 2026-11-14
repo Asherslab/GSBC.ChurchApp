@@ -44,7 +44,7 @@ internal static class DiagnosticsReading
         List<FailedCallLine> calls = [];
         foreach (FailedCallCount call in report.FailedCalls.Take(DiagnosticsReport.MaximumFailedCalls))
         {
-            if (DayOf(call.Day, today) is not { } day || !LooksLikeAMethod(call.Method) || !Enum.IsDefined((StatusCode)call.Status))
+            if (DayOf(call.Day, today) is not { } day || !LooksLikeAMethod(call.Method) || !FailedCalls.IsAFailure((StatusCode)call.Status))
                 continue;
             calls.Add(new FailedCallLine(day, context.Origin, call.Method, call.Status, Clip(context.AppVersion, MaximumVersionLength), CountOf(call.Count)));
         }

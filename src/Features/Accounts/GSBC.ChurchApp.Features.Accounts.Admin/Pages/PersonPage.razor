@@ -71,6 +71,7 @@
     {
         Task<PeopleList> people = Office.GetPeopleAsync([Id]).AsTask();
         Task<InvitationList> invitations = Office.ListInvitationsAsync().AsTask();
+        await Task.WhenAll(people, invitations);
         PersonInfo? person = (await people).People.FirstOrDefault(found => !found.Deleted);
         InvitationInfo? invitation = (await invitations).Invitations.FirstOrDefault(found => found.UserId == Id);
         return new PersonView(person, invitation);
