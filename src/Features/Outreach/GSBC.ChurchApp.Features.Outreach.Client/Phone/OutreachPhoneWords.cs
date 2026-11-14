@@ -46,7 +46,12 @@ public static class OutreachPhoneWords
     public static string Campaigns(IEnumerable<Campaign> carried) => string.Join(" and ", carried.Select(campaign => campaign.Name));
 
     public static string Carrying(IReadOnlyList<Campaign> carried) =>
-        carried.Count == 0 ? "General outreach" : $"Carrying {string.Join(" and ", carried.Select(HandedOut))}";
+        carried.Count == 0 ? OutreachCampaigns.GeneralName : string.Join(" and ", carried.Select(campaign => campaign.Name));
+
+    public static string HandedOut(IReadOnlyList<Campaign> carried) =>
+        carried.Any(campaign => campaign.HandedOut.Trim().Length > 0)
+            ? $"Carrying {string.Join(" and ", carried.Select(HandedOut))}"
+            : "What you're walking for";
 
     private static string HandedOut(Campaign campaign) => campaign.HandedOut.Trim() is { Length: > 0 } what ? what : campaign.Name;
 

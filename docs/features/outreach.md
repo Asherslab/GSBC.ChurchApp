@@ -439,6 +439,62 @@ Reports tabs; the phone's follow-up page is stage 2.
 - A new exclusion zone doesn't yet flag the day routes it touches.
 - Taking an area as a claim (the 2026-10-27 draft's *Areas*) isn't built: areas are the planners' for now.
 
+## The phone (built 2026-11-15)
+
+Built overnight by the walking station while the owner slept; *Claude's default* marks what is the owner's to change.
+Design: `.impeccable/mocks/outreach-walking/` (three structures; the station built A, *Words first*, borrowing B's line of
+stops for the end of a walk; B and C stay on the page for the owner). Detail: [design/outreach.md](../design/outreach.md).
+
+- **Where it lives.** Outreach (`/outreach`) is a page any tab or Home tile can open: the Home tile `hub.outreach` (it
+  replaces the coming-soon tile with the same key, so placed tiles keep working, and goes live while an outreach day is on)
+  and a nav entry staff can put in the tab bar. It leads with your walk if one is on, then the outreach day if one is on,
+  then *Got an hour? Walk from your door* (30 min, 1 hr, 2 hr, or a distance), what you're carrying, a map of the streets
+  around you with those walked lately in grey, the next outreach days, My outreach and Offline maps.
+- **Carrying campaigns:** the active campaigns you choose are remembered on the phone; none chosen means General outreach.
+  A doorknock counts for one campaign (*Claude's default*).
+- **Planning** runs the engine on the phone from the region's street file kept on the phone: from here (location asked
+  only when you plan), a street you find by name (searched in the region's own street names, offline, no geocoder), or a
+  pin dropped on the map. The plan shows distance and time, letterboxes and bundles, when you'll be back, the reach note
+  with its reasons and the two ways to get more, and the streets. Past the daylight hours it warns; doorknocking can't
+  start then, nor without *I'm walking with someone* when settings ask for pairs.
+- **The walk.** Location runs in the background for the walk's length only (When In Use permission and iOS's blue
+  indicator; started and stopped by the walk). Every fix goes into a journal on the phone, so a locked phone, a suspended
+  page or the app being closed loses nothing; the follower reads it whenever the app runs. The screen leads with the
+  street and side at display size, what's left on it and the next turn; the map follows you (drag to look around,
+  *Follow me* to come back); progress, then two big marks (No junk mail and Spoke to someone; At a door when
+  doorknocking), then Pause, ⋯ (Not a home or wrong on the map, Skipped this bit) and Finish. A light haptic when you
+  start a new street, while the app is open. No junk mail marks the nearest home on the side you're on, with Undo.
+- **Recorded as it goes:** a piece goes through the outbox every 90 seconds or when you reach a new street, with the
+  street sides newly covered (never one already sent), skips, conversations and doors. The walk's state is kept on the
+  phone, so it carries on after the app is closed, numbering included.
+- **The end** shows what you walked and the planned streets as a line of stops, each ticked where the app saw you walk;
+  untick what it got wrong (taken back), tick what it missed (added), save. *Keep walking* goes back to the walk.
+- **Doorknocking:** at a door, *Knocked, no answer*, *Spoke with them*, *Spoke, and they'd like a follow-up* (first name,
+  phone or email and a note kept only when *They agreed to be contacted* is on; otherwise just a conversation), or *They
+  want nothing to do with it* (explained, then confirmed). Check-in at start and finish is the walk's first and last piece
+  (*Claude's default*: no separate check-in step).
+- **Reports** (Not a home, Wrong on the map, Unsafe, A complaint, Other) need a note, can carry a photo of the place
+  (queued with the report through the outbox into *Outreach reports*), and are for the nearest home to you.
+- **Outreach days** list their routes with who's taking them (first names, "Sam, Ruth + 1"), Open and Yours. A route's page
+  shows it on the map with the meeting point, its figures and streets, how much is done today, *I'll take this route*
+  (a first name, asked once and remembered on the phone; taken back with *I'm not taking it after all*), and *Start this
+  route*. Leaders who can see reports get *How the day is going* (the planner station's live board).
+- **The QR on a printed map** is `https://<app host>/open/outreach/r/<code>` (`OutreachLinks.RouteLink`), the app's
+  existing universal link, so it opens the route ready to start. **Without the app** it lands on the existing `/open` page,
+  which names nothing for this route and says how to get the app. A web page with the route's map would be a new non-gRPC
+  path, so it isn't built: **open for the owner** (below).
+- **My outreach:** every walk saved on this phone, and your walks from wherever you're signed in, with totals; *Count me
+  by name* for signed-in walkers (off: counted anonymously). Signed-out walks are kept on the phone (the last 200).
+- **Offline maps:** each region with its size; the one you walk in is kept by itself, others by choice; Remove takes the
+  files off the phone. The map reads the kept file by byte ranges through the native layer, so it works with no signal.
+
+Open for the owner:
+
+- **The QR without the app:** should scanning a route's QR on a phone without the app show a web page with the route's
+  map? That is a server-rendered page or a public data path on the gateway, which AGENTS.md needs your yes for. Today it
+  shows the existing "get the app" page.
+- **Android:** the background location and kept files are iOS only; Android's data layer is still a stub.
+
 ## Outreach days
 
 - **Made in the admin panel** (decided 2026-10-27): a day (date, time window, meeting point, note) and

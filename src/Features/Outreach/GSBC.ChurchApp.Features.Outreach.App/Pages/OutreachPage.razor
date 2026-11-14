@@ -121,8 +121,7 @@
 
     private static string CampaignName(Nearby near, OutreachDay day) => near.Now.CampaignOf(day.Campaign)?.Name ?? "Outreach";
 
-    private static string CarryingDetail(Nearby near) =>
-        near.Carried.Count == 1 ? $"For {near.Carried[0].Name} · change" : $"For {OutreachPhoneWords.Campaigns(near.Carried)} · change";
+    private static string CarryingDetail(Nearby near) => $"{OutreachPhoneWords.HandedOut(near.Carried)} · change";
 
     private static string AroundLead(Nearby near) => near.Here.State switch
     {
