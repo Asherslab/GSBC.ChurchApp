@@ -1,21 +1,23 @@
+@using Microsoft.Extensions.DependencyInjection
 @inject Shell Shell
+@inject IServiceProvider Services
 
 <PageTitle>@Title · Good Shepherd</PageTitle>
 
-<div class="page-scroll" data-stuck-at="@StuckAt" data-back-href="@BackHref">
+<div class="page-scroll" data-stuck-at="@StuckAt" data-back-href="@Back">
     <header class="topbar @(TopBar switch { TopBarStyle.Solid => "topbar--solid", TopBarStyle.SolidTitleOnScroll => "topbar--solid topbar--late-title", _ => "" })">
         <div class="topbar__start">
-            @if (BackHref is not null || OnBack.HasDelegate)
+            @if (Back is not null || OnBack.HasDelegate)
             {
-                <button type="button" class="icon-btn icon-btn--back" @onclick="BackAsync" aria-label="@(BackLabel == DefaultBack ? BackLabel : $"Back to {BackLabel}")">
-                    <Icon Name="chevron-left" />@BackLabel
+                <button type="button" class="icon-btn icon-btn--back" @onclick="BackAsync" aria-label="@(Label == DefaultBack ? Label : $"Back to {Label}")">
+                    <Icon Name="chevron-left" />@Label
                 </button>
             }
         </div>
         <div class="topbar__title" aria-hidden="true">@Title</div>
         <div class="topbar__end">
             @Actions
-            @if (BackHref is null && !OnBack.HasDelegate)
+            @if (Back is null && !OnBack.HasDelegate)
             {
                 <InboxBell />
             }
@@ -37,6 +39,27 @@
     [Parameter] public RenderFragment? Actions { get; set; }
     [Parameter] public RenderFragment? ChildContent { get; set; }
     [Parameter] public EventCallback OnBack { get; set; }
+    [Parameter] public string? Place { get; set; }
+
+    private PlaceBack? _placeBack;
+
+    private string? Back => Place is null ? BackHref : _placeBack?.Href;
+
+    private string Label => Place is null ? BackLabel : _placeBack?.Label ?? DefaultBack;
+
+    private PhoneTabs? Tabs => Services.GetService<PhoneTabs>();
+
+    protected override void OnParametersSet()
+    {
+        if (Place is not null && Tabs is { } tabs)
+            _placeBack = tabs.BackFor(Place);
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (Place is not null && Tabs is { } tabs)
+            _placeBack = await tabs.BackForAsync(Place);
+    }
 
     private async Task BackAsync()
     {
@@ -44,6 +67,6 @@
         if (OnBack.HasDelegate)
             await OnBack.InvokeAsync();
         else
-            await Shell.BackAsync(BackHref!);
+            await Shell.BackAsync(Back!);
     }
 }

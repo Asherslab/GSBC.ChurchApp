@@ -1,7 +1,7 @@
 @page "/account"
 @inject IAccess Access
 
-<Page Title="Account" BackHref="more" BackLabel="More">
+<Page Title="Account" Place="account">
     <Masthead Title="Account" Note="Your sign-in on this phone" />
 
     <LiveData TValue="bool" Load="() => Task.FromResult(Access.SignedIn)" ReloadOn="ChangeKind.Session | ChangeKind.Access">

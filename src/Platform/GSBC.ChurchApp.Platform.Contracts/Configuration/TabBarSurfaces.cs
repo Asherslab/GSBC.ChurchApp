@@ -114,3 +114,18 @@ public static class TabBar
         entry.Values.Get(TabSettings.Word),
         entry.Values.Get(TabSettings.Icon));
 }
+
+public sealed record PlaceBack(string Href, string Label)
+{
+    public static readonly PlaceBack ToHome = new(DestinationPaths.Trim(ShellDestinations.Home.Path), ShellDestinations.Home.Title);
+    public static readonly PlaceBack ToMore = new(DestinationPaths.Trim(ShellDestinations.More.Path), ShellDestinations.More.Title);
+
+    public static PlaceBack? For(string place, IReadOnlyList<AppTab> tabs, string? openedFrom) =>
+        tabs.Any(tab => SameRoute(tab.Route, place)) ? null
+        : openedFrom is not null && SameRoute(openedFrom, ToHome.Href) ? ToHome
+        : ToMore;
+
+    public static bool IsWhereAPlaceOpensFrom(string route) => SameRoute(route, ToHome.Href) || SameRoute(route, ToMore.Href);
+
+    private static bool SameRoute(string one, string other) => string.Equals(one.Trim('/'), other.Trim('/'), StringComparison.OrdinalIgnoreCase);
+}

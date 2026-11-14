@@ -9,5 +9,5 @@ In App styling you can drag a tab along the phone's tab bar to move it.
 
 ## For staff
 Changed: The tabs you choose can be dragged along the tab bar on App styling's phone to a new place, saved in your draft like the move arrows. Home stays first and More stays last. Dragging opens the Tab bar part, whichever part was open.
-Where: Admin panel → App styling, the phone's tab bar.
-Try: Open a draft and drag Sermons past Calendar on the phone.
+Where: Admin panel → The app → App styling, the phone's tab bar.
+Try: Open a draft and drag Sermons past News on the phone.

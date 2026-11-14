@@ -92,7 +92,7 @@
                 }
             </span>
         </div>),
-        new("From", line => @<span>@line.From</span>, line => line.From, "quiet nowrap"),
+        new("From", line => @<span>@line.From</span>, line => line.From, "quiet nowrap optional"),
         new("Sent", line => @<span>@ChurchDates.Ago(line.SentAt, Now)</span>, line => line.SentAt, "num"),
     ];
 

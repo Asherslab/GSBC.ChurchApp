@@ -3,7 +3,7 @@
 @inject Platform.Ui.Destinations.LinkOpener Links
 @inject TimeProvider Clock
 
-<LiveData TValue="IReadOnlyList<InboxEntry>" Load="Inbox.LoadAsync" Feeds="Inbox.Feeds" Remember="@Inbox.Remembered" ReloadOn="ChangeKind.Reconnected | ChangeKind.Session">
+<LiveData @ref="_live" TValue="IReadOnlyList<InboxEntry>" Load="Inbox.LoadAsync" Feeds="Inbox.Feeds" Remember="@Inbox.Remembered" ReloadOn="ChangeKind.Reconnected | ChangeKind.Session">
     @{ List<InboxEntry> waiting = context.Value.Where(entry => entry.Item.Waiting).ToList(); }
     @if (context.Value.Count == 0)
     {
@@ -36,40 +36,50 @@
         }
         else
         {
-            <Section First="true">
-                <ListGroup>
-                    @foreach (InboxEntry entry in context.Value)
+            <Section First="true" Title="Newest first">
+                <Trailing>
+                    @if (context.Value.Any(entry => entry.Unread))
                     {
-                        <ListRow Title="@entry.Item.Title" Subtitle="@NullIfEmpty(entry.Item.Body)" Icon="@IconOf(entry.Item)" IconTone="@(entry.Item.Waiting ? RowTone.Warm : RowTone.Quiet)"
-                                 Unread="entry.Unread" Trailing="@When(entry.Item.RaisedAt)" Reading="true" OnClick="() => OpenAsync(entry)">
-                            <TitleExtra>
-                                @if (entry.Item.Test)
-                                {
-                                    <Pill Tone="PillTone.Accent">Test</Pill>
-                                }
-                            </TitleExtra>
-                        </ListRow>
+                        <Button Variant="ButtonVariant.Quiet" Small="true" Icon="check" OnClick="() => MarkReadAsync(context.Value)">Mark all as read</Button>
                     }
-                </ListGroup>
-                @if (context.Value.Any(entry => entry.Unread))
-                {
-                    <div class="ui-after">
-                        <Button Variant="ButtonVariant.Quiet" Small="true" Icon="check" OnClick="() => Inbox.MarkReadAsync(context.Value)">Mark all as read</Button>
-                    </div>
-                }
+                </Trailing>
+                <ChildContent>
+                    <ListGroup>
+                        @foreach (InboxEntry entry in context.Value)
+                        {
+                            <ListRow Title="@entry.Item.Title" Subtitle="@NullIfEmpty(entry.Item.Body)" Icon="@IconOf(entry.Item)" IconTone="@(entry.Item.Waiting ? RowTone.Warm : RowTone.Quiet)"
+                                     Unread="entry.Unread" Trailing="@When(entry.Item.RaisedAt)" Reading="true" OnClick="() => OpenAsync(entry)">
+                                <TitleExtra>
+                                    @if (entry.Item.Test)
+                                    {
+                                        <Pill Tone="PillTone.Accent">Test</Pill>
+                                    }
+                                </TitleExtra>
+                            </ListRow>
+                        }
+                    </ListGroup>
+                </ChildContent>
             </Section>
         }
     }
 </LiveData>
 
 @code {
+    private LiveData<IReadOnlyList<InboxEntry>>? _live;
     private bool _showingWaiting = true;
 
     private static IReadOnlyList<SegmentOption<bool>> Switch(int waiting) => [new(true, "Waiting", Count: waiting), new(false, "Everything")];
 
+    private async Task MarkReadAsync(IReadOnlyCollection<InboxEntry> entries)
+    {
+        await Inbox.MarkReadAsync(entries);
+        if (_live is not null)
+            await _live.ReloadAsync();
+    }
+
     private async Task OpenAsync(InboxEntry entry)
     {
-        await Inbox.MarkReadAsync([entry]);
+        await MarkReadAsync([entry]);
         if (entry.Item.InAdminPanel || entry.Item.Link is not { } link)
             return;
         await Links.OpenAsync(link);
