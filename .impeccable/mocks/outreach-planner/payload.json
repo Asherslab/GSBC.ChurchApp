@@ -1,0 +1,45 @@
+{
+  "title": "Planning an outreach day in the admin panel",
+  "question": "Leaders plan the monthly outreach Saturday: the day (date, window, meeting point, campaign), its routes split from an area on the map and edited with the planner's tools, the printed A4 maps with QR codes, and the live board on the day. Every card keeps Days as a Workbench tab of Outreach; they differ in what a chosen day's own page leads with. Owner asleep 2026-11-15: the station builds C, the map and the routes table (marked Built), because planning and the day itself both happen on the map, and one frame for both keeps it still (the Still Frame rule). A and B stay here; pick another and it changes.",
+  "options": [
+    {
+      "id": "day-board",
+      "kind": "assigned",
+      "kicker": "THE ROLL",
+      "label": "The day as a board of routes",
+      "thesis": "A day's page is a Board: Needs review, Open, Claimed, Walking, Done. Routes move across it from planning to the end of the day, so the same page is the plan and the live board; a strip of map above shows them all. Plan routes opens the map planner as its own page.",
+      "palette": ["#2a3d5e", "#f4efe7", "#008176", "#e7ae74"],
+      "materials": ["Board + BoardCard", "map strip", "progress bars", "TitleBand actions"],
+      "viewport": "Outreach Saturday, 6 December: a map strip of the nine routes with 'On now, 6 walking, 41% done'; below, five columns with route cards (number, letterboxes, km, time, who claimed it, % walked).",
+      "risk": "The planner and the board are two pages; editing routes takes you away from the day.",
+      "html": ".impeccable/mocks/outreach-planner/a-day-board.html"
+    },
+    {
+      "id": "print-run",
+      "kind": "dealt",
+      "label": "The day as its printed maps",
+      "thesis": "A day's page shows its route maps as the A4 sheets they print as, on sand like a proof sheet, beside the day's details. What you see is what's handed out; a sheet opens that route in the planner. On the day a second tab shows progress.",
+      "palette": ["#2a3d5e", "#f4efe7", "#00776d", "#ffffff"],
+      "materials": ["proof sheets", "facts column", "QR on every sheet", "tabs"],
+      "viewport": "Route maps tab: eight A4 sheets in four columns, each with its map, letterboxes, bundles, time and first streets; a column at left with the day's details and Print 9 maps.",
+      "risk": "A grid of small sheets is hard to compare and edit; the map of the whole day is never in one piece.",
+      "html": ".impeccable/mocks/outreach-planner/b-print-run.html"
+    },
+    {
+      "id": "map-and-table",
+      "kind": "dealt",
+      "label": "The map and the routes table (Built)",
+      "thesis": "A day's page is the map and a routes table side by side. Plan: the tool rail (select, scissors, brush, lasso, eraser, start pin, undo, redo) on the map, the selection's actions floating under it, the table with Needs review flags, Rebalance and Regenerate, and Publish to the day. On the day: the same map and table with who claimed each route and how much is walked.",
+      "palette": ["#2a3d5e", "#f4efe7", "#00776d", "#e7ae74"],
+      "materials": ["full-bleed map", "floating tool rail", "Segmented Plan / On the day", "DataTable", "SaveBar-style foot"],
+      "viewport": "Outreach Saturday, 6 December: the map of nine coloured routes with labels (number, letterboxes, minutes) and the meeting point; route 4 chosen with Merge, Lock, Rename under it; the routes table at right with claims and Publish to the day.",
+      "risk": "Dense at 1024px: the table pane narrows and the map shrinks; on a phone it's the map with the table below.",
+      "html": ".impeccable/mocks/outreach-planner/c-map-and-table.html"
+    }
+  ],
+  "reroll": true,
+  "steer": true,
+  "buildPath": {
+    "value": "code"
+  }
+}

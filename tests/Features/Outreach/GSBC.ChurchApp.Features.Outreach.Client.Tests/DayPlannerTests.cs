@@ -1,6 +1,7 @@
 using GSBC.ChurchApp.Features.Outreach.Client.Planning;
 using GSBC.ChurchApp.Features.Outreach.Contracts;
 using GSBC.ChurchApp.Features.Outreach.Routing;
+using GSBC.ChurchApp.Platform.Common.Printing;
 using GeoPoint = GSBC.ChurchApp.Features.Outreach.Routing.GeoPoint;
 
 namespace GSBC.ChurchApp.Features.Outreach.Client.Tests;
@@ -34,6 +35,31 @@ public sealed class DayPlannerTests
         Assert.Equal(planner.Letterboxes, routes.Sum(r => r.Stretches.Sum(s => s.Letterboxes)));
         Assert.All(routes, r => Assert.True(OutreachRules.IsValid(r.Stretches[0])));
         Assert.Equal(Enumerable.Range(1, routes.Count), routes.Select(r => r.Number));
+    }
+
+    [Fact]
+    public void PublishedRoutesComeBackAsADraftThatCanBeEditedWithTheSameRoutes()
+    {
+        DayPlanner planner = Planned();
+        List<DayRoute> published = planner.ToRoutes().Select((route, i) => { route.Id = $"route-{i}"; return route; }).ToList();
+
+        DayPlanner again = Planner();
+        again.Restore(DayPlanner.DraftOf(published));
+
+        Assert.Equal(planner.Sections.Select(s => s.Letterboxes), again.Sections.Select(s => s.Letterboxes));
+        Assert.Equal(published.Select(route => route.Id), again.ToRoutes().Select(route => route.Id));
+    }
+
+    [Fact]
+    public void ThePrintedMapsAreOneA4PageARoute()
+    {
+        DayPlanner planner = Planned();
+        List<SheetRoute> routes = planner.Sections.Select(s => new SheetRoute(s, $"CODE{s.Number:00}", $"https://app.example/open/outreach/r/CODE{s.Number:00}")).ToList();
+
+        PdfDocument document = RouteSheets.Make(planner, new SheetDay("Outreach Saturday 6 December", "8:30 to 11:30am", "Church", "General outreach", "Tracts", "", "© OpenStreetMap contributors"), routes);
+
+        Assert.Equal(routes.Count, document.Pages.Count);
+        Assert.All(document.Pages, page => Assert.Equal((PdfDocument.A4Width, PdfDocument.A4Height), (page.Width, page.Height)));
     }
 
     private static DayPlanner Planned()

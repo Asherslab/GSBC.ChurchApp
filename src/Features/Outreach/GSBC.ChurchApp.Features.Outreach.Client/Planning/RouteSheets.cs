@@ -9,6 +9,13 @@ public sealed record SheetRoute(PlannedSection Section, string Code, string Link
 
 public static class RouteSheets
 {
+    private readonly record struct Box(double X0, double Y0, double X1, double Y1)
+    {
+        public bool Overlaps(Box other) => X0 < other.X1 && other.X0 < X1 && Y0 < other.Y1 && other.Y0 < Y1;
+
+        public bool Holds(Box other) => other.X0 >= X0 && other.X1 <= X1 && other.Y0 >= Y0 && other.Y1 <= Y1;
+    }
+
     private const double Margin = 34;
     private const double MapTop = 150;
     private const double MapHeight = 430;
@@ -53,7 +60,7 @@ public static class RouteSheets
         page.Text(scanX + ScanSize / 2, Margin + ScanSize + 11, $"Code {route.Code}", PdfFont.Bold, 9, Ink, TextAlign.Centre);
 
         DrawMap(page, planner, section, summary, Margin, MapTop, width, MapHeight);
-        DrawStreets(page, summary, day, Margin, MapTop + MapHeight + 22, width);
+        DrawStreets(page, summary, day, Margin, MapTop + MapHeight + 42, width);
     }
 
     private static string Facts(PlannedSection section, RouteSummary summary, SheetDay day)
@@ -69,14 +76,18 @@ public static class RouteSheets
         List<Flat> routeFlats = summary.Line.Select(graph.Projection.ToFlat).ToList();
         Flat meeting = graph.Projection.ToFlat(planner.Meeting);
         Flat low = new(routeFlats.Min(f => f.X), routeFlats.Min(f => f.Y)), high = new(routeFlats.Max(f => f.X), routeFlats.Max(f => f.Y));
-        bool showMeeting = Flat.Distance(meeting, new Flat((low.X + high.X) / 2, (low.Y + high.Y) / 2)) < 900;
-        if (showMeeting)
-            (low, high) = (new Flat(Math.Min(low.X, meeting.X), Math.Min(low.Y, meeting.Y)), new Flat(Math.Max(high.X, meeting.X), Math.Max(high.Y, meeting.Y)));
         double spanX = Math.Max(high.X - low.X, 150), spanY = Math.Max(high.Y - low.Y, 150);
-        double scale = Math.Min(width / (spanX * 1.18), height / (spanY * 1.18));
+        double scale = Math.Min(width / (spanX * 1.2), height / (spanY * 1.2));
         Flat centre = new((low.X + high.X) / 2, (low.Y + high.Y) / 2);
         PdfPoint At(Flat flat) => new(left + width / 2 + (flat.X - centre.X) * scale, top + height / 2 - (flat.Y - centre.Y) * scale);
         Flat viewLow = new(centre.X - width / 2 / scale, centre.Y - height / 2 / scale), viewHigh = new(centre.X + width / 2 / scale, centre.Y + height / 2 / scale);
+        Box frame = new(left + 4, top + 4, left + width - 4, top + height - 4);
+        PdfPoint meet = At(meeting);
+        bool showMeeting = frame.Holds(new Box(meet.X - 8, meet.Y - 8, meet.X + 8, meet.Y + 8));
+        PdfPoint start = At(routeFlats[0]);
+        List<Box> taken = [new(start.X - 8, start.Y - 8, start.X + 40, start.Y + 8), new(left + width - 30, top, left + width, top + 46), new(left, top + height - 26, left + 150, top + height)];
+        if (showMeeting)
+            taken.Add(new Box(meet.X - 8, meet.Y - 8, meet.X + 64, meet.Y + 8));
 
         page.Save();
         page.ClipTo(left, top, width, height);
@@ -96,22 +107,21 @@ public static class RouteSheets
                 page.Line(line, Ink, 1.3, [3, 2.5]);
         }
         Arrows(page, routeFlats, At);
-        StreetNames(page, graph, summary, At);
+        StreetNames(page, graph, summary, At, viewLow, viewHigh, frame, taken);
         foreach (RouteMarker marker in summary.Steps.SelectMany(step => step.Markers).Where(m => m.Kind is MarkerKind.NoJunkMail or MarkerKind.DontLetterbox))
         {
             PdfPoint at = At(graph.Projection.ToFlat(marker.Point));
             page.Circle(at.X, at.Y, 2.6, PdfColour.White, Ink, 0.9);
             page.Line([new(at.X - 1.8, at.Y - 1.8), new(at.X + 1.8, at.Y + 1.8)], Ink, 0.8, round: false);
         }
-        PdfPoint start = At(routeFlats[0]);
         page.Circle(start.X, start.Y, 6.5, Ink, PdfColour.White, 1.6);
         page.Text(start.X + 9, start.Y + 3.5, "Start", PdfFont.Bold, 9, Ink, halo: PdfColour.White);
         if (showMeeting)
         {
-            PdfPoint meet = At(meeting);
             page.Rectangle(meet.X - 6, meet.Y - 6, 12, 12, PdfColour.White, Ink, 1.6);
             page.Text(meet.X, meet.Y + 3.2, "M", PdfFont.Bold, 8, Ink, TextAlign.Centre);
-            page.Text(meet.X + 10, meet.Y + 3.5, "Meet here", PdfFont.Bold, 9, Ink, halo: PdfColour.White);
+            bool room = meet.X + 64 < left + width;
+            page.Text(room ? meet.X + 10 : meet.X - 10, meet.Y + 3.5, "Meet here", PdfFont.Bold, 9, Ink, room ? TextAlign.Left : TextAlign.Right, halo: PdfColour.White);
         }
         page.Restore();
         page.Rectangle(left, top, width, height, null, Ink, 0.8);
@@ -139,27 +149,51 @@ public static class RouteSheets
         }
     }
 
-    private static void StreetNames(PdfPage page, StreetGraph graph, RouteSummary summary, Func<Flat, PdfPoint> at)
+    private static void StreetNames(PdfPage page, StreetGraph graph, RouteSummary summary, Func<Flat, PdfPoint> at, Flat low, Flat high, Box frame, List<Box> taken)
     {
+        HashSet<string> named = [];
         foreach (IGrouping<string, RouteStep> street in summary.Steps.Where(s => s.Delivers && s.Street != WalkLeg.Unnamed).GroupBy(s => s.Street))
         {
-            RouteStep longest = street.MaxBy(s => s.Metres)!;
-            List<PdfPoint> line = longest.Line.Select(p => at(graph.Projection.ToFlat(p))).ToList();
-            if (line.Count < 2)
-                continue;
-            (PdfPoint a, PdfPoint b) = Longest(line);
-            double angle = Math.Atan2(b.Y - a.Y, b.X - a.X);
-            if (angle > Math.PI / 2 || angle < -Math.PI / 2)
-            {
-                (a, b) = (b, a);
-                angle = Math.Atan2(b.Y - a.Y, b.X - a.X);
-            }
-            double length = Math.Sqrt((b.X - a.X) * (b.X - a.X) + (b.Y - a.Y) * (b.Y - a.Y));
-            if (PdfPage.Measure(street.Key, PdfFont.Bold, LabelSize) > length + 30)
-                continue;
-            double offsetX = Math.Sin(angle) * 6, offsetY = -Math.Cos(angle) * 6;
-            page.Text((a.X + b.X) / 2 + offsetX, (a.Y + b.Y) / 2 + offsetY + 2.5, street.Key, PdfFont.Bold, LabelSize, Ink, TextAlign.Centre, angle, PdfColour.White);
+            List<PdfPoint> line = street.MaxBy(s => s.Metres)!.Line.Select(p => at(graph.Projection.ToFlat(p))).ToList();
+            if (Label(page, line, street.Key, PdfFont.Bold, LabelSize, Ink, frame, taken))
+                named.Add(street.Key);
         }
+        foreach (IGrouping<string, int> street in graph.Index.StreetsIn(low, high)
+                     .Where(s => graph.Street(s).Name.Length > 0 && !graph.Street(s).Kind.IsPath())
+                     .GroupBy(s => graph.Street(s).Name)
+                     .Where(g => !named.Contains(g.Key))
+                     .OrderByDescending(g => g.Any(s => graph.Street(s).Kind.IsMainRoad()))
+                     .ThenByDescending(g => g.Sum(s => graph.Street(s).Length)))
+        {
+            int longest = street.MaxBy(s => graph.Street(s).Length);
+            Label(page, graph.ShapeBetween(longest).Select(at).ToList(), street.Key, PdfFont.Regular, LabelSize - 0.5, Ink2, frame, taken);
+        }
+    }
+
+    private static bool Label(PdfPage page, List<PdfPoint> line, string name, PdfFont font, double size, PdfColour colour, Box frame, List<Box> taken)
+    {
+        if (line.Count < 2)
+            return false;
+        (PdfPoint a, PdfPoint b) = Longest(line);
+        double angle = Math.Atan2(b.Y - a.Y, b.X - a.X);
+        if (angle > Math.PI / 2 || angle < -Math.PI / 2)
+        {
+            (a, b) = (b, a);
+            angle = Math.Atan2(b.Y - a.Y, b.X - a.X);
+        }
+        double length = Math.Sqrt((b.X - a.X) * (b.X - a.X) + (b.Y - a.Y) * (b.Y - a.Y));
+        double width = PdfPage.Measure(name, font, size);
+        if (width > length + 30)
+            return false;
+        double x = (a.X + b.X) / 2 + Math.Sin(angle) * 6, y = (a.Y + b.Y) / 2 - Math.Cos(angle) * 6;
+        double halfX = Math.Abs(Math.Cos(angle)) * width / 2 + Math.Abs(Math.Sin(angle)) * size / 2 + 2;
+        double halfY = Math.Abs(Math.Sin(angle)) * width / 2 + Math.Abs(Math.Cos(angle)) * size / 2 + 2;
+        Box box = new(x - halfX, y - halfY, x + halfX, y + halfY);
+        if (!frame.Holds(box) || taken.Any(box.Overlaps))
+            return false;
+        taken.Add(box);
+        page.Text(x, y + size / 3, name, font, size, colour, TextAlign.Centre, angle, PdfColour.White);
+        return true;
     }
 
     private static (PdfPoint, PdfPoint) Longest(List<PdfPoint> line)
