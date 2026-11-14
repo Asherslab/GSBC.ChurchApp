@@ -1,0 +1,136 @@
+@inject OutreachDeskClient Outreach
+@inject TimeProvider Time
+@using System.Globalization
+
+<LiveData @ref="_live" TValue="Numbers" Feeds="Feeds" Load="LoadAsync" FailedTitle="Can't load the numbers right now">
+    @{ Numbers numbers = context.Value; }
+    <OutreachHead Tab="OutreachTab.Numbers" FollowUps="numbers.Desk.OpenFollowUps" Reports="numbers.Desk.NewReports" />
+    <div class="outreach-numbers">
+        <div class="outreach-numbers__filters">
+            <FilterChips TValue="NumbersSpan" Label="When" Options="Spans" Value="_span" ValueChanged="span => ChooseAsync(() => _span = span)" />
+            <FilterChips TValue="string" Label="Campaign" Options="CampaignOptions(numbers.Desk)" Value="_campaign" ValueChanged="campaign => ChooseAsync(() => _campaign = campaign)" />
+        </div>
+
+        <div class="stat-tiles outreach-numbers__tiles">
+            <StatTile Value="@OutreachWords.Count(numbers.Now.Letterboxes)" Label="letterboxes"
+                      Change="@NumbersPeriod.Change(numbers.Now.Letterboxes, numbers.Before.Letterboxes, numbers.Period.Before)" />
+            <StatTile Value="@OutreachWords.Kilometres(numbers.Now.Metres)" Label="walked"
+                      Change="@NumbersPeriod.Change(numbers.Now.Metres, numbers.Before.Metres, numbers.Period.Before)" />
+            <StatTile Value="@OutreachWords.Count(numbers.Now.Walks)" Label="@(numbers.Now.Walks == 1 ? "walk" : "walks")"
+                      Change="@NumbersPeriod.Change(numbers.Now.Walks, numbers.Before.Walks, numbers.Period.Before)"
+                      Explanation="@OnDays(numbers)" />
+            <StatTile Value="@OutreachWords.Count(numbers.Now.Conversations)" Label="@(numbers.Now.Conversations == 1 ? "conversation" : "conversations")"
+                      Change="@NumbersPeriod.Change(numbers.Now.Conversations, numbers.Before.Conversations, numbers.Period.Before)"
+                      Explanation="@(numbers.Now.Doors > 0 ? $"{OutreachWords.Plural(numbers.Now.Doors, "door", "doors")} knocked on" : null)" />
+        </div>
+
+        <div class="outreach-numbers__body">
+            <div>
+                <Section Title="Letterboxes" Lead="@($"Each {(numbers.Period.By == TotalsBy.Week ? "week, Monday to Sunday" : "month")}, against {numbers.Period.Before}.")">
+                    <TrendLine Label="@($"Letterboxes each {(numbers.Period.By == TotalsBy.Week ? "week" : "month")}")" PeriodName="@numbers.Period.Bucket"
+                               Points="@numbers.Period.Points(numbers.Current.Rows, numbers.Period.Starts)"
+                               Comparison="@numbers.Period.Points(numbers.Previous.Rows, numbers.Period.PreviousStarts, withYear: true)"
+                               SeriesName="Letterboxes" ComparisonName="@Capitalised(numbers.Period.Before)"
+                               Empty="Not enough walks to draw yet. Every number is in the table below." />
+                </Section>
+                <Section Title="Outreach days" Lead="What each day added up to, counting anyone who walked during it.">
+                    <DataTable TItem="TotalsRow" Label="Outreach days" Items="numbers.Days.Rows" Columns="DayColumns" Key="row => row.Starts.Ticks.ToString(CultureInfo.InvariantCulture)">
+                        <Empty>
+                            <p class="outreach-numbers__quiet">No outreach days in this time@(_campaign.Length > 0 ? " for this campaign" : "").</p>
+                        </Empty>
+                    </DataTable>
+                </Section>
+            </div>
+            <div>
+                <Section Title="Walkers">
+                    <RankedList Title="Counted by name" Explanation="@WalkersExplanation(numbers)" Empty="Nobody counted by name has walked in this time."
+                                Items="@numbers.Current.Walkers.Select(walker => new RankedItem(walker.Name, WalkerLine(walker))).ToList()" />
+                    @if (numbers.Current.Anonymous.Walks > 0)
+                    {
+                        <p class="outreach-numbers__quiet">
+                            And @OutreachWords.Plural(numbers.Current.Anonymous.Walks, "walk", "walks") by people counted without a name, or not signed in:
+                            @WalkerLine(numbers.Current.Anonymous).
+                        </p>
+                    }
+                </Section>
+            </div>
+        </div>
+    </div>
+</LiveData>
+
+@code {
+    private static readonly IReadOnlyList<string> Feeds = [OutreachFeeds.Desk, OutreachFeeds.Coverage, OutreachFeeds.Leaderboards];
+
+    private static readonly IReadOnlyList<FilterOption<NumbersSpan>> Spans =
+        [new(NumbersSpan.ThirteenWeeks, "Last 13 weeks"), new(NumbersSpan.ThisYear, "This year"), new(NumbersSpan.TwelveMonths, "Last 12 months")];
+
+    private static readonly IReadOnlyList<TableColumn<TotalsRow>> DayColumns =
+    [
+        new("Outreach day", row => @<span class="outreach-desk__cell"><span class="outreach-desk__name">@DayOf(row)</span><span class="outreach-desk__sub">@CampaignOf(row)</span></span>, row => row.Starts),
+        new("Letterboxes", row => @<span>@OutreachWords.Count(row.Letterboxes)</span>, row => row.Letterboxes, "num"),
+        new("Walked", row => @<span>@OutreachWords.Kilometres(row.Metres)</span>, row => row.Metres, "num"),
+        new("Walkers", row => @<span>@OutreachWords.Count(row.Walkers)</span>, row => row.Walkers, "num"),
+        new("Conversations", row => @<span>@OutreachWords.Count(row.Conversations)</span>, row => row.Conversations, "num"),
+    ];
+
+    [Parameter, EditorRequired] public required string Scope { get; set; }
+
+    private LiveData<Numbers>? _live;
+    private NumbersSpan _span = NumbersSpan.ThirteenWeeks;
+    private string _campaign = "";
+
+    private sealed record Numbers(OutreachDesk Desk, NumbersPeriod Period, Totals Current, Totals Previous, Totals Days)
+    {
+        public TotalsRow Now { get; } = Sum(Current.Rows);
+        public TotalsRow Before { get; } = Sum(Previous.Rows);
+
+        private static TotalsRow Sum(IEnumerable<TotalsRow> rows) => rows.Aggregate(new TotalsRow(), (sum, row) =>
+        {
+            (sum.Walks, sum.Metres, sum.Letterboxes) = (sum.Walks + row.Walks, sum.Metres + row.Metres, sum.Letterboxes + row.Letterboxes);
+            (sum.Doors, sum.Conversations) = (sum.Doors + row.Doors, sum.Conversations + row.Conversations);
+            return sum;
+        });
+    }
+
+    private async Task<Numbers> LoadAsync()
+    {
+        NumbersPeriod period = NumbersPeriod.Of(_span, ChurchTime.Today(Time));
+        Task<OutreachDesk> desk = Outreach.DeskAsync(Scope);
+        Task<Totals> current = Outreach.TotalsAsync(Scope, period.FromUtc, period.ToUtc, period.By, _campaign);
+        Task<Totals> previous = Outreach.TotalsAsync(Scope, period.PreviousFromUtc, period.PreviousToUtc, period.By, _campaign);
+        Task<Totals> days = Outreach.TotalsAsync(Scope, period.FromUtc, period.ToUtc, TotalsBy.OutreachDay, _campaign);
+        await Task.WhenAll(desk, current, previous, days);
+        return new Numbers(await desk, period, await current, await previous, await days);
+    }
+
+    private Task ChooseAsync(Action choose)
+    {
+        choose();
+        return _live?.ReloadAsync() ?? Task.CompletedTask;
+    }
+
+    private static IReadOnlyList<FilterOption<string>> CampaignOptions(OutreachDesk desk) =>
+        [new("", "All campaigns"), .. desk.Campaigns.Select(campaign => new FilterOption<string>(campaign.Id, campaign.Name))];
+
+    private static string? OnDays(Numbers numbers)
+    {
+        int onDays = numbers.Days.Rows.Sum(row => row.Walks);
+        return onDays == 0 ? null : $"{OutreachWords.Count(onDays)} on outreach days";
+    }
+
+    private string WalkersExplanation(Numbers numbers)
+    {
+        List<string> boards = numbers.Desk.Campaigns.Where(campaign => campaign.Leaderboard).Select(campaign => campaign.Name).ToList();
+        string shown = boards.Count == 0 ? "No campaign shows a leaderboard in the app." : $"The app shows a leaderboard for {string.Join(" and ", boards)}.";
+        return $"Walkers who are signed in count by name unless they've turned it off. {shown}";
+    }
+
+    private static string WalkerLine(WalkerTotal walker) =>
+        $"{OutreachWords.Plural(walker.Letterboxes, "letterbox", "letterboxes")} · {OutreachWords.Kilometres(walker.Metres)}";
+
+    private static string DayOf(TotalsRow row) => row.Label.Split(" · ")[0];
+
+    private static string CampaignOf(TotalsRow row) => row.Label.Split(" · ") is [_, var campaign, ..] ? campaign : "";
+
+    private static string Capitalised(string words) => words.Length == 0 ? words : char.ToUpperInvariant(words[0]) + words[1..];
+}

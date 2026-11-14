@@ -247,7 +247,7 @@ internal sealed class OutreachReview(
             throw Invalid("Choose the campaign whose streets are to be done again.");
         if (expire.Area.Count > 0 && !OutreachRules.IsAPolygon(expire.Area))
             throw Invalid("Draw the area with at least three points.");
-        DateTime now = Now;
+        DateTime now = ToStoredPrecision(Now);
         List<string> named = expire.Stretches.Select(stretch => stretch.Street).Distinct().ToList();
         List<CoverageRecord> live = await db.Coverage
             .Where(coverage => coverage.CampaignId == campaign && coverage.ExpiredAt == null && (expire.Area.Count > 0 || named.Contains(coverage.Street)))
@@ -258,8 +258,26 @@ internal sealed class OutreachReview(
         await db.SaveChangesAsync(cancellationToken);
         await publisher.StreetsAsync(campaign, expiring.Select(coverage => coverage.Street), await settingsStore.GetAsync(cancellationToken), now, cancellationToken);
         await db.SaveChangesAsync(cancellationToken);
-        return new Expired { Stretches = expiring.Count };
+        return new Expired { Stretches = expiring.Count, At = now };
     }
+
+    public async Task<Expired> UndoExpiryAsync(ExpiryUndo undo, CancellationToken cancellationToken)
+    {
+        await ministries.CheckAsync(undo.MinistryId, cancellationToken);
+        if (!Guid.TryParse(undo.Campaign, out Guid campaign))
+            throw Invalid("Choose the campaign whose streets are to be put back.");
+        DateTime at = DateTime.SpecifyKind(undo.At, DateTimeKind.Utc);
+        List<CoverageRecord> restoring = await db.Coverage.Where(coverage => coverage.CampaignId == campaign && coverage.ExpiredAt == at).ToListAsync(cancellationToken);
+        foreach (CoverageRecord coverage in restoring)
+            coverage.ExpiredAt = null;
+        await db.SaveChangesAsync(cancellationToken);
+        DateTime now = Now;
+        await publisher.StreetsAsync(campaign, restoring.Select(coverage => coverage.Street), await settingsStore.GetAsync(cancellationToken), now, cancellationToken);
+        await db.SaveChangesAsync(cancellationToken);
+        return new Expired { Stretches = restoring.Count, At = at };
+    }
+
+    private static DateTime ToStoredPrecision(DateTime utc) => new(utc.Ticks - utc.Ticks % TimeSpan.TicksPerMicrosecond, DateTimeKind.Utc);
 
     public async Task<Totals> TotalsAsync(TotalsQuery query, CancellationToken cancellationToken)
     {
@@ -274,7 +292,12 @@ internal sealed class OutreachReview(
         (List<WalkerTotal> named, WalkerTotal anonymous) = TotalsRules.Walkers(walks, await leaderboards.WalkersAsync(walks, cancellationToken));
         return new Totals
         {
-            Rows = query.By == TotalsBy.Campaign ? TotalsRules.ByCampaign(walks, campaignNames) : TotalsRules.Rows(walks, query.By),
+            Rows = query.By switch
+            {
+                TotalsBy.Campaign => TotalsRules.ByCampaign(walks, campaignNames),
+                TotalsBy.OutreachDay => TotalsRules.ByOutreachDay(walks, await DaysOfAsync(walks, cancellationToken), campaignNames),
+                _ => TotalsRules.Rows(walks, query.By),
+            },
             Walkers = named,
             Anonymous = anonymous,
         };
@@ -313,6 +336,12 @@ internal sealed class OutreachReview(
             LetterboxesDone = finished.Sum(stretch => stretch.Letterboxes),
             Done = finished,
         };
+    }
+
+    private async Task<Dictionary<Guid, DayRecord>> DaysOfAsync(IEnumerable<WalkRecord> walks, CancellationToken cancellationToken)
+    {
+        List<Guid> ids = walks.Where(walk => walk.DayId is not null).Select(walk => walk.DayId!.Value).Distinct().ToList();
+        return await db.Days.AsNoTracking().Where(day => ids.Contains(day.Id)).ToDictionaryAsync(day => day.Id, cancellationToken);
     }
 
     private async Task<IReadOnlyDictionary<Guid, string>> NamesAsync(IEnumerable<Guid?> users, CancellationToken cancellationToken)

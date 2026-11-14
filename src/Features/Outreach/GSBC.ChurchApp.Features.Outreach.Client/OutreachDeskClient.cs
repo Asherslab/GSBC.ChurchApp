@@ -38,4 +38,31 @@ public sealed class OutreachDeskClient(ChannelBase channel)
         await _admin.ResolveReportAsync(new ReportResolve { MinistryId = ministryId, Id = id, Outcome = outcome, ExcludeAs = ExclusionReason.NotHomes });
 
     public async Task DeleteReportAsync(string ministryId, string id) => await _admin.DeleteReportAsync(new ThingRef { MinistryId = ministryId, Id = id });
+
+    public async Task<Totals> TotalsAsync(string ministryId, DateTime from, DateTime to, TotalsBy by, string campaign) =>
+        await _admin.TotalsAsync(new TotalsQuery { MinistryId = ministryId, From = from, To = to, By = by, Campaign = campaign });
+
+    public async Task<CoverageMap> CoverageAsync(string ministryId, string campaign) =>
+        await _admin.CoverageAsync(new CoverageQuery { MinistryId = ministryId, Campaign = campaign });
+
+    public async Task<Expired> ExpireAsync(string ministryId, string campaign, List<GeoPoint> area, List<Stretch> stretches) =>
+        await _admin.ExpireAsync(new ExpireCoverage { MinistryId = ministryId, Campaign = campaign, Area = area, Stretches = stretches });
+
+    public async Task<Expired> UndoExpiryAsync(string ministryId, string campaign, DateTime at) =>
+        await _admin.UndoExpiryAsync(new ExpiryUndo { MinistryId = ministryId, Campaign = campaign, At = at });
+
+    public async Task<SkipLines> SkipsAsync(string ministryId) => await _admin.SkipsAsync(new MinistryRef { MinistryId = ministryId });
+
+    public async Task ClearSkipAsync(string ministryId, string id) => await _admin.ClearSkipAsync(new ThingRef { MinistryId = ministryId, Id = id });
+
+    public async Task<Exclusions> ExclusionsAsync(string ministryId) => await _admin.ExclusionsAsync(new MinistryRef { MinistryId = ministryId });
+
+    public async Task SaveZoneAsync(string ministryId, ExclusionZone zone) => await _admin.SaveZoneAsync(new ZoneSave { MinistryId = ministryId, Zone = zone });
+
+    public async Task DeleteZoneAsync(string ministryId, string id) => await _admin.DeleteZoneAsync(new ThingRef { MinistryId = ministryId, Id = id });
+
+    public async Task SaveAddressAsync(string ministryId, ExclusionAddress address) =>
+        await _admin.SaveAddressAsync(new AddressSave { MinistryId = ministryId, Address = address });
+
+    public async Task DeleteAddressAsync(string ministryId, string id) => await _admin.DeleteAddressAsync(new ThingRef { MinistryId = ministryId, Id = id });
 }

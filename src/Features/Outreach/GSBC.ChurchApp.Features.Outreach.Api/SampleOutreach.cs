@@ -21,9 +21,10 @@ internal sealed class SampleOutreach(IServiceScopeFactory scopes, IHostEnvironme
         {
             await using AsyncServiceScope scope = scopes.CreateAsyncScope();
             OutreachDbContext db = scope.ServiceProvider.GetRequiredService<OutreachDbContext>();
+            OutreachPublisher publisher = scope.ServiceProvider.GetRequiredService<OutreachPublisher>();
+            await AddHistoryAsync(db, publisher, stoppingToken);
             if (await db.Walks.AnyAsync(stoppingToken) || await db.Campaigns.CountAsync(stoppingToken) > 1)
                 return;
-            OutreachPublisher publisher = scope.ServiceProvider.GetRequiredService<OutreachPublisher>();
             DateTime now = time.GetUtcNow().UtcDateTime;
             CampaignRecord carols = new()
             {
@@ -59,5 +60,67 @@ internal sealed class SampleOutreach(IServiceScopeFactory scopes, IHostEnvironme
         {
             logger.LogWarning(exception, "Adding the sample outreach failed");
         }
+    }
+
+    private async Task AddHistoryAsync(OutreachDbContext db, OutreachPublisher publisher, CancellationToken cancellationToken)
+    {
+        if (await db.Days.AnyAsync(cancellationToken) || await db.Skips.AnyAsync(cancellationToken) || await db.ExclusionZones.AnyAsync(cancellationToken))
+            return;
+        DateTime now = time.GetUtcNow().UtcDateTime;
+        Random random = new(2026);
+        DayRecord day = new()
+        {
+            Id = Guid.NewGuid(), CampaignId = OutreachCampaigns.GeneralId, StartsAt = now.AddDays(-40).Date.AddHours(22.5), EndsAt = now.AddDays(-40).Date.AddHours(25.5),
+            MeetingLat = -27.3466, MeetingLng = 152.9667, MeetingPlace = "The church car park", Mode = WalkMode.Letterbox, Published = true, ChangedAt = now,
+        };
+        db.Days.Add(day);
+        for (int week = 1; week <= 56; week++)
+        {
+            for (int walk = random.Next(0, 4); walk > 0; walk--)
+            {
+                DateTime started = now.AddDays(-7 * week + random.Next(0, 7)).Date.AddHours(random.Next(21, 30));
+                int metres = random.Next(1500, 5200);
+                db.Walks.Add(new WalkRecord
+                {
+                    Id = Guid.NewGuid(), Campaigns = [OutreachCampaigns.GeneralId], StartedAt = started, LastAt = started.AddMinutes(metres / 50.0), Ended = true,
+                    Metres = metres, Letterboxes = metres * random.Next(30, 40) / 1000, Conversations = random.Next(0, 3),
+                });
+            }
+        }
+        for (int walker = 0; walker < 14; walker++)
+        {
+            int metres = random.Next(2200, 3600);
+            db.Walks.Add(new WalkRecord
+            {
+                Id = Guid.NewGuid(), Campaigns = [OutreachCampaigns.GeneralId], DayId = day.Id, StartedAt = day.StartsAt.AddMinutes(walker), LastAt = day.EndsAt,
+                Ended = true, Metres = metres, Letterboxes = metres * 36 / 1000, Conversations = random.Next(0, 2),
+            });
+        }
+        (string Label, SkipKind Kind)[] marks = [("Sample St, this side", SkipKind.NoJunkMail), ("Sample Ave, the far end", SkipKind.NoJunkMail), ("Sample Cres, by the park", SkipKind.Hostile)];
+        foreach ((string label, SkipKind kind) in marks)
+        {
+            SkipRecord skip = new()
+            {
+                Id = Guid.NewGuid(), Kind = kind, Street = "sample", Label = label, Lat = -27.35, Lng = 152.97, At = now.AddDays(-random.Next(3, 90)),
+            };
+            skip.Until = kind == SkipKind.Hostile ? null : skip.At.AddDays(OutreachDefaults.Settings().NoJunkMailKeptDays);
+            db.Skips.Add(skip);
+            publisher.Skip(skip, now);
+        }
+        ExclusionZoneRecord zone = new()
+        {
+            Id = Guid.NewGuid(), Name = "Sample retirement village", AreaLats = [-27.351, -27.351, -27.354, -27.354], AreaLngs = [152.968, 152.972, 152.972, 152.968],
+            Reason = ExclusionReason.PrivateEstate, Note = "The manager asked us not to deliver inside the gates.", ChangedAt = now,
+        };
+        db.ExclusionZones.Add(zone);
+        publisher.Zone(zone, now);
+        ExclusionAddressRecord address = new()
+        {
+            Id = Guid.NewGuid(), Street = "sample", Label = "Sample Rd, this side", Lat = -27.348, Lng = 152.965, Reason = ExclusionReason.Complaint,
+            Note = "Phoned the office.", Caller = "Sample caller, 0400 000 000", ChangedAt = now,
+        };
+        db.ExclusionAddresses.Add(address);
+        publisher.Address(address, now);
+        await db.SaveChangesAsync(cancellationToken);
     }
 }

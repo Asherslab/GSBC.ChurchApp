@@ -16,3 +16,10 @@
 .outreach-desk__totals .stat-tile__label { color: var(--ink-2); font-size: var(--text-caption); font-weight: 400; }
 .outreach-desk__cell { display: grid; gap: var(--space-3xs); }
 .outreach-desk__sub { color: var(--ink-3); font-size: var(--text-caption); }
+.outreach-numbers { padding: var(--after-tabs) 0 var(--section); }
+.outreach-numbers__filters { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-md) var(--space-2xl); margin-bottom: var(--space-2xl); }
+.outreach-numbers__tiles .stat-tile__value { font-variant-numeric: tabular-nums; }
+.outreach-numbers__body { display: grid; grid-template-columns: minmax(0, 1fr) minmax(280px, 360px); gap: 0 var(--space-4xl); align-items: start; }
+.outreach-numbers__quiet { margin: var(--space-md) 0 0; color: var(--ink-3); font-size: var(--text-caption); line-height: 1.45; }
+@media (max-width: 1272px) { .outreach-numbers__body { grid-template-columns: minmax(0, 1fr); } }
+.outreach-places__about { margin: var(--space-lg) 0 0; color: var(--ink-3); font-size: var(--text-caption); line-height: 1.45; }

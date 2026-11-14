@@ -52,6 +52,9 @@ public interface IOutreachAdminService
     [Requires(OutreachPermissions.ExpireNode)]
     ValueTask<Expired> ExpireAsync(ExpireCoverage request, CallContext context = default);
 
+    [Requires(OutreachPermissions.ExpireNode)]
+    ValueTask<Expired> UndoExpiryAsync(ExpiryUndo request, CallContext context = default);
+
     [Requires(OutreachPermissions.ReportsNode)]
     ValueTask<Totals> TotalsAsync(TotalsQuery request, CallContext context = default);
 

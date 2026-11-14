@@ -1,0 +1,43 @@
+{
+  "title": "Outreach in the admin panel: coverage, numbers and places",
+  "question": "Stage 2 of the admin Outreach page: the coverage map (what each campaign has done recently, fading with age against the rest period, open streets, marks and exclusions, and marking an area not done), the numbers (letterboxes, km, walks and conversations over time, per campaign and per outreach day; walkers by name and the leaderboard), the places outreach never delivers to (exclusion zones and addresses, No junk mail, hostile), and the regions the maps are cut into. Owner asleep 2026-11-15: the station builds the one marked Built; pick another and it changes.",
+  "options": [
+    {
+      "id": "map-desk",
+      "kind": "assigned",
+      "kicker": "THE ROLL",
+      "label": "The map is the desk",
+      "thesis": "A Map tab leads the page: the map fills the work area, a layers column on the left (each campaign's coverage, open streets, No junk mail, exclusions, reports) and whatever you click (a street, a zone, a report pin) opens in the record pane on the right. Numbers is its own tab of charts and walkers.",
+      "palette": ["#2a3d5e", "#f7f4ee", "#00776d", "#e7ae74"],
+      "materials": ["TabStrip", "full-bleed map", "layers column", "record pane", "selection tray"],
+      "viewport": "Outreach, Map tab: Albany Creek's streets shaded by how recently General outreach walked them, three red-edged exclusion zones, No junk mail dots; Kingfisher St chosen, its record on the right with 'Done 12 days ago · 2 walks' and Mark as not done.",
+      "risk": "Every kind of place lands on one map; reports and follow-ups are pins as well as lists, and the map turns into a junk drawer at the church's scale.",
+      "html": ".impeccable/mocks/outreach-coverage/map-desk.html"
+    },
+    {
+      "id": "numbers-first",
+      "kind": "dealt",
+      "label": "Numbers lead, the map a tab",
+      "thesis": "A Numbers tab opens on what outreach has done: four stat tiles (letterboxes, km, walks, conversations) for the period, the trend by week or month, a table per outreach day, and the walkers counted by name. Coverage is a second tab with the map and its own rail. Places (exclusions and No junk mail) join Reports.",
+      "palette": ["#2a3d5e", "#ffffff", "#00776d", "#f4efe7"],
+      "materials": ["TabStrip", "StatTile", "trend line", "DataTable", "ranked list", "Segmented"],
+      "viewport": "Outreach, Numbers tab: 'Last 3 months' with General outreach chosen; 4,812 letterboxes, 168 km, 61 walks, 23 conversations; a weekly trend line ending in a labelled dot; a table of outreach days; 14 walkers by name and 'and 9 others'.",
+      "risk": "The map, the thing the owner asked for by name, is a tab away from the page's front.",
+      "html": ".impeccable/mocks/outreach-coverage/numbers-first.html"
+    },
+    {
+      "id": "coverage-rail",
+      "kind": "dealt",
+      "label": "A coverage map with a working rail (Built)",
+      "thesis": "Coverage gets its own tab: the map on the left, a ruled-off rail on the right for the campaign, the age legend (done this week, fading out as the rest period ends), what to show, and the selection's numbers with Mark as not done. Numbers is a tab of charts and walkers. Places is a workbench of exclusion zones, addresses and No junk mail, each shown on the map in its record pane.",
+      "palette": ["#2a3d5e", "#f7f4ee", "#00776d", "#e7ae74"],
+      "materials": ["TabStrip", "map", "record-pane rail", "age ramp legend", "Workbench for Places"],
+      "viewport": "Outreach, Coverage tab: the map with General outreach's streets in deep aqua fading to white over 3 months; on the right the campaign menu, the ramp 'This week → 3 months', 1,912 of 4,338 streets done, a lassoed area selected with '86 street sides, 1,140 letterboxes' and Mark as not done.",
+      "risk": "Seven tabs on one page (Campaigns, Coverage, Numbers, Places, Follow-ups, Reports, Settings); at 1024 the strip scrolls.",
+      "html": ".impeccable/mocks/outreach-coverage/coverage-rail.html"
+    }
+  ],
+  "reroll": true,
+  "steer": true,
+  "buildPath": {"value": "code"}
+}
