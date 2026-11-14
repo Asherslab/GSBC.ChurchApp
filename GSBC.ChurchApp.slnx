@@ -270,6 +270,7 @@
   </Folder>
   <Folder Name="/tests/Platform/">
     <Project Path="tests/Platform/GSBC.ChurchApp.Platform.Api.Tests/GSBC.ChurchApp.Platform.Api.Tests.csproj" />
+    <Project Path="tests/Platform/GSBC.ChurchApp.Platform.Common.Tests/GSBC.ChurchApp.Platform.Common.Tests.csproj" />
     <Project Path="tests/Platform/GSBC.ChurchApp.Platform.Contracts.Tests/GSBC.ChurchApp.Platform.Contracts.Tests.csproj" />
     <Project Path="tests/Platform/GSBC.ChurchApp.Platform.Permissions.Tests/GSBC.ChurchApp.Platform.Permissions.Tests.csproj" />
   </Folder>

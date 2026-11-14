@@ -11,7 +11,7 @@ global.json                    the SDK (10.0.401, Homebrew's; SPEC §9)
 
 src/
   Platform/                    what every feature stands on; never feature code
-    GSBC.ChurchApp.Platform.Common          (AOT) church time, small shared types
+    GSBC.ChurchApp.Platform.Common          (AOT) church time, small shared types, QR codes and PDFs
     GSBC.ChurchApp.Platform.Permissions     (AOT) permission nodes, scopes, the matcher
     GSBC.ChurchApp.Platform.Contracts       (AOT) Sync contracts, service tiers
     GSBC.ChurchApp.Platform.Client          (AOT) module registration, sync reader, access checks
@@ -237,6 +237,7 @@ flowchart LR
     subgraph Tests
         ArchitectureTests["Architecture.Tests"]
         PermissionsTests["Platform.Permissions.Tests"]
+        CommonTests["Platform.Common.Tests"]
         ContractsTests["Platform.Contracts.Tests"]
         ApiTests["Platform.Api.Tests"]
         GatewayTests["Features.Accounts.Gateway.Tests"]
@@ -379,6 +380,7 @@ flowchart LR
 
     ArchitectureTests --> HostsApi & HostsGateway & HostsWebsite & HostsAdmin & PlatformUi & MinistriesClient
     PermissionsTests --> PlatformPermissions
+    CommonTests --> PlatformCommon
     ContractsTests --> PlatformContracts
     ApiTests --> PlatformApi & PlatformClient & Testing
     GatewayTests --> AccountsGateway & Testing
@@ -425,7 +427,7 @@ flowchart LR
 
 | Project | What it is and does | AOT |
 |---|---|---|
-| `GSBC.ChurchApp.Platform.Common` | Church time (`Australia/Brisbane`) and small shared types | Yes |
+| `GSBC.ChurchApp.Platform.Common` | Church time (`Australia/Brisbane`), small shared types, and printing: QR codes (`QrCode`) and simple vector PDFs (`PdfDocument`: A4 pages, lines, shapes, Helvetica text) | Yes |
 | `GSBC.ChurchApp.Platform.Permissions` | Permission nodes, scopes, patterns and the grant matcher; the same code decides on server and phone | Yes |
 | `GSBC.ChurchApp.Platform.Contracts` | Tier attributes (`[Public]`, `[SignedIn]`, `[Requires]`, `[AppInstall]`), the Sync service contract, and configuration's descriptors (areas, surfaces, setting fields, audiences, layout composition, and the Hub area), `MediaRef` (how any feature's record points at an image or file), rich text (`RichText`, its parser and save rules), the Hub's tiles, grid and icon cleaning (`HubGrid`, `SvgIcons`), places (`DestinationPage`, `DestinationKind`), notification kinds, and usage measures | Yes |
 | `GSBC.ChurchApp.Platform.Client` | Client plumbing: module registry and startup tasks, `IAccess`, the session signal and `IPeopleDirectory` (how features cooperate without referencing each other), `PersonTab` and `AccountSection` (what features add to a person's page and to your Account page), the native bridge, local feed reads (`ILocalFeeds`), the outbox (`IOutbox`, with quiet entries that never show), `IClientDiagnostics` and `CurrentPage` (errors and failed calls, seen by the channel every feature calls through), `ISurfaceLayout` (an area as staff arranged it), `ClientSignals` (every change the client knows about, in one event), media files (`IMediaFiles`: the phone's file cache, or the URL in a browser; `MediaPrefetch` rules; the `MediaPicker` registration), and the audio player (`IAudioPlayer`: the native player on the phone, an audio element in a browser, with a playback journal that survives the app being closed) | Yes |
@@ -553,6 +555,7 @@ flowchart LR
 | `GSBC.ChurchApp.Features.Events.Client.Tests` | Unit tests, no I/O: Coming up leaves ordinary regular dates out; a date edited on its own starts from the regular event with only what its special changed, and never changes every date; a date not on says why on its own line; the widening sentence is one full sentence, and silent when nothing widens | No |
 | `GSBC.ChurchApp.Features.ReleaseNotes.App.Tests` | Highlights show once after an update and never on a fresh install; a production build carries no staff notes or staff wording | No |
 | `GSBC.ChurchApp.Hosts.Website.Tests` | Unit tests, no I/O: an event or calendar the API takes away leaves the website, a reset feed forgets what it held, ready only after the first full read; an embed limited to calendars includes events shown on them; weeks and what's still ahead; each page's share address on the website; caching and framing headers | No |
+| `GSBC.ChurchApp.Platform.Common.Tests` | Unit: QR codes match a reference encoder module for module, and a printed PDF is well formed with its pages, text and fonts | No |
 | `GSBC.ChurchApp.Platform.Contracts.Tests` | Sync's wire format, pinned as bytes the Swift codec's tests decode too; how the phone composes an area from defaults, placements, dates and audience; rich text refuses unsafe links and foreign images, and HTML is only text | No |
 | `GSBC.ChurchApp.Testing` | What the tests share ([testing.md](testing.md)): `TestDatabase` gives each test its own database on one Postgres for the whole run, which every test project joins and which stops by itself once no test has used it for 30 seconds; `TestBuckets` gives each test its own buckets on one S3 server; `TestClock` is the time tests run at | No |
 
