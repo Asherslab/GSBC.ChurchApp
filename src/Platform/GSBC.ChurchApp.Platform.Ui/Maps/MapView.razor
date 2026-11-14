@@ -78,6 +78,10 @@
     [JSInvokable("OnStoppedFollowing")]
     public Task StoppedFollowingAsync() => OnStoppedFollowing.InvokeAsync();
 
+    public IJSObjectReference? Handle => _map;
+
+    public event Func<Task>? Created;
+
     public async Task FitAsync(MapFrame frame)
     {
         if (_map is not null && !frame.IsEmpty)
@@ -118,6 +122,8 @@
         _shownYou = null;
         _shownFrame = null;
         _shownFollow = Follow;
+        if (Created is { } created)
+            await created();
     }
 
     private async Task PushAsync()

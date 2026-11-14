@@ -1025,6 +1025,7 @@ component, never a copy.
 | Something in the app inside a post | `AppCardFrame` (+ a feature's card via `AddAppCardView`) | An event, sermon, ministry or Life Group as a card in the writer's pick of *Side rule* (default), *Timetable line* or *Box* (owner, 2026-11-14), filled from the synced store; inserted from Insert → *From the app* (`AppCardPicker`). |
 | Writing on a page (admin) | `WritingDesk` | The work as a white page on sand (up to 800px) with Write and Preview on a phone tabs; settings in a 360px column on the right that folds; the save bar at the column's foot (owner, 2026-11-13). |
 | A map | `MapView` (Platform.Ui `Maps/`), drawing `mapStyle` (`wwwroot/map/map-style.js`) over a region's map file | The base map shows what bounds a walk (parks, places that aren't homes, main roads) with homes' streets white and quiet, no icons. Screens draw on top: the walk in deep aqua (bright aqua at night) with a white edge, streets walked recently in ink-3 at 45%, you in orange; attribution under every map. A map that follows you keeps you in the middle until it is dragged (then a quiet *Follow me* on it); otherwise it frames what it shows. Detail: [maps.md](docs/design/maps.md). |
+| A map to work on, with its list beside it (admin) | `MapDesk` (Platform.Ui `Maps/`) | The map fills the work area under the title band, edge to edge and to the foot of the window; a pane on the right (460px, 380px at 1360px and under) with its own foot for the page's actions. Tools float on the map: a rail top left, a hint top centre, hover facts top right, the chosen thing's actions bottom centre. At 760px and under the map sits above the pane. The outreach planner uses it. Detail: [outreach.md](docs/design/outreach.md). |
 | Spacing | `--space-*`, `--section`, `--section-first`, `--stack`, `--gutter`, `--after-tabs` | No new raw pixel spacing. |
 
 **Rules for the workflow** (every station):
@@ -1084,6 +1085,8 @@ Detail of where each role is used: [foundations.md](docs/design/foundations.md),
 - **Danger**: only what has failed or run out (a run-out safeguarding item, a failing check, danger actions, a field's
   problem line). Due soon stays the marker.
 - **Beige**: text on navy only.
+- **Map land** (`--map-land`): the base map's ground in each scheme; outreach coverage fades into it as a street's rest
+  period ends.
 
 ### Named Rules
 **The Roles Not Hexes Rule.** Components use the semantic roles, never a palette hex: every role is redefined by
@@ -1199,7 +1202,7 @@ file for what you touch:
 | [ministries.md](docs/design/ministries.md) | A ministry's page, leading it, its roster, the Ministries desk, Life Groups |
 | [people.md](docs/design/people.md) | A person's page and roles, safeguarding, finding someone, families, the blue card |
 | [prayer.md](docs/design/prayer.md) | The Prayer desk, its settings, a prayer request's page |
-| [outreach.md](docs/design/outreach.md) | The Outreach page: campaigns, follow-ups, reports and settings; the walker's side on the phone |
+| [outreach.md](docs/design/outreach.md) | The Outreach page: campaigns, the coverage map, numbers, places outreach skips, follow-ups, reports, settings and map areas; the walker's side on the phone |
 | [chats.md](docs/design/chats.md) | The chats desk and checking a chat |
 | [feedback.md](docs/design/feedback.md) | Send feedback on both sides, the Feedback board |
 | [media.md](docs/design/media.md) | The media library |

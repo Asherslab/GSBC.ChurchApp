@@ -14,6 +14,7 @@ public static class OutreachAdminExtensions
             [new NavEntry("Outreach", "outreach", AppIcons.Outreach, OutreachPermissions.Reports, Area: NavAreas.MinistriesAndGroups,
                 Summary: "Outreach campaigns and their settings: rest period, pace, bundles and what's kept")],
             [OutreachFeeds.Desk], []));
-        return services.AddOutreachClient().AddSingleton<OutreachDeskClient>();
+        return services.AddOutreachClient().AddSingleton<OutreachDeskClient>().AddSingleton<OutreachMapsClient>()
+            .AddSingleton(_ => new StreetGraphLoader(new HttpClient()));
     }
 }

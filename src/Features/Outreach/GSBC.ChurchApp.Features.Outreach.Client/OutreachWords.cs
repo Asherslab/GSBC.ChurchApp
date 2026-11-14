@@ -49,5 +49,17 @@ public static class OutreachWords
         _ => "To review",
     };
 
+    public static string Reason(ExclusionReason reason) => reason switch
+    {
+        ExclusionReason.NotHomes => "Not homes",
+        ExclusionReason.Complaint => "A complaint",
+        ExclusionReason.WrongData => "Wrong on the map",
+        ExclusionReason.Unsafe => "Unsafe",
+        ExclusionReason.PrivateEstate => "A private estate",
+        _ => "Something else",
+    };
+
+    public static string Date(DateTime utc) => Day(ChurchTime.DayOf(utc));
+
     public static string Place(AddressPoint place) => place.Label.Length > 0 ? place.Label : "A place on the map";
 }

@@ -100,3 +100,26 @@ the admin panel. It follows light and dark by itself.
 
 The libraries are vendored in `wwwroot/map/vendor` by `tools/outreach/map/vendor.mjs` (`npm install`, then
 `node vendor.mjs`), so the app never fetches them.
+
+## Drawing on the map
+
+`MapSketch` (Platform.Ui `Maps/`, with `wwwroot/map/map-tools.js`) sits beside a `MapView` (`Map="@_map"`) and adds what a
+planner draws, on its own layers over the overlays:
+
+- **`Tool`** (`MapSketchTool`): `Polygon` (click the corners; click the first corner, double-click or press Enter to close;
+  Backspace takes the last corner back; Escape starts again), `Lasso` (drag a loop), `Line` (drag a line, for cutting),
+  `Brush` (drag along streets; `OnDrawing` reports the stroke as it goes, drawn wide in `BrushColour`), `Pin` (one click).
+  `None` gives the map back its panning and reports the pointer (`OnHover`, `OnHoverEnded`). A drag tool holds the map
+  still while drawing; scroll and the zoom buttons still zoom.
+- **`OnDrawn`** gives the finished stroke's points (`MapSketchStroke`); what they select is the screen's business.
+- **`Labels`** (`MapLabel`): a capsule in a colour with white text at a point, such as a route's "4 · 137 · 74 min". Every
+  colour a label uses holds 4.5:1 against white.
+- **`Preview`**: lines drawn over everything while a gesture is under way (a cut's pieces, a brush's stretch).
+
+## Coverage and dashed areas (reports station, 2026-11-15)
+
+- `MapLineStyle.Covered` with `MapLine.Age` (0 today, 1 the rest period over) draws a street side in the walk colour
+  fading to `--map-land`, the base map's land colour in each scheme, so a side at the end of its rest period disappears
+  into the map.
+- `MapArea.Dashed` draws the edge dashed: areas outreach skips (in danger) and a drawn selection (in primary).
+- `Colour` on a line or area may be a theme token name (`--danger`, `--primary`); the map reads it when it draws.

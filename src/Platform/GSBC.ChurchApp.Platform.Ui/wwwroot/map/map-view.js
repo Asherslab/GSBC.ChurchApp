@@ -34,6 +34,7 @@ function colours() {
     surface: token("--surface"),
     danger: token("--danger"),
     primary: token("--primary"),
+    land: token("--map-land"),
   };
 }
 
@@ -53,7 +54,10 @@ async function tilesFor(source) {
 function overlayLayers(c) {
   return [
     { id: "areas-fill", type: "fill", source: "areas", paint: { "fill-color": ["coalesce", ["get", "colour"], c.walk], "fill-opacity": 0.12 } },
-    { id: "areas-edge", type: "line", source: "areas", paint: { "line-color": ["coalesce", ["get", "colour"], c.walk], "line-width": 1.5 } },
+    { id: "areas-edge", type: "line", source: "areas", filter: ["!", ["get", "dashed"]], paint: { "line-color": ["coalesce", ["get", "colour"], c.walk], "line-width": 1.5 } },
+    { id: "areas-edge-dashed", type: "line", source: "areas", filter: ["get", "dashed"], paint: { "line-color": ["coalesce", ["get", "colour"], c.walk], "line-width": 2, "line-dasharray": [3, 2] } },
+    { id: "covered", type: "line", source: "lines", filter: styleIs("covered"), layout: { "line-cap": "round", "line-join": "round" },
+      paint: { "line-color": ["interpolate-hcl", ["linear"], ["get", "age"], 0, c.walk, 1, c.land], "line-width": byZoom([[12, 1.5], [15, 3.5], [18, 9]]) } },
     { id: "walked", type: "line", source: "lines", filter: styleIs("walked"), layout: { "line-cap": "round", "line-join": "round" },
       paint: { "line-color": c.walked, "line-opacity": 0.45, "line-width": byZoom([[13, 2], [16, 5], [18, 12]]) } },
     { id: "walk-edge", type: "line", source: "lines", filter: styleIs("walk", "walk-done", "route"), layout: { "line-cap": "round", "line-join": "round" },
@@ -110,9 +114,10 @@ function withOverlays(base, data) {
   return base;
 }
 
-const line = (l) => ({ type: "Feature", properties: { style: l.style, ...(l.label ? { label: l.label } : {}), ...(l.colour ? { colour: l.colour } : {}), id: l.id ?? "" },
+const colourOf = (value) => (value?.startsWith("--") ? token(value) : value);
+const line = (l) => ({ type: "Feature", properties: { style: l.style, ...(l.label ? { label: l.label } : {}), ...(l.colour ? { colour: colourOf(l.colour) } : {}), ...(l.age != null ? { age: l.age } : {}), id: l.id ?? "" },
   geometry: { type: "LineString", coordinates: l.points } });
-const area = (a) => ({ type: "Feature", properties: { ...(a.colour ? { colour: a.colour } : {}), id: a.id ?? "" }, geometry: { type: "Polygon", coordinates: [a.points] } });
+const area = (a) => ({ type: "Feature", properties: { ...(a.colour ? { colour: colourOf(a.colour) } : {}), dashed: !!a.dashed, id: a.id ?? "" }, geometry: { type: "Polygon", coordinates: [a.points] } });
 const marker = (m) => ({ type: "Feature", properties: { kind: m.kind, ...(m.label ? { label: m.label } : {}), id: m.id ?? "" }, geometry: { type: "Point", coordinates: m.point } });
 
 function metresToPixels(map, metres, lat) {
@@ -188,6 +193,7 @@ export async function create(element, optionsJson, receiver) {
   const ready = new Promise((resolve) => map.once("load", resolve));
 
   return {
+    map,
     setLines: (json) => set("lines", { type: "FeatureCollection", features: JSON.parse(json).map(line) }),
     setAreas: (json) => set("areas", { type: "FeatureCollection", features: JSON.parse(json).map(area) }),
     setMarkers: (json) => set("markers", { type: "FeatureCollection", features: JSON.parse(json).map(marker) }),

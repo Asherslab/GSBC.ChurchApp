@@ -1,0 +1,102 @@
+@using GSBC.ChurchApp.Features.Outreach.Maps.Contracts
+@using GSBC.ChurchApp.Features.Outreach.Routing
+@using GSBC.ChurchApp.Platform.Ui.Maps
+@using MapAreaShape = GSBC.ChurchApp.Platform.Ui.Maps.MapArea
+@using RoutingPoint = GSBC.ChurchApp.Features.Outreach.Routing.GeoPoint
+@inject OutreachMapsClient Maps
+@inject StreetGraphLoader Graphs
+
+<LiveData TValue="RegionList" Feeds="Feeds" Load="Maps.RegionsAsync" FailedTitle="Can't load the map right now">
+<div class="place-map">
+    @if (RegionFor(context.Value) is { } region)
+    {
+        <MapView @ref="_map" Class="place-map__map" Source="@MapSource.Url(region.Map.Url, region.Attribution)" Label="@Label"
+                 Areas="@Shapes" Markers="@Pins" Frame="@Framed" Centre="@_centre" Zoom="15" OnTap="TapAsync" />
+        <MapSketch Map="_map" Tool="@(Mode == PlaceMapMode.DrawArea ? MapSketchTool.Polygon : MapSketchTool.None)" OnDrawn="DrawnAsync" />
+        @if (Mode != PlaceMapMode.Show)
+        {
+            <p class="place-map__how">@(Mode == PlaceMapMode.DrawArea
+                ? "Click round the area, then click the first point to close it. Escape starts again."
+                : "Click the letterbox. The nearest one on that side of the street is chosen.")</p>
+        }
+    }
+    else
+    {
+        <p class="field__hint">There's no map here yet. Add a map area under Settings to see places on the map.</p>
+    }
+</div>
+</LiveData>
+
+@code {
+    [Parameter, EditorRequired] public required string Label { get; set; }
+    [Parameter] public MapPoint? Point { get; set; }
+    [Parameter] public IReadOnlyList<MapPoint>? Area { get; set; }
+    [Parameter] public PlaceMapMode Mode { get; set; }
+    [Parameter] public EventCallback<IReadOnlyList<MapPoint>> OnArea { get; set; }
+    [Parameter] public EventCallback<AddressPoint> OnAddress { get; set; }
+
+    private MapView? _map;
+    private OutreachRegion? _region;
+    private StreetGraph? _graph;
+    private MapPoint? _placed;
+
+    private MapPoint? Middle => Point ?? (Area is { Count: > 0 } area ? new MapPoint(area.Average(point => point.Lat), area.Average(point => point.Lon)) : null);
+
+    private MapFrame? Framed => Area is { Count: >= 3 } area ? MapFrame.Around(area, padding: 40, maxZoom: 17) : null;
+
+    private IReadOnlyList<MapAreaShape> Shapes => Area is { Count: >= 3 } area ? [new MapAreaShape(area, "--danger", Dashed: true)] : [];
+
+    private IReadOnlyList<MapMarker> Pins => (_placed ?? Point) is { } point ? [new MapMarker(point, MapMarkerKind.Pin)] : [];
+
+    private static readonly IReadOnlyList<string> Feeds = [OutreachMapsFeeds.Regions];
+
+    private OutreachRegion? RegionFor(RegionList list)
+    {
+        List<OutreachRegion> regions = list.Regions;
+        MapPoint? middle = Middle ?? MiddleOf(regions);
+        _region = middle is { } point
+            ? regions.FirstOrDefault(region => Inside(region.Core, point)) ?? regions.FirstOrDefault(region => Inside(region.Bounds, point)) ?? regions.FirstOrDefault()
+            : null;
+        _centre = middle;
+        return _region;
+    }
+
+    private MapPoint? _centre;
+
+    private static MapPoint? MiddleOf(IReadOnlyList<OutreachRegion> regions) =>
+        regions.Count == 0
+            ? null
+            : new MapPoint((regions.Min(region => region.Core.South) + regions.Max(region => region.Core.North)) / 2,
+                (regions.Min(region => region.Core.West) + regions.Max(region => region.Core.East)) / 2);
+
+    private static bool Inside(MapBounds bounds, MapPoint point) =>
+        point.Lat >= bounds.South && point.Lat <= bounds.North && point.Lon >= bounds.West && point.Lon <= bounds.East;
+
+    private async Task TapAsync(MapPoint point)
+    {
+        if (Mode != PlaceMapMode.PickAddress || _region is null)
+            return;
+        _graph ??= await Graphs.LoadAsync(_region);
+        Flat flat = _graph.Projection.ToFlat(new RoutingPoint(point.Lat, point.Lon));
+        if (_graph.Index.Nearest(flat, 60, street => _graph.Street(street).CanDeliver) is not { } near)
+            return;
+        LetterboxRange boxes = _graph.Letterboxes(near.Street, near.Side);
+        int? nearest = null;
+        double best = double.MaxValue;
+        for (int box = boxes.Start; box < boxes.End; box++)
+        {
+            double distance = Math.Abs(_graph.LetterboxAlong(box) - near.Along);
+            if (distance < best)
+                (best, nearest) = (distance, box);
+        }
+        if (nearest is not { } letterbox)
+            return;
+        AddressPoint address = EngineInputs.Address(_graph, _region.Id, letterbox);
+        if (address.Label.Length == 0)
+            address.Label = $"{_graph.Street(near.Street).Name}, {(near.Side == Side.Left ? "left" : "right")} side";
+        _placed = new MapPoint(address.Point.Lat, address.Point.Lng);
+        await OnAddress.InvokeAsync(address);
+    }
+
+    private Task DrawnAsync(MapSketchStroke stroke) => stroke.Points.Count >= 3 ? OnArea.InvokeAsync(stroke.Points) : Task.CompletedTask;
+}

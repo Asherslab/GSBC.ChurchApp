@@ -1,0 +1,278 @@
+@using GSBC.ChurchApp.Features.Outreach.Maps.Contracts
+@using GSBC.ChurchApp.Features.Outreach.Routing
+@using GeoPoint = GSBC.ChurchApp.Features.Outreach.Contracts.GeoPoint
+@using GSBC.ChurchApp.Platform.Ui.Maps
+@using MapAreaShape = GSBC.ChurchApp.Platform.Ui.Maps.MapArea
+@inject OutreachDeskClient Outreach
+@inject OutreachMapsClient Maps
+@inject StreetGraphLoader Graphs
+@inject TimeProvider Time
+@inject IAccess Access
+
+<LiveData @ref="_live" TValue="Shown" Feeds="Feeds" Load="LoadAsync" FailedTitle="Can't load the coverage map right now">
+    @{ Shown shown = context.Value; }
+    <OutreachHead Tab="OutreachTab.Coverage" FollowUps="shown.Desk.OpenFollowUps" Reports="shown.Desk.NewReports" />
+    @if (shown.Region is null || shown.View is null)
+    {
+        <div class="outreach-coverage__none">
+            <EmptyState Icon="map" Title="No map yet"
+                        Body="The coverage map appears once the area around church has its maps and streets. Add it under Settings, Map areas; building takes a few minutes." />
+        </div>
+    }
+    else
+    {
+        CoverageView view = shown.View;
+        <MapDesk PaneLabel="Coverage" Class="outreach-coverage">
+            <Map>
+                <MapView @ref="_map" Source="@MapSource.Url(shown.Region.Map.Url, shown.Region.Attribution)"
+                         Label="@($"{CampaignName(shown)}: streets done in the last {view.RestDays} days, darker the more recently")"
+                         Lines="@Lines(view)" Areas="@Areas(shown)" Markers="@Markers(shown)" Frame="@view.Frame()" OnTap="TapAsync">
+                    <Overlay>
+                        <div class="outreach-coverage__tools">
+                            <Button Variant="@(_drawing ? ButtonVariant.Primary : ButtonVariant.Quiet)" Icon="pencil" OnClick="ToggleDrawing" Class="outreach-coverage__tool">@(_drawing ? "Stop drawing" : "Draw round streets")</Button>
+                            @if (_drawing)
+                            {
+                                <p class="outreach-coverage__hint" role="status">Drag a loop round the streets. Escape stops.</p>
+                            }
+                        </div>
+                    </Overlay>
+                </MapView>
+                <MapSketch Map="_map" Tool="@(_drawing ? MapSketchTool.Lasso : MapSketchTool.None)" OnDrawn="DrawnAsync" OnCancelled="() => _drawing = false" />
+            </Map>
+            <Pane>
+                <div class="outreach-coverage__rail">
+                <SelectField Label="Campaign" Options="CampaignOptions(shown.Desk)" Value="@shown.Campaign" ValueChanged="ChooseCampaignAsync" />
+                @if (shown.Regions.Count > 1)
+                {
+                    <SelectField Label="Region" Options="@shown.Regions.Select(region => new FieldOption(region.Id, region.Name)).ToList()" Value="@shown.Region.Id"
+                                 ValueChanged="ChooseRegionAsync" />
+                }
+                <div>
+                    <p class="outreach-coverage__label">When it was last done</p>
+                    <div class="outreach-coverage__ramp" aria-hidden="true"></div>
+                    <p class="outreach-coverage__ramp-key"><span>This week</span><span>@Weeks(view.RestDays / 2)</span><span>@Weeks(view.RestDays): open again</span></p>
+                    @if (_showPlaces && shown.Exclusions.Zones.Count > 0)
+                    {
+                        <p class="outreach-coverage__key"><span class="outreach-coverage__swatch" aria-hidden="true"></span>Outlined in red: an area outreach skips</p>
+                    }
+                </div>
+                <div class="outreach-coverage__figures">
+                    <StatTile Value="@OutreachWords.Count(view.StreetsDone)" Label="@($"streets done, of {OutreachWords.Count(view.DeliverableStreets)} in this region")" Quiet="true" />
+                    <StatTile Value="@Percent(view.HomesDone, view.AllHomes)" Label="of this region's letterboxes done" Quiet="true" />
+                </div>
+                <div class="outreach-coverage__layers">
+                    <p class="outreach-coverage__label">Show on the map</p>
+                    <ToggleRow Title="@($"No junk mail and hostile ({OutreachWords.Count(shown.Skips.Lines.Count)})")"
+                               Checked="_showMarks" CheckedChanged="on => _showMarks = on" />
+                    <ToggleRow Title="@($"Places outreach skips ({OutreachWords.Count(shown.Exclusions.Zones.Count + shown.Exclusions.Addresses.Count)})")"
+                               Checked="_showPlaces" CheckedChanged="on => _showPlaces = on" />
+                </div>
+
+                </div>
+            </Pane>
+            <Foot>
+                @if (_choice is { } chosen)
+                {
+                    <div class="outreach-coverage__chosen-block">
+                        <p class="outreach-coverage__chosen">@chosen.Title</p>
+                        <p class="outreach-coverage__chosen-sub">@ChoiceLine(view, chosen)</p>
+                    </div>
+                    <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+                    <div class="outreach-coverage__actions">
+                        <Button Variant="ButtonVariant.Quiet" OnClick="Clear">Clear</Button>
+                        @if (CanExpire)
+                        {
+                            <Button Busy="_busy" Disabled="@(chosen.Pieces.Count == 0)" OnClick="() => ExpireAsync(shown, chosen)">@($"Mark as not done in {CampaignName(shown)}")</Button>
+                        }
+                    </div>
+                }
+                else
+                {
+                    @if (_undo is not null)
+                    {
+                        <p class="outreach-coverage__done" role="status">
+                            Those streets are open again for @CampaignName(shown).
+                            <Button Variant="ButtonVariant.Link" Busy="_busy" OnClick="UndoAsync">Undo</Button>
+                        </p>
+                    }
+                    else
+                    {
+                        <p class="field__hint">Click a street on the map, or draw round several, to mark them not done.</p>
+                    }
+                }
+            </Foot>
+        </MapDesk>
+    }
+</LiveData>
+
+@code {
+    private static readonly IReadOnlyList<string> Feeds = [OutreachFeeds.Desk, OutreachFeeds.Coverage, OutreachFeeds.Settings, OutreachFeeds.Skips, OutreachFeeds.Exclusions];
+
+    [Parameter, EditorRequired] public required string Scope { get; set; }
+
+    private sealed record Shown(OutreachDesk Desk, string Campaign, IReadOnlyList<OutreachRegion> Regions, OutreachRegion? Region, CoverageView? View,
+        SkipLines Skips, Exclusions Exclusions);
+
+    private sealed record Undo(string Campaign, DateTime At, int Stretches);
+
+    private LiveData<Shown>? _live;
+    private MapView? _map;
+    private string _campaign = OutreachCampaigns.GeneralId.ToString();
+    private string? _region;
+    private CoverageChoice? _choice;
+    private Undo? _undo;
+    private bool _drawing, _busy, _showMarks = true, _showPlaces = true;
+    private string? _problem;
+    private CoverageView? _view;
+
+    private string? MinistryScope => Scope.Length == 0 ? null : Scope;
+
+    private bool CanExpire => Access.Can(OutreachPermissions.Expire, MinistryScope);
+
+    private async Task<Shown> LoadAsync()
+    {
+        Task<OutreachDesk> desk = Outreach.DeskAsync(Scope);
+        Task<RegionList> regions = Maps.RegionsAsync();
+        Task<CoverageMap> coverage = Outreach.CoverageAsync(Scope, _campaign);
+        Task<SkipLines> skips = Access.Can(OutreachPermissions.Review, MinistryScope) ? Outreach.SkipsAsync(Scope) : Task.FromResult(new SkipLines());
+        Task<Exclusions> exclusions = Access.Can(OutreachPermissions.Settings, MinistryScope) ? Outreach.ExclusionsAsync(Scope) : Task.FromResult(new Exclusions());
+        await Task.WhenAll(desk, regions, coverage, skips, exclusions);
+        List<OutreachRegion> all = [.. (await regions).Regions.OrderBy(region => region.Name, StringComparer.Ordinal)];
+        Dictionary<string, int> covered = (await coverage).Streets.GroupBy(street => street.Region).ToDictionary(group => group.Key, group => group.Count());
+        OutreachRegion? region = all.FirstOrDefault(found => found.Id == _region)
+                                 ?? all.OrderByDescending(found => covered.GetValueOrDefault(found.Id)).ThenByDescending(found => found.Letterboxes).FirstOrDefault();
+        _region = region?.Id;
+        CoverageView? view = null;
+        if (region is not null)
+        {
+            StreetGraph graph = await Graphs.LoadAsync(region);
+            view = new CoverageView(graph, (await coverage).Streets, (await desk).Settings.RestDays, ChurchTime.Today(Time));
+        }
+        _view = view;
+        if (_choice is { } choice && view is not null)
+            _choice = choice.Street is { } street ? view.ForStreet(street) : choice.Area is { } area ? view.InArea(area) : null;
+        return new Shown(await desk, _campaign, all, region, view, await skips, await exclusions);
+    }
+
+    private IReadOnlyList<MapLine> Lines(CoverageView view) =>
+        _choice is { Street: { } street }
+            ? [.. view.Lines(), new MapLine(view.StreetShape(street), MapLineStyle.Route, Colour: "--primary")]
+            : view.Lines();
+
+    private IReadOnlyList<MapAreaShape> Areas(Shown shown)
+    {
+        List<MapAreaShape> areas = _showPlaces
+            ? [.. shown.Exclusions.Zones.Where(zone => zone.Area.Count >= 3)
+                .Select(zone => new MapAreaShape([.. zone.Area.Select(point => new MapPoint(point.Lat, point.Lng))], "--danger", zone.Id, Dashed: true))]
+            : [];
+        if (_choice is { Area: { } drawn })
+            areas.Add(new MapAreaShape(drawn, "--primary", Dashed: true));
+        return areas;
+    }
+
+    private IReadOnlyList<MapMarker> Markers(Shown shown)
+    {
+        List<MapMarker> markers = [];
+        if (_showMarks)
+            markers.AddRange(shown.Skips.Lines.Where(skip => skip.Address.Point is { Lat: not 0 })
+                .Select(skip => new MapMarker(new MapPoint(skip.Address.Point.Lat, skip.Address.Point.Lng), skip.Hostile ? MapMarkerKind.Skip : MapMarkerKind.NoJunkMail,
+                    skip.Hostile ? "Hostile" : "No junk mail", skip.Id)));
+        if (_showPlaces)
+            markers.AddRange(shown.Exclusions.Addresses.Where(address => address.Address.Point is { Lat: not 0 })
+                .Select(address => new MapMarker(new MapPoint(address.Address.Point.Lat, address.Address.Point.Lng), MapMarkerKind.DontLetterbox, "Don't letterbox",
+                    address.Id)));
+        return markers;
+    }
+
+    private static IReadOnlyList<FieldOption> CampaignOptions(OutreachDesk desk) => [.. desk.Campaigns.Select(campaign => new FieldOption(campaign.Id, campaign.Name))];
+
+    private static string CampaignName(Shown shown) => shown.Desk.Campaigns.FirstOrDefault(campaign => campaign.Id == shown.Campaign)?.Name ?? "this campaign";
+
+    private static string Weeks(int days) => days >= 56 ? $"{(int)Math.Round(days / 30.4)} months" : $"{(int)Math.Round(days / 7.0)} weeks";
+
+    private static string Percent(int part, int whole) => whole == 0 ? "0%" : $"{Math.Round(part * 100.0 / whole):0}%";
+
+    private string ChoiceLine(CoverageView view, CoverageChoice choice) =>
+        choice.Pieces.Count == 0
+            ? "Nothing done here in this campaign's rest period."
+            : $"{OutreachWords.Plural(choice.Sides, "street side", "street sides")} · {OutreachWords.Plural(choice.Homes, "letterbox", "letterboxes")} · {view.DoneBetween(choice)}";
+
+    private Task ChooseCampaignAsync(string campaign)
+    {
+        (_campaign, _undo) = (campaign, null);
+        return _live?.ReloadAsync() ?? Task.CompletedTask;
+    }
+
+    private Task ChooseRegionAsync(string region)
+    {
+        (_region, _choice) = (region, null);
+        return _live?.ReloadAsync() ?? Task.CompletedTask;
+    }
+
+    private static readonly TimeSpan DrawingsClosingClick = TimeSpan.FromMilliseconds(600);
+    private DateTimeOffset _drewAt;
+
+    private void TapAsync(MapPoint point)
+    {
+        if (_drawing || _view is null || Time.GetUtcNow() - _drewAt < DrawingsClosingClick)
+            return;
+        _choice = _view.StreetAt(point);
+        _problem = null;
+    }
+
+    private void DrawnAsync(MapSketchStroke stroke)
+    {
+        (_drawing, _drewAt) = (false, Time.GetUtcNow());
+        if (_view is null || stroke.Points.Count < 3)
+            return;
+        _choice = _view.InArea(stroke.Points);
+        _problem = null;
+    }
+
+    private void Clear() => (_choice, _problem, _drawing) = (null, null, false);
+
+    private void ToggleDrawing()
+    {
+        _drawing = !_drawing;
+        if (_drawing)
+            (_choice, _problem) = (null, null);
+    }
+
+    private async Task ExpireAsync(Shown shown, CoverageChoice choice)
+    {
+        await RunAsync(async () =>
+        {
+            Expired expired = choice.Street is { } street && _view is not null
+                ? await Outreach.ExpireAsync(Scope, shown.Campaign, [], CoverageView.WholeStreet(_view.Graph, street))
+                : await Outreach.ExpireAsync(Scope, shown.Campaign, [.. choice.Area!.Select(point => new GeoPoint { Lat = point.Lat, Lng = point.Lon })], []);
+            _undo = new Undo(shown.Campaign, expired.At, expired.Stretches);
+            _choice = null;
+        });
+    }
+
+    private Task UndoAsync() => _undo is not { } undo ? Task.CompletedTask : RunAsync(async () =>
+    {
+        await Outreach.UndoExpiryAsync(Scope, undo.Campaign, undo.At);
+        _undo = null;
+    });
+
+    private async Task RunAsync(Func<Task> work)
+    {
+        _busy = true;
+        _problem = null;
+        try
+        {
+            await work();
+            if (_live is not null)
+                await _live.ReloadAsync();
+        }
+        catch (RpcException exception)
+        {
+            _problem = exception.Status.Detail;
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+}

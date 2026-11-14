@@ -7,6 +7,9 @@ namespace GSBC.ChurchApp.Features.Outreach.Maps.Contracts;
 [Service("gsbc.outreach.Maps")]
 public interface IOutreachMapsService
 {
+    [SignedIn]
+    ValueTask<RegionList> RegionsAsync(RegionListRequest request, CallContext context = default);
+
     [Requires(OutreachMapsPermissions.ManageNode)]
     ValueTask<MapAreaList> AreasAsync(MapAreaListRequest request, CallContext context = default);
 

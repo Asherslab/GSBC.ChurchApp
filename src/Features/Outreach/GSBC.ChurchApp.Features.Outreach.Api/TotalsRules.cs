@@ -32,6 +32,17 @@ internal static class TotalsRules
             .OrderByDescending(row => row.Letterboxes)
             .ToList();
 
+    public static List<TotalsRow> ByOutreachDay(IReadOnlyList<WalkRecord> walks, IReadOnlyDictionary<Guid, DayRecord> days, IReadOnlyDictionary<Guid, string> campaignNames) =>
+        walks.Where(walk => walk.DayId is { } day && days.ContainsKey(day))
+            .GroupBy(walk => days[walk.DayId!.Value])
+            .Select(group => Totalled(new TotalsRow
+            {
+                Label = $"{ChurchTime.DayOf(group.Key.StartsAt).ToString("ddd d MMM yyyy", CultureInfo.GetCultureInfo("en-AU"))} · {campaignNames.GetValueOrDefault(group.Key.CampaignId, "A campaign since deleted")}",
+                Starts = group.Key.StartsAt,
+            }, group.ToList()))
+            .OrderByDescending(row => row.Starts)
+            .ToList();
+
     public static (List<WalkerTotal> Named, WalkerTotal Anonymous) Walkers(IReadOnlyList<WalkRecord> walks, IReadOnlyDictionary<Guid, Walker> walkers)
     {
         List<WalkerTotal> named = walks.Where(walk => walk.UserId is { } user && walkers.TryGetValue(user, out Walker? walker) && walker.ByName)

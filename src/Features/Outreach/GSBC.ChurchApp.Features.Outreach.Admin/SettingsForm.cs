@@ -22,6 +22,7 @@ public sealed class SettingsForm
     public string FollowUpsKeptDays { get; set; } = "";
     public string WalkingKmh { get; set; } = "";
     public string BundleSize { get; set; } = "";
+    public string SparePercent { get; set; } = "";
     public string HouseSeconds { get; set; } = "";
     public string UnitSeconds { get; set; } = "";
     public string DoorSeconds { get; set; } = "";
@@ -39,6 +40,8 @@ public sealed class SettingsForm
     public string FastestKmh { get; set; } = "";
     public string LongestWalkKm { get; set; } = "";
 
+    public static SettingsForm Usual { get; } = Of(OutreachDefaults.Settings());
+
     public static SettingsForm Of(OutreachSettings settings) => new()
     {
         RestDays = Whole(settings.RestDays),
@@ -46,6 +49,7 @@ public sealed class SettingsForm
         FollowUpsKeptDays = Whole(settings.FollowUpsKeptDays),
         WalkingKmh = Decimal(settings.WalkingKmh),
         BundleSize = Whole(settings.BundleSize),
+        SparePercent = Whole((int)Math.Round(settings.SpareShare * 100)),
         HouseSeconds = Whole(settings.HouseSeconds),
         UnitSeconds = Whole(settings.UnitSeconds),
         DoorSeconds = Whole(settings.DoorSeconds),
@@ -69,7 +73,7 @@ public sealed class SettingsForm
     public OutreachSettings? Settings(OutreachSettings basis)
     {
         if (!(Int(RestDays) is { } rest && Int(NoJunkMailKeptDays) is { } noJunk && Int(FollowUpsKeptDays) is { } followUps && Double(WalkingKmh) is { } pace
-              && Int(BundleSize) is { } bundle && Int(HouseSeconds) is { } house && Int(UnitSeconds) is { } unit && Int(DoorSeconds) is { } door
+              && Int(BundleSize) is { } bundle && Int(SparePercent) is { } spare && Int(HouseSeconds) is { } house && Int(UnitSeconds) is { } unit && Int(DoorSeconds) is { } door
               && Int(UnitDoorSeconds) is { } unitDoor && Minute(DaylightStarts) is { } from && Minute(DaylightEnds) is { } until
               && Int(MaxApproachMetres) is { } approach && Int(MaxConnectorLegMetres) is { } leg && Int(MaxConnectorTotalMetres) is { } total
               && Int(SplitJoinMetres) is { } join && Int(MaxHopMetres) is { } hop && Int(ShortOfPercent) is { } shortOf && Int(LongOfPercent) is { } longOf
@@ -78,6 +82,7 @@ public sealed class SettingsForm
         OutreachSettings settings = OutreachPayloadCopy.Of(basis);
         (settings.RestDays, settings.NoJunkMailKeptDays, settings.FollowUpsKeptDays) = (rest, noJunk, followUps);
         (settings.WalkingKmh, settings.BundleSize, settings.HouseSeconds, settings.UnitSeconds) = (pace, bundle, house, unit);
+        settings.SpareShare = spare / 100.0;
         (settings.DoorSeconds, settings.UnitDoorSeconds, settings.DaylightStartsMinute, settings.DaylightEndsMinute) = (door, unitDoor, from, until);
         settings.DoorknockInPairs = DoorknockInPairs;
         (settings.MaxApproachMetres, settings.MaxConnectorLegMetres, settings.MaxConnectorTotalMetres) = (approach, leg, total);
@@ -93,8 +98,8 @@ public sealed class SettingsForm
     public bool Same(SettingsGroup group, SettingsForm other) => group switch
     {
         SettingsGroup.Keeping => (RestDays, NoJunkMailKeptDays, FollowUpsKeptDays) == (other.RestDays, other.NoJunkMailKeptDays, other.FollowUpsKeptDays),
-        SettingsGroup.Times => (WalkingKmh, BundleSize, HouseSeconds, UnitSeconds, DoorSeconds, UnitDoorSeconds)
-                               == (other.WalkingKmh, other.BundleSize, other.HouseSeconds, other.UnitSeconds, other.DoorSeconds, other.UnitDoorSeconds),
+        SettingsGroup.Times => (WalkingKmh, BundleSize, SparePercent, HouseSeconds, UnitSeconds, DoorSeconds, UnitDoorSeconds)
+                               == (other.WalkingKmh, other.BundleSize, other.SparePercent, other.HouseSeconds, other.UnitSeconds, other.DoorSeconds, other.UnitDoorSeconds),
         SettingsGroup.Daylight => (DaylightStarts, DaylightEnds, DoorknockInPairs) == (other.DaylightStarts, other.DaylightEnds, other.DoorknockInPairs),
         SettingsGroup.Between => (MaxApproachMetres, MaxConnectorLegMetres, MaxConnectorTotalMetres, SplitJoinMetres, MaxHopMetres)
                                  == (other.MaxApproachMetres, other.MaxConnectorLegMetres, other.MaxConnectorTotalMetres, other.SplitJoinMetres, other.MaxHopMetres),
@@ -110,7 +115,7 @@ public sealed class SettingsForm
                 (RestDays, NoJunkMailKeptDays, FollowUpsKeptDays) = (from.RestDays, from.NoJunkMailKeptDays, from.FollowUpsKeptDays);
                 break;
             case SettingsGroup.Times:
-                (WalkingKmh, BundleSize, HouseSeconds) = (from.WalkingKmh, from.BundleSize, from.HouseSeconds);
+                (WalkingKmh, BundleSize, SparePercent, HouseSeconds) = (from.WalkingKmh, from.BundleSize, from.SparePercent, from.HouseSeconds);
                 (UnitSeconds, DoorSeconds, UnitDoorSeconds) = (from.UnitSeconds, from.DoorSeconds, from.UnitDoorSeconds);
                 break;
             case SettingsGroup.Daylight:

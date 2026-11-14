@@ -3,7 +3,7 @@
 Detail behind [DESIGN.md](../../DESIGN.md) for the admin panel's Outreach page and the walker's side on the phone. Read DESIGN.md first; its rules win.
 
 ## Outreach page (admin)
-`/outreach` and `/outreach/{tab}`, for the leaders of the ministry that runs outreach. Every tab opens on the title band "Outreach" with a lead, then a `TabStrip`: Campaigns, Follow-ups (counted), Reports (counted), Settings (`OutreachHead`). With no ministry running outreach, the page is the title band over an `EmptyState` that says where to turn it on.
+`/outreach` and `/outreach/{tab}`, for the leaders of the ministry that runs outreach. Every tab opens on the title band "Outreach" with a lead, then a `TabStrip`: Campaigns, Coverage, Numbers, Places, Follow-ups (counted), Reports (counted), Settings (`OutreachHead`). With no ministry running outreach, the page is the title band over an `EmptyState` that says where to turn it on.
 
 ## Campaigns
 A `Workbench`: the campaigns `DataTable` in the main pane, the chosen campaign in the record pane. *New campaign* sits in the title band's actions for those who may plan.
@@ -26,6 +26,51 @@ The settings in the work area, each group a `Section Grouped` card with short fi
 - **Each group saves by itself:** its own `SaveBar` in its own sand foot, saving or cancelling only that group's fields, with its own warning. A group still being changed keeps what was typed when the page reloads.
 - **Read only:** fields are disabled and each foot says "Only outreach leaders can change these."
 - **Leaving with changes** asks first (`UnsavedGuard`), on Settings and on a campaign.
+
+## Coverage
+The map (`MapView` over the region's map file) fills the work area to the left; the pane is ruled off on the right,
+where every workbench keeps its record (460px, 380px at 1360px and under). It is the shared `MapDesk`. The pane, top to bottom: Campaign (and Region when there are several), the
+legend (with a dashed red key when areas are skipped), two quiet `StatTile`s (streets done of the region's, share of
+its letterboxes), and *Show on the map* as two `ToggleRow`s, each titled by what it draws with its count ("No junk mail
+and hostile (12)", "Places outreach skips (3)"). The pane's foot holds the chosen streets (title, sides, letterboxes,
+when done), Clear and *Mark as not done in* the campaign, the undo line, or with nothing chosen a hint saying how to
+choose.
+- **The ramp** is the signature: covered sides are drawn in deep aqua (bright aqua at night) fading to the map's own
+  ground (`--map-land`, the base map's land colour in each scheme) as the rest period ends (`MapLineStyle.Covered` with an
+  age), and the legend is the same ramp with "This week",
+  half the rest period and "open again". Each side is drawn 3.5 m off the centre line, so a half-done street shows which.
+- **Choosing:** a click picks a street, drawn in navy; *Draw round streets* (quiet, floating top left on the map) turns
+  on the lasso (`MapSketch`) and becomes the primary *Stop drawing* with a hint beside it ("Drag a loop round the
+  streets. Escape stops."); the drawn area shows dashed in navy. The chosen streets' sides, letterboxes and when they
+  were done read under its title, then Clear (quiet, left) and *Mark as not done in* the campaign's name (right).
+  Marking applies at once and a status line in its place offers *Undo*.
+- **Exclusion areas** draw in danger at 12% with a dashed edge (`MapArea Dashed`); Don't letterbox, No junk mail and hostile marks are the
+  map's own markers.
+- At 760px and under, MapDesk puts the pane under the map.
+
+## Numbers
+Two rows of `FilterChips` (when; which campaign), four `StatTile`s (letterboxes, walked, walks, conversations) with the
+change on the period before, then two columns (one at 1272px and under): the main one holds *Letterboxes* (a `TrendLine`
+with the period before dashed) over *Outreach days* (a `DataTable`: the day over its campaign, letterboxes, km, walkers,
+conversations); the narrow one (280 to 360px) holds *Walkers* (a `RankedList` of those counted by name, then one quiet
+line for everyone else).
+
+## Places
+A `Workbench` with a rail (`FilterChips Rail`: Everything, Areas, Addresses, No junk mail, Hostile, with counts, and a
+caption saying where these come from). The table has the place over a caption (kind and why) and when it was marked.
+*Add a place* in the title band is a `Menu` (An area, An address). The record pane leads with `PlaceMap`, a 260px map:
+an area is drawn with the polygon tool (click round, click the first point to close) and shown in danger; an address
+is clicked (the nearest letterbox on that side) and shown with a pin. Delete or Clear sits in the ⋯ and asks once.
+
+## A report on the map
+The report's record shows `PlaceMap` with the place, the note, and the photo (`PictureOpen`, opening the
+`PictureViewer`). *Skip an area round it…* swaps the decision for drawing on the same map, with *Skip this area* and
+Back.
+
+## Map areas (Settings)
+A `Section Grouped` card after the settings groups, only for those who manage maps: a `ListGroup` of areas (state as the
+subtitle, the regions' counts, size and version under it, ⋯ with Rebuild, Rename, Delete), *Add a map area* (quiet,
+opening a `Sheet` with Name, Centre and How far around it), and a foot saying these change straight away.
 
 ## On the phone
 
