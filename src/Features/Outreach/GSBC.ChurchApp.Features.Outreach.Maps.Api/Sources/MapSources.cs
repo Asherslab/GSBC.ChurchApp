@@ -26,8 +26,22 @@ internal sealed class MapSources(HttpClient http, IOptions<MapSourcesOptions> op
     private const string AddressFields = "address_pid,street_full,unit_number,lotplan,locality,local_authority";
     private MapSourcesOptions Options => options.Value;
 
-    public Task<OsmData> StreetsAsync(GeoBounds bounds, CancellationToken cancellationToken) =>
-        new OverpassStreets(http).FetchAsync(Options.Overpass, bounds, cancellationToken);
+    public async Task<OsmData> StreetsAsync(GeoBounds bounds, CancellationToken cancellationToken)
+    {
+        string file = Path.Combine(Path.GetTempPath(), $"gsbc-outreach-{Guid.NewGuid():N}.osm.pbf");
+        try
+        {
+            await using (Stream download = await http.GetStreamAsync(Options.Streets, cancellationToken))
+            await using (FileStream saved = File.Create(file))
+                await download.CopyToAsync(saved, cancellationToken);
+            await using FileStream pbf = File.OpenRead(file);
+            return await OsmPbf.ReadAsync(pbf, bounds, StreetNetwork.IsStreet, cancellationToken);
+        }
+        finally
+        {
+            File.Delete(file);
+        }
+    }
 
     public async Task<IReadOnlyList<AddressPoint>> AddressesAsync(GeoBounds bounds, CancellationToken cancellationToken)
     {
