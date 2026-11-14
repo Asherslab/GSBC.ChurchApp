@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <PackageReference Include="xunit.v3" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\..\src\Features\Outreach\GSBC.ChurchApp.Features.Outreach.Client\GSBC.ChurchApp.Features.Outreach.Client.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Using Include="Xunit" />
+    <None Include="..\GSBC.ChurchApp.Features.Outreach.Routing.Tests\Fixtures\albany-creek.streets" Link="Fixtures\albany-creek.streets" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>
