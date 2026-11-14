@@ -27,6 +27,8 @@ public sealed class WhereYouAre(ILocationSession location, WalkSession walk, Tim
 
     public async Task<Here> FindAsync(bool mayAsk, bool again = false)
     {
+        if (walk.Current is { Finished: false })
+            await walk.DrainAsync();
         if (walk.Progress?.You is { } walking)
             return new Here(HereState.Found, walking, walk.Progress.Accuracy);
         if (!again && _last is { State: HereState.Found } last && time.GetUtcNow() - _lastAt < Fresh)

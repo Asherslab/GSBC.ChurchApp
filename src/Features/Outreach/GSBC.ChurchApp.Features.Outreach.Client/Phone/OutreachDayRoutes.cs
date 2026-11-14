@@ -32,7 +32,8 @@ public sealed record DayRouteView(
     IReadOnlyList<MapLine> Lines,
     IReadOnlyList<MapMarker> Markers,
     MapFrame? Frame,
-    WalkState? Walking);
+    WalkState? Walking,
+    int BundleSize = 50);
 
 public sealed class OutreachDayRoutes(OutreachStore store, OutreachClaims claims, RegionMaps regions, WalkChoices choices, WalkSession walk, TimeProvider time)
 {
@@ -99,7 +100,7 @@ public sealed class OutreachDayRoutes(OutreachStore store, OutreachClaims claims
             .. WalkPlans.Markers(planned.Summary),
         ];
         MapFrame frame = MapFrame.Around(planned.Summary.Line.Select(WalkPlans.Point), 36);
-        return new DayRouteView(RouteState.Ready, route, day, campaign, on, mine, firstName, onPhone, source, planned, lines, markers, frame, walking);
+        return new DayRouteView(RouteState.Ready, route, day, campaign, on, mine, firstName, onPhone, source, planned, lines, markers, frame, walking, now.Settings.BundleSize);
     }
 }
 

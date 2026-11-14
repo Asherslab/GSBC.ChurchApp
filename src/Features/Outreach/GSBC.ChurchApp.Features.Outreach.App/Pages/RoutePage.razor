@@ -69,14 +69,16 @@
         bool started = day.StartsAt <= Clock.GetUtcNow().UtcDateTime;
         bool walking = view.Walking is { Finished: false };
         <Section First="true">
-            <h1 class="outreach-route-title">@DayPage.RouteTitle(route)</h1>
-            <p class="outreach-figures__line">@($"{(view.Campaign?.Name ?? "Outreach")} · {OutreachPhoneWords.DayWhen(day)}")</p>
-            <p class="outreach-figures__big">@OutreachPhoneWords.Distance(summary.Metres) · @OutreachPhoneWords.Duration(summary.Time)</p>
-            <p class="outreach-figures__line">@(doorknock ? OutreachPhoneWords.Doors(summary.Letterboxes) : $"{OutreachPhoneWords.Letterboxes(summary.Letterboxes)} · {OutreachPhoneWords.Bundles(summary.BundlesToTake, 50)}")</p>
-            @if (view.Walk.ShareDone > 0)
-            {
-                <p class="outreach-figures__line">@($"{Math.Round(view.Walk.ShareDone * 100)}% done already today")</p>
-            }
+            <div class="outreach-figures">
+                <h1 class="outreach-route-title">@DayPage.RouteTitle(route)</h1>
+                <p class="outreach-figures__line">@($"{(view.Campaign?.Name ?? "Outreach")} · {OutreachPhoneWords.DayWhen(day)}")</p>
+                <p class="outreach-figures__big">@OutreachPhoneWords.Distance(summary.Metres) · @OutreachPhoneWords.Duration(summary.Time)</p>
+                <p class="outreach-figures__line">@(doorknock ? OutreachPhoneWords.Doors(summary.Letterboxes) : $"{OutreachPhoneWords.Letterboxes(summary.Letterboxes)} · {OutreachPhoneWords.Bundles(summary.BundlesToTake, view.BundleSize)}")</p>
+                @if (view.Walk.ShareDone > 0)
+                {
+                    <p class="outreach-figures__line">@($"{Math.Round(view.Walk.ShareDone * 100)}% done already today")</p>
+                }
+            </div>
             @if (doorknock)
             {
                 <ToggleRow Title="I'm walking with someone" Description="Doorknocking is in pairs, together." Checked="_withPartner" CheckedChanged="on => _withPartner = on" />
