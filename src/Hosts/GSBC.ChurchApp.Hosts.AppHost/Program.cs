@@ -39,11 +39,15 @@ else
     builder.AddDevMediaStore(api, tunnel, portOffset);
 }
 
-foreach (IConfigurationSection setting in builder.Configuration.GetSection("Email:Graph").GetChildren())
-    api.WithEnvironment($"Email__Graph__{setting.Key}", setting.Value);
+bool reachesRealPeople = portOffset == 0;
+if (reachesRealPeople)
+{
+    foreach (IConfigurationSection setting in builder.Configuration.GetSection("Email:Graph").GetChildren())
+        api.WithEnvironment($"Email__Graph__{setting.Key}", setting.Value);
 
-foreach (IConfigurationSection setting in builder.Configuration.GetSection("Notifications:Apns").GetChildren())
-    api.WithEnvironment($"Notifications__Apns__{setting.Key}", setting.Value);
+    foreach (IConfigurationSection setting in builder.Configuration.GetSection("Notifications:Apns").GetChildren())
+        api.WithEnvironment($"Notifications__Apns__{setting.Key}", setting.Value);
+}
 
 foreach (IConfigurationSection setting in builder.Configuration.GetSection("People:SafeMinistryCheck").GetChildren())
     api.WithEnvironment($"People__SafeMinistryCheck__{setting.Key}", setting.Value);
