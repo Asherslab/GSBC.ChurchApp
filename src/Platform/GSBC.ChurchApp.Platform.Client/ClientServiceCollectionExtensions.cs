@@ -27,6 +27,7 @@ public static class ClientServiceCollectionExtensions
         services.TryAddSingleton<IDeviceSession, CookieSession>();
         services.TryAddSingleton<IFileShelf, NoFileShelf>();
         services.AddSingleton<FileUploads>();
+        services.AddSingleton<Files.FileSaver>();
         services.AddSingleton<CurrentPage>();
         services.AddSingleton<OpeningSheets>();
         services.TryAddSingleton<IUsage, NoUsage>();

@@ -83,3 +83,14 @@ public sealed class PlanningMarks
     [ProtoMember(1)] public List<Skip> Skips { get; set; } = [];
     [ProtoMember(2)] public List<Exclusion> Exclusions { get; set; } = [];
 }
+
+[ProtoContract]
+public sealed class DayFacts
+{
+    [ProtoMember(1)] public string DayId { get; set; } = "";
+    [ProtoMember(2)] public int Routes { get; set; }
+    [ProtoMember(3)] public int Letterboxes { get; set; }
+    [ProtoMember(4)] public int Claims { get; set; }
+    [ProtoMember(5)] public DateTime? RoutesPublishedAt { get; set; }
+    [ProtoMember(6)] public bool HasDraft { get; set; }
+}

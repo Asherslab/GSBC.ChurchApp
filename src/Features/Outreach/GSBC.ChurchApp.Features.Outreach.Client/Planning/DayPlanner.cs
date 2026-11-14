@@ -142,6 +142,25 @@ public sealed class DayPlanner
         Note = null;
     }
 
+    public static DayDraft DraftOf(IReadOnlyList<DayRoute> routes) => new()
+    {
+        PerRoute = DefaultPerRoute,
+        Routes = routes.Select((route, index) => new PlannedRoute
+        {
+            Id = index + 1,
+            Name = route.Name,
+            Colour = route.Colour,
+            Start = route.Start,
+            RouteId = route.Id,
+            Stretches = route.Stretches.GroupBy(stretch => (stretch.Street, stretch.From, stretch.To)).Select(same => same.First())
+                .Select(stretch => new RecordStretch
+                {
+                    Region = stretch.Region, RegionVersion = stretch.RegionVersion, Street = stretch.Street, Side = StreetSide.Left, From = stretch.From, To = stretch.To,
+                    Middle = stretch.Middle, Metres = stretch.Metres, Letterboxes = stretch.Letterboxes,
+                }).ToList(),
+        }).ToList(),
+    };
+
     public DayDraft Save() => new()
     {
         Area = Area.Select(EngineInputs.Point).ToList(),

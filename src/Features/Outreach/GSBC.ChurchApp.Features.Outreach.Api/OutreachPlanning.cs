@@ -32,14 +32,27 @@ internal sealed class OutreachPlanning(
         DateTime since = Now - DaysShownBack;
         OutreachSettings settings = await settingsStore.GetAsync(cancellationToken);
         settings.MinistryIds = (await ministries.RunningAsync(cancellationToken)).Select(ministry => ministry.Id.ToString()).ToList();
+        List<DayRecord> days = await db.Days.AsNoTracking().Where(day => day.EndsAt > since).OrderBy(day => day.StartsAt).ToListAsync(cancellationToken);
+        List<Guid> dayIds = days.Select(day => day.Id).ToList();
+        ILookup<Guid, RouteRecord> routes = (await db.Routes.AsNoTracking().Where(route => dayIds.Contains(route.DayId)).ToListAsync(cancellationToken)).ToLookup(route => route.DayId);
+        Dictionary<Guid, int> claims = await db.Claims.AsNoTracking().Where(claim => dayIds.Contains(claim.DayId)).GroupBy(claim => claim.DayId)
+            .Select(group => new { group.Key, Count = group.Count() }).ToDictionaryAsync(group => group.Key, group => group.Count, cancellationToken);
         return new OutreachDesk
         {
             Settings = settings,
             Campaigns = (await db.Campaigns.AsNoTracking().ToListAsync(cancellationToken))
                 .OrderByDescending(campaign => campaign.General).ThenBy(campaign => campaign.StartsOn).ThenBy(campaign => campaign.Name)
                 .Select(OutreachViews.Campaign).ToList(),
-            Days = (await db.Days.AsNoTracking().Where(day => day.EndsAt > since).OrderBy(day => day.StartsAt).ToListAsync(cancellationToken))
-                .Select(OutreachViews.Day).ToList(),
+            Days = days.Select(OutreachViews.Day).ToList(),
+            DayFacts = days.Select(day => new DayFacts
+            {
+                DayId = day.Id.ToString(),
+                Routes = routes[day.Id].Count(),
+                Letterboxes = routes[day.Id].Sum(route => OutreachPayloads.Decode<DayRoute>(route.Payload).Letterboxes),
+                Claims = claims.GetValueOrDefault(day.Id),
+                RoutesPublishedAt = day.RoutesPublishedAt,
+                HasDraft = day.Draft is { Length: > 0 },
+            }).ToList(),
             Areas = (await db.Areas.AsNoTracking().OrderBy(area => area.Name).ToListAsync(cancellationToken)).Select(OutreachViews.Area).ToList(),
             Ministries = (await MinistriesAsync(cancellationToken)).Ministries,
             Totals = await TotalsAsync(cancellationToken),

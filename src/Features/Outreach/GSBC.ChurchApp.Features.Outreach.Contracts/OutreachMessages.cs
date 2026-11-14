@@ -631,6 +631,7 @@ public sealed class OutreachDesk
     [ProtoMember(6)] public List<CampaignTotals> Totals { get; set; } = [];
     [ProtoMember(7)] public int OpenFollowUps { get; set; }
     [ProtoMember(8)] public int NewReports { get; set; }
+    [ProtoMember(9)] public List<DayFacts> DayFacts { get; set; } = [];
 }
 
 [ProtoContract]

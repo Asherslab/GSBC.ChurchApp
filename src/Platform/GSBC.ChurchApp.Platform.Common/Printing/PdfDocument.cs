@@ -175,13 +175,16 @@ public sealed class PdfPage(double width, double height)
         Paint(path, fill, stroke, lineWidth);
     }
 
-    public void Text(double x, double y, string text, PdfFont font, double size, PdfColour colour, TextAlign align = TextAlign.Left, double angle = 0)
+    public void Text(double x, double y, string text, PdfFont font, double size, PdfColour colour, TextAlign align = TextAlign.Left, double angle = 0, PdfColour? halo = null)
     {
         double width = Measure(text, font, size);
         double shift = align switch { TextAlign.Centre => width / 2, TextAlign.Right => width, _ => 0 };
         double cos = Math.Cos(angle), sin = Math.Sin(angle);
         double startX = x - shift * cos, startY = Height - y + shift * sin;
-        Op($"BT {Fill(colour)} /{(font == PdfFont.Bold ? "F2" : "F1")} {N(size)} Tf {N(cos)} {N(-sin)} {N(sin)} {N(cos)} {N(startX)} {N(startY)} Tm {Literal(text)} Tj ET");
+        string place = $"/{(font == PdfFont.Bold ? "F2" : "F1")} {N(size)} Tf {N(cos)} {N(-sin)} {N(sin)} {N(cos)} {N(startX)} {N(startY)} Tm {Literal(text)} Tj";
+        if (halo is { } around)
+            Op($"BT {StrokeColour(around)} {N(size / 4)} w 1 J 1 j 1 Tr {place} ET");
+        Op($"BT {Fill(colour)} 0 Tr {place} ET");
     }
 
     public IReadOnlyList<string> Wrap(string text, PdfFont font, double size, double width)
