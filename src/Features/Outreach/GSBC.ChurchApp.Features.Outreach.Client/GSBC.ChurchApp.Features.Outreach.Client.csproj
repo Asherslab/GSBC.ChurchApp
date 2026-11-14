@@ -5,6 +5,7 @@
   <ItemGroup>
     <ProjectReference Include="..\GSBC.ChurchApp.Features.Outreach.Contracts\GSBC.ChurchApp.Features.Outreach.Contracts.csproj" />
     <ProjectReference Include="..\GSBC.ChurchApp.Features.Outreach.Routing\GSBC.ChurchApp.Features.Outreach.Routing.csproj" />
+    <ProjectReference Include="..\GSBC.ChurchApp.Features.Outreach.Maps.Contracts\GSBC.ChurchApp.Features.Outreach.Maps.Contracts.csproj" />
     <ProjectReference Include="..\..\..\Platform\GSBC.ChurchApp.Platform.Client\GSBC.ChurchApp.Platform.Client.csproj" />
     <ProjectReference Include="..\..\..\Platform\GSBC.ChurchApp.Platform.Ui\GSBC.ChurchApp.Platform.Ui.csproj" />
     <ProjectReference Include="..\..\..\Platform\GSBC.ChurchApp.Platform.Common\GSBC.ChurchApp.Platform.Common.csproj" />

@@ -30,6 +30,8 @@ public static class OutreachApiExtensions
         services.AddHostedService<OutreachSchedule>();
         services.AddHostedService<SampleOutreach>();
         services.AddPermissions(OutreachPermissions.All);
+        services.AddDestinations(OutreachDestinations.All);
+        services.AddSurfaces(OutreachTiles.Surfaces);
         services.AddNotificationKinds(OutreachNotifications.All);
 
         services.AddToSystemRole(MinistryLeaderRole, OutreachPermissions.LeaderNodes);
