@@ -1,0 +1,46 @@
+{
+  "title": "The outreach map's look",
+  "question": "The base map every outreach screen draws on: walking on the phone and planning in the admin panel, light and dark, under the route and what's been walked. Each sketch is the real map (OpenStreetMap tiles, Montserrat labels) over the same Albany Creek streets. You were asleep, so I built the first one (what bounds a walk); the other two stay here, and switching is one word in the style. Pick the one you want kept.",
+  "reroll": true,
+  "steer": true,
+  "buildPath": { "value": "code", "toggle": false },
+  "options": [
+    {
+      "id": "pockets",
+      "kind": "assigned",
+      "kicker": "THE ROLL",
+      "label": "What bounds a walk",
+      "thesis": "Parks in sage, schools, shops and industry in warm beige, main roads with a firm brown edge, homes' streets white on a warm ground. The things that end a walk's pocket show, so the app's 'streets near you run out' has its reason on the map.",
+      "palette": ["#f7f4ee", "#d9e6cf", "#ebe2d2", "#a99c88", "#141d31"],
+      "materials": ["warm ground", "sage parks", "beige non-homes", "edged main roads", "Montserrat labels"],
+      "viewport": "Four maps of the same streets: walking zoom light and dark, planning zoom light and dark, with a walk, streets walked recently and your position drawn on top.",
+      "risk": "The most colour of the three under the route: beside a park the sage and the walk's deep aqua sit close.",
+      "html": ".impeccable/mocks/outreach-map/pockets.html",
+      "htmlFrame": "1440x900"
+    },
+    {
+      "id": "sand",
+      "kind": "dealt",
+      "label": "One calm sand page",
+      "thesis": "Everything in the bulletin's sand with white streets: no land-use colour, no buildings. The quietest base, so the route and coverage are the only colour on screen; prints cleanly on outreach-day handouts.",
+      "palette": ["#f4efe7", "#ffffff", "#d5c9b7", "#1d2840"],
+      "materials": ["sand ground", "white streets", "beige main-road edge"],
+      "viewport": "The same four maps, sand throughout.",
+      "risk": "Nothing says why a walk stops at a park or a shopping centre; the map can't explain a short walk.",
+      "html": ".impeccable/mocks/outreach-map/sand.html",
+      "htmlFrame": "1440x900"
+    },
+    {
+      "id": "homes",
+      "kind": "dealt",
+      "label": "The houses themselves",
+      "thesis": "Buildings in warm beige over a near-white ground and grey streets, so you see where the letterboxes are.",
+      "palette": ["#fbfaf7", "#d8c8ae", "#dfe0e4", "#141d31"],
+      "materials": ["near-white ground", "beige buildings", "grey street edges"],
+      "viewport": "The same four maps, buildings warm.",
+      "risk": "Most houses around Albany Creek aren't mapped as buildings in OpenStreetMap, so whole blocks of homes look empty while shops and schools stand out: the opposite of what outreach needs.",
+      "html": ".impeccable/mocks/outreach-map/homes.html",
+      "htmlFrame": "1440x900"
+    }
+  ]
+}
