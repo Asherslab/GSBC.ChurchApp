@@ -5,7 +5,7 @@ Detail behind [DESIGN.md](../../DESIGN.md) for the admin panel's layout and brea
 ## Admin panel
 The 248px navy sidebar beside the work area; each page is a title band over content capped at 1440px. Full-bleed views (the workbench, the preview window, the sign-in stage) run edge to edge.
 
-- **Office week:** the day rail over "Needs you" and "Your areas".
+- **Office week:** the day rail over two columns, "Needs you" (the wider) and "Your areas".
 - **Announcements desk:** the fortnight rail with the "Not sent yet" chips under it, then the writing column beside a sticky proof aside (280 to 340px), capped at 1180px; "Sent earlier" follows as a table.
 - **Places in the app:** the directory beside a sticky 440px phone column (380 to 560px tall), capped at 1320px.
 - **App styling:** a 72px title band (DESIGN.md, *Still Frame*): the title on one line, cut with an ellipsis, over one lead line; its actions never wrap. Under it the sticky phone column (at least 520px tall) with its preview chips, and the 400px panel.
@@ -36,7 +36,7 @@ The masthead turned on its side. Areas are cut by the job staff are doing, in th
 - **Home, then Pinned:** Home sits alone under Jump to; pinned pages follow under "Pinned" in the order pinned. Pins are kept with the account, so they follow it to any computer (owner, 2026-11-09). With pins, the areas get an "Everything" label; without, neither label shows.
 - **Area heads:** a chevron and the area's name. Nothing else at its end unless something inside waits on someone: a folded area then shows the orange count of what's waiting, never a count of pages (owner, 2026-11-14).
 - **Folding:** an area starts open when the person sees 8 pages or fewer, folded otherwise; folding is remembered on that computer. The current page's area opens by itself, unremembered. Pages are alphabetical and indented, with names short enough for one line (*Import sermons*).
-- **Links:** an icon and the title, cut with an ellipsis. The current link takes the masthead tint and the orange marker bar at the left edge; a pinned page is current only under Pinned. A count of things waiting (`INavCounts`) sits at the end in an orange capsule, only above zero.
+- **Links:** an icon and the title, cut with an ellipsis. The current link takes the masthead tint and the orange marker bar at the left edge; a pinned page is current only under Pinned. A count of things waiting (`INavCounts`) sits at the end in an orange capsule, only above zero, refreshing as you move between pages.
 - **Pin:** each page row has a pin button at its end, shown on hover or focus and always on touch screens; a pinned page's is orange and filled. Pinning is only in the sidebar, not on each page (owner, 2026-11-09).
 - **Actions in the foot:** a `SidebarAction` a feature registers (shown only with its permission) opens a sheet instead of going somewhere: a button drawn as a link, current while its sheet is open, announced as opening a dialog. Send feedback is first (speech-bubble icon); Account is last and opens a popover.
 - **A failed save:** "Couldn't save your pins." with an underlined "Try now".
@@ -44,7 +44,7 @@ The masthead turned on its side. Areas are cut by the job staff are doing, in th
 Focus rings in the sidebar and on the narrow Menu button are orange.
 
 ## Jump to
-Finds any page the person's role opens, by name, area or summary: a `Sheet` named "Jump to a page", untitled, near the top of the window at 720px and wider. The search field ("Type the name of a page", focused on open) over up to 12 matches, each its icon, title, and area and summary ("The app · …"). Arrow keys move the active (sand) row, wrapping; Enter or a click opens the page. A polite status says how many match; with none, "No page called “…” that your role opens." ⌘K or Ctrl K opens and closes it from anywhere unless another sheet is open, and focus returns where it was.
+Finds any page the person's role opens, by name, area or summary: a `Sheet` named "Jump to a page", untitled, near the top of the window at 720px and wider. The search field ("Type the name of a page", focused on open) over up to 12 matches, each its icon, title, and area and summary ("The app · …"). Arrow keys move the active (sand) row, wrapping; Enter or a click opens the page and closes the sheet. A polite status says how many match; with none, "No page called “…” that your role opens." ⌘K or Ctrl K opens and closes it from anywhere unless another sheet is open, and focus returns where it was.
 
 ## Title band
 The admin page head: a headline-size title (the focus target for navigation), an optional caption lead up to 72ch or a lead slot, an optional deep-aqua back link above, and actions at the end, wrapping. It sets the browser title to "Page · Good Shepherd admin".
@@ -53,7 +53,7 @@ The admin page head: a headline-size title (the focus target for navigation), an
 - **Day rail:** one shared rail, a week on the home page and a fortnight on Announcements: a sand track of white day columns, each a weekday ("Today" in orange ink) over a tabular date. Today is ringed in primary; past days are in ink-3.
 - **Fortnight:** fourteen days from this week's Monday. A span over the whole rail reads "The whole fortnight" instead of "All week".
 - **Capsules:** each dated item spans the days it covers, a title over its date range, packed into the highest band where it touches no other. Three kinds: **Everyone** (what everyone sees) in primary; **Event layer** in an accent tint; **Draft** (not out yet) in a marker tint. The chosen one has a 2px marker outline at a 2px offset.
-- **Moments:** an item at one time (an announcement's send time) reserves its day and the next two (fewer at the rail's end) so its title gets two lines; its second line is the time alone ("7am"), the full day and time in its tooltip.
+- **Moments:** an item at one time (an announcement's send time) reserves its day and the next two (fewer at the rail's end) so its title gets two lines, and another item that close moves down a band; its second line is the time alone ("7am"), the full day and time in its tooltip.
 - **Legend and quiet state:** a legend appears only when something is dated, listing only the kinds on the rail in the page's own words (the home page's Draft: "Not out yet: a draft or a scheduled announcement"). With nothing dated, one centred caption line.
 - **Needs you:** hairline rows with a marker-tinted pencil tile, a title link, a relative date and a small quiet action. With nothing waiting, one line with a deep-aqua check.
 - **Your areas:** hairline rows linking to each area, each with a one-line purpose.

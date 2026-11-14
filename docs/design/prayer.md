@@ -13,7 +13,7 @@ Detail behind [DESIGN.md](../../DESIGN.md) for the Prayer desk, its settings and
 *Settings*, the desk's last chip, for the pastoral team and whoever may change prayer settings, sets when people hear that someone prayed for their request (owner's pick on the decision page, 2026-11-12). It replaces the search and list with the settings in the work area (up to 680px).
 - **Head:** "When people hear someone prayed", then a lead.
 - **Timeline:** one wrapping row of stops (never scrolling), each a dot over a tabular label: "On the wall" (an accent ring), each chosen time as an accent dot ("15m", "1h", "2d"), spaced by the square root of its gap so longer waits sit further apart, ending at "Then every day at 12pm" (an ink ring) when the daily time is on.
-- **Changing it:** "A few times after it goes on the wall" over a hint and the chip picker of times, written out ("2 hours"); then *Then once a day* and, when on, *Each day at* (7am to 8:30pm by half hours, "Church time."). The `SaveBar` won't save with no time chosen; a quiet *Back to the usual times* shows when they differ.
+- **Changing it:** "A few times after it goes on the wall" over a hint and the chip picker of times, written out ("2 hours"); then *Then once a day* and, when on, *Each day at* (7am to 8:30pm by half hours, "Church time."). The `SaveBar` won't save with no time chosen; a quiet *Back to the usual times* shows when they differ. The page asks before losing changes.
 - **Read only:** someone who may see but not change it gets the timeline and the notice "Only the pastoral team can change these."; everyone gets the closing line "People can turn these off in Notification settings."
 
 ## A prayer request's page (phone)

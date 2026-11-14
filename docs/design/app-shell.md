@@ -4,13 +4,13 @@ Detail behind [DESIGN.md](../../DESIGN.md) for the phone's top bar, tab bar, bel
 
 ## Navigation
 - **Top-bar actions:** DESIGN.md, *Pattern map*; pressed or with their menu open they take the masthead chip fill.
-- **Top bar:** back, centred title, actions. Transparent over the masthead, it turns solid navy once the big title reaches it (so the title slides under it, never under Back); the small title fades in once the big one is fully under, or past a per-page threshold (120px, 44px on Home), whichever is first. Hero pages use it solid. A page whose heading is its title (a post) uses `TopBarStyle.SolidTitleOnScroll`: solid, the small title shown only once the `data-page-title` heading is fully under the bar, so the title never shows twice. Back carries the parent's name, spoken "Back to" it; a page may give it its own action (the event editor's "Cancel").
+- **Top bar:** back, centred title, actions. Transparent over the masthead, it turns solid navy once the big title reaches it (so the title slides under it, never under Back); the small title fades in once the big one is fully under, or past a per-page threshold (120px, 44px on Home), whichever is first. Hero pages use it solid. A page whose heading is its title (a post) uses `TopBarStyle.SolidTitleOnScroll`: solid, the small title shown only once the `data-page-title` heading is fully under the bar, so the title never shows twice. Back carries the parent's name, spoken "Back to" it; a page may give it its own action (the event editor's "Cancel"). A word action at the end ("Edit") is on-masthead text.
 - **Tab bar:** up to five items: Home first, up to three chosen by staff (Sermons until they publish a change), More last; the active one is deep aqua and tapping it scrolls to the top. While audio plays, orange bars animate beside the Listen icon.
 - **Notifications bell:** on every tab root, with an orange count badge; it opens the inbox, whose top bar has a sliders button to Notification settings.
 
 ## Masthead (signature)
 The cover of every tab root (DESIGN.md, *Masthead First*): the display title (up to 13 characters a line), a beige note line (verse and date, a date range, a purpose), then an optional slot for the screen's live element.
-- **Status strip:** on Sunday's, the next service or "Live now" and a button.
+- **Status strip:** on Sunday's, a clock or a pulsing live dot, the next service or "Live now", and a ghost or live button.
 - **Now playing:** on Listen's, 16:9 artwork beside the title: the latest sermon with Listen and Watch, or, while audio plays, that sermon with an orange progress line and transport (elapsed, 15s back, play/pause, 30s forward, remaining).
 - **Beside:** a slot on the title's row (the calendar's Week and Month switch).
 - **Week rail:** seven day buttons (at least 44px) with a beige dot when something is on. The day in view takes the masthead chip; today is a white tile with an orange dot; past days are dimmed. Tapping a day scrolls the agenda to it.

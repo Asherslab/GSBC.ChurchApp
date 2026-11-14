@@ -21,7 +21,7 @@ The system ships in `src/Platform/GSBC.ChurchApp.Platform.Ui`; the app links all
 | Callout, picture card, navy card | `Card` | `CardTone.Callout`, `Raised` (only where a picture leads), `Masthead` |
 | Rows and boxed lists | `ListGroup`, `ListRow` | Tile tones, chevron or external-link icon; `Reading`, `TitleExtra`, `Below`; `Unread` sets the dot and weight; `Current` marks the open one (`aria-current`) |
 | Pull to refresh | `PullToRefresh` | Wraps the whole page body, masthead included. Touch only, so offer a button too |
-| Sheet | `Sheet` | Escape and the scrim close it; centred on wide screens; `Cover` adds the navy band (name it with `Label`); `Wide`; `LayerClass`. A native `<dialog>` via `showModal()` so no ancestor clips it; focuses an `autofocus` child and returns focus on close |
+| Sheet | `Sheet` | Escape and the scrim close it; centred on wide screens; `Cover` adds the navy band (name it with `Label`); `Wide`; `LayerClass`. A native `<dialog>` via `showModal()` so no ancestor clips it; opening moves focus in without scrolling the page, to an `autofocus` child if there is one, and closing returns it |
 | Sheet heading | `SheetHeading` | `Icon`, `Title`, `Note`; goes in a sheet's `Cover` |
 | Paged sheet | `PagedSheet` | `Count`, `Cover`, `Page`, `Action`; dots, swipe, Next and Done |
 | Facts | `FactList`, `Fact` | A fact with neither text nor `ChildContent` is skipped |
