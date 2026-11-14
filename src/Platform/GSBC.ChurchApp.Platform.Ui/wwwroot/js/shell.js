@@ -71,6 +71,13 @@ window.gsbcShell = (() => {
     const field = document.activeElement;
     if (!(field instanceof HTMLElement) || !field.matches(typing)) return;
     field.scrollIntoView({ block: 'nearest' });
+    const dock = field.closest('.rich-text-field')?.querySelector('.rich-text-field__bar');
+    if (!dock || field.isContentEditable || getComputedStyle(dock).position !== 'fixed') return;
+    const covered = field.getBoundingClientRect().bottom - dock.getBoundingClientRect().top + 12;
+    if (covered <= 0) return;
+    let scroller = field.parentElement;
+    while (scroller && scroller !== document.body && !(scroller.scrollHeight > scroller.clientHeight && /auto|scroll/.test(getComputedStyle(scroller).overflowY))) scroller = scroller.parentElement;
+    (scroller && scroller !== document.body ? scroller : document.scrollingElement).scrollBy(0, covered);
   };
 
   const followKeyboard = () => {

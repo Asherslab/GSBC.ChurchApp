@@ -65,4 +65,8 @@ public static class AppIcons
     public const string Emoji = "smile";
     public const string Insert = "plus";
     public const string PlainText = "type";
+    public const string MoveEarlier = "chevron-left";
+    public const string MoveLater = "chevron-right";
+    public const string ReplaceIt = "refresh";
+    public const string TakeOut = "trash";
 }

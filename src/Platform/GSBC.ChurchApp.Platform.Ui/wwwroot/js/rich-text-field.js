@@ -1,6 +1,6 @@
 import {
   EditorState, EditorSelection, StateField, StateEffect, RangeSetBuilder, Prec, EditorView, Decoration, ViewPlugin, WidgetType, keymap, placeholder,
-  history, defaultKeymap, historyKeymap, Language, defineLanguageFacet, LanguageSupport, syntaxTree, markdownParser,
+  history, defaultKeymap, historyKeymap, Language, defineLanguageFacet, LanguageSupport, syntaxTree, ensureSyntaxTree, markdownParser,
   Table, Strikethrough, Subscript, Superscript, Emoji,
 } from './codemirror.js';
 
@@ -153,12 +153,13 @@ function decorate(view, emoji) {
     }
   };
   const inMedia = position => media && media.ranges.some(range => range.from <= position && range.to >= position);
+  const withinMedia = (from, to) => media && media.ranges.some(range => range.from <= from && to <= range.to);
   for (const { from, to } of view.visibleRanges) {
     syntaxTree(state).iterate({
       from, to,
       enter: node => {
         const name = node.name;
-        if (inMedia(node.from)) return false;
+        if (withinMedia(node.from, node.to)) return false;
         if (name === 'Link' && node.from === state.doc.lineAt(node.from).from && footnoteDefinition.test(state.doc.lineAt(node.from).text)) return false;
         if (styles[name]) {
           marks.push(styles[name].range(node.from, node.to));
@@ -341,7 +342,7 @@ class MediaWidget extends WidgetType {
     const frame = document.createElement('div');
     frame.className = 'cm-media__frame';
     frame.dataset.count = String(Math.min(range.items.length, 4));
-    for (const item of range.items) frame.append(this.face(item, name(item)));
+    range.items.forEach((item, index) => frame.append(this.face(item, name(item), view, dom, index)));
     dom.append(frame);
 
     const { tools, button } = this.tools(view, dom);
@@ -410,16 +411,13 @@ class MediaWidget extends WidgetType {
 
   grip(view, dom, button) {
     const grip = button('Drag to move it', icons.grip, () => {});
-    grip.draggable = true;
     grip.classList.add('cm-media__grip');
-    grip.addEventListener('dragstart', event => {
-      const from = view.posAtDOM(dom);
-      const found = view.state.field(mediaField).ranges.find(each => each.from === from);
-      if (!found) return;
-      event.dataTransfer.setData('application/x-gsbc-media', JSON.stringify({ from: found.from, to: found.to }));
-      event.dataTransfer.setData('text/plain', view.state.doc.sliceString(found.from, found.to));
-      event.dataTransfer.effectAllowed = 'move';
-      event.dataTransfer.setDragImage(dom, 24, 24);
+    grip.setAttribute('aria-keyshortcuts', 'Alt+ArrowUp Alt+ArrowDown');
+    grip.addEventListener('pointerdown', event => this.actions.drag(event, view.posAtDOM(dom), dom, grip));
+    grip.addEventListener('keydown', event => {
+      if (!event.altKey || (event.key !== 'ArrowUp' && event.key !== 'ArrowDown')) return;
+      event.preventDefault();
+      this.actions.step(view.posAtDOM(dom), event.key === 'ArrowUp' ? -1 : 1);
     });
     return grip;
   }
@@ -486,7 +484,7 @@ class MediaWidget extends WidgetType {
     return dom;
   }
 
-  face(item, name) {
+  face(item, name, view, dom, index) {
     const known = this.info.media[item.id];
     const kind = item.link ? 'link' : known?.kind ?? 'picture';
     const face = document.createElement('div');
@@ -514,7 +512,27 @@ class MediaWidget extends WidgetType {
       text.append(title, size);
       face.append(text);
     }
+    if (this.range.items.length > 1) face.append(this.pictureMenu(view, dom, index));
     return face;
+  }
+
+  pictureMenu(view, dom, index) {
+    const more = document.createElement('button');
+    more.type = 'button';
+    more.className = 'cm-media__more';
+    const label = `Picture ${index + 1} of ${this.range.items.length}`;
+    more.setAttribute('aria-label', `${label}: move, replace or take it out`);
+    more.setAttribute('aria-haspopup', 'menu');
+    more.title = label;
+    more.innerHTML = icons.more;
+    more.addEventListener('mousedown', event => event.preventDefault());
+    more.addEventListener('click', event => {
+      event.preventDefault();
+      event.stopPropagation();
+      more.setAttribute('aria-expanded', 'true');
+      this.actions.pictureMenu(view.posAtDOM(dom), index, this.range.items.length, more);
+    });
+    return more;
   }
 
   ignoreEvent() { return true; }
@@ -537,6 +555,7 @@ const icons = {
   edit: svg('<path d="M21.17 6.81a1 1 0 0 0-3.99-3.99L3.84 16.17a2 2 0 0 0-.5.83l-1.32 4.35a.5.5 0 0 0 .62.62l4.35-1.32a2 2 0 0 0 .83-.5z"/>'),
   look: svg('<rect width="18" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/><path d="M14 15h7"/><path d="M14 20h7"/>'),
   image: svg('<rect width="18" height="18" x="3" y="3" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/>'),
+  more: svg('<circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/>'),
 };
 
 const mediaField = StateField.define({
@@ -589,6 +608,165 @@ function blockInsertAt(state, position, text) {
     return { from: line.from, insert: `${before}${text}${after}` };
   }
   return { from: line.from, insert: `${text}\n\n` };
+}
+
+function blocks(state) {
+  const tree = ensureSyntaxTree(state, state.doc.length, 200) ?? syntaxTree(state);
+  const found = [];
+  for (let node = tree.topNode.firstChild; node; node = node.nextSibling) found.push({ from: state.doc.lineAt(node.from).from, to: node.to });
+  return found;
+}
+
+function dropPlaces(state, range) {
+  const others = blocks(state).filter(block => block.to < range.from || block.from > range.to);
+  const after = others.findIndex(block => block.from > range.to);
+  return [...others.map(block => block.from), state.doc.length]
+    .filter((at, index) => index !== after && !(after < 0 && at === state.doc.length));
+}
+
+function moving(state, range, at) {
+  const text = state.doc.sliceString(range.from, range.to);
+  const cut = removal(state, range);
+  let insert;
+  if (at >= state.doc.length) {
+    insert = { from: state.doc.length, insert: `${state.doc.length > 0 ? '\n\n' : ''}${text}` };
+  } else {
+    const line = state.doc.lineAt(at);
+    const before = line.number > 1 && state.doc.line(line.number - 1).length > 0 ? '\n' : '';
+    insert = { from: line.from, insert: `${before}${text}\n\n` };
+  }
+  const changes = state.changes([cut, insert]);
+  const start = changes.mapPos(insert.from, -1) + insert.insert.indexOf(text);
+  return { changes, selection: EditorSelection.range(start, start + text.length) };
+}
+
+function scrollerOf(element) {
+  for (let at = element.parentElement; at && at !== document.body; at = at.parentElement) {
+    const overflow = getComputedStyle(at).overflowY;
+    if ((overflow === 'auto' || overflow === 'scroll') && at.scrollHeight > at.clientHeight) return at;
+  }
+  return document.scrollingElement;
+}
+
+function dragBlock(view, event, from, dom, grip) {
+  if (event.button > 0) return;
+  const range = view.state.field(mediaField).ranges.find(each => each.from === from);
+  if (!range) return;
+  event.preventDefault();
+  grip.setPointerCapture(event.pointerId);
+  const start = { x: event.clientX, y: event.clientY };
+  const scroller = scrollerOf(view.dom);
+  const line = document.createElement('div');
+  line.className = 'cm-drop';
+  line.setAttribute('aria-hidden', 'true');
+  let lifted = false;
+  let pointerY = start.y;
+  let target = null;
+  let frame = 0;
+
+  const shown = () => {
+    const found = new Map();
+    for (const element of view.contentDOM.children) {
+      if (!element.matches('.cm-line, .cm-media') || element.matches('.cm-md-blank, .cm-md-blank-in-list')) continue;
+      found.set(view.posAtDOM(element), element);
+    }
+    return found;
+  };
+  const gapAt = (at, elements) => {
+    const last = view.contentDOM.lastElementChild;
+    if (at >= view.state.doc.length) return view.viewport.to >= view.state.doc.length && last ? last.getBoundingClientRect().bottom + 6 : null;
+    const element = elements.get(at);
+    if (!element) return null;
+    let previous = element.previousElementSibling;
+    while (previous && previous.matches('.cm-md-blank, .cm-md-blank-in-list')) previous = previous.previousElementSibling;
+    const top = element.getBoundingClientRect().top;
+    return previous ? (previous.getBoundingClientRect().bottom + top) / 2 : top - 6;
+  };
+  const place = () => {
+    const elements = shown();
+    const places = dropPlaces(view.state, range).map(at => ({ at, y: gapAt(at, elements) })).filter(each => each.y !== null);
+    target = places.reduce((best, each) => (best === null || Math.abs(each.y - pointerY) < Math.abs(best.y - pointerY) ? each : best), null);
+    line.hidden = !target;
+    if (!target) return;
+    const box = view.contentDOM.getBoundingClientRect();
+    const padding = parseFloat(getComputedStyle(view.contentDOM).paddingLeft) || 0;
+    Object.assign(line.style, { top: `${target.y - 1.5}px`, left: `${box.left + padding}px`, width: `${box.width - padding * 2}px` });
+  };
+  const edge = 56;
+  const tick = () => {
+    frame = 0;
+    if (!lifted) return;
+    const bounds = scroller === document.scrollingElement ? { top: 0, bottom: window.innerHeight } : scroller.getBoundingClientRect();
+    const step = pointerY < bounds.top + edge ? -Math.ceil((bounds.top + edge - pointerY) / 4) : pointerY > bounds.bottom - edge ? Math.ceil((pointerY - bounds.bottom + edge) / 4) : 0;
+    if (step === 0) return;
+    scroller.scrollBy(0, step);
+    place();
+    frame = requestAnimationFrame(tick);
+  };
+  const lift = () => {
+    lifted = true;
+    dom.classList.add('cm-media--moving');
+    document.documentElement.classList.add('is-moving-block');
+    document.body.append(line);
+  };
+  const onMove = moved => {
+    pointerY = moved.clientY;
+    if (!lifted && Math.hypot(moved.clientX - start.x, moved.clientY - start.y) < 4) return;
+    if (!lifted) lift();
+    place();
+    if (!frame) frame = requestAnimationFrame(tick);
+  };
+  const finish = drop => {
+    grip.removeEventListener('pointermove', onMove);
+    grip.removeEventListener('pointerup', onUp);
+    grip.removeEventListener('pointercancel', onCancel);
+    window.removeEventListener('keydown', onKey, true);
+    cancelAnimationFrame(frame);
+    line.remove();
+    dom.classList.remove('cm-media--moving');
+    document.documentElement.classList.remove('is-moving-block');
+    if (!drop || !lifted || !target) return;
+    const current = view.state.field(mediaField).ranges.find(each => each.from === range.from && each.to === range.to);
+    if (!current) return;
+    view.dispatch({ ...moving(view.state, current, target.at), userEvent: 'move.drop', scrollIntoView: true });
+    if (event.pointerType === 'mouse') view.focus();
+  };
+  const onUp = () => finish(true);
+  const onCancel = () => finish(false);
+  const onKey = key => {
+    if (key.key !== 'Escape') return;
+    key.preventDefault();
+    key.stopPropagation();
+    finish(false);
+  };
+  grip.addEventListener('pointermove', onMove);
+  grip.addEventListener('pointerup', onUp);
+  grip.addEventListener('pointercancel', onCancel);
+  window.addEventListener('keydown', onKey, true);
+}
+
+function stepBlock(view, at, direction) {
+  const range = rangeAt(view.state, at);
+  if (!range) return;
+  const all = blocks(view.state);
+  const before = all.filter(block => block.to < range.from);
+  const after = all.filter(block => block.from > range.to);
+  const to = direction < 0 ? before.at(-1)?.from : after.length > 1 ? after[1].from : after.length === 1 ? view.state.doc.length : undefined;
+  if (to === undefined) return;
+  const move = moving(view.state, range, to);
+  view.dispatch({ ...move, userEvent: 'move.keyboard', scrollIntoView: true });
+  requestAnimationFrame(() => {
+    for (const each of view.contentDOM.querySelectorAll('.cm-media')) {
+      if (view.posAtDOM(each) === move.selection.from) each.querySelector('.cm-media__grip')?.focus();
+    }
+  });
+}
+
+function rewritePictures(state, range, order) {
+  const lines = range.items.map(item => state.doc.line(item.line));
+  const caption = range.items[0].caption ?? '';
+  const items = order.map((index, at) => ({ ...range.items[index], caption: at === 0 ? caption : '' }));
+  return { from: lines[0].from, to: lines.at(-1).to, insert: items.map(mediaLine).join('\n') };
 }
 
 function enclosing(state, kind) {
@@ -702,14 +880,20 @@ export function attach(host, field, value, label, placeholderText, emojiJson) {
       if (range) view.dispatch({ changes: removal(view.state, range), userEvent: 'delete' });
       view.focus();
     },
-    replace: at => field.invokeMethodAsync('MediaWantedAsync', 'replace', at),
+    replace: at => field.invokeMethodAsync('MediaWantedAsync', 'replace', at, 0),
     cardReplace: at => field.invokeMethodAsync('CardWantedAsync', 'replace', at),
     cardLook: at => field.invokeMethodAsync('CardWantedAsync', 'look', at),
     table: at => {
       const range = rangeAt(view.state, at);
       if (range) field.invokeMethodAsync('TableWantedAsync', range.from, view.state.doc.sliceString(range.from, range.to));
     },
-    add: at => field.invokeMethodAsync('MediaWantedAsync', 'add', at),
+    add: at => field.invokeMethodAsync('MediaWantedAsync', 'add', at, 0),
+    drag: (event, at, dom, grip) => dragBlock(view, event, at, dom, grip),
+    step: (at, direction) => stepBlock(view, at, direction),
+    pictureMenu: (at, index, count, button) => {
+      const box = button.getBoundingClientRect();
+      field.invokeMethodAsync('PictureMenuAsync', at, index, count, box.left, box.top, box.width, box.height);
+    },
     caption: (at, caption) => {
       const range = rangeAt(view.state, at);
       if (!range) return;
@@ -787,29 +971,6 @@ export function attach(host, field, value, label, placeholderText, emojiJson) {
               });
             return true;
           },
-          dragover: event => {
-            if (!event.dataTransfer?.types.includes('application/x-gsbc-media')) return false;
-            event.preventDefault();
-            event.dataTransfer.dropEffect = 'move';
-            return true;
-          },
-          drop: (event, view) => {
-            const moving = event.dataTransfer?.getData('application/x-gsbc-media');
-            if (!moving) return false;
-            event.preventDefault();
-            const { from, to } = JSON.parse(moving);
-            const position = view.posAtCoords({ x: event.clientX, y: event.clientY });
-            if (position == null || (position >= from && position <= to)) return true;
-            const text = view.state.doc.sliceString(from, to);
-            const target = view.state.doc.lineAt(position);
-            const box = view.coordsAtPos(target.from);
-            const below = box && event.clientY > (box.top + box.bottom) / 2 && target.length > 0;
-            const insertAt = below ? Math.min(view.state.doc.length, target.to) : target.from;
-            const insert = below ? `\n\n${text}` : `${text}\n\n`;
-            view.dispatch({ changes: [removal(view.state, { from, to }), { from: insertAt, insert }], userEvent: 'move.drop', scrollIntoView: true });
-            view.focus();
-            return true;
-          },
         }),
         EditorView.updateListener.of(update => {
           if (update.docChanged) send(update.view);
@@ -861,11 +1022,11 @@ export function attach(host, field, value, label, placeholderText, emojiJson) {
       view.dispatch({ changes: { from: line.from, to: line.to, insert: text }, userEvent: 'input' });
       view.focus();
     },
-    placeMedia: (mode, at, lines) => {
+    placeMedia: (mode, at, lines, index) => {
       const range = rangeAt(view.state, at);
       if (!range) return;
       if (mode === 'replace') {
-        const line = view.state.doc.line(range.items[0].line);
+        const line = view.state.doc.line((range.items[index] ?? range.items[0]).line);
         const old = parseMediaLine(line.text);
         const fresh = parseMediaLine(lines);
         view.dispatch({ changes: { from: line.from, to: line.to, insert: mediaLine({ ...fresh, caption: old?.caption ?? '' }) }, userEvent: 'input' });
@@ -873,6 +1034,23 @@ export function attach(host, field, value, label, placeholderText, emojiJson) {
         view.dispatch({ changes: { from: range.to, insert: `\n${lines}` }, userEvent: 'input' });
       }
       view.focus();
+    },
+    pictureClosed: () => {
+      const open = host.querySelector('.cm-media__more[aria-expanded="true"]');
+      open?.removeAttribute('aria-expanded');
+      open?.focus();
+    },
+    picture: (action, at, index) => {
+      const range = rangeAt(view.state, at);
+      if (!range || range.items.length < 2 || index >= range.items.length) return;
+      const order = range.items.map((_, each) => each);
+      if (action === 'remove') order.splice(index, 1);
+      else {
+        const to = action === 'earlier' ? index - 1 : index + 1;
+        if (to < 0 || to >= order.length) return;
+        [order[index], order[to]] = [order[to], order[index]];
+      }
+      view.dispatch({ changes: rewritePictures(view.state, range, order), userEvent: action === 'remove' ? 'delete' : 'move' });
     },
     toggleOff: format => {
       const node = enclosing(view.state, inlineKinds[format]);

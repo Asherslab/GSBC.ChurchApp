@@ -11,7 +11,6 @@
 @inject IMediaFiles Files
 @inject FileUploads Uploads
 @inject UiHost Host
-@inject IServiceProvider Services
 @inject IEnumerable<IAppCardSource> CardSources
 
 <div class="rich-text-field @(Host.Desktop ? "" : "rich-text-field--phone") @Class" data-headings="@(Headings ? "true" : "false")">
@@ -166,6 +165,11 @@
     }
 </div>
 
+@if (Host.Desktop && _picture is { } picture)
+{
+    <Menu Label="@picture.Name" Items="PictureItems(picture)" Anchor="picture.Box" OnClose="PictureClosedAsync" />
+}
+
 @if (_picking is { } picking)
 {
     <AppCardPicker Kind="picking.Kind" Look="picking.Look" OnChosen="CardChosenAsync" OnCancel="() => _picking = null" />
@@ -179,7 +183,19 @@
 @if (!Host.Desktop)
 {
     <Sheet Open="_sheet != Sheet.None" OpenChanged="open => _sheet = open ? _sheet : Sheet.None" Title="@SheetTitle">
-        @if (_sheet == Sheet.Insert)
+        @if (_sheet == Sheet.Picture && _picture is { } chosen)
+        {
+            <div class="rich-text-sheet__rows">
+                @foreach (MenuItem item in PictureItems(chosen))
+                {
+                    <button type="button" class="rich-text-sheet__row @(item.Danger ? "rich-text-sheet__row--danger" : "")" disabled="@item.Disabled" @onclick="() => FromSheetAsync(() => item.OnChoose.InvokeAsync())">
+                        <Icon Name="@(item.Icon ?? AppIcons.PlainText)" />
+                        <span>@item.Label</span>
+                    </button>
+                }
+            </div>
+        }
+        else if (_sheet == Sheet.Insert)
         {
             @foreach (IGrouping<string, InsertChoice> group in Inserts.GroupBy(choice => choice.Group))
             {
@@ -237,6 +253,7 @@
     private string _cardLines = "";
     private MarkdownTable? _table;
     private int? _tableAt;
+    private PictureAt? _picture;
 
     [Parameter, EditorRequired] public required RichText Content { get; set; }
     [Parameter] public EventCallback<RichText> ContentChanged { get; set; }
@@ -263,9 +280,15 @@
         Insert,
         Style,
         More,
+        Picture,
     }
 
-    private sealed record Choosing(PickableFiles Kinds, string Mode, int At);
+    private sealed record Choosing(PickableFiles Kinds, string Mode, int At, int Index = 0);
+
+    private sealed record PictureAt(int At, int Index, int Count, MenuAnchor Box)
+    {
+        public string Name => $"Picture {Index + 1} of {Count}";
+    }
 
     private sealed record Picking(AppCardKind Kind, AppCardLook Look, int? At);
 
@@ -307,6 +330,7 @@
     private string SheetTitle => _sheet switch
     {
         Sheet.Insert => "Insert",
+        Sheet.Picture => _picture?.Name ?? "",
         Sheet.Style => "Text style",
         _ => "More formatting",
     };
@@ -363,6 +387,38 @@
         this.Item("Heading 2", () => FormatAsync(Format.H2), AppIcons.Heading, @checked: _style == LineStyle.Heading2),
         this.Item("Heading 3", () => FormatAsync(Format.H3), AppIcons.Heading, @checked: _style == LineStyle.Heading3),
     ];
+
+    private IReadOnlyList<MenuItem> PictureItems(PictureAt picture) =>
+    [
+        this.Item("Move earlier", () => PictureAsync("earlier", picture), AppIcons.MoveEarlier, disabled: picture.Index == 0),
+        this.Item("Move later", () => PictureAsync("later", picture), AppIcons.MoveLater, disabled: picture.Index == picture.Count - 1),
+        this.Item("Replace", () => _choosing = new Choosing(PickableFiles.Pictures, "replace", picture.At, picture.Index), AppIcons.ReplaceIt),
+        this.Item("Take this picture out", () => PictureAsync("remove", picture), AppIcons.TakeOut, danger: true, startsGroup: true),
+    ];
+
+    private async Task PictureAsync(string action, PictureAt picture)
+    {
+        _picture = null;
+        if (_editor is not null)
+            await _editor.InvokeVoidAsync("picture", action, picture.At, picture.Index);
+    }
+
+    private async Task PictureClosedAsync()
+    {
+        _picture = null;
+        if (_editor is not null)
+            await _editor.InvokeVoidAsync("pictureClosed");
+    }
+
+    [JSInvokable]
+    public Task PictureMenuAsync(int at, int index, int count, double left, double top, double width, double height)
+    {
+        _picture = new PictureAt(at, index, count, new MenuAnchor(left, top, width, height));
+        if (!Host.Desktop)
+            _sheet = Sheet.Picture;
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
 
     private IReadOnlyList<MenuItem> MoreItems() =>
     [
@@ -599,9 +655,9 @@
     public string PastedAsync(string tree) => PastedText.FromJson(tree, Headings);
 
     [JSInvokable]
-    public Task MediaWantedAsync(string mode, int at)
+    public Task MediaWantedAsync(string mode, int at, int index)
     {
-        _choosing = new Choosing(mode == "add" ? PickableFiles.Pictures : KindAt(at), mode, at);
+        _choosing = new Choosing(mode == "add" ? PickableFiles.Pictures : KindAt(at), mode, at, index);
         StateHasChanged();
         return Task.CompletedTask;
     }
@@ -699,7 +755,7 @@
         if (choosing.Mode == "insert")
             await ApplyAsync(RichTextEdits.MediaLines(_before, [line]));
         else
-            await _editor.InvokeVoidAsync("placeMedia", choosing.Mode, choosing.At, line);
+            await _editor.InvokeVoidAsync("placeMedia", choosing.Mode, choosing.At, line, choosing.Index);
     }
 
     private async Task AddLinkAsync()
