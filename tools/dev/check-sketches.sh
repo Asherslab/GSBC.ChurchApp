@@ -32,11 +32,14 @@ for card in cards:
     if not file.is_file():
         problems.append(f"{card.get('id')}: {path} doesn't exist")
         continue
-    for match in linked.finditer(file.read_text()):
+    html = file.read_text()
+    for match in linked.finditer(html):
         problems.append(f"{card.get('id')}: {path} links {match.group(0)[:90]}")
+    if re.search(r'<(?:iframe|frame|object|embed)\b', html, re.IGNORECASE):
+        problems.append(f"{card.get('id')}: {path} nests a document (iframe, object or embed); the page shows it blank")
 
 if problems:
-    print("Sketches that will show unstyled on the decision page (inline these into the file):")
+    print("Sketches that will show unstyled or blank on the decision page (make each one a plain document, everything inline):")
     print("\n".join(f"  {p}" for p in problems))
     sys.exit(1)
 sketches = [Path(c["html"]) for c in cards if c.get("html")]
