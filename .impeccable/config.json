@@ -106,7 +106,7 @@
           ".impeccable/mocks/digest/admin.html"
         ],
         "createdAt": "2026-11-07T14:52:20.210Z",
-        "reason": "DESIGN.md Admin sidebar (signature): current link carries a 3px orange bar at the left edge"
+        "reason": "docs/design/admin-shell.md, Admin sidebar: current link carries a 3px orange bar at the left edge"
       },
       {
         "rule": "nested-cards",
@@ -115,7 +115,7 @@
           ".impeccable/mocks/digest/admin.html"
         ],
         "createdAt": "2026-11-07T14:52:20.249Z",
-        "reason": "DESIGN.md Previews: phone frame holds the real app screen, whose feature cards sit inside the frame"
+        "reason": "docs/design/app-shell.md, Previews: phone frame holds the real app screen, whose feature cards sit inside the frame"
       },
       {
         "rule": "cramped-padding",
@@ -124,7 +124,7 @@
           ".impeccable/mocks/digest/admin.html"
         ],
         "createdAt": "2026-11-07T14:52:20.287Z",
-        "reason": "DESIGN.md Previews: phone frame screen is edge-to-edge by design; its content has its own gutters"
+        "reason": "docs/design/app-shell.md, Previews: phone frame screen is edge-to-edge by design; its content has its own gutters"
       },
       {
         "rule": "cream-palette",

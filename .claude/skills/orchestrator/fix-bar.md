@@ -4,8 +4,8 @@ For fixes to screens that already exist: bugs, feedback tickets, layout and styl
 changes. The owner's rule is the same as for every station; the checking is sized to the change (owner, 2026-11-14:
 agents were "taking more and more time for simple things and fixes").
 
-- Read AGENTS.md and docs/architecture/testing.md first. From DESIGN.md read the **Pattern map** at the top of its body
-  and the sections for the parts you touch, not the whole file. The hard rules all hold: gRPC only, the app reads
+- Read AGENTS.md and docs/architecture/testing.md first. Read DESIGN.md (a few minutes: the **Pattern map**
+  and the rules), then only the `docs/design/` file for the parts you touch. The hard rules all hold: gRPC only, the app reads
   through Sync, Access for who-sees-what, create means delete, no comments, the repo is public.
 - The owner's AppHost runs from the main checkout: don't stop it. **Only run your own backend if the fix needs data or
   the server** (then as AGENTS.md says: `Dev__PortOffset`, `tools/dev/copy-main-db-live.sh`, Development environment,

@@ -30,7 +30,7 @@ Write it to a file in your scratchpad and start the station with `--prompt-file`
 
 1. **Who and where:** "You are the **X** station. Work in this worktree on branch `feature/x` (off
    `skeleton/backbone`). Your backend offset is N." Give each live station its own offset (100, 200, …).
-2. **What to read first:** the feature's docs, the architecture docs it touches, DESIGN.md for UI.
+2. **What to read first:** the feature's docs, the architecture docs it touches, DESIGN.md for UI, and the `docs/design/` files for the screens it touches.
 3. **The owner's words, quoted, with the date,** and a plain description of each screenshot (stations can't see the
    owner's images). Describe what's on screen and what's wrong, with the exact labels.
 4. **Decisions already made** (the owner's answers to your questions), and **defaults you picked** where they left a
