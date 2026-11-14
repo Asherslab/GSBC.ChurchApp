@@ -1,14 +1,13 @@
 ---
 title: The app looks and works the same way everywhere
 audience: everyone
-added: 2026-11-12
+added: 2026-11-13
 icon: layout
 area: Everywhere
-highlight: true
 ---
-The app and the admin panel now do each kind of job one way, with buttons in the same places, so once you've learnt one screen you know the rest.
+Each kind of job is done one way, with buttons in the same places, and quiet text, past events and buttons you can't press yet are easier to read.
 
 ## For staff
-Changed: Anywhere you save, Cancel is at the bottom left and Save at the bottom right, with "Saved" or "You have changes that aren't saved" on its own line above them. Deleting, hiding, recalling or turning something off is always in that item's ⋯ menu, and it asks once, saying what goes with it. In the admin panel, a list keeps the record you chose open beside it at every window size, with search and filters in a rail on the left where a page has them: Sermons, Series and speakers, Media, People, App review, App health, Safeguarding, the Calendar and the weekly digest all work this way, and adding something opens it in the same pane. Settings are grouped into cards (your Account, Notification settings, a person's Family and Safeguarding tabs), dialogs show their main button at the right with Cancel or Keep it at the far left, and the sidebar's Account opens a menu where you choose Light, Dark or Automatic and sign out. On the phone, the event editors have Cancel and Save at the foot and their other actions in ⋯, a ministry's roster shows Add a date with a ⋯ menu beside it, and the roster grid no longer shows a sliver of the scrolled dates. Every shared piece is live in the Design gallery.
-Where: Every admin page with a list or settings, the sidebar's Account, the Calendar, and the phone's event editors, Account, Notification settings and a ministry's roster.
-Try: In the admin panel, open Sermons, choose a sermon and open its ⋯ menu; open People and choose Add someone; then click Account at the bottom of the sidebar and choose Dark. On the phone, edit an event and open ⋯ in its head.
+Changed: Anywhere you save, Cancel is bottom left and Save bottom right, with "Saved" above them. Deleting, hiding or turning something off is in that item's ⋯ menu and asks once, saying what goes with it. In the admin panel a list keeps the record you chose open beside it, with search and filters on the left (People, Sermons, Media, Prayer, App health, the Calendar and more); on a narrow window the record opens in place of the list. Settings are grouped into cards, and every place that takes a file has the same dashed box to drop files on. Greyed-out rows, hints and buttons that can't be used yet stay readable in light, dark and every theme, and App styling warns before a theme would make text hard to read. Every page has its own icon. Every shared piece is live in the Design gallery (Technical → Design gallery; More → Design gallery on the phone, for those who can send feedback).
+Where: Everywhere in the app and the admin panel; Account at the foot of the admin sidebar chooses Light, Dark or Automatic.
+Try: In the admin panel, open Sermons, choose a sermon and open its ⋯ menu, then make the window narrow and choose one again. Click Account at the foot of the sidebar and choose Dark. On the phone, edit an event and open ⋯ in its head.

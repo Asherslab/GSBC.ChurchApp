@@ -1,14 +1,14 @@
 ---
 title: Rosters
 audience: everyone
-added: 2026-11-11
+added: 2026-11-14
 icon: calendar
-area: Ministries
+area: Rosters
 highlight: true
 ---
 A ministry can roster its team: see when you're on, say whether you can do it, ask for a swap and mark days you're away, all in the app.
 
 ## For staff
-Changed: A ministry has a *Roster* tab (it's in *What it uses*, so a ministry that doesn't roster can turn it off). Leaders add the jobs people do (*Positions*: how many people each needs, and whether it needs a blue card, Safe Ministry training or being trained for it), then add dates by choosing any event in the app's calendars and put people on, date by date or in the grid. Anything someone doesn't meet, a day they're away, or being on twice that day is flagged beside their name, but never stops you. *How it works* chooses whether people answer, which ways swaps work (the team picks it up; the team offers and a leader says yes; ask someone directly), how much of the roster the team sees, and when reminders go. People hear when they're put on, before the date, and if they haven't answered; leaders hear when someone can't do it, asks for a swap, or is away on a date they're on. A parent sees and answers for a child on the team. The Hub has a *Your roster* tile.
-Where: A ministry's *Roster* tab, in the app (More → Ministries) and in the admin panel (People → Ministries).
-Try: In a ministry you lead, open *Roster*, add a position, add a date, and put yourself on it. Then answer it, ask for a swap, and add a day you're away.
+Changed: A ministry's *Roster* tab (turn it off in *What it uses*). Leaders add *Positions* (how many people, and whether each needs a blue card, Safe Ministry training or being trained for it), then add dates from events in the calendars the roster uses and put people on, date by date or in the grid. Anything someone doesn't meet, a day away, or being on twice that day is flagged, but never stops you. Someone not yet trained goes on as training, on their own line ("Training, with Jo"), and the place stays open until someone trained is on with them. *How the roster works* sets whether people answer, the swap rule (nobody, anyone can take it, or a leader says yes), how much the team sees and when reminders go; each reminder arrives once. A parent answers for a child on the team. The Hub has a *Your roster* tile.
+Where: A ministry's Roster tab; How the roster works is in the ⋯ next to Add a date.
+Try: Add a position that needs training and a date. Put on someone untrained (amber), then someone trained. Answer the date and ask for a swap.
