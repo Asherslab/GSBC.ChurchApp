@@ -1,7 +1,70 @@
 # Outreach
 
-Status: draft, 2026-10-27; not built yet (Home has a sample *Outreach day* tile that opens *coming soon*). Extends [SPEC.md](../../SPEC.md). A POC is in the PWA spike
-(`spikes/app-poc`, More → Outreach and the Hub tile).
+Status: interviewed 2026-11-14 (*The interview*, below: it supersedes the draft where they differ); being built from
+2026-11-14 in stages. Draft 2026-10-27. Extends [SPEC.md](../../SPEC.md). A POC is in the PWA spike
+(`spikes/app-poc`, More → Outreach and the Hub tile): its engine and planner tools are the starting point, its rough
+edges are not.
+
+## The interview (owner, 2026-11-14)
+
+The owner: "The POC was decent, but it definitely had some rough edges and felt very POC." Two parts:
+
+**A) Casual outreach.** "An app user has X amount of time, or wants to go for a walk for X amount of km. Opens the app,
+goes to outreach, and wants to walk from where they are (most likely), maybe a select from location they're driving to
+... The app gives them a route, and they start walking while the app has a continuous interaction throughout the walk.
+needs to be able to handle the user not constantly interacting (shouldn't have to tick off every house, etc), but should
+allow marking houses / etc as makes sense." The heart of it is **a shared record with the church**: what has been
+outreached, how recently and how much, so casual walks quietly collaborate by avoiding recently done streets. "Sometimes
+(especially if a user is frequently walking around their house area), the area around is already outreached, in which
+case, the app will need to advise them about that and where to go to start."
+
+**B) Planned outreach.** A monthly outreach Saturday with pre-planned routes, in pairs. Today a ministry member
+screenshots Google Maps into Illustrator and draws each route by hand ("That's a lot of work"). People arrive, get a
+paper map with a QR code to a PDF copy; **the QR code now opens the route in the app**, and walkers are asked to use it
+so the church can see which parts of each route did or didn't get done.
+
+Decided:
+
+- **Tracking: GPS marks streets.** While a walk is on, the phone's position marks each street side as covered as you
+  pass it, including with the phone locked in a pocket (iOS background location for the length of a walk only, started
+  and stopped by the walker). Nobody ticks houses; you can correct the record at the end.
+- **Marks along the way:** No junk mail; Spoke to someone (a count, nothing about the people); Not a home / wrong on
+  the map (a report for staff review); Skipped this bit (stays open for someone else even though you walked past it).
+- **Start:** from here by default, or anywhere (search an address or drop a pin, e.g. where you'll park). When the
+  streets around you are already done, the app says so and suggests the nearest good start and how far it is.
+- **Rest period: configurable, default 3 months.** An admin **settings screen** holds this and the other tunables
+  (pace, seconds per letterbox, bundle size, daylight hours, connector limits …), and an admin **coverage map** shows
+  everything recently done and lets staff mark coverage expired by hand.
+- **Outreach days:** printable route maps (one A4 PDF per route: the route drawn, start and meeting point, letterboxes
+  and bundles, a street list and the route's QR code), replacing the Illustrator work; the **QR opens the route** in
+  the app ready to start (a web page with the map without the app); a **live day board** for organisers (claimed or
+  not, progress, what's done, so late arrivals go to gaps). People pick routes themselves; no pre-assigned pairs.
+- **Planners:** Outreach is a **ministry**; its leaders (a role) plan days and routes in the admin panel; on the phone
+  they see the day and the live board.
+- **Areas: both** a coverage map (what's open and what's done, which casual routes aim at) and saved, named areas
+  planners can reuse.
+- **Sign-in optional.** Anyone with the app can walk, visitors on a day included. Signed-in walkers' totals are
+  **counted by name, with an opt-out** (one switch; then counted anonymously), so the church can recognise people who
+  do a lot (prizes, competitions); leaderboards are a per-campaign switch for staff. Which streets someone walked is
+  never shown to others, only totals; each walker sees their own history.
+- **Campaigns.** A campaign is what's handed out and where: *General outreach* (always on), *Carols 2026*, a mission
+  like Gympie or the south side. Each has its own flyer, dates, area and **its own coverage**, so a carols drop ignores
+  general coverage and the other way round. Outreach days and casual walks belong to a campaign; the app picks the
+  active one near you and you can switch. **A walker may carry more than one campaign at once** (carols flyers and
+  general tracts): the walk then records coverage for each. No junk mail and the doorknock "hostile" mark are shared
+  across campaigns.
+- **Data area:** about **20 km around church** by default, cut into **regions**; a campaign far away (Gympie, the south
+  side) adds its own region. A phone downloads the region it's walking in automatically and the active campaign's
+  region before an outreach day; *Offline maps* lets anyone keep or remove regions, with sizes.
+- **Map tiles: self-hosted.** One static PMTiles file (vector map) per region, stored in R2 and read by HTTP range
+  requests from the media host; the owner approved this path (AGENTS.md). Styled to the church brand; works offline.
+- **Doorknocking: planned in now.** A doorknock walk has its own pace per door, pairs required, daylight only, and a
+  check-in at start and finish. At a door: *Knocked, no answer* (so a later doorknock can try again, never shown as
+  anything about the household); *Spoke, follow-up wanted* (a first name and contact details only with their consent,
+  sent to the outreach leaders' inbox); *Hostile*: "wants absolutely nothing to do with it", not merely dismissive;
+  that address is then skipped for doorknocking and letterboxing.
+- **Reporting:** the coverage map with expiry; totals over time (letterboxes, km, walks, conversations, per week, month,
+  outreach day and campaign); each walker's own history.
 
 ## What it is
 
