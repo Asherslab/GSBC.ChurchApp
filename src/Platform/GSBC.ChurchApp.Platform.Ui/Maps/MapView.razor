@@ -31,6 +31,7 @@
     private bool _shownFollow;
     private MapFrame? _shownFrame;
     private bool _disposed;
+    private Task? _creating;
 
     [Parameter, EditorRequired] public required MapSource Source { get; set; }
     [Parameter, EditorRequired] public required string Label { get; set; }
@@ -52,8 +53,20 @@
     {
         if (_disposed)
             return;
+        if (_creating is not null)
+            await _creating;
         if (_map is null || !Equals(_shownSource, Source))
-            await CreateAsync();
+        {
+            _creating = CreateAsync();
+            try
+            {
+                await _creating;
+            }
+            finally
+            {
+                _creating = null;
+            }
+        }
         if (_map is null)
             return;
         await PushAsync();
