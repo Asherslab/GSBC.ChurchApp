@@ -20,7 +20,7 @@ public sealed class DestinationsService(DestinationDirectory directory) : IDesti
 }
 
 public sealed class DestinationDirectory(
-    DestinationCatalog catalog, IEnumerable<IDestinationSource> sources, IAccessEvaluator access, PermissionCatalog permissions)
+    DestinationCatalog catalog, IEnumerable<IDestinationSource> sources, PlaceAccess access, PermissionCatalog permissions)
 {
     private const int BrowseTake = 6;
     private const int AreaTake = 40;
@@ -83,16 +83,8 @@ public sealed class DestinationDirectory(
     private static bool OpenableByAll(Destination destination, Audience viewers) =>
         Audience.TryParse(destination.Audience, out Audience? audience) && DestinationAudiences.OpenableByAll(audience, destination.AudienceScope, viewers);
 
-    private async Task<bool> MayOpenAsync(ClaimsPrincipal user, Destination destination, CancellationToken cancellationToken)
-    {
-        if (!Audience.TryParse(destination.Audience, out Audience? audience))
-            return false;
-        if (audience == Audience.Everyone)
-            return true;
-        if (Caller.UserId(user) is null)
-            return false;
-        return audience.Node is not { } node || await access.IsAllowedAsync(user, node, destination.AudienceScope, cancellationToken);
-    }
+    private async Task<bool> MayOpenAsync(ClaimsPrincipal user, Destination destination, CancellationToken cancellationToken) =>
+        Audience.TryParse(destination.Audience, out Audience? audience) && await access.MayOpenAsync(user, audience, destination.AudienceScope, cancellationToken);
 
     private Destination Describe(DestinationPage page, DestinationState state) => new()
     {

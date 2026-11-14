@@ -1,0 +1,39 @@
+@using GSBC.ChurchApp.Platform.Icons
+@using GSBC.ChurchApp.Platform.Contracts.Content
+@using GSBC.ChurchApp.Platform.Ui.Content
+@inject ISermonCards Cards
+
+<LiveData TValue="SermonCardShelf" Load="Cards.LoadAsync" Feeds="Cards.Feeds" Loading="Nothing" Failed="_ => Nothing">
+    @if (context.Value.Find(Card.Id) is { } sermon)
+    {
+        ListeningEntry? progress = context.Value.ProgressOf(sermon);
+        string href = SermonsDestinations.Sermon.PathOf(sermon.Id);
+        <AppCardFrame Kind="AppCardKind.Sermon" Look="Card.Look" Title="@sermon.Title" Meta="@Meta(sermon)" Href="@href" Picture="sermon.Artwork"
+                      Progress="@ProgressOf(progress)" Actions="ActionsFor(href)">
+            <AppCardLine Icon="mic">@SermonText.Join(sermon.SpeakerName, SermonText.LongDay(sermon.PreachedAt), SermonText.Length(sermon.DurationSeconds))</AppCardLine>
+        </AppCardFrame>
+    }
+    else if (Editing)
+    {
+        <AppCardMissing Text="This sermon isn't in the app any more, or it's older than phones keep. Take it out or choose another." />
+    }
+</LiveData>
+
+@code {
+    private static readonly RenderFragment Nothing = _ => { };
+
+    [Parameter, EditorRequired] public required AppCard Card { get; set; }
+    [Parameter] public bool Editing { get; set; }
+
+    private static IReadOnlyList<AppCardAction> ActionsFor(string href) => [new("Open the sermon", AppIcons.Sermons, href, Main: true)];
+
+    private static string Meta(Sermon sermon) =>
+        sermon.SeriesName is { Length: > 0 } series ? SermonText.Join("Sermon", sermon.Part > 0 ? $"{series}, part {sermon.Part}" : series) : "Sermon";
+
+    private static RenderFragment? ProgressOf(ListeningEntry? progress) => progress switch
+    {
+        { } entry when ListeningProgress.IsFinished(entry) => @<span>Heard</span>,
+        { } entry when ListeningProgress.IsUnderway(entry) => @<text><ProgressTrack Fraction="ListeningProgress.Fraction(entry)" /><span>@SermonText.Left(entry)</span></text>,
+        _ => null,
+    };
+}

@@ -1,5 +1,7 @@
 using GSBC.ChurchApp.Features.Sermons.Contracts;
+using GSBC.ChurchApp.Platform.Client.Content;
 using GSBC.ChurchApp.Platform.Client.Destinations;
+using GSBC.ChurchApp.Platform.Contracts.Content;
 using GSBC.ChurchApp.Platform.Client.Modules;
 using GSBC.ChurchApp.Platform.Client.Notifications;
 using GSBC.ChurchApp.Platform.Ui.Surfaces;
@@ -16,6 +18,7 @@ public static class SermonsClientExtensions
             .AddSingleton<IClientStartupTask>(provider => provider.GetRequiredService<Listening>())
             .AddSingleton<SermonPlayer>()
             .AddSingleton<SermonLibrary>()
+            .AddSingleton<ISermonCards, StoredSermonCards>()
             .AddSingleton<SermonFollows>()
             .AddSingleton<IFollowedScopes>(provider => provider.GetRequiredService<SermonFollows>())
             .AddSingleton<IClientStartupTask>(provider => provider.GetRequiredService<SermonFollows>());
@@ -24,5 +27,7 @@ public static class SermonsClientExtensions
         services
             .AddDestinations(SermonsDestinations.All)
             .AddSingleton<SermonCatalogue>()
-            .AddHubTile<LatestSermonTile>(SermonsTiles.Latest);
+            .AddHubTile<LatestSermonTile>(SermonsTiles.Latest)
+            .AddAppCardView<SermonCard>(AppCardKind.Sermon)
+            .AddAppCardSource<SermonCardChoices>();
 }

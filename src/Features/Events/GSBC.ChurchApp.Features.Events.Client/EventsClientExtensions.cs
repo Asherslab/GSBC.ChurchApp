@@ -1,5 +1,7 @@
 using GSBC.ChurchApp.Features.Events.Contracts;
+using GSBC.ChurchApp.Platform.Client.Content;
 using GSBC.ChurchApp.Platform.Client.Destinations;
+using GSBC.ChurchApp.Platform.Contracts.Content;
 using GSBC.ChurchApp.Platform.Client.Modules;
 using GSBC.ChurchApp.Platform.Ui.Surfaces;
 using Microsoft.Extensions.DependencyInjection;
@@ -19,6 +21,7 @@ public static class EventsClientExtensions
             .AddSingleton<IEventEditing, StoredEventEditing>()
             .AddSingleton<IYourCalendarLink, PhoneCalendarLink>()
             .AddSingleton<IEventChoices, DiaryEventChoices>()
+            .AddSingleton<IEventCards, DiaryEventCards>()
             .AddSingleton<IClientStartupTask>(provider => provider.GetRequiredService<YourCalendars>());
 
     public static IServiceCollection AddEventsClient(this IServiceCollection services) =>
@@ -29,5 +32,7 @@ public static class EventsClientExtensions
             .AddSingleton<CalendarSubscriptions>()
             .AddSingleton<WideningWords>()
             .AddSingleton(new CalendarSetView(CalendarSetList.For))
-            .AddHubTile<ComingUpTile>(EventsTiles.Week);
+            .AddHubTile<ComingUpTile>(EventsTiles.Week)
+            .AddAppCardView<EventCard>(AppCardKind.Event)
+            .AddAppCardSource<EventCardChoices>();
 }

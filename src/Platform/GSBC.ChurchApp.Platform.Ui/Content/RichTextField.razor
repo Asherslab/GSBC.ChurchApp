@@ -1,5 +1,6 @@
 @using System.Globalization
 @using System.Text.Json
+@using GSBC.ChurchApp.Platform.Client.Content
 @using GSBC.ChurchApp.Platform.Client.Media
 @using GSBC.ChurchApp.Platform.Client.Uploads
 @using GSBC.ChurchApp.Platform.Contracts.Content
@@ -11,6 +12,7 @@
 @inject FileUploads Uploads
 @inject UiHost Host
 @inject IServiceProvider Services
+@inject IEnumerable<IAppCardSource> CardSources
 
 <div class="rich-text-field @(Host.Desktop ? "" : "rich-text-field--phone") @Class" data-headings="@(Headings ? "true" : "false")">
     <div class="rich-text-field__bar" role="toolbar" aria-label="Formatting" data-look-scroll data-look-bleed>
@@ -79,6 +81,63 @@
             </div>
         </div>
     }
+    else if (_panel == Panel.Look && _cardAt is { } looking)
+    {
+        <div class="rich-text-panel" role="group" aria-label="How the card looks">
+            <Segmented TValue="AppCardLook" Label="How the card looks" Rows="true" Options="Looks" Value="looking.Card.Look" ValueChanged="LookChosenAsync" />
+            <div class="rich-text-panel__actions">
+                <Button Variant="ButtonVariant.Quiet" Small="true" OnClick="ClosePanel">Done</Button>
+            </div>
+        </div>
+    }
+    else if (_panel == Panel.Table && _table is { } table)
+    {
+        <div class="rich-text-panel" role="group" aria-label="The table">
+            <div class="rich-text-table-editor">
+                <table>
+                    @for (int row = 0; row < table.Rows.Count; row++)
+                    {
+                        int r = row;
+                        <tr>
+                            @for (int column = 0; column < table.Columns; column++)
+                            {
+                                int c = column;
+                                <td>
+                                    <input class="rich-text-table-editor__cell @(r == 0 ? "rich-text-table-editor__cell--head" : "")" value="@table.Rows[r][c]"
+                                           aria-label="@(r == 0 ? $"Heading {c + 1}" : $"Row {r}, column {c + 1}")" @oninput="change => SetCell(table, r, c, change)" />
+                                </td>
+                            }
+                            <td class="rich-text-table-editor__tool">
+                                @if (r > 0 && table.Rows.Count > 2)
+                                {
+                                    <Button Variant="ButtonVariant.Quiet" Small="true" Icon="x" AriaLabel="@($"Take out row {r}")" Tooltip="Take out this row" OnClick="() => table.RemoveRow(r)" />
+                                }
+                            </td>
+                        </tr>
+                    }
+                    @if (table.Columns > 1)
+                    {
+                        <tr>
+                            @for (int column = 0; column < table.Columns; column++)
+                            {
+                                int c = column;
+                                <td class="rich-text-table-editor__tool">
+                                    <Button Variant="ButtonVariant.Quiet" Small="true" Icon="x" AriaLabel="@($"Take out column {c + 1}")" Tooltip="Take out this column" OnClick="() => table.RemoveColumn(c)" />
+                                </td>
+                            }
+                        </tr>
+                    }
+                </table>
+            </div>
+            <div class="rich-text-panel__actions">
+                <Button Variant="ButtonVariant.Tinted" Small="true" Icon="plus" OnClick="table.AddRow">Add a row</Button>
+                <Button Variant="ButtonVariant.Tinted" Small="true" Icon="plus" OnClick="table.AddColumn">Add a column</Button>
+                <span class="rich-text-panel__gap"></span>
+                <Button Variant="ButtonVariant.Quiet" Small="true" OnClick="ClosePanel">Cancel</Button>
+                <Button Small="true" OnClick="TableDoneAsync">@(_tableAt is null ? "Put it in" : "Done")</Button>
+            </div>
+        </div>
+    }
     else if (_panel == Panel.Emoji)
     {
         <div class="rich-text-panel rich-text-panel--emoji" role="group" aria-label="Emoji">
@@ -94,7 +153,23 @@
         </div>
     }
     <div class="rich-text-field__editor" @ref="_host"></div>
+    @if (Allowed.HasFlag(RichTextMedia.AppCards))
+    {
+        <div class="rich-text-field__cards" @ref="_shelf" aria-hidden="true">
+            @foreach (AppCard card in CardsInText())
+            {
+                <div @key="card.Directive" data-card="@card.Directive" data-label="@($"A card for {AppCards.WithArticle(card.Kind)}")">
+                    <AppCardBlock Card="card" Editing="true" />
+                </div>
+            }
+        </div>
+    }
 </div>
+
+@if (_picking is { } picking)
+{
+    <AppCardPicker Kind="picking.Kind" Look="picking.Look" OnChosen="CardChosenAsync" OnCancel="() => _picking = null" />
+}
 
 @if (_choosing is { } choosing)
 {
@@ -155,6 +230,13 @@
     private EditorText _before;
     private Choosing? _choosing;
     private string _sentMedia = "";
+    private ElementReference _shelf;
+    private bool _watchingCards;
+    private Picking? _picking;
+    private CardAt? _cardAt;
+    private string _cardLines = "";
+    private MarkdownTable? _table;
+    private int? _tableAt;
 
     [Parameter, EditorRequired] public required RichText Content { get; set; }
     [Parameter] public EventCallback<RichText> ContentChanged { get; set; }
@@ -171,6 +253,8 @@
         Link,
         VideoLink,
         Emoji,
+        Look,
+        Table,
     }
 
     private enum Sheet
@@ -182,6 +266,17 @@
     }
 
     private sealed record Choosing(PickableFiles Kinds, string Mode, int At);
+
+    private sealed record Picking(AppCardKind Kind, AppCardLook Look, int? At);
+
+    private sealed record CardAt(AppCard Card, int At);
+
+    private static readonly IReadOnlyList<SegmentOption<AppCardLook>> Looks =
+    [
+        new(AppCardLook.Rule, "Side rule", Detail: "Quiet, part of the text, its actions as words"),
+        new(AppCardLook.Line, "Timetable line", Detail: "The date or picture at the left, with buttons"),
+        new(AppCardLook.Box, "Box", Detail: "Its picture across the top and a wide main button"),
+    ];
 
     private sealed record InsertChoice(string Group, string Label, string Icon, string? Detail, Func<Task> Action);
 
@@ -226,13 +321,28 @@
             ? [
                 new InsertChoice("Layout", "Split into cards", AppIcons.CardSplit, null, () => BlockAsync(RichTextParser.CardSplit)),
                 new InsertChoice("Layout", "Line across", AppIcons.LineAcross, null, () => BlockAsync("---")),
-                new InsertChoice("Layout", "Table", AppIcons.Table, null, () => BlockAsync("| Heading | Heading |\n| --- | --- |\n| Text | Text |", 2)),
+                new InsertChoice("Layout", "Table", AppIcons.Table, null, NewTableAsync),
                 new InsertChoice("Layout", "Code block", AppIcons.CodeBlock, null, () => BlockAsync("```\n\n```", 4)),
                 new InsertChoice("In the text", "Footnote", AppIcons.Footnote, null, FootnoteAsync),
                 new InsertChoice("In the text", "Emoji", AppIcons.Emoji, null, () => OpenPanel(Panel.Emoji)),
             ]
             : Array.Empty<InsertChoice>(),
+        .. Allowed.HasFlag(RichTextMedia.AppCards)
+            ? AppCards.All.Where(kind => CardSources.Any(source => source.Kinds.Contains(kind)))
+                .Select(kind => new InsertChoice("From the app", AppCards.Title(kind), CardIcon(kind), null, () => PickCardAsync(kind)))
+            : [],
     ];
+
+    private static string CardIcon(AppCardKind kind) => kind switch
+    {
+        AppCardKind.Event => AppIcons.Calendar,
+        AppCardKind.Sermon => AppIcons.Sermons,
+        AppCardKind.Ministry => AppIcons.Ministries,
+        _ => AppIcons.LifeGroups,
+    };
+
+    private IReadOnlyList<AppCard> CardsInText() =>
+        RichTextParser.Parse(_markdown).AppCards.DistinctBy(card => card.Directive).ToList();
 
     private IReadOnlyList<MenuItem> InsertItems()
     {
@@ -299,6 +409,11 @@
         _editor = await _module.InvokeAsync<IJSObjectReference>("attach", _host, _self, _markdown, Label, Placeholder, emoji);
         _sentMedia = "";
         await SendMediaAsync();
+        if (Allowed.HasFlag(RichTextMedia.AppCards))
+        {
+            await _editor.InvokeVoidAsync("watchCards", _shelf);
+            _watchingCards = true;
+        }
     }
 
     private async Task SendMediaAsync()
@@ -381,6 +496,92 @@
             return;
         _markdown = markdown;
         await ContentChanged.InvokeAsync(Current());
+        string lines = string.Join('\n', CardsInText().Select(card => card.Directive));
+        if (_watchingCards && lines != _cardLines)
+        {
+            _cardLines = lines;
+            StateHasChanged();
+        }
+    }
+
+    [JSInvokable]
+    public Task CardWantedAsync(string mode, int at)
+    {
+        if (AppCards.OfLine(LineAt(at)) is not { } card)
+            return Task.CompletedTask;
+        _cardAt = new CardAt(card, at);
+        if (mode == "look")
+            _panel = Panel.Look;
+        else
+            _picking = new Picking(card.Kind, card.Look, at);
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+    [JSInvokable]
+    public Task TableWantedAsync(int at, string markdown)
+    {
+        if (MarkdownTable.Read(markdown) is not { } table)
+            return Task.CompletedTask;
+        (_table, _tableAt, _panel) = (table, at, Panel.Table);
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+    private static void SetCell(MarkdownTable table, int row, int column, ChangeEventArgs change) =>
+        table.Rows[row][column] = change.Value?.ToString() ?? "";
+
+    private async Task NewTableAsync()
+    {
+        await OpenPanel(Panel.Table);
+        (_table, _tableAt) = (MarkdownTable.New(), null);
+    }
+
+    private async Task TableDoneAsync()
+    {
+        MarkdownTable? table = _table;
+        int? at = _tableAt;
+        ClosePanel();
+        if (table is null || _editor is null)
+            return;
+        if (at is { } position)
+            await _editor.InvokeVoidAsync("replaceRange", position, table.Markdown());
+        else
+            await ApplyAsync(RichTextEdits.Block(_before, table.Markdown()));
+    }
+
+    private async Task PickCardAsync(AppCardKind kind)
+    {
+        _before = await CurrentAsync();
+        _picking = new Picking(kind, AppCardLook.Rule, null);
+    }
+
+    private async Task CardChosenAsync(AppCard card)
+    {
+        Picking? picking = _picking;
+        _picking = null;
+        if (picking is null || _editor is null)
+            return;
+        if (picking.At is { } at)
+            await _editor.InvokeVoidAsync("replaceLine", at, card.Directive);
+        else
+            await ApplyAsync(RichTextEdits.Block(_before, card.Directive));
+    }
+
+    private async Task LookChosenAsync(AppCardLook look)
+    {
+        if (_cardAt is not { } at || _editor is null)
+            return;
+        AppCard changed = at.Card with { Look = look };
+        _cardAt = at with { Card = changed };
+        await _editor.InvokeVoidAsync("replaceLine", at.At, changed.Directive);
+    }
+
+    private string LineAt(int at)
+    {
+        string before = _markdown[..Math.Clamp(at, 0, _markdown.Length)];
+        int lineEnd = _markdown.IndexOf('\n', before.Length);
+        return _markdown[(before.LastIndexOf('\n') + 1)..(lineEnd < 0 ? _markdown.Length : lineEnd)].Trim();
     }
 
     private RichText Current() => RichTextRules.WithOnlyUsedMedia(new RichText { Markdown = _markdown, Media = [.. _media] });
@@ -407,10 +608,7 @@
 
     private PickableFiles KindAt(int at)
     {
-        string before = _markdown[..Math.Clamp(at, 0, _markdown.Length)];
-        int lineEnd = _markdown.IndexOf('\n', before.Length);
-        string line = _markdown[(before.LastIndexOf('\n') + 1)..(lineEnd < 0 ? _markdown.Length : lineEnd)].Trim();
-        return RichTextParser.Parse(line).MediaIds.FirstOrDefault() is { } id && _media.FirstOrDefault(media => media.Id == id) is { } media
+        return RichTextParser.Parse(LineAt(at)).MediaIds.FirstOrDefault() is { } id && _media.FirstOrDefault(known => known.Id == id) is { } media
             ? media.IsVideo ? PickableFiles.Videos : media.IsImage ? PickableFiles.Pictures : PickableFiles.Documents
             : PickableFiles.Pictures;
     }

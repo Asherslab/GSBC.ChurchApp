@@ -1,0 +1,25 @@
+@using GSBC.ChurchApp.Platform.Client.Content
+@using GSBC.ChurchApp.Platform.Contracts.Content
+@inject IEnumerable<AppCardView> Views
+
+@if (Views.FirstOrDefault(view => view.Kind == Card.Kind) is { } view)
+{
+    @Render(view)
+}
+else if (Editing)
+{
+    <AppCardMissing Text="@($"This {AppCards.Noun(Card.Kind)} can't be shown here.")" />
+}
+
+@code {
+    [Parameter, EditorRequired] public required AppCard Card { get; set; }
+    [Parameter] public bool Editing { get; set; }
+
+    private RenderFragment Render(AppCardView view) => builder =>
+    {
+        builder.OpenComponent(0, view.Component);
+        builder.AddComponentParameter(1, AppCardView.CardParameter, Card);
+        builder.AddComponentParameter(2, AppCardView.EditingParameter, Editing);
+        builder.CloseComponent();
+    };
+}

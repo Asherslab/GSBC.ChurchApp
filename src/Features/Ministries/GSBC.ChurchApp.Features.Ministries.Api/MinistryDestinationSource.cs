@@ -28,7 +28,7 @@ internal sealed class MinistryDestinationSource(MinistryViews views) : IDestinat
 
     public Task<string?> OpenUrlAsync(string id, CancellationToken cancellationToken) => Task.FromResult<string?>(null);
 
-    private static FoundPlace Place(MinistryTree tree, MinistryRecord ministry) =>
+    internal static FoundPlace Place(MinistryTree tree, MinistryRecord ministry) =>
         tree.IsHidden(ministry.Id)
             ? new(ministry.Id.ToString(), ministry.Name, "Ministries", MinistryViews.SeesHidden(ministry.Id), ministry.Id.ToString())
             : new(ministry.Id.ToString(), ministry.Name, "Ministries", Audience.Everyone);

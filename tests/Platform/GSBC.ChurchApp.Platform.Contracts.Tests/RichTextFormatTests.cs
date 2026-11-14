@@ -139,16 +139,43 @@ public sealed class RichTextFormatTests
     public void EmojiShortcodesBecomeEmojiAndUnknownOnesStayText() =>
         Assert.Equal("Thanks 🙏 :not-a-code: 10:30", Text(Assert.Single(Only("Thanks :pray: :not-a-code: 10:30"))));
 
-    [Fact]
-    public void AppThingsAreReservedAndNotShownYet()
+    [Theory]
+    [InlineData("::event{id=4f1c2d3e4f1c2d3e4f1c2d3e4f1c2d3e}", AppCardKind.Event, EventShows.OneDate)]
+    [InlineData("::event{id=4f1c2d3e4f1c2d3e4f1c2d3e4f1c2d3e-2026-12-20}", AppCardKind.Event, EventShows.OneDate)]
+    [InlineData("::event{id=4f1c2d3e4f1c2d3e4f1c2d3e4f1c2d3e show=next}", AppCardKind.Event, EventShows.NextDate)]
+    [InlineData("::event{id=4f1c2d3e4f1c2d3e4f1c2d3e4f1c2d3e show=pattern}", AppCardKind.Event, EventShows.Pattern)]
+    [InlineData("::event{id=4f1c2d3e4f1c2d3e4f1c2d3e4f1c2d3e show=next look=box}", AppCardKind.Event, EventShows.NextDate)]
+    [InlineData("::sermon{id=8a1b look=line}", AppCardKind.Sermon, EventShows.OneDate)]
+    [InlineData("::ministry{id=welcome-team}", AppCardKind.Ministry, EventShows.OneDate)]
+    [InlineData("::lifegroup{id=0193a1b2c3d4}", AppCardKind.LifeGroup, EventShows.OneDate)]
+    public void AnAppCardReadsBackAsTheLineItWasWrittenAs(string line, AppCardKind kind, EventShows shows)
     {
-        RichTextDocument document = RichTextParser.Parse("::event{id=42 date=\"2026-12-20\"}");
+        AppCard card = Assert.Single(RichTextParser.Parse(line).AppCards);
 
-        DirectiveBlock directive = Assert.IsType<DirectiveBlock>(Assert.Single(document.Blocks));
-        Assert.Equal(("event", "42", "2026-12-20"), (directive.Name, directive.Attributes["id"], directive.Attributes["date"]));
-        Assert.Contains("isn't ready yet", Assert.Single(RichTextRules.ProblemsWith(new RichText { Markdown = "::event{id=42}" })));
-        Assert.Contains("isn't something the app can show", Assert.Single(RichTextRules.ProblemsWith(new RichText { Markdown = "::script{src=x}" })));
+        Assert.Equal((kind, shows, line), (card.Kind, card.Shows, card.Directive));
+        Assert.Empty(RichTextRules.ProblemsWith(new RichText { Markdown = line }, allowed: RichTextMedia.Posts));
     }
+
+    [Theory]
+    [InlineData("::event{}")]
+    [InlineData("::event{id=\"a b\"}")]
+    [InlineData("::sermon{id=8a1b show=next}")]
+    [InlineData("::event{id=8a1b show=always}")]
+    [InlineData("::ministry{id=8a1b onclick=x}")]
+    [InlineData("::ministry{id=8a1b look=huge}")]
+    public void AnAppCardThatLostWhatItPointsToIsRefused(string line) =>
+        Assert.Contains("lost what it points to", Assert.Single(RichTextRules.ProblemsWith(new RichText { Markdown = line }, allowed: RichTextMedia.Posts)));
+
+    [Fact]
+    public void AppCardsGoOnlyWhereThePlaceAllowsThemAndOtherDirectivesNowhere()
+    {
+        Assert.Contains("can't go in here", Assert.Single(RichTextRules.ProblemsWith(new RichText { Markdown = "::event{id=8a1b}" }, allowed: RichTextMedia.Pictures | RichTextMedia.Layout)));
+        Assert.Contains("isn't something the app can show", Assert.Single(RichTextRules.ProblemsWith(new RichText { Markdown = "::script{src=x}" }, allowed: RichTextMedia.Posts)));
+    }
+
+    [Fact]
+    public void AnAppCardIsNeverPartOfAPostsPlainText() =>
+        Assert.Equal("Come along.", PlainText.Of(new RichText { Markdown = "::ministry{id=hidden-team}\n\nCome along." }));
 
     [Fact]
     public void AVideoLinkCanCarryACaption()

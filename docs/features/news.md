@@ -157,9 +157,41 @@ markdown ... plenty of it could be under a 'extras' dropdown".
   *Each part a card* (the post on sand, one white card per part). Chosen because it gives the picture-less posts the
   presence the owner asked for while matching the picture-led posts they already chose. The admin panel's *Preview
   on a phone* shows the same.
-- **Not yet:** the owner's app-specific embeds (events, sermons, ministries, Life Groups) are the next round; their
-  spelling is reserved (*rich-text.md*). Emoji show as boxes in the dev Simulator only (it has no emoji font); phones
+- **App-specific embeds** came next: see *Cards for app content* below. Emoji show as boxes in the dev Simulator only (it has no emoji font); phones
   show them.
+
+## Cards for app content, and tables drawn in place (owner, 2026-11-14)
+
+The owner: "Keep going with the 'next round' of markdown stuff", the most valuable being app content as live cards in a
+post ("a custom thing for those more app-specific native things like you mentioned (events, sermons, ministries,
+lifegroups, etc)").
+
+- **Interview (owner, 2026-11-14):** a post may be for more people than can see a card in it: it saves, and the editor
+  says under the card "Only people who can see this … will see its card"; everyone else sees the post without it. A
+  regular event is the writer's choice: one date, the next date rolling on, or the pattern ("Every Sunday"). A sermon
+  card opens the sermon rather than playing in place, and shows how far you got (or Heard).
+- **Three looks, the writer picks** (decision page, `.impeccable/mocks/app-embeds/`; the owner: "can we give them a
+  choice? all three look good for different scenarios"; default chosen: *Side rule*). *Side rule*: set into the text
+  behind a rule in the kind's colour, its actions as words. *Timetable line*: the date (or picture or tile) at the left,
+  hairlines above and below, real buttons. *Box*: a sand box with the picture (or a solid tile) across the top and a
+  wide main button. Changed from each card's controls while writing.
+- **What each shows:** an event: title, date and time, place, picture; *Add to calendar* and *Open*; its change note
+  ("Changed: …") or, cancelled, a struck title and the reason; a date that's over says so quietly. A sermon: artwork,
+  speaker, date, length, series; *Open the sermon*; progress. A ministry or Life Group: its icon (ministries have no
+  pictures), line and when it meets; *Join*, *Ask to join*, *Sign in to join* or just *Open* by its joining rules for
+  this person, through the same join sheet as its page.
+- **Who sees what:** cards read the phone's synced store (events, sermons and ministries' own feeds), so they work
+  offline, update themselves and show only what the reader's phone was given: a hidden ministry, a private calendar's
+  event or a group someone can't see draws nothing, not a broken card. In the admin panel the preview reads the same
+  things online. A sermon older than the 400 phones keep shows nothing on phones (the editor says so).
+- **The server checks every card on save** (`AppCardChecks`, Platform.Api): each must exist and be something the writer
+  may see; anything else is refused with the same words, so a refusal never tells a writer that a hidden thing exists.
+  A `::lifegroup` must be a ministry shown in Life Groups. Cards never reach a notification's line or a list's excerpt.
+- **Tables are drawn in the editor** as the post page's table; pressing one opens a panel under the bar with its cells,
+  *Add a row*, *Add a column* and × to take one out (`MarkdownTable`, Platform.Contracts). Insert → Table opens the same
+  panel. Cell text stays plain Markdown; a typed `|` is kept.
+- **Not yet:** a card for a sermon series, a speaker or a calendar; cards in a ministry's *About* (it still uses the old
+  editor).
 
 ## How it's built
 

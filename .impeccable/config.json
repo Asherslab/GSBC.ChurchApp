@@ -179,6 +179,15 @@
         ],
         "createdAt": "2026-11-09T11:21:52.900Z",
         "reason": "Claude: unchosen decision-round sketch (owner picked the pinned option 2026-11-09); never ships"
+      },
+      {
+        "rule": "side-tab",
+        "value": "*",
+        "files": [
+          "src/Platform/GSBC.ChurchApp.Platform.Ui/wwwroot/css/app-cards.css"
+        ],
+        "createdAt": "2026-11-14T03:10:44.155Z",
+        "reason": "user confirmed: the owner picked the Side rule look (a 4px rule in the kind's colour) as one of three card looks and as the default, 2026-11-14 (.impeccable/mocks/app-embeds/a-rail.html)"
       }
     ]
   }

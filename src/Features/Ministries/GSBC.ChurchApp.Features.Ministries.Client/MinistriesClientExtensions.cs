@@ -1,6 +1,8 @@
 using GSBC.ChurchApp.Features.Ministries.Client.Components;
 using GSBC.ChurchApp.Features.Ministries.Contracts;
+using GSBC.ChurchApp.Platform.Client.Content;
 using GSBC.ChurchApp.Platform.Client.Destinations;
+using GSBC.ChurchApp.Platform.Contracts.Content;
 using GSBC.ChurchApp.Platform.Client.Media;
 using GSBC.ChurchApp.Platform.Client.Modules;
 using GSBC.ChurchApp.Platform.Client.Scopes;
@@ -31,5 +33,8 @@ public static class MinistriesClientExtensions
             .AddSingleton<MinistryLookups>()
             .AddSingleton<IScopeNamer, MinistryScopeNames>()
             .AddHubTile<MinistriesTile>(MinistriesTiles.Ministries)
-            .AddHubTile<LifeGroupsTile>(MinistriesTiles.LifeGroups);
+            .AddHubTile<LifeGroupsTile>(MinistriesTiles.LifeGroups)
+            .AddAppCardView<MinistryAppCard>(AppCardKind.Ministry)
+            .AddAppCardView<MinistryAppCard>(AppCardKind.LifeGroup)
+            .AddAppCardSource<MinistryCardChoices>();
 }

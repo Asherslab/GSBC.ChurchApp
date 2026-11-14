@@ -7,6 +7,8 @@ public sealed record RichTextDocument(
 
     public IReadOnlyList<DirectiveBlock> Directives => Blocks.OfType<DirectiveBlock>().ToList();
 
+    public IReadOnlyList<AppCard> AppCards => Directives.Select(Content.AppCards.Of).OfType<AppCard>().ToList();
+
     public IReadOnlyList<IReadOnlyList<Block>> Cards()
     {
         List<IReadOnlyList<Block>> cards = [];

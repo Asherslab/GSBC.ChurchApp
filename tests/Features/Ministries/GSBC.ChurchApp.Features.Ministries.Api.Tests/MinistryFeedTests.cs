@@ -17,6 +17,8 @@ using GSBC.ChurchApp.Platform.Client.Access;
 using GSBC.ChurchApp.Platform.Client.Feeds;
 using GSBC.ChurchApp.Platform.Common;
 using GSBC.ChurchApp.Platform.Contracts.Configuration;
+using GSBC.ChurchApp.Platform.Api.Content;
+using GSBC.ChurchApp.Platform.Api.Destinations;
 using GSBC.ChurchApp.Platform.Contracts.Content;
 using GSBC.ChurchApp.Platform.Contracts.News;
 using GSBC.ChurchApp.Platform.Data;
@@ -85,7 +87,8 @@ public sealed class MinistryFeedTests : IAsyncLifetime
             .AddSingleton<IChurchNews>(_churchNews)
             .AddScoped(_ => new MinistryPostMedia(_media, _media, _media))
             .AddScoped<MinistryChurchNews>()
-            .AddScoped(provider => new MinistryLeadingService(provider.GetRequiredService<MinistriesDbContext>(), provider.GetRequiredService<MinistryViews>(),
+            .AddScoped(provider => new AppCardChecks([new MinistryCardSource(provider.GetRequiredService<MinistryViews>())], new PlaceAccess(provider.GetRequiredService<IAccessEvaluator>())))
+            .AddScoped(provider => new MinistryLeadingService(provider.GetRequiredService<MinistriesDbContext>(), provider.GetRequiredService<AppCardChecks>(), provider.GetRequiredService<MinistryViews>(),
                 provider.GetRequiredService<MinistryChanges>(), null!, null!, _roles, _people, _people, _calendars, new KeptInSundays(), _told, null!,
                 provider.GetRequiredService<MinistryPostMedia>(), provider.GetRequiredService<MinistryChurchNews>(), provider.GetRequiredService<IAccessEvaluator>(), _clock))
             .AddMinistriesData()
@@ -329,6 +332,22 @@ public sealed class MinistryFeedTests : IAsyncLifetime
         await publisher.PublishAsync(Cancel);
 
         Assert.Equal(new[] { _youth.Id, _band.Id }.Order(), (await MinistryPeopleChanges.SinceAsync(sync, before, Cancel)).Ministries.Order());
+    }
+
+    [Fact]
+    public async Task APostsCardsPointOnlyAtMinistriesAndLifeGroupsItsWriterCanSee()
+    {
+        MinistryRecord office = Ministry("Church office", null);
+        office.Hidden = true;
+        await AddAsync([office]);
+
+        await SavePostAsync(_leader, _youth, NewPost("Join the band", Audiences.Everyone, $"Come along.\n\n::lifegroup{{id={_band.Id}}}\n\n::ministry{{id={_youth.Id} look=box}}"));
+
+        RpcException notAGroup = await Assert.ThrowsAsync<RpcException>(() => SavePostAsync(_leader, _youth, NewPost("Youth", Audiences.Everyone, $"::lifegroup{{id={_youth.Id}}}")));
+        RpcException hidden = await Assert.ThrowsAsync<RpcException>(() => SavePostAsync(_leader, _youth, NewPost("Office", Audiences.Everyone, $"::ministry{{id={office.Id}}}")));
+        RpcException gone = await Assert.ThrowsAsync<RpcException>(() => SavePostAsync(_leader, _youth, NewPost("Gone", Audiences.Everyone, $"::ministry{{id={Guid.CreateVersion7()}}}")));
+        Assert.All([notAGroup, hidden, gone], refused => Assert.Equal(StatusCode.InvalidArgument, refused.StatusCode));
+        Assert.Equal(gone.Status.Detail, hidden.Status.Detail);
     }
 
     [Fact]

@@ -48,6 +48,7 @@ public static class SermonsApiExtensions
         services.AddDestinationSource<SermonDestinationSource>();
         services.AddDestinationSource<SeriesDestinationSource>();
         services.AddDestinationSource<SpeakerDestinationSource>();
+        services.AddAppCardSource<SermonCardSource>();
         services.AddSystemRole(new SystemRole(SermonsPermissions.UploaderRole, "Sermons Uploader",
             "Upload Sunday's sermons (the AV team)", ScopeKind.Global, [SermonsPermissions.UploadNode],
             Feature: RoleFeatures.Sermons, Kits: [RoleKits.Pictures]));

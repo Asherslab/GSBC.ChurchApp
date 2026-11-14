@@ -1,0 +1,6 @@
+<p class="app-card__line"><Icon Name="@Icon" Size="IconSize.Small" /><span>@ChildContent</span></p>
+
+@code {
+    [Parameter, EditorRequired] public required string Icon { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}

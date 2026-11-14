@@ -1,0 +1,124 @@
+@using GSBC.ChurchApp.Platform.Icons
+@using GSBC.ChurchApp.Platform.Contracts.Content
+@using GSBC.ChurchApp.Platform.Contracts.Media
+
+<article class="app-card app-card--@LookName app-card--@ToneName @(Off ? "app-card--off" : "")" aria-label="@($"{AppCards.Title(Kind)}: {Title}")">
+    @if (Look == AppCardLook.Box)
+    {
+        <div class="app-card__cover">
+            @if (Picture is not null)
+            {
+                <MediaImage Media="Picture" Alt="" />
+            }
+            else
+            {
+                <span class="app-card__cover-tile" aria-hidden="true"><Icon Name="@TileIcon" /></span>
+            }
+        </div>
+    }
+    else if (Look == AppCardLook.Line)
+    {
+        <div class="app-card__lead" aria-hidden="true">
+            @if (Lead is not null)
+            {
+                @Lead
+            }
+            else
+            {
+                @Square
+            }
+        </div>
+    }
+    <div class="app-card__body">
+        <p class="app-card__title">
+            @if (Href is not null)
+            {
+                <a href="@Href">@Title</a>
+            }
+            else
+            {
+                @Title
+            }
+        </p>
+        <p class="app-card__meta"><Icon Name="@KindIcon" Size="IconSize.Small" />@Meta</p>
+        @if (ChildContent is not null)
+        {
+            <div class="app-card__details">@ChildContent</div>
+        }
+        @if (Change is not null)
+        {
+            <p class="app-card__change">@Change</p>
+        }
+        @if (OffLine is not null)
+        {
+            <p class="app-card__off">@OffLine</p>
+        }
+        @if (Progress is not null)
+        {
+            <div class="app-card__progress">@Progress</div>
+        }
+        @if (Actions.Count > 0)
+        {
+            <div class="app-card__actions">
+                @foreach (AppCardAction action in Actions)
+                {
+                    <Button Variant="@VariantOf(action)" Small="@(Look != AppCardLook.Rule)" Icon="@(Look == AppCardLook.Rule ? null : action.Icon)" Href="@action.Href"
+                            OnClick="action.OnClick" Busy="action.Busy" Class="@(action.Main && Look == AppCardLook.Box ? "app-card__main" : null)">@action.Label</Button>
+                }
+            </div>
+        }
+    </div>
+    @if (Look == AppCardLook.Rule)
+    {
+        <div class="app-card__side" aria-hidden="true">@Square</div>
+    }
+    @if (Note is not null)
+    {
+        <p class="app-card__note"><Icon Name="@AppIcons.Hidden" Size="IconSize.Small" />@Note</p>
+    }
+</article>
+
+@code {
+    [Parameter, EditorRequired] public required AppCardKind Kind { get; set; }
+    [Parameter] public AppCardLook Look { get; set; }
+    [Parameter, EditorRequired] public required string Title { get; set; }
+    [Parameter, EditorRequired] public required string Meta { get; set; }
+    [Parameter] public string? Href { get; set; }
+    [Parameter] public MediaRef? Picture { get; set; }
+    [Parameter] public RenderFragment? Lead { get; set; }
+    [Parameter] public string? Change { get; set; }
+    [Parameter] public string? OffLine { get; set; }
+    [Parameter] public bool Off { get; set; }
+    [Parameter] public RenderFragment? Progress { get; set; }
+    [Parameter] public IReadOnlyList<AppCardAction> Actions { get; set; } = [];
+    [Parameter] public string? Note { get; set; }
+    [Parameter] public string? Icon { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    private string LookName => Look.ToString().ToLowerInvariant();
+
+    private string ToneName => Kind switch
+    {
+        AppCardKind.Event => "event",
+        AppCardKind.Sermon => "sermon",
+        AppCardKind.Ministry => "ministry",
+        _ => "lifegroup",
+    };
+
+    private string KindIcon => Kind switch
+    {
+        AppCardKind.Event => AppIcons.Calendar,
+        AppCardKind.Sermon => AppIcons.Sermons,
+        AppCardKind.Ministry => AppIcons.Ministries,
+        _ => AppIcons.LifeGroups,
+    };
+
+    private string TileIcon => Icon ?? KindIcon;
+
+    private RenderFragment Square => Picture is not null
+        ? @<MediaImage Media="Picture" Alt="" Class="app-card__picture" />
+        : @<span class="app-card__tile"><Icon Name="@TileIcon" /></span>;
+
+    private ButtonVariant VariantOf(AppCardAction action) =>
+        Look == AppCardLook.Rule ? ButtonVariant.Link : action.Main ? ButtonVariant.Primary : ButtonVariant.Tinted;
+}

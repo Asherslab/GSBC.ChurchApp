@@ -1,0 +1,66 @@
+@using GSBC.ChurchApp.Platform.Contracts.Content
+@using GSBC.ChurchApp.Platform.Ui.Content
+@inject IMinistryReads Reads
+
+<LiveData @key="Card.Id" TValue="MinistryPage" Load="() => Reads.MinistryAsync(Card.Id)" Feeds="Reads.Feeds" Loading="Nothing" Failed="Missing">
+    @{
+        MinistryPage page = context.Value;
+        MinistryDetails ministry = page.Ministry;
+    }
+    @if (Card.Kind == AppCardKind.LifeGroup && !ministry.ShowsInLifeGroups)
+    {
+        @Missing(new MinistryNotHereException(ministry.Name))
+    }
+    else
+    {
+        string href = MinistriesPlaces.Of(ministry.Id);
+        <AppCardFrame Kind="Card.Kind" Look="Card.Look" Title="@ministry.Name" Meta="@Meta(page)" Href="@href" Icon="@AboutArea.IconOf(ministry.Icon)"
+                      Actions="ActionsFor(page, href)" Note="@(Editing && MinistryLogic.IsHidden(ministry) ? $"Only people who can see this {AppCards.Noun(Card.Kind)} will see its card." : null)">
+            @if (ministry.Summary.Length > 0)
+            {
+                <p class="app-card__line">@ministry.Summary</p>
+            }
+            @if (ministry.Meets.Length > 0)
+            {
+                <AppCardLine Icon="clock">@ministry.Meets</AppCardLine>
+            }
+        </AppCardFrame>
+        @if (_joining)
+        {
+            <JoinSheet Open="_joining" OpenChanged="open => _joining = open" Page="page" />
+        }
+    }
+</LiveData>
+
+@code {
+    private static readonly RenderFragment Nothing = _ => { };
+
+    private bool _joining;
+
+    [Parameter, EditorRequired] public required AppCard Card { get; set; }
+    [Parameter] public bool Editing { get; set; }
+
+    private RenderFragment<Exception> Missing => _ => Editing
+        ? @<AppCardMissing Text="@($"This {AppCards.Noun(Card.Kind)} isn't in the app any more, or you can't see it. Take it out or choose another.")" />
+        : Nothing;
+
+    private string Meta(MinistryPage page) =>
+        MinistryWords.Yours(page) is { Length: > 0 } yours ? $"{AppCards.Title(Card.Kind)} · {yours}" : AppCards.Title(Card.Kind);
+
+    private IReadOnlyList<AppCardAction> ActionsFor(MinistryPage page, string href)
+    {
+        AppCardAction open = new("Open", Href: href);
+        if (!page.You.SignedIn)
+            return JoinChoices.AnyOpen(page) || page.Ministry.TeamJoin != Joining.Invite ? [new AppCardAction("Sign in to join", Href: "/account", Main: true), open] : [open];
+        if (!JoinChoices.AnyOpen(page))
+            return [open];
+        bool asks = JoinChoices.For(page).Where(choice => choice.Refusal is null).All(choice => choice.Asks);
+        return [new AppCardAction(asks ? "Ask to join" : "Join", OnClick: EventCallback.Factory.Create(this, Join), Main: true), open];
+    }
+
+    private void Join()
+    {
+        if (!Editing)
+            _joining = true;
+    }
+}

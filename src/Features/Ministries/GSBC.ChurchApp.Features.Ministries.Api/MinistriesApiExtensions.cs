@@ -79,6 +79,7 @@ public static class MinistriesApiExtensions
         services.AddFeed(new FeedDefinition(MinistriesFeeds.Yours, FeedAudience.OwnRecords));
         services.AddDestinations(MinistriesDestinations.All);
         services.AddDestinationSource<MinistryDestinationSource>();
+        services.AddAppCardSource<MinistryCardSource>();
         services.AddSurfaces(MinistriesTiles.Surfaces);
         return services;
     }

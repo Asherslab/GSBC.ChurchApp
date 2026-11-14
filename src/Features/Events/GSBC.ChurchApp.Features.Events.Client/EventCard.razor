@@ -1,0 +1,66 @@
+@using GSBC.ChurchApp.Platform.Contracts.Content
+@using GSBC.ChurchApp.Platform.Ui.Content
+@inject IEventCards Cards
+@inject TimeProvider Clock
+@inject Shell Shell
+@inject IJSRuntime Js
+
+<LiveData TValue="Diary" Load="Cards.DiaryAsync" Feeds="Cards.Feeds" Loading="Nothing" Failed="_ => Nothing">
+    @if (EventCardFacts.Find(context.Value, Card, Now) is { } shown)
+    {
+        EventOccurrence occurrence = shown.Occurrence;
+        <AppCardFrame Kind="AppCardKind.Event" Look="Card.Look" Title="@occurrence.Fields.Title" Meta="@Meta(shown)" Href="@EventsPlaces.Open(occurrence)"
+                      Picture="occurrence.Fields.Picture" Icon="@(shown.AsPattern ? "repeat" : null)" Lead="@(shown.AsPattern ? null : DateLead(occurrence))"
+                      Change="@ChangeOf(shown)" Off="@(occurrence.NotOn && !shown.AsPattern)" OffLine="@(occurrence.NotOn && !shown.AsPattern ? $"Cancelled: {EventWords.NotOnLine(occurrence)}" : null)"
+                      Actions="ActionsFor(shown)" Note="@(Editing && !EventCardFacts.IsForEveryone(shown) ? "Only people who can see this event will see its card." : null)">
+            <AppCardLine Icon="clock">@(shown.AsPattern ? EventWords.Join(occurrence.Repeats, EventWords.Times(occurrence)) : WhenOf(occurrence))</AppCardLine>
+            @if (EventWords.PlaceLine(occurrence) is { } place)
+            {
+                <AppCardLine Icon="map-pin">@place</AppCardLine>
+            }
+        </AppCardFrame>
+    }
+    else if (Editing)
+    {
+        <AppCardMissing Text="This event isn't in the app any more, or you can't see it. Take it out or choose another." />
+    }
+    else if (EventCardFacts.IsOver(Card, Now) && EventCardFacts.DayOf(Card) is { } day)
+    {
+        <AppCardMissing Text="@($"An event on {EventWords.LongDate(day)} that's over now.")" />
+    }
+</LiveData>
+
+@code {
+    private static readonly RenderFragment Nothing = _ => { };
+
+    [Parameter, EditorRequired] public required AppCard Card { get; set; }
+    [Parameter] public bool Editing { get; set; }
+
+    private DateTime Now => Clock.GetUtcNow().UtcDateTime;
+
+    private static string Meta(EventCardShown shown) => shown.AsPattern ? "Event · regularly" : "Event";
+
+    private string WhenOf(EventOccurrence occurrence) =>
+        Card.Look == AppCardLook.Line ? EventWords.Times(occurrence) : $"{EventWords.LongDate(EventWords.DayOf(occurrence))}, {EventWords.Times(occurrence)}";
+
+    private static RenderFragment DateLead(EventOccurrence occurrence) => @<DateBlock Day="EventWords.DayOf(occurrence)" Class="app-card-date" />;
+
+    private static string? ChangeOf(EventCardShown shown) =>
+        shown.Occurrence.NotOn || shown.Occurrence.ChangedAt is null || shown.Occurrence.ChangeNote.Length == 0 ? null : $"Changed: {shown.Occurrence.ChangeNote}";
+
+    private IReadOnlyList<AppCardAction> ActionsFor(EventCardShown shown) =>
+        shown.Occurrence.NotOn && !shown.AsPattern
+            ? [new AppCardAction("Open", Href: EventsPlaces.Open(shown.Occurrence))]
+            : [
+                new AppCardAction("Add to calendar", "calendar-plus", OnClick: EventCallback.Factory.Create(this, () => AddToCalendarAsync(shown.Occurrence)), Main: true),
+                new AppCardAction("Open", Href: EventsPlaces.Open(shown.Occurrence)),
+            ];
+
+    private async Task AddToCalendarAsync(EventOccurrence occurrence)
+    {
+        if (Editing)
+            return;
+        await Shell.HapticAsync();
+        await Js.InvokeVoidAsync("gsbcEvents.saveCalendarFile", EventFile.NameOf(occurrence), EventFile.Of(occurrence, Now));
+    }
+}
