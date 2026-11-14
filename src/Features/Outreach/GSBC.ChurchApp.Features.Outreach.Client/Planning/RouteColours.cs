@@ -10,6 +10,8 @@ public static class RouteColours
 
     public static string Faded(int colour) => Mix(Of(colour), 0.5);
 
+    public static string Pale(int colour) => Mix(Of(colour), 0.1);
+
     private static string Mix(string hex, double share)
     {
         int value = Convert.ToInt32(hex[1..], 16);

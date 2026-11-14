@@ -44,6 +44,7 @@
 .plan-pane__area { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: var(--space-sm); width: 100%; }
 .plan-pane__from { margin: 0 0 var(--space-md); color: var(--ink-2); font-size: var(--text-caption); }
 .plan-pane__routes { margin-top: var(--space-sm); }
+@media (max-width: 1360px) { .plan-pane__routes .plan-pane__time { display: none; } }
 .plan-pane__route { display: flex; align-items: flex-start; gap: var(--space-sm); }
 .plan-pane__route .plan-dot { margin-top: var(--space-3xs); }
 .plan-pane__review { color: var(--marker-ink); font-size: var(--text-caption); font-weight: 600; }

@@ -110,7 +110,7 @@ else
             </span>
         </span>, section => section.Number),
         new("Letterboxes", section => @<span>@OutreachWords.Count(section.Letterboxes)</span>, section => section.Letterboxes, "num"),
-        new("Time", section => @<span>@OutreachWords.Minutes(section.Minutes)</span>, section => section.Minutes, "num"),
+        new("Time", section => @<span>@OutreachWords.Minutes(section.Minutes)</span>, section => section.Minutes, "num plan-pane__time"),
     ];
 
     private Task UseAreaAsync() => Areas.FirstOrDefault(area => area.Id == _area) is { } area ? OnUseArea.InvokeAsync(area) : Task.CompletedTask;

@@ -45,7 +45,7 @@ public static class PlanDrawing
         planner.Sections.Select(section =>
         {
             GeoPoint middle = Middle(planner, section);
-            string colour = selected is null || selected == section.Id ? RouteColours.Of(section.Colour) : RouteColours.Faded(section.Colour);
+            string colour = selected is null || selected == section.Id ? RouteColours.Of(section.Colour) : RouteColours.Pale(section.Colour);
             string ink = selected is null || selected == section.Id ? "#ffffff" : RouteColours.Of(section.Colour);
             return new MapLabel(Point(middle), $"{section.Number} · {section.Letterboxes} · {OutreachWords.Minutes(section.Minutes)}", colour, section.Id == selected ? -1 : section.Number, ink);
         }).ToList();
