@@ -872,7 +872,7 @@
     flex-direction: column;
     justify-content: center;
     aspect-ratio: 4 / 3;
-    padding-bottom: calc(var(--space-xs) + 40px);
+    padding-bottom: var(--space-4xl);
     text-align: center;
 }
 
