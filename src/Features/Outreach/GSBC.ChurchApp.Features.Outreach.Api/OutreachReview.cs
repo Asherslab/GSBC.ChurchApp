@@ -21,7 +21,6 @@ internal sealed class OutreachReview(
 {
     private static readonly TimeSpan ResolvedReportsShownFor = TimeSpan.FromDays(90);
     private static readonly TimeSpan StillWalking = TimeSpan.FromMinutes(30);
-    private const double DoneShare = 0.9;
 
     public async Task<Reports> ReportsAsync(string ministryId, CancellationToken cancellationToken)
     {
@@ -297,23 +296,13 @@ internal sealed class OutreachReview(
         {
             Day = OutreachViews.Day(day),
             Routes = routes,
-            Progress = routes.Select(route => Progress(route, claims, done)).ToList(),
+            Progress = routes.Select(route => Progress(route, claims, done.Select(row => new CoveredPiece(row.Street, row.Side, row.From, row.To)).ToList())).ToList(),
             Walking = await db.Walks.CountAsync(walk => walk.DayId == dayId && !walk.Ended && walk.LastAt > now - StillWalking, cancellationToken),
         };
     }
 
-    private static RouteProgress Progress(DayRoute route, List<ClaimRecord> claims, List<CoverageRecord> done)
-    {
-        List<Stretch> finished = route.Stretches.Where(stretch => CoverageExpiry.CoveredShare(stretch, done) >= DoneShare).ToList();
-        return new RouteProgress
-        {
-            RouteId = route.Id,
-            ClaimedBy = claims.Where(claim => claim.RouteId.ToString() == route.Id).OrderBy(claim => claim.At).Select(claim => claim.FirstName).ToList(),
-            Letterboxes = route.Letterboxes,
-            LetterboxesDone = finished.Sum(stretch => stretch.Letterboxes),
-            Done = finished,
-        };
-    }
+    private static RouteProgress Progress(DayRoute route, List<ClaimRecord> claims, List<CoveredPiece> done) =>
+        DayProgress.Of(route, claims.Where(claim => claim.RouteId.ToString() == route.Id).OrderBy(claim => claim.At).Select(claim => claim.FirstName), done);
 
     private async Task<IReadOnlyDictionary<Guid, string>> NamesAsync(IEnumerable<Guid?> users, CancellationToken cancellationToken)
     {
@@ -334,24 +323,4 @@ internal static class CoverageExpiry
     public static bool Matches(CoverageRecord coverage, ExpireCoverage expire) =>
         (expire.Area.Count > 0 && OutreachRules.Contains(expire.Area, new GeoPoint { Lat = coverage.MiddleLat, Lng = coverage.MiddleLng }))
         || expire.Stretches.Any(stretch => stretch.Street == coverage.Street && stretch.Side == coverage.Side && stretch.From < coverage.To && stretch.To > coverage.From);
-
-    public static double CoveredShare(Stretch stretch, IEnumerable<CoverageRecord> coverage)
-    {
-        int length = stretch.To - stretch.From;
-        if (length <= 0)
-            return 0;
-        List<(int From, int To)> pieces = coverage.Where(row => row.Street == stretch.Street && row.Side == stretch.Side)
-            .Select(row => (Math.Max(row.From, stretch.From), Math.Min(row.To, stretch.To))).Where(piece => piece.Item1 < piece.Item2)
-            .OrderBy(piece => piece.Item1).ToList();
-        int covered = 0;
-        int reached = stretch.From;
-        foreach ((int from, int to) in pieces)
-        {
-            int start = Math.Max(from, reached);
-            if (to > start)
-                covered += to - start;
-            reached = Math.Max(reached, to);
-        }
-        return covered / (double)length;
-    }
 }
