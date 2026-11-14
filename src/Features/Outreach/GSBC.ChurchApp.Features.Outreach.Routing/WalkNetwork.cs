@@ -157,6 +157,8 @@ public sealed class WalkNetwork
         return forward ? Graph.ShapePoints(p.Street, p.From, p.To) : Graph.ShapePoints(p.Street, p.To, p.From);
     }
 
+    public IReadOnlyList<Flat> FlatLine(int piece) => Graph.ShapeBetween(pieces[piece].Street, pieces[piece].From, pieces[piece].To);
+
     public double OutBearing(int piece, bool forward)
     {
         Piece p = pieces[piece];

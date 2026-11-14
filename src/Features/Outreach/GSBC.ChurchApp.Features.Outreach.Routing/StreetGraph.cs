@@ -121,19 +121,22 @@ public sealed class StreetGraph
 
     public ReadOnlySpan<Flat> Shape(int street) => shape.AsSpan(shapeStart[street], shapeStart[street + 1] - shapeStart[street]);
 
-    public IReadOnlyList<GeoPoint> ShapePoints(int street, double from = 0, double to = 1)
+    public IReadOnlyList<GeoPoint> ShapePoints(int street, double from = 0, double to = 1) =>
+        ShapeBetween(street, from, to).Select(Projection.ToGeo).ToList();
+
+    public IReadOnlyList<Flat> ShapeBetween(int street, double from = 0, double to = 1)
     {
-        List<GeoPoint> points = [Projection.ToGeo(PointAt(street, from))];
+        List<Flat> points = [PointAt(street, Math.Min(from, to))];
         double length = streets[street].Length;
         for (int i = shapeStart[street] + 1; i < shapeStart[street + 1] - 1; i++)
         {
             double at = length <= 0 ? 0 : shapeAlong[i] / length;
             if (at > Math.Min(from, to) && at < Math.Max(from, to))
-                points.Add(Projection.ToGeo(shape[i]));
+                points.Add(shape[i]);
         }
-        points.Add(Projection.ToGeo(PointAt(street, to)));
+        points.Add(PointAt(street, Math.Max(from, to)));
         if (from > to)
-            points.Reverse(1, points.Count - 2);
+            points.Reverse();
         return points;
     }
 
