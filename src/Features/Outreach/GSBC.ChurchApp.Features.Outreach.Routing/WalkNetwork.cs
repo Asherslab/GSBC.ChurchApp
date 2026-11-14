@@ -11,10 +11,10 @@ public sealed class WalkNetwork
 {
     private const int Steps = 10_000;
 
-    private readonly List<Piece> pieces = [];
-    private readonly Dictionary<(int Street, int From, int To), int> pieceIds = [];
-    private readonly Dictionary<(int Street, int At), int> nodeIds = [];
-    private readonly List<(int Street, double At)> virtualNodes = [];
+    private readonly List<Piece> _pieces = [];
+    private readonly Dictionary<(int Street, int From, int To), int> _pieceIds = [];
+    private readonly Dictionary<(int Street, int At), int> _nodeIds = [];
+    private readonly List<(int Street, double At)> _virtualNodes = [];
 
     public WalkNetwork(StreetGraph graph)
     {
@@ -22,21 +22,21 @@ public sealed class WalkNetwork
         for (int s = 0; s < graph.StreetCount; s++)
         {
             ref readonly StreetInfo street = ref graph.Street(s);
-            pieces.Add(new Piece(s, s, 0, 1, street.U, street.V, street.Length));
+            _pieces.Add(new Piece(s, s, 0, 1, street.U, street.V, street.Length));
         }
     }
 
     public StreetGraph Graph { get; }
 
-    public Piece this[int piece] => pieces[piece];
+    public Piece this[int piece] => _pieces[piece];
 
-    public int PieceCount => pieces.Count;
+    public int PieceCount => _pieces.Count;
 
-    public int NodeCount => Graph.NodeCount + virtualNodes.Count;
+    public int NodeCount => Graph.NodeCount + _virtualNodes.Count;
 
     public bool IsVirtual(int node) => node >= Graph.NodeCount;
 
-    public (int Street, double At) VirtualNode(int node) => virtualNodes[node - Graph.NodeCount];
+    public (int Street, double At) VirtualNode(int node) => _virtualNodes[node - Graph.NodeCount];
 
     public static double Round(double fraction) => Math.Round(Math.Clamp(fraction, 0, 1) * Steps) / Steps;
 
@@ -48,12 +48,12 @@ public sealed class WalkNetwork
         int high = (int)Math.Round(Math.Clamp(Math.Max(from, to), 0, 1) * Steps);
         if (low == 0 && high == Steps)
             return street;
-        if (!pieceIds.TryGetValue((street, low, high), out int id))
+        if (!_pieceIds.TryGetValue((street, low, high), out int id))
         {
-            id = pieces.Count;
-            pieces.Add(new Piece(id, street, low / (double)Steps, high / (double)Steps, NodeAt(street, low / (double)Steps), NodeAt(street, high / (double)Steps),
+            id = _pieces.Count;
+            _pieces.Add(new Piece(id, street, low / (double)Steps, high / (double)Steps, NodeAt(street, low / (double)Steps), NodeAt(street, high / (double)Steps),
                 Graph.Street(street).Length * (high - low) / Steps));
-            pieceIds[(street, low, high)] = id;
+            _pieceIds[(street, low, high)] = id;
         }
         return id;
     }
@@ -65,11 +65,11 @@ public sealed class WalkNetwork
             return Graph.Street(street).U;
         if (step >= Steps)
             return Graph.Street(street).V;
-        if (!nodeIds.TryGetValue((street, step), out int node))
+        if (!_nodeIds.TryGetValue((street, step), out int node))
         {
-            node = Graph.NodeCount + virtualNodes.Count;
-            virtualNodes.Add((street, step / (double)Steps));
-            nodeIds[(street, step)] = node;
+            node = Graph.NodeCount + _virtualNodes.Count;
+            _virtualNodes.Add((street, step / (double)Steps));
+            _nodeIds[(street, step)] = node;
         }
         return node;
     }
@@ -82,7 +82,7 @@ public sealed class WalkNetwork
         return Graph.PointAt(street, at);
     }
 
-    public int Other(int piece, int node) => pieces[piece].U == node ? pieces[piece].V : pieces[piece].U;
+    public int Other(int piece, int node) => _pieces[piece].U == node ? _pieces[piece].V : _pieces[piece].U;
 
     public ReadOnlySpan<int> Adjacent(int node, Cuts? cuts = null)
     {
@@ -125,7 +125,7 @@ public sealed class WalkNetwork
         Dictionary<int, SortedSet<double>> cuts = [];
         foreach (int id in chosen)
         {
-            Piece piece = pieces[id];
+            Piece piece = _pieces[id];
             if (!piece.Partial)
                 continue;
             if (!cuts.TryGetValue(piece.Street, out SortedSet<double>? set))
@@ -149,19 +149,19 @@ public sealed class WalkNetwork
         yield return PieceOf(street, at, 1);
     }
 
-    public Flat Midpoint(int piece) => Graph.PointAt(pieces[piece].Street, (pieces[piece].From + pieces[piece].To) / 2);
+    public Flat Midpoint(int piece) => Graph.PointAt(_pieces[piece].Street, (_pieces[piece].From + _pieces[piece].To) / 2);
 
     public IReadOnlyList<GeoPoint> Line(int piece, bool forward = true)
     {
-        Piece p = pieces[piece];
+        Piece p = _pieces[piece];
         return forward ? Graph.ShapePoints(p.Street, p.From, p.To) : Graph.ShapePoints(p.Street, p.To, p.From);
     }
 
-    public IReadOnlyList<Flat> FlatLine(int piece) => Graph.ShapeBetween(pieces[piece].Street, pieces[piece].From, pieces[piece].To);
+    public IReadOnlyList<Flat> FlatLine(int piece) => Graph.ShapeBetween(_pieces[piece].Street, _pieces[piece].From, _pieces[piece].To);
 
     public double OutBearing(int piece, bool forward)
     {
-        Piece p = pieces[piece];
+        Piece p = _pieces[piece];
         if (!p.Partial)
             return Graph.StartBearing(p.Street, forward);
         double heading = Graph.HeadingAt(p.Street, forward ? p.From + 1e-6 : p.To - 1e-6);
@@ -170,7 +170,7 @@ public sealed class WalkNetwork
 
     public double InBearing(int piece, bool forward)
     {
-        Piece p = pieces[piece];
+        Piece p = _pieces[piece];
         if (!p.Partial)
             return Graph.EndBearing(p.Street, forward);
         double heading = Graph.HeadingAt(p.Street, forward ? p.To - 1e-6 : p.From + 1e-6);
@@ -179,11 +179,11 @@ public sealed class WalkNetwork
 
     public LetterboxRange Letterboxes(int piece, Side side)
     {
-        Piece p = pieces[piece];
+        Piece p = _pieces[piece];
         return p.Partial ? Graph.Between(p.Street, side, p.From, p.To) : Graph.Letterboxes(p.Street, side);
     }
 
-    public ref readonly StreetInfo Street(int piece) => ref Graph.Street(pieces[piece].Street);
+    public ref readonly StreetInfo Street(int piece) => ref Graph.Street(_pieces[piece].Street);
 }
 
 public sealed class Cuts(Dictionary<int, double[]> cuts)

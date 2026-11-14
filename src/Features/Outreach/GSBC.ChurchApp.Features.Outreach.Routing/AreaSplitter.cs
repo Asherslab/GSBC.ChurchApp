@@ -25,15 +25,15 @@ public sealed record SectionSummary(DraftSection Section, string Name, WalkPlan 
 
 public sealed class SplitGraph
 {
-    private readonly WalkNetwork network;
-    private readonly double joinMetres;
-    private readonly Dictionary<int, int> group = [];
-    private readonly HashSet<int> placed = [];
+    private readonly WalkNetwork _network;
+    private readonly double _joinMetres;
+    private readonly Dictionary<int, int> _group = [];
+    private readonly HashSet<int> _placed = [];
 
     public SplitGraph(WalkNetwork network, IEnumerable<int> connectors, IReadOnlyCollection<int> streets, double joinMetres)
     {
-        this.network = network;
-        this.joinMetres = joinMetres;
+        _network = network;
+        _joinMetres = joinMetres;
         JoinShortLinks(connectors, streets);
     }
 
@@ -41,20 +41,20 @@ public sealed class SplitGraph
     {
         if (a == b)
             return false;
-        (int au, int av, int bu, int bv) = (Root(network[a].U), Root(network[a].V), Root(network[b].U), Root(network[b].V));
+        (int au, int av, int bu, int bv) = (Root(_network[a].U), Root(_network[a].V), Root(_network[b].U), Root(_network[b].V));
         return au == bu || au == bv || av == bu || av == bv;
     }
 
     public bool Reaches(int piece, int node)
     {
         int root = Root(node);
-        return Root(network[piece].U) == root || Root(network[piece].V) == root;
+        return Root(_network[piece].U) == root || Root(_network[piece].V) == root;
     }
 
     public void Join(IEnumerable<int> connectors)
     {
         foreach (int piece in connectors)
-            Union(network[piece].U, network[piece].V);
+            Union(_network[piece].U, _network[piece].V);
     }
 
     public List<List<int>> Components(IReadOnlyCollection<int> pieces)
@@ -62,7 +62,7 @@ public sealed class SplitGraph
         Dictionary<int, List<int>> byGroup = [];
         foreach (int piece in pieces)
         {
-            foreach (int root in new[] { Root(network[piece].U), Root(network[piece].V) }.Distinct())
+            foreach (int root in new[] { Root(_network[piece].U), Root(_network[piece].V) }.Distinct())
             {
                 if (!byGroup.TryGetValue(root, out List<int>? list))
                     byGroup[root] = list = [];
@@ -80,7 +80,7 @@ public sealed class SplitGraph
             while (stack.TryPop(out int piece))
             {
                 component.Add(piece);
-                foreach (int next in byGroup[Root(network[piece].U)].Concat(byGroup[Root(network[piece].V)]))
+                foreach (int next in byGroup[Root(_network[piece].U)].Concat(byGroup[Root(_network[piece].V)]))
                 {
                     if (seen.Add(next))
                         stack.Push(next);
@@ -96,14 +96,14 @@ public sealed class SplitGraph
         Dictionary<int, List<int>> linksAt = [];
         foreach (int piece in connectors)
         {
-            foreach (int node in new[] { network[piece].U, network[piece].V })
+            foreach (int node in new[] { _network[piece].U, _network[piece].V })
             {
                 if (!linksAt.TryGetValue(node, out List<int>? list))
                     linksAt[node] = list = [];
                 list.Add(piece);
             }
         }
-        HashSet<int> ends = streets.SelectMany(p => new[] { network[p].U, network[p].V }).ToHashSet();
+        HashSet<int> ends = streets.SelectMany(p => new[] { _network[p].U, _network[p].V }).ToHashSet();
         foreach (int origin in ends.Where(linksAt.ContainsKey))
         {
             Dictionary<int, double> distance = new() { [origin] = 0 };
@@ -117,9 +117,9 @@ public sealed class SplitGraph
                     Union(origin, node);
                 foreach (int piece in linksAt.GetValueOrDefault(node) ?? [])
                 {
-                    int next = network.Other(piece, node);
-                    double nextDistance = reached + network[piece].Length;
-                    if (nextDistance <= joinMetres && nextDistance < distance.GetValueOrDefault(next, double.MaxValue))
+                    int next = _network.Other(piece, node);
+                    double nextDistance = reached + _network[piece].Length;
+                    if (nextDistance <= _joinMetres && nextDistance < distance.GetValueOrDefault(next, double.MaxValue))
                     {
                         distance[next] = nextDistance;
                         queue.Enqueue(next, nextDistance);
@@ -131,12 +131,12 @@ public sealed class SplitGraph
 
     private int Root(int node)
     {
-        if (network.IsVirtual(node) && placed.Add(node))
+        if (_network.IsVirtual(node) && _placed.Add(node))
         {
-            (int street, double at) = network.VirtualNode(node);
-            ref readonly StreetInfo whole = ref network.Graph.Street(street);
+            (int street, double at) = _network.VirtualNode(node);
+            ref readonly StreetInfo whole = ref _network.Graph.Street(street);
             (int corner, double metres) = at <= 0.5 ? (whole.U, at * whole.Length) : (whole.V, (1 - at) * whole.Length);
-            if (metres <= joinMetres)
+            if (metres <= _joinMetres)
                 Union(node, corner);
         }
         return Find(node);
@@ -145,11 +145,11 @@ public sealed class SplitGraph
     private int Find(int node)
     {
         int root = node;
-        while (group.TryGetValue(root, out int parent) && parent != root)
+        while (_group.TryGetValue(root, out int parent) && parent != root)
             root = parent;
-        while (group.TryGetValue(node, out int parent) && parent != root)
+        while (_group.TryGetValue(node, out int parent) && parent != root)
         {
-            group[node] = root;
+            _group[node] = root;
             node = parent;
         }
         return root;
@@ -159,7 +159,7 @@ public sealed class SplitGraph
     {
         (int ra, int rb) = (Find(a), Find(b));
         if (ra != rb)
-            group[ra] = rb;
+            _group[ra] = rb;
     }
 }
 
@@ -169,37 +169,37 @@ public sealed class AreaSplitter(WalkPlanner planner)
     private const double ScrapShare = 1 / 3.0;
     private const double UnknownTravelFactor = 1.3;
 
-    private readonly WalkNetwork network = planner.Network;
-    private readonly Openness open = planner.Open;
+    private readonly WalkNetwork _network = planner.Network;
+    private readonly Openness _open = planner.Open;
 
     public WalkPlanner Planner => planner;
 
     public AreaSelection Select(IReadOnlyList<GeoPoint> polygon)
     {
-        Flat[] area = polygon.Select(network.Graph.Projection.ToFlat).ToArray();
+        Flat[] area = polygon.Select(_network.Graph.Projection.ToFlat).ToArray();
         Flat low = new(area.Min(p => p.X), area.Min(p => p.Y)), high = new(area.Max(p => p.X), area.Max(p => p.Y));
-        List<int> inside = network.Graph.Index.StreetsIn(low, high).Where(s => Geometry.Inside(area, network.Midpoint(s))).Order().ToList();
-        List<int> streets = inside.Where(s => network.Street(s).CanDeliver && !open.IsExcludedStreet(s)).ToList();
-        List<int> delivering = streets.Where(s => network.Graph.Homes(s) > 0).ToList();
+        List<int> inside = _network.Graph.Index.StreetsIn(low, high).Where(s => Geometry.Inside(area, _network.Midpoint(s))).Order().ToList();
+        List<int> streets = inside.Where(s => _network.Street(s).CanDeliver && !_open.IsExcludedStreet(s)).ToList();
+        List<int> delivering = streets.Where(s => _network.Graph.Homes(s) > 0).ToList();
         return new AreaSelection(
-            delivering.Where(open.Live).ToList(),
-            delivering.Where(s => !open.Live(s)).ToList(),
-            inside.Where(s => network.Street(s).Kind.IsMainRoad()).ToList(),
-            inside.Where(s => network.Street(s).CanDeliver && open.IsExcludedStreet(s)).ToList(),
-            streets.Except(delivering).Concat(inside.Where(s => network.Street(s).Kind.IsPath())).ToList());
+            delivering.Where(_open.Live).ToList(),
+            delivering.Where(s => !_open.Live(s)).ToList(),
+            inside.Where(s => _network.Street(s).Kind.IsMainRoad()).ToList(),
+            inside.Where(s => _network.Street(s).CanDeliver && _open.IsExcludedStreet(s)).ToList(),
+            [.. streets.Except(delivering), .. inside.Where(s => _network.Street(s).Kind.IsPath())]);
     }
 
     public double Weight(int piece, SplitTarget target) => target switch
     {
-        SplitTarget.Minutes => open.BothSidesSeconds(piece) / 60,
-        SplitTarget.Bundles => open.Open(piece) / (double)open.Settings.BundleSize,
-        _ => open.Open(piece),
+        SplitTarget.Minutes => _open.BothSidesSeconds(piece) / 60,
+        SplitTarget.Bundles => _open.Open(piece) / (double)_open.Settings.BundleSize,
+        _ => _open.Open(piece),
     };
 
     public (List<HashSet<int>> Sections, SplitGraph Graph) Split(IEnumerable<int> pieces, SplitTarget target, double perRoute, IEnumerable<int> connectors)
     {
-        HashSet<int> streets = pieces.Where(open.Live).ToHashSet();
-        SplitGraph graph = new(network, connectors, streets, open.Settings.SplitJoinMetres);
+        HashSet<int> streets = pieces.Where(_open.Live).ToHashSet();
+        SplitGraph graph = new(_network, connectors, streets, _open.Settings.SplitJoinMetres);
         double total = streets.Sum(p => Weight(p, target));
         if (total <= 0 || perRoute <= 0)
             return ([], graph);
@@ -231,25 +231,25 @@ public sealed class AreaSplitter(WalkPlanner planner)
 
     public SectionSummary Summarise(DraftSection section, GeoPoint meeting, SplitGraph graph)
     {
-        Flat meetingPoint = network.Graph.Projection.ToFlat(meeting);
-        int start = section.Start is { } pinned && section.Pieces.Any(p => network[p].U == pinned || network[p].V == pinned)
+        Flat meetingPoint = _network.Graph.Projection.ToFlat(meeting);
+        int start = section.Start is { } pinned && section.Pieces.Any(p => _network[p].U == pinned || _network[p].V == pinned)
             ? pinned
             : planner.NearestEnd(section.Pieces, meetingPoint);
         WalkPlan plan = planner.Circuit(section.Pieces, start);
         int? meetingNode = planner.StartNear(meeting);
-        double travel = meetingNode is { } node ? planner.Paths.Metres(node, plan.Start, network.CutsOf(plan.Pieces)) : double.NaN;
+        double travel = meetingNode is { } node ? planner.Paths.Metres(node, plan.Start, _network.CutsOf(plan.Pieces)) : double.NaN;
         if (double.IsNaN(travel))
-            travel = Flat.Distance(meetingPoint, network.Node(plan.Start)) * UnknownTravelFactor;
-        TimeSpan time = plan.Time + TimeSpan.FromSeconds(open.WalkSeconds(2 * travel));
+            travel = Flat.Distance(meetingPoint, _network.Node(plan.Start)) * UnknownTravelFactor;
+        TimeSpan time = plan.Time + TimeSpan.FromSeconds(_open.WalkSeconds(2 * travel));
         return new SectionSummary(section, section.Name ?? Name(section.Pieces), plan, time, travel, graph.Components(section.Pieces.ToList()).Count);
     }
 
     public string Name(IEnumerable<int> pieces)
     {
         string name = string.Join(" & ", pieces
-            .Where(p => network.Street(p).Name.Length > 0)
-            .GroupBy(p => network.Street(p).Name)
-            .OrderByDescending(g => g.Sum(open.Open))
+            .Where(p => _network.Street(p).Name.Length > 0)
+            .GroupBy(p => _network.Street(p).Name)
+            .OrderByDescending(g => g.Sum(_open.Open))
             .ThenBy(g => g.Key, StringComparer.Ordinal)
             .Take(2)
             .Select(g => g.Key));
@@ -282,9 +282,9 @@ public sealed class AreaSplitter(WalkPlanner planner)
             double bestMetres = double.MaxValue;
             foreach (List<int> island in islands)
             {
-                HashSet<int> targets = streets.Except(island).SelectMany(p => new[] { network[p].U, network[p].V }).ToHashSet();
-                List<int> path = planner.Paths.Shortest(island.SelectMany(p => new[] { network[p].U, network[p].V }).Distinct(), targets.Contains, open.Settings.SplitJoinMetres, network.CutsOf(streets));
-                double metres = path.Sum(p => network[p].Length);
+                HashSet<int> targets = streets.Except(island).SelectMany(p => new[] { _network[p].U, _network[p].V }).ToHashSet();
+                List<int> path = planner.Paths.Shortest(island.SelectMany(p => new[] { _network[p].U, _network[p].V }).Distinct(), targets.Contains, _open.Settings.SplitJoinMetres, _network.CutsOf(streets));
+                double metres = path.Sum(p => _network[p].Length);
                 if (path.Count > 0 && metres < bestMetres)
                     (best, bestMetres) = (path, metres);
             }
@@ -304,10 +304,10 @@ public sealed class AreaSplitter(WalkPlanner planner)
         while (unassigned.Count > 0 && growing.Count > 0)
         {
             int lightest = growing.MinBy(i => totals[i]);
-            Flat seedPoint = network.Midpoint(seeds[lightest]);
+            Flat seedPoint = _network.Midpoint(seeds[lightest]);
             int? next = unassigned
                 .Where(p => members[lightest].Any(m => graph.Touch(p, m)))
-                .OrderBy(p => Flat.Distance(network.Midpoint(p), seedPoint))
+                .OrderBy(p => Flat.Distance(_network.Midpoint(p), seedPoint))
                 .ThenBy(p => p)
                 .Select(p => (int?)p)
                 .FirstOrDefault();
@@ -321,7 +321,7 @@ public sealed class AreaSplitter(WalkPlanner planner)
             totals[lightest] += Weight(piece, target);
         }
         foreach (int piece in unassigned)
-            members[Enumerable.Range(0, seeds.Count).MinBy(i => Flat.Distance(network.Midpoint(piece), network.Midpoint(seeds[i])))].Add(piece);
+            members[Enumerable.Range(0, seeds.Count).MinBy(i => Flat.Distance(_network.Midpoint(piece), _network.Midpoint(seeds[i])))].Add(piece);
         return members;
     }
 
@@ -329,14 +329,14 @@ public sealed class AreaSplitter(WalkPlanner planner)
     {
         Dictionary<int, double> weights = pieces.ToDictionary(p => p, p => Weight(p, target));
         double total = Math.Max(weights.Values.Sum(), 1e-9);
-        Flat centre = new(pieces.Sum(p => network.Midpoint(p).X * weights[p]) / total, pieces.Sum(p => network.Midpoint(p).Y * weights[p]) / total);
-        List<int> seeds = [pieces.OrderBy(p => p).MinBy(p => Flat.Distance(network.Midpoint(p), centre))];
+        Flat centre = new(pieces.Sum(p => _network.Midpoint(p).X * weights[p]) / total, pieces.Sum(p => _network.Midpoint(p).Y * weights[p]) / total);
+        List<int> seeds = [pieces.OrderBy(p => p).MinBy(p => Flat.Distance(_network.Midpoint(p), centre))];
         while (seeds.Count < count)
         {
             seeds.Add(pieces
                 .Where(p => !seeds.Contains(p))
                 .OrderBy(p => p)
-                .MaxBy(p => seeds.Min(s => Flat.Distance(network.Midpoint(p), network.Midpoint(s))) * (weights[p] + 0.01)));
+                .MaxBy(p => seeds.Min(s => Flat.Distance(_network.Midpoint(p), _network.Midpoint(s))) * (weights[p] + 0.01)));
         }
         return seeds;
     }
@@ -361,7 +361,7 @@ public sealed class AreaSplitter(WalkPlanner planner)
                         double difference = totals[from] - totals[to];
                         if (to == from || weight >= difference || !sections[to].Any(p => graph.Touch(p, piece)))
                             continue;
-                        Flat middle = network.Midpoint(piece);
+                        Flat middle = _network.Midpoint(piece);
                         double compactness = Flat.Distance(middle, centres[from]) - Flat.Distance(middle, centres[to]);
                         double gain = Math.Min(weight, difference - weight) + compactness / 1000;
                         if ((best is null || gain > best.Value.Gain) && CanGive(graph, sections[from], piece))
@@ -377,5 +377,5 @@ public sealed class AreaSplitter(WalkPlanner planner)
     }
 
     private Flat Centre(IReadOnlyCollection<int> pieces) =>
-        new(pieces.Average(p => network.Midpoint(p).X), pieces.Average(p => network.Midpoint(p).Y));
+        new(pieces.Average(p => _network.Midpoint(p).X), pieces.Average(p => _network.Midpoint(p).Y));
 }

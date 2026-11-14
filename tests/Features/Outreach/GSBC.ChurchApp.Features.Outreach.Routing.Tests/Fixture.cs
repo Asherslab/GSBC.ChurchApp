@@ -1,5 +1,3 @@
-using GSBC.ChurchApp.Features.Outreach.Routing;
-
 namespace GSBC.ChurchApp.Features.Outreach.Routing.Tests;
 
 internal static class Fixture

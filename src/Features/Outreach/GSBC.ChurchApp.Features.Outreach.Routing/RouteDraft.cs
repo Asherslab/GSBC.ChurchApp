@@ -29,7 +29,7 @@ public sealed class RouteDraft
 
         public string? Name { get; set; } = section.Name;
 
-        public int Colour { get; set; } = section.Colour;
+        public int Colour { get; } = section.Colour;
 
         public bool Locked { get; set; } = section.Locked;
 
@@ -40,24 +40,24 @@ public sealed class RouteDraft
 
     private sealed record Segment(double From, double To, Working? Owner);
 
-    private readonly AreaSplitter splitter;
-    private readonly WalkNetwork network;
-    private readonly int colours;
-    private readonly ImmutableStack<Snapshot> undo;
-    private readonly ImmutableStack<Snapshot> redo;
-    private readonly int nextId;
+    private readonly AreaSplitter _splitter;
+    private readonly WalkNetwork _network;
+    private readonly int _colours;
+    private readonly ImmutableStack<Snapshot> _undo;
+    private readonly ImmutableStack<Snapshot> _redo;
+    private readonly int _nextId;
 
     private RouteDraft(AreaSplitter splitter, int colours, IReadOnlySet<int> streets, Snapshot now, ImmutableStack<Snapshot> undo, ImmutableStack<Snapshot> redo)
     {
-        this.splitter = splitter;
-        network = splitter.Planner.Network;
-        this.colours = colours;
+        _splitter = splitter;
+        _network = splitter.Planner.Network;
+        _colours = colours;
         Streets = streets;
         Sections = now.Sections;
         Graph = now.Graph;
-        nextId = now.NextId;
-        this.undo = undo;
-        this.redo = redo;
+        _nextId = now.NextId;
+        _undo = undo;
+        _redo = redo;
     }
 
     public static RouteDraft Empty(AreaSplitter splitter, IEnumerable<int> streets, int colours) =>
@@ -69,9 +69,9 @@ public sealed class RouteDraft
 
     public IReadOnlySet<int> Streets { get; }
 
-    public bool CanUndo => !undo.IsEmpty;
+    public bool CanUndo => !_undo.IsEmpty;
 
-    public bool CanRedo => !redo.IsEmpty;
+    public bool CanRedo => !_redo.IsEmpty;
 
     public int Number(int section) => Sections.FindIndex(s => s.Id == section) + 1;
 
@@ -79,19 +79,19 @@ public sealed class RouteDraft
 
     public DraftSection? OwnerOf(int piece) => Sections.Find(s => s.Pieces.Contains(piece));
 
-    public RouteDraft Undo() => undo.IsEmpty ? this : new RouteDraft(splitter, colours, Streets, undo.Peek(), undo.Pop(), redo.Push(Now));
+    public RouteDraft Undo() => _undo.IsEmpty ? this : new RouteDraft(_splitter, _colours, Streets, _undo.Peek(), _undo.Pop(), _redo.Push(Now));
 
-    public RouteDraft Redo() => redo.IsEmpty ? this : new RouteDraft(splitter, colours, Streets, redo.Peek(), undo.Push(Now), redo.Pop());
+    public RouteDraft Redo() => _redo.IsEmpty ? this : new RouteDraft(_splitter, _colours, Streets, _redo.Peek(), _undo.Push(Now), _redo.Pop());
 
     public IEnumerable<SectionSummary> Summaries(GeoPoint meeting) =>
-        Graph is null ? [] : Sections.Select(s => splitter.Summarise(s, meeting, Graph));
+        Graph is null ? [] : Sections.Select(s => _splitter.Summarise(s, meeting, Graph));
 
     public DraftEdit Regenerate(SplitTarget target, double perRoute, IEnumerable<int> connectors) => Edit(state =>
     {
         List<Working> locked = state.Where(s => s.Locked).ToList();
-        HashSet<int> lockedStreets = locked.SelectMany(s => s.Pieces).Select(p => network[p].Street).ToHashSet();
+        HashSet<int> lockedStreets = locked.SelectMany(s => s.Pieces).Select(p => _network[p].Street).ToHashSet();
         List<int> free = Streets.SelectMany(s => lockedStreets.Contains(s) ? Unlocked(state, s) : [s]).ToList();
-        (List<HashSet<int>> fresh, SplitGraph graph) = splitter.Split(free, target, perRoute, connectors);
+        (List<HashSet<int>> fresh, SplitGraph graph) = _splitter.Split(free, target, perRoute, connectors);
         state.RemoveAll(s => !s.Locked);
         foreach (HashSet<int> pieces in fresh)
             state.Add(New(state, pieces));
@@ -102,7 +102,7 @@ public sealed class RouteDraft
     {
         List<Working> state = Thaw();
         Working? target = state.Find(s => s.Id == into);
-        return Touched(state, stretches).Where(t => Moves(t.Owner, target)).Sum(t => Letterboxes(network.PieceOf(t.Street, t.From, t.To)));
+        return Touched(state, stretches).Where(t => Moves(t.Owner, target)).Sum(t => Letterboxes(_network.PieceOf(t.Street, t.From, t.To)));
     }
 
     public DraftEdit Paint(int into, IReadOnlyList<Stretch> stretches) => Edit(state =>
@@ -117,13 +117,13 @@ public sealed class RouteDraft
     {
         if (loop.Count < 3)
             return new HashSet<int>();
-        Flat[] polygon = loop.Select(network.Graph.Projection.ToFlat).ToArray();
+        Flat[] polygon = loop.Select(_network.Graph.Projection.ToFlat).ToArray();
         List<Working> state = Thaw();
-        Cuts cuts = network.CutsOf(state.SelectMany(s => s.Pieces));
-        return Streets.SelectMany(street => network.Split(street, cuts.Of(street) ?? []))
+        Cuts cuts = _network.CutsOf(state.SelectMany(s => s.Pieces));
+        return Streets.SelectMany(street => _network.Split(street, cuts.Of(street) ?? []))
             .Where(p => Letterboxes(p) > 0)
             .Where(p => !(OwnerOf(p) is { } owner && (owner.Id == into || owner.Locked)))
-            .Where(p => Geometry.Inside(polygon, network.Midpoint(p)))
+            .Where(p => Geometry.Inside(polygon, _network.Midpoint(p)))
             .ToHashSet();
     }
 
@@ -149,7 +149,7 @@ public sealed class RouteDraft
         List<CutPreview> previews = [];
         if (Graph is null || line.Count < 2)
             return previews;
-        List<Flat> cut = line.Select(network.Graph.Projection.ToFlat).ToList();
+        List<Flat> cut = line.Select(_network.Graph.Projection.ToFlat).ToList();
         List<int> used = Sections.Select(s => s.Colour).ToList();
         foreach (DraftSection section in Sections.Where(s => !s.Locked))
         {
@@ -171,7 +171,7 @@ public sealed class RouteDraft
 
     public bool CutTouches(IReadOnlyList<GeoPoint> line)
     {
-        List<Flat> cut = line.Select(network.Graph.Projection.ToFlat).ToList();
+        List<Flat> cut = line.Select(_network.Graph.Projection.ToFlat).ToList();
         return Graph is not null && cut.Count > 1 && Sections.Any(s => !s.Locked && s.Pieces.Any(p => Crossings(cut, p).Count > 0));
     }
 
@@ -207,7 +207,7 @@ public sealed class RouteDraft
         Working section = state.Single(s => s.Id == id);
         if (section.Locked || section.Pieces.Count < 2 || Graph is null)
             return (false, section.Locked ? $"Route {Number(id)} {LockedNote}" : null, Graph);
-        List<HashSet<int>> halves = splitter.SplitInTwo(Graph, section.Pieces, target);
+        List<HashSet<int>> halves = _splitter.SplitInTwo(Graph, section.Pieces, target);
         section.Pieces.Clear();
         section.Pieces.UnionWith(halves[0]);
         section.Start = null;
@@ -262,7 +262,7 @@ public sealed class RouteDraft
     public DraftEdit MoveStart(int id, GeoPoint point) => Edit(state =>
     {
         Working section = state.Single(s => s.Id == id);
-        int node = splitter.Planner.NearestEnd(section.Pieces, network.Graph.Projection.ToFlat(point));
+        int node = _splitter.Planner.NearestEnd(section.Pieces, _network.Graph.Projection.ToFlat(point));
         if (section.Start == node)
             return (false, null, Graph);
         section.Start = node;
@@ -275,7 +275,7 @@ public sealed class RouteDraft
             return (false, null, Graph);
         List<Working> free = state.Where(s => !s.Locked).ToList();
         List<HashSet<int>> sections = free.Select(s => new HashSet<int>(s.Pieces)).ToList();
-        splitter.Rebalance(Graph, sections, target);
+        _splitter.Rebalance(Graph, sections, target);
         bool changed = false;
         for (int i = 0; i < free.Count; i++)
         {
@@ -288,7 +288,7 @@ public sealed class RouteDraft
 
     public IReadOnlyList<Stretch> Brush(IReadOnlyList<GeoPoint> stroke)
     {
-        StreetGraph graph = network.Graph;
+        StreetGraph graph = _network.Graph;
         List<(int Street, double From, double To)> runs = [];
         foreach (GeoPoint point in stroke)
         {
@@ -311,13 +311,13 @@ public sealed class RouteDraft
 
     public Stretch Snap(Stretch stretch)
     {
-        double length = network.Graph.Street(stretch.Street).Length;
+        double length = _network.Graph.Street(stretch.Street).Length;
         double from = stretch.From * length <= SnapToCornerMetres ? 0 : stretch.From;
         double to = (1 - stretch.To) * length <= SnapToCornerMetres ? 1 : stretch.To;
         return stretch with { From = from, To = to };
     }
 
-    private Snapshot Now => new(Sections, Graph, nextId);
+    private Snapshot Now => new(Sections, Graph, _nextId);
 
     private List<Working> Thaw() => Sections.Select(s => new Working(s)).ToList();
 
@@ -327,31 +327,31 @@ public sealed class RouteDraft
         (bool changed, string? note, SplitGraph? graph) = change(state);
         if (!changed)
             return new DraftEdit(this, false, note);
-        foreach (int street in state.SelectMany(s => s.Pieces).Where(p => network[p].Partial).Select(p => network[p].Street).Distinct().ToList())
+        foreach (int street in state.SelectMany(s => s.Pieces).Where(p => _network[p].Partial).Select(p => _network[p].Street).Distinct().ToList())
             Write(state, street, Timeline(state, street));
         state.RemoveAll(s => s.Pieces.Count == 0);
-        ImmutableStack<Snapshot> history = undo.Push(Now);
+        ImmutableStack<Snapshot> history = _undo.Push(Now);
         if (history.Count() > MaxHistory)
             history = ImmutableStack.CreateRange(history.Take(MaxHistory).Reverse());
         Snapshot next = new([.. state.Select(s => s.Freeze())], graph, NextId(state));
-        return new DraftEdit(new RouteDraft(splitter, colours, Streets, next, history, []), true);
+        return new DraftEdit(new RouteDraft(_splitter, _colours, Streets, next, history, []), true);
     }
 
-    private int NextId(List<Working> state) => Math.Max(nextId, state.Count == 0 ? 0 : state.Max(s => s.Id) + 1);
+    private int NextId(List<Working> state) => Math.Max(_nextId, state.Count == 0 ? 0 : state.Max(s => s.Id) + 1);
 
     private Working New(List<Working> state, IEnumerable<int> pieces, int? colour = null)
     {
         return new Working(new DraftSection(NextId(state), [.. pieces], null, colour ?? NextColour(state.Select(s => s.Colour).ToList()), false, null));
     }
 
-    private int Letterboxes(int piece) => splitter.Planner.Open.Open(piece);
+    private int Letterboxes(int piece) => _splitter.Planner.Open.Open(piece);
 
     private static bool Moves(Working? owner, Working? into) => owner != into && owner is not { Locked: true };
 
     private (bool, string?, SplitGraph?) Reassign(List<Working> state, IReadOnlyList<Stretch> stretches, Working? into)
     {
         var touched = Touched(state, stretches);
-        if (touched.Where(t => Moves(t.Owner, into)).Sum(t => Letterboxes(network.PieceOf(t.Street, t.From, t.To))) == 0)
+        if (touched.Where(t => Moves(t.Owner, into)).Sum(t => Letterboxes(_network.PieceOf(t.Street, t.From, t.To))) == 0)
         {
             Working? locked = touched.FirstOrDefault(t => t.Owner is { Locked: true } && t.Owner != into).Owner;
             return (false, locked is not null ? $"Route {Number(locked.Id)} {LockedNote}"
@@ -379,7 +379,7 @@ public sealed class RouteDraft
     {
         foreach (IGrouping<int, Stretch> street in stretches.Where(s => Streets.Contains(s.Street)).GroupBy(s => s.Street))
         {
-            double length = network.Graph.Street(street.Key).Length;
+            double length = _network.Graph.Street(street.Key).Length;
             Stretch? pending = null;
             foreach ((double from, double to) in street.Select(s => (WalkNetwork.Round(Math.Min(s.From, s.To)), WalkNetwork.Round(Math.Max(s.From, s.To)))).OrderBy(s => s.Item1))
             {
@@ -400,7 +400,7 @@ public sealed class RouteDraft
     private List<Segment> Timeline(List<Working> state, int street)
     {
         IEnumerable<Segment> owned = state
-            .SelectMany(section => section.Pieces.Where(p => network[p].Street == street).Select(p => new Segment(network[p].From, network[p].To, section)))
+            .SelectMany(section => section.Pieces.Where(p => _network[p].Street == street).Select(p => new Segment(_network[p].From, _network[p].To, section)))
             .OrderBy(s => s.From);
         List<Segment> timeline = [];
         double at = 0;
@@ -442,21 +442,21 @@ public sealed class RouteDraft
     private void Write(List<Working> state, int street, IEnumerable<Segment> segments)
     {
         List<Segment> kept = Joined(Joined(segments)
-            .Select(s => s.Owner is { Locked: false } && (s.From > 0 || s.To < 1) && Letterboxes(network.PieceOf(street, s.From, s.To)) == 0 ? s with { Owner = null } : s));
+            .Select(s => s.Owner is { Locked: false } && (s.From > 0 || s.To < 1) && Letterboxes(_network.PieceOf(street, s.From, s.To)) == 0 ? s with { Owner = null } : s));
         foreach (Working section in state)
-            section.Pieces.RemoveWhere(p => network[p].Street == street);
+            section.Pieces.RemoveWhere(p => _network[p].Street == street);
         foreach (Segment segment in kept.Where(s => s.Owner is not null))
-            segment.Owner!.Pieces.Add(network.PieceOf(street, segment.From, segment.To));
+            segment.Owner!.Pieces.Add(_network.PieceOf(street, segment.From, segment.To));
     }
 
     private IEnumerable<int> Unlocked(List<Working> state, int street) =>
         Joined(Timeline(state, street).Select(s => s.Owner is { Locked: true } ? s : s with { Owner = null }))
             .Where(s => s.Owner is null)
-            .Select(s => network.PieceOf(street, s.From, s.To));
+            .Select(s => _network.PieceOf(street, s.From, s.To));
 
     private int NextColour(List<int> used, IReadOnlyCollection<int>? avoid = null)
     {
-        IEnumerable<int> options = Enumerable.Range(0, colours).Where(c => avoid?.Contains(c) != true).DefaultIfEmpty(0);
+        IEnumerable<int> options = Enumerable.Range(0, _colours).Where(c => avoid?.Contains(c) != true).DefaultIfEmpty(0);
         return options.MinBy(c => (used.Count(u => u == c), c));
     }
 
@@ -484,7 +484,7 @@ public sealed class RouteDraft
             return null;
         foreach ((int piece, List<double> along) in crossed.Where(c => !untouched.Contains(c.Piece)))
         {
-            (int near, int far) = along.Min() >= 1 - along.Max() ? (network[piece].U, network[piece].V) : (network[piece].V, network[piece].U);
+            (int near, int far) = along.Min() >= 1 - along.Max() ? (_network[piece].U, _network[piece].V) : (_network[piece].V, _network[piece].U);
             HashSet<int> home = pieces.FirstOrDefault(p => p.Any(q => graph.Reaches(q, near)))
                 ?? pieces.FirstOrDefault(p => p.Any(q => graph.Reaches(q, far)))
                 ?? pieces.MaxBy(p => p.Sum(Letterboxes))!;
@@ -497,7 +497,7 @@ public sealed class RouteDraft
 
     private List<double> Crossings(List<Flat> cut, int piece)
     {
-        IReadOnlyList<Flat> line = network.FlatLine(piece);
+        IReadOnlyList<Flat> line = _network.FlatLine(piece);
         double[] lengths = new double[line.Count - 1];
         for (int i = 0; i < lengths.Length; i++)
             lengths[i] = Flat.Distance(line[i], line[i + 1]);

@@ -1,5 +1,3 @@
-using GSBC.ChurchApp.Features.Outreach.Routing;
-
 namespace GSBC.ChurchApp.Features.Outreach.Routing.Tests;
 
 public sealed class FollowingTests

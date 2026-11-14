@@ -1,5 +1,3 @@
-using GSBC.ChurchApp.Features.Outreach.Routing;
-
 namespace GSBC.ChurchApp.Features.Outreach.Routing.Tests;
 
 public sealed class StreetGraphFileTests
@@ -49,7 +47,7 @@ public sealed class StreetGraphFileTests
     {
         StreetGraph graph = Fixture.AlbanyCreek();
 
-        int homes = Enumerable.Range(0, graph.StreetCount).Sum(s => graph.Homes(s));
+        int homes = Enumerable.Range(0, graph.StreetCount).Sum(graph.Homes);
         int skipped = Enumerable.Range(0, graph.LetterboxCount).Count(b => graph.LetterboxKindOf(b) == LetterboxKind.Skip);
 
         Assert.Equal(17102, homes);

@@ -8,27 +8,27 @@ public sealed class WalkPlanner
     private const double HopLeadMetres = 400;
     private const double StartSearchMetres = 2000;
 
-    private readonly WalkNetwork network;
-    private readonly StreetGraph graph;
-    private readonly RouteSettings settings;
+    private readonly WalkNetwork _network;
+    private readonly StreetGraph _graph;
+    private readonly RouteSettings _settings;
 
     public WalkPlanner(Openness open)
     {
         Open = open;
-        network = open.Network;
-        graph = network.Graph;
-        settings = open.Settings;
-        Paths = new Paths(network);
+        _network = open.Network;
+        _graph = _network.Graph;
+        _settings = open.Settings;
+        Paths = new Paths(_network);
     }
 
     public Openness Open { get; }
 
     public Paths Paths { get; }
 
-    public WalkNetwork Network => network;
+    public WalkNetwork Network => _network;
 
     public int? StartNear(GeoPoint point) =>
-        graph.Index.NearestNode(graph.Projection.ToFlat(point), StartSearchMetres, node => Walkable(node));
+        _graph.Index.NearestNode(_graph.Projection.ToFlat(point), StartSearchMetres, Walkable);
 
     public WalkPlan Plan(int start, WalkBudget budget, WalkHop? hop = null)
     {
@@ -47,9 +47,9 @@ public sealed class WalkPlanner
         HashSet<int> connectors = walkOnly is null ? [] : [.. walkOnly];
         HashSet<int> set = pieces.Where(p => connectors.Contains(p) || Open.Live(p)).ToHashSet();
         set.UnionWith(connectors);
-        if (set.Count > 0 && !set.Any(p => network[p].U == start || network[p].V == start))
-            start = NearestEnd(set, network.Node(start));
-        Cuts cuts = network.CutsOf(set);
+        if (set.Count > 0 && !set.Any(p => _network[p].U == start || _network[p].V == start))
+            start = NearestEnd(set, _network.Node(start));
+        Cuts cuts = _network.CutsOf(set);
         foreach (int link in Links(set, start, cuts))
         {
             if (set.Add(link))
@@ -59,8 +59,8 @@ public sealed class WalkPlanner
         Dictionary<int, List<Arc>> arcsFrom = [];
         foreach (int piece in set.Order())
         {
-            Outgoing(arcsFrom, network[piece].U).Add(new Arc(piece, true));
-            Outgoing(arcsFrom, network[piece].V).Add(new Arc(piece, false));
+            Outgoing(arcsFrom, _network[piece].U).Add(new Arc(piece, true));
+            Outgoing(arcsFrom, _network[piece].V).Add(new Arc(piece, false));
         }
         HashSet<Arc> used = [];
 
@@ -104,7 +104,7 @@ public sealed class WalkPlanner
         for (int i = 0; i < route.Count; i++)
         {
             Arc arc = route[i];
-            Piece piece = network[arc.Piece];
+            Piece piece = _network[arc.Piece];
             int boxes = Boxes(arc);
             metres += piece.Length;
             seconds += Open.WalkSeconds(piece.Length) + (boxes > 0 ? Open.DeliverySeconds(arc.Piece, arc.Side) : 0);
@@ -123,8 +123,8 @@ public sealed class WalkPlanner
                 run = 0;
             }
 
-            string street = network.Street(arc.Piece).Name is { Length: > 0 } name ? name : WalkLeg.Unnamed;
-            bool turnedBack = previous is { } before && network[before.Piece].Street == piece.Street && before.Forward != arc.Forward;
+            string street = _network.Street(arc.Piece).Name is { Length: > 0 } name ? name : WalkLeg.Unnamed;
+            bool turnedBack = previous is { } before && _network[before.Piece].Street == piece.Street && before.Forward != arc.Forward;
             bool part = boxes > 0 && piece.Partial;
             if (legs.Count > 0 && legs[^1].Street == street && legs[^1].Delivers == boxes > 0 && !turnedBack)
             {
@@ -138,30 +138,30 @@ public sealed class WalkPlanner
             previous = arc;
         }
         int letterboxes = legs.Sum(l => l.Letterboxes);
-        int bundles = (letterboxes + settings.BundleSize - 1) / settings.BundleSize;
-        int toTake = (int)Math.Ceiling(letterboxes * (1 + settings.SpareShare) / settings.BundleSize);
-        bool review = connectorMetres > settings.MaxConnectorTotalMetres || longest > settings.MaxConnectorLegMetres;
+        int bundles = (letterboxes + _settings.BundleSize - 1) / _settings.BundleSize;
+        int toTake = (int)Math.Ceiling(letterboxes * (1 + _settings.SpareShare) / _settings.BundleSize);
+        bool review = connectorMetres > _settings.MaxConnectorTotalMetres || longest > _settings.MaxConnectorLegMetres;
         return new WalkPlan(start, route, legs, metres, letterboxes, TimeSpan.FromSeconds(seconds), connectorMetres, longest, approachMetres, bundles, toTake, review);
     }
 
-    public double Cost(int piece, WalkBudget budget) => budget.ByTime ? Open.BothSidesSeconds(piece) : 2 * network[piece].Length;
+    public double Cost(int piece, WalkBudget budget) => budget.ByTime ? Open.BothSidesSeconds(piece) : 2 * _network[piece].Length;
 
     public double TransitCost(int piece, WalkBudget budget) =>
-        budget.ByTime ? Open.WalkSeconds(2 * network[piece].Length) : 2 * network[piece].Length;
+        budget.ByTime ? Open.WalkSeconds(2 * _network[piece].Length) : 2 * _network[piece].Length;
 
     private IEnumerable<(int Seed, List<int> Approach)> Seeds(int start)
     {
         Dictionary<int, int> via = [];
         HashSet<int> seen = [];
         List<Flat> seeds = [];
-        foreach ((int node, _, int reachedBy) in Paths.Outward([start], settings.MaxApproachMetres))
+        foreach ((int node, _, int reachedBy) in Paths.Outward([start], _settings.MaxApproachMetres))
         {
             via[node] = reachedBy;
-            foreach (int piece in network.Adjacent(node).ToArray())
+            foreach (int piece in _network.Adjacent(node).ToArray())
             {
                 if (!seen.Add(piece) || !Open.Live(piece))
                     continue;
-                Flat middle = network.Midpoint(piece);
+                Flat middle = _network.Midpoint(piece);
                 if (seeds.Any(s => Flat.Distance(s, middle) < SeedSpacingMetres))
                     continue;
                 seeds.Add(middle);
@@ -178,7 +178,7 @@ public sealed class WalkPlanner
         while (via.TryGetValue(node, out int piece) && piece >= 0)
         {
             path.Add(piece);
-            node = network.Other(piece, node);
+            node = _network.Other(piece, node);
         }
         path.Reverse();
         return path;
@@ -195,27 +195,27 @@ public sealed class WalkPlanner
         foreach (int piece in chosen)
         {
             total += transit.Contains(piece) ? TransitCost(piece, budget) : Cost(piece, budget);
-            nodes.Add(network[piece].U);
-            nodes.Add(network[piece].V);
+            nodes.Add(_network[piece].U);
+            nodes.Add(_network[piece].V);
         }
-        Flat centre = network.Midpoint(seed);
+        Flat centre = _network.Midpoint(seed);
         PriorityQueue<int, double> queue = new();
         Dictionary<int, (List<int> Path, double Metres)> pathTo = [];
 
         void Discover(IEnumerable<int> from)
         {
             Dictionary<int, int> via = [];
-            foreach ((int node, double metres, int reachedBy) in Paths.Outward(from, settings.MaxConnectorLegMetres, piece => !Open.Live(piece)))
+            foreach ((int node, double metres, int reachedBy) in Paths.Outward(from, _settings.MaxConnectorLegMetres, piece => !Open.Live(piece)))
             {
                 via[node] = reachedBy;
-                foreach (int piece in network.Adjacent(node))
+                foreach (int piece in _network.Adjacent(node))
                 {
                     if (chosen.Contains(piece) || !Open.Live(piece))
                         continue;
                     if (pathTo.TryGetValue(piece, out var known) && known.Metres <= metres)
                         continue;
                     pathTo[piece] = (PathBack(node, via), metres);
-                    queue.Enqueue(piece, Flat.Distance(centre, network.Midpoint(piece)) + 2 * metres);
+                    queue.Enqueue(piece, Flat.Distance(centre, _network.Midpoint(piece)) + 2 * metres);
                 }
             }
         }
@@ -231,7 +231,7 @@ public sealed class WalkPlanner
                 if (step != piece && !Open.Live(step))
                     transit.Add(step);
             }
-            List<int> ends = fresh.SelectMany(p => new[] { network[p].U, network[p].V }).Where(nodes.Add).ToList();
+            List<int> ends = fresh.SelectMany(p => new[] { _network[p].U, _network[p].V }).Where(nodes.Add).ToList();
             Discover(ends);
         }
 
@@ -283,31 +283,31 @@ public sealed class WalkPlanner
             while (grew)
             {
                 grew = false;
-                foreach (int piece in pending.Where(p => reached.Contains(network[p].U) || reached.Contains(network[p].V)).ToList())
+                foreach (int piece in pending.Where(p => reached.Contains(_network[p].U) || reached.Contains(_network[p].V)).ToList())
                 {
                     pending.Remove(piece);
-                    reached.Add(network[piece].U);
-                    reached.Add(network[piece].V);
+                    reached.Add(_network[piece].U);
+                    reached.Add(_network[piece].V);
                     grew = true;
                 }
             }
             if (pending.Count == 0)
                 return links;
-            HashSet<int> targets = pending.SelectMany(p => new[] { network[p].U, network[p].V }).ToHashSet();
+            HashSet<int> targets = pending.SelectMany(p => new[] { _network[p].U, _network[p].V }).ToHashSet();
             List<int> path = Paths.Shortest(reached, targets.Contains, cuts: cuts);
             if (path.Count == 0)
                 return links;
             links.AddRange(path);
             foreach (int piece in path)
             {
-                reached.Add(network[piece].U);
-                reached.Add(network[piece].V);
+                reached.Add(_network[piece].U);
+                reached.Add(_network[piece].V);
             }
         }
     }
 
     public int NearestEnd(IEnumerable<int> pieces, Flat point) =>
-        pieces.SelectMany(p => new[] { network[p].U, network[p].V }).MinBy(n => Flat.Distance(network.Node(n), point));
+        pieces.SelectMany(p => new[] { _network[p].U, _network[p].V }).MinBy(n => Flat.Distance(_network.Node(n), point));
 
     private Arc? NextArc(int node, Arc? came, Dictionary<int, List<Arc>> arcsFrom, HashSet<Arc> used)
     {
@@ -323,7 +323,7 @@ public sealed class WalkPlanner
                 return arc;
             double turn = arc.Piece == incoming.Piece
                 ? -Math.PI
-                : Geometry.AngleBetween(network.InBearing(incoming.Piece, incoming.Forward), network.OutBearing(arc.Piece, arc.Forward));
+                : Geometry.AngleBetween(_network.InBearing(incoming.Piece, incoming.Forward), _network.OutBearing(arc.Piece, arc.Forward));
             if (turn > bestTurn)
                 (best, bestTurn) = (arc, turn);
         }
@@ -332,17 +332,17 @@ public sealed class WalkPlanner
 
     private bool Walkable(int node)
     {
-        foreach (int street in graph.StreetsAt(node))
+        foreach (int street in _graph.StreetsAt(node))
         {
-            if (!graph.Street(street).Kind.IsMainRoad())
+            if (!_graph.Street(street).Kind.IsMainRoad())
                 return true;
         }
         return false;
     }
 
-    private int From(Arc arc) => arc.Forward ? network[arc.Piece].U : network[arc.Piece].V;
+    private int From(Arc arc) => arc.Forward ? _network[arc.Piece].U : _network[arc.Piece].V;
 
-    private int To(Arc arc) => arc.Forward ? network[arc.Piece].V : network[arc.Piece].U;
+    private int To(Arc arc) => arc.Forward ? _network[arc.Piece].V : _network[arc.Piece].U;
 
     private static List<Arc> Outgoing(Dictionary<int, List<Arc>> arcsFrom, int node)
     {

@@ -1,5 +1,3 @@
-using GSBC.ChurchApp.Features.Outreach.Routing;
-
 namespace GSBC.ChurchApp.Features.Outreach.Routing.Tests;
 
 public sealed class SplitterTests
@@ -69,7 +67,7 @@ public sealed class SplitterTests
     [Fact]
     public void ALockedRouteKeepsItsStreetsThroughPaintingAndRegenerating()
     {
-        (AreaSplitter splitter, AreaSelection selection, RouteDraft draft) = Drafted();
+        (_, AreaSelection selection, RouteDraft draft) = Drafted();
         DraftSection locked = draft.Sections[0];
         RouteDraft held = draft.SetLocked([locked.Id], true).Draft;
 

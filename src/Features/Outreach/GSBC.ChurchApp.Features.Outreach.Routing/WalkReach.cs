@@ -46,9 +46,9 @@ public sealed class ReachFinder(WalkPlanner planner)
     private const int PocketsLooked = 24;
     private const double PocketCapFactor = 3;
 
-    private readonly WalkNetwork network = planner.Network;
-    private readonly Openness open = planner.Open;
-    private readonly RouteSettings settings = planner.Open.Settings;
+    private readonly WalkNetwork _network = planner.Network;
+    private readonly Openness _open = planner.Open;
+    private readonly RouteSettings _settings = planner.Open.Settings;
 
     private sealed record Pocket(HashSet<int> Pieces, HashSet<int> Nodes, int Letterboxes, double Metres, double Seconds, Dictionary<string, double> MainRoads)
     {
@@ -58,8 +58,8 @@ public sealed class ReachFinder(WalkPlanner planner)
     public ReachStatus StatusOf(WalkBudget budget, WalkPlan walk)
     {
         double asked = budget.Asked, reached = budget.Reached(walk);
-        return walk.IsEmpty || reached < asked * settings.ShortOf ? ReachStatus.Short
-            : reached > asked * settings.LongOf ? ReachStatus.Long
+        return walk.IsEmpty || reached < asked * _settings.ShortOf ? ReachStatus.Short
+            : reached > asked * _settings.LongOf ? ReachStatus.Long
             : ReachStatus.Full;
     }
 
@@ -68,7 +68,7 @@ public sealed class ReachFinder(WalkPlanner planner)
         ReachStatus status = StatusOf(budget, walk);
         if (status == ReachStatus.Full)
             return WalkReach.Full;
-        Flat from = network.Node(start);
+        Flat from = _network.Node(start);
         if (walk.IsEmpty)
         {
             IReadOnlyList<int> done = RestedNear([from]);
@@ -88,7 +88,7 @@ public sealed class ReachFinder(WalkPlanner planner)
             return new WalkReach(status, reasons, null, null);
         }
 
-        Pocket pocket = Flood(walk.Pieces.Where(open.Live), double.MaxValue, budget);
+        Pocket pocket = Flood(walk.Pieces.Where(_open.Live), double.MaxValue, budget);
         if (rested.Count > 0)
             reasons.Add(new ReachReason(ReachReasonKind.Rested, Names(rested), rested.Count));
         if (AtAreaEdge(pocket))
@@ -110,9 +110,9 @@ public sealed class ReachFinder(WalkPlanner planner)
             return [];
         Flat low = new(points.Min(p => p.X) - NearbyMetres, points.Min(p => p.Y) - NearbyMetres);
         Flat high = new(points.Max(p => p.X) + NearbyMetres, points.Max(p => p.Y) + NearbyMetres);
-        return network.Graph.Index.StreetsIn(low, high)
-            .Where(open.Rested)
-            .Where(s => Inside(network.Midpoint(s), low, high))
+        return _network.Graph.Index.StreetsIn(low, high)
+            .Where(_open.Rested)
+            .Where(s => Inside(_network.Midpoint(s), low, high))
             .ToList();
     }
 
@@ -126,7 +126,7 @@ public sealed class ReachFinder(WalkPlanner planner)
     {
         List<(WalkHop Hop, Pocket Landing)> found = [];
         Dictionary<int, int> via = [];
-        foreach ((int node, double metres, int reachedBy) in planner.Paths.Outward(pocket.Nodes, settings.MaxHopMetres, piece => !open.Live(piece)))
+        foreach ((int node, double metres, int reachedBy) in planner.Paths.Outward(pocket.Nodes, _settings.MaxHopMetres, piece => !_open.Live(piece)))
         {
             via[node] = reachedBy;
             if (found.Count >= HopTries)
@@ -134,9 +134,9 @@ public sealed class ReachFinder(WalkPlanner planner)
             if (pocket.Nodes.Contains(node))
                 continue;
             int target = -1;
-            foreach (int piece in network.Adjacent(node))
+            foreach (int piece in _network.Adjacent(node))
             {
-                if (open.Live(piece) && !pocket.Pieces.Contains(piece) && (target < 0 || open.Open(piece) > open.Open(target)))
+                if (_open.Live(piece) && !pocket.Pieces.Contains(piece) && (target < 0 || _open.Open(piece) > _open.Open(target)))
                     target = piece;
             }
             if (target < 0 || found.Any(f => f.Landing.Pieces.Contains(target)))
@@ -146,7 +146,7 @@ public sealed class ReachFinder(WalkPlanner planner)
             while (via.TryGetValue(back, out int piece) && piece >= 0)
             {
                 path.Insert(0, piece);
-                back = network.Other(piece, back);
+                back = _network.Other(piece, back);
             }
             found.Add((new WalkHop(back, path, target, metres), Flood([target], budget.Asked * PocketCapFactor, budget)));
         }
@@ -157,12 +157,12 @@ public sealed class ReachFinder(WalkPlanner planner)
             ?? found.MaxBy(f => f.Landing.Letterboxes).Hop;
         WalkPlan with = planner.Plan(start, budget, hop);
         int added = with.Letterboxes - walk.Letterboxes;
-        return with.Hop is null || added < MinHopGain ? null : new HopChoice(hop, network.Street(hop.Target).Name, with, added);
+        return with.Hop is null || added < MinHopGain ? null : new HopChoice(hop, _network.Street(hop.Target).Name, with, added);
     }
 
     private StartChoice? FindStart(int start, WalkBudget budget, Pocket? current)
     {
-        double asked = budget.Asked * settings.ShortOf;
+        double asked = budget.Asked * _settings.ShortOf;
         List<Pocket> seen = current is null ? [] : [current];
         int tries = 0;
         foreach ((int node, double metres, _) in planner.Paths.Outward([start], StartSearchMetres))
@@ -170,9 +170,9 @@ public sealed class ReachFinder(WalkPlanner planner)
             if (seen.Count > PocketsLooked || tries >= StartTries)
                 return null;
             int live = -1;
-            foreach (int piece in network.Adjacent(node))
+            foreach (int piece in _network.Adjacent(node))
             {
-                if (open.Live(piece) && !seen.Any(p => p.Pieces.Contains(piece)))
+                if (_open.Live(piece) && !seen.Any(p => p.Pieces.Contains(piece)))
                     live = piece;
             }
             if (live < 0)
@@ -184,7 +184,7 @@ public sealed class ReachFinder(WalkPlanner planner)
             tries++;
             WalkPlan walk = planner.Plan(node, budget);
             if (StatusOf(budget, walk) != ReachStatus.Short)
-                return new StartChoice(node, network.Graph.Projection.ToGeo(network.Node(node)), metres, network.Street(live).Name, walk);
+                return new StartChoice(node, _network.Graph.Projection.ToGeo(_network.Node(node)), metres, _network.Street(live).Name, walk);
         }
         return null;
     }
@@ -201,8 +201,8 @@ public sealed class ReachFinder(WalkPlanner planner)
         {
             if (!pieces.Add(seed))
                 continue;
-            (letterboxes, metres, seconds) = (letterboxes + open.Open(seed), metres + 2 * network[seed].Length, seconds + open.BothSidesSeconds(seed));
-            foreach (int end in new[] { network[seed].U, network[seed].V })
+            (letterboxes, metres, seconds) = (letterboxes + _open.Open(seed), metres + 2 * _network[seed].Length, seconds + _open.BothSidesSeconds(seed));
+            foreach (int end in new[] { _network[seed].U, _network[seed].V })
             {
                 if (nodes.Add(end))
                     queue.Enqueue(end);
@@ -210,21 +210,21 @@ public sealed class ReachFinder(WalkPlanner planner)
         }
         while (queue.TryDequeue(out int node) && (budget.ByTime ? seconds : metres) < cap)
         {
-            foreach (int piece in network.Adjacent(node).ToArray())
+            foreach (int piece in _network.Adjacent(node).ToArray())
             {
-                if (!open.Live(piece) || !pieces.Add(piece))
+                if (!_open.Live(piece) || !pieces.Add(piece))
                     continue;
-                (letterboxes, metres, seconds) = (letterboxes + open.Open(piece), metres + 2 * network[piece].Length, seconds + open.BothSidesSeconds(piece));
-                foreach (int end in new[] { network[piece].U, network[piece].V })
+                (letterboxes, metres, seconds) = (letterboxes + _open.Open(piece), metres + 2 * _network[piece].Length, seconds + _open.BothSidesSeconds(piece));
+                foreach (int end in new[] { _network[piece].U, _network[piece].V })
                 {
                     if (nodes.Add(end))
                         queue.Enqueue(end);
                 }
             }
-            foreach ((int across, _, int via) in planner.Paths.Outward([node], settings.MaxConnectorLegMetres, piece => !open.Live(piece)))
+            foreach ((int across, _, int via) in planner.Paths.Outward([node], _settings.MaxConnectorLegMetres, piece => !_open.Live(piece)))
             {
-                if (via >= 0 && network.Street(via).Kind.IsMainRoad() && network.Street(via).Name.Length > 0)
-                    roads[network.Street(via).Name] = roads.GetValueOrDefault(network.Street(via).Name) + network[via].Length;
+                if (via >= 0 && _network.Street(via).Kind.IsMainRoad() && _network.Street(via).Name.Length > 0)
+                    roads[_network.Street(via).Name] = roads.GetValueOrDefault(_network.Street(via).Name) + _network[via].Length;
                 if (across != node && nodes.Add(across) && HasLive(across))
                     queue.Enqueue(across);
             }
@@ -234,9 +234,9 @@ public sealed class ReachFinder(WalkPlanner planner)
 
     private bool HasLive(int node)
     {
-        foreach (int piece in network.Adjacent(node))
+        foreach (int piece in _network.Adjacent(node))
         {
-            if (open.Live(piece))
+            if (_open.Live(piece))
                 return true;
         }
         return false;
@@ -244,10 +244,10 @@ public sealed class ReachFinder(WalkPlanner planner)
 
     private bool AtAreaEdge(Pocket pocket)
     {
-        StreetGraph graph = network.Graph;
+        StreetGraph graph = _network.Graph;
         Flat low = graph.Projection.ToFlat(new GeoPoint(graph.Region.Bounds.South, graph.Region.Bounds.West)) + new Flat(AreaEdgeMetres, AreaEdgeMetres);
         Flat high = graph.Projection.ToFlat(new GeoPoint(graph.Region.Bounds.North, graph.Region.Bounds.East)) - new Flat(AreaEdgeMetres, AreaEdgeMetres);
-        return pocket.Pieces.Any(p => !Inside(network.Midpoint(p), low, high));
+        return pocket.Pieces.Any(p => !Inside(_network.Midpoint(p), low, high));
     }
 
     private int NonHomesNear(WalkPlan walk)
@@ -256,22 +256,22 @@ public sealed class ReachFinder(WalkPlanner planner)
         Flat low = new(points.Min(p => p.X) - NearbyMetres, points.Min(p => p.Y) - NearbyMetres);
         Flat high = new(points.Max(p => p.X) + NearbyMetres, points.Max(p => p.Y) + NearbyMetres);
         int count = 0;
-        foreach (int street in network.Graph.Index.StreetsIn(low, high))
+        foreach (int street in _network.Graph.Index.StreetsIn(low, high))
         {
             for (int side = 0; side < 2; side++)
             {
-                LetterboxRange range = network.Graph.Letterboxes(street, (Side)side);
+                LetterboxRange range = _network.Graph.Letterboxes(street, (Side)side);
                 for (int b = range.Start; b < range.End; b++)
-                    count += open.State(b) == LetterboxState.NotAHome && Inside(network.Graph.LetterboxFlat(b), low, high) ? 1 : 0;
+                    count += _open.State(b) == LetterboxState.NotAHome && Inside(_network.Graph.LetterboxFlat(b), low, high) ? 1 : 0;
             }
         }
         return count;
     }
 
-    private List<Flat> WalkPoints(WalkPlan walk) => walk.Pieces.SelectMany(p => new[] { network.Node(network[p].U), network.Node(network[p].V) }).ToList();
+    private List<Flat> WalkPoints(WalkPlan walk) => walk.Pieces.SelectMany(p => new[] { _network.Node(_network[p].U), _network.Node(_network[p].V) }).ToList();
 
     private IReadOnlyList<string> Names(IEnumerable<int> pieces) =>
-        pieces.Select(p => network.Street(p).Name).Where(n => n.Length > 0).Distinct().Order().ToList();
+        pieces.Select(p => _network.Street(p).Name).Where(n => n.Length > 0).Distinct().Order().ToList();
 
     private static bool Inside(Flat point, Flat low, Flat high) => point.X >= low.X && point.X <= high.X && point.Y >= low.Y && point.Y <= high.Y;
 }

@@ -21,24 +21,23 @@ public readonly record struct StreetPosition(int Street, double Along, Side Side
 
 public sealed class StreetGraph
 {
-    private readonly double[] nodeX;
-    private readonly double[] nodeY;
-    private readonly long[] nodeOsm;
-    private readonly StreetInfo[] streets;
-    private readonly int[] shapeStart;
-    private readonly Flat[] shape;
-    private readonly double[] shapeAlong;
-    private readonly int[] boxStart;
-    private readonly double[] boxAlong;
-    private readonly LetterboxKind[] boxKind;
-    private readonly string?[] boxLabel;
-    private readonly uint[] boxKey;
-    private readonly int[] homes;
-    private readonly int[] units;
-    private readonly int[] adjacentStart;
-    private readonly int[] adjacent;
-    private Dictionary<StreetKey, int>? byKey;
-    private StreetIndex? index;
+    private readonly double[] _nodeX;
+    private readonly double[] _nodeY;
+    private readonly long[] _nodeOsm;
+    private readonly StreetInfo[] _streets;
+    private readonly int[] _shapeStart;
+    private readonly Flat[] _shape;
+    private readonly double[] _shapeAlong;
+    private readonly int[] _boxStart;
+    private readonly double[] _boxAlong;
+    private readonly LetterboxKind[] _boxKind;
+    private readonly string?[] _boxLabel;
+    private readonly uint[] _boxKey;
+    private readonly int[] _homes;
+    private readonly int[] _units;
+    private readonly int[] _adjacentStart;
+    private readonly int[] _adjacent;
+    private Dictionary<StreetKey, int>? _byKey;
 
     internal StreetGraph(
         StreetRegion region,
@@ -56,70 +55,70 @@ public sealed class StreetGraph
     {
         Region = region;
         Projection = new LocalProjection(region.Origin);
-        this.nodeX = nodeX;
-        this.nodeY = nodeY;
-        this.nodeOsm = nodeOsm;
-        this.streets = streets;
-        this.shapeStart = shapeStart;
-        this.shape = shape;
-        this.boxStart = boxStart;
-        this.boxAlong = boxAlong;
-        this.boxKind = boxKind;
-        this.boxLabel = boxLabel;
-        this.boxKey = boxKey;
-        shapeAlong = new double[shape.Length];
+        _nodeX = nodeX;
+        _nodeY = nodeY;
+        _nodeOsm = nodeOsm;
+        _streets = streets;
+        _shapeStart = shapeStart;
+        _shape = shape;
+        _boxStart = boxStart;
+        _boxAlong = boxAlong;
+        _boxKind = boxKind;
+        _boxLabel = boxLabel;
+        _boxKey = boxKey;
+        _shapeAlong = new double[shape.Length];
         for (int s = 0; s < streets.Length; s++)
         {
             int from = shapeStart[s], to = shapeStart[s + 1];
             for (int i = from + 1; i < to; i++)
-                shapeAlong[i] = shapeAlong[i - 1] + Flat.Distance(shape[i - 1], shape[i]);
+                _shapeAlong[i] = _shapeAlong[i - 1] + Flat.Distance(shape[i - 1], shape[i]);
         }
-        homes = new int[streets.Length * 2];
-        units = new int[streets.Length * 2];
-        for (int side = 0; side < homes.Length; side++)
+        _homes = new int[streets.Length * 2];
+        _units = new int[streets.Length * 2];
+        for (int side = 0; side < _homes.Length; side++)
         {
             for (int b = boxStart[side]; b < boxStart[side + 1]; b++)
             {
-                homes[side] += boxKind[b].IsHome() ? 1 : 0;
-                units[side] += boxKind[b] == LetterboxKind.Unit ? 1 : 0;
+                _homes[side] += boxKind[b].IsHome() ? 1 : 0;
+                _units[side] += boxKind[b] == LetterboxKind.Unit ? 1 : 0;
             }
         }
-        (adjacentStart, adjacent) = Adjacency(nodeX.Length, streets);
+        (_adjacentStart, _adjacent) = Adjacency(nodeX.Length, streets);
     }
 
     public StreetRegion Region { get; }
 
     public LocalProjection Projection { get; }
 
-    public int NodeCount => nodeX.Length;
+    public int NodeCount => _nodeX.Length;
 
-    public int StreetCount => streets.Length;
+    public int StreetCount => _streets.Length;
 
-    public int LetterboxCount => boxAlong.Length;
+    public int LetterboxCount => _boxAlong.Length;
 
-    public int ShapePointCount => shape.Length;
+    public int ShapePointCount => _shape.Length;
 
-    public Flat NodeFlat(int node) => new(nodeX[node], nodeY[node]);
+    public Flat NodeFlat(int node) => new(_nodeX[node], _nodeY[node]);
 
     public GeoPoint NodePoint(int node) => Projection.ToGeo(NodeFlat(node));
 
-    public long NodeOsmId(int node) => nodeOsm[node];
+    public long NodeOsmId(int node) => _nodeOsm[node];
 
-    public ref readonly StreetInfo Street(int street) => ref streets[street];
+    public ref readonly StreetInfo Street(int street) => ref _streets[street];
 
-    public StreetKey KeyOf(int street) => new(streets[street].Way, nodeOsm[streets[street].U], nodeOsm[streets[street].V]);
+    public StreetKey KeyOf(int street) => new(_streets[street].Way, _nodeOsm[_streets[street].U], _nodeOsm[_streets[street].V]);
 
     public int? StreetOf(StreetKey key)
     {
-        byKey ??= Enumerable.Range(0, streets.Length).GroupBy(KeyOf).ToDictionary(g => g.Key, g => g.First());
-        return byKey.TryGetValue(key, out int street) ? street : null;
+        _byKey ??= Enumerable.Range(0, _streets.Length).GroupBy(KeyOf).ToDictionary(g => g.Key, g => g.First());
+        return _byKey.TryGetValue(key, out int street) ? street : null;
     }
 
-    public ReadOnlySpan<int> StreetsAt(int node) => adjacent.AsSpan(adjacentStart[node], adjacentStart[node + 1] - adjacentStart[node]);
+    public ReadOnlySpan<int> StreetsAt(int node) => _adjacent.AsSpan(_adjacentStart[node], _adjacentStart[node + 1] - _adjacentStart[node]);
 
-    public int OtherEnd(int street, int node) => streets[street].U == node ? streets[street].V : streets[street].U;
+    public int OtherEnd(int street, int node) => _streets[street].U == node ? _streets[street].V : _streets[street].U;
 
-    public ReadOnlySpan<Flat> Shape(int street) => shape.AsSpan(shapeStart[street], shapeStart[street + 1] - shapeStart[street]);
+    public ReadOnlySpan<Flat> Shape(int street) => _shape.AsSpan(_shapeStart[street], _shapeStart[street + 1] - _shapeStart[street]);
 
     public IReadOnlyList<GeoPoint> ShapePoints(int street, double from = 0, double to = 1) =>
         ShapeBetween(street, from, to).Select(Projection.ToGeo).ToList();
@@ -127,12 +126,12 @@ public sealed class StreetGraph
     public IReadOnlyList<Flat> ShapeBetween(int street, double from = 0, double to = 1)
     {
         List<Flat> points = [PointAt(street, Math.Min(from, to))];
-        double length = streets[street].Length;
-        for (int i = shapeStart[street] + 1; i < shapeStart[street + 1] - 1; i++)
+        double length = _streets[street].Length;
+        for (int i = _shapeStart[street] + 1; i < _shapeStart[street + 1] - 1; i++)
         {
-            double at = length <= 0 ? 0 : shapeAlong[i] / length;
+            double at = length <= 0 ? 0 : _shapeAlong[i] / length;
             if (at > Math.Min(from, to) && at < Math.Max(from, to))
-                points.Add(shape[i]);
+                points.Add(_shape[i]);
         }
         points.Add(PointAt(street, Math.Max(from, to)));
         if (from > to)
@@ -142,28 +141,28 @@ public sealed class StreetGraph
 
     public Flat PointAt(int street, double along)
     {
-        int from = shapeStart[street], to = shapeStart[street + 1];
-        double target = Math.Clamp(along, 0, 1) * streets[street].Length;
+        int from = _shapeStart[street], to = _shapeStart[street + 1];
+        double target = Math.Clamp(along, 0, 1) * _streets[street].Length;
         for (int i = from; i < to - 1; i++)
         {
-            if (target <= shapeAlong[i + 1] || i == to - 2)
+            if (target <= _shapeAlong[i + 1] || i == to - 2)
             {
-                double span = shapeAlong[i + 1] - shapeAlong[i];
-                double t = span <= 0 ? 0 : Math.Clamp((target - shapeAlong[i]) / span, 0, 1);
-                return shape[i] + (shape[i + 1] - shape[i]) * t;
+                double span = _shapeAlong[i + 1] - _shapeAlong[i];
+                double t = span <= 0 ? 0 : Math.Clamp((target - _shapeAlong[i]) / span, 0, 1);
+                return _shape[i] + (_shape[i + 1] - _shape[i]) * t;
             }
         }
-        return shape[from];
+        return _shape[from];
     }
 
     public double HeadingAt(int street, double along)
     {
-        int from = shapeStart[street], to = shapeStart[street + 1];
-        double target = Math.Clamp(along, 0, 1) * streets[street].Length;
+        int from = _shapeStart[street], to = _shapeStart[street + 1];
+        double target = Math.Clamp(along, 0, 1) * _streets[street].Length;
         for (int i = from; i < to - 1; i++)
         {
-            if (target <= shapeAlong[i + 1] || i == to - 2)
-                return (shape[i + 1] - shape[i]).Bearing;
+            if (target <= _shapeAlong[i + 1] || i == to - 2)
+                return (_shape[i + 1] - _shape[i]).Bearing;
         }
         return 0;
     }
@@ -182,51 +181,51 @@ public sealed class StreetGraph
 
     public StreetPosition Project(int street, Flat point)
     {
-        int from = shapeStart[street], to = shapeStart[street + 1];
+        int from = _shapeStart[street], to = _shapeStart[street + 1];
         double best = double.MaxValue, along = 0, offset = 0;
         for (int i = from; i < to - 1; i++)
         {
-            Flat a = shape[i], d = shape[i + 1] - a;
+            Flat a = _shape[i], d = _shape[i + 1] - a;
             double lengthSquared = Math.Max(Flat.Dot(d, d), 1e-9);
             double t = Math.Clamp(Flat.Dot(point - a, d) / lengthSquared, 0, 1);
             double distance = Flat.Distance(point, a + d * t);
             if (distance < best)
             {
                 best = distance;
-                along = shapeAlong[i] + t * (shapeAlong[i + 1] - shapeAlong[i]);
+                along = _shapeAlong[i] + t * (_shapeAlong[i + 1] - _shapeAlong[i]);
                 offset = Flat.Cross(d, point - a) / Math.Sqrt(lengthSquared);
             }
         }
-        double length = streets[street].Length;
+        double length = _streets[street].Length;
         return new StreetPosition(street, length <= 0 ? 0 : along / length, offset >= 0 ? Side.Left : Side.Right, offset, best);
     }
 
-    public int Homes(int street, Side side) => homes[street * 2 + (int)side];
+    public int Homes(int street, Side side) => _homes[street * 2 + (int)side];
 
-    public int Units(int street, Side side) => units[street * 2 + (int)side];
+    public int Units(int street, Side side) => _units[street * 2 + (int)side];
 
-    public int Homes(int street) => homes[street * 2] + homes[street * 2 + 1];
+    public int Homes(int street) => _homes[street * 2] + _homes[street * 2 + 1];
 
     public LetterboxRange Letterboxes(int street, Side side)
     {
         int s = street * 2 + (int)side;
-        return new LetterboxRange(boxStart[s], boxStart[s + 1]);
+        return new LetterboxRange(_boxStart[s], _boxStart[s + 1]);
     }
 
     public Letterbox LetterboxAt(int letterbox)
     {
-        int side = Array.BinarySearch(boxStart, letterbox);
+        int side = Array.BinarySearch(_boxStart, letterbox);
         side = side >= 0 ? LastStartingAt(side) : ~side - 1;
-        return new Letterbox(side / 2, (Side)(side % 2), boxAlong[letterbox], boxKind[letterbox], boxLabel[letterbox], boxKey[letterbox]);
+        return new Letterbox(side / 2, (Side)(side % 2), _boxAlong[letterbox], _boxKind[letterbox], _boxLabel[letterbox], _boxKey[letterbox]);
     }
 
-    public double LetterboxAlong(int letterbox) => boxAlong[letterbox];
+    public double LetterboxAlong(int letterbox) => _boxAlong[letterbox];
 
-    public LetterboxKind LetterboxKindOf(int letterbox) => boxKind[letterbox];
+    public LetterboxKind LetterboxKindOf(int letterbox) => _boxKind[letterbox];
 
-    public string? LetterboxLabel(int letterbox) => boxLabel[letterbox];
+    public string? LetterboxLabel(int letterbox) => _boxLabel[letterbox];
 
-    public uint LetterboxAddressKey(int letterbox) => boxKey[letterbox];
+    public uint LetterboxAddressKey(int letterbox) => _boxKey[letterbox];
 
     public LetterboxRange Between(int street, Side side, double from, double to)
     {
@@ -245,39 +244,39 @@ public sealed class StreetGraph
         return centre + new Flat(Math.Cos(heading), Math.Sin(heading)) * setbackMetres;
     }
 
-    public StreetIndex Index => index ??= new StreetIndex(this);
+    public StreetIndex Index => field ??= new StreetIndex(this);
 
-    internal int ShapeStart(int street) => shapeStart[street];
+    internal int ShapeStart(int street) => _shapeStart[street];
 
-    internal double ShapeAlong(int point) => shapeAlong[point];
+    internal double ShapeAlong(int point) => _shapeAlong[point];
 
-    internal Flat ShapePoint(int point) => shape[point];
+    internal Flat ShapePoint(int point) => _shape[point];
 
-    internal double[] NodeX => nodeX;
+    internal double[] NodeX => _nodeX;
 
-    internal double[] NodeY => nodeY;
+    internal double[] NodeY => _nodeY;
 
-    internal long[] NodeOsm => nodeOsm;
+    internal long[] NodeOsm => _nodeOsm;
 
-    internal StreetInfo[] Streets => streets;
+    internal StreetInfo[] Streets => _streets;
 
-    internal int[] ShapeStarts => shapeStart;
+    internal int[] ShapeStarts => _shapeStart;
 
-    internal Flat[] ShapeFlat => shape;
+    internal Flat[] ShapeFlat => _shape;
 
-    internal int[] BoxStarts => boxStart;
+    internal int[] BoxStarts => _boxStart;
 
-    internal double[] BoxAlong => boxAlong;
+    internal double[] BoxAlong => _boxAlong;
 
-    internal LetterboxKind[] BoxKinds => boxKind;
+    internal LetterboxKind[] BoxKinds => _boxKind;
 
-    internal string?[] BoxLabels => boxLabel;
+    internal string?[] BoxLabels => _boxLabel;
 
-    internal uint[] BoxKeys => boxKey;
+    internal uint[] BoxKeys => _boxKey;
 
     private int LastStartingAt(int side)
     {
-        while (side + 1 < boxStart.Length - 1 && boxStart[side + 1] == boxStart[side])
+        while (side + 1 < _boxStart.Length - 1 && _boxStart[side + 1] == _boxStart[side])
             side++;
         return side;
     }
@@ -288,7 +287,7 @@ public sealed class StreetGraph
         while (low < high)
         {
             int middle = (low + high) / 2;
-            if (boxAlong[middle] < at)
+            if (_boxAlong[middle] < at)
                 low = middle + 1;
             else
                 high = middle;
