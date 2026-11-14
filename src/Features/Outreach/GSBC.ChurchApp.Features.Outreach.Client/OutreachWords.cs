@@ -49,5 +49,21 @@ public static class OutreachWords
         _ => "To review",
     };
 
+    public static string Date(DateTime utc) => Day(ChurchTime.DayOf(utc));
+
+    public static string DayTitle(OutreachDay day) => ChurchTime.ToChurch(day.StartsAt).ToString("dddd d MMMM", English);
+
+    public static string Window(OutreachDay day)
+    {
+        DateTime starts = ChurchTime.ToChurch(day.StartsAt), ends = ChurchTime.ToChurch(day.EndsAt);
+        bool samePart = starts.Hour < 12 == ends.Hour < 12;
+        return $"{Clock(starts, !samePart)} to {Clock(ends, true)}";
+    }
+
+    public static string Minutes(int minutes) => minutes < 60 ? $"{minutes}{Together}min" : $"{minutes / 60}{Together}h{(minutes % 60 > 0 ? $" {minutes % 60}{Together}min" : "")}";
+
+    private static string Clock(DateTime local, bool withPart) =>
+        local.ToString(local.Minute == 0 ? "h" : "h:mm", English) + (withPart ? (local.Hour < 12 ? "am" : "pm") : "");
+
     public static string Place(AddressPoint place) => place.Label.Length > 0 ? place.Label : "A place on the map";
 }
