@@ -158,9 +158,11 @@ export async function create(element, optionsJson, receiver) {
 
   let framed = null;
   const fit = (b) => map.fitBounds([[b.west, b.south], [b.east, b.north]], { padding: b.padding ?? 40, duration: 0, maxZoom: b.maxZoom ?? 17 });
+  const showYou = () => map.jumpTo({ center: you.point, zoom: Math.max(map.getZoom(), 17) });
   map.on("load", () => {
     Object.entries(data).forEach(([name, value]) => map.getSource(name)?.setData(value));
-    if (framed) fit(framed);
+    if (following && you) showYou();
+    else if (framed) fit(framed);
   });
   map.on("zoomend", drawYou);
   map.on("click", (e) => receiver?.invokeMethodAsync("OnTap", e.lngLat.lat, e.lngLat.lng));
@@ -195,7 +197,8 @@ export async function create(element, optionsJson, receiver) {
     fit: (json) => {
       framed = JSON.parse(json);
       map.resize();
-      fit(framed);
+      if (following && you) showYou();
+      else fit(framed);
     },
     centre: (lat, lon, zoom) => map.jumpTo({ center: [lon, lat], zoom: zoom ?? map.getZoom() }),
     resize: () => map.resize(),
