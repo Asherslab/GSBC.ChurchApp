@@ -54,7 +54,7 @@ internal sealed class EventWriter(EventsDbContext db, EventsPublisher publisher,
             await WritableCalendarAsync(record.CalendarId.ToString(), cancellationToken);
         }
 
-        EventFields fields = await CheckedAsync(request.Fields, cancellationToken);
+        EventFields fields = await CheckedAsync(request.Fields, wanted.Uploaded, cancellationToken);
         (DateOnly startDate, DateOnly? endDate, int? startMinute, int? endMinute) = Times(request.Times);
         DateTime? showFrom = ShowFromOf(request.Showing, request.ShowFrom);
         await MayShowAsync(user, calendar, record, request.Showing, now, cancellationToken);
@@ -126,7 +126,7 @@ internal sealed class EventWriter(EventsDbContext db, EventsPublisher publisher,
             await WritableCalendarAsync(record.CalendarId.ToString(), cancellationToken);
         }
 
-        EventFields fields = await CheckedAsync(request.Fields, cancellationToken);
+        EventFields fields = await CheckedAsync(request.Fields, wanted.Uploaded, cancellationToken);
         RegularPattern pattern = Checked(request.Pattern, ChurchTime.Today(time));
         (int? startMinute, int? endMinute) = Minutes(request.StartMinute, request.EndMinute);
         List<string> needs = request.Needs.Where(EventFieldKeys.Needable.Contains).Distinct().ToList();
@@ -235,7 +235,7 @@ internal sealed class EventWriter(EventsDbContext db, EventsPublisher publisher,
             CalendarId = wanted.CalendarId, RegularEventId = wanted.RegularEventId, Date = wanted.Date, Fields = before.Fields,
             StartMinute = before.StartMinute, EndMinute = before.EndMinute, NotOn = special?.NotOn == true, NotOnNote = special?.NotOnNote ?? "",
         }, wanted);
-        EventFields fields = await CheckedAsync(request.Fields, cancellationToken);
+        EventFields fields = await CheckedAsync(request.Fields, wanted.Uploaded, cancellationToken);
         (int? startMinute, int? endMinute) = Minutes(request.StartMinute, request.EndMinute);
         Timed thisDate = new(fields, startMinute, endMinute);
         List<string> changed = FieldValues.Differences(every, thisDate);
@@ -335,7 +335,7 @@ internal sealed class EventWriter(EventsDbContext db, EventsPublisher publisher,
         ReadOnly = calendar.ICalSource is { Length: > 0 },
     };
 
-    public static EventSave SaveOf(EventRecord record) => new()
+    private static EventSave SaveOf(EventRecord record) => new()
     {
         CalendarId = record.CalendarId.ToString(),
         EventId = record.Id.ToString(),
@@ -380,7 +380,7 @@ internal sealed class EventWriter(EventsDbContext db, EventsPublisher publisher,
     private static Timed Effective(RegularEventRecord regular, SpecialRecord special) =>
         KeptValues.Effective(new Timed(regular.Fields, regular.StartMinute, regular.EndMinute), Info(special));
 
-    public static SpecialInfo Info(SpecialRecord special) => new()
+    private static SpecialInfo Info(SpecialRecord special) => new()
     {
         Date = EventDates.Format(special.Date),
         Changed = special.Changed,
@@ -448,8 +448,10 @@ internal sealed class EventWriter(EventsDbContext db, EventsPublisher publisher,
     private async Task<bool> CanAsync(ClaimsPrincipal user, string node, Guid calendarId, CancellationToken cancellationToken) =>
         await access.IsAllowedAsync(user, node, calendarId.ToString(), cancellationToken);
 
-    private async Task<EventFields> CheckedAsync(EventFields fields, CancellationToken cancellationToken)
+    private async Task<EventFields> CheckedAsync(EventFields fields, IReadOnlyList<string> uploaded, CancellationToken cancellationToken)
     {
+        if (uploaded.Count > 0 && fields.Description is { } description)
+            fields.Description = UploadedMedia.Resolve(description, await media.VerifyAsync(uploaded.Select(id => new MediaRef { Id = id }).ToList(), cancellationToken));
         string title = fields.Title.Trim();
         if (title.Length is 0 or > LongestTitle)
             throw Invalid($"Give it a title of up to {LongestTitle} characters.");

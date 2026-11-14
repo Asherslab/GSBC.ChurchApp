@@ -1,0 +1,22 @@
+@page "/calendar/event/new"
+@page "/calendar/event/{CalendarId}/{EventId}"
+@inject NavigationManager Navigation
+
+<EventEditor @key="@(EventId ?? $"new-{Calendar}-{On}")" Target="Target" NewOn="Day" OnAPage="true"
+             BackHref="@CalendarWorkbenchLinks.Back(From)" BackText="@CalendarWorkbenchLinks.BackText(From)" Closed="Back" />
+
+@code {
+    [Parameter] public string? CalendarId { get; set; }
+    [Parameter] public string? EventId { get; set; }
+    [SupplyParameterFromQuery(Name = "calendar")] public string? Calendar { get; set; }
+    [SupplyParameterFromQuery(Name = "on")] public string? On { get; set; }
+    [SupplyParameterFromQuery(Name = "from")] public string? From { get; set; }
+
+    private EditTarget Target => EventId is { } eventId && CalendarId is { } calendarId
+        ? new EditTarget(calendarId, EventId: eventId)
+        : EditTarget.New(Calendar ?? "");
+
+    private DateOnly? Day => On is null ? null : EventDates.Parse(On);
+
+    private void Back() => Navigation.NavigateTo(CalendarWorkbenchLinks.Back(From));
+}

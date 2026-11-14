@@ -429,8 +429,12 @@ the locked sketches and finish-reviewed (`.impeccable/review/events/`).
   `events.edit` at the calendar.
 - **The admin panel** (`Events.Admin`): Calendar is the workbench (your calendars in the church's order with switches, Needs
   details, Asked to publish with *Asked to show on your calendar* and its widening sentence, + New calendar, Breaks;
-  Agenda | Month, or a calendar's own page with its tabs; the editor or a break on the right). Its Needs details and Asked to publish
-  feed the office week and the sidebar's count.
+  Agenda | Month, or a calendar's own page with its tabs; the chosen event to read, or a break, on the right). Its Needs details and Asked to publish
+  feed the office week and the sidebar's count. Editing is a page of its own, as Church news writing is (owner, 2026-11-14,
+  #98): `/calendar/event/new`, `/calendar/event/{calendar}/{event}`, `/calendar/regular/new`, `/calendar/regular/{calendar}/{id}`
+  and `/calendar/regular/{calendar}/{id}/{date}`, each with `?from=` naming where Back returns (`CalendarWorkbenchLinks`).
+  The event's *About* is the shared `RichTextField` on both sides; files added to it on the phone wait and go with the save
+  (`Uploaded` on `EventSave`, `RegularEventSave` and `DateSave`), as news does.
 - **Home:** *This week* (`hub.week`, same key and layouts) moved from Configuration's waiting tiles into Events as
   `EventsTiles.Week`, showing *Coming up*.
 - **Shared components** added to Platform.Ui: `AgendaRow`, `WeekRail`, `ToggleChips`; `Masthead` gained a `Beside`

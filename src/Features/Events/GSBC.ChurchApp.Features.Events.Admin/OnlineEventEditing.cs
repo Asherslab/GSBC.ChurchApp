@@ -34,11 +34,11 @@ internal sealed class OnlineEventEditing(CalendarEditing editing) : IEventEditin
     public async Task<ShowableList> ShowableAsync(string calendarId, string search) =>
         await editing.Editing.ShowableAsync(new ShowableQuery { CalendarId = calendarId, Search = search });
 
-    public Task<EditSent> SaveEventAsync(EventSave save) => SendAsync(() => editing.Editing.SaveEventAsync(save));
+    public Task<EditSent> SaveEventAsync(EventSave save, IReadOnlyList<MediaRef>? files = null) => SendAsync(() => editing.Editing.SaveEventAsync(save));
 
-    public Task<EditSent> SaveRegularEventAsync(RegularEventSave save) => SendAsync(() => editing.Editing.SaveRegularEventAsync(save));
+    public Task<EditSent> SaveRegularEventAsync(RegularEventSave save, IReadOnlyList<MediaRef>? files = null) => SendAsync(() => editing.Editing.SaveRegularEventAsync(save));
 
-    public Task<EditSent> SaveDateAsync(DateSave save) => SendAsync(() => editing.Editing.SaveDateAsync(save));
+    public Task<EditSent> SaveDateAsync(DateSave save, IReadOnlyList<MediaRef>? files = null) => SendAsync(() => editing.Editing.SaveDateAsync(save));
 
     public Task<EditSent> DeleteEventAsync(EventRef target) => SendAsync(() => editing.Editing.DeleteEventAsync(target));
 

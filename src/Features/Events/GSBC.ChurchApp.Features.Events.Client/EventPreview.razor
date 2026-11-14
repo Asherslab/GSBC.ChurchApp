@@ -1,0 +1,32 @@
+@using GSBC.ChurchApp.Platform.Ui.Surfaces
+
+<PhoneFrame Label="The event, as it will look in the app" OnRoute="week" Back="This week" Title="@Title">
+    <EventHead Day="Day" Label="@Label" Title="@Title" When="@When" />
+    @if (Fields.Picture is { } picture)
+    {
+        <div class="event-picture"><MediaCover Media="picture" Alt="" /></div>
+    }
+    <EventDetails Occurrence="Shown">
+        <Actions>
+            @if (!NotOn)
+            {
+                <Button Icon="calendar-plus">Add to calendar</Button>
+                @if (Fields.RegisterLink.Length > 0)
+                {
+                    <Button Variant="ButtonVariant.Quiet" Icon="external-link">Register</Button>
+                }
+            }
+        </Actions>
+    </EventDetails>
+</PhoneFrame>
+
+@code {
+    [Parameter] public DateOnly? Day { get; set; }
+    [Parameter, EditorRequired] public required string Label { get; set; }
+    [Parameter, EditorRequired] public required string Title { get; set; }
+    [Parameter] public string? When { get; set; }
+    [Parameter, EditorRequired] public required EventFields Fields { get; set; }
+    [Parameter] public bool NotOn { get; set; }
+
+    private EventOccurrence Shown => new() { Fields = Fields, NotOn = NotOn, NotOnReason = NotOn ? EventDraft.NotOnNote : "" };
+}

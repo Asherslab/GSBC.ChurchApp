@@ -26,11 +26,11 @@ public interface IEventEditing
 
     Task<ShowableList> ShowableAsync(string calendarId, string search);
 
-    Task<EditSent> SaveEventAsync(EventSave save);
+    Task<EditSent> SaveEventAsync(EventSave save, IReadOnlyList<MediaRef>? files = null);
 
-    Task<EditSent> SaveRegularEventAsync(RegularEventSave save);
+    Task<EditSent> SaveRegularEventAsync(RegularEventSave save, IReadOnlyList<MediaRef>? files = null);
 
-    Task<EditSent> SaveDateAsync(DateSave save);
+    Task<EditSent> SaveDateAsync(DateSave save, IReadOnlyList<MediaRef>? files = null);
 
     Task<EditSent> DeleteEventAsync(EventRef target);
 

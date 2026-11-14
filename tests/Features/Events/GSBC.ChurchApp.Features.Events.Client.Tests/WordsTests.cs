@@ -17,6 +17,14 @@ public sealed class WordsTests
     }
 
     [Fact]
+    public void TheHeadNeverSaysTheLabelAgainAboveATitleThatAlreadyHasIt()
+    {
+        Assert.Equal("Services", EventWords.LabelOf("Anniversary", "Anniversary Sunday Service", "Services"));
+        Assert.Equal("Baptism", EventWords.LabelOf("Baptism", "Morning service", "Services"));
+        Assert.Equal("Services", EventWords.LabelOf("", "Morning service", "Services"));
+    }
+
+    [Fact]
     public async Task WideningIsOneFullSentenceAndSilentWhenNothingWidens()
     {
         WideningWords words = new(new NoServices());

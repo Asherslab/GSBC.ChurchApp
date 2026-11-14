@@ -9,7 +9,7 @@ namespace GSBC.ChurchApp.Features.Events.Client;
 
 public sealed class QueuedEventEdits : IDisposable
 {
-    public const string Service = "/gsbc.events.Editing/";
+    private const string Service = "/gsbc.events.Editing/";
     public const string SaveEvent = Service + "SaveEvent";
     public const string SaveRegularEvent = Service + "SaveRegularEvent";
     public const string SaveDate = Service + "SaveDate";
@@ -38,7 +38,7 @@ public sealed class QueuedEventEdits : IDisposable
 
     public bool CanQueue => _outbox.IsAvailable;
 
-    public async Task QueueAsync<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] T>(string key, string method, T request, QueuedUpload? upload = null)
+    public async Task QueueAsync<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] T>(string key, string method, T request, IReadOnlyList<QueuedUpload>? files = null)
     {
         using MemoryStream body = new();
         EventsContractsModel.Instance.Serialize(body, request);
@@ -47,7 +47,7 @@ public sealed class QueuedEventEdits : IDisposable
         try
         {
             List<QueuedEdit> edits = await EditsAsync();
-            string entryId = await _outbox.EnqueueAsync(method, bytes, upload is null ? [] : [upload]);
+            string entryId = await _outbox.EnqueueAsync(method, bytes, files ?? []);
             edits.Add(new QueuedEdit { Key = key, EntryId = entryId, Method = method, Request = bytes });
             await RememberAsync(edits);
         }

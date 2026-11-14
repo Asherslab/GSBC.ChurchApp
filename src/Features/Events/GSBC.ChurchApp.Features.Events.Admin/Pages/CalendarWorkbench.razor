@@ -1,7 +1,6 @@
 @page "/calendar"
 @using GSBC.ChurchApp.Platform.Contracts.Configuration
 @inject CalendarEditing Editing
-@inject IPlacePeopleSource People
 @inject TimeProvider Clock
 @inject NavigationManager Navigation
 @inject Shell Shell
@@ -35,10 +34,7 @@
     private enum CalendarTab { Events, Regular, People, Settings }
 
     private abstract record Chosen;
-    private sealed record ChosenEvent(EditTarget Target, string OccurrenceId) : Chosen;
-    private sealed record NewEvent(string CalendarId, DateOnly? On) : Chosen;
-    private sealed record ChosenDate(string CalendarId, string RegularEventId, DateOnly Date, string OccurrenceId) : Chosen;
-    private sealed record ChosenRegular(string CalendarId, string? RegularEventId, RegularDate? Date = null) : Chosen;
+    private sealed record ChosenEvent(EventOccurrence Occurrence) : Chosen;
     private sealed record ChosenBreak(BreakInfo? Break) : Chosen;
     private sealed record ShowingHere(CalendarInfo Calendar) : Chosen;
 
@@ -51,7 +47,6 @@
     private DateOnly? _monthFirst;
     private DateOnly? _monthDay;
     private int _weeks = FirstWeeks;
-    private int _datesVersion;
     private HashSet<string>? _hidden;
     private Chosen? _chosen;
     private string? _problem;
@@ -103,7 +98,7 @@
         };
         _view = _tab == CalendarTab.Regular ? View.Regular : _view == View.Regular ? View.Agenda : _view;
         if (_tab != CalendarTab.Events)
-            _chosen = _chosen is ChosenRegular ? _chosen : null;
+            _chosen = null;
         _readUrl = EventId is null && BreakId is null;
         if (ShownCalendarKey != shownBefore || _view != viewBefore)
             await ReloadAsync();
@@ -152,7 +147,7 @@
         EventOccurrence? found = view.Agenda.FirstOrDefault(occurrence => occurrence.Id == EventId)
             ?? view.Needs.Items.Select(item => item.Occurrence).FirstOrDefault(occurrence => occurrence.Id == EventId);
         if (found is not null)
-            _chosen = ChosenFor(found);
+            _chosen = new ChosenEvent(found);
         else if (view.Desk.CanManage && view.Breaks.Breaks.FirstOrDefault(entry => entry.Id == BreakId) is { } chosenBreak)
         {
             _middle = Middle.Breaks;
@@ -163,44 +158,26 @@
     private Task ReloadAsync() => _live?.ReloadAsync() ?? Task.CompletedTask;
 
     private RenderFragment Drawn(WorkbenchView view) =>
-        @<Workbench AsideLabel="Calendars" DetailLabel="@DetailLabel" Class="calendar-workbench" FoldAside="true" Showing="@Pane" Aside="Aside(view)" Detail="@(RegularSpans ? null : Detail(view))">
-            @(_chosen is ChosenRegular regular ? Regular(regular) : Main(view))
+        @<Workbench AsideLabel="Calendars" DetailLabel="@DetailLabel" Class="calendar-workbench" FoldAside="true" Showing="@Pane" Aside="Aside(view)" Detail="@(Spans ? null : Detail(view))">
+            @Main(view)
         </Workbench>;
 
-    private bool RegularSpans => _chosen is ChosenRegular { Date: null } || (_chosen is null && _middle == Middle.Calendar && _tab != CalendarTab.Events) || _middle == Middle.NewCalendar;
+    private bool Spans => (_chosen is null && _middle == Middle.Calendar && _tab != CalendarTab.Events) || _middle == Middle.NewCalendar;
 
-    private WorkbenchPane Pane => _chosen is null || RegularSpans ? WorkbenchPane.Main : WorkbenchPane.Detail;
+    private WorkbenchPane Pane => _chosen is null || Spans ? WorkbenchPane.Main : WorkbenchPane.Detail;
 
     private string DetailLabel => _chosen switch
     {
         ChosenBreak => "Break",
-        ChosenDate or ChosenRegular => "This date",
         ShowingHere => "Show an event from another calendar",
         _ => "Event",
     };
 
-    private static Chosen ChosenFor(EventOccurrence occurrence) => occurrence.Kind == OccurrenceKind.OneOff
-        ? new ChosenEvent(EditTarget.Of(occurrence), occurrence.Id)
-        : new ChosenDate(occurrence.CalendarId, occurrence.ItemId, EventWords.DayOf(occurrence), occurrence.Id);
+    private string? ChosenOccurrence => (_chosen as ChosenEvent)?.Occurrence.Id;
 
-    private string? ChosenOccurrence => _chosen switch
-    {
-        ChosenEvent chosen => chosen.OccurrenceId,
-        ChosenDate chosen => chosen.OccurrenceId,
-        _ => null,
-    };
+    private string Here => Navigation.ToBaseRelativePath(Navigation.Uri);
 
-    private RenderFragment Regular(ChosenRegular chosen) =>
-        @<div class="calendar-regular">
-            <Button Variant="ButtonVariant.Quiet" Small="true" Icon="chevron-left" Class="calendar-regular__back" OnClick="BackToRegularList">Regular events</Button>
-            <RegularEventEditor @key="@(chosen.RegularEventId ?? $"new-{chosen.CalendarId}")" CalendarId="@chosen.CalendarId" RegularEventId="@chosen.RegularEventId" InPanel="true"
-                                SelectedDate="@chosen.Date?.Date" DatesVersion="_datesVersion" Saved="id => RegularSavedAsync(chosen, id)" Closed="BackToRegularList"
-                                DatePicked="date => Choose(chosen with { Date = date })" Organisers="Organisers" />
-        </div>;
-
-    private RenderFragment<string> Organisers => regularEventId =>
-        @<PeopleRow @key="regularEventId" Source="People.For(ScopeKind.RegularEvent, regularEventId)" Label="Organisers"
-                    SheetTitle="Organisers" SheetLead="Organisers are reminded when a date is missing what it needs." Empty="No one is reminded yet." />;
+    private string HereWith(EventOccurrence occurrence) => Navigation.ToBaseRelativePath(Navigation.GetUriWithQueryParameter("event", occurrence.Id));
 
     private RenderFragment Aside(WorkbenchView view)
     {
@@ -416,7 +393,7 @@
                     @Month(view, selected)
                     break;
                 case View.Regular when selected is not null:
-                    <RegularEventsList CalendarId="@selected.Settings.Calendar.Id" OnPick="regular => Choose(new ChosenRegular(regular.CalendarId, regular.Id))" />
+                    <RegularEventsList CalendarId="@selected.Settings.Calendar.Id" OnPick="regular => Navigation.NavigateTo(CalendarWorkbenchLinks.Regular(regular.CalendarId, regular.Id, Here))" />
                     break;
                 default:
                     @Agenda(view, selected)
@@ -455,7 +432,7 @@
     private RenderFragment Row(WorkbenchView view, EventOccurrence occurrence) =>
         @<OccurrenceRow @key="occurrence.Id" Occurrence="occurrence" Calendar="CalendarOf(view, occurrence.CalendarId)" NowUtc="Now" ShowNeeds="true" ShowSaved="true"
                         NewChange="@(occurrence.ChangedAt is not null)" Selected="@(ChosenOccurrence == occurrence.Id)"
-                        OnClick="() => Choose(ChosenFor(occurrence))" />;
+                        OnClick="() => Choose(new ChosenEvent(occurrence))" />;
 
     private RenderFragment Month(WorkbenchView view, DeskCalendar? calendar)
     {
@@ -502,7 +479,7 @@
                     {
                         <OccurrenceRow @key="item.Occurrence.Id" Occurrence="item.Occurrence" Calendar="CalendarOf(view, item.Occurrence.CalendarId)" ShowNeeds="true"
                                        Selected="@(ChosenOccurrence == item.Occurrence.Id)"
-                                       OnClick="() => Choose(ChosenFor(item.Occurrence))" />
+                                       OnClick="() => Choose(new ChosenEvent(item.Occurrence))" />
                     }
                 </div>
                 <p class="hint">Days are counted to each date: @string.Join(", ", view.Needs.Items.Take(3).Select(item => $"{item.Occurrence.Fields.Title} in {Days(item.DaysToGo)}")).</p>
@@ -597,13 +574,7 @@
 
     private RenderFragment Detail(WorkbenchView view) => _chosen switch
     {
-        ChosenEvent chosen => @<EventEditor @key="chosen.OccurrenceId" Target="chosen.Target" InPanel="true" Saved="SavedAsync" Closed="CloseDetail" />,
-        ChosenDate chosen => @<DateEditor @key="chosen.OccurrenceId" CalendarId="@chosen.CalendarId" RegularEventId="@chosen.RegularEventId" Date="chosen.Date" InPanel="true"
-                                          Saved="SavedAsync" Closed="CloseDetail" OpenRegular="() => Choose(new ChosenRegular(chosen.CalendarId, chosen.RegularEventId))" />,
-        ChosenRegular { Date: { } date } chosen when EventDates.Parse(date.Date) is { } day =>
-            @<DateEditor @key="date.OccurrenceId" CalendarId="@chosen.CalendarId" RegularEventId="@(chosen.RegularEventId ?? string.Empty)" Date="day" InPanel="true"
-                         Saved="_ => DateSavedAsync()" Closed="() => Choose(chosen with { Date = null })" OpenRegular="() => Choose(chosen with { Date = null })" />,
-        NewEvent fresh => @<EventEditor @key="@($"new-{fresh.CalendarId}")" Target="EditTarget.New(fresh.CalendarId)" NewOn="fresh.On" InPanel="true" Saved="SavedNewAsync" Closed="CloseDetail" />,
+        ChosenEvent chosen => Reading(view, Current(view, chosen.Occurrence)),
         ShowingHere here => @<div class="event-panel" @key="@($"show-{here.Calendar.Id}")">
             <EventHead Title="Show an event from another calendar" Label="@here.Calendar.Name" Compact="true" />
             <div class="event-body">
@@ -615,9 +586,42 @@
         </div>,
         ChosenBreak chosen => @<BreakPanel @key="@(chosen.Break?.Id ?? "new")" Break="chosen.Break" RegularEvents="RegularTitles(view)" Saved="ReloadAsync" Closed="CloseDetail" />,
         _ => @<div class="calendar-detail-empty">
-            <EmptyState Icon="calendar" Title="Choose an event" Body="It opens here to change, in the same editor as the phone." />
+            <EmptyState Icon="calendar" Title="Choose an event" Body="It shows here as people see it. Change opens it on its own page." />
         </div>,
     };
+
+    private static EventOccurrence Current(WorkbenchView view, EventOccurrence chosen) =>
+        view.Agenda.FirstOrDefault(occurrence => occurrence.Id == chosen.Id) ?? chosen;
+
+    private RenderFragment Reading(WorkbenchView view, EventOccurrence occurrence)
+    {
+        CalendarInfo? calendar = CalendarOf(view, occurrence.CalendarId);
+        bool oneOff = occurrence.Kind == OccurrenceKind.OneOff;
+        string change = CalendarWorkbenchLinks.Change(occurrence, HereWith(occurrence));
+        bool changeable = occurrence.KeptBy.Length == 0 && calendar is { ReadOnly: false };
+        IReadOnlyList<MenuItem> actions = !changeable ? [] :
+        [
+            this.Item(oneOff ? "Change the event" : "Change this date", () => Navigation.NavigateTo(change), "pencil"),
+            .. oneOff ? Array.Empty<MenuItem>() :
+                [this.Item("Change the regular event", () => Navigation.NavigateTo(CalendarWorkbenchLinks.Regular(occurrence.CalendarId, occurrence.ItemId, HereWith(occurrence))), "repeat", "Every date of it")],
+        ];
+        return @<div class="event-panel" @key="occurrence.Id">
+            <EventHead Day="EventWords.DayOf(occurrence)" Label="@EventWords.LabelOf(occurrence, calendar)" Title="@occurrence.Fields.Title"
+                       When="@EventWords.WhenLine(occurrence)" Compact="true" Actions="actions" />
+            @if (occurrence.Fields.Picture is { } picture)
+            {
+                <div class="event-picture"><MediaCover Media="picture" Alt="" /></div>
+            }
+            <EventDetails Occurrence="occurrence" Calendar="calendar" Contacts="occurrence.Fields.Contacts">
+                <Actions>
+                    @if (changeable)
+                    {
+                        <Button Icon="pencil" Href="@change">@(oneOff ? "Change the event" : "Change this date")</Button>
+                    }
+                </Actions>
+            </EventDetails>
+        </div>;
+    }
 
     private static IReadOnlyDictionary<string, string> RegularTitles(WorkbenchView view) =>
         view.Agenda.Where(occurrence => occurrence.Kind != OccurrenceKind.OneOff).GroupBy(occurrence => occurrence.ItemId)
@@ -632,33 +636,9 @@
             _chosen = chosen;
     }
 
-    private Task NewOnce(DeskCalendar into) => Choose(new NewEvent(into.Settings.Calendar.Id, ShowingMonth ? _monthDay : null));
+    private void NewOnce(DeskCalendar into) => Navigation.NavigateTo(CalendarWorkbenchLinks.NewEvent(into.Settings.Calendar.Id, ShowingMonth ? _monthDay : null, Here));
 
-    private Task NewRegular(DeskCalendar into) => Choose(new ChosenRegular(into.Settings.Calendar.Id, null));
-
-    private async Task BackToRegularList()
-    {
-        if (!await Unsaved.MayLeaveAsync())
-            return;
-        _chosen = null;
-        if (ShownCalendarKey is { } calendar)
-            Navigation.NavigateTo(CalendarWorkbenchLinks.Calendar(calendar, CalendarWorkbenchLinks.RegularTab), new NavigationOptions { ReplaceHistoryEntry = true });
-    }
-
-    private async Task DateSavedAsync()
-    {
-        _datesVersion++;
-        await ReloadAsync();
-    }
-
-    private async Task RegularSavedAsync(ChosenRegular chosen, string regularEventId)
-    {
-        if (regularEventId.Length == 0)
-            _chosen = null;
-        else if (chosen.RegularEventId is null)
-            _chosen = chosen with { RegularEventId = regularEventId };
-        await ReloadAsync();
-    }
+    private void NewRegular(DeskCalendar into) => Navigation.NavigateTo(CalendarWorkbenchLinks.NewRegular(into.Settings.Calendar.Id, Here));
 
     private async Task ChooseBreak(WorkbenchView view, BreakInfo entry)
     {
@@ -737,19 +717,6 @@
     {
         _weeks += MoreWeeks;
         await ReloadAsync();
-    }
-
-    private async Task SavedAsync(string occurrenceId)
-    {
-        if (occurrenceId.Length == 0)
-            _chosen = null;
-        await ReloadAsync();
-    }
-
-    private async Task SavedNewAsync(string occurrenceId)
-    {
-        await ReloadAsync();
-        _chosen = null;
     }
 
     private async Task PublishAsync(AskedItem item)

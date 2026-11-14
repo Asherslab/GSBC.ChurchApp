@@ -1,0 +1,38 @@
+@page "/calendar/regular/new"
+@page "/calendar/regular/{CalendarId}/{RegularEventId}"
+@inject NavigationManager Navigation
+@inject IPlacePeopleSource People
+
+<RegularEventEditor @key="@(RegularEventId ?? $"new-{Calendar}")" CalendarId="@(CalendarId ?? Calendar ?? "")" RegularEventId="@RegularEventId" OnAPage="true"
+                    BackHref="@CalendarWorkbenchLinks.Back(From)" BackText="@CalendarWorkbenchLinks.BackText(From)"
+                    Saved="SavedAsync" Closed="Back" DatePicked="PickDate" Organisers="Organisers" />
+
+@code {
+    [Parameter] public string? CalendarId { get; set; }
+    [Parameter] public string? RegularEventId { get; set; }
+    [SupplyParameterFromQuery(Name = "calendar")] public string? Calendar { get; set; }
+    [SupplyParameterFromQuery(Name = "from")] public string? From { get; set; }
+
+    private string Here => Navigation.ToBaseRelativePath(Navigation.Uri);
+
+    private RenderFragment<string> Organisers => regularEventId =>
+        @<PeopleRow @key="regularEventId" Source="People.For(ScopeKind.RegularEvent, regularEventId)" Label="Organisers"
+                    SheetTitle="Organisers" SheetLead="Organisers are reminded when a date is missing what it needs." Empty="No one is reminded yet." />;
+
+    private void Back() => Navigation.NavigateTo(CalendarWorkbenchLinks.Back(From));
+
+    private Task SavedAsync(string regularEventId)
+    {
+        if (regularEventId.Length == 0)
+            Back();
+        else if (RegularEventId is null)
+            Navigation.NavigateTo(CalendarWorkbenchLinks.Regular(CalendarId ?? Calendar ?? "", regularEventId, CalendarWorkbenchLinks.Back(From)), new NavigationOptions { ReplaceHistoryEntry = true });
+        return Task.CompletedTask;
+    }
+
+    private void PickDate(RegularDate date)
+    {
+        if (RegularEventId is { } regularEventId && EventDates.Parse(date.Date) is { } day)
+            Navigation.NavigateTo(CalendarWorkbenchLinks.Date(CalendarId ?? Calendar ?? "", regularEventId, day, Here));
+    }
+}

@@ -60,6 +60,29 @@ public static class CalendarWorkbenchLinks
 
     public static string Event(string occurrenceId, string? show = null) =>
         show is null ? $"{Page}?event={Uri.EscapeDataString(occurrenceId)}" : $"{Page}?show={show}&event={Uri.EscapeDataString(occurrenceId)}";
+
+    public static string NewEvent(string calendarId, DateOnly? on, string from) =>
+        $"{Page}/event/new?calendar={Uri.EscapeDataString(calendarId)}{(on is { } day ? $"&on={EventDates.Format(day)}" : "")}&from={Uri.EscapeDataString(from)}";
+
+    private static string ChangeEvent(string calendarId, string eventId, string from) => $"{Page}/event/{calendarId}/{eventId}?from={Uri.EscapeDataString(from)}";
+
+    public static string NewRegular(string calendarId, string from) => $"{Page}/regular/new?calendar={Uri.EscapeDataString(calendarId)}&from={Uri.EscapeDataString(from)}";
+
+    public static string Regular(string calendarId, string regularEventId, string from) => $"{Page}/regular/{calendarId}/{regularEventId}?from={Uri.EscapeDataString(from)}";
+
+    public static string Date(string calendarId, string regularEventId, DateOnly date, string from) =>
+        $"{Page}/regular/{calendarId}/{regularEventId}/{EventDates.Format(date)}?from={Uri.EscapeDataString(from)}";
+
+    public static string Change(EventOccurrence occurrence, string from) => occurrence.Kind == OccurrenceKind.OneOff
+        ? ChangeEvent(occurrence.CalendarId, occurrence.ItemId, from)
+        : Date(occurrence.CalendarId, occurrence.ItemId, EventWords.DayOf(occurrence), from);
+
+    public static string Back(string? from) =>
+        from is { Length: > 0 } && (from == Page || from.StartsWith($"{Page}?", StringComparison.Ordinal) || from.StartsWith($"{Page}/", StringComparison.Ordinal)) && !from.Contains("//", StringComparison.Ordinal)
+            ? from
+            : Page;
+
+    public static string BackText(string? from) => Back(from).StartsWith($"{Page}/regular/", StringComparison.Ordinal) ? "The regular event" : "Calendar";
 }
 
 public static class DigestPlaces

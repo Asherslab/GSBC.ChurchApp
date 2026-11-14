@@ -7,9 +7,9 @@
 <UnsavedGuard Changed="() => Changed" What="this event" Save="SaveBeforeLeavingAsync" />
 <RefreshOn Feeds="Editing.Feeds" On="ChangeKind.Reconnected | ChangeKind.Session | ChangeKind.Access | ChangeKind.Outbox" Changed="_ => RefreshAsync()" />
 
-@if (InPanel)
+@if (OnAPage)
 {
-    <div class="event-panel"><EditScope Edited="() => { }">@Body</EditScope></div>
+    @Desk
 }
 else
 {
@@ -32,6 +32,7 @@ else
     private enum EditorSheet { None, Tell, Delete }
 
     private EventDraft? _draft;
+    private EventFieldsEditor? _fields;
     private CalendarDesk _desk = new();
     private IReadOnlyList<EventPlace> _placesUsed = [];
     private IReadOnlyList<MediaRef>? _pictures = [];
@@ -47,7 +48,9 @@ else
 
     [Parameter, EditorRequired] public required EditTarget Target { get; set; }
     [Parameter] public IReadOnlyList<CalendarInfo> Calendars { get; set; } = [];
-    [Parameter] public bool InPanel { get; set; }
+    [Parameter] public bool OnAPage { get; set; }
+    [Parameter] public string BackHref { get; set; } = "";
+    [Parameter] public string BackText { get; set; } = "Calendar";
     [Parameter] public DateOnly? NewOn { get; set; }
     [Parameter] public EventCallback Closed { get; set; }
     [Parameter] public EventCallback<string> Saved { get; set; }
@@ -64,7 +67,7 @@ else
 
     private bool MustAsk => DeskCalendar is { Settings.NeedsPublisher: true, CanPublish: false };
 
-    private IReadOnlyList<DeskCalendar> Editable => _desk.Calendars.Where(calendar => calendar.CanEdit && !calendar.Settings.Calendar.ReadOnly).ToList();
+    private IReadOnlyList<DeskCalendar> Editable => _desk.Calendars.Where(calendar => calendar is { CanEdit: true, Settings.Calendar.ReadOnly: false }).ToList();
 
     private string DeleteTitle => $"Delete {Fields.Title}?";
 
@@ -130,63 +133,132 @@ else
     private RenderFragment Body => @<text>
         @if (_loadProblem is not null)
         {
-            <EmptyState Icon="cloud-off" Title="Can't open this for editing" Body="@_loadProblem">
-                <Button Variant="ButtonVariant.Quiet" OnClick="Closed">Back</Button>
-            </EmptyState>
+            @CantOpen
         }
         else if (_draft is not { } draft)
         {
-            <EventHead Title="" Compact="InPanel" />
+            <EventHead Title="" />
             <div class="event-body"><Skeleton Shape="SkeletonShape.Lines" Count="5" /></div>
         }
         else
         {
-            <EventHead Day="draft.ShownDay" Label="@(Fields.Label.Length > 0 ? Fields.Label : CalendarName)" Title="@(Fields.Title.Length > 0 ? Fields.Title : "New event")" When="@draft.WhenLine"
-                       Compact="InPanel" Actions="ItemActions(draft)" />
+            @Head(draft, ItemActions(draft))
             <div class="event-body event-body--editing">
-                @if (_asked)
-                {
-                    <p class="event-saved" role="status"><Icon Name="check" Size="IconSize.Small" />Asked. The calendar's publishers have been told.</p>
-                }
+                @Asked
                 @if (draft.IsNew)
                 {
-                    <SelectField Label="Calendar" Options="CalendarOptions" Value="@draft.CalendarId" ValueChanged="ChooseCalendar" />
+                    @CalendarChoice(draft)
                 }
-                <TitleFields Fields="Fields" CalendarName="@CalendarName" />
-                <div class="ui-pair">
-                    <DateField Label="Date" Value="@EventDates.Format(draft.StartDate)" ValueChanged="value => draft.StartDate = EventDates.Parse(value) ?? draft.StartDate" />
-                    <DateField Label="Until (for several days)" Value="@(draft.EndDate is { } end ? EventDates.Format(end) : "")" Min="@EventDates.Format(draft.StartDate)"
-                               ValueChanged="value => draft.EndDate = EventDates.Parse(value)" />
-                </div>
-                <TimesEditor Timed="draft.Every" SameDay="@(draft.EndDate is null || draft.EndDate == draft.StartDate)" />
-                @if (draft.NotOnThisDate)
-                {
-                    <p class="event-off"><Icon Name="circle-off" Size="IconSize.Small" />Not on this date</p>
-                }
-                <EventFieldsEditor Fields="Fields" PlacesUsed="_placesUsed" PicturesUsed="_pictures" />
+                @FieldsOf(draft)
                 <ShownOnEditor Draft="draft" Desk="_desk" />
                 <ShowingEditor Draft="draft" MustAsk="MustAsk" CalendarName="@CalendarName" />
             </div>
-            <div class="editor-foot @(InPanel ? "editor-foot--panel" : "")">
+            <div class="editor-foot">
                 <Notice Tone="NoticeTone.Warning" Text="@_problem" />
-                <div class="editor-foot__actions">
-                    <SaveBar Block="!InPanel" New="draft.IsNew" Label="@SaveLabel(draft)" Busy="_saving" OnSave="SaveAsync" OnCancel="LeaveAsync" Blocked="@(Fields.Title.Trim().Length == 0 ? $"Give it a title to {(draft.IsNew ? "add" : "save")} it." : null)" State="SaveLine" SavedText="@SavedWords"
-                             WaitingText="@EditWaiting.WaitingWords" FailedText="@EditWaiting.FailedWords" Detail="@Waiting?.Problem" Retry="() => Editing.RetryAsync(ItemKey)" />
-                </div>
+                <div class="editor-foot__actions">@Saving(draft)</div>
             </div>
         }
     </text>;
+
+    private RenderFragment Desk => @<text>
+        <TitleBand Title="@(Target.IsNew ? "New event" : "Change the event")" BrowserTitle="@(Fields.Title.Length > 0 ? Fields.Title : null)" BackHref="@BackHref" BackText="@BackText"
+                   Lead="@(_draft is { } shown ? EventWords.Join($"On {CalendarName}", ShowingEditor.Words(shown)) : null)">
+            <Actions>
+                @if (_draft is { } draft && ItemActions(draft) is { Count: > 0 } actions)
+                {
+                    <Menu Label="@($"More for {(Fields.Title.Length > 0 ? Fields.Title : "this event")}")" Items="actions" />
+                }
+            </Actions>
+            <LeadContent>@Asked</LeadContent>
+        </TitleBand>
+        @if (_loadProblem is not null)
+        {
+            @CantOpen
+        }
+        else if (_draft is not { } draft)
+        {
+            <Skeleton Shape="SkeletonShape.Lines" Count="8" />
+        }
+        else
+        {
+            <WritingDesk SettingsTitle="Where it shows" SettingsSummary="@EventWords.Join(CalendarName, ShowingEditor.Words(draft))">
+                <ChildContent>
+                    <EditScope Edited="() => { }">
+                        @Head(draft, null)
+                        <div class="event-body event-body--editing">@FieldsOf(draft)</div>
+                    </EditScope>
+                    <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+                </ChildContent>
+                <Settings>
+                    <EditScope Edited="() => { }">
+                        <Section Grouped="true" Title="Its calendar">
+                            @if (draft.IsNew)
+                            {
+                                @CalendarChoice(draft)
+                            }
+                            else
+                            {
+                                <p class="hint">On @CalendarName.</p>
+                            }
+                            <ShownOnEditor Draft="draft" Desk="_desk" />
+                            <ShowingEditor Draft="draft" MustAsk="MustAsk" CalendarName="@CalendarName" Rows="true" />
+                        </Section>
+                    </EditScope>
+                </Settings>
+                <Preview>
+                    <EventPreview Day="draft.ShownDay" Label="@HeadLabel" Title="@HeadTitle" When="@draft.WhenLine" Fields="Fields" NotOn="draft.NotOnThisDate" />
+                </Preview>
+                <Foot>@Saving(draft)</Foot>
+            </WritingDesk>
+        }
+    </text>;
+
+    private RenderFragment CantOpen => @<EmptyState Icon="cloud-off" Title="Can't open this for editing" Body="@_loadProblem">
+        <Button Variant="ButtonVariant.Quiet" OnClick="Closed">Back</Button>
+    </EmptyState>;
+
+    private RenderFragment? Asked => !_asked ? null :
+        @<p class="event-saved" role="status"><Icon Name="check" Size="IconSize.Small" />Asked. The calendar's publishers have been told.</p>;
+
+    private string HeadLabel => EventWords.LabelOf(Fields.Label, Fields.Title, CalendarName);
+
+    private string HeadTitle => Fields.Title.Length > 0 ? Fields.Title : "New event";
+
+    private RenderFragment Head(EventDraft draft, IReadOnlyList<MenuItem>? actions) =>
+        @<EventHead Day="draft.ShownDay" Label="@HeadLabel" Title="@HeadTitle" When="@draft.WhenLine" Compact="OnAPage" Actions="actions" />;
+
+    private RenderFragment CalendarChoice(EventDraft draft) =>
+        @<SelectField Label="Calendar" Options="CalendarOptions" Value="@draft.CalendarId" ValueChanged="ChooseCalendar" />;
+
+    private RenderFragment FieldsOf(EventDraft draft) => @<text>
+        <TitleFields Fields="Fields" CalendarName="@CalendarName" />
+        <div class="ui-pair">
+            <DateField Label="Date" Value="@EventDates.Format(draft.StartDate)" ValueChanged="value => draft.StartDate = EventDates.Parse(value) ?? draft.StartDate" />
+            <DateField Label="Until (for several days)" Value="@(draft.EndDate is { } end ? EventDates.Format(end) : "")" Min="@EventDates.Format(draft.StartDate)"
+                       ValueChanged="value => draft.EndDate = EventDates.Parse(value)" />
+        </div>
+        <TimesEditor Timed="draft.Every" SameDay="@(draft.EndDate is null || draft.EndDate == draft.StartDate)" />
+        @if (draft.NotOnThisDate)
+        {
+            <p class="event-off"><Icon Name="circle-off" Size="IconSize.Small" />Not on this date</p>
+        }
+        <EventFieldsEditor @ref="_fields" Fields="Fields" PlacesUsed="_placesUsed" PicturesUsed="_pictures" />
+    </text>;
+
+    private RenderFragment Saving(EventDraft draft) =>
+        @<SaveBar Block="!OnAPage" New="draft.IsNew" Label="@SaveLabel(draft)" Busy="_saving" OnSave="SaveAsync" OnCancel="LeaveAsync" Blocked="@(Fields.Title.Trim().Length == 0 ? $"Give it a title to {(draft.IsNew ? "add" : "save")} it." : null)" State="SaveLine" SavedText="@SavedWords"
+                  WaitingText="@EditWaiting.WaitingWords" FailedText="@EditWaiting.FailedWords" Detail="@Waiting?.Problem" Retry="() => Editing.RetryAsync(ItemKey)" />;
 
     private IReadOnlyList<MenuItem> ItemActions(EventDraft draft) => draft.IsNew
         ? []
         :
         [
             this.Item(draft.NotOnThisDate ? "On again" : "Not on this date", NotOnAsync, "circle-off", disabled: _saving),
-            .. MustAsk && !draft.Asked && !draft.WasShown ? [this.Item("Ask to publish", AskAsync, "send", "The calendar's publishers are told")] : Array.Empty<MenuItem>(),
+            .. MustAsk && draft is { Asked: false, WasShown: false } ? [this.Item("Ask to publish", AskAsync, "send", "The calendar's publishers are told")] : Array.Empty<MenuItem>(),
             this.Item("Delete this event", () => OpenAsync(EditorSheet.Delete), "trash-2", danger: true, startsGroup: true),
         ];
 
-    private IReadOnlyList<FieldOption> CalendarOptions =>Editable.Select(calendar => new FieldOption(calendar.Settings.Calendar.Id, calendar.Settings.Calendar.Name)).ToList();
+    private IReadOnlyList<FieldOption> CalendarOptions => Editable.Select(calendar => new FieldOption(calendar.Settings.Calendar.Id, calendar.Settings.Calendar.Name)).ToList();
 
 
     private string? _stored;
@@ -255,11 +327,11 @@ else
             return;
         _saving = true;
         _problem = null;
-        bool wasShown = draft.WasShown && !draft.IsNew;
+        bool wasShown = draft is { WasShown: true, IsNew: false };
         EventSave? before = _base;
         EventSave save = SaveMessage(draft);
         save.Base = before;
-        EditSent sent = await Editing.SaveEventAsync(save);
+        EditSent sent = await Editing.SaveEventAsync(save, _fields?.WaitingFiles());
         _saving = false;
         if (!sent.Succeeded)
         {
@@ -337,7 +409,6 @@ else
         _sheet = EditorSheet.None;
         _savedWords = done;
         await Saved.InvokeAsync(_savedOccurrenceId);
-        if (!InPanel)
-            await Closed.InvokeAsync();
+        await Closed.InvokeAsync();
     }
 }

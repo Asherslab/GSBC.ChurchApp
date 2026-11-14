@@ -86,7 +86,7 @@ public sealed class StoredEventEditing(ILocalFeeds feeds, QueuedEventEdits queue
         EditingBook book = await ReadAsync();
         IReadOnlyList<QueuedEdit> queued = await queue.WaitingAsync();
         IEnumerable<string> ids = book.Regulars.Keys
-            .Concat(queued.Where(edit => edit.Method == QueuedEventEdits.SaveRegularEvent).Select(edit => QueuedEventEdits.Read<RegularEventSave>(edit)).Select(save => save.RegularEventId.Length > 0 ? save.RegularEventId : save.NewId))
+            .Concat(queued.Where(edit => edit.Method == QueuedEventEdits.SaveRegularEvent).Select(QueuedEventEdits.Read<RegularEventSave>).Select(save => save.RegularEventId.Length > 0 ? save.RegularEventId : save.NewId))
             .Distinct();
         return ids.Select(id => (Id: id, Stored: book.Regulars.GetValueOrDefault(id), Detail: Waiting(book, id, queued.Where(edit => QueuedEventEdits.Concerns(edit.Key, EditKeys.Regular(id))).ToList())))
             .Where(entry => entry.Detail?.CalendarId == calendarId)
@@ -106,16 +106,20 @@ public sealed class StoredEventEditing(ILocalFeeds feeds, QueuedEventEdits queue
     public async Task<ShowableList> ShowableAsync(string calendarId, string search) =>
         EditingOffers.Showable(await diary.LoadAsync(), await ReadAsync(), calendarId, search, Today, id => access.Can(EventsPermissions.Edit, id));
 
-    public Task<EditSent> SaveEventAsync(EventSave save) =>
+    public Task<EditSent> SaveEventAsync(EventSave save, IReadOnlyList<MediaRef>? files = null) =>
         QueueAsync(EditKeys.Event(save.EventId.Length > 0 ? save.EventId : save.NewId), QueuedEventEdits.SaveEvent, save,
-            uploads.For(save.Fields.Picture, EventPictureSlots.EventSave));
+            Uploads(save.Fields.Picture, EventPictureSlots.EventSave, files, EventPictureSlots.EventSaveUploaded));
 
-    public Task<EditSent> SaveRegularEventAsync(RegularEventSave save) =>
+    public Task<EditSent> SaveRegularEventAsync(RegularEventSave save, IReadOnlyList<MediaRef>? files = null) =>
         QueueAsync(EditKeys.Regular(save.RegularEventId.Length > 0 ? save.RegularEventId : save.NewId), QueuedEventEdits.SaveRegularEvent, save,
-            uploads.For(save.Fields.Picture, EventPictureSlots.RegularEventSave));
+            Uploads(save.Fields.Picture, EventPictureSlots.RegularEventSave, files, EventPictureSlots.RegularEventSaveUploaded));
 
-    public Task<EditSent> SaveDateAsync(DateSave save) =>
-        QueueAsync(EditKeys.Date(save.RegularEventId, save.Date), QueuedEventEdits.SaveDate, save, uploads.For(save.Fields.Picture, EventPictureSlots.DateSave));
+    public Task<EditSent> SaveDateAsync(DateSave save, IReadOnlyList<MediaRef>? files = null) =>
+        QueueAsync(EditKeys.Date(save.RegularEventId, save.Date), QueuedEventEdits.SaveDate, save,
+            Uploads(save.Fields.Picture, EventPictureSlots.DateSave, files, EventPictureSlots.DateSaveUploaded));
+
+    private IReadOnlyList<QueuedUpload> Uploads(MediaRef? picture, MediaSlot pictureSlot, IReadOnlyList<MediaRef>? files, MediaSlot filesSlot) =>
+        [.. new[] { uploads.For(picture, pictureSlot) }.Concat((files ?? []).Select(file => uploads.For(file, filesSlot))).OfType<QueuedUpload>()];
 
     public async Task<EditSent> DeleteEventAsync(EventRef target) =>
         await DropPictureSavesAsync(EditKeys.Event(target.EventId), edit => edit.Method == QueuedEventEdits.SaveEvent && QueuedEventEdits.Read<EventSave>(edit).EventId.Length == 0)
@@ -142,11 +146,11 @@ public sealed class StoredEventEditing(ILocalFeeds feeds, QueuedEventEdits queue
 
     public string Explain(Exception exception) => "Something went wrong. Try again in a moment.";
 
-    private async Task<EditSent> QueueAsync<[System.Diagnostics.CodeAnalysis.DynamicallyAccessedMembers(System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.All)] T>(string key, string method, T request, QueuedUpload? upload = null)
+    private async Task<EditSent> QueueAsync<[System.Diagnostics.CodeAnalysis.DynamicallyAccessedMembers(System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.All)] T>(string key, string method, T request, IReadOnlyList<QueuedUpload>? files = null)
     {
         if (!queue.CanQueue)
             return new EditSent(NeedsTheApp);
-        await queue.QueueAsync(key, method, request, upload);
+        await queue.QueueAsync(key, method, request, files);
         return EditSent.Waiting;
     }
 

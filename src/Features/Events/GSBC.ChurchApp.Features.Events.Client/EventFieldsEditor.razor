@@ -1,14 +1,10 @@
 @using GSBC.ChurchApp.Platform.Contracts.Media
-@using GSBC.ChurchApp.Platform.Contracts.Content
 @using GSBC.ChurchApp.Platform.Ui.Content
 
 <PlaceEditor Place="Fields.Place" PlaceChanged="place => Fields.Place = place" Used="PlacesUsed" Missing="@(Needs.Contains(EventFieldKeys.Place))" />
 <ContactsEditor Contacts="Fields.Contacts" />
-<div class="field">
-    <span class="field__label" aria-hidden="true">About</span>
-    <RichTextEditor Label="About" Value="@(Fields.Description ?? new RichText())" ValueChanged="text => Fields.Description = text" Rows="5"
-                    Placeholder="What it is, who it's for, what to bring" />
-</div>
+<EventAbout @ref="_about" Label="About" Text="Fields.Description" TextChanged="text => Fields.Description = text"
+            Placeholder="What it is, who it's for, what to bring. Formatting is in the bar; pictures, video, files and more are under Insert." />
 <AddableField Label="Register link" Adding="Register link" Shown="Fields.RegisterLink.Length > 0">
     <TextField Label="Register link" Type="url" Value="@Fields.RegisterLink" ValueChanged="value => Fields.RegisterLink = value.Trim()"
                Placeholder="https://" Hint="Opens in the app's browser. The app never counts registrations." />
@@ -18,8 +14,12 @@
               Unavailable="Pictures are added in the admin panel." />
 
 @code {
+    private EventAbout? _about;
+
     [Parameter, EditorRequired] public required EventFields Fields { get; set; }
     [Parameter] public IReadOnlyList<EventPlace> PlacesUsed { get; set; } = [];
     [Parameter] public IReadOnlyList<MediaRef>? PicturesUsed { get; set; }
     [Parameter] public IReadOnlyList<string> Needs { get; set; } = [];
+
+    public IReadOnlyList<MediaRef> WaitingFiles() => _about?.WaitingFiles() ?? [];
 }

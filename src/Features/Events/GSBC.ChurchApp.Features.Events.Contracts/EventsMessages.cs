@@ -247,6 +247,7 @@ public sealed class EventSave : IScopedRequest
     [ProtoMember(8)] public string NotOnNote { get; set; } = "";
     [ProtoMember(9)] public string NewId { get; set; } = "";
     [ProtoMember(10)] public EventSave? Base { get; set; }
+    [ProtoMember(11)] public List<string> Uploaded { get; set; } = [];
 
     public string ScopeId => CalendarId;
 }
@@ -386,6 +387,7 @@ public sealed class RegularEventSave : IScopedRequest
     [ProtoMember(14)] public bool ListEveryDate { get; set; }
     [ProtoMember(15)] public string NewId { get; set; } = "";
     [ProtoMember(16)] public RegularEventSave? Base { get; set; }
+    [ProtoMember(17)] public List<string> Uploaded { get; set; } = [];
 
     public string ScopeId => CalendarId;
 }
@@ -419,6 +421,7 @@ public sealed class DateSave : IScopedRequest
     [ProtoMember(7)] public bool NotOn { get; set; }
     [ProtoMember(8)] public string NotOnNote { get; set; } = "";
     [ProtoMember(9)] public DateSave? Base { get; set; }
+    [ProtoMember(10)] public List<string> Uploaded { get; set; } = [];
 
     public string ScopeId => CalendarId;
 }
