@@ -12,7 +12,7 @@ agents were "taking more and more time for simple things and fixes").
   stop it by its process id). Use the offset in your brief. Never print user secrets.
 - **Use your own Simulator only if the fix reaches the phone,** and the real on-screen keyboard only if it touches a
   text field (`idb ui tap`, hardware keyboard off; see testing.md). Shut the Simulator down as soon as you're done
-  looking. Don't deploy to the owner's phone. Don't notify real people.
+  looking. Stop that device's `idb_companion` by its pid too (it holds your worktree open, so it can't be cleaned up). Don't deploy to the owner's phone. Don't notify real people.
 - UI: invoke `impeccable:impeccable` and use the matching command (`polish`, `layout`, `clarify` …) with
   `craft-floor.md` before editing, then `impeccable detect`. A decision page only when a fix has more than one
   reasonable look (then every sketch is one plain HTML file, no iframes, checked with `tools/dev/check-sketches.sh`).
