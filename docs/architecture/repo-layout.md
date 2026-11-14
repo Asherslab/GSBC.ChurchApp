@@ -340,7 +340,7 @@ flowchart LR
     PrayerContracts --> PlatformContracts
     OutreachApp --> OutreachClient
     OutreachAdmin --> OutreachClient
-    OutreachClient --> OutreachContracts & OutreachRouting & PlatformClient & PlatformUi & PlatformCommon
+    OutreachClient --> OutreachContracts & OutreachMapsContracts & OutreachRouting & PlatformClient & PlatformUi & PlatformCommon
     OutreachApi --> OutreachContracts & PlatformApi & PlatformCommon
     OutreachContracts --> PlatformContracts
     FeedbackApp --> FeedbackClient
@@ -499,7 +499,7 @@ flowchart LR
 | `GSBC.ChurchApp.Features.Prayer.Admin` | The admin panel's Prayer page: the pastoral inbox and choosing what the prayer wall shows | Yes |
 | `GSBC.ChurchApp.Features.Outreach.Contracts` | The `Outreach` (app writes: walks recorded as they go, No junk mail, doors, reports, route claims) and `OutreachAdmin` (staff) services, the settings the route engine runs on, campaigns, coverage, days and routes, the `outreach.*` feeds and permission nodes, the shared rules (dates, polygons, stretches) | Yes |
 | `GSBC.ChurchApp.Features.Outreach.Api` | Outreach (schema `outreach`): campaigns with their own coverage, settings, walks and their plausibility, coverage per street side and its rest period and expiry, No junk mail and hostile marks, doorknock records and follow-ups for the outreach leaders, reports with a photo, exclusions, outreach days, routes and claims, totals and leaderboards, the Outreach ministry's roles, forgetting a deleted person | No |
-| `GSBC.ChurchApp.Features.Outreach.Client` | Outreach's gRPC calls for the admin panel; `EngineInputs`, which turns synced or fetched records into the route engine's inputs and back (stretches, coverage, marks, settings, addresses); the printed route maps | Yes |
+| `GSBC.ChurchApp.Features.Outreach.Client` | Outreach's gRPC calls for the admin panel, map areas included, and loading a region's streets (`StreetGraphLoader`); `EngineInputs`, which turns synced or fetched records into the route engine's inputs and back (stretches, coverage, marks, settings, addresses); the day planner and the printed route maps | Yes |
 | `GSBC.ChurchApp.Features.Outreach.App` | Registers Outreach on the phone and syncs its feeds (the walking screens are stage 2) | Yes |
 | `GSBC.ChurchApp.Features.Outreach.Admin` | The admin panel's Outreach page: campaigns and settings | Yes |
 | `GSBC.ChurchApp.Features.Feedback.Contracts` | The `Feedback` (sending from the app) and `Desk` (staff) services, tickets, statuses and limits, the `feedback.desk` feed, the `feedback.*` permissions and the new-feedback notification | Yes |

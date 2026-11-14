@@ -84,6 +84,15 @@ public sealed class MapAreaList
 public sealed class MapAreaListRequest;
 
 [ProtoContract]
+public sealed class RegionList
+{
+    [ProtoMember(1)] public List<OutreachRegion> Regions { get; set; } = [];
+}
+
+[ProtoContract]
+public sealed class RegionListRequest;
+
+[ProtoContract]
 public sealed class AddMapArea
 {
     [ProtoMember(1)] public string Name { get; set; } = "";

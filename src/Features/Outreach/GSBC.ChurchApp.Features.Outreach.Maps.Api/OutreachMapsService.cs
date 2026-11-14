@@ -15,6 +15,12 @@ internal sealed class OutreachMapsService(OutreachMapsDbContext db, AreaBuildRun
 {
     private DateTime Now => time.GetUtcNow().UtcDateTime;
 
+    public async ValueTask<RegionList> RegionsAsync(RegionListRequest request, CallContext context = default) => new()
+    {
+        Regions = (await db.Regions.AsNoTracking().OrderBy(region => region.Id).ToListAsync(context.CancellationToken))
+            .Select(region => RegionFeed.ToMessage(region, blobs)).ToList(),
+    };
+
     public async ValueTask<MapAreaList> AreasAsync(MapAreaListRequest request, CallContext context = default) => await ListAsync(context.CancellationToken);
 
     public async ValueTask<MapArea> AddAsync(AddMapArea request, CallContext context = default)

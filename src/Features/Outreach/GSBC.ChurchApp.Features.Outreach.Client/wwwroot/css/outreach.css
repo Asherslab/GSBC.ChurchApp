@@ -16,3 +16,5 @@
 .outreach-desk__totals .stat-tile__label { color: var(--ink-2); font-size: var(--text-caption); font-weight: 400; }
 .outreach-desk__cell { display: grid; gap: var(--space-3xs); }
 .outreach-desk__sub { color: var(--ink-3); font-size: var(--text-caption); }
+.outreach-areas__regions { margin: var(--space-2xs) 0 0; color: var(--ink-3); font-size: var(--text-caption); font-variant-numeric: tabular-nums; }
+.outreach-areas__form { display: grid; gap: var(--stack); }
