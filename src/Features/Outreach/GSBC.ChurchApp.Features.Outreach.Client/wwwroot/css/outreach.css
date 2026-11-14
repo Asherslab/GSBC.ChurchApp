@@ -39,7 +39,7 @@
 .outreach-reach .btn--link { justify-self: start; min-height: var(--touch); text-align: left; }
 .outreach-reach .btn--block { margin-top: var(--space-xs); }
 .section > .notice { margin-bottom: var(--stack); }
-.section > .segmented { margin-bottom: var(--stack); }
+.section > .segmented, .section > .field { margin-bottom: var(--stack); }
 .outreach-note { margin: 0 0 var(--stack); color: var(--ink-2); font-size: var(--text-caption); line-height: 1.45; }
 
 .outreach-now { padding-bottom: var(--space-xl); }
@@ -50,7 +50,7 @@
 .outreach-now__next { display: flex; align-items: center; gap: var(--space-xs); margin: var(--space-md) 0 0; padding-top: var(--space-md); border-top: 1px solid var(--masthead-chip); font-size: var(--text-label); font-weight: 600; }
 .outreach-now__next .icon { flex: none; }
 
-.outreach-walk-map .map-view__map { min-height: 0; height: max(13rem, calc(100dvh - 34rem)); }
+.outreach-walk-map .map-view__map { min-height: 0; height: max(11rem, calc(100dvh - 37rem)); }
 .outreach-walk-map .map-view__attribution { padding: var(--space-2xs) var(--gutter) 0; }
 .outreach-walk-map__follow { position: absolute; right: var(--space-md); bottom: var(--space-md); box-shadow: var(--lift); }
 

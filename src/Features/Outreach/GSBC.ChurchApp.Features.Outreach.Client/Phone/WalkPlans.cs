@@ -34,6 +34,8 @@ public sealed record PlanView(
     IReadOnlyList<string> StreetNames,
     StreetGraph? Graph = null)
 {
+    public MapYou? You => Request.Start is null && Here.Point is { } here ? new MapYou(new MapPoint(here.Lat, here.Lon), Here.Accuracy) : null;
+
     public RoutingPoint? StartPoint => Request.Start ?? Here.Point;
 }
 
@@ -76,7 +78,7 @@ public sealed class WalkPlans(OutreachStore store, WhereYouAre where, RegionMaps
         if (walk is null)
             return Empty(PlanState.NoStreetNear, onPhone, source) with { StreetNames = names, Graph = graph };
         List<MapLine> lines = [.. OutreachNearby.WalkedLines(now, graph, carried), .. RouteLines(walk.Summary, walk.Plan.Hop is not null ? walk.Reach.Hop : null)];
-        List<MapMarker> markers = [new MapMarker(Point(start), MapMarkerKind.Start, request.Start is null ? "You" : "Start"), .. Markers(walk.Summary)];
+        List<MapMarker> markers = [.. request.Start is null ? [] : new[] { new MapMarker(Point(start), MapMarkerKind.Pin, "Start") }, .. Markers(walk.Summary)];
         List<MapPoint> framed = [.. walk.Summary.Line.Select(Point), Point(start)];
         return new PlanView(PlanState.Ready, request, now, here, campaigns, onPhone, source, walk, lines, markers, MapFrame.Around(framed, 36), names, graph);
     }
