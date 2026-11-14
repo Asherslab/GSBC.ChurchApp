@@ -7,7 +7,7 @@
 <LiveData @ref="_live" TValue="SermonView" Load="Library.LoadAsync" Feeds="SermonLibrary.Feeds" Remember="@SermonLibrary.Remembered" ReloadOn="ChangeKind.Reconnected | ChangeKind.Session">
     <ChildContent>@Drawn(context.Value)</ChildContent>
     <Loading>
-        <Page Title="Sermons" StuckAt="200">
+        <Page Title="Sermons" Place="sermons" StuckAt="200">
             <Masthead Title="Sermons" Note=" " />
             <Section First="true"><Skeleton Count="3" /></Section>
         </Page>
@@ -32,7 +32,7 @@
     private RenderFragment Drawn(SermonView view)
     {
         if (view.Shelf.Sermons.Count == 0)
-            return @<Page Title="Sermons">
+            return @<Page Title="Sermons" Place="sermons">
                 <Masthead Title="Sermons" Note="Listen and watch, wherever you are" />
                 <EmptyState Icon="sermons" Title="Sermons will be here soon" Body="They arrive the first time the app connects, and stay on this phone after that." />
             </Page>;
@@ -52,7 +52,7 @@
             ? $"Keep going · {SermonText.Left(going.Progress)}"
             : SermonText.Join("Latest", SermonText.Day(featured.PreachedAt), featured.Service);
 
-        return @<Page Title="Sermons" StuckAt="260">
+        return @<Page Title="Sermons" Place="sermons" StuckAt="260">
             <Masthead Title="Sermons" Note="@note">
                 @if (current is not null)
                 {

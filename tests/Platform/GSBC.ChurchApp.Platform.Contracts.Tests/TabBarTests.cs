@@ -31,6 +31,17 @@ public sealed class TabBarTests
     }
 
     [Fact]
+    public void APlaceOnTheTabBarHasNoBackAndOneInMoreGoesBackToWhereItWasOpened()
+    {
+        IReadOnlyList<AppTab> tabs = For(Visitor, Tab("prayer", "/prayer", "Prayer", order: 120));
+
+        Assert.Null(PlaceBack.For("prayer", tabs, openedFrom: ""));
+        Assert.Equal(PlaceBack.ToMore, PlaceBack.For("ministries", tabs, openedFrom: "more"));
+        Assert.Equal(PlaceBack.ToMore, PlaceBack.For("ministries", tabs, openedFrom: null));
+        Assert.Equal(PlaceBack.ToHome, PlaceBack.For("ministries", tabs, openedFrom: ""));
+    }
+
+    [Fact]
     public void ATabTakenOffTheBarOrForSomeoneElseLeavesNoGap()
     {
         StoredPlacement[] stored =

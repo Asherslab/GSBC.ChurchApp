@@ -15,7 +15,27 @@ public sealed class PhoneTabs(ISurfaceLayout layout, ClientModules modules, IAcc
         remove => layout.Changed -= value;
     }
 
-    public async Task<IReadOnlyList<AppTab>> CurrentAsync() => TabBar.For(await layout.ShownAsync(TabBarSurfaces.Area));
+    private readonly Dictionary<string, string> _openedFrom = new(StringComparer.OrdinalIgnoreCase);
+    private IReadOnlyList<AppTab> _known = TabBar.Starting;
+
+    public async Task<IReadOnlyList<AppTab>> CurrentAsync() => _known = TabBar.For(await layout.ShownAsync(TabBarSurfaces.Area));
+
+    public void Moved(string from, string to)
+    {
+        string fromRoute = RouteOf(from);
+        string toSection = FirstSegment(RouteOf(to));
+        if (!SameRoute(FirstSegment(fromRoute), toSection) && PlaceBack.IsWhereAPlaceOpensFrom(fromRoute))
+            _openedFrom[toSection] = fromRoute;
+    }
+
+    public PlaceBack? BackFor(string place) =>
+        PlaceBack.For(place, _known, _openedFrom.GetValueOrDefault(FirstSegment(RouteOf(place))));
+
+    public async Task<PlaceBack?> BackForAsync(string place)
+    {
+        await CurrentAsync();
+        return BackFor(place);
+    }
 
     public IReadOnlyList<NavEntry> InMore(IReadOnlyList<AppTab> tabs) =>
         modules.Navigation

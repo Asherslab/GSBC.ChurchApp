@@ -10,5 +10,5 @@ Sermon, series and speaker pictures load in the size each screen needs, and link
 
 ## For staff
 Changed: Sermons now keeps each picture once, as it was given, and Media makes the sizes the app needs, so sermon artwork no longer shows up twice in Media as a “large” and a “small” file. Speaker photos are kept whole instead of being cut to small squares. On Series and speakers and in Upload a sermon, a line under the picture says what the app shows, such as “The app shows a 1280×720 copy · 210 KB”. A large sermon picture (one with a For phones size) can lose its original in Media to save space; smaller ones keep theirs, because the app shows them full width.
-Where: Admin panel → Sermons → Series and speakers, Upload a sermon, and Media → Made by the app → Sermon artwork.
+Where: Admin panel → Sundays & sermons → Sermons → Series and speakers, Upload a sermon, and The app → Media → Made by the app → Sermon artwork.
 Try: Open a series on Series and speakers and read the line under its picture. In Media, open a large sermon picture (one with a For phones size), remove its original, and check the sermon still shows its picture in the app.

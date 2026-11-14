@@ -10,7 +10,7 @@
 <LiveData TValue="Diary" Load="Diary.LoadAsync" Feeds="CalendarDiary.Feeds" Remember="@CalendarDiary.Remembered">
     <ChildContent>@Drawn(context.Value)</ChildContent>
     <Loading>
-        <Page Title="This week" StuckAt="90">
+        <Page Title="This week" Place="@EventsDestinations.Week.Route" StuckAt="90">
             <Masthead Title="@(Month ? EventWords.Today(Now).ToString("MMMM", English) : "This week")" Beside="Switch" />
             <Section First="true"><Skeleton Shape="SkeletonShape.Lines" Count="6" /></Section>
         </Page>
@@ -90,7 +90,7 @@
         HashSet<DateOnly> marked = shown.Select(EventWords.DayOf).ToHashSet();
         IReadOnlyList<RailDay> rail = Enumerable.Range(0, 7).Select(weekStart.AddDays).Select(day => new RailDay(day, marked.Contains(day))).ToList();
 
-        return @<Page Title="This week" StuckAt="90" Actions="NewEvent(diary)">
+        return @<Page Title="This week" Place="@EventsDestinations.Week.Route" StuckAt="90" Actions="NewEvent(diary)">
             <Masthead Title="This week" Beside="Switch" Class="masthead--week" />
             <div class="week-band">
                 <p class="week-band__range">@EventWords.Range(weekStart, weekStart.AddDays(6))</p>

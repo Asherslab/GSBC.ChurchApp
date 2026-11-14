@@ -9,7 +9,7 @@
 @inject IPreviewMode Preview
 @inject IAccess Access
 
-<Page Title="Previews" BackHref="more" BackLabel="More">
+<Page Title="Previews" Place="previews">
     <Masthead Title="Previews" Note="See the app as it will be, on this phone only" />
 
     <LiveData TValue="Previewable" Load="LoadAsync" Feeds="[ConfigurationFeeds.Drafts, ConfigurationFeeds.Placements]" ReloadOn="ChangeKind.Reconnected | ChangeKind.Session | ChangeKind.Access">

@@ -3,7 +3,7 @@
 @inject WhatsNew WhatsNew
 @inject NativeBridge Bridge
 
-<Page Title="What's new" BackHref="more" BackLabel="More">
+<Page Title="What's new" Place="whats-new">
     <Masthead Title="What's new" Note="@OnThisPhone" />
 
     @if (WhatsNew.Notes.Count == 0)
