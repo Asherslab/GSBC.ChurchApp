@@ -13,7 +13,7 @@ public sealed record NotificationKind(
     bool MayBeUrgent = false,
     NotificationPacing? Pacing = null,
     bool Waits = false,
-    Permission? For = null,
+    IReadOnlyList<Permission>? For = null,
     bool InAdminPanel = false,
     NotificationOpens? Opens = null,
     NotificationDigest? Digest = null);

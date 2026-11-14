@@ -24,7 +24,7 @@ internal sealed class KindsFeed(IServiceScopeFactory scopes, NotificationKindCat
         }
     }
 
-    public static async Task PublishAsync(NotificationsDbContext db, NotificationKindCatalog kinds, CancellationToken cancellationToken)
+    private static async Task PublishAsync(NotificationsDbContext db, NotificationKindCatalog kinds, CancellationToken cancellationToken)
     {
         Dictionary<string, FeedChangeRecord> published = (await db.FeedChanges.AsNoTracking()
                 .Where(change => change.Feed == NotificationsFeeds.Kinds)
@@ -43,8 +43,9 @@ internal sealed class KindsFeed(IServiceScopeFactory scopes, NotificationKindCat
                 DefaultPush = kind.DefaultPush,
                 Mandatory = kind.Mandatory,
                 PerScope = kind.PerScope?.Name,
-                ForNode = kind.For?.Node,
-                ForScope = kind.For?.ScopeKind.Name,
+                ForNode = kind.For is [var only] ? only.Node : null,
+                ForScope = kind.For is [var single] ? single.ScopeKind.Name : null,
+                ForAny = (kind.For ?? []).Select(permission => new KindPermission { Node = permission.Node, Scope = permission.ScopeKind.Name }).ToList(),
             });
             FeedChangeRecord? before = published.GetValueOrDefault(kind.Key);
             if (before is { Deleted: false } && before.Payload.AsSpan().SequenceEqual(payload))

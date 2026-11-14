@@ -174,6 +174,22 @@ public sealed class RosterFlowTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task EachReminderIsSentOnceHoweverOftenTheScheduleRuns()
+    {
+        await SetUpAsync(new Position { Name = "Sound" });
+        await AssignAsync(_jo);
+        _notifications.Sent.Clear();
+        _clock.Advance(TimeSpan.FromDays(6));
+
+        for (int run = 0; run < 3; run++)
+            await using (AsyncServiceScope scope = _services.CreateAsyncScope())
+                await scope.ServiceProvider.GetRequiredService<RosterReminders>().SendAsync(Cancel);
+
+        Assert.NotEmpty(_notifications.Sent);
+        Assert.All(_notifications.Sent.GroupBy(sent => (sent.Kind, sent.Subject)), group => Assert.Single(group));
+    }
+
+    [Fact]
     public async Task ForgettingSomeoneTakesThemOffDatesToComeAndLeavesPastOnesFilledBySomeoneWhoHasLeft()
     {
         await SetUpAsync(new Position { Name = "Sound", Needed = 2 });

@@ -80,11 +80,11 @@ feature, only Platform.
 public static class DraftNotifications
 {
     public static readonly NotificationKind WaitingToPublish = new(
-        "config.drafts.waiting", "A draft is waiting for you to publish", "Drafts", Waits: true, For: HubSurfaces.Edit);
+        "config.drafts.waiting", "A draft is waiting for you to publish", "Drafts", Waits: true, For: [HubSurfaces.Edit]);
 
     public static readonly NotificationKind SharedWithYou = new(
         "config.drafts.shared", "Someone shares a draft with you", "Drafts", Waits: true,
-        For: ConfigurationPermissions.PreviewDraft);
+        For: [ConfigurationPermissions.PreviewDraft]);
 }
 ```
 
@@ -99,7 +99,7 @@ A kind has:
 | `MayBeUrgent` | Whether a raise may be urgent (skips quiet hours, time-sensitive on iOS) |
 | `Pacing` | `null` (each pushes: chat messages, security), or `NotificationPacing(pushes, per)`: past that many pushes per recipient and ministry in that time, they collapse (below). Declared per kind (decision 9) |
 | `Waits` | It asks something of you (a draft to publish, a draft shared with you, an announcement to send). It shows under *Waiting* in the inbox until the feature **settles** its subject (below) |
-| `For` | The permission its audience holds. The phone's preferences list only kinds a person could get, checked with `IAccess.CanSomewhere` (held anywhere, at any scope); a kind without one is for everyone (owner, 2026-11-03: "through permissions") |
+| `For` | The permissions its audience holds, any one of them (a roster reminder reaches the person on it or their parent). The phone's preferences list only kinds a person could get, checked with `IAccess.CanSomewhere` (held anywhere, at any scope); a kind without one is for everyone (owner, 2026-11-03: "through permissions"). Every kind for holders of a permission declares it; one anyone may receive is listed in `NotificationAudienceRules.ForAnyone` with why, so a new kind must choose (2026-11-14, after members saw leaders' kinds in their settings) |
 | `InAdminPanel` | Its task is done in the admin panel (an announcement waiting to send). On the phone the row says so and doesn't open anything, and a push opens the notifications list |
 | `Opens` | The places its links may open, as routes (`/prayer/requests/{id}`), or `ChosenByStaff` for announcements (decision 14) |
 | `Digest` | `null`, or how it comes as a digest: its title for one and for many, its body, its schedule and who may change the schedule (decision 13) |

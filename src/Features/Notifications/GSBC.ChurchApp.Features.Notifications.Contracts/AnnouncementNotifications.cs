@@ -10,7 +10,7 @@ public static class AnnouncementNotifications
 
     public static readonly NotificationKind WaitingToSend = new(
         "notifications.announcement.waiting", "An announcement is waiting for you to send", "Announcements",
-        Waits: true, For: NotificationsPermissions.Send, InAdminPanel: true, Opens: new("/announcements/{id}"));
+        Waits: true, For: [NotificationsPermissions.Send], InAdminPanel: true, Opens: new("/announcements/{id}"));
 
     public static readonly IReadOnlyList<NotificationKind> All = [WaitingToSend];
 }

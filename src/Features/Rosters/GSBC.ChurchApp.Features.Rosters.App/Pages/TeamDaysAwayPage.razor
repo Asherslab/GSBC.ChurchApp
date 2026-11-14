@@ -2,7 +2,7 @@
 @inject IRosterReads Reads
 
 <Page Title="The team's days away" BackHref="@AwayPlaces.Roster(MinistryId)" BackLabel="Roster">
-    <LiveData TValue="RosterView" Load="() => Reads.RosterAsync(MinistryId)" Feeds="Reads.Feeds" Remember="@($"rosters.{MinistryId}")" FailedTitle="Can't show the team's days away right now">
+    <LiveData @key="MinistryId" TValue="RosterView" Load="() => Reads.RosterAsync(MinistryId)" Feeds="Reads.Feeds" Remember="@($"rosters.{MinistryId}")" FailedTitle="Can't show the team's days away right now">
         <ChildContent>
             <Masthead Title="The team's days away" Note="@($"{context.Value.MinistryName}'s leaders can change anyone's days away, and anyone away is flagged when they're put on.")" />
             @if (TeamAway.Shown(context.Value))
