@@ -140,6 +140,9 @@
     <Project Path="src/Features/News/GSBC.ChurchApp.Features.News.Client/GSBC.ChurchApp.Features.News.Client.csproj" />
     <Project Path="src/Features/News/GSBC.ChurchApp.Features.News.Contracts/GSBC.ChurchApp.Features.News.Contracts.csproj" />
   </Folder>
+  <Folder Name="/src/Features/Outreach/">
+    <Project Path="src/Features/Outreach/GSBC.ChurchApp.Features.Outreach.Routing/GSBC.ChurchApp.Features.Outreach.Routing.csproj" />
+  </Folder>
   <Folder Name="/src/Features/Prayer/">
     <Project Path="src/Features/Prayer/GSBC.ChurchApp.Features.Prayer.Admin/GSBC.ChurchApp.Features.Prayer.Admin.csproj" />
     <Project Path="src/Features/Prayer/GSBC.ChurchApp.Features.Prayer.Api/GSBC.ChurchApp.Features.Prayer.Api.csproj" />
@@ -236,6 +239,9 @@
   <Folder Name="/tests/Features/News/">
     <Project Path="tests/Features/News/GSBC.ChurchApp.Features.News.Api.Tests/GSBC.ChurchApp.Features.News.Api.Tests.csproj" />
     <Project Path="tests/Features/News/GSBC.ChurchApp.Features.News.Client.Tests/GSBC.ChurchApp.Features.News.Client.Tests.csproj" />
+  </Folder>
+  <Folder Name="/tests/Features/Outreach/">
+    <Project Path="tests/Features/Outreach/GSBC.ChurchApp.Features.Outreach.Routing.Tests/GSBC.ChurchApp.Features.Outreach.Routing.Tests.csproj" />
   </Folder>
   <Folder Name="/tests/Features/Prayer/">
     <Project Path="tests/Features/Prayer/GSBC.ChurchApp.Features.Prayer.Api.Tests/GSBC.ChurchApp.Features.Prayer.Api.Tests.csproj" />

@@ -1,0 +1,5 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <InternalsVisibleTo Include="GSBC.ChurchApp.Features.Outreach.Routing.Tests" />
+  </ItemGroup>
+</Project>

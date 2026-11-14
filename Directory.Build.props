@@ -13,7 +13,7 @@
 
     <GsbcIsContracts>$(MSBuildProjectName.EndsWith('.Contracts'))</GsbcIsContracts>
     <GsbcIsPageModule Condition="$(MSBuildProjectName.EndsWith('.App')) or $(MSBuildProjectName.EndsWith('.Admin'))">true</GsbcIsPageModule>
-    <GsbcInAotScope Condition="'$(GsbcIsContracts)' == 'true' or '$(GsbcIsPageModule)' == 'true' or $(MSBuildProjectName.EndsWith('.Client'))">true</GsbcInAotScope>
+    <GsbcInAotScope Condition="'$(GsbcIsContracts)' == 'true' or '$(GsbcIsPageModule)' == 'true' or $(MSBuildProjectName.EndsWith('.Client')) or $(MSBuildProjectName.EndsWith('.Routing'))">true</GsbcInAotScope>
     <GsbcInAotScope Condition="'$(MSBuildProjectName)' == 'GSBC.ChurchApp.Platform.Common' or '$(MSBuildProjectName)' == 'GSBC.ChurchApp.Platform.Permissions' or '$(MSBuildProjectName)' == 'GSBC.ChurchApp.Platform.Contracts' or '$(MSBuildProjectName)' == 'GSBC.ChurchApp.Platform.Client' or '$(MSBuildProjectName)' == 'GSBC.ChurchApp.Platform.Ui'">true</GsbcInAotScope>
     <GsbcInAotScope Condition="'$(MSBuildProjectName)' == 'GSBC.ChurchApp.Hosts.Admin'">false</GsbcInAotScope>
   </PropertyGroup>
