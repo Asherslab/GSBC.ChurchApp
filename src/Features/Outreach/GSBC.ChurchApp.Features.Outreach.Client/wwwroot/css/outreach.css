@@ -75,3 +75,4 @@
 .outreach-order__stop--done::after { background: var(--accent); box-shadow: none; }
 .outreach-order__stop:first-child::before { top: 50%; }
 .outreach-order__stop:last-child::before { bottom: 50%; }
+.outreach-figures__line + .notice { margin-top: var(--stack); }

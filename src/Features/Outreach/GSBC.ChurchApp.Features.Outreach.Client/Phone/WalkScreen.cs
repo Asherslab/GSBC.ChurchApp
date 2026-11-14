@@ -2,6 +2,7 @@ using GSBC.ChurchApp.Features.Outreach.Contracts;
 using GSBC.ChurchApp.Features.Outreach.Maps.Contracts;
 using GSBC.ChurchApp.Features.Outreach.Routing;
 using GSBC.ChurchApp.Platform.Client.Location;
+using GSBC.ChurchApp.Platform.Client.Outbox;
 using GSBC.ChurchApp.Platform.Ui.Maps;
 
 namespace GSBC.ChurchApp.Features.Outreach.Client.Phone;
@@ -16,9 +17,11 @@ public sealed record WalkView(
     MapYou? You,
     string Carrying,
     bool Tracking,
-    int BundleSize);
+    int BundleSize,
+    int Waiting = 0,
+    int Failed = 0);
 
-public sealed class WalkScreen(WalkSession walk, OutreachStore store, RegionMaps regions, ILocationSession location)
+public sealed class WalkScreen(WalkSession walk, OutreachStore store, RegionMaps regions, ILocationSession location, IOutbox outbox)
 {
     public static readonly IReadOnlyList<string> Feeds = [OutreachFeeds.Settings, OutreachFeeds.Campaigns, OutreachMapsFeeds.Regions];
 
@@ -48,7 +51,8 @@ public sealed class WalkScreen(WalkSession walk, OutreachStore store, RegionMaps
         MapYou? you = progress?.You is { } at ? new MapYou(new MapPoint(at.Lat, at.Lon), progress.Accuracy) : null;
         List<Campaign> carried = [.. state.Campaigns.Select(now.CampaignOf).OfType<Campaign>()];
         bool tracking = state.Tracking && (await location.StateAsync()).Running || state.Paused;
+        List<OutboxEntry> queued = [.. (await outbox.ListAsync()).Where(entry => entry.Method.StartsWith(OutreachMethods.Under, StringComparison.Ordinal))];
         return new WalkView(state, progress, source, lines, markers, frame, you, carried.Count == 0 ? "General outreach" : string.Join(" + ", carried.Select(c => c.Name)),
-            tracking, now.Settings.BundleSize);
+            tracking, now.Settings.BundleSize, queued.Count(entry => !entry.Failed), queued.Count(entry => entry.Failed));
     }
 }

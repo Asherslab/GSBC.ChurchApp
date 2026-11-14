@@ -35,8 +35,9 @@
 <DoorSheet @bind-Open="_door" />
 
 @code {
-    private const ChangeKind Reload = ChangeKind.Reconnected | ChangeKind.Session;
+    private const ChangeKind Reload = ChangeKind.Reconnected | ChangeKind.Session | ChangeKind.Outbox;
     private static readonly TimeSpan DrainEvery = TimeSpan.FromSeconds(8);
+    private static readonly TimeSpan SaidFor = TimeSpan.FromSeconds(12);
 
     private LiveData<WalkView>? _live;
     private Timer? _timer;
@@ -46,6 +47,7 @@
     private AddressPoint? _reportPlace;
     private string? _marked;
     private string? _said;
+    private DateTimeOffset _saidAt;
 
     protected override void OnInitialized()
     {
@@ -63,7 +65,7 @@
         bool doorknock = state.Mode == WalkMode.Doorknock;
         <header class="masthead outreach-now">
             <p class="outreach-now__status">
-                <span>@(state.Paused ? "Paused" : "Walking") · @OutreachPhoneWords.Duration(progress?.Elapsed ?? Clock.GetUtcNow().UtcDateTime - state.StartedAt)</span>
+                <span>@(state.Paused ? "Paused" : "Walking") · @OutreachPhoneWords.Duration(Clock.GetUtcNow().UtcDateTime - state.StartedAt)</span>
                 <span>@view.Carrying</span>
             </p>
             @if (now is null)
@@ -143,6 +145,12 @@
 
     private async Task DrainAsync()
     {
+        if (_said is not null && Clock.GetUtcNow() - _saidAt > SaidFor)
+        {
+            _said = null;
+            _marked = null;
+            StateHasChanged();
+        }
         if (await Walk.DrainAsync())
             await Shell.HapticAsync(Haptic.Success);
     }
@@ -153,6 +161,7 @@
         _said = _marked is null
             ? Walk.Progress?.HasFixes == true ? "No letterbox near you on this street. Stand at it and try again." : "The app needs your location to mark a letterbox."
             : $"Marked No junk mail{(Walk.NearestAddress(out _) is { Label.Length: > 0 } address ? $" ({address.Label})" : "")}. It's skipped from now on.";
+        _saidAt = Clock.GetUtcNow();
         await Shell.HapticAsync();
     }
 
@@ -162,6 +171,7 @@
             await Walk.UndoNoJunkMailAsync(_marked);
         _marked = null;
         _said = "Taken back.";
+        _saidAt = Clock.GetUtcNow();
     }
 
     private async Task SpokeAsync()
@@ -169,6 +179,7 @@
         await Walk.SpokeAsync();
         _marked = null;
         _said = $"Counted. {OutreachWords.Plural(Walk.Current?.Conversations ?? 0, "conversation", "conversations")} on this walk.";
+        _saidAt = Clock.GetUtcNow();
         await Shell.HapticAsync();
     }
 
@@ -177,6 +188,7 @@
         await Walk.SkipThisBitAsync();
         _marked = null;
         _said = "Left open for someone else.";
+        _saidAt = Clock.GetUtcNow();
     }
 
     private void OpenReport()
@@ -189,6 +201,7 @@
     {
         await Walk.FinishAsync();
         _said = null;
+        await Shell.ScrollToTopAsync();
     }
 
     private Task SavedAsync()

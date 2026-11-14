@@ -110,6 +110,16 @@ public static class OutreachPhoneWords
         return $"Then {way} {to.Title}";
     }
 
+    public static string SideOf(SavedStep step)
+    {
+        if (step.Line.Count < 2)
+            return step.Title;
+        double bearing = Bearing(step.Line[0], step.Line[^1]);
+        string[] compass = ["north", "east", "south", "west"];
+        string facing = compass[(int)Math.Round(((bearing - 90 + 360) % 360) / 90) % 4];
+        return $"{step.Title}, {facing} side";
+    }
+
     public static string Remaining(int letterboxesLeft) => letterboxesLeft <= 0 ? "done" : $"{OutreachWords.Count(letterboxesLeft)} to go";
 
     public static string Walked(DateTime utc) => ChurchTime.ToChurch(utc).ToString("ddd d MMM", English);

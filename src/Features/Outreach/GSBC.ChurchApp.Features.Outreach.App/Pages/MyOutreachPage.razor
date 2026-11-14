@@ -3,6 +3,7 @@
 
 <Page Title="My outreach" BackHref="@OutreachLinks.Home" BackLabel="Outreach">
     <Masthead Title="My outreach" Note="Your walks, on this phone and wherever you're signed in" />
+    <WaitingToSend MethodsUnder="@OutreachMethods.Under" Describe="OutreachMethods.Describe" First="true" />
     <LiveData TValue="MyOutreachView" Load="Mine.LoadAsync" Feeds="MyOutreach.Feeds" ReloadOn="Reload">
         @{
             MyOutreachView view = context.Value;
