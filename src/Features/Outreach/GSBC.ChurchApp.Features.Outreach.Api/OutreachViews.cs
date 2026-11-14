@@ -103,6 +103,15 @@ internal static class OutreachViews
         Id = area.Id.ToString(), Name = area.Name, Area = Polygon(area.AreaLats, area.AreaLngs), Note = area.Note,
     };
 
+    public static Exclusion Exclusion(ExclusionZoneRecord zone) => new() { Id = zone.Id.ToString(), Area = Polygon(zone.AreaLats, zone.AreaLngs) };
+
+    public static Exclusion Exclusion(ExclusionAddressRecord address) => new()
+    {
+        Id = address.Id.ToString(),
+        Address = Address(address.AddressKey, address.Region, address.Street, address.Side, address.Along, address.Lat, address.Lng, address.ShowMarker ? address.Label : ""),
+        ShowMarker = address.ShowMarker,
+    };
+
     public static ExclusionZone Zone(ExclusionZoneRecord zone) => new()
     {
         Id = zone.Id.ToString(), Name = zone.Name, Area = Polygon(zone.AreaLats, zone.AreaLngs), Reason = zone.Reason, Note = zone.Note,

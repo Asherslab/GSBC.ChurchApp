@@ -76,4 +76,5 @@ namespace GSBC.ChurchApp.Features.Outreach.Contracts;
 [ProtoSerializable(typeof(RoutesPublish))]
 [ProtoSerializable(typeof(Published))]
 [ProtoSerializable(typeof(DayDeletion))]
+[ProtoSerializable(typeof(PlanningMarks))]
 public partial class OutreachContractsModel : TypeModel;

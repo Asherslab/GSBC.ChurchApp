@@ -76,3 +76,10 @@ public sealed class DayDeletion
     [ProtoMember(3)] public int Walks { get; set; }
     [ProtoMember(4)] public bool OnNow { get; set; }
 }
+
+[ProtoContract]
+public sealed class PlanningMarks
+{
+    [ProtoMember(1)] public List<Skip> Skips { get; set; } = [];
+    [ProtoMember(2)] public List<Exclusion> Exclusions { get; set; } = [];
+}

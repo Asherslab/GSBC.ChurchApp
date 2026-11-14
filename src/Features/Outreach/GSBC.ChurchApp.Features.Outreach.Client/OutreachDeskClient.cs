@@ -45,6 +45,11 @@ public sealed class OutreachDeskClient(ChannelBase channel)
 
     public async Task DeleteDayAsync(string ministryId, string id) => await _admin.DeleteDayAsync(new ThingRef { MinistryId = ministryId, Id = id });
 
+    public async Task<PlanningMarks> PlanningMarksAsync(string ministryId) => await _admin.PlanningMarksAsync(new MinistryRef { MinistryId = ministryId });
+
+    public async Task<CoverageMap> CoverageAsync(string ministryId, string campaign) =>
+        await _admin.CoverageAsync(new CoverageQuery { MinistryId = ministryId, Campaign = campaign });
+
     public async Task<DayPlan> PlanAsync(string ministryId, string dayId) => await _admin.PlanAsync(new ThingRef { MinistryId = ministryId, Id = dayId });
 
     public async Task SaveDraftAsync(string ministryId, string dayId, DayDraft? draft) =>

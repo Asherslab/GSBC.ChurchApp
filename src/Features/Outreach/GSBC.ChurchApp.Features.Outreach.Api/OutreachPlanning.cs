@@ -241,6 +241,20 @@ internal sealed class OutreachPlanning(
         };
     }
 
+    public async Task<PlanningMarks> PlanningMarksAsync(string ministryId, CancellationToken cancellationToken)
+    {
+        await ministries.CheckAsync(ministryId, cancellationToken);
+        return new PlanningMarks
+        {
+            Skips = (await db.Skips.AsNoTracking().ToListAsync(cancellationToken)).Select(OutreachViews.Skip).ToList(),
+            Exclusions =
+            [
+                .. (await db.ExclusionZones.AsNoTracking().ToListAsync(cancellationToken)).Select(OutreachViews.Exclusion),
+                .. (await db.ExclusionAddresses.AsNoTracking().ToListAsync(cancellationToken)).Select(OutreachViews.Exclusion),
+            ],
+        };
+    }
+
     public async Task<DayPlan> PlanAsync(ThingRef thing, CancellationToken cancellationToken)
     {
         await ministries.CheckAsync(thing.MinistryId, cancellationToken);

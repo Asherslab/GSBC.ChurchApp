@@ -35,6 +35,9 @@ public interface IOutreachAdminService
     ValueTask<DayDeletion> DayDeletionAsync(ThingRef request, CallContext context = default);
 
     [Requires(OutreachPermissions.PlanNode)]
+    ValueTask<PlanningMarks> PlanningMarksAsync(MinistryRef request, CallContext context = default);
+
+    [Requires(OutreachPermissions.PlanNode)]
     ValueTask<DayPlan> PlanAsync(ThingRef request, CallContext context = default);
 
     [Requires(OutreachPermissions.PlanNode)]

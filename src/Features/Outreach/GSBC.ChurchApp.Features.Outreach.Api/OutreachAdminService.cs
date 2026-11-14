@@ -49,6 +49,9 @@ internal sealed class OutreachAdminService(OutreachPlanning planning, OutreachRe
     public async ValueTask<DayDeletion> DayDeletionAsync(ThingRef request, CallContext context = default) =>
         await planning.DayDeletionAsync(request, context.CancellationToken);
 
+    public async ValueTask<PlanningMarks> PlanningMarksAsync(MinistryRef request, CallContext context = default) =>
+        await planning.PlanningMarksAsync(request.MinistryId, context.CancellationToken);
+
     public async ValueTask<DayPlan> PlanAsync(ThingRef request, CallContext context = default) =>
         await planning.PlanAsync(request, context.CancellationToken);
 
