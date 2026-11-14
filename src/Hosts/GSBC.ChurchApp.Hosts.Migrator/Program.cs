@@ -14,6 +14,7 @@ using GSBC.ChurchApp.Features.Chats.Api.Data;
 using GSBC.ChurchApp.Features.People.Api.Data;
 using GSBC.ChurchApp.Features.Sermons.Api.Data;
 using GSBC.ChurchApp.Features.Sermons.Import.Api.Data;
+using GSBC.ChurchApp.Features.Outreach.Maps.Api.Data;
 using GSBC.ChurchApp.Platform.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -39,6 +40,7 @@ builder.Services.AddChatsData();
 builder.Services.AddSermonsData();
 builder.Services.AddSermonsImportData();
 builder.Services.AddEventsData();
+builder.Services.AddOutreachMapsData();
 
 using IHost host = builder.Build();
 await using AsyncServiceScope scope = host.Services.CreateAsyncScope();
