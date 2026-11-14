@@ -73,7 +73,7 @@ public sealed class CoverageView
 
     public CoverageChoice? StreetAt(MapPoint point)
     {
-        if (_graph.Index.Nearest(_graph.Projection.ToFlat(new RoutingPoint(point.Lat, point.Lon)), 40, street => _graph.Street(street).CanDeliver) is not { } found)
+        if (_graph.Index.Nearest(_graph.Projection.ToFlat(new RoutingPoint(point.Lat, point.Lon)), 40, street => _graph.Street(street).CanDeliver && _graph.Homes(street) > 0) is not { } found)
             return null;
         return ForStreet(found.Street);
     }

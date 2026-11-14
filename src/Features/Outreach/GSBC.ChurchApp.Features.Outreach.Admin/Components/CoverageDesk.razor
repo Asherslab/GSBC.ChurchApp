@@ -22,12 +22,25 @@
     else
     {
         CoverageView view = shown.View;
-        <div class="outreach-coverage">
-            <MapView @ref="_map" Class="outreach-coverage__map" Source="@MapSource.Url(shown.Region.Map.Url, shown.Region.Attribution)"
-                     Label="@($"{CampaignName(shown)}: streets done in the last {view.RestDays} days, darker the more recently")"
-                     Lines="@Lines(view)" Areas="@Areas(shown)" Markers="@Markers(shown)" Frame="@view.Frame()" OnTap="TapAsync" />
-            <MapSketch Map="_map" Tool="@(_drawing ? MapSketchTool.Lasso : MapSketchTool.None)" OnDrawn="DrawnAsync" OnCancelled="() => _drawing = false" />
-            <aside class="outreach-coverage__rail" aria-label="Coverage">
+        <MapDesk PaneLabel="Coverage" Class="outreach-coverage">
+            <Map>
+                <MapView @ref="_map" Source="@MapSource.Url(shown.Region.Map.Url, shown.Region.Attribution)"
+                         Label="@($"{CampaignName(shown)}: streets done in the last {view.RestDays} days, darker the more recently")"
+                         Lines="@Lines(view)" Areas="@Areas(shown)" Markers="@Markers(shown)" Frame="@view.Frame()" OnTap="TapAsync">
+                    <Overlay>
+                        <div class="outreach-coverage__tools">
+                            <Button Variant="@(_drawing ? ButtonVariant.Primary : ButtonVariant.Quiet)" Icon="pencil" OnClick="ToggleDrawing">@(_drawing ? "Stop drawing" : "Draw round streets")</Button>
+                            @if (_drawing)
+                            {
+                                <p class="outreach-coverage__hint" role="status">Drag a loop round the streets. Escape stops.</p>
+                            }
+                        </div>
+                    </Overlay>
+                </MapView>
+                <MapSketch Map="_map" Tool="@(_drawing ? MapSketchTool.Lasso : MapSketchTool.None)" OnDrawn="DrawnAsync" OnCancelled="() => _drawing = false" />
+            </Map>
+            <Pane>
+                <div class="outreach-coverage__rail">
                 <SelectField Label="Campaign" Options="CampaignOptions(shown.Desk)" Value="@shown.Campaign" ValueChanged="ChooseCampaignAsync"
                              Hint="Each campaign keeps its own record of streets done." />
                 @if (shown.Regions.Count > 1)
@@ -44,38 +57,11 @@
                     <StatTile Value="@OutreachWords.Count(view.StreetsDone)" Label="@($"of {OutreachWords.Count(view.DeliverableStreets)} streets done")" Quiet="true" />
                     <StatTile Value="@Percent(view.HomesDone, view.AllHomes)" Label="of letterboxes" Quiet="true" />
                 </div>
-                <ToggleChips TValue="string" Label="Show on the map" Chips="Layers(shown)" Toggled="Toggle" />
+                <ToggleChips TValue="string" Label="Show on the map" Chips="Layers(shown)" Toggled="Toggle" Class="toggle-chips--wrap" />
 
                 <div class="outreach-coverage__choice">
                     <p class="outreach-coverage__label">Choose streets</p>
-                    @if (_choice is { } choice)
-                    {
-                        <p class="outreach-coverage__chosen">@choice.Title</p>
-                        <p class="outreach-coverage__chosen-sub">@ChoiceLine(view, choice)</p>
-                        @if (CanExpire && choice.Pieces.Count > 0)
-                        {
-                            <p class="field__hint">Marking it not done opens these streets to walks in @CampaignName(shown) straight away. Other campaigns keep theirs.</p>
-                        }
-                        <Notice Tone="NoticeTone.Warning" Text="@_problem" />
-                        <div class="outreach-coverage__actions">
-                            <Button Variant="ButtonVariant.Quiet" OnClick="Clear">Clear</Button>
-                            @if (CanExpire)
-                            {
-                                <Button Busy="_busy" Disabled="@(choice.Pieces.Count == 0)" OnClick="() => ExpireAsync(shown, choice)">Mark as not done</Button>
-                            }
-                        </div>
-                    }
-                    else
-                    {
-                        <p class="field__hint">Click a street on the map, or draw round several.</p>
-                        <div>
-                            <Button Variant="ButtonVariant.Quiet" Icon="pencil" OnClick="() => _drawing = !_drawing">@(_drawing ? "Stop drawing" : "Draw round streets")</Button>
-                        </div>
-                        @if (_drawing)
-                        {
-                            <p class="field__hint">Drag a loop round the streets on the map. Escape stops.</p>
-                        }
-                    }
+                    <p class="field__hint">Click a street on the map, or draw round several with the pencil at the map's top left.</p>
                     @if (_undo is { } undo)
                     {
                         <p class="outreach-coverage__done" role="status">
@@ -84,8 +70,34 @@
                         </p>
                     }
                 </div>
-            </aside>
-        </div>
+                </div>
+            </Pane>
+            <Foot>
+                @if (_choice is { } chosen)
+                {
+                    <div class="outreach-coverage__chosen-block">
+                        <p class="outreach-coverage__chosen">@chosen.Title</p>
+                        <p class="outreach-coverage__chosen-sub">@ChoiceLine(view, chosen)</p>
+                        @if (CanExpire && chosen.Pieces.Count > 0)
+                        {
+                            <p class="field__hint">Marking them not done opens them to walks in @CampaignName(shown) straight away. Other campaigns keep theirs.</p>
+                        }
+                    </div>
+                    <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+                    <div class="outreach-coverage__actions">
+                        <Button Variant="ButtonVariant.Quiet" OnClick="Clear">Clear</Button>
+                        @if (CanExpire)
+                        {
+                            <Button Busy="_busy" Disabled="@(chosen.Pieces.Count == 0)" OnClick="() => ExpireAsync(shown, chosen)">Mark as not done</Button>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <p class="field__hint">Choose streets on the map to mark them not done.</p>
+                }
+            </Foot>
+        </MapDesk>
     }
 </LiveData>
 
@@ -124,7 +136,10 @@
         Task<Exclusions> exclusions = Access.Can(OutreachPermissions.Settings, MinistryScope) ? Outreach.ExclusionsAsync(Scope) : Task.FromResult(new Exclusions());
         await Task.WhenAll(desk, regions, coverage, skips, exclusions);
         List<OutreachRegion> all = [.. (await regions).Regions.OrderBy(region => region.Name, StringComparer.Ordinal)];
-        OutreachRegion? region = all.FirstOrDefault(found => found.Id == _region) ?? all.FirstOrDefault();
+        Dictionary<string, int> covered = (await coverage).Streets.GroupBy(street => street.Region).ToDictionary(group => group.Key, group => group.Count());
+        OutreachRegion? region = all.FirstOrDefault(found => found.Id == _region)
+                                 ?? all.OrderByDescending(found => covered.GetValueOrDefault(found.Id)).ThenByDescending(found => found.Letterboxes).FirstOrDefault();
+        _region = region?.Id;
         CoverageView? view = null;
         if (region is not null)
         {
@@ -169,8 +184,8 @@
 
     private IReadOnlyList<ToggleChip<string>> Layers(Shown shown) =>
     [
-        new(MarksLayer, $"No junk mail and hostile ({OutreachWords.Count(shown.Skips.Lines.Count)})", _showMarks),
-        new(PlacesLayer, $"Places outreach skips ({OutreachWords.Count(shown.Exclusions.Zones.Count + shown.Exclusions.Addresses.Count)})", _showPlaces),
+        new(MarksLayer, $"No junk mail ({OutreachWords.Count(shown.Skips.Lines.Count)})", _showMarks),
+        new(PlacesLayer, $"Places skipped ({OutreachWords.Count(shown.Exclusions.Zones.Count + shown.Exclusions.Addresses.Count)})", _showPlaces),
     ];
 
     private void Toggle(ToggleChip<string> chip)
@@ -206,9 +221,12 @@
         return _live?.ReloadAsync() ?? Task.CompletedTask;
     }
 
+    private static readonly TimeSpan DrawingsClosingClick = TimeSpan.FromMilliseconds(600);
+    private DateTimeOffset _drewAt;
+
     private void TapAsync(MapPoint point)
     {
-        if (_drawing || _view is null)
+        if (_drawing || _view is null || Time.GetUtcNow() - _drewAt < DrawingsClosingClick)
             return;
         _choice = _view.StreetAt(point);
         _problem = null;
@@ -216,7 +234,7 @@
 
     private void DrawnAsync(MapSketchStroke stroke)
     {
-        _drawing = false;
+        (_drawing, _drewAt) = (false, Time.GetUtcNow());
         if (_view is null || stroke.Points.Count < 3)
             return;
         _choice = _view.InArea(stroke.Points);
@@ -224,6 +242,13 @@
     }
 
     private void Clear() => (_choice, _problem, _drawing) = (null, null, false);
+
+    private void ToggleDrawing()
+    {
+        _drawing = !_drawing;
+        if (_drawing)
+            (_choice, _problem) = (null, null);
+    }
 
     private async Task ExpireAsync(Shown shown, CoverageChoice choice)
     {

@@ -1,3 +1,4 @@
+@using GSBC.ChurchApp.Platform.Ui.Maps
 @using GSBC.ChurchApp.Platform.Client.People
 @using GSBC.ChurchApp.Platform.Contracts.Media
 @using GSBC.ChurchApp.Platform.Ui.Content
@@ -50,6 +51,14 @@
                         </DataTable>
                     </ChildContent>
                 </Workbench>
+            </div>)
+        @Item("A map to work on: MapDesk", "The map fills the page under the title band with its pane on the right and the page's actions in the pane's foot. Tools float on the map. The outreach planner draws on it.",
+            @<div class="gallery__frame gallery__frame--tall">
+                <MapDesk PaneLabel="Routes" Class="gallery__map-desk">
+                    <Map><div class="gallery__map-stand-in" role="img" aria-label="Where the map goes"></div></Map>
+                    <Pane><PaneHead Title="Plan the routes" Lead="Draw the area to cover and it's split into even routes." /></Pane>
+                    <Foot><Button>Publish</Button></Foot>
+                </MapDesk>
             </div>)
         @Item("The heading of a record: PaneHead", "Title, one line under it, and the record's own actions in its More menu (Delete is always there, last and red).",
             @<PaneHead Title="Jordan Example" Lead="jordan@example.com · joined Sun 1 Nov" Actions="RecordActions" OnClose="() => { }" OnOpen="() => { }" />)

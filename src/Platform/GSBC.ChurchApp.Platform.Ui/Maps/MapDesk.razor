@@ -1,0 +1,18 @@
+<div class="map-desk @Class">
+    <div class="map-desk__map">@Map</div>
+    <section class="map-desk__pane" aria-label="@PaneLabel">
+        <div class="map-desk__body">@Pane</div>
+        @if (Foot is not null)
+        {
+            <div class="map-desk__foot">@Foot</div>
+        }
+    </section>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public required RenderFragment Map { get; set; }
+    [Parameter, EditorRequired] public required RenderFragment Pane { get; set; }
+    [Parameter, EditorRequired] public required string PaneLabel { get; set; }
+    [Parameter] public RenderFragment? Foot { get; set; }
+    [Parameter] public string? Class { get; set; }
+}
