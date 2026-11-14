@@ -28,13 +28,15 @@ public sealed record PlanSetup(
         OutreachDay day = plan.Day;
         IReadOnlyList<OutreachRegion> regions = (await maps.RegionsAsync()).Regions;
         OutreachRegion? region = RegionFor(regions, plan);
-        Task<StreetGraph>? graph = region is null ? null : streets.LoadAsync(region);
+        Task<StreetGraph?> graph = region is null ? Task.FromResult<StreetGraph?>(null) : LoadAsync(streets, region);
         Task<CoverageMap> coverage = outreach.CoverageAsync(scope, day.Campaign);
         Task<PlanningMarks> marks = outreach.PlanningMarksAsync(scope);
+        await Task.WhenAll(graph, coverage, marks);
         Campaign? campaign = desk.Campaigns.FirstOrDefault(found => found.Id == day.Campaign);
-        return new PlanSetup(scope, day, campaign?.Name ?? "", campaign?.HandedOut ?? "", desk.Settings, plan, desk.Areas,
-            region, graph is null ? null : await graph, await coverage, await marks);
+        return new PlanSetup(scope, day, campaign?.Name ?? "", campaign?.HandedOut ?? "", desk.Settings, plan, desk.Areas, region, graph.Result, coverage.Result, marks.Result);
     }
+
+    private static async Task<StreetGraph?> LoadAsync(StreetGraphLoader streets, OutreachRegion region) => await streets.LoadAsync(region);
 
     private static OutreachRegion? RegionFor(IReadOnlyList<OutreachRegion> regions, DayPlan plan)
     {

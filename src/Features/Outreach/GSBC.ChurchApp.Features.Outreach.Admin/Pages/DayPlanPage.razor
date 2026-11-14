@@ -6,7 +6,7 @@
 @inject StreetGraphLoader Streets
 @inject IAccess Access
 
-<LiveData TValue="Found" Load="LoadAsync" ReloadOn="ChangeKind.Session | ChangeKind.Access" FailedTitle="Can't load this outreach day right now">
+<LiveData @key="DayId" TValue="Found" Load="LoadAsync" ReloadOn="ChangeKind.Session | ChangeKind.Access" FailedTitle="Can't load this outreach day right now">
     @if (context.Value.Setup is not { } setup)
     {
         <TitleBand Title="Outreach day" BackHref="@OutreachLinks.Days" BackText="Outreach days" />

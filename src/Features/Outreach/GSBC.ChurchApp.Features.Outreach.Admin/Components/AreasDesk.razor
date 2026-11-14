@@ -109,8 +109,9 @@
     private async Task<AreasPlace> LoadAsync()
     {
         Task<OutreachDesk> desk = Outreach.DeskAsync(Scope);
-        RegionList regions = await Maps.RegionsAsync();
-        return new AreasPlace(await desk, regions.Regions);
+        Task<RegionList> regions = Maps.RegionsAsync();
+        await Task.WhenAll(desk, regions);
+        return new AreasPlace(desk.Result, regions.Result.Regions);
     }
 
     private SavedArea? Chosen(OutreachDesk desk) => _editing is { Id.Length: > 0 } editing ? desk.Areas.FirstOrDefault(area => area.Id == editing.Id) : null;
