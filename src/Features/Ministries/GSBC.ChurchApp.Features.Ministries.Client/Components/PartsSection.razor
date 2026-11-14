@@ -17,6 +17,11 @@
                            CheckedChanged="on => TurnAsync(context.Key, on)" />
             </ItemTemplate>
         </ReorderList>
+        @foreach (MinistryPart part in MinistryParts.WithoutTabs)
+        {
+            <ToggleRow @key="part.Key" Title="@part.Name" Description="@part.Does" Checked="@(!Off.Contains(part.Key))"
+                       CheckedChanged="on => TurnAsync(part.Key, on)" />
+        }
         <Notice Tone="NoticeTone.Warning" Text="@_problem" />
     </ChildContent>
     <Foot>These change straight away.</Foot>

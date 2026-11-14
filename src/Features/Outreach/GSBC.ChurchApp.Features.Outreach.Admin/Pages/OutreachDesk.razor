@@ -1,0 +1,47 @@
+@page "/outreach"
+@page "/outreach/{Slug}"
+@inject OutreachDeskClient Outreach
+@inject IAccess Access
+
+<LiveData TValue="Place" Feeds="Feeds" Load="ScopeAsync" FailedTitle="Can't load Outreach right now">
+    @if (context.Value.Scope is not { } scope)
+    {
+        <TitleBand Title="Outreach" Lead="Campaigns, the settings walks run on, and what walkers send in." />
+        <EmptyState Icon="footprints" Title="No ministry runs outreach yet"
+                    Body="Turn on Outreach in a ministry's Settings, under What it uses. Its leaders then plan outreach here." />
+    }
+    else
+    {
+        @switch (OutreachTabs.Of(Slug))
+        {
+            case OutreachTab.FollowUps:
+                <FollowUpsDesk Scope="@scope" />
+                break;
+            case OutreachTab.Reports:
+                <ReportsDesk Scope="@scope" />
+                break;
+            case OutreachTab.Settings:
+                <SettingsDesk Scope="@scope" />
+                break;
+            default:
+                <CampaignsDesk Scope="@scope" />
+                break;
+        }
+    }
+</LiveData>
+
+@code {
+    private static readonly IReadOnlyList<string> Feeds = [OutreachFeeds.Settings];
+
+    [Parameter] public string? Slug { get; set; }
+
+    private sealed record Place(string? Scope);
+
+    private async Task<Place> ScopeAsync()
+    {
+        RunningMinistries running = await Outreach.MinistriesAsync();
+        return Access.Can(OutreachPermissions.Reports)
+            ? new Place(running.Ministries.FirstOrDefault()?.Id ?? "")
+            : new Place(running.Ministries.FirstOrDefault(ministry => Access.Can(OutreachPermissions.Reports, ministry.Id))?.Id);
+    }
+}

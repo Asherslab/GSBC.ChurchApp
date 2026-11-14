@@ -1,0 +1,117 @@
+@inject OutreachDeskClient Outreach
+
+<LiveData @ref="_live" TValue="Lists" Feeds="Feeds" Load="LoadAsync" FailedTitle="Can't load the reports right now">
+    <OutreachHead Tab="OutreachTab.Reports" FollowUps="context.Value.Desk.OpenFollowUps" Reports="context.Value.Desk.NewReports" />
+    <Workbench DetailLabel="The report" Showing="@(Chosen(context.Value) is null ? WorkbenchPane.Main : WorkbenchPane.Detail)">
+        <ChildContent>
+            <DataTable TItem="ReportLine" Label="Reports" Items="context.Value.Reports.Lines" Columns="Columns" Key="report => report.Id"
+                       Selected="Chosen(context.Value)" SelectedChanged="report => _chosen = report.Id">
+                <Empty>
+                    <EmptyState Icon="flag" Title="No reports"
+                                Body="When a walker reports a place (not a home, unsafe, a complaint, wrong on the map) it comes here to be looked at." />
+                </Empty>
+            </DataTable>
+        </ChildContent>
+        <Detail>
+            <div class="outreach-desk__edit">
+                @if (Chosen(context.Value) is { } report)
+                {
+                    <PaneHead Title="@OutreachWords.Reason(report.Reason)" Lead="@($"Sent {OutreachWords.At(report.At)}{(report.From.Length > 0 ? $" by {report.From}" : "")}")"
+                              Actions="@([this.Item("Delete this report…", () => _deleting = true, "trash-2", "Its photo goes too", danger: true, disabled: _busy)])"
+                              OnClose="() => _chosen = null" />
+                    <FactList>
+                        <Fact Label="Where" Icon="map-pin" Text="@OutreachWords.Place(report.Place)" />
+                        <Fact Label="Now" Icon="flag" Text="@OutreachWords.State(report.State)" />
+                    </FactList>
+                    <p class="outreach-desk__note">@report.Note</p>
+                    @if (report.Photo is not null)
+                    {
+                        <p class="field__hint">A photo came with it. Photos show the place, never people, and are deleted once the report is dealt with.</p>
+                    }
+                    <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+                    @if (report.State == ReportState.New)
+                    {
+                        <p class="field__hint">Never deliver there adds the place to the addresses outreach skips, without saying why to walkers. A fixed or dismissed report changes nothing on the map.</p>
+                        <div class="outreach-desk__decide">
+                            <Button Block="true" Busy="_busy" OnClick="() => ResolveAsync(report, ReportState.Excluded)">Never deliver there</Button>
+                            <div class="outreach-desk__actions">
+                                <Button Variant="ButtonVariant.Quiet" Busy="_busy" OnClick="() => ResolveAsync(report, ReportState.Fixed)">It's been fixed</Button>
+                                <Button Variant="ButtonVariant.Quiet" Busy="_busy" OnClick="() => ResolveAsync(report, ReportState.Dismissed)">Dismiss it</Button>
+                            </div>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <EmptyState Icon="flag" Title="Choose a report" Body="A report changes nothing until it's looked at here." />
+                }
+            </div>
+        </Detail>
+    </Workbench>
+    <Sheet Open="_deleting" OpenChanged="open => _deleting = open" Title="Delete this report?" Lead="Its note and any photo go for good. This can't be undone.">
+        <Actions>
+            <Button Block="true" Variant="ButtonVariant.Danger" Busy="_busy" OnClick="() => DeleteAsync(Chosen(context.Value))">Delete the report</Button>
+            <Button Block="true" Variant="ButtonVariant.Quiet" OnClick="() => _deleting = false">Keep it</Button>
+        </Actions>
+    </Sheet>
+</LiveData>
+
+@code {
+    private static readonly IReadOnlyList<string> Feeds = [OutreachFeeds.Desk];
+
+    [Parameter, EditorRequired] public required string Scope { get; set; }
+
+    private sealed record Lists(OutreachDesk Desk, Reports Reports);
+
+    private LiveData<Lists>? _live;
+    private string? _chosen;
+    private bool _busy, _deleting;
+    private string? _problem;
+
+    private static readonly IReadOnlyList<TableColumn<ReportLine>> Columns =
+    [
+        new("What", report => @<span class="outreach-desk__cell"><span class="outreach-desk__name">@OutreachWords.Reason(report.Reason)</span><span class="outreach-desk__sub">@OutreachWords.Place(report.Place)</span></span>, report => report.Reason),
+        new("Sent", report => @<span>@OutreachWords.At(report.At)</span>, report => report.At),
+        new("Now", report => @<span>@if (report.State == ReportState.New) { <Pill>To review</Pill> } else { <Pill Tone="PillTone.Quiet">@OutreachWords.State(report.State)</Pill> }</span>,
+            report => report.State),
+    ];
+
+    private async Task<Lists> LoadAsync()
+    {
+        Task<OutreachDesk> desk = Outreach.DeskAsync(Scope);
+        Task<Reports> reports = Outreach.ReportsAsync(Scope);
+        await Task.WhenAll(desk, reports);
+        return new Lists(await desk, await reports);
+    }
+
+    private ReportLine? Chosen(Lists lists) => lists.Reports.Lines.FirstOrDefault(report => report.Id == _chosen);
+
+    private Task ResolveAsync(ReportLine report, ReportState outcome) => RunAsync(() => Outreach.ResolveReportAsync(Scope, report.Id, outcome));
+
+    private Task DeleteAsync(ReportLine? report) => report is null ? Task.CompletedTask : RunAsync(async () =>
+    {
+        await Outreach.DeleteReportAsync(Scope, report.Id);
+        _deleting = false;
+        _chosen = null;
+    });
+
+    private async Task RunAsync(Func<Task> work)
+    {
+        _busy = true;
+        _problem = null;
+        try
+        {
+            await work();
+            if (_live is not null)
+                await _live.ReloadAsync();
+        }
+        catch (RpcException exception)
+        {
+            _problem = exception.Status.Detail;
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+}

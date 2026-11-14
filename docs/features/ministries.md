@@ -576,6 +576,11 @@ switch's words), and Settings, the server's refusals and the tab labels all read
 is added there, then turned on in that ministry and off everywhere else. The part's own tab and server checks are still
 the feature's to build.
 
+**Outreach is a part without a tab** (2026-11-14, [outreach.md](outreach.md), *Outreach is a ministry*): turning it on
+makes the ministry the one that runs outreach, and its leaders hold the outreach permissions. It shows as a switch under
+*Its tabs* but is never a tab or in the tab order (`MinistryPart.Tab`), and it starts off for every ministry, existing
+ones included (migration `OutreachPartOff`).
+
 **News from the ministries under it** (owner, 2026-11-10: "configurable"). Settings → *Show news from the ministries under
 it*, off by default, beside the calendar one (both are now `PartsFromBelow` on the ministry, from the same list). With it on,
 the News tab also shows the posts of every ministry under it, at any depth, skipping any with News off and anything under

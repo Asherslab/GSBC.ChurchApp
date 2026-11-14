@@ -13,6 +13,7 @@
     <ProjectReference Include="..\..\Features\Ministries\GSBC.ChurchApp.Features.Ministries.Api\GSBC.ChurchApp.Features.Ministries.Api.csproj" />
     <ProjectReference Include="..\..\Features\Feedback\GSBC.ChurchApp.Features.Feedback.Api\GSBC.ChurchApp.Features.Feedback.Api.csproj" />
     <ProjectReference Include="..\..\Features\News\GSBC.ChurchApp.Features.News.Api\GSBC.ChurchApp.Features.News.Api.csproj" />
+    <ProjectReference Include="..\..\Features\Outreach\GSBC.ChurchApp.Features.Outreach.Api\GSBC.ChurchApp.Features.Outreach.Api.csproj" />
     <ProjectReference Include="..\..\Features\Prayer\GSBC.ChurchApp.Features.Prayer.Api\GSBC.ChurchApp.Features.Prayer.Api.csproj" />
     <ProjectReference Include="..\..\Features\Rosters\GSBC.ChurchApp.Features.Rosters.Api\GSBC.ChurchApp.Features.Rosters.Api.csproj" />
     <ProjectReference Include="..\..\Features\Chats\GSBC.ChurchApp.Features.Chats.Api\GSBC.ChurchApp.Features.Chats.Api.csproj" />

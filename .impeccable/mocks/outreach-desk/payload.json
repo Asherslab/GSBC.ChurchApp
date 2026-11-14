@@ -1,0 +1,76 @@
+{
+  "title": "Outreach in the admin panel: campaigns and settings",
+  "question": "The first Outreach page for leaders at a desk: the campaigns (General outreach, Carols 2026, a mission), the settings walks run on (rest period, pace, bundles, what's kept), and where the follow-ups and reports that notifications open land. The planner, coverage map and day board come later as their own tabs. Owner asleep 2026-11-14: the station built C, Campaigns as the workbench (marked Built): campaigns are records staff create and delete, so they take the Workbench, and settings take grouped cards like every settings page. Pick another and it changes.",
+  "options": [
+    {
+      "id": "settings-beside",
+      "kind": "assigned",
+      "kicker": "THE ROLL",
+      "label": "Settings in a column beside the campaigns",
+      "thesis": "One Campaigns and settings tab: the settings groups stand in a narrow column on the left, always in view, and the campaigns workbench (list and the chosen campaign) fills the rest. Follow-ups and Reports are their own tabs.",
+      "palette": [
+        "#2a3d5e",
+        "#f4efe7",
+        "#00776d",
+        "#e7ae74"
+      ],
+      "materials": [
+        "TabStrip",
+        "settings groups in a column",
+        "Workbench list and record",
+        "SaveBar"
+      ],
+      "viewport": "Outreach, Campaigns and settings tab: Rest period, Walking and Keeping groups on the left; General outreach, Carols 2026 and Gympie mission in the list; Carols 2026 open on the right.",
+      "risk": "Two forms side by side, each with its own Save; a narrow settings column squeezes the number fields.",
+      "html": ".impeccable/mocks/outreach-desk/a-settings-beside.html"
+    },
+    {
+      "id": "settings-first",
+      "kind": "dealt",
+      "label": "One page of settings, campaigns a group in it",
+      "thesis": "Outreach opens on grouped settings cards the full width of the pane, as a ministry's Settings does: Campaigns first as a list in its own card (each opening a sheet), then How walks are worked out, Rest period, What's kept. Follow-ups and Reports are tabs.",
+      "palette": [
+        "#2a3d5e",
+        "#f4efe7",
+        "#00776d",
+        "#ffffff"
+      ],
+      "materials": [
+        "TabStrip",
+        "Section Grouped cards",
+        "a list card",
+        "Sheet for a campaign"
+      ],
+      "viewport": "Outreach, Settings tab: a Campaigns card listing three, then a How walks are worked out card with pace and seconds two to a line, and a Rest period card.",
+      "risk": "Campaigns are things you create and delete, not settings; they get the narrow treatment of a list inside a card.",
+      "html": ".impeccable/mocks/outreach-desk/b-settings-first.html"
+    },
+    {
+      "id": "campaign-records",
+      "kind": "dealt",
+      "label": "Campaigns as the workbench, settings a tab (Built)",
+      "thesis": "Campaigns is the page's main tab: the list in the middle with each campaign's dates and this month's letterboxes, the chosen one in the record pane with its details and its own totals. Settings is a tab of grouped cards; Follow-ups and Reports are tabs with the same workbench.",
+      "palette": [
+        "#2a3d5e",
+        "#f4efe7",
+        "#00776d",
+        "#e7ae74"
+      ],
+      "materials": [
+        "TabStrip",
+        "Workbench",
+        "DataTable",
+        "PaneHead with ⋯",
+        "Section Grouped"
+      ],
+      "viewport": "Outreach, Campaigns tab: a table of three campaigns with dates, what's handed out and letterboxes this month; Carols 2026 open on the right with its dates, area regions, leaderboard switch and Cancel and Save.",
+      "risk": "The settings are a tab away, so a leader changing the rest period doesn't see the campaigns it affects.",
+      "html": ".impeccable/mocks/outreach-desk/c-campaign-records.html"
+    }
+  ],
+  "reroll": true,
+  "steer": true,
+  "buildPath": {
+    "value": "code"
+  }
+}
