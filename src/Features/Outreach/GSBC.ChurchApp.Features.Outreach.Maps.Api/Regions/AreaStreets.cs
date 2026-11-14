@@ -22,7 +22,7 @@ internal sealed class AreaStreets
     }
 
     public Network Network { get; }
-    public IReadOnlyList<PlacedLetterbox> Letterboxes { get; }
+    private IReadOnlyList<PlacedLetterbox> Letterboxes { get; }
     public PlacementCounts Counts { get; }
 
     public static AreaStreets Build(OsmData osm, IReadOnlyList<AddressPoint> addresses, LandUseMap landUse, GeoPoint origin)

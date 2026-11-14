@@ -4,7 +4,7 @@ namespace GSBC.ChurchApp.Features.Outreach.Maps.Api.Regions;
 
 internal static class RegionVersions
 {
-    public const int KeptVersions = 2;
+    private const int KeptVersions = 2;
 
     public static long Next(RegionRecord? current, string streetsFingerprint, string mapKey) => current switch
     {

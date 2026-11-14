@@ -69,7 +69,7 @@ internal static class StreetNetwork
         return joined;
     }
 
-    public static bool Walkable(OsmWay way)
+    private static bool Walkable(OsmWay way)
     {
         IReadOnlyDictionary<string, string> tags = way.Tags;
         if (!Kept.Contains(way.Highway) || way.Nodes.Length < 2 || tags.GetValueOrDefault("area") == "yes")
@@ -88,7 +88,7 @@ internal static class StreetNetwork
         return segments.Where(segment => !segment.Kind.IsPath() || !RunsBesideARoad(Shape(segment, osm, projection), roads)).ToList();
     }
 
-    public static bool RunsBesideARoad(Flat[] path, SegmentGrid roads)
+    private static bool RunsBesideARoad(Flat[] path, SegmentGrid roads)
     {
         int samples = 0;
         int beside = 0;

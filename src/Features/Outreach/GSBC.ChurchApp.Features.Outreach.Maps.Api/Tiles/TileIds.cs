@@ -37,7 +37,7 @@ internal static class TileIds
         }
     }
 
-    public static (uint X, uint Y) TileOf(double longitude, double latitude, int zoom)
+    private static (uint X, uint Y) TileOf(double longitude, double latitude, int zoom)
     {
         double size = 1 << zoom;
         double latitudeRadians = latitude * Math.PI / 180;

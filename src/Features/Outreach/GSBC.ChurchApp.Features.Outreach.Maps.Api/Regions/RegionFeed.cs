@@ -40,7 +40,7 @@ internal static class RegionFeed
 
     public static FeedChangeRecord BuildChanged(string areaId, DateTime now) => FeedChangeRecord.Marker(OutreachMapsFeeds.Builds, areaId, now);
 
-    public static byte[] Encode<T>(T message)
+    private static byte[] Encode<T>(T message)
     {
         using MemoryStream stream = new();
         OutreachMapsContractsModel.Instance.Serialize(stream, message);

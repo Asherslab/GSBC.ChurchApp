@@ -77,7 +77,7 @@ internal sealed class AreaBuilder(OutreachMapsDbContext db, IMapSources sources,
         await db.SaveChangesAsync(cancellationToken);
     }
 
-    public static List<(RegionCell Cell, string Name)> Named(List<(RegionCell Cell, string Name)> cells, string areaName)
+    private static List<(RegionCell Cell, string Name)> Named(List<(RegionCell Cell, string Name)> cells, string areaName)
     {
         Dictionary<string, int> uses = cells.GroupBy(cell => cell.Name).ToDictionary(group => group.Key, group => group.Count());
         Dictionary<string, int> seen = [];
@@ -138,7 +138,7 @@ internal sealed class AreaBuilder(OutreachMapsDbContext db, IMapSources sources,
             region.MapKey = mapKey;
             region.MapBytes = extracted.Bytes;
             region.MapMaxZoom = extracted.MaxZoom;
-            region.Letterboxes = Enumerable.Range(0, graph.StreetCount).Sum(street => graph.Homes(street));
+            region.Letterboxes = Enumerable.Range(0, graph.StreetCount).Sum(graph.Homes);
             db.Files.Add(new RegionFileRecord { Key = streetsKey, RegionId = region.Id, Version = version });
             if (mapKey != streetsKey)
                 db.Files.Add(new RegionFileRecord { Key = mapKey, RegionId = region.Id, Version = version });

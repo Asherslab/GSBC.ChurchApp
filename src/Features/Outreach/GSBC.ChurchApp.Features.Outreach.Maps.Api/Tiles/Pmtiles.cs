@@ -5,7 +5,6 @@ namespace GSBC.ChurchApp.Features.Outreach.Maps.Api.Tiles;
 
 internal enum PmtilesCompression : byte
 {
-    Unknown = 0,
     None = 1,
     Gzip = 2,
 }
@@ -166,7 +165,7 @@ internal static class PmtilesDirectory
         return compressed.ToArray();
     }
 
-    public static byte[] Decompress(byte[] bytes, PmtilesCompression compression)
+    private static byte[] Decompress(byte[] bytes, PmtilesCompression compression)
     {
         if (compression == PmtilesCompression.None)
             return bytes;

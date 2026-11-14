@@ -8,7 +8,7 @@ internal sealed record RegionCell(string Id, GeoBounds Core, GeoBounds Bounds);
 
 internal static class RegionGrid
 {
-    public const double CellMetres = 10_000;
+    private const double CellMetres = 10_000;
     public const double OverlapMetres = 2_000;
 
     public static List<RegionCell> Cut(string areaId, GeoBounds area)

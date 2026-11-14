@@ -1,7 +1,6 @@
 using GSBC.ChurchApp.Features.Outreach.Maps.Api.Data;
 using GSBC.ChurchApp.Features.Outreach.Maps.Api.Geo;
 using GSBC.ChurchApp.Features.Outreach.Maps.Api.Sources;
-using GSBC.ChurchApp.Features.Outreach.Maps.Contracts;
 using GSBC.ChurchApp.Features.Outreach.Routing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -11,8 +10,8 @@ namespace GSBC.ChurchApp.Features.Outreach.Maps.Api.Regions;
 
 internal static class MapAreaSeeding
 {
-    public const string ChurchAreaId = "church";
-    public const string ChurchAreaName = "Around the church";
+    private const string ChurchAreaId = "church";
+    private const string ChurchAreaName = "Around the church";
 
     public static async Task SeedAsync(IServiceScopeFactory scopes, CancellationToken cancellationToken)
     {

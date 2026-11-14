@@ -38,7 +38,7 @@ internal sealed class AreaBuildRunner(IServiceScopeFactory scopes, TimeProvider 
         }
     }
 
-    public async Task<bool> RunNextAsync(CancellationToken cancellationToken)
+    private async Task<bool> RunNextAsync(CancellationToken cancellationToken)
     {
         await using AsyncServiceScope scope = scopes.CreateAsyncScope();
         OutreachMapsDbContext db = scope.ServiceProvider.GetRequiredService<OutreachMapsDbContext>();

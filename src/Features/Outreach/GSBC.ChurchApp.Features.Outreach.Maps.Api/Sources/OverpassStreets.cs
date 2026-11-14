@@ -22,7 +22,7 @@ internal sealed class OverpassStreets(HttpClient http)
         return all;
     }
 
-    public static string QueryFor(GeoBounds chunk) => string.Create(CultureInfo.InvariantCulture,
+    private static string QueryFor(GeoBounds chunk) => string.Create(CultureInfo.InvariantCulture,
         $"[out:json][timeout:180];way[\"highway\"~\"^({string.Join('|', StreetNetwork.Highways)})$\"]({chunk.South},{chunk.West},{chunk.North},{chunk.East});out body;>;out skel qt;");
 
     private async Task<OsmData> ChunkAsync(IReadOnlyList<Uri> servers, GeoBounds chunk, CancellationToken cancellationToken)
@@ -46,7 +46,7 @@ internal sealed class OverpassStreets(HttpClient http)
         }
     }
 
-    public static OsmData Read(JsonElement root)
+    private static OsmData Read(JsonElement root)
     {
         OsmData data = new();
         foreach (JsonElement element in root.GetProperty("elements").EnumerateArray())
