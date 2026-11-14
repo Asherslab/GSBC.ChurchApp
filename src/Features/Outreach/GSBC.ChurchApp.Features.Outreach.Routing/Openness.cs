@@ -17,6 +17,8 @@ public sealed record OutreachMarks
 
     public IReadOnlySet<uint> Excluded { get; init; } = new HashSet<uint>();
 
+    public IReadOnlySet<uint> ShownToWalkers { get; init; } = new HashSet<uint>();
+
     public IReadOnlyList<IReadOnlyList<GeoPoint>> ExcludedZones { get; init; } = [];
 }
 
@@ -45,6 +47,7 @@ public sealed class Openness
         Walk = walk;
         StreetGraph graph = network.Graph;
         marks ??= OutreachMarks.None;
+        Marks = marks;
         state = new LetterboxState[graph.LetterboxCount];
         streetExcluded = new bool[graph.StreetCount];
 
@@ -73,6 +76,8 @@ public sealed class Openness
     }
 
     public RouteSettings Settings { get; }
+
+    public OutreachMarks Marks { get; }
 
     public WalkKind Walk { get; }
 
