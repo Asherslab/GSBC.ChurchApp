@@ -11,7 +11,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace GSBC.ChurchApp.Features.News.Api.Tests;
 
-[Integration("Church news reaches readers only once published, through the feed its audience can see, and tells people once")]
+[Integration("Church news reaches readers only once published, through the feed its audience can see, tells people once, and leaves when archived")]
 public sealed class ChurchNewsTests : NewsHost
 {
     [Fact]
@@ -91,13 +91,29 @@ public sealed class ChurchNewsTests : NewsHost
     }
 
     [Fact]
-    public async Task AWriterCannotChangeOrDeleteWhatIsAlreadyPublished()
+    public async Task AWriterCannotChangeArchiveOrPutBackWhatIsAlreadyPublished()
     {
         NewsPost post = await PublishedAsync(await WriteAsync(Draft(), Writing));
         post.New = false;
 
         await Assert.ThrowsAsync<RpcException>(() => WriteAsync(post, Writing));
-        await Assert.ThrowsAsync<RpcException>(() => DeskAsync(desk => desk.DeleteAsync(Writing, Guid.Parse(post.Id), Cancel)));
+        await Assert.ThrowsAsync<RpcException>(() => DeskAsync(desk => desk.ArchiveAsync(Writing, Guid.Parse(post.Id), Cancel)));
+        await DeskAsync(desk => desk.ArchiveAsync(Publishing, Guid.Parse(post.Id), Cancel));
+        await Assert.ThrowsAsync<RpcException>(() => DeskAsync(desk => desk.PutBackAsync(Writing, Guid.Parse(post.Id), Cancel)));
+    }
+
+    [Fact]
+    public async Task AWriterSavingAWaitingPostAsADraftTakesBackTheAskAndItStaysOffEveryonesNews()
+    {
+        NewsPost post = await WriteAsync(Draft(), Writing);
+        await DeskAsync(desk => desk.AskToPublishAsync(Writing, Guid.Parse(post.Id), Cancel));
+
+        NewsPost draft = await DeskAsync(desk => desk.BackToWritingAsync(Writing, Guid.Parse(post.Id), Cancel));
+
+        Assert.Equal(NewsState.Draft, draft.State);
+        Assert.Contains(Told.Raised.Single().Subject!, Told.Settled);
+        Assert.Empty(await LiveRowsAsync(NewsFeeds.Posts));
+        Assert.Equal(NewsState.Draft, Assert.Single(await ReadersSeeAsync(NewsFeeds.Desk)).State);
     }
 
     [Fact]
@@ -118,15 +134,51 @@ public sealed class ChurchNewsTests : NewsHost
     }
 
     [Fact]
-    public async Task DeletingAPublishedPostTakesItFromEveryPhoneAndRecallsItsNotification()
+    public async Task ArchivingAPublishedPostTakesItFromEveryonesNewsAndRecallsItsNotificationButKeepsItOnTheDesk()
     {
-        NewsPost post = await PublishedAsync(await WriteAsync(Draft()));
+        NewsPost post = await PublishedAsync(await WriteAsync(Draft(audience: Audience.SignedIn.Text)));
 
-        await DeskAsync(desk => desk.DeleteAsync(Publishing, Guid.Parse(post.Id), Cancel));
+        await DeskAsync(desk => desk.ArchiveAsync(Publishing, Guid.Parse(post.Id), Cancel));
 
         Assert.Empty(await LiveRowsAsync(NewsFeeds.Posts));
-        Assert.Empty(await LiveRowsAsync(NewsFeeds.Desk));
+        Assert.Empty(await LiveRowsAsync(NewsFeeds.PrivatePosts));
+        Assert.Equal(NewsState.Archived, Assert.Single(await ReadersSeeAsync(NewsFeeds.Desk)).State);
         Assert.Contains(NewsTelling.Subject(Guid.Parse(post.Id)), Told.Recalled);
+    }
+
+    [Fact]
+    public async Task PuttingBackAnArchivedPostMakesItADraftThatTellsNobodyAndPublishingItAgainDoesNotTellAgain()
+    {
+        NewsPost post = await PublishedAsync(await WriteAsync(Draft()));
+        await DeskAsync(desk => desk.ArchiveAsync(Publishing, Guid.Parse(post.Id), Cancel));
+
+        NewsPost back = await DeskAsync(desk => desk.PutBackAsync(Publishing, Guid.Parse(post.Id), Cancel));
+        Assert.Equal(NewsState.Draft, back.State);
+        Assert.Empty(await LiveRowsAsync(NewsFeeds.Posts));
+        Assert.Single(Told.Raised);
+
+        await PublishedAsync(back);
+
+        Assert.Single(await LiveRowsAsync(NewsFeeds.Posts));
+        Assert.Single(Told.Raised);
+    }
+
+    [Fact]
+    public async Task OnlyAnArchivedPostCanBeDeletedForGood()
+    {
+        NewsPost post = await PublishedAsync(await WriteAsync(Draft()));
+        NewsPost draft = await WriteAsync(Draft("Working bee"), Writing);
+
+        await Assert.ThrowsAsync<RpcException>(() => DeskAsync(desk => desk.DeleteAsync(Publishing, Guid.Parse(post.Id), Cancel)));
+        await Assert.ThrowsAsync<RpcException>(() => DeskAsync(desk => desk.DeleteAsync(Writing, Guid.Parse(draft.Id), Cancel)));
+        await DeskAsync(desk => desk.ArchiveAsync(Publishing, Guid.Parse(post.Id), Cancel));
+        await DeskAsync(desk => desk.ArchiveAsync(Writing, Guid.Parse(draft.Id), Cancel));
+        await Assert.ThrowsAsync<RpcException>(() => DeskAsync(desk => desk.DeleteAsync(Writing, Guid.Parse(post.Id), Cancel)));
+
+        await DeskAsync(desk => desk.DeleteAsync(Publishing, Guid.Parse(post.Id), Cancel));
+        await DeskAsync(desk => desk.DeleteAsync(Writing, Guid.Parse(draft.Id), Cancel));
+
+        Assert.Empty(await LiveRowsAsync(NewsFeeds.Desk));
     }
 
     [Fact]

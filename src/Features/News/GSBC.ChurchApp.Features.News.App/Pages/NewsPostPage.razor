@@ -51,13 +51,13 @@
     </Page>
 </LiveData>
 
-<Sheet Open="_deleting" OpenChanged="open => _deleting = open" Title="@(_shown?.Shared == true ? "Take it off church news?" : "Delete this post?")"
-       Lead="@(_shown?.Shared == true ? $"It stays in {_shown.From}'s news. Its notification is taken back from phones that haven't opened it." : "It goes from everyone's phone, and its notification is taken back. This can't be undone.")">
+<Sheet Open="_deleting" OpenChanged="open => _deleting = open" Title="@(_shown?.Shared == true ? "Take it off church news?" : "Delete this post for good?")"
+       Lead="@(_shown?.Shared == true ? $"It stays in {_shown.From}'s news. Its notification is taken back from phones that haven't opened it." : "It goes from Archived, and nobody can put it back. This can't be undone.")">
     <ChildContent>
         <Notice Tone="NoticeTone.Warning" Text="@_problem" />
     </ChildContent>
     <Actions>
-        <Button Block="true" Variant="ButtonVariant.Danger" Busy="_busy" OnClick="DeleteAsync">@(_shown?.Shared == true ? "Take it off" : "Delete the post")</Button>
+        <Button Block="true" Variant="ButtonVariant.Danger" Busy="_busy" OnClick="DeleteAsync">@(_shown?.Shared == true ? "Take it off" : "Delete it for good")</Button>
         <Button Block="true" Variant="ButtonVariant.Quiet" OnClick="() => _deleting = false">Keep it</Button>
     </Actions>
 </Sheet>
@@ -83,14 +83,22 @@
     private IReadOnlyList<MenuItem> Actions(NewsPost post)
     {
         bool publishes = Access.Can(NewsPermissions.Publish);
-        bool mayChange = !post.Shared && (publishes || post.State is NewsState.Draft or NewsState.WaitingToPublish) && Access.Can(NewsPermissions.Write);
+        bool mayChange = !post.Shared && Access.Can(NewsPermissions.Write)
+                         && (publishes || post.State is NewsState.Draft or NewsState.WaitingToPublish || post is { State: NewsState.Archived, PublishedAt: null });
         List<MenuItem> items = [];
-        if (mayChange)
-            items.Add(this.Item("Change the post", () => Navigation.NavigateTo($"news/{post.Id}/change"), "pencil"));
         if (post.Shared && publishes && post.State == NewsState.Published)
             items.Add(this.Item("Take it off church news…", () => (_deleting, _problem) = (true, null), "trash-2", danger: true, startsGroup: true));
+        else if (mayChange && post.State == NewsState.Archived)
+        {
+            items.Add(this.Item("Put it back", () => RunAsync(() => Writes.PutBackAsync(post.Id)), "rotate-ccw", "It comes back as a draft, to change or publish again"));
+            items.Add(this.Item("Delete it for good…", () => (_deleting, _problem) = (true, null), "trash-2", danger: true, startsGroup: true));
+        }
         else if (mayChange)
-            items.Add(this.Item("Delete the post…", () => (_deleting, _problem) = (true, null), "trash-2", danger: true, startsGroup: true));
+        {
+            items.Add(this.Item("Change the post", () => Navigation.NavigateTo($"news/{post.Id}/change"), "pencil"));
+            items.Add(this.Item("Archive", () => RunAsync(() => Writes.ArchiveAsync(post.Id)), "archive",
+                post.State == NewsState.Published ? "Takes it out of everyone's News and takes back its notification. You can put it back." : "Keeps it under Archived. You can put it back.", startsGroup: true));
+        }
         return items;
     }
 

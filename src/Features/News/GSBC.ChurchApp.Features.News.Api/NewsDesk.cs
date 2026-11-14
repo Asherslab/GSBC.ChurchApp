@@ -38,6 +38,8 @@ internal sealed class NewsDesk(
             throw Refused($"Change it in {post.FromName}'s news: church news shows the ministry's post as it is.");
         if (post is not null && !writer.MayPublish && !NewsRules.WritersMayChange(post))
             throw Refused("It's already scheduled or published, so only someone who publishes church news can change it.");
+        if (post is { State: NewsState.Archived })
+            throw Refused("It's archived. Put it back first, then change it.");
 
         DateTime now = Now;
         if (post is null)
@@ -72,6 +74,8 @@ internal sealed class NewsDesk(
             return NewsRules.View(post);
         if (post.State is NewsState.Asked or NewsState.Declined)
             throw Refused("Answer the ministry's ask instead: put it in church news, or say no.");
+        if (post.State == NewsState.Archived)
+            throw Refused("It's archived. Put it back first, then publish it.");
         DateTime now = Now;
         if (at is { } when && when > now.AddMinutes(1))
         {
@@ -127,12 +131,47 @@ internal sealed class NewsDesk(
         return NewsRules.View(post);
     }
 
+    public async Task<NewsPost> ArchiveAsync(Writer writer, Guid id, CancellationToken cancellationToken)
+    {
+        PostRecord post = await FindAsync(id, cancellationToken);
+        if (post.State == NewsState.Archived)
+            return NewsRules.View(post);
+        if (NewsRules.IsShared(post))
+            throw Refused($"Take it off church news instead: it's {post.FromName}'s post.");
+        if (!writer.MayPublish && !NewsRules.WritersMayChange(post))
+            throw Refused("Only someone who publishes church news can archive it once it's scheduled or published.");
+        DateTime now = Now;
+        (post.State, post.PublishAt, post.ChangedAt) = (NewsState.Archived, null, now);
+        publisher.Changed(post, now);
+        await db.SaveChangesAsync(cancellationToken);
+        await telling.SettleAsync(post.Id, cancellationToken);
+        await telling.RecallAsync(post.Id, cancellationToken);
+        return NewsRules.View(post);
+    }
+
+    public async Task<NewsPost> PutBackAsync(Writer writer, Guid id, CancellationToken cancellationToken)
+    {
+        PostRecord post = await FindAsync(id, cancellationToken);
+        if (post.State != NewsState.Archived)
+            return NewsRules.View(post);
+        if (!writer.MayPublish && !NewsRules.WritersMayChange(post))
+            throw Refused("Only someone who publishes church news can put back a post that was published.");
+        DateTime now = Now;
+        (post.State, post.ChangedAt) = (NewsState.Draft, now);
+        publisher.Changed(post, now);
+        await db.SaveChangesAsync(cancellationToken);
+        return NewsRules.View(post);
+    }
+
     public async Task DeleteAsync(Writer writer, Guid id, CancellationToken cancellationToken)
     {
         if (await db.Posts.SingleOrDefaultAsync(found => found.Id == id, cancellationToken) is not { } post)
             return;
-        if (!writer.MayPublish && !NewsRules.WritersMayChange(post))
-            throw Refused("Only someone who publishes church news can delete it once it's scheduled or published.");
+        bool shared = NewsRules.IsShared(post);
+        if (!shared && post.State != NewsState.Archived)
+            throw Refused("Archive it first: only an archived post can be deleted for good.");
+        if (shared ? !writer.MayPublish : !writer.MayPublish && !NewsRules.WritersMayChange(post))
+            throw Refused("Only someone who publishes church news can delete it once it's been published.");
         await RemoveAsync(post, cancellationToken);
         await TellSourceAsync(post, SharedState.None, cancellationToken);
     }

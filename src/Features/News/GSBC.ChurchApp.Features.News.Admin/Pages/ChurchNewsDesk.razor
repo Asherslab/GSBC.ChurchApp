@@ -49,16 +49,16 @@
             }
             else
             {
-                <EmptyState Icon="@AppIcons.News" Title="@EmptyTitle(context.Value)" Body="Posts show here as they're written, asked for, scheduled and published." />
+                <EmptyState Icon="@AppIcons.News" Title="@EmptyTitle(context.Value)" Body="@EmptyBody(context.Value)" />
             }
         </ChildContent>
     </Workbench>
 </LiveData>
 
-<Sheet Open="_deleting" OpenChanged="open => _deleting = open" Title="@(_deletingShared ? "Take it off church news?" : "Delete this post?")"
-       Lead="@(_deletingShared ? "It stays in the ministry's news. Its notification is taken back from phones that haven't opened it." : "It goes from everyone's phone and its notification is taken back. This can't be undone.")">
+<Sheet Open="_deleting" OpenChanged="open => _deleting = open" Title="@(_deletingShared ? "Take it off church news?" : "Delete this post for good?")"
+       Lead="@(_deletingShared ? "It stays in the ministry's news. Its notification is taken back from phones that haven't opened it." : "It goes from Archived, and nobody can put it back. This can't be undone.")">
     <Actions>
-        <Button Variant="ButtonVariant.Danger" Busy="_busy" OnClick="DeleteAsync">@(_deletingShared ? "Take it off" : "Delete the post")</Button>
+        <Button Variant="ButtonVariant.Danger" Busy="_busy" OnClick="DeleteAsync">@(_deletingShared ? "Take it off" : "Delete it for good")</Button>
         <Button Variant="ButtonVariant.Quiet" OnClick="() => _deleting = false">Keep it</Button>
     </Actions>
 </Sheet>
@@ -91,7 +91,7 @@
             }
     </text>;
 
-    private const string Asked = "asked", Writing = "writing", Scheduled = "scheduled", Published = "published", Kept = "kept";
+    private const string Asked = "asked", Writing = "writing", Scheduled = "scheduled", Published = "published", Kept = "kept", Archived = "archived";
 
     private static readonly IReadOnlyList<string> DeskFeeds = [NewsFeeds.Desk];
 
@@ -130,6 +130,7 @@
         NewsState.Draft or NewsState.WaitingToPublish => Writing,
         NewsState.Scheduled => Scheduled,
         NewsState.Declined => Kept,
+        NewsState.Archived => Archived,
         _ => Published,
     };
 
@@ -143,6 +144,7 @@
         new(Scheduled, "Scheduled", posts.Count(post => Group(post) == Scheduled)),
         new(Published, "Published", posts.Count(post => Group(post) == Published)),
         new(Kept, "Kept in ministries", posts.Count(post => Group(post) == Kept)),
+        new(Archived, "Archived", posts.Count(post => Group(post) == Archived)),
     ];
 
     private List<NewsPost> Shown(IReadOnlyList<NewsPost> posts)
@@ -157,11 +159,16 @@
         Writing => "Nothing being written",
         Scheduled => "Nothing scheduled",
         Kept => "No posts kept in ministries",
+        Archived => "Nothing archived",
         _ => "Nothing published yet",
     };
 
+    private string EmptyBody(IReadOnlyList<NewsPost> posts) => Filter(posts) == Archived
+        ? "Posts you archive show here, out of everyone's News. Put one back to use it again, or delete it for good."
+        : "Posts show here as they're written, asked for, scheduled and published.";
+
     private bool IsEditable(NewsPost post) =>
-        !post.Shared && (Access.Can(NewsPermissions.Publish) || post.State is NewsState.Draft or NewsState.WaitingToPublish);
+        !post.Shared && post.State != NewsState.Archived && (Access.Can(NewsPermissions.Publish) || post.State is NewsState.Draft or NewsState.WaitingToPublish);
 
     private string When(NewsPost post) => NewsWords.When(post, Clock);
 
@@ -170,6 +177,7 @@
         NewsState.Asked or NewsState.Declined => $"{post.From} · asked by {(post.AskedBy.Length > 0 ? post.AskedBy : "a leader")}",
         NewsState.Scheduled when post.PublishAt is { } at => $"Publishes {ChurchDates.Describe(at, DateLineStyle.Relative, withTime: true, Clock.GetUtcNow().UtcDateTime)}",
         NewsState.Published => string.Join(" · ", new[] { post.From.Length > 0 ? $"From {post.From}" : post.Author, When(post) }.Where(part => part.Length > 0)),
+        NewsState.Archived => NewsWords.ArchivedLine(post, Clock),
         _ => post.Author.Length > 0 ? $"By {post.Author}" : "Being written",
     };
 
@@ -191,10 +199,17 @@
         if (post.State is NewsState.Scheduled && publishes || post.State == NewsState.WaitingToPublish)
             items.Add(this.Item("Back to writing", () => RunAsync(() => Writes.BackToWritingAsync(post.Id)), "pencil",
                 post.State == NewsState.Scheduled ? "It won't publish until it's posted again" : "Nobody is asked to publish it any more"));
+        bool mayPutAway = !post.Shared && (publishes || post.State is NewsState.Draft or NewsState.WaitingToPublish || post is { State: NewsState.Archived, PublishedAt: null });
         if (post is { Shared: true, State: NewsState.Published } && publishes)
             items.Add(this.Item("Take it off church news…", () => (_deleting, _deletingShared) = (true, true), "trash-2", danger: true, startsGroup: true));
-        else if (!post.Shared && (publishes || post.State is NewsState.Draft or NewsState.WaitingToPublish))
-            items.Add(this.Item("Delete the post…", () => (_deleting, _deletingShared) = (true, false), "trash-2", danger: true, startsGroup: true));
+        else if (mayPutAway && post.State == NewsState.Archived)
+        {
+            items.Add(this.Item("Put it back", () => RunAsync(() => Writes.PutBackAsync(post.Id)), "rotate-ccw", "It comes back as a draft, to change or publish again"));
+            items.Add(this.Item("Delete it for good…", () => (_deleting, _deletingShared) = (true, false), "trash-2", danger: true, startsGroup: true));
+        }
+        else if (mayPutAway)
+            items.Add(this.Item("Archive", () => RunAsync(() => Writes.ArchiveAsync(post.Id)), "archive",
+                post.State == NewsState.Published ? "Takes it out of everyone's News and takes back its notification. You can put it back." : "Keeps it under Archived. You can put it back.", startsGroup: true));
         return items;
     }
 

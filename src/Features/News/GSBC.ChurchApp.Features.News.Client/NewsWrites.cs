@@ -35,6 +35,10 @@ public sealed class NewsWrites(IWrites writes, IServiceProvider services)
 
     public Task BackToWritingAsync(string id) => SendAsync(NewsMethods.BackToWriting, new NewsRef { Id = id });
 
+    public Task ArchiveAsync(string id) => SendAsync(NewsMethods.Archive, new NewsRef { Id = id });
+
+    public Task PutBackAsync(string id) => SendAsync(NewsMethods.PutBack, new NewsRef { Id = id });
+
     public Task DeleteAsync(string id) => SendAsync(NewsMethods.Delete, new NewsRef { Id = id });
 
     public Task TryOnMyPhoneAsync(string id) => SendAsync(NewsMethods.TryOnMyPhone, new NewsRef { Id = id });

@@ -96,6 +96,10 @@ else
 
     private RenderFragment Saving => @<text>
         <SaveBar Label="@SaveLabel" Busy="_busy" OnSave="SaveAsync" OnCancel="OnCancel" New="@(Post.Id.Length == 0)" Blocked="@Blocked">
+            @if (Post.State is not NewsState.Published)
+            {
+                <Button Variant="ButtonVariant.Quiet" Disabled="@(_busy || _title.Trim().Length == 0)" OnClick="SaveDraftAsync">Save as a draft</Button>
+            }
             @if (Post.Id.Length > 0 && MayPublish && Post.State is NewsState.Draft or NewsState.WaitingToPublish)
             {
                 <Button Variant="ButtonVariant.Quiet" Disabled="_busy" OnClick="TryAsync">Send to my phone</Button>
@@ -172,7 +176,7 @@ else
         : NewsWords.AudienceWords(_audience) == "Everyone" ? "Post for everyone" : "Post it";
 
     private string? Blocked =>
-        _title.Trim().Length == 0 ? "Give it a title to post it."
+        _title.Trim().Length == 0 ? "Give it a title to post it or save it as a draft."
         : _later && MayPublish && Later is null ? "Choose when to publish it."
         : LaterProblem ?? LinkProblem;
 
@@ -197,6 +201,16 @@ else
             else
                 await Writes.AskToPublishAsync(saved.Id);
         }
+        _loadedShape = Shape;
+        await OnSaved.InvokeAsync(saved);
+    });
+
+    private Task SaveDraftAsync() => RunAsync(async () =>
+    {
+        NewsPost saved = await Writes.SaveAsync(Wanted(), _editor?.WaitingFiles() ?? []);
+        _sent = true;
+        if (Post.State is NewsState.WaitingToPublish or NewsState.Scheduled)
+            await Writes.BackToWritingAsync(saved.Id);
         _loadedShape = Shape;
         await OnSaved.InvokeAsync(saved);
     });

@@ -12,6 +12,7 @@ public enum NewsState
     Published = 3,
     Asked = 4,
     Declined = 5,
+    Archived = 6,
 }
 
 [ProtoContract]
