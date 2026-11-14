@@ -16,6 +16,7 @@ public static class MinistryParts
     public const string Files = "files";
     public const string Rosters = "rosters";
     public const string Chats = "chats";
+    public const string Outreach = "outreach";
 
     public static readonly IReadOnlyList<MinistryPart> All =
     [
@@ -28,6 +29,7 @@ public static class MinistryParts
         new(Files, "Files", "Documents and links for its people"),
         new(Rosters, "Roster", "Who's on for each date, with replies, swaps and the dates people are away"),
         new(Chats, "Chats", "Group chats and channels for its people, with the church's safeguarding rules"),
+        new(Outreach, "Outreach", "Runs the church's outreach: its leaders plan outreach days and routes, see what's been covered and follow people up"),
     ];
 
     public static readonly IReadOnlyList<string> OnWhenNew = [News, Calendar, Chats];
