@@ -3,6 +3,7 @@ import {
   history, defaultKeymap, historyKeymap, Language, defineLanguageFacet, LanguageSupport, syntaxTree, ensureSyntaxTree, markdownParser,
   Table, Strikethrough, Subscript, Superscript, Emoji,
 } from './codemirror.js';
+import { thumbnail, withFirstFrame } from './video.js';
 
 const blank = text => /\s|^$/.test(text);
 
@@ -435,11 +436,13 @@ class MediaWidget extends WidgetType {
       for (let index = 0; index < columns; index++) {
         const cell = document.createElement(tag);
         cell.textContent = shown(cells[index] ?? '');
+        if (cell.textContent.trim().length <= shortCell) cell.dataset.short = '';
         tr.append(cell);
       }
       return tr;
     };
     const thead = document.createElement('thead');
+    thead.dataset.lookBleed = '';
     thead.append(row(tableCells(head), 'th'));
     const tbody = document.createElement('tbody');
     for (const line of body) tbody.append(row(tableCells(line), 'td'));
@@ -497,6 +500,19 @@ class MediaWidget extends WidgetType {
       face.append(image);
     } else if (kind === 'video' || kind === 'link' || kind === 'audio') {
       face.innerHTML = `<span class="cm-media__play">${icons.play}</span>`;
+      if (kind === 'video' && known?.url) face.prepend(firstFrame(known.url));
+      if (kind === 'link') {
+        thumbnail(item.link).then(url => {
+          if (!url) return;
+          const image = document.createElement('img');
+          image.src = url;
+          image.alt = '';
+          image.draggable = false;
+          image.className = 'cm-media__still';
+          image.addEventListener('error', () => image.remove());
+          face.prepend(image);
+        });
+      }
       const label = document.createElement('span');
       label.className = 'cm-media__label';
       label.textContent = kind === 'link' ? linkSite(item.link) : name;
@@ -538,6 +554,17 @@ class MediaWidget extends WidgetType {
   ignoreEvent() { return true; }
 
   get estimatedHeight() { return this.range.kind === 'file' ? 72 : this.range.kind === 'card' ? 160 : this.range.kind === 'table' ? 40 * (this.range.lastLine - this.range.items[0].line) : 260; }
+}
+
+function firstFrame(url) {
+  const video = document.createElement('video');
+  video.className = 'cm-media__still';
+  video.muted = true;
+  video.playsInline = true;
+  video.preload = 'metadata';
+  video.src = withFirstFrame(url);
+  video.setAttribute('aria-hidden', 'true');
+  return video;
 }
 
 function linkSite(link) {
@@ -849,7 +876,50 @@ function pastedTree(html) {
   return { k: 'p', c: walk(document.body) };
 }
 
+const dividerRoom = 14;
+const insertWordRoom = 64;
+const shortCell = 24;
+
+function foldBar(bar, field) {
+  let frame = 0;
+  const measure = () => {
+    frame = 0;
+    const parts = [...bar.children];
+    if (parts.length === 0 || bar.clientWidth === 0) return;
+    const folded = Number(bar.dataset.folded);
+    const gap = parseFloat(getComputedStyle(bar).columnGap) || 0;
+    const firstRowEnds = Math.min(...parts.map(part => part.getBoundingClientRect().bottom));
+    const wraps = parts.some(part => part.getBoundingClientRect().top >= firstRowEnds);
+    if (wraps) {
+      field.invokeMethodAsync('FoldAsync', folded + 1);
+      return;
+    }
+    if (folded === 0) return;
+    const used = parts.reduce((sum, part) => {
+      const style = getComputedStyle(part);
+      const margins = part.classList.contains('rich-text-field__divider') ? parseFloat(style.marginLeft) + parseFloat(style.marginRight) : 0;
+      return sum + part.getBoundingClientRect().width + margins;
+    }, gap * (parts.length - 1));
+    const tool = bar.querySelector('.rich-text-field__tool');
+    const wordless = bar.querySelector('.rich-text-field__insert > .btn--icon');
+    const unfolding = (wordless ? insertWordRoom : (tool?.getBoundingClientRect().width ?? 36)) + gap * 2 + dividerRoom;
+    if (bar.clientWidth - used >= unfolding) field.invokeMethodAsync('FoldAsync', folded - 1);
+  };
+  const soon = () => { if (!frame) frame = requestAnimationFrame(measure); };
+  const resizing = new ResizeObserver(soon);
+  resizing.observe(bar);
+  const changing = new MutationObserver(soon);
+  changing.observe(bar, { childList: true, attributes: true, attributeFilter: ['data-folded'] });
+  soon();
+  return () => {
+    resizing.disconnect();
+    changing.disconnect();
+    cancelAnimationFrame(frame);
+  };
+}
+
 export function attach(host, field, value, label, placeholderText, emojiJson) {
+  let barFolding;
   const emoji = JSON.parse(emojiJson);
   let reportedFormats = '';
   let sending = false;
@@ -1072,7 +1142,12 @@ export function attach(host, field, value, label, placeholderText, emojiJson) {
       view.focus();
     },
     focus: () => view.focus(),
+    foldBar: bar => {
+      barFolding?.();
+      barFolding = foldBar(bar, field);
+    },
     dispose: () => {
+      barFolding?.();
       cardWatcher?.disconnect();
       tools?.removeEventListener('pointerdown', keepFocus);
       tools?.removeEventListener('mousedown', keepFocus);

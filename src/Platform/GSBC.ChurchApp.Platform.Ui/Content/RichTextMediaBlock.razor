@@ -75,6 +75,7 @@
             {
                 <div class="video-embed">
                     <button type="button" class="video-embed__poster" aria-label="@($"Watch {Titled(embed)} on {embed.Video.SiteName}")" @onclick="() => Shell.OpenExternalAsync(embed.Video.WatchUrl)">
+                        <VideoThumbnail Video="embed.Video" />
                         <span class="video-embed__play" aria-hidden="true"><Icon Name="play" /></span>
                     </button>
                 </div>

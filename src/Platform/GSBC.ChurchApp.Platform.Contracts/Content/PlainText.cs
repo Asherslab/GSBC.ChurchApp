@@ -13,6 +13,13 @@ public static class PlainText
     public static string Opening(RichText content) =>
         RichTextParser.Parse(content.Markdown).Cards().Select(TextOf).FirstOrDefault(text => text.Length > 0) ?? "";
 
+    public static string OfInlines(IReadOnlyList<Inline> inlines)
+    {
+        StringBuilder text = new();
+        AddInlines(text, inlines);
+        return text.ToString().Trim();
+    }
+
     private static string TextOf(IEnumerable<Block> blocks)
     {
         StringBuilder text = new();

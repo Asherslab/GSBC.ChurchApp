@@ -1,3 +1,4 @@
+@using Microsoft.Extensions.DependencyInjection
 <div @ref="_frame" class="phone-frame phone-frame--@Device.Cutout.ToString().ToLowerInvariant()" data-palette="@(Theme is null ? Palette : PreviewPalette)" data-preview-scheme="@Scheme?.ToString().ToLowerInvariant()" role="@(Interactive ? "group" : "img")" aria-label="@Label"
      style="@($"width: {Device.Width}px; height: {Device.Height}px; --sat: {Device.TopInset}px; --sab: {Device.BottomInset}px")">
     @if (Theme is not null)
@@ -32,7 +33,7 @@
     else
     {
         <nav class="tabbar" aria-hidden="true">
-            @foreach (AppTab tab in Tabs)
+            @foreach (AppTab tab in Tabs ?? _configured)
             {
                 <span class="tabbar__item @(tab.Route == OnRoute ? "active" : "")"><Icon Name="@tab.Icon" /><span>@tab.Word</span></span>
             }
@@ -42,10 +43,19 @@
 </div>
 
 @inject Shell Shell
+@inject IServiceProvider Services
 
 @code {
     private ElementReference _frame;
     private PhoneDevice? _fitted;
+    private IReadOnlyList<AppTab> _configured = TabBar.Starting;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Tabs is null && TabBarContent is null && Services.GetService<ITabBarNow>() is { } tabBar)
+            _configured = await tabBar.CurrentAsync();
+    }
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (_fitted == Device)
@@ -60,7 +70,7 @@
     [Parameter] public ThemeSpec? Theme { get; set; }
     [Parameter] public ThemeScheme? Scheme { get; set; }
     [Parameter] public PhoneDevice Device { get; set; } = PhoneDevice.IPhone15Pro;
-    [Parameter] public IReadOnlyList<AppTab> Tabs { get; set; } = TabBar.Starting;
+    [Parameter] public IReadOnlyList<AppTab>? Tabs { get; set; }
     [Parameter] public string? OnRoute { get; set; } = "";
     [Parameter] public RenderFragment? TabBarContent { get; set; }
     [Parameter] public bool Interactive { get; set; }

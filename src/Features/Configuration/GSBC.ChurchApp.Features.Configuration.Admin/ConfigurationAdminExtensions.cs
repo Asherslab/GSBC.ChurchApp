@@ -6,6 +6,7 @@ using GSBC.ChurchApp.Platform.Client.Scopes;
 using GSBC.ChurchApp.Platform.Contracts.Configuration;
 using GSBC.ChurchApp.Platform.Contracts.Destinations;
 using GSBC.ChurchApp.Platform.Icons;
+using GSBC.ChurchApp.Platform.Ui.Tabs;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace GSBC.ChurchApp.Features.Configuration.Admin;
@@ -18,7 +19,7 @@ public static class ConfigurationAdminExtensions
             [
                 new NavEntry("App styling", "app-styling", AppIcons.AppStyling, HubSurfaces.Edit, Area: NavAreas.TheApp, Summary: "Change the app's home screen, colours and fonts, then publish"),
             ]));
-        return services.AddConfigurationClient().AddSingleton<ConfigurationClient>().AddSingleton<DraftsClient>().AddSingleton<DatedChanges>().AddSingleton<IOfficeWeekSource, DraftsOfficeWeek>().AddSingleton<IScopeNamer, DraftScopeNames>()
+        return services.AddConfigurationClient().AddSingleton<ConfigurationClient>().AddSingleton<ITabBarNow, LiveTabBar>().AddSingleton<DraftsClient>().AddSingleton<DatedChanges>().AddSingleton<IOfficeWeekSource, DraftsOfficeWeek>().AddSingleton<IScopeNamer, DraftScopeNames>()
             .AddPlacePreview<HomePlacePreview>(place => place.Path == ShellDestinations.Home.Path)
             .AddPlaceAction(new PlaceAction("Change it in a draft", "pencil", place => place.Path == ShellDestinations.Home.Path ? $"app-styling?area={HubSurfaces.Area.Key}" : null, HubSurfaces.Edit, Leads: true));
     }

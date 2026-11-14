@@ -1,6 +1,6 @@
 @using GSBC.ChurchApp.Platform.Client.Native
+@using GSBC.ChurchApp.Platform.Contracts.Content
 @using GSBC.ChurchApp.Platform.Contracts.Media
-@using Microsoft.JSInterop
 @implements IAsyncDisposable
 @inject IJSRuntime Js
 @inject Shell Shell
@@ -19,6 +19,10 @@
             @if (Poster is { } poster)
             {
                 <MediaImage Media="poster" Alt="" Class="video-embed__image" />
+            }
+            else
+            {
+                <VideoThumbnail Video="new VideoLink(VideoSite.YouTube, YouTubeId)" />
             }
             <span class="video-embed__play" aria-hidden="true"><Icon Name="play" /></span>
         </button>

@@ -1,0 +1,30 @@
+@using GSBC.ChurchApp.Platform.Contracts.Content
+@inject IJSRuntime Js
+
+@if (_source is not null)
+{
+    <img src="@_source" alt="" class="video-embed__image" loading="lazy" decoding="async" @onerror="() => _source = null" />
+}
+
+@code {
+    private string? _source;
+    private VideoLink? _shown;
+
+    [Parameter, EditorRequired] public required VideoLink Video { get; set; }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (Video == _shown)
+            return;
+        _shown = Video;
+        _source = null;
+        try
+        {
+            await using IJSObjectReference module = await Js.InvokeAsync<IJSObjectReference>("import", "./_content/GSBC.ChurchApp.Platform.Ui/js/video.js");
+            _source = await module.InvokeAsync<string?>("thumbnail", Video.WatchUrl);
+        }
+        catch (Exception exception) when (exception is JSException or InvalidOperationException)
+        {
+        }
+    }
+}

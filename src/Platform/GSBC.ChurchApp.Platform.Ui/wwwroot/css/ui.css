@@ -586,7 +586,7 @@ button.text-link:disabled { color: var(--ink-3); cursor: default; }
 .writing-desk { --side: 360px; --foot-h: 108px; display: grid; grid-template-columns: minmax(0, 1fr) var(--side); grid-template-rows: 1fr auto; grid-template-areas: "main side" "main foot"; min-height: 100dvh; background: linear-gradient(to left, var(--page) var(--side), var(--line) var(--side), var(--line) calc(var(--side) + 1px), var(--sand) calc(var(--side) + 1px)); }
 .writing-desk--folded { --side: 64px; grid-template-areas: "main side" "foot foot"; }
 .writing-desk__main { grid-area: main; min-width: 0; padding: var(--space-2xl) var(--space-3xl) 0; }
-.writing-desk__page { max-width: 800px; min-height: calc(100% - var(--space-2xl)); margin: 0 auto; padding: var(--space-xs) var(--space-2xl) var(--space-4xl); border-radius: var(--radius) var(--radius) 0 0; background: var(--page); box-shadow: 0 0 0 1px var(--line), var(--lift); }
+.writing-desk__page { max-width: 800px; min-height: calc(100% - var(--space-2xl)); margin: 0 auto; padding: var(--space-xs) var(--space-2xl) var(--space-4xl); border-radius: var(--radius) var(--radius) 0 0; background: var(--page); --rich-text-ground: var(--page); box-shadow: 0 0 0 1px var(--line), var(--lift); }
 .writing-desk__page > .tab-strip { margin-bottom: var(--space-xl); }
 .writing-desk__summary { margin-left: auto; padding: 0; border: 0; background: none; color: var(--accent); font: inherit; font-size: var(--text-caption); font-weight: 600; cursor: pointer; }
 .writing-desk__summary:hover { text-decoration: underline; text-underline-offset: 3px; }
@@ -1464,7 +1464,7 @@ span.stage-pipeline__stage { pointer-events: none; }
 
 .menu { position: relative; display: inline-flex; }
 .menu__away { position: fixed; inset: 0; z-index: 39; padding: 0; border: 0; background: none; cursor: default; }
-.menu__panel { position: absolute; top: calc(100% + var(--space-xs)); right: 0; z-index: 40; display: grid; min-width: 15rem; max-width: min(22rem, calc(100vw - var(--space-3xl))); overflow-y: auto; overscroll-behavior: contain; padding: var(--space-xs); border-radius: var(--radius-field); background: var(--surface); box-shadow: 0 0 0 1px var(--line), 0 18px 36px -16px var(--scrim); }
+.menu__panel { position: absolute; top: calc(100% + var(--space-xs)); right: 0; z-index: 40; display: grid; min-width: 15rem; max-width: min(22rem, calc(100vw - var(--space-3xl))); overflow-y: auto; overscroll-behavior: contain; padding: var(--space-xs); border-radius: var(--radius-field); --menu-edge: color-mix(in srgb, var(--ink) 16%, transparent); background: linear-gradient(var(--surface) 40%, transparent) top / 100% 28px no-repeat local, linear-gradient(transparent, var(--surface) 60%) bottom / 100% 28px no-repeat local, radial-gradient(farthest-side at 50% 0, var(--menu-edge), transparent) top / 100% 10px no-repeat scroll, radial-gradient(farthest-side at 50% 100%, var(--menu-edge), transparent) bottom / 100% 10px no-repeat scroll, var(--surface); box-shadow: 0 0 0 1px var(--line), 0 18px 36px -16px var(--scrim); }
 .menu__panel--up { top: auto; bottom: calc(100% + var(--space-xs)); }
 .menu > .btn--quiet.btn--icon { background: none; color: var(--ink-2); }
 .menu > .btn--quiet.btn--icon:hover, .menu > .btn--quiet.btn--icon[aria-expanded="true"] { background: var(--field); color: var(--ink); }
