@@ -8,7 +8,7 @@ namespace GSBC.ChurchApp.Features.Outreach.Api;
 
 internal sealed class OutreachSchedule(IServiceScopeFactory scopes, TimeProvider time, ILogger<OutreachSchedule> logger) : BackgroundService
 {
-    public static readonly TimeSpan Every = TimeSpan.FromMinutes(15);
+    private static readonly TimeSpan Every = TimeSpan.FromMinutes(15);
     private const long AdvisoryLockKey = 0x6f75_7472_6561_6368;
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)

@@ -1,0 +1,124 @@
+@inject OutreachDeskClient Outreach
+
+<LiveData @ref="_live" TValue="Lists" Feeds="Feeds" Load="LoadAsync" FailedTitle="Can't load the follow-ups right now">
+    <OutreachHead Tab="OutreachTab.FollowUps" FollowUps="context.Value.Desk.OpenFollowUps" Reports="context.Value.Desk.NewReports" />
+    <Workbench DetailLabel="The follow-up" Showing="@(Chosen(context.Value) is null ? WorkbenchPane.Main : WorkbenchPane.Detail)">
+        <ChildContent>
+            <DataTable TItem="FollowUp" Label="Follow-ups" Items="context.Value.FollowUps.Lines" Columns="Columns" Key="followUp => followUp.Id"
+                       Selected="Chosen(context.Value)" SelectedChanged="followUp => _chosen = followUp.Id">
+                <Empty>
+                    <EmptyState Icon="door-open" Title="No follow-ups"
+                                Body="When someone at a door would like the church to get in touch, and says the walker may pass on their details, it comes here." />
+                </Empty>
+            </DataTable>
+        </ChildContent>
+        <Detail>
+            <div class="outreach-desk__edit">
+                @if (Chosen(context.Value) is { } followUp)
+                {
+                    <PaneHead Title="@Name(followUp)" Lead="@($"Asked {OutreachWords.At(followUp.At)}{(followUp.WalkedBy.Length > 0 ? $", to {followUp.WalkedBy}" : "")}")"
+                              Actions="@([this.Item("Delete this follow-up…", () => _deleting = true, "trash-2", "Their name and contact go too", danger: true, disabled: _busy)])"
+                              OnClose="() => _chosen = null" />
+                    <FactList>
+                        <Fact Label="Contact" Icon="phone" Text="@(followUp.Contact.Length > 0 ? followUp.Contact : "No contact given")" />
+                        <Fact Label="Where" Icon="map-pin" Text="@OutreachWords.Place(followUp.Address)" />
+                        <Fact Label="Campaign" Icon="footprints" Text="@CampaignName(context.Value, followUp.Campaign)" />
+                    </FactList>
+                    @if (followUp.Note.Length > 0)
+                    {
+                        <p class="outreach-desk__note">@followUp.Note</p>
+                    }
+                    <p class="field__hint">They agreed to the church getting in touch. Keep their details to the outreach leaders.</p>
+                    <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+                    <div class="outreach-desk__actions">
+                        @if (followUp.DoneAt is { } done)
+                        {
+                            <p class="field__hint">Followed up @OutreachWords.At(done).</p>
+                            <Button Variant="ButtonVariant.Quiet" Busy="_busy" OnClick="() => MarkAsync(followUp, false)">Mark as not followed up</Button>
+                        }
+                        else
+                        {
+                            <Button Icon="check" Busy="_busy" OnClick="() => MarkAsync(followUp, true)">Mark as followed up</Button>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <EmptyState Icon="door-open" Title="Choose a follow-up" Body="Each one says who to get in touch with and how." />
+                }
+            </div>
+        </Detail>
+    </Workbench>
+    <Sheet Open="_deleting" OpenChanged="open => _deleting = open" Title="Delete this follow-up?"
+           Lead="Their first name, contact and the walker's note go for good. This can't be undone.">
+        <Actions>
+            <Button Block="true" Variant="ButtonVariant.Danger" Busy="_busy" OnClick="() => DeleteAsync(Chosen(context.Value))">Delete the follow-up</Button>
+            <Button Block="true" Variant="ButtonVariant.Quiet" OnClick="() => _deleting = false">Keep it</Button>
+        </Actions>
+    </Sheet>
+</LiveData>
+
+@code {
+    private static readonly IReadOnlyList<string> Feeds = [OutreachFeeds.Desk];
+
+    [Parameter, EditorRequired] public required string Scope { get; set; }
+
+    private sealed record Lists(OutreachDesk Desk, FollowUps FollowUps);
+
+    private LiveData<Lists>? _live;
+    private string? _chosen;
+    private bool _busy, _deleting;
+    private string? _problem;
+
+    private static readonly IReadOnlyList<TableColumn<FollowUp>> Columns =
+    [
+        new("Who", followUp => @<span class="outreach-desk__cell"><span class="outreach-desk__name">@Name(followUp)</span><span class="outreach-desk__sub">@OutreachWords.Place(followUp.Address)</span></span>, followUp => followUp.FirstName),
+        new("Asked", followUp => @<span>@OutreachWords.At(followUp.At)</span>, followUp => followUp.At),
+        new("Now", followUp => @<span>@if (followUp.DoneAt is null) { <Pill>To follow up</Pill> } else { <Pill Tone="PillTone.Quiet">Followed up</Pill> }</span>,
+            followUp => followUp.DoneAt is null ? 0 : 1),
+    ];
+
+    private async Task<Lists> LoadAsync()
+    {
+        Task<OutreachDesk> desk = Outreach.DeskAsync(Scope);
+        Task<FollowUps> followUps = Outreach.FollowUpsAsync(Scope);
+        await Task.WhenAll(desk, followUps);
+        return new Lists(await desk, await followUps);
+    }
+
+    private FollowUp? Chosen(Lists lists) => lists.FollowUps.Lines.FirstOrDefault(followUp => followUp.Id == _chosen);
+
+    private static string Name(FollowUp followUp) => followUp.FirstName.Length > 0 ? followUp.FirstName : "Someone at the door";
+
+    private static string CampaignName(Lists lists, string campaign) =>
+        lists.Desk.Campaigns.FirstOrDefault(found => found.Id == campaign)?.Name ?? "A campaign since deleted";
+
+    private Task MarkAsync(FollowUp followUp, bool done) => RunAsync(() => Outreach.FollowUpDoneAsync(Scope, followUp.Id, done));
+
+    private Task DeleteAsync(FollowUp? followUp) => followUp is null ? Task.CompletedTask : RunAsync(async () =>
+    {
+        await Outreach.DeleteFollowUpAsync(Scope, followUp.Id);
+        _deleting = false;
+        _chosen = null;
+    });
+
+    private async Task RunAsync(Func<Task> work)
+    {
+        _busy = true;
+        _problem = null;
+        try
+        {
+            await work();
+            if (_live is not null)
+                await _live.ReloadAsync();
+        }
+        catch (RpcException exception)
+        {
+            _problem = exception.Status.Detail;
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+}

@@ -2,6 +2,7 @@ using System.Security.Cryptography;
 using Grpc.Core;
 using GSBC.ChurchApp.Features.Outreach.Api.Data;
 using GSBC.ChurchApp.Features.Outreach.Contracts;
+using GSBC.ChurchApp.Platform.Common;
 using Microsoft.EntityFrameworkCore;
 
 namespace GSBC.ChurchApp.Features.Outreach.Api;
@@ -14,10 +15,16 @@ internal sealed class OutreachPlanning(
     OutreachLeaderboards leaderboards,
     TimeProvider time)
 {
-    public const string CodeLetters = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
-    public const int CodeLength = 6;
-    public static readonly TimeSpan LongestDay = TimeSpan.FromHours(24);
-    public static readonly TimeSpan DaysShownBack = TimeSpan.FromDays(90);
+    private const string CodeLetters = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
+    private const int CodeLength = 6;
+    private static readonly TimeSpan LongestDay = TimeSpan.FromHours(24);
+    private static readonly TimeSpan DaysShownBack = TimeSpan.FromDays(90);
+
+    public async Task<RunningMinistries> MinistriesAsync(CancellationToken cancellationToken) => new()
+    {
+        Ministries = (await ministries.RunningAsync(cancellationToken)).Select(ministry => new OutreachMinistry { Id = ministry.Id.ToString(), Name = ministry.Name })
+            .ToList(),
+    };
 
     public async Task<OutreachDesk> DeskAsync(string ministryId, CancellationToken cancellationToken)
     {
@@ -34,9 +41,36 @@ internal sealed class OutreachPlanning(
             Days = (await db.Days.AsNoTracking().Where(day => day.EndsAt > since).OrderBy(day => day.StartsAt).ToListAsync(cancellationToken))
                 .Select(OutreachViews.Day).ToList(),
             Areas = (await db.Areas.AsNoTracking().OrderBy(area => area.Name).ToListAsync(cancellationToken)).Select(OutreachViews.Area).ToList(),
-            Ministries = (await ministries.RunningAsync(cancellationToken)).Select(ministry => new OutreachMinistry { Id = ministry.Id.ToString(), Name = ministry.Name })
-                .ToList(),
+            Ministries = (await MinistriesAsync(cancellationToken)).Ministries,
+            Totals = await TotalsAsync(cancellationToken),
+            OpenFollowUps = await db.FollowUps.CountAsync(followUp => followUp.DoneAt == null, cancellationToken),
+            NewReports = await db.Reports.CountAsync(report => report.State == ReportState.New, cancellationToken),
         };
+    }
+
+    private async Task<List<CampaignTotals>> TotalsAsync(CancellationToken cancellationToken)
+    {
+        DateTime now = Now;
+        DateOnly today = ChurchTime.DayOf(now);
+        DateTime monthStarts = ChurchTime.ToUtc(new DateOnly(today.Year, today.Month, 1).ToDateTime(TimeOnly.MinValue));
+        List<WalkRecord> walks = await db.Walks.AsNoTracking().Where(walk => walk.Doubtful == "").ToListAsync(cancellationToken);
+        Dictionary<Guid, int> days = await db.Days.AsNoTracking().GroupBy(day => day.CampaignId).Select(group => new { group.Key, Count = group.Count() })
+            .ToDictionaryAsync(group => group.Key, group => group.Count, cancellationToken);
+        return
+        [
+            .. walks.SelectMany(walk => walk.Campaigns.Select(campaign => (campaign, walk))).GroupBy(pair => pair.campaign)
+                .Select(group => new CampaignTotals
+                {
+                    Campaign = group.Key.ToString(),
+                    LetterboxesThisMonth = group.Where(pair => pair.walk.StartedAt >= monthStarts).Sum(pair => pair.walk.Letterboxes),
+                    Letterboxes = group.Sum(pair => pair.walk.Letterboxes),
+                    Metres = group.Sum(pair => pair.walk.Metres),
+                    Walks = group.Count(),
+                    Days = days.GetValueOrDefault(group.Key),
+                })
+                .Concat(days.Keys.Where(campaign => walks.All(walk => !walk.Campaigns.Contains(campaign)))
+                    .Select(campaign => new CampaignTotals { Campaign = campaign.ToString(), Days = days[campaign] })),
+        ];
     }
 
     public async Task SaveSettingsAsync(Guid by, SettingsSave save, CancellationToken cancellationToken)
@@ -170,7 +204,7 @@ internal sealed class OutreachPlanning(
     public async Task DeleteDayAsync(ThingRef thing, CancellationToken cancellationToken)
     {
         await ministries.CheckAsync(thing.MinistryId, cancellationToken);
-        if (!Guid.TryParse(thing.Id, out Guid id) || await db.Days.FirstOrDefaultAsync(day => day.Id == id, cancellationToken) is not { } day)
+        if (!Guid.TryParse(thing.Id, out Guid id) || await db.Days.FirstOrDefaultAsync(found => found.Id == id, cancellationToken) is not { } day)
             return;
         DateTime now = Now;
         await RemoveDayAsync(day, now, cancellationToken);
@@ -206,7 +240,7 @@ internal sealed class OutreachPlanning(
     {
         await ministries.CheckAsync(save.MinistryId, cancellationToken);
         DayRoute asked = save.Route;
-        if (!Guid.TryParse(asked.DayId, out Guid dayId) || await db.Days.FirstOrDefaultAsync(day => day.Id == dayId, cancellationToken) is not { } day)
+        if (!Guid.TryParse(asked.DayId, out Guid dayId) || await db.Days.FirstOrDefaultAsync(found => found.Id == dayId, cancellationToken) is not { } day)
             throw Invalid("Choose the outreach day the route is for.");
         if (asked.Stretches.Count == 0 || asked.Stretches.Any(stretch => !OutreachRules.IsValid(stretch)))
             throw Invalid("A route needs its streets.");
@@ -219,8 +253,13 @@ internal sealed class OutreachPlanning(
         {
             if (await db.Routes.AnyAsync(found => found.Id == id, cancellationToken))
                 throw Invalid("That route belongs to another day.");
-            route = new RouteRecord { Id = id, DayId = dayId, Code = await NewCodeAsync(cancellationToken) };
-            route.Number = asked.Number > 0 ? asked.Number : routes.Select(found => found.Number).DefaultIfEmpty().Max() + 1;
+            route = new RouteRecord
+            {
+                Id = id,
+                DayId = dayId,
+                Code = await NewCodeAsync(cancellationToken),
+                Number = asked.Number > 0 ? asked.Number : routes.Select(found => found.Number).DefaultIfEmpty().Max() + 1,
+            };
             db.Routes.Add(route);
             routes.Add(route);
         }
@@ -246,7 +285,7 @@ internal sealed class OutreachPlanning(
     public async Task DeleteRouteAsync(ThingRef thing, CancellationToken cancellationToken)
     {
         await ministries.CheckAsync(thing.MinistryId, cancellationToken);
-        if (!Guid.TryParse(thing.Id, out Guid id) || await db.Routes.FirstOrDefaultAsync(route => route.Id == id, cancellationToken) is not { } route)
+        if (!Guid.TryParse(thing.Id, out Guid id) || await db.Routes.FirstOrDefaultAsync(found => found.Id == id, cancellationToken) is not { } route)
             return;
         DateTime now = Now;
         foreach (ClaimRecord claim in await db.Claims.Where(claim => claim.RouteId == id).ToListAsync(cancellationToken))
@@ -288,7 +327,7 @@ internal sealed class OutreachPlanning(
     public async Task DeleteAreaAsync(ThingRef thing, CancellationToken cancellationToken)
     {
         await ministries.CheckAsync(thing.MinistryId, cancellationToken);
-        if (!Guid.TryParse(thing.Id, out Guid id) || await db.Areas.FirstOrDefaultAsync(area => area.Id == id, cancellationToken) is not { } area)
+        if (!Guid.TryParse(thing.Id, out Guid id) || await db.Areas.FirstOrDefaultAsync(found => found.Id == id, cancellationToken) is not { } area)
             return;
         db.Areas.Remove(area);
         await publisher.DeskAsync("area", id, Now, cancellationToken);
@@ -306,7 +345,7 @@ internal sealed class OutreachPlanning(
     }
 
     private async Task<CampaignRecord> CampaignAsync(string id, CancellationToken cancellationToken) =>
-        Guid.TryParse(id, out Guid campaignId) && await db.Campaigns.FirstOrDefaultAsync(campaign => campaign.Id == campaignId, cancellationToken) is { } campaign
+        Guid.TryParse(id, out Guid campaignId) && await db.Campaigns.FirstOrDefaultAsync(found => found.Id == campaignId, cancellationToken) is { } campaign
             ? campaign
             : throw new RpcException(new Status(StatusCode.NotFound, "That campaign isn't there any more."));
 

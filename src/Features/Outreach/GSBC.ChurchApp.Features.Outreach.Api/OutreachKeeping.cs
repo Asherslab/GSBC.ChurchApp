@@ -1,6 +1,5 @@
 using GSBC.ChurchApp.Features.Outreach.Api.Data;
 using GSBC.ChurchApp.Features.Outreach.Contracts;
-using GSBC.ChurchApp.Platform.Data;
 using Microsoft.EntityFrameworkCore;
 
 namespace GSBC.ChurchApp.Features.Outreach.Api;
@@ -13,8 +12,8 @@ internal sealed class OutreachKeeping(
     OutreachLeaderboards leaderboards,
     TimeProvider time)
 {
-    public static readonly TimeSpan OpenFollowUpsKeptFor = TimeSpan.FromDays(365);
-    public static readonly TimeSpan ResolvedReportsKeptFor = TimeSpan.FromDays(90);
+    private static readonly TimeSpan OpenFollowUpsKeptFor = TimeSpan.FromDays(365);
+    private static readonly TimeSpan ResolvedReportsKeptFor = TimeSpan.FromDays(90);
 
     public async Task RunAsync(CancellationToken cancellationToken)
     {

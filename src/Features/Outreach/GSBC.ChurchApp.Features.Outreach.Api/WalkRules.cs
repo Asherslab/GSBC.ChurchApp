@@ -13,10 +13,10 @@ internal sealed record WalkVerdict(bool Counts, string Why)
 
 internal static class WalkRules
 {
-    public const int MostStretchesPerPiece = 300;
+    private const int MostStretchesPerPiece = 300;
     public const int MostPiecesPerWalk = 2000;
-    public static readonly TimeSpan ClockSlack = TimeSpan.FromMinutes(10);
-    public static readonly TimeSpan OldestPiece = TimeSpan.FromDays(7);
+    private static readonly TimeSpan ClockSlack = TimeSpan.FromMinutes(10);
+    private static readonly TimeSpan OldestPiece = TimeSpan.FromDays(7);
     private static readonly TimeSpan ShortestElapsed = TimeSpan.FromMinutes(2);
     private const double StreetSlackShare = 1.25;
     private const int StreetSlackMetres = 150;

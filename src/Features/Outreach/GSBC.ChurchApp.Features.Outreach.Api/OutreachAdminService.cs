@@ -7,6 +7,9 @@ namespace GSBC.ChurchApp.Features.Outreach.Api;
 
 internal sealed class OutreachAdminService(OutreachPlanning planning, OutreachReview review) : IOutreachAdminService
 {
+    public async ValueTask<RunningMinistries> MinistriesAsync(MinistryRef request, CallContext context = default) =>
+        await planning.MinistriesAsync(context.CancellationToken);
+
     public async ValueTask<OutreachDesk> DeskAsync(MinistryRef request, CallContext context = default) =>
         await planning.DeskAsync(request.MinistryId, context.CancellationToken);
 

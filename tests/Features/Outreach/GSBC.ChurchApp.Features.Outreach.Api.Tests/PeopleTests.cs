@@ -61,6 +61,6 @@ public sealed class PeopleTests : OutreachHost
         await WithAsync(provider => provider.GetRequiredService<OutreachPersonData>().ForgetAsync(Walker, Cancel));
 
         Assert.Empty(await FeedAsync<Claim>(OutreachFeeds.Claims));
-        Assert.Empty(await RecordsAsync<ClaimRecord>(db => db.Claims));
+        Assert.Empty(await RecordsAsync(db => db.Claims));
     }
 }

@@ -10,7 +10,6 @@ namespace GSBC.ChurchApp.Features.Outreach.Api.Tests;
 internal sealed class RecordedNotifications : INotifications
 {
     public List<Notification> Raised { get; } = [];
-    public List<string> Settled { get; } = [];
 
     public Task RaiseAsync(Notification notification, CancellationToken cancellationToken)
     {
@@ -24,11 +23,7 @@ internal sealed class RecordedNotifications : INotifications
         return Task.CompletedTask;
     }
 
-    public Task SettleAsync(string subject, CancellationToken cancellationToken)
-    {
-        Settled.Add(subject);
-        return Task.CompletedTask;
-    }
+    public Task SettleAsync(string subject, CancellationToken cancellationToken) => Task.CompletedTask;
 
     public Task CollectAsync(NotificationDigestItem item, CancellationToken cancellationToken) => Task.CompletedTask;
 
@@ -54,13 +49,10 @@ internal sealed class KnownPeople : IPeopleIndex
 
 internal sealed class OutreachMinistryFacts : IMinistryFacts
 {
-    public List<MinistryFacts> Running { get; } = [];
-
-    public ValueTask<MinistryFacts?> FindAsync(Guid ministryId, CancellationToken cancellationToken) =>
-        ValueTask.FromResult(Running.FirstOrDefault(ministry => ministry.Id == ministryId));
+    public ValueTask<MinistryFacts?> FindAsync(Guid ministryId, CancellationToken cancellationToken) => ValueTask.FromResult<MinistryFacts?>(null);
 
     public ValueTask<IReadOnlyList<MinistryFacts>> UsingAsync(string part, CancellationToken cancellationToken) =>
-        ValueTask.FromResult<IReadOnlyList<MinistryFacts>>(Running.Where(ministry => ministry.Uses(part)).ToList());
+        ValueTask.FromResult<IReadOnlyList<MinistryFacts>>([]);
 
     public ValueTask<IReadOnlyList<MinistryMember>> TeamAsync(Guid ministryId, CancellationToken cancellationToken) => throw new NotSupportedException();
 }

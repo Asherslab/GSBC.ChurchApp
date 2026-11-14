@@ -14,7 +14,7 @@ internal sealed class OutreachPersonData(OutreachDbContext db, OutreachPublisher
             walk.UserId = null;
             publisher.WalkGone(walk.Id, userId, now);
         }
-        if (await db.Walkers.FirstOrDefaultAsync(walker => walker.UserId == userId, cancellationToken) is { } walker)
+        if (await db.Walkers.FirstOrDefaultAsync(found => found.UserId == userId, cancellationToken) is { } walker)
         {
             db.Walkers.Remove(walker);
             publisher.CountingGone(userId, now);

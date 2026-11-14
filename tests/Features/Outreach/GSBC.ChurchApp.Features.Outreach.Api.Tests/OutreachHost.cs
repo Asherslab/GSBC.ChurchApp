@@ -77,8 +77,6 @@ public abstract class OutreachHost : IAsyncLifetime
 
     private protected Task<T> ReviewAsync<T>(Func<OutreachReview, Task<T>> work) => WithAsync(provider => work(provider.GetRequiredService<OutreachReview>()));
 
-    private protected Task ReviewAsync(Func<OutreachReview, Task> work) => WithAsync(provider => work(provider.GetRequiredService<OutreachReview>()));
-
     protected Task KeepAsync() => WithAsync(provider => provider.GetRequiredService<OutreachKeeping>().RunAsync(Cancel));
 
     protected static Stretch Side(string street, int metres = 100, int letterboxes = 10, StreetSide side = StreetSide.Left) => new()

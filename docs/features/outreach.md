@@ -281,6 +281,164 @@ walk with its reach note from 50 places 0.6 ms on average and 4.7 ms at worst. O
 same. Even an older phone tens of times slower plans a walk well under a second. The whole 40 km church area (48 copies,
 856,272 letterboxes, 6 MB) loads in 66 ms on the JIT, so a phone could hold it whole if regions ever needed to go.
 
+## Foundations: records, feeds and services (built 2026-11-14)
+
+Built overnight by the foundations station while the owner slept. Everything marked *Claude's default* is the owner's to
+change. The module is `Features/Outreach` (Contracts, Api, Client, App, Admin) beside the route engine (`Routing`) and
+the maps station's regions (`Maps`); schema `outreach`.
+
+### Outreach is a ministry
+
+- **A ministry runs outreach by turning on the Outreach part** (Settings → *What it uses*; `MinistryParts.Outreach`, off
+  for every ministry until a leader turns it on: a migration added it to every existing ministry's parts that are off).
+  *Claude's default*: more than one ministry may run it (a missions ministry and an outreach team, say); they share
+  the same campaigns and records.
+- **Permissions** (Access, at the ministry; `OutreachPermissions`):
+
+  | Node | Allows | Who holds it |
+  |---|---|---|
+  | (none) | Walk, mark, report, claim a route, doorknock | Anyone with the app, signed in or not (`[AppInstall]`) |
+  | `outreach.reports.view` | See campaigns, coverage, totals and the day board; opens the admin page | Leader, Admin and Team of the Outreach ministry |
+  | `outreach.plan` | Campaigns, outreach days, routes, saved areas | Leader, Admin |
+  | `outreach.review` (sensitive) | Walkers' reports, follow-ups with contact details, clearing No junk mail and hostile marks | Leader, Admin |
+  | `outreach.settings.change` | Settings, exclusion zones and addresses | Leader, Admin |
+  | `outreach.coverage.expire` | Mark streets not done before the rest period ends | Leader, Admin |
+
+  The ministry roles get these through `AddToSystemRole` (as Rosters does); every ministry's leaders hold them at their
+  own ministry, but the server only accepts a ministry that has Outreach on. A global **Outreach Manager** role
+  (`outreach.*`, *Outreach* in Access) is for staff who run outreach without leading the ministry; it also covers the
+  maps station's `outreach.maps.manage`. The Owner has everything.
+- Every admin request carries the ministry it acts at (`IScopedRequest`); an empty one is allowed only for global holders.
+  The settings feed lists the ministries running outreach (`MinistryIds`), refreshed every 15 minutes and on any save.
+
+### Campaigns
+
+- A campaign: name, what's handed out, optional start and end dates, an optional area (a polygon) or regions, a
+  leaderboard switch. **General outreach** is always there (seeded with a fixed id), can be renamed, has no dates, and
+  can't be deleted. A walk carries one or more campaigns (none chosen means General) and records coverage for each.
+- **Deleting a campaign** (*Claude's default*): refused while it has an outreach day still to come ("Delete or move them
+  first"); otherwise its coverage, no-answer doors and past days (with their routes and claims) go with it, and its walks
+  stay in the totals without it.
+
+### Settings
+
+One record (`OutreachSettings`, feed `outreach.settings`) with the engine's `RouteSettings` names 1:1 (rest days, pace,
+house, unit, door and unit door seconds, bundle size, spare share, connector limits, the walk to the first open street,
+reach thresholds) plus the screens' own: daylight hours, doorknocking in pairs, how long No junk mail marks (730 days)
+and done follow-ups (90 days) are kept, and what counts as a walk (fastest 9 km/h, longest 30 km). Defaults are in
+`OutreachDefaults`; the server refuses values outside sensible ranges (`SettingsRules`). The rest period is days: 91 for
+"three months".
+
+### Coverage
+
+- One row per street side (or stretch, in thousandths) per campaign: date, source (casual, day route, area), the walk
+  and the day, the stretch's middle point and length, and the region it came from. Streets are the engine's stable
+  `StreetKey` ("way/from/to"), so coverage survives a rebuild of the map data.
+- **The feed** `outreach.coverage` has one record per campaign and street: the newest walk of each piece of each side
+  within the rest period (`CoverageRules.Merge`). A street leaves the feed when its last piece passes the rest period.
+- **Expiring by hand**: staff choose a campaign and an area (by the stretch's middle point) or a list of stretches; those
+  rows are marked expired and the streets reopen at once in that campaign only.
+- Coverage older than a year is deleted; the walks' totals keep it in the reports.
+
+### Walks are recorded as they go
+
+*Claude's decision*: a walk is a phone-made id plus numbered pieces (`RecordWalk(WalkPiece)`), each sent through the
+outbox as the walk goes: the stretches covered since the last piece, those skipped or taken back, metres walked, doors
+and conversations, and `Ended` on the last one. The first piece creates the walk (with its campaigns, mode, day and
+route). **Why:** a walk cut short (a flat battery, no signal for an hour) still counts everything up to its last piece,
+retried pieces are recognised by (walk, number), and no message grows with the walk.
+
+- **Plausible before it counts** (`WalkRules`): a piece whose times are in the future or more than a week old, that makes
+  the walk faster than the fastest setting or longer than the longest, or that marks more street done than was walked,
+  is kept but marks nothing done; the walk is marked doubtful with why and leaves the totals. The phone's figures are
+  trusted otherwise (the server has no street graph; checking lengths against it is open).
+- A casual walk started during an outreach day of one of its campaigns counts toward that day.
+
+### What walkers mark
+
+- **No junk mail** (`NoJunkMail`): the letterbox's address key (and street, side and position) goes into `outreach.skips`
+  as "skip this letterbox" in every campaign, kept two years from the last time anyone marked it. The walker who marked it
+  can take it back within a day; staff clear it (`outreach.review`). Never shown with who made it.
+- **Spoke to someone** is a count on the walk; nothing about the people.
+- **Skipped this bit** and corrections take the walk's own coverage back off those stretches.
+- **Reports** (`Report`): a reason (not a home, unsafe, a complaint, wrong on the map, other), the place, a **mandatory
+  note** and an optional photo (uploaded through the outbox into Media's *Outreach reports* area, readable only by
+  `outreach.review`; deleted once the report is dealt with). Staff mark it *never deliver there* (it becomes an excluded
+  address), *fixed* or *dismissed*, or delete it. *Not a home* from the walking screen is a report too, so it carries a
+  note. Resolved reports are deleted after 90 days.
+
+### Doorknocking
+
+- *Knocked, no answer* keeps only the address and campaign, for the campaign's rest period, so a later doorknock tries
+  again (not yet in a feed; the engine's `Reopened` reads it in stage 2).
+- *Spoke* is a count. *Spoke, follow-up wanted* keeps a first name, contact and note **only when the walker ticks that
+  they agreed** and gives a contact; otherwise nothing is kept (`DoorRules`). A kept follow-up notifies the outreach
+  leaders (`outreach.follow-up`, waits until marked followed up) and syncs to their phones (`outreach.follow-ups`,
+  open ones only); done ones are deleted after the settings' days, open ones after a year.
+- *Hostile* adds the address to `outreach.skips` as "skip the letterbox and the door" in **every** campaign, until staff
+  clear it.
+
+### Outreach days, routes, claims and areas
+
+- A day: campaign, start and end (a time window), meeting point and place, note, letterbox or doorknock, published. A
+  route: a list of stretches with its start, letterboxes, metres and minutes, a number, and a **six-letter code** for its
+  QR (`ABCDEFGHJKMNPQRSTUVWXYZ23456789`, unique). Published days within four weeks, and until a day after they end, are
+  on phones (`outreach.days`, `outreach.routes`).
+- **Claims**: a first name (required), several per route, the claimer can take theirs back; all deleted when the day
+  ends (`outreach.claims`).
+- **Saved areas**: a name, a polygon and a note, for planners (admin only).
+- The day board (`OutreachAdmin.Board`): each route's claims and how much of it was walked since the day began
+  (a stretch counts once 90% of it is covered).
+
+### Walkers and history
+
+- Walks are kept per install, and per person when signed in. **Counted by name** is one switch (`Counting`, default
+  on): off, the person's walks count only in the anonymous total, on every leaderboard and report, past walks included.
+  The person's own history (`outreach.mine`) shows every walk either way. Signed-out phones keep their own (stage 2).
+- **Leaderboards** (`outreach.leaderboards`) for campaigns with the switch on: the top 20 named walkers as "Sam S." and
+  everyone's total, refreshed every 15 minutes and published only when changed.
+- **Deleting an account** (`OutreachPersonData`): their walks stay, without them; their history, counting choice and
+  route claims go; their reports, follow-ups and marks stay without who made them.
+
+### Limits (*Claude's defaults*)
+
+Per phone per day: 20 walks, 150 No junk mail marks, 400 doors, 20 reports, 20 claims; past that the outbox waits until
+tomorrow. Each walk: 2,000 pieces, 300 stretches a piece, 500 doors or conversations a piece.
+
+### Feeds
+
+| Feed | Audience | Records |
+|---|---|---|
+| `outreach.settings` | everyone | the settings and the ministries running outreach |
+| `outreach.campaigns` | everyone | every campaign |
+| `outreach.coverage` | everyone | per campaign and street, the newest walk of each piece within the rest period |
+| `outreach.days`, `outreach.routes` | everyone | published days from four weeks ahead to a day after, their routes |
+| `outreach.claims` | everyone | first names on routes until the day ends |
+| `outreach.skips` | everyone | No junk mail (letterbox) and hostile (letterbox and door) addresses, never who or why |
+| `outreach.exclusions` | everyone | exclusion zones and addresses, with "Don't letterbox" only where staff chose to show it; never the reason or caller |
+| `outreach.leaderboards` | everyone | per campaign with a leaderboard |
+| `outreach.mine` | own records | your walks and your counting choice |
+| `outreach.follow-ups` | `outreach.review` at the ministry | open follow-ups |
+| `outreach.desk` | `outreach.reports.view` at the ministry | markers for the admin panel |
+| `outreach.regions` | everyone | the maps station's regions (`Maps`) |
+
+### The admin page (2026-11-14)
+
+Outreach in the admin panel (Ministries & groups → Outreach, `/outreach`): **Campaigns** (the workbench: the list with
+what's handed out, dates and this month's letterboxes; the chosen campaign with its letterboxes, km and outreach days,
+its fields, Cancel and Save, Delete in its ⋯), **Follow-ups**, **Reports** (lists with the chosen one beside them) and
+**Settings** (grouped cards, one Save). Decision page: `.impeccable/mocks/outreach-desk/` (three structures; the station
+built C, *Campaigns as the workbench*: campaigns are records, settings are settings; A and B stay on the page for the
+owner). The planner, coverage map, day board and exclusions screens are stage 2. Notifications open its Follow-ups and
+Reports tabs; the phone's follow-up page is stage 2.
+
+### Open (for stage 2 and the owner)
+
+- Checking walked lengths against the street graph on the server (today the phone's figures are trusted within the
+  speed and length limits).
+- A new exclusion zone doesn't yet flag the day routes it touches.
+- Taking an area as a claim (the 2026-10-27 draft's *Areas*) isn't built: areas are the planners' for now.
+
 ## Outreach days
 
 - **Made in the admin panel** (decided 2026-10-27): a day (date, time window, meeting point, note) and
@@ -370,6 +528,8 @@ there.
   the church should honour the signs anyway, and the app assumes it does.
 
 ## Data and feeds
+
+The 2026-10-27 draft; *Foundations* above is what was built and wins where they differ.
 
 A feature module `Features/Outreach` (§8). Feeds (§5, §10):
 

@@ -6,9 +6,9 @@ namespace GSBC.ChurchApp.Features.Outreach.Api;
 
 internal sealed class OutreachTelling(INotifications notifications, OutreachMinistries ministries)
 {
-    public static string FollowUpSubject(Guid id) => $"outreach.follow-up/{id:N}";
+    private static string FollowUpSubject(Guid id) => $"outreach.follow-up/{id:N}";
 
-    public static string ReportSubject(Guid id) => $"outreach.report/{id:N}";
+    private static string ReportSubject(Guid id) => $"outreach.report/{id:N}";
 
     public async Task FollowUpAsync(FollowUpRecord followUp, CancellationToken cancellationToken)
     {

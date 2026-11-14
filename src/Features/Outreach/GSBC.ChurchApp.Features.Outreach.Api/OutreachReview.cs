@@ -19,8 +19,8 @@ internal sealed class OutreachReview(
     IPeopleIndex people,
     TimeProvider time)
 {
-    public static readonly TimeSpan ResolvedReportsShownFor = TimeSpan.FromDays(90);
-    public static readonly TimeSpan StillWalking = TimeSpan.FromMinutes(30);
+    private static readonly TimeSpan ResolvedReportsShownFor = TimeSpan.FromDays(90);
+    private static readonly TimeSpan StillWalking = TimeSpan.FromMinutes(30);
     private const double DoneShare = 0.9;
 
     public async Task<Reports> ReportsAsync(string ministryId, CancellationToken cancellationToken)
@@ -38,7 +38,7 @@ internal sealed class OutreachReview(
         await ministries.CheckAsync(resolve.MinistryId, cancellationToken);
         if (resolve.Outcome == ReportState.New || !Enum.IsDefined(resolve.Outcome))
             throw Invalid("Choose what was done about the report.");
-        if (!Guid.TryParse(resolve.Id, out Guid id) || await db.Reports.FirstOrDefaultAsync(report => report.Id == id, cancellationToken) is not { } report)
+        if (!Guid.TryParse(resolve.Id, out Guid id) || await db.Reports.FirstOrDefaultAsync(found => found.Id == id, cancellationToken) is not { } report)
             return;
         DateTime now = Now;
         if (resolve.Outcome == ReportState.Excluded)
@@ -63,12 +63,12 @@ internal sealed class OutreachReview(
     public async Task DeleteReportAsync(ThingRef thing, CancellationToken cancellationToken)
     {
         await ministries.CheckAsync(thing.MinistryId, cancellationToken);
-        if (!Guid.TryParse(thing.Id, out Guid id) || await db.Reports.FirstOrDefaultAsync(report => report.Id == id, cancellationToken) is not { } report)
+        if (!Guid.TryParse(thing.Id, out Guid id) || await db.Reports.FirstOrDefaultAsync(found => found.Id == id, cancellationToken) is not { } report)
             return;
         await RemoveReportAsync(report, cancellationToken);
     }
 
-    public async Task RemoveReportAsync(ReportRecord report, CancellationToken cancellationToken)
+    private async Task RemoveReportAsync(ReportRecord report, CancellationToken cancellationToken)
     {
         db.Reports.Remove(report);
         await publisher.DeskAsync("report", report.Id, Now, cancellationToken);
@@ -89,7 +89,7 @@ internal sealed class OutreachReview(
     public async Task FollowUpDoneAsync(FollowUpDone done, CancellationToken cancellationToken)
     {
         await ministries.CheckAsync(done.MinistryId, cancellationToken);
-        if (!Guid.TryParse(done.Id, out Guid id) || await db.FollowUps.FirstOrDefaultAsync(followUp => followUp.Id == id, cancellationToken) is not { } followUp)
+        if (!Guid.TryParse(done.Id, out Guid id) || await db.FollowUps.FirstOrDefaultAsync(found => found.Id == id, cancellationToken) is not { } followUp)
             return;
         DateTime now = Now;
         followUp.DoneAt = done.Done ? followUp.DoneAt ?? now : null;
@@ -102,7 +102,7 @@ internal sealed class OutreachReview(
     public async Task DeleteFollowUpAsync(ThingRef thing, CancellationToken cancellationToken)
     {
         await ministries.CheckAsync(thing.MinistryId, cancellationToken);
-        if (!Guid.TryParse(thing.Id, out Guid id) || await db.FollowUps.FirstOrDefaultAsync(followUp => followUp.Id == id, cancellationToken) is not { } followUp)
+        if (!Guid.TryParse(thing.Id, out Guid id) || await db.FollowUps.FirstOrDefaultAsync(found => found.Id == id, cancellationToken) is not { } followUp)
             return;
         db.FollowUps.Remove(followUp);
         await publisher.FollowUpGoneAsync(id, Now, cancellationToken);
@@ -124,7 +124,7 @@ internal sealed class OutreachReview(
     public async Task ClearSkipAsync(ThingRef thing, CancellationToken cancellationToken)
     {
         await ministries.CheckAsync(thing.MinistryId, cancellationToken);
-        if (!Guid.TryParse(thing.Id, out Guid id) || await db.Skips.FirstOrDefaultAsync(skip => skip.Id == id, cancellationToken) is not { } skip)
+        if (!Guid.TryParse(thing.Id, out Guid id) || await db.Skips.FirstOrDefaultAsync(found => found.Id == id, cancellationToken) is not { } skip)
             return;
         DateTime now = Now;
         db.Skips.Remove(skip);
@@ -171,7 +171,7 @@ internal sealed class OutreachReview(
     public async Task DeleteZoneAsync(ThingRef thing, CancellationToken cancellationToken)
     {
         await ministries.CheckAsync(thing.MinistryId, cancellationToken);
-        if (!Guid.TryParse(thing.Id, out Guid id) || await db.ExclusionZones.FirstOrDefaultAsync(zone => zone.Id == id, cancellationToken) is not { } zone)
+        if (!Guid.TryParse(thing.Id, out Guid id) || await db.ExclusionZones.FirstOrDefaultAsync(found => found.Id == id, cancellationToken) is not { } zone)
             return;
         DateTime now = Now;
         db.ExclusionZones.Remove(zone);
@@ -184,7 +184,7 @@ internal sealed class OutreachReview(
     {
         await ministries.CheckAsync(save.MinistryId, cancellationToken);
         AddressPoint place = save.Address.Address;
-        if (place.AddressKey == 0 && place.Street.Length == 0)
+        if (place is { AddressKey: 0, Street.Length: 0 })
             throw Invalid("Choose the address on the map.");
         DateTime now = Now;
         Guid id = Guid.TryParse(save.Address.Id, out Guid given) && given != Guid.Empty ? given : Guid.CreateVersion7();
@@ -210,7 +210,7 @@ internal sealed class OutreachReview(
     public async Task DeleteAddressAsync(ThingRef thing, CancellationToken cancellationToken)
     {
         await ministries.CheckAsync(thing.MinistryId, cancellationToken);
-        if (!Guid.TryParse(thing.Id, out Guid id) || await db.ExclusionAddresses.FirstOrDefaultAsync(address => address.Id == id, cancellationToken) is not { } address)
+        if (!Guid.TryParse(thing.Id, out Guid id) || await db.ExclusionAddresses.FirstOrDefaultAsync(found => found.Id == id, cancellationToken) is not { } address)
             return;
         DateTime now = Now;
         db.ExclusionAddresses.Remove(address);
@@ -283,7 +283,7 @@ internal sealed class OutreachReview(
     public async Task<DayBoard> BoardAsync(BoardQuery query, CancellationToken cancellationToken)
     {
         await ministries.CheckAsync(query.MinistryId, cancellationToken);
-        if (!Guid.TryParse(query.DayId, out Guid dayId) || await db.Days.AsNoTracking().FirstOrDefaultAsync(day => day.Id == dayId, cancellationToken) is not { } day)
+        if (!Guid.TryParse(query.DayId, out Guid dayId) || await db.Days.AsNoTracking().FirstOrDefaultAsync(found => found.Id == dayId, cancellationToken) is not { } day)
             throw new RpcException(new Status(StatusCode.NotFound, "That outreach day isn't there any more."));
         List<DayRoute> routes = (await db.Routes.AsNoTracking().Where(route => route.DayId == dayId).OrderBy(route => route.Number).ToListAsync(cancellationToken))
             .Select(route => OutreachPayloads.Decode<DayRoute>(route.Payload)).ToList();

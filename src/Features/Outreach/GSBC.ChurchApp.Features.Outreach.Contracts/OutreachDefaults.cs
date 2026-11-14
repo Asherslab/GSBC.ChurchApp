@@ -16,6 +16,7 @@ public static class OutreachDefaults
         MaxConnectorTotalMetres = 250,
         SplitJoinMetres = 125,
         MaxHopMetres = 600,
+        MaxApproachMetres = 500,
         ShortOf = 0.9,
         LongOf = 1.25,
         DaylightStartsMinute = 7 * 60,

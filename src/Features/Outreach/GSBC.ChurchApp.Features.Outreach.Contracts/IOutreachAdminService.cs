@@ -7,6 +7,9 @@ namespace GSBC.ChurchApp.Features.Outreach.Contracts;
 [Service("gsbc.outreach.OutreachAdmin")]
 public interface IOutreachAdminService
 {
+    [SignedIn]
+    ValueTask<RunningMinistries> MinistriesAsync(MinistryRef request, CallContext context = default);
+
     [Requires(OutreachPermissions.ReportsNode)]
     ValueTask<OutreachDesk> DeskAsync(MinistryRef request, CallContext context = default);
 

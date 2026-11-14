@@ -128,6 +128,7 @@ public sealed class OutreachSettings
     [ProtoMember(21)] public bool DoorknockInPairs { get; set; }
     [ProtoMember(22)] public List<string> MinistryIds { get; set; } = [];
     [ProtoMember(23)] public DateTime ChangedAt { get; set; }
+    [ProtoMember(24)] public int MaxApproachMetres { get; set; }
 }
 
 [ProtoContract]
@@ -626,6 +627,26 @@ public sealed class OutreachDesk
     [ProtoMember(3)] public List<OutreachDay> Days { get; set; } = [];
     [ProtoMember(4)] public List<SavedArea> Areas { get; set; } = [];
     [ProtoMember(5)] public List<OutreachMinistry> Ministries { get; set; } = [];
+    [ProtoMember(6)] public List<CampaignTotals> Totals { get; set; } = [];
+    [ProtoMember(7)] public int OpenFollowUps { get; set; }
+    [ProtoMember(8)] public int NewReports { get; set; }
+}
+
+[ProtoContract]
+public sealed class CampaignTotals
+{
+    [ProtoMember(1)] public string Campaign { get; set; } = "";
+    [ProtoMember(2)] public int LetterboxesThisMonth { get; set; }
+    [ProtoMember(3)] public int Letterboxes { get; set; }
+    [ProtoMember(4)] public int Metres { get; set; }
+    [ProtoMember(5)] public int Walks { get; set; }
+    [ProtoMember(6)] public int Days { get; set; }
+}
+
+[ProtoContract]
+public sealed class RunningMinistries
+{
+    [ProtoMember(1)] public List<OutreachMinistry> Ministries { get; set; } = [];
 }
 
 [ProtoContract]

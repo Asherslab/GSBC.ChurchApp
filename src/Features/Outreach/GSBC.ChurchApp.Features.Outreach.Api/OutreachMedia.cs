@@ -8,7 +8,7 @@ namespace GSBC.ChurchApp.Features.Outreach.Api;
 
 internal sealed class OutreachMedia(IMediaReferences references, IMediaSystemFolders folders, OutreachMinistries ministries)
 {
-    public const long LargestPhoto = 15 * 1024 * 1024;
+    private const long LargestPhoto = 15 * 1024 * 1024;
 
     public static readonly MediaSystemArea ReportPhotos = new(OutreachAreas.ReportPhotos, "Outreach reports",
         "Made by the app: photos walkers add to a report about a place, deleted once the report is dealt with", OutreachPermissions.Review,

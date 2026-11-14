@@ -6,7 +6,7 @@ namespace GSBC.ChurchApp.Features.Outreach.Api;
 
 internal sealed class OutreachSettingsStore(OutreachDbContext db, OutreachMinistries ministries, OutreachPublisher publisher)
 {
-    public const int OnlyId = 1;
+    private const int OnlyId = 1;
     private OutreachSettings? _settings;
 
     public async Task<OutreachSettings> GetAsync(CancellationToken cancellationToken) =>

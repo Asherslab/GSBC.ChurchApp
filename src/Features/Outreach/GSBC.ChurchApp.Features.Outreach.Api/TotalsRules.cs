@@ -9,7 +9,7 @@ internal sealed record Walker(Guid UserId, string Name, bool ByName);
 
 internal static class TotalsRules
 {
-    public const int LeaderboardLength = 20;
+    private const int LeaderboardLength = 20;
 
     public static List<TotalsRow> Rows(IReadOnlyList<WalkRecord> walks, TotalsBy by) =>
         walks.GroupBy(walk => StartOf(walk, by))
@@ -49,9 +49,6 @@ internal static class TotalsRules
         (List<WalkerTotal> named, _) = Walkers(theirs, walkers);
         return new Leaderboard { Campaign = campaign.ToString(), Walkers = named.Take(LeaderboardLength).ToList(), Everyone = Total("", theirs) };
     }
-
-    public static bool CountsByName(Guid? user, IReadOnlyDictionary<Guid, Walker> walkers) =>
-        user is { } id && walkers.TryGetValue(id, out Walker? walker) && walker.ByName;
 
     private static DateOnly StartOf(WalkRecord walk, TotalsBy by)
     {

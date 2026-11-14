@@ -1,0 +1,17 @@
+<TitleBand Title="Outreach" Lead="Campaigns, the settings walks run on, and what walkers send in.">
+    <Actions>@Actions</Actions>
+</TitleBand>
+<TabStrip TValue="OutreachTab" Label="Outreach" Options="Options" Value="Tab" Href="OutreachTabs.Href" />
+
+@code {
+    [Parameter, EditorRequired] public required OutreachTab Tab { get; set; }
+    [Parameter] public int FollowUps { get; set; }
+    [Parameter] public int Reports { get; set; }
+    [Parameter] public RenderFragment? Actions { get; set; }
+
+    private IReadOnlyList<TabOption<OutreachTab>> Options =>
+    [
+        new(OutreachTab.Campaigns, "Campaigns"), new(OutreachTab.FollowUps, "Follow-ups", FollowUps), new(OutreachTab.Reports, "Reports", Reports),
+        new(OutreachTab.Settings, "Settings"),
+    ];
+}

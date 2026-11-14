@@ -58,7 +58,7 @@ internal sealed class OutreachPublisher(OutreachDbContext db, OutreachMinistries
 
     public void CoverageGone(Guid campaign, string street, DateTime now) => db.FeedChanges.Add(Gone(OutreachFeeds.Coverage, CoverageId(campaign, street), now));
 
-    public static string CoverageId(Guid campaign, string street) => $"{campaign:N}/{street}";
+    private static string CoverageId(Guid campaign, string street) => $"{campaign:N}/{street}";
 
     public void Day(DayRecord day, IReadOnlyList<RouteRecord> routes, DateTime now)
     {

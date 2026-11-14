@@ -16,7 +16,7 @@ internal sealed class Walking(
     TimeProvider time)
 {
     private const int MostCountedPerPiece = 500;
-    public static readonly TimeSpan UndoWithin = TimeSpan.FromDays(1);
+    private static readonly TimeSpan UndoWithin = TimeSpan.FromDays(1);
 
     public async Task RecordAsync(Guid install, Guid? user, WalkPiece piece, CancellationToken cancellationToken)
     {
@@ -165,7 +165,7 @@ internal sealed class Walking(
     {
         DateTime now = Now;
         if (!Guid.TryParse(mark.Id, out Guid id)
-            || await db.Skips.FirstOrDefaultAsync(skip => skip.Id == id && skip.Kind == SkipKind.NoJunkMail, cancellationToken) is not { } skip
+            || await db.Skips.FirstOrDefaultAsync(found => found.Id == id && found.Kind == SkipKind.NoJunkMail, cancellationToken) is not { } skip
             || skip.InstallId != install || skip.At < now - UndoWithin)
             return;
         db.Skips.Remove(skip);
@@ -264,8 +264,8 @@ internal sealed class Walking(
             throw Invalid("Add your first name, so others see who has this route.");
         DateTime now = Now;
         if (!Guid.TryParse(send.RouteId, out Guid routeId)
-            || await db.Routes.AsNoTracking().FirstOrDefaultAsync(route => route.Id == routeId, cancellationToken) is not { } route
-            || await db.Days.AsNoTracking().FirstOrDefaultAsync(day => day.Id == route.DayId, cancellationToken) is not { Published: true } day
+            || await db.Routes.AsNoTracking().FirstOrDefaultAsync(found => found.Id == routeId, cancellationToken) is not { } route
+            || await db.Days.AsNoTracking().FirstOrDefaultAsync(found => found.Id == route.DayId, cancellationToken) is not { Published: true } day
             || day.EndsAt <= now)
             throw new RpcException(new Status(StatusCode.FailedPrecondition, "That route isn't on offer any more."));
         int today = await db.Claims.CountAsync(claim => claim.InstallId == install && claim.At > now - OutreachLimits.Day, cancellationToken);
@@ -281,7 +281,7 @@ internal sealed class Walking(
     public async Task UnclaimAsync(Guid install, Guid? user, MarkRef mark, CancellationToken cancellationToken)
     {
         if (!Guid.TryParse(mark.Id, out Guid id)
-            || await db.Claims.FirstOrDefaultAsync(claim => claim.Id == id, cancellationToken) is not { } claim
+            || await db.Claims.FirstOrDefaultAsync(found => found.Id == id, cancellationToken) is not { } claim
             || (claim.InstallId != install && (user is null || claim.UserId != user)))
             return;
         DateTime now = Now;

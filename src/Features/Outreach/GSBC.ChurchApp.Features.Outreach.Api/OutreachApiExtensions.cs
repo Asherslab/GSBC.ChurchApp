@@ -28,6 +28,7 @@ public static class OutreachApiExtensions
         services.AddScoped<IMediaAreaAccess, ReportPhotoAccess>();
         services.AddMediaSystemArea(OutreachMedia.ReportPhotos);
         services.AddHostedService<OutreachSchedule>();
+        services.AddHostedService<SampleOutreach>();
         services.AddPermissions(OutreachPermissions.All);
         services.AddNotificationKinds(OutreachNotifications.All);
 

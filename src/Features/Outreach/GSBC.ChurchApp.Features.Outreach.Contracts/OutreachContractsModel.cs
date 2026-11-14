@@ -66,5 +66,7 @@ namespace GSBC.ChurchApp.Features.Outreach.Contracts;
 [ProtoSerializable(typeof(OutreachDesk))]
 [ProtoSerializable(typeof(OutreachMinistry))]
 [ProtoSerializable(typeof(DayRoutes))]
+[ProtoSerializable(typeof(CampaignTotals))]
+[ProtoSerializable(typeof(RunningMinistries))]
 [ProtoSerializable(typeof(MediaRef))]
 public partial class OutreachContractsModel : TypeModel;
