@@ -1,0 +1,89 @@
+@page "/outreach/days/{DayId}/board"
+@inject OutreachDayBoard Board
+@inject IAccess Access
+
+<Page Title="How the day is going" BackHref="@OutreachLinks.Day(DayId)" BackLabel="Outreach day">
+    @if (!Access.CanSomewhere(OutreachPermissions.Reports))
+    {
+        <Masthead Title="How the day is going" />
+        <Section First="true">
+            <EmptyState Icon="map" Title="For the outreach leaders" Body="The outreach team uses this to see which routes have people on them." />
+        </Section>
+    }
+    else
+    {
+        <LiveData @key="DayId" TValue="PhoneBoard" Load="() => Board.LoadAsync(DayId)" Feeds="OutreachDayBoard.Feeds" ReloadOn="Reload">
+            @{
+                PhoneBoard board = context.Value;
+            }
+            @if (board.Day is not { } day)
+            {
+                <Masthead Title="How the day is going" />
+                <Section First="true">
+                    <EmptyState Icon="calendar" Title="This outreach day isn't on this phone" Body="It may have finished, or it's more than four weeks away." />
+                </Section>
+            }
+            else
+            {
+                <Masthead Title="How the day is going" Note="@Note(board, day)" />
+                <Section First="true">
+                    <div class="day-board-phone__totals">
+                        <StatTile Value="@($"{board.Claimed} of {board.Routes.Count}")" Label="routes have someone" Quiet="true" />
+                        <StatTile Value="@($"{board.DonePercent}%")" Label="of letterboxes done" Quiet="true" />
+                    </div>
+                    @if (board.Open.Count > 0 && !board.Over)
+                    {
+                        <Notice Tone="NoticeTone.Info" Text="@Gaps(board)" />
+                    }
+                </Section>
+                <Section Title="Routes" Lead="Open routes first, so someone arriving late goes where no one is.">
+                    @if (board.Routes.Count == 0)
+                    {
+                        <EmptyState Icon="map" Title="The routes aren't out yet" Body="They show here once the outreach team publishes them." />
+                    }
+                    else
+                    {
+                        <ListGroup>
+                            @foreach (BoardRoute line in board.Routes)
+                            {
+                                <ListRow @key="line.Route.Id" Title="@DayPage.RouteTitle(line.Route)" Subtitle="@Who(line)" Chevron="true" Href="@OutreachLinks.Route(line.Route.Code)">
+                                    <TrailingContent>
+                                        <Pill Tone="@Tone(line.State)">@DayBoards.Words(line.State, line.Done)</Pill>
+                                    </TrailingContent>
+                                    <Below>
+                                        <ProgressTrack Fraction="line.Done" Label="@($"Route {line.Route.Number} done")" Class="day-board-phone__track" />
+                                    </Below>
+                                </ListRow>
+                            }
+                        </ListGroup>
+                    }
+                </Section>
+            }
+        </LiveData>
+    }
+</Page>
+
+@code {
+    private const ChangeKind Reload = ChangeKind.Reconnected | ChangeKind.Session | ChangeKind.Access | ChangeKind.Outbox;
+
+    [Parameter] public string DayId { get; set; } = "";
+
+    private static string Note(PhoneBoard board, OutreachDay day) =>
+        $"{OutreachPhoneWords.DayWhen(day)}{(board.On ? " · on now" : board.Over ? " · finished" : "")}";
+
+    private static string Gaps(PhoneBoard board) => board.Open.Count switch
+    {
+        1 => $"Someone just arrived? Route {board.Open[0].Route.Number} has no one yet.",
+        _ => $"Someone just arrived? Routes {string.Join(", ", board.Open.Take(board.Open.Count - 1).Select(line => line.Route.Number))} and {board.Open[^1].Route.Number} have no one yet.",
+    };
+
+    private static string Who(BoardRoute line) =>
+        $"{(line.Progress.ClaimedBy.Count switch { 0 => "No one yet", <= 2 => string.Join(", ", line.Progress.ClaimedBy), _ => $"{line.Progress.ClaimedBy[0]}, {line.Progress.ClaimedBy[1]} + {line.Progress.ClaimedBy.Count - 2}" })} · {OutreachPhoneWords.Letterboxes(line.Route.Letterboxes)}";
+
+    private static PillTone Tone(BoardState state) => state switch
+    {
+        BoardState.Open => PillTone.Marker,
+        BoardState.Walking => PillTone.Accent,
+        _ => PillTone.Quiet,
+    };
+}

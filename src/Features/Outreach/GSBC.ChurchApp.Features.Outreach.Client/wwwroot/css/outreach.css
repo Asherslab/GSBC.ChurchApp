@@ -126,3 +126,7 @@
 .outreach-order__stop--done::after { background: var(--accent); box-shadow: none; }
 .outreach-order__stop:first-child::before { top: 50%; }
 .outreach-order__stop:last-child::before { bottom: 50%; }
+.day-board-phone__totals { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-md); margin-bottom: var(--space-lg); }
+.day-board-phone__totals .stat-tile__value { font-variant-numeric: tabular-nums; }
+.day-board-phone__track { margin-top: var(--space-xs); }
+.day-board-phone__track i { background: var(--live); }
