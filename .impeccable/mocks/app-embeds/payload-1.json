@@ -1,0 +1,46 @@
+{
+  "title": "Cards for events, sermons, ministries and Life Groups in a post",
+  "question": "A post can now hold a card for something in the app, chosen from Insert. Each sketch shows the same post three ways: as people read it, as it looks while you write it (the card itself, with move, replace and take-out controls; nobody sees ::event{…}), and the other states (a cancelled event, a regular event shown as its pattern, a finished sermon, one that's gone). Scroll inside each phone. Pick the card design; the other two go.",
+  "reroll": true,
+  "steer": true,
+  "buildPath": { "value": "code", "toggle": false },
+  "options": [
+    {
+      "id": "rail",
+      "kind": "assigned",
+      "kicker": "THE ROLL",
+      "label": "A rule down the side",
+      "thesis": "No box: each card is set into the text behind a coloured rule (aqua for an event, navy for a sermon, the ministry's own colour), with a small capital kicker, the details, a square picture at the right and its actions as words (Add to calendar · Open). It reads as part of the post, like a quote does.",
+      "palette": ["#00776d", "#2a3d5e", "#009c8f", "#ffffff"],
+      "materials": ["coloured left rule", "small-caps kicker", "square picture at the right", "actions as words"],
+      "viewport": "Carols on the lawn with its rule, time, place and change note, Add to calendar · Open; then the sermon with its progress.",
+      "risk": "The quietest of the three: an event's Add to calendar is words, not a button, and a card can be passed over as a quote.",
+      "html": ".impeccable/mocks/app-embeds/a-rail.html",
+      "htmlFrame": "1290x900"
+    },
+    {
+      "id": "timetable",
+      "kind": "dealt",
+      "label": "A line in the bulletin's timetable",
+      "thesis": "Like the bulletin's This week: a column at the left carries the day and date in large type for an event (EVERY SUN for a regular one), the artwork for a sermon, the ministry's coloured icon; the details at the right with real buttons. Hairlines above and below rule it off from the text.",
+      "palette": ["#00776d", "#2a3d5e", "#e9e1d4", "#ffffff"],
+      "materials": ["date block", "hairline rules", "small buttons"],
+      "viewport": "SAT 20 DEC block beside Carols on the lawn with Add to calendar and Open; then the sermon's artwork beside its title and progress.",
+      "risk": "An event's picture isn't shown (the date leads); a post with several cards reads like a list.",
+      "html": ".impeccable/mocks/app-embeds/b-timetable.html",
+      "htmlFrame": "1290x900"
+    },
+    {
+      "id": "box",
+      "kind": "dealt",
+      "label": "A box from the bulletin",
+      "thesis": "Each card is a sand box at the card radius: an event's picture across the top (a ministry's colour and icon where it has none), then the kind and date, the title in a larger size, the details and a wide main button. The strongest presence: it reads as something to do.",
+      "palette": ["#f4efe7", "#2a3d5e", "#00776d", "#009c8f"],
+      "materials": ["sand box", "picture across the top", "wide main button"],
+      "viewport": "Carols on the lawn's picture, then its date line, title, time, place, change note and a wide Add to calendar beside Open.",
+      "risk": "Big: two or three cards take over a short post, and a ministry's colour block stands in for a picture it doesn't have.",
+      "html": ".impeccable/mocks/app-embeds/c-bulletin-box.html",
+      "htmlFrame": "1290x900"
+    }
+  ]
+}

@@ -2,6 +2,7 @@ using GSBC.ChurchApp.Platform.Api.Access;
 using GSBC.ChurchApp.Platform.Api.Analytics;
 using GSBC.ChurchApp.Platform.Api.Calendars;
 using GSBC.ChurchApp.Platform.Api.Chats;
+using GSBC.ChurchApp.Platform.Api.Content;
 using GSBC.ChurchApp.Platform.Api.Destinations;
 using GSBC.ChurchApp.Platform.Api.Email;
 using GSBC.ChurchApp.Platform.Api.Installs;
@@ -76,6 +77,8 @@ public static class PlatformApiExtensions
         services.AddSingleton<FeedRegistry>();
         services.AddSingleton<DestinationCatalog>();
         services.AddScoped<DestinationDirectory>();
+        services.AddScoped<PlaceAccess>();
+        services.AddScoped<AppCardChecks>();
         services.AddDestinations(ShellDestinations.All);
         services.AddSingleton<FeedChangeBroadcaster>();
         services.AddSingleton(provider =>
@@ -148,6 +151,9 @@ public static class PlatformApiExtensions
 
     public static IServiceCollection AddDestinationSource<TSource>(this IServiceCollection services) where TSource : class, IDestinationSource =>
         services.AddScoped<IDestinationSource, TSource>();
+
+    public static IServiceCollection AddAppCardSource<TSource>(this IServiceCollection services) where TSource : class, IAppCardSource =>
+        services.AddScoped<IAppCardSource, TSource>();
 
     public static IServiceCollection AddMediaSystemArea(this IServiceCollection services, MediaSystemArea area) =>
         services.AddSingleton(area);

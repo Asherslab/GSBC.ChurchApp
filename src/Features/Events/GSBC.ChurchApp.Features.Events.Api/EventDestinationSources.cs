@@ -41,7 +41,7 @@ internal sealed class EventDestinationSource(EventsDbContext db, TimeProvider ti
 
     public Task<string?> OpenUrlAsync(string id, CancellationToken cancellationToken) => Task.FromResult<string?>(null);
 
-    private static FoundPlace Place(EventsBook book, EventOccurrence occurrence)
+    internal static FoundPlace Place(EventsBook book, EventOccurrence occurrence)
     {
         string calendar = Guid.TryParse(occurrence.CalendarId, out Guid id) && book.Calendars.TryGetValue(id, out CalendarRecord? record) ? record.Name : "Event";
         return new FoundPlace(occurrence.Id, occurrence.Fields.Title, calendar, book.AudienceOf(occurrence), When: occurrence.StartsAt);

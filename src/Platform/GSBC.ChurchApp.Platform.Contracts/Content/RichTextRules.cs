@@ -11,7 +11,8 @@ public enum RichTextMedia
     Files = 8,
     VideoLinks = 16,
     Layout = 32,
-    Posts = Pictures | Video | Audio | Files | VideoLinks | Layout,
+    AppCards = 64,
+    Posts = Pictures | Video | Audio | Files | VideoLinks | Layout | AppCards,
 }
 
 public static class RichTextRules
@@ -37,9 +38,7 @@ public static class RichTextRules
         }
         if (document.Videos.Count > 0 && !allowed.HasFlag(RichTextMedia.VideoLinks))
             problems.Add("Videos can't be shown in here. Link to the video instead.");
-        problems.AddRange(document.Directives.Select(directive => RichTextParser.ReservedDirectives.Contains(directive.Name)
-            ? $"Showing {DirectiveNoun(directive.Name)} in here isn't ready yet. Link to it instead."
-            : $"'{RichTextParser.DirectivePrefix}{directive.Name}' isn't something the app can show."));
+        problems.AddRange(document.Directives.Select(directive => ProblemWith(directive, allowed)).OfType<string>());
         return problems.Distinct().ToList();
     }
 
@@ -69,13 +68,10 @@ public static class RichTextRules
         };
     }
 
-    private static string DirectiveNoun(string name) => name switch
-    {
-        "event" => "an event",
-        "sermon" => "a sermon",
-        "ministry" => "a ministry",
-        _ => "a Life Group",
-    };
+    private static string? ProblemWith(DirectiveBlock directive, RichTextMedia allowed) =>
+        AppCards.ProblemWith(directive) is { } problem ? problem
+        : allowed.HasFlag(RichTextMedia.AppCards) ? null
+        : $"A card for {AppCards.WithArticle(AppCards.Of(directive)!.Kind)} can't go in here. Link to it instead.";
 
     private static string Shortened(string href) => href.Length <= 60 ? href : href[..57] + "…";
 }

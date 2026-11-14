@@ -3,6 +3,7 @@ using System.Security.Claims;
 using Grpc.Core;
 using GSBC.ChurchApp.Features.Ministries.Api.Data;
 using GSBC.ChurchApp.Features.Ministries.Contracts;
+using GSBC.ChurchApp.Platform.Api.Content;
 using GSBC.ChurchApp.Platform.Api.Access;
 using GSBC.ChurchApp.Platform.Common;
 using GSBC.ChurchApp.Platform.Api.Calendars;
@@ -20,6 +21,7 @@ namespace GSBC.ChurchApp.Features.Ministries.Api;
 
 internal sealed class MinistryLeadingService(
     MinistriesDbContext db,
+    AppCardChecks cards,
     MinistryViews views,
     MinistryChanges changes,
     MinistryRemover remover,
@@ -189,6 +191,8 @@ internal sealed class MinistryLeadingService(
         RichText content = await postMedia.ResolvedAsync(wanted.Content ?? PlainText.AsRichText(wanted.Body), request.Uploaded, cancellationToken);
         if (MinistryRules.WhyNotPost(wanted.Title, content, wanted.Audience, MinistryLogic.PostableAudiences(ministry.AttendJoin)) is { } problem)
             throw Invalid(problem);
+        if (await cards.ProblemAsync(UserOf(context), content, cancellationToken) is { } cardProblem)
+            throw Invalid(cardProblem);
         content = await postMedia.VerifiedAsync(content, wanted.Audience, cancellationToken);
         DateOnly? sunday = wanted.Sunday.Length == 0 ? null : await SundayOfAsync(ministry, wanted.Sunday, cancellationToken);
 

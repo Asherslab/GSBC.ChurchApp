@@ -14,7 +14,6 @@ public static partial class RichTextParser
 {
     public const string CardSplit = "===";
     public const string DirectivePrefix = "::";
-    public static readonly IReadOnlyList<string> ReservedDirectives = ["event", "sermon", "ministry", "lifegroup"];
 
     private const int NestedIndent = 2;
     private const int MaximumHrefLength = 2_000;

@@ -21,7 +21,7 @@ public sealed class DestinationDirectoryTests
     private readonly DestinationDirectory _directory = new(
         new DestinationCatalog([ShellDestinations.All, new DestinationSet([Previews], [File])]),
         [new Files()],
-        new Grants(Leader, SeeLeadersFiles.Node),
+        new PlaceAccess(new Grants(Leader, SeeLeadersFiles.Node)),
         new PermissionCatalog([new PermissionSet([SeeLeadersFiles])]));
 
     private static CancellationToken Cancel => TestContext.Current.CancellationToken;

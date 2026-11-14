@@ -49,6 +49,7 @@ public static class EventsApiExtensions
         services.AddDestinations(EventsDestinations.All);
         services.AddDestinationSource<EventDestinationSource>();
         services.AddDestinationSource<CalendarDestinationSource>();
+        services.AddAppCardSource<EventCardSource>();
 
         services.AddSystemRole(new SystemRole(EventsPermissions.EveryCalendarEditorRole, "Calendar Editor",
             "Add and change events and regular events in every calendar", ScopeKind.Global,
