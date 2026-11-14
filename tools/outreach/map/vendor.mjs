@@ -7,8 +7,11 @@ const here = dirname(fileURLToPath(import.meta.url));
 const out = join(here, "..", "..", "..", "src/Platform/GSBC.ChurchApp.Platform.Ui/wwwroot/map/vendor");
 const maplibre = join(here, "node_modules/maplibre-gl/dist");
 mkdirSync(out, { recursive: true });
-for (const file of ["maplibre-gl.mjs", "maplibre-gl-worker.mjs", "maplibre-gl.css"])
-  writeFileSync(join(out, file), readFileSync(join(maplibre, file), "utf8").replace(/\n\/\/# sourceMappingURL=\S+\s*$/, "\n"));
+const withoutSourceMap = (text) => text.replace(/\n\/\/# sourceMappingURL=\S+\s*$/, "\n");
+for (const file of ["maplibre-gl.mjs", "maplibre-gl-worker.mjs"])
+  writeFileSync(join(out, file), withoutSourceMap(readFileSync(join(maplibre, file), "utf8")));
+const css = readFileSync(join(maplibre, "maplibre-gl.css"), "utf8").replace(/\/\*# sourceMappingURL=\S+\s*\*\/\s*$/, "");
+writeFileSync(join(out, "maplibre-gl.css.mjs"), `export default ${JSON.stringify(css)};\n`);
 copyFileSync(join(here, "node_modules/maplibre-gl/LICENSE.txt"), join(out, "maplibre-gl.LICENSE.txt"));
 
 await build({
