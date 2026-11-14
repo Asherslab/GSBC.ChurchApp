@@ -197,9 +197,13 @@ Checked against each publisher's own metadata, 2026-10-27:
 | Lot land use and zones | Moreton Bay City Council ("MBRC 2020") | CC BY 4.0 |
 | City Plan 2014 zoning | Brisbane City Council | CC BY 4.0, no access or use limitations |
 | Streets | OpenStreetMap contributors | ODbL (attribution; the derived street graph is shared under ODbL) |
-| Map tiles | OpenFreeMap (OpenMapTiles schema, OSM data) | Free public instance, no keys or limits; attribution required |
+| Map tiles | Protomaps basemap daily planet build (OSM data; Protomaps keeps a week of builds) | An ODbL Produced Work: OpenStreetMap attribution required. Protomaps asks for a copy in your own storage rather than linking to its builds, which is what each region's map file is (checked 2026-11-15) |
+| Map lettering | Montserrat (the brand face), turned into map glyphs by `tools/outreach/map/glyphs.mjs` | SIL Open Font License 1.1 |
 
-The app shows the attributions under the map and in More → About.
+Each region's record carries one attribution line for the map: "Map © OpenStreetMap contributors (ODbL) · Protomaps.
+Addresses © State of Queensland (CC BY 4.0). Land use © City of Moreton Bay (CC BY 4.0). Zoning © Brisbane City Council
+(CC BY 4.0)." The app shows it under every map (MapLibre's attribution control, compact) and in More → About; printed
+outreach-day maps carry it in their foot. (Updated 2026-11-15: the map tiles are now self-hosted, *Regions and maps*.)
 
 ## The route engine (built 2026-11-14)
 
@@ -280,6 +284,87 @@ region takes 16 ms (30 ms with its street index), working out what's open 3 ms, 
 walk with its reach note from 50 places 0.6 ms on average and 4.7 ms at worst. On the JIT the numbers are about the
 same. Even an older phone tens of times slower plans a walk well under a second. The whole 40 km church area (48 copies,
 856,272 letterboxes, 6 MB) loads in 66 ms on the JIT, so a phone could hold it whole if regions ever needed to go.
+
+## Regions and maps (built 2026-11-15)
+
+`GSBC.ChurchApp.Features.Outreach.Maps.Api` and `.Maps.Contracts` (schema `outreach_maps`). The streets and the map
+outreach works on come in **regions**, which the API builds itself, and which phones download as two files.
+
+- **Areas and regions.** Staff add an **area** (a name, a centre and how far it reaches, 1 to 30 km); the first one is
+  seeded: *Around the church*, 20 km each way from the church (Moreton Bay and Brisbane's northside). An area far away
+  (Gympie, the south side) is just another area. Each area is cut on a grid into **regions**: cores of at most 10 km a side, an
+  odd number of them each way so the area's centre (the church) sits in the middle of one, and 2 km of overlap on
+  every side (*Around the church* is 5 × 5 regions with 8 km cores), so a two-hour walk started in a region's core stays inside it and the
+  phone never stitches regions (agreed with the engine station). A region whose core holds no homes (bushland, the
+  bay) isn't made. Region ids are stable slugs (`church-b2`); names come from the commonest suburbs among the homes in
+  the core ("Albany Creek and Bridgeman Downs"), numbered when two would share one.
+- **Why that size.** Measured 2026-11-15 by the job itself over *Around the church*: the whole 40 km square is 89 MB
+  of maps and 11.4 MB of streets files (25 regions); a typical region downloads 2 to 5 MB in all (Albany Creek and
+  Bridgeman Downs, the church's own: 4.5 MB of map and 0.65 MB of streets), the busiest, the inner city, 11.5 MB, and
+  bush regions about 1.2 MB. One file for the whole area would be about 100 MB. A phone downloads the region it walks in automatically and the outreach day's region before the day,
+  so a region is kept to what is reasonable on mobile data; *Offline maps* lists them with sizes.
+- **The build is a job in the API** (`AreaBuildRunner`, one area at a time under a Postgres advisory lock), queued by
+  adding an area or by *Rebuild* (the admin `Maps` service: list, add, rename, rebuild, delete;
+  `outreach.maps.manage`, global: setting up maps is whole-church work). It resumes an interrupted build. Steps:
+  1. **Streets** from OpenStreetMap: Geofabrik's Queensland extract (`queensland-latest.osm.pbf`, about 200 MB,
+     refreshed daily), downloaded to a temporary file and read in one pass in .NET (`OsmPbf`): the coordinates of
+     nodes inside the area, then the walkable ways, each cut to its longest run inside the area. Kept: roads (residential, living street, unclassified,
+     tertiary, the main roads and their links) and footways, paths, cycleways, steps and pedestrian streets. Left out:
+     private or no-foot ways, areas, and a footway tagged as a road's sidewalk or crossing. A path whose length runs
+     mostly (60%) within 20 m of a road and alongside it (within 30°) is beside the road and left out; paths through
+     parks and cut-throughs stay. Streets split where they meet and keep the OSM way's direction and node ids (the
+     engine's stable keys). The first version asked a public Overpass server instead: around the POC box it took 20
+     minutes on a busy night against 4 seconds from the extract, with the same streets (2026-11-15).
+  2. **Addresses**: the Queensland address layer's primary addresses (`address_status = 'P'`; the POC also counted
+     aliases, double-counting some homes). Each is placed on the nearest segment **of its own street** within 200 m,
+     on the side it's on.
+  3. **Homes only**: Moreton Bay lots by lot and plan, then by the lot it sits in; Brisbane City Plan zones by the
+     zone it sits in, with the rules above (mixed use and unknowns are delivered as "check"). Any other council is
+     delivered as "check: no land use data for this council" until its import is written.
+  4. **Each region's `.streets` file**, written through the route engine: every segment that touches the region's
+     bounds and every letterbox placed on them (skips with their label, units as units, the address id as its key).
+  5. **Each region's map**: a vector map file (PMTiles, zoom 0 to 15) cut from the latest Protomaps planet build by
+     range requests, in .NET (`PmtilesExtract`): only the region's tiles are read, about 10 to 20 s a region.
+  6. **Stored and published**: both files go into the **public media bucket** under content-addressed keys
+     (`<sha256>.streets`, `<sha256>.pmtiles`) with `Cache-Control: public, max-age=31536000, immutable`, and the region's
+     record in the `outreach.regions` feed (public) carries both URLs and sizes, its core and bounds, the map's
+     zoom range and the attribution. A rebuild whose streets and map are unchanged keeps its version, so phones don't
+     download again; a changed one gets the next version. The previous version's files are kept (a phone may still be
+     reading the old map), older ones are deleted. Deleting an area deletes its regions, their records and files.
+- **The map file is a static file read by HTTP range requests** from the media host, the path the owner approved
+  (AGENTS.md, 2026-11-14): no host gets an endpoint, nothing varies per person. Checked through Cloudflare on
+  `dev-media.baptist.com.au` 2026-11-15: a range request answers 206 with the `immutable` header, the second is a
+  Cloudflare `HIT`, and CORS allows the app (`capacitor://localhost`) and the admin panel with a `Range` header.
+- **What UAT needs** (for the orchestrator to put to the owner; nothing here touches the cluster): the API pod reaches
+  download.geofabrik.de, spatial-gis.information.qld.gov.au, services-ap1.arcgis.com,
+  services2.arcgis.com, build-metadata.protomaps.dev and build.protomaps.com over HTTPS; a build of the church area
+  peaks at about 1.7 GB of memory for a few minutes (measured in dev; most of it is the 640,000 addresses and
+  the land-use polygons, freed once letterboxes are placed) and writes temporary files (the 200 MB Queensland extract and a
+  region's map) to the pod's temp folder; the R2
+  bucket `gsbc-uat-media`'s CORS keeps allowing `GET` with a `Range` header from the app and admin origins and exposes
+  `ETag`; Cloudflare caches files of this size (well under the 512 MB limit). The first UAT start builds *Around the
+  church* by itself (14 minutes in dev: addresses 5½, land use 4, streets from the extract under a minute, the 25 regions' files 3). Settings live under `Outreach:Maps` (sources, `MaxZoom`, the seeded centre and
+  reach, `SeedChurchArea`).
+
+- **Measured 2026-11-15 over *Around the church*:** 639,807 addresses, 96.6% placed on their own street (the POC's
+  Albany Creek box: 94.0%; the POC counted alias addresses too and reported 95%); 533,227 homes, 29,405 delivered as
+  "check", 85,051 skipped as not homes; 127,676 street segments; 10,486 footpaths beside roads left out.
+- **Open for the owner:** a 20 km square around the church also takes in the inner city and the south side (West End,
+  Coorparoo, Carindale). Those regions cost nothing until someone walks there, and a south-side mission would use
+  them, but the area could be made smaller or moved north (its centre and reach are settings, and staff can add
+  areas).
+
+### The map's look (2026-11-15)
+
+`src/Platform/GSBC.ChurchApp.Platform.Ui/wwwroot/map/`: `map-style.js` builds the MapLibre style for a region's map
+file, light or dark, and `glyphs/` holds Montserrat 400 and 600 as map glyphs (made by `tools/outreach/map/glyphs.mjs`;
+Latin and punctuation only, as the brand fonts are subset). It ships with the app and the admin panel, so it works
+offline. There are no icons or sprites: the map names streets and suburbs and draws nothing that competes with a
+walk. The look was put on the decision page (`.impeccable/mocks/outreach-map/`) while the owner was asleep; the station
+built *What bounds a walk* (parks in sage, schools, shops and industry in beige, main roads with a firm edge, so a
+short walk's reason shows) and kept *One calm sand page* and *The houses themselves* there to switch to: each is a
+`look` in `map-style.js`. What's drawn on top is the screens' job: the walk in deep aqua (bright aqua at night) with a
+white edge, streets walked recently in ink-3 at 45%, you in orange.
 
 ## Foundations: records, feeds and services (built 2026-11-14)
 
@@ -616,7 +701,7 @@ A feature module `Features/Outreach` (§8). Feeds (§5, §10):
 
 | Feed | Records | Window | Notes |
 |---|---|---|---|
-| `outreach.streets` | The street graph with letterbox counts per side, and each letterbox's position along its street (thousandths, no address) so a stretch has an exact count | Whole area, versioned | About 450 KB for Albany Creek; changes only when rebuilt from OSM and addresses |
+| `outreach.regions` | Each region: name, core and bounds, version, and the URLs and sizes of its `.streets` file and map file | All | Public. The street graph is a file per region in the media store, not a feed record (*Regions and maps*); replaces the draft's `outreach.streets` |
 | `outreach.days` | Outreach days and their routes | Next 4 weeks and the current day | Routes are lists of street sides, or stretches of them (street, from, to) |
 | `outreach.claims` | Claims on day routes and areas | Live | First names only; deleted after the day or the claim's end date |
 | `outreach.coverage` | Last walked date per street side | Rolling 8 weeks | Drives "avoid streets done this week" and areas' freshness |
@@ -631,11 +716,9 @@ Services, all gRPC (the AGENTS.md hard rule; nothing here needs an exception):
   client-streamed gRPC upload, so no non-gRPC path is needed). Rate-limited per install.
 - `IOutreachAdminService` (Admin): days, routes, areas, flags (review and clear), exclusion zones and
   addresses, the report queue (review, turn into an exclusion or a fix, dismiss), drafting routes
-  from a polygon (`DraftRoutes(polygon, target, meeting point)` returns sections to review), and
-  rebuilding `outreach.streets`.
-- **Building the street graph** is a server job, not a request path: fetch OSM and the address data,
-  place letterboxes, publish a new version of `outreach.streets`. The POC's
-  `spikes/app-poc/tools/outreach/build_data.py` is that job in miniature.
+  from a polygon (`DraftRoutes(polygon, target, meeting point)` returns sections to review).
+- **Building the street graph and the map** is a server job, not a request path, in its own `Maps` service
+  (*Regions and maps*); the POC's `build_data.py` was that job in miniature.
 
 ## Where routes are made: on the phone
 
@@ -648,11 +731,8 @@ engine in admin for day routes. The phone sends only what was walked.
 - **MapLibre in the web view** (the POC uses it), with vector tiles. It is the same in the app and the
   admin panel, and styles can match the brand. Native map SDKs (MapKit, Google Maps through a
   Capacitor plugin) would draw under the web view and split the UI; not worth it here.
-- **Tiles:** the POC uses OpenFreeMap (free, no key; the phone fetches them directly, which is an
-  outbound call to a third party, not one of our API paths). For the real app: OpenFreeMap or a paid
-  provider with an SLA; or self-hosted vector tiles (one PMTiles file for the region). **Self-hosting
-  means the gateway serves map data by HTTP range requests, which is a non-gRPC path: it needs the
-  owner's explicit approval first** (AGENTS.md).
+- **Tiles: self-hosted** (owner, 2026-11-14; built 2026-11-15): one PMTiles file per region in the media store,
+  read by range requests (*Regions and maps*). The POC used OpenFreeMap.
 - **Offline:** before a walk, cache the tiles around the route (a few hundred KB) so the map works with
   no signal.
 

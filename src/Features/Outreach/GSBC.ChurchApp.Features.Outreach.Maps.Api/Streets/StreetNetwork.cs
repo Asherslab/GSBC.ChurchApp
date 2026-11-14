@@ -69,6 +69,8 @@ internal static class StreetNetwork
         return joined;
     }
 
+    public static bool IsStreet(IReadOnlyDictionary<string, string> tags) => Kept.Contains(tags.GetValueOrDefault("highway", ""));
+
     private static bool Walkable(OsmWay way)
     {
         IReadOnlyDictionary<string, string> tags = way.Tags;

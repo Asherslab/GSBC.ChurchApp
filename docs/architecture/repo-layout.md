@@ -163,6 +163,8 @@ flowchart LR
         OutreachClient["Features.Outreach.Client"]
         OutreachApi["Features.Outreach.Api"]
         OutreachContracts["Features.Outreach.Contracts"]
+        OutreachMapsApi["Features.Outreach.Maps.Api"]
+        OutreachMapsContracts["Features.Outreach.Maps.Contracts"]
         OutreachRouting["Features.Outreach.Routing"]
         OutreachMapsApi["Features.Outreach.Maps.Api"]
         OutreachMapsContracts["Features.Outreach.Maps.Contracts"]

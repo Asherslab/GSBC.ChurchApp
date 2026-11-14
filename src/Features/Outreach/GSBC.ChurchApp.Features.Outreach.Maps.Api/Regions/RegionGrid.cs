@@ -13,8 +13,8 @@ internal static class RegionGrid
 
     public static List<RegionCell> Cut(string areaId, GeoBounds area)
     {
-        int rows = Math.Max(1, (int)Math.Ceiling(area.HeightMetres() / CellMetres - 0.05));
-        int columns = Math.Max(1, (int)Math.Ceiling(area.WidthMetres() / CellMetres - 0.05));
+        int rows = OddCount(area.HeightMetres());
+        int columns = OddCount(area.WidthMetres());
         double height = (area.North - area.South) / rows;
         double width = (area.East - area.West) / columns;
         List<RegionCell> cells = [];
@@ -27,5 +27,11 @@ internal static class RegionGrid
                 cells.Add(new RegionCell(string.Create(CultureInfo.InvariantCulture, $"{areaId}-{(char)('a' + row)}{column + 1}"), core, core.Grown(OverlapMetres)));
             }
         return cells;
+    }
+
+    private static int OddCount(double metres)
+    {
+        int count = Math.Max(1, (int)Math.Ceiling(metres / CellMetres - 0.05));
+        return count % 2 == 0 ? count + 1 : count;
     }
 }
