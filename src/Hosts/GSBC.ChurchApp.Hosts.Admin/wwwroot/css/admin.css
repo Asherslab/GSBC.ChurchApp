@@ -108,7 +108,6 @@ a { color: var(--accent); }
 .module-nav__area-head:hover { background: color-mix(in srgb, var(--masthead-chip) 60%, transparent); }
 .module-nav__chevron { flex: none; color: var(--masthead-note); transition: transform 200ms var(--ease-out); }
 .module-nav__area--open .module-nav__chevron { transform: rotate(90deg); }
-.module-nav__pages { margin-left: auto; color: var(--on-masthead-2); font-size: var(--text-pill); font-weight: 600; font-variant-numeric: tabular-nums; }
 .module-nav__area-pages { display: grid; grid-template-columns: minmax(0, 1fr); gap: 2px; padding: 2px 0 8px; }
 .module-nav__area-pages[hidden] { display: none; }
 .module-nav__area--open .module-nav__area-pages { animation: module-nav-area-open 200ms var(--ease-out) both; }

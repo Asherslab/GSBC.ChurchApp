@@ -60,10 +60,6 @@
                         {
                             <span class="module-nav__count">@area.Waiting<span class="visually-hidden"> waiting</span></span>
                         }
-                        else
-                        {
-                            <span class="module-nav__pages">@area.Entries.Count<span class="visually-hidden"> pages</span></span>
-                        }
                     </button>
                     <div class="module-nav__area-pages" id="@id" hidden="@(!area.Open)">
                         @if (area.Open)
