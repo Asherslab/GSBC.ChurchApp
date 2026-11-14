@@ -39,5 +39,6 @@ Insert), the editor showing formatted text. Phone post page: navy band with the 
 
 FORM: seed:ca4abc76845a49bd · insert-button (dealt), with band post page (seed same, followup).
 Signature: media in place in the text, each with its caption line and its library path (`~/Main Photos/x.jpg`).
+Blocks (2026-11-14, #92 to #96): every block moves by its pill's handle with a pointer drag (mouse or finger) onto an aqua drop line between blocks, or Alt ↑ ↓ on the handle; one caption line for every block. A gallery's pictures each carry a ⋯ at their bottom right (on hover at a desk, always on the phone) opening the shared menu: Move earlier, Move later, Replace, Take this picture out (owner's pick on the decision page, `.impeccable/mocks/gallery-pictures/`, seed:c7d012e2e0addc82, option 3 dealt).
 
 FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict and DESIGN.md
