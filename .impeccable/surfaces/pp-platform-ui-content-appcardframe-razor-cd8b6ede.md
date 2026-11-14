@@ -29,7 +29,7 @@ rule (the owner's pick overrides the floor's border-left default), sand box at t
 STORY: the reader sees what it is and when, sees if it changed or was cancelled, and does the one thing it asks.
 FIRST VIEWPORT: inside a post: title, a meta line with the kind's icon and date under it, details lines, then actions;
 Side rule with its picture square at the right, Line with the date block or artwork at the left, Box with the cover on top.
-FORM: three looks of one frame (`AppCardFrame`), chosen per card. seed: 9f7adf60ec4befdf (surface roll, dealt 6, 5, 1).
+FORM: three looks of one frame (`AppCardFrame`), chosen per card; the surface roll dealt my structures 6, 5 and 1 (rule, timetable, box). seed: none (unavailable)
 FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, DESIGN.md, and every shipping raster carrying its provenance
 
 ## States
@@ -40,3 +40,10 @@ sermon says Heard. Writers see "Only people who can see this … will see its ca
 ## Constraints
 Phone reads only the synced store (Sync rule); the admin panel reads online. No kicker above the title (floor ban): the
 kind and date sit on a meta line under it. Platform.Ui draws; features fill it.
+
+## Decided while building (cited deviations from the sketches)
+- An event's date sits on its clock line, not the meta line, so it shows once (it showed twice in the first build).
+- A sermon's Box keeps a 16:9 cover: DESIGN.md says sermon artwork boxes are always 16:9 so the graphic's text is never cropped.
+- In the editor every card and table shows its pill of tools above it, like pictures, files and videos do (DESIGN.md, Formatted text: media in place); above, not over, so it never covers a title on the phone.
+- With no picture, tiles and covers are solid in the kind's colour with the icon on it (sketch c), so they read as a design, not a gap.
+- A ministry's own `Colour` is drawn nowhere else in the app, so cards use the kind's tone instead of inventing a use for it.

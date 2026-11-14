@@ -281,6 +281,18 @@
                         <AppCardLine Icon="map-pin">The front lawn</AppCardLine>
                     </AppCardFrame>
                 }
+                <AppCardFrame Kind="AppCardKind.Event" Look="AppCardLook.Line" Title="Carols on the lawn" Meta="Event" Off="true" OffLine="Cancelled: storms are forecast"
+                              Actions="SampleOpenOnly">
+                    <AppCardLine Icon="clock">6:30 to 8:00pm</AppCardLine>
+                </AppCardFrame>
+                <AppCardFrame Kind="AppCardKind.Sermon" Title="The breath of the Almighty" Meta="Sermon · Almighty God, part 4" Actions="SampleSermonActions">
+                    <Progress><ProgressTrack Fraction="0.6" /><span>14 min left</span></Progress>
+                    <ChildContent><AppCardLine Icon="mic">Sunday 8 November · 38 min</AppCardLine></ChildContent>
+                </AppCardFrame>
+                <AppCardFrame Kind="AppCardKind.LifeGroup" Look="AppCardLook.Box" Title="Tuesday night Life Group" Meta="Life Group" Icon="users" Actions="SampleJoinActions"
+                              Note="Only people who can see this Life Group will see its card.">
+                    <AppCardLine Icon="clock">Tuesdays 7:30pm</AppCardLine>
+                </AppCardFrame>
                 <AppCardMissing Text="An event on Saturday 6 September that's over now." />
             </div>)
         @Item("Formatted text: RichTextField", "Formats as you type: the bar and its shortcuts, or Markdown for those who know. The marks show faintly only where the cursor is. Each place says what it allows: this one is formatting only, so Insert holds just the layout and emoji. On the phone its bar sits on the keyboard.",
@@ -476,6 +488,9 @@
     private static readonly IReadOnlyList<Crumb> Trail = [new("Library", "library", "folder"), new("Events", "events"), new("2026", "2026")];
     private static readonly IReadOnlyList<SegmentOption<string>> Views = [new("grid", "Grid"), new("list", "List")];
     private static readonly IReadOnlyList<AppCardAction> SampleCardActions = [new("Add to calendar", "calendar-plus", Main: true), new("Open", Href: "gallery")];
+    private static readonly IReadOnlyList<AppCardAction> SampleOpenOnly = [new("Open", Href: "gallery")];
+    private static readonly IReadOnlyList<AppCardAction> SampleSermonActions = [new("Open the sermon", "sermons", "gallery", Main: true)];
+    private static readonly IReadOnlyList<AppCardAction> SampleJoinActions = [new("Ask to join", Main: true), new("Open", Href: "gallery")];
 
     private static readonly IReadOnlyList<SegmentOption<string>> SwapRules =
     [

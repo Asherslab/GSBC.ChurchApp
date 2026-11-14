@@ -1,6 +1,8 @@
 .app-card {
     --app-card-tone: var(--accent);
     --app-card-tile: color-mix(in srgb, var(--live) 16%, transparent);
+    --app-card-solid: var(--live);
+    --app-card-on-solid: var(--on-live);
     --app-card-square: 68px;
     position: relative;
     display: grid;
@@ -13,15 +15,22 @@
 .app-card--sermon {
     --app-card-tone: var(--primary);
     --app-card-tile: color-mix(in srgb, var(--primary) 14%, transparent);
+    --app-card-solid: var(--primary);
+    --app-card-on-solid: var(--on-primary);
 }
 
 .app-card--lifegroup {
     --app-card-tone: var(--marker-ink);
     --app-card-tile: color-mix(in srgb, var(--marker) 30%, transparent);
+    --app-card-solid: var(--marker);
+    --app-card-on-solid: var(--on-marker);
 }
 
 .app-card--off {
     --app-card-tone: var(--danger);
+    --app-card-tile: color-mix(in srgb, var(--danger) 12%, transparent);
+    --app-card-solid: color-mix(in srgb, var(--danger) 12%, transparent);
+    --app-card-on-solid: var(--danger);
 }
 
 .app-card p {
@@ -129,8 +138,8 @@
 }
 
 .app-card__tile {
-    background: var(--app-card-tile);
-    color: var(--app-card-tone);
+    background: var(--app-card-solid);
+    color: var(--app-card-on-solid);
 }
 
 .app-card__tile .icon {
@@ -182,7 +191,6 @@
 }
 
 .app-card--box {
-    max-width: 34rem;
     overflow: hidden;
     border-radius: var(--radius);
     background: var(--fill-on-surface);
@@ -203,6 +211,8 @@
 
 .app-card__cover {
     aspect-ratio: 16 / 7;
+    max-height: 220px;
+    width: 100%;
     background: var(--sand-strong);
 }
 
@@ -226,8 +236,8 @@
     display: grid;
     place-items: center;
     height: 100%;
-    background: var(--app-card-tile);
-    color: var(--app-card-tone);
+    background: var(--app-card-solid);
+    color: var(--app-card-on-solid);
 }
 
 .app-card__cover-tile .icon {
@@ -319,8 +329,9 @@
     object-fit: cover;
 }
 
-.cm-media--card:has(.app-card--box) {
-    max-width: 34rem;
+.cm-media__card .app-card--box {
+    background: var(--surface);
+    box-shadow: inset 0 0 0 1px var(--line);
 }
 
 .rich-text .app-card .btn--primary {
