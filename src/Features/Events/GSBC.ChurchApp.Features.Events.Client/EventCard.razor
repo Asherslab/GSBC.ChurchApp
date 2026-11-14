@@ -38,10 +38,10 @@
 
     private DateTime Now => Clock.GetUtcNow().UtcDateTime;
 
-    private static string Meta(EventCardShown shown) =>
-        shown.AsPattern ? "Event · regularly" : $"Event · {EventWords.DayOf(shown.Occurrence).ToString("ddd d MMM", System.Globalization.CultureInfo.InvariantCulture)}";
+    private static string Meta(EventCardShown shown) => shown.AsPattern ? "Event · regularly" : "Event";
 
-    private static string WhenOf(EventOccurrence occurrence) => $"{EventWords.LongDate(EventWords.DayOf(occurrence))}, {EventWords.Times(occurrence)}";
+    private string WhenOf(EventOccurrence occurrence) =>
+        Card.Look == AppCardLook.Line ? EventWords.Times(occurrence) : $"{EventWords.LongDate(EventWords.DayOf(occurrence))}, {EventWords.Times(occurrence)}";
 
     private static RenderFragment DateLead(EventOccurrence occurrence) => @<DateBlock Day="EventWords.DayOf(occurrence)" Class="app-card-date" />;
 

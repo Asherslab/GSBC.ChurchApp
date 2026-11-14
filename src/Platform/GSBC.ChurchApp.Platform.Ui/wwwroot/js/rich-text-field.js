@@ -244,6 +244,14 @@ function decorate(view, emoji) {
 const mediaPattern = /^!\[([^\]]*)\]\((media:[^\s)"]+|https:\/\/[^\s)"]+)(?:\s+"([^"]*)")?\)\s*$/;
 const setMediaInfo = StateEffect.define();
 const cardPattern = /^::(?:event|sermon|ministry|lifegroup)\{[^{}]*\}\s*$/;
+const tableDelimiter = /^\s*\|?\s*:?-+:?\s*(\|\s*:?-+:?\s*)*\|?\s*$/;
+
+function tableCells(line) {
+  let text = line.trim();
+  if (text.startsWith('|')) text = text.slice(1);
+  if (text.endsWith('|') && !text.endsWith('\\|')) text = text.slice(0, -1);
+  return text.split(/(?<!\\)\|/).map(cell => cell.trim().replace(/\\\|/g, '|'));
+}
 
 function parseMediaLine(text) {
   const found = mediaPattern.exec(text);
@@ -272,6 +280,14 @@ function mediaRanges(state, info) {
       ranges.push({ from: line.from, to: line.to, lastLine: number, kind: 'card', items: [{ card: line.text.trim(), line: number }] });
       continue;
     }
+    if (line.text.includes('|') && number < state.doc.lines && tableDelimiter.test(state.doc.line(number + 1).text) && state.doc.line(number + 1).text.includes('-')) {
+      let last = number + 1;
+      while (last < state.doc.lines && state.doc.line(last + 1).text.includes('|') && state.doc.line(last + 1).text.trim().length > 0) last++;
+      const to = state.doc.line(last).to;
+      ranges.push({ from: line.from, to, lastLine: last, kind: 'table', items: [{ table: state.doc.sliceString(line.from, to), line: number }] });
+      number = last;
+      continue;
+    }
     const item = parseMediaLine(line.text);
     if (!item) continue;
     const kind = kindOf(item, info);
@@ -294,7 +310,7 @@ class MediaWidget extends WidgetType {
     this.info = info;
     this.selected = selected;
     this.actions = actions;
-    this.key = `${range.kind}:${range.items.map(item => item.id ?? item.link ?? item.card).join(',')}:${info.version}`;
+    this.key = `${range.kind}:${range.items.map(item => item.id ?? item.link ?? item.card ?? item.table).join(',')}:${info.version}`;
   }
 
   eq(other) { return other.key === this.key && other.selected === this.selected && other.caption === this.caption; }
@@ -320,6 +336,7 @@ class MediaWidget extends WidgetType {
     dom.setAttribute('aria-label', range.kind === 'link' ? 'Video link' : range.items.length > 1 ? `Gallery of ${range.items.length} pictures` : `${range.kind[0].toUpperCase()}${range.kind.slice(1)}: ${name(first)}`);
 
     if (range.kind === 'card') return this.cardDOM(view, dom);
+    if (range.kind === 'table') return this.tableDOM(view, dom);
 
     const frame = document.createElement('div');
     frame.className = 'cm-media__frame';
@@ -407,6 +424,43 @@ class MediaWidget extends WidgetType {
     return grip;
   }
 
+  tableDOM(view, dom) {
+    dom.setAttribute('aria-label', 'Table');
+    const [head, , ...body] = this.range.items[0].table.split('\n');
+    const shown = text => text.replace(/\*\*|__|==|~~|`/g, '');
+    const wrap = document.createElement('div');
+    wrap.className = 'rich-text-table cm-media__table';
+    const table = document.createElement('table');
+    const columns = tableCells(head).length;
+    const row = (cells, tag) => {
+      const tr = document.createElement('tr');
+      for (let index = 0; index < columns; index++) {
+        const cell = document.createElement(tag);
+        cell.textContent = shown(cells[index] ?? '');
+        tr.append(cell);
+      }
+      return tr;
+    };
+    const thead = document.createElement('thead');
+    thead.append(row(tableCells(head), 'th'));
+    const tbody = document.createElement('tbody');
+    for (const line of body) tbody.append(row(tableCells(line), 'td'));
+    table.append(thead, tbody);
+    wrap.append(table);
+    dom.append(wrap);
+    const { tools, button } = this.tools(view, dom);
+    tools.append(this.grip(view, dom, button));
+    tools.append(button('Change the table', icons.edit, at => this.actions.table(at)));
+    tools.append(button('Take it out', icons.remove, at => this.actions.remove(at)));
+    dom.append(tools);
+    dom.addEventListener('mousedown', event => {
+      if (event.target.closest('button')) return;
+      event.preventDefault();
+      this.actions.table(view.posAtDOM(dom));
+    });
+    return dom;
+  }
+
   cardDOM(view, dom) {
     const card = this.range.items[0].card;
     dom.setAttribute('aria-label', this.info.cards?.[card]?.label ?? 'A card');
@@ -465,7 +519,7 @@ class MediaWidget extends WidgetType {
 
   ignoreEvent() { return true; }
 
-  get estimatedHeight() { return this.range.kind === 'file' ? 72 : this.range.kind === 'card' ? 160 : 260; }
+  get estimatedHeight() { return this.range.kind === 'file' ? 72 : this.range.kind === 'card' ? 160 : this.range.kind === 'table' ? 40 * (this.range.lastLine - this.range.items[0].line) : 260; }
 }
 
 function linkSite(link) {
@@ -480,6 +534,7 @@ const icons = {
   remove: svg('<path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>'),
   play: svg('<path d="M6 3l14 9-14 9V3z" fill="currentColor"/>'),
   file: svg('<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/>'),
+  edit: svg('<path d="M21.17 6.81a1 1 0 0 0-3.99-3.99L3.84 16.17a2 2 0 0 0-.5.83l-1.32 4.35a.5.5 0 0 0 .62.62l4.35-1.32a2 2 0 0 0 .83-.5z"/>'),
   look: svg('<rect width="18" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/><path d="M14 15h7"/><path d="M14 20h7"/>'),
   image: svg('<rect width="18" height="18" x="3" y="3" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/>'),
 };
@@ -650,6 +705,10 @@ export function attach(host, field, value, label, placeholderText, emojiJson) {
     replace: at => field.invokeMethodAsync('MediaWantedAsync', 'replace', at),
     cardReplace: at => field.invokeMethodAsync('CardWantedAsync', 'replace', at),
     cardLook: at => field.invokeMethodAsync('CardWantedAsync', 'look', at),
+    table: at => {
+      const range = rangeAt(view.state, at);
+      if (range) field.invokeMethodAsync('TableWantedAsync', range.from, view.state.doc.sliceString(range.from, range.to));
+    },
     add: at => field.invokeMethodAsync('MediaWantedAsync', 'add', at),
     caption: (at, caption) => {
       const range = rangeAt(view.state, at);
@@ -788,6 +847,12 @@ export function attach(host, field, value, label, placeholderText, emojiJson) {
       cardWatcher = new MutationObserver(send);
       cardWatcher.observe(shelf, { subtree: true, childList: true, characterData: true, attributes: true });
       send();
+    },
+    replaceRange: (at, text) => {
+      const range = rangeAt(view.state, at);
+      if (!range) return;
+      view.dispatch({ changes: { from: range.from, to: range.to, insert: text }, userEvent: 'input' });
+      view.focus();
     },
     replaceLine: (at, text) => {
       const range = rangeAt(view.state, at);

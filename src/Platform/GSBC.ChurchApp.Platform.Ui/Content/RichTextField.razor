@@ -90,6 +90,54 @@
             </div>
         </div>
     }
+    else if (_panel == Panel.Table && _table is { } table)
+    {
+        <div class="rich-text-panel rich-text-panel--table" role="group" aria-label="The table">
+            <div class="rich-text-table-editor">
+                <table>
+                    @for (int row = 0; row < table.Rows.Count; row++)
+                    {
+                        int r = row;
+                        <tr>
+                            @for (int column = 0; column < table.Columns; column++)
+                            {
+                                int c = column;
+                                <td>
+                                    <input class="rich-text-table-editor__cell @(r == 0 ? "rich-text-table-editor__cell--head" : "")" value="@table.Rows[r][c]"
+                                           aria-label="@(r == 0 ? $"Heading {c + 1}" : $"Row {r}, column {c + 1}")" @oninput="change => SetCell(table, r, c, change)" />
+                                </td>
+                            }
+                            <td class="rich-text-table-editor__tool">
+                                @if (r > 0 && table.Rows.Count > 2)
+                                {
+                                    <Button Variant="ButtonVariant.Quiet" Small="true" Icon="x" AriaLabel="@($"Take out row {r}")" Tooltip="Take out this row" OnClick="() => table.RemoveRow(r)" />
+                                }
+                            </td>
+                        </tr>
+                    }
+                    @if (table.Columns > 1)
+                    {
+                        <tr>
+                            @for (int column = 0; column < table.Columns; column++)
+                            {
+                                int c = column;
+                                <td class="rich-text-table-editor__tool">
+                                    <Button Variant="ButtonVariant.Quiet" Small="true" Icon="x" AriaLabel="@($"Take out column {c + 1}")" Tooltip="Take out this column" OnClick="() => table.RemoveColumn(c)" />
+                                </td>
+                            }
+                        </tr>
+                    }
+                </table>
+            </div>
+            <div class="rich-text-panel__actions">
+                <Button Variant="ButtonVariant.Tinted" Small="true" Icon="plus" OnClick="table.AddRow">Add a row</Button>
+                <Button Variant="ButtonVariant.Tinted" Small="true" Icon="plus" OnClick="table.AddColumn">Add a column</Button>
+                <span class="rich-text-panel__gap"></span>
+                <Button Variant="ButtonVariant.Quiet" Small="true" OnClick="ClosePanel">Cancel</Button>
+                <Button Small="true" OnClick="TableDoneAsync">@(_tableAt is null ? "Put it in" : "Done")</Button>
+            </div>
+        </div>
+    }
     else if (_panel == Panel.Emoji)
     {
         <div class="rich-text-panel rich-text-panel--emoji" role="group" aria-label="Emoji">
@@ -187,6 +235,8 @@
     private Picking? _picking;
     private CardAt? _cardAt;
     private string _cardLines = "";
+    private MarkdownTable? _table;
+    private int? _tableAt;
 
     [Parameter, EditorRequired] public required RichText Content { get; set; }
     [Parameter] public EventCallback<RichText> ContentChanged { get; set; }
@@ -204,6 +254,7 @@
         VideoLink,
         Emoji,
         Look,
+        Table,
     }
 
     private enum Sheet
@@ -270,7 +321,7 @@
             ? [
                 new InsertChoice("Layout", "Split into cards", AppIcons.CardSplit, null, () => BlockAsync(RichTextParser.CardSplit)),
                 new InsertChoice("Layout", "Line across", AppIcons.LineAcross, null, () => BlockAsync("---")),
-                new InsertChoice("Layout", "Table", AppIcons.Table, null, () => BlockAsync("| Heading | Heading |\n| --- | --- |\n| Text | Text |", 2)),
+                new InsertChoice("Layout", "Table", AppIcons.Table, null, NewTableAsync),
                 new InsertChoice("Layout", "Code block", AppIcons.CodeBlock, null, () => BlockAsync("```\n\n```", 4)),
                 new InsertChoice("In the text", "Footnote", AppIcons.Footnote, null, FootnoteAsync),
                 new InsertChoice("In the text", "Emoji", AppIcons.Emoji, null, () => OpenPanel(Panel.Emoji)),
@@ -465,6 +516,38 @@
             _picking = new Picking(card.Kind, card.Look, at);
         StateHasChanged();
         return Task.CompletedTask;
+    }
+
+    [JSInvokable]
+    public Task TableWantedAsync(int at, string markdown)
+    {
+        if (MarkdownTable.Read(markdown) is not { } table)
+            return Task.CompletedTask;
+        (_table, _tableAt, _panel) = (table, at, Panel.Table);
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+    private static void SetCell(MarkdownTable table, int row, int column, ChangeEventArgs change) =>
+        table.Rows[row][column] = change.Value?.ToString() ?? "";
+
+    private async Task NewTableAsync()
+    {
+        await OpenPanel(Panel.Table);
+        (_table, _tableAt) = (MarkdownTable.New(), null);
+    }
+
+    private async Task TableDoneAsync()
+    {
+        MarkdownTable? table = _table;
+        int? at = _tableAt;
+        ClosePanel();
+        if (table is null || _editor is null)
+            return;
+        if (at is { } position)
+            await _editor.InvokeVoidAsync("replaceRange", position, table.Markdown());
+        else
+            await ApplyAsync(RichTextEdits.Block(_before, table.Markdown()));
     }
 
     private async Task PickCardAsync(AppCardKind kind)

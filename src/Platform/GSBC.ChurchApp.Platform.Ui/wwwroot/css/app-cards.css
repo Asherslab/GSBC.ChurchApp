@@ -182,6 +182,7 @@
 }
 
 .app-card--box {
+    max-width: 34rem;
     overflow: hidden;
     border-radius: var(--radius);
     background: var(--fill-on-surface);
@@ -256,42 +257,24 @@
     color: var(--ink-3);
 }
 
-.app-card-date {
-    display: grid;
-    justify-items: center;
-    align-content: start;
-    width: 64px;
-    padding: var(--space-sm) 0 var(--space-md);
+.app-card-date.date-block {
+    width: var(--app-card-square);
     border-radius: var(--radius-tile);
     background: var(--app-card-tile);
+}
+
+.app-card-date .date-block__weekday,
+.app-card-date .date-block__month {
     color: var(--app-card-tone);
-    line-height: 1;
-    text-align: center;
 }
 
-.app-card-date small {
-    font-size: var(--text-pill);
-    font-weight: 700;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-}
-
-.app-card-date b {
-    margin: var(--space-2xs) 0 var(--space-3xs);
+.app-card-date .date-block__day {
     font-size: var(--text-headline);
-    font-weight: 700;
     color: var(--ink);
 }
 
-.app-card--off .app-card-date b {
+.app-card--off .app-card-date .date-block__day {
     color: var(--danger);
-}
-
-.app-card-date em {
-    font-style: normal;
-    font-size: var(--text-pill);
-    font-weight: 700;
-    text-transform: uppercase;
 }
 
 .cm-media--card {
@@ -300,9 +283,18 @@
     border-radius: var(--radius-inner);
 }
 
+.cm-media__card {
+    white-space: normal;
+    cursor: default;
+}
+
 .cm-media__card .app-card,
 .cm-media__card .app-card-missing {
     margin: 0;
+}
+
+.cm-media__card .app-card--rule .app-card__side {
+    margin-top: var(--space-4xl);
 }
 
 .cm-media--card .cm-media__tools {
