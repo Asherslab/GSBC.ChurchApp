@@ -1,6 +1,7 @@
 import * as maplibregl from "./vendor/maplibre-gl.mjs";
 import { PMTiles, Protocol } from "./vendor/pmtiles.mjs";
 import { mapStyle } from "./map-style.js";
+import maplibreCss from "./vendor/maplibre-gl.css.mjs";
 
 const protocol = new Protocol();
 maplibregl.addProtocol("pmtiles", protocol.tile);
@@ -11,14 +12,12 @@ const byZoom = (stops) => ["interpolate", ["exponential", 1.6], ["zoom"], ...sto
 const styleIs = (...styles) => ["in", ["get", "style"], ["literal", styles]];
 const kindIs = (...kinds) => ["in", ["get", "kind"], ["literal", kinds]];
 const keptSources = new Map();
-const stylesheet = new URL("./vendor/maplibre-gl.css", import.meta.url).href;
-
 function loadStylesheet() {
-  if (document.querySelector(`link[href="${stylesheet}"]`)) return;
-  const link = document.createElement("link");
-  link.rel = "stylesheet";
-  link.href = stylesheet;
-  document.head.append(link);
+  if (document.getElementById("maplibre-gl-css")) return;
+  const style = document.createElement("style");
+  style.id = "maplibre-gl-css";
+  style.textContent = maplibreCss;
+  document.head.append(style);
 }
 
 const scheme = () => (document.documentElement.dataset.scheme === "dark" ? "dark" : "light");
