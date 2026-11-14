@@ -164,6 +164,8 @@ flowchart LR
         OutreachApi["Features.Outreach.Api"]
         OutreachContracts["Features.Outreach.Contracts"]
         OutreachRouting["Features.Outreach.Routing"]
+        OutreachMapsApi["Features.Outreach.Maps.Api"]
+        OutreachMapsContracts["Features.Outreach.Maps.Contracts"]
     end
 
     subgraph Feedback["Features / Feedback"]
@@ -262,6 +264,7 @@ flowchart LR
         EventsClientTests["Features.Events.Client.Tests"]
         ReleaseNotesTests["Features.ReleaseNotes.App.Tests"]
         OutreachClientTests["Features.Outreach.Client.Tests"]
+        OutreachMapsTests["Features.Outreach.Maps.Api.Tests"]
         OutreachRoutingTests["Features.Outreach.Routing.Tests"]
         WebsiteTests["Hosts.Website.Tests"]
         Testing["Testing"]
@@ -272,12 +275,12 @@ flowchart LR
     HostsGateway --> HostsAdmin & AccountsGateway & EventsGateway
     HostsApp --> AccountsApp & AccessClient & PeopleApp & MinistriesApp & NewsApp & PrayerApp & OutreachApp & FeedbackApp & RostersApp & ConfigurationApp & PlatformUi & MediaClient & ReleaseNotesApp & AnalyticsApp & NotificationsApp & SermonsApp & EventsApp
     HostsAdmin --> PlatformUi & AccountsAdmin & AccessAdmin & PeopleAdmin & MinistriesAdmin & NewsAdmin & PrayerAdmin & OutreachAdmin & FeedbackAdmin & RostersAdmin & ConfigurationAdmin & MediaAdmin & AnalyticsAdmin & NotificationsAdmin & SermonsAdmin & SermonsImportAdmin & EventsAdmin
-    HostsApi --> AccountsApi & AccessApi & PeopleApi & MinistriesApi & NewsApi & PrayerApi & OutreachApi & FeedbackApi & RostersApi & ConfigurationApi & MediaApi & AnalyticsApi & NotificationsApi & SermonsApi & SermonsImportApi & EventsApi & PlatformApi
-    HostsMigrator --> PlatformData & AccountsData & AccessApi & PeopleApi & MinistriesApi & NewsApi & PrayerApi & OutreachApi & FeedbackApi & RostersApi & ConfigurationApi & MediaApi & AnalyticsApi & NotificationsApi & SermonsApi & SermonsImportApi & EventsApi
+    HostsApi --> AccountsApi & AccessApi & PeopleApi & MinistriesApi & NewsApi & PrayerApi & OutreachApi & FeedbackApi & RostersApi & ConfigurationApi & MediaApi & AnalyticsApi & NotificationsApi & SermonsApi & SermonsImportApi & EventsApi & OutreachMapsApi & PlatformApi
+    HostsMigrator --> PlatformData & AccountsData & AccessApi & PeopleApi & MinistriesApi & NewsApi & PrayerApi & OutreachApi & FeedbackApi & RostersApi & ConfigurationApi & MediaApi & AnalyticsApi & NotificationsApi & SermonsApi & SermonsImportApi & EventsApi & OutreachMapsApi
     HostsApp --> AccountsApp & AccessClient & PeopleApp & MinistriesApp & ChatsApp & ConfigurationApp & PlatformUi & MediaClient & ReleaseNotesApp & AnalyticsApp & NotificationsApp & SermonsApp & EventsApp
     HostsAdmin --> PlatformUi & AccountsAdmin & AccessAdmin & PeopleAdmin & MinistriesAdmin & ChatsAdmin & ConfigurationAdmin & MediaAdmin & AnalyticsAdmin & NotificationsAdmin & SermonsAdmin & SermonsImportAdmin & EventsAdmin
-    HostsApi --> AccountsApi & AccessApi & PeopleApi & MinistriesApi & ChatsApi & ConfigurationApi & MediaApi & AnalyticsApi & NotificationsApi & SermonsApi & SermonsImportApi & EventsApi & PlatformApi
-    HostsMigrator --> PlatformData & AccountsData & AccessApi & PeopleApi & MinistriesApi & ChatsApi & ConfigurationApi & MediaApi & AnalyticsApi & NotificationsApi & SermonsApi & SermonsImportApi & EventsApi
+    HostsApi --> AccountsApi & AccessApi & PeopleApi & MinistriesApi & ChatsApi & ConfigurationApi & MediaApi & AnalyticsApi & NotificationsApi & SermonsApi & SermonsImportApi & EventsApi & OutreachMapsApi & PlatformApi
+    HostsMigrator --> PlatformData & AccountsData & AccessApi & PeopleApi & MinistriesApi & ChatsApi & ConfigurationApi & MediaApi & AnalyticsApi & NotificationsApi & SermonsApi & SermonsImportApi & EventsApi & OutreachMapsApi
 
     AccountsApp --> AccountsClient
     AccountsAdmin --> AccountsClient
@@ -363,6 +366,8 @@ flowchart LR
     SermonsContracts --> PlatformContracts
     SermonsImportAdmin --> SermonsImportContracts & PlatformClient & PlatformUi
     SermonsImportApi --> SermonsImportContracts & SermonsApi
+    OutreachMapsApi --> OutreachRouting & OutreachMapsContracts & PlatformApi & PlatformStorage
+    OutreachMapsContracts --> PlatformContracts
     SermonsImportContracts --> PlatformContracts
 
     EventsApp --> EventsClient
@@ -407,6 +412,7 @@ flowchart LR
     WebsiteTests --> HostsWebsite
     ReleaseNotesTests --> ReleaseNotesApp & ReleaseNotesGenerator
     OutreachClientTests --> OutreachClient
+    OutreachMapsTests --> OutreachMapsApi & Testing
     OutreachRoutingTests --> OutreachRouting
 ```
 
@@ -513,6 +519,8 @@ flowchart LR
 | `GSBC.ChurchApp.Features.Sermons.App` | The phone's Sermons tab: the latest and what you're part-way through, series, speakers, search, a sermon with its audio and video | Yes |
 | `GSBC.ChurchApp.Features.Sermons.Import.Contracts` | **Temporary, removed after go-live** ([sermons-import.md](../features/sermons-import.md)): the `Import` service, its progress messages, its feed and the `sermons.import` permission | Yes |
 | `GSBC.ChurchApp.Features.Sermons.Import.Api` | **Temporary:** reads every sermon off the old website (its listing pages, each sermon's page and its series pages), copies the audio and pictures into our storage and adds the sermons through Sermons.Api, skipping what it brought across before (schema `sermons_import`) | No |
+| `GSBC.ChurchApp.Features.Outreach.Maps.Contracts` | Outreach regions: the `outreach.regions` feed's record (a region's bounds, version and its streets and map files), the admin `Maps` service for the areas maps cover, and the `outreach.maps.manage` permission | Yes |
+| `GSBC.ChurchApp.Features.Outreach.Maps.Api` | Builds each area's regions (schema `outreach_maps`): fetches OpenStreetMap streets and paths, Queensland addresses and council land use, places letterboxes on their street's side, writes each region's `.streets` file through the route engine and cuts its map (PMTiles) from the Protomaps planet, stores both in the public media bucket and publishes `outreach.regions` ([outreach.md](../features/outreach.md), *Regions and maps*) | No |
 | `GSBC.ChurchApp.Features.Outreach.Routing` | The outreach route engine, shared by the phone, the admin panel and the API: the street graph of a region and its compact file (`.streets`), Walk now loops, reach and "start somewhere better", coverage per campaign, the area splitter and its edits, route summaries, and following a walk from GPS ([outreach.md](../features/outreach.md), *The route engine*) | Yes |
 | `GSBC.ChurchApp.Features.Sermons.Import.Admin` | **Temporary:** the admin panel's *Import from the website* page: start, live progress, failures to try again | Yes |
 | `GSBC.ChurchApp.Features.Events.Contracts` | The `Events`, `Editing`, `Setup` and `CalendarFiles` services, the iCal link paths, calendars, events, regular events and their patterns, specials, breaks, the dated rows phones hold, the *in your week* rule (`CalendarChoices`), feeds, places and the `events.*` permission nodes | Yes |
@@ -554,6 +562,7 @@ flowchart LR
 | `GSBC.ChurchApp.Features.Sermons.Api.Tests` | Against Postgres: phones hold the newest 400; listening progress merges by the rule, in any order, and reaches only its person; uploaded audio is stored once; deletes move or release what used the deleted thing; the app-only migration wipes the website's sermons | No |
 | `GSBC.ChurchApp.Features.Sermons.Import.Api.Tests` | Unit, against saved sample pages with made-up names: listing pages, a sermon's page, a series page, a guest speaker's name and honorific out of the title, the service from old and new labels. Against Postgres: a re-run skips what was brought across and retries only what failed; one recording under two addresses is one sermon | No |
 | `GSBC.ChurchApp.Features.Outreach.Client.Tests` | Unit, over the Albany Creek fixture: records and the engine agree both ways (stretches, marks), and the printed route maps | No |
+| `GSBC.ChurchApp.Features.Outreach.Maps.Api.Tests` | Unit: an address lands on its own street's side; businesses skipped and mixed use checked; footpaths beside a road left out and those through a park kept; a rebuilt region's version; a region's map file holds exactly its tiles | No |
 | `GSBC.ChurchApp.Features.Outreach.Routing.Tests` | Unit, over real Albany Creek streets from the POC (`Fixtures/albany-creek.streets`, made by `tools/outreach/poc-fixture.cs`): the file reads back exactly, loops cover both sides, the doc's rules (main roads kept in the network, no empty walking, reach), coverage per campaign, the splitter and its edits, following recorded and synthetic GPS tracks; and the benchmark | No |
 | `GSBC.ChurchApp.Features.Events.Client.Tests` | Unit tests, no I/O: Coming up leaves ordinary regular dates out; a date edited on its own starts from the regular event with only what its special changed, and never changes every date; a date not on says why on its own line; the widening sentence is one full sentence, and silent when nothing widens | No |
 | `GSBC.ChurchApp.Features.ReleaseNotes.App.Tests` | Highlights show once after an update and never on a fresh install; a production build carries no staff notes or staff wording | No |
