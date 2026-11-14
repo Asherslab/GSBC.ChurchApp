@@ -147,7 +147,7 @@ markdown ... plenty of it could be under a 'extras' dropdown".
   set when it's chosen; files chosen before this show `~/name`).
 - **Split into cards** (owner, 2026-11-14: "we could use something similar to horizontal rule to specify a 'card split'
   instead, e.g. `===`"): `===` on a line of its own where a block starts. Under a line of text it stays text (never a
-  setext heading). On the post page each part is separated by a sand bar across the page; a notification's line and a
+  setext heading). On the post page each part opens under a navy rule (a sand bar until the bulletin item, below); a notification's line and a
   list's excerpt come from the first part with text.
 - **The post page** (feedback #88, "incredibly barren looking"): a quiet navy band for picture-less posts was the
   station's default here; replaced on 2026-11-14 by the owner's pick, *The bulletin item* (see *Reading a post* below).
