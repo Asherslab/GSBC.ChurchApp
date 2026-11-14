@@ -263,6 +263,7 @@ flowchart LR
         EventsClientTests["Features.Events.Client.Tests"]
         ReleaseNotesTests["Features.ReleaseNotes.App.Tests"]
         OutreachMapsTests["Features.Outreach.Maps.Api.Tests"]
+        OutreachClientTests["Features.Outreach.Client.Tests"]
         OutreachRoutingTests["Features.Outreach.Routing.Tests"]
         WebsiteTests["Hosts.Website.Tests"]
         Testing["Testing"]
@@ -338,7 +339,7 @@ flowchart LR
     PrayerContracts --> PlatformContracts
     OutreachApp --> OutreachClient
     OutreachAdmin --> OutreachClient
-    OutreachClient --> OutreachContracts & PlatformClient & PlatformUi & PlatformCommon
+    OutreachClient --> OutreachContracts & OutreachRouting & PlatformClient & PlatformUi & PlatformCommon
     OutreachApi --> OutreachContracts & PlatformApi & PlatformCommon
     OutreachContracts --> PlatformContracts
     FeedbackApp --> FeedbackClient
@@ -409,6 +410,7 @@ flowchart LR
     WebsiteTests --> HostsWebsite
     ReleaseNotesTests --> ReleaseNotesApp & ReleaseNotesGenerator
     OutreachMapsTests --> OutreachMapsApi & Testing
+    OutreachClientTests --> OutreachClient
     OutreachRoutingTests --> OutreachRouting
 ```
 
@@ -495,7 +497,7 @@ flowchart LR
 | `GSBC.ChurchApp.Features.Prayer.Admin` | The admin panel's Prayer page: the pastoral inbox and choosing what the prayer wall shows | Yes |
 | `GSBC.ChurchApp.Features.Outreach.Contracts` | The `Outreach` (app writes: walks recorded as they go, No junk mail, doors, reports, route claims) and `OutreachAdmin` (staff) services, the settings the route engine runs on, campaigns, coverage, days and routes, the `outreach.*` feeds and permission nodes, the shared rules (dates, polygons, stretches) | Yes |
 | `GSBC.ChurchApp.Features.Outreach.Api` | Outreach (schema `outreach`): campaigns with their own coverage, settings, walks and their plausibility, coverage per street side and its rest period and expiry, No junk mail and hostile marks, doorknock records and follow-ups for the outreach leaders, reports with a photo, exclusions, outreach days, routes and claims, totals and leaderboards, the Outreach ministry's roles, forgetting a deleted person | No |
-| `GSBC.ChurchApp.Features.Outreach.Client` | Outreach's gRPC calls for the admin panel | Yes |
+| `GSBC.ChurchApp.Features.Outreach.Client` | Outreach's gRPC calls for the admin panel; `EngineInputs`, which turns synced or fetched records into the route engine's inputs and back (stretches, coverage, marks, settings, addresses); the printed route maps | Yes |
 | `GSBC.ChurchApp.Features.Outreach.App` | Registers Outreach on the phone and syncs its feeds (the walking screens are stage 2) | Yes |
 | `GSBC.ChurchApp.Features.Outreach.Admin` | The admin panel's Outreach page: campaigns and settings | Yes |
 | `GSBC.ChurchApp.Features.Feedback.Contracts` | The `Feedback` (sending from the app) and `Desk` (staff) services, tickets, statuses and limits, the `feedback.desk` feed, the `feedback.*` permissions and the new-feedback notification | Yes |
@@ -558,6 +560,7 @@ flowchart LR
 | `GSBC.ChurchApp.Features.Sermons.Api.Tests` | Against Postgres: phones hold the newest 400; listening progress merges by the rule, in any order, and reaches only its person; uploaded audio is stored once; deletes move or release what used the deleted thing; the app-only migration wipes the website's sermons | No |
 | `GSBC.ChurchApp.Features.Sermons.Import.Api.Tests` | Unit, against saved sample pages with made-up names: listing pages, a sermon's page, a series page, a guest speaker's name and honorific out of the title, the service from old and new labels. Against Postgres: a re-run skips what was brought across and retries only what failed; one recording under two addresses is one sermon | No |
 | `GSBC.ChurchApp.Features.Outreach.Maps.Api.Tests` | Unit: an address lands on its own street's side; businesses skipped and mixed use checked; footpaths beside a road left out and those through a park kept; a rebuilt region's version; a region's map file holds exactly its tiles | No |
+| `GSBC.ChurchApp.Features.Outreach.Client.Tests` | Unit, over the Albany Creek fixture: records and the engine agree both ways (stretches, marks), and the printed route maps | No |
 | `GSBC.ChurchApp.Features.Outreach.Routing.Tests` | Unit, over real Albany Creek streets from the POC (`Fixtures/albany-creek.streets`, made by `tools/outreach/poc-fixture.cs`): the file reads back exactly, loops cover both sides, the doc's rules (main roads kept in the network, no empty walking, reach), coverage per campaign, the splitter and its edits, following recorded and synthetic GPS tracks; and the benchmark | No |
 | `GSBC.ChurchApp.Features.Events.Client.Tests` | Unit tests, no I/O: Coming up leaves ordinary regular dates out; a date edited on its own starts from the regular event with only what its special changed, and never changes every date; a date not on says why on its own line; the widening sentence is one full sentence, and silent when nothing widens | No |
 | `GSBC.ChurchApp.Features.ReleaseNotes.App.Tests` | Highlights show once after an update and never on a fresh install; a production build carries no staff notes or staff wording | No |
