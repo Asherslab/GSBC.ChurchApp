@@ -155,24 +155,31 @@ public sealed class WalkSession(
         if (_state is not { Finished: false } state || _follower is null)
             return false;
         int before = _progress?.Current ?? -1;
+        bool moved;
         await _working.WaitAsync();
         try
         {
             LocationFixes fixes = await location.FixesAsync(state.FixLatest);
-            foreach (LocationFix fix in fixes.Fixes.Where(fix => fix.Seq > state.FixLatest))
+            List<LocationFix> fresh = [.. fixes.Fixes.Where(fix => fix.Seq > state.FixLatest)];
+            foreach (LocationFix fix in fresh)
                 _follower.Add(new GpsFix(fix.At, new RoutingPoint(fix.Lat, fix.Lon), fix.Accuracy));
-            if (fixes.Fixes.Count > 0)
-                state.FixLatest = Math.Max(state.FixLatest, fixes.Latest);
-            _progress = Measure(state);
-            if (time.GetUtcNow().UtcDateTime - state.LastSentAt >= SendEvery || (_progress?.Current ?? -1) != before)
-                await SendPieceAsync(state, ended: false, force: false);
-            await SaveStateAsync();
+            moved = fresh.Count > 0;
+            if (moved)
+            {
+                state.FixLatest = fresh.Max(fix => fix.Seq);
+                _progress = Measure(state);
+            }
+            bool sent = (time.GetUtcNow().UtcDateTime - state.LastSentAt >= SendEvery || (_progress?.Current ?? -1) != before)
+                        && await SendPieceAsync(state, ended: false, force: false);
+            if (moved || sent)
+                await SaveStateAsync();
         }
         finally
         {
             _working.Release();
         }
-        Changed?.Invoke();
+        if (moved)
+            Changed?.Invoke();
         return (_progress?.Current ?? -1) != before && before >= 0;
     }
 
@@ -289,6 +296,18 @@ public sealed class WalkSession(
         await location.StopAsync();
         _state.Finished = true;
         _state.EndedAt = time.GetUtcNow().UtcDateTime;
+        await SaveStateAsync();
+        Changed?.Invoke();
+    }
+
+    public async Task KeepWalkingAsync()
+    {
+        if (_state is null)
+            return;
+        _state.Finished = false;
+        _state.EndedAt = null;
+        _state.Paused = false;
+        _state.Tracking = await location.StartAsync(Purpose) == LocationStart.Running;
         await SaveStateAsync();
         Changed?.Invoke();
     }
@@ -453,7 +472,7 @@ public sealed class WalkSession(
         return best;
     }
 
-    private async Task SendPieceAsync(WalkState state, bool ended, bool force, IReadOnlyList<SideStretch>? extra = null, IReadOnlyList<SideStretch>? takenBack = null)
+    private async Task<bool> SendPieceAsync(WalkState state, bool ended, bool force, IReadOnlyList<SideStretch>? extra = null, IReadOnlyList<SideStretch>? takenBack = null)
     {
         List<RecordStretch> covered = [];
         List<RecordStretch> skipped = [];
@@ -478,7 +497,7 @@ public sealed class WalkSession(
         bool news = covered.Count > 0 || skipped.Count > 0 || uncovered.Count > 0 || metres - state.SentMetres >= 50
                     || state.Conversations != state.SentConversations || state.Doors != state.SentDoors;
         if (!force && !ended && !news)
-            return;
+            return false;
         WalkPiece piece = new()
         {
             WalkId = state.WalkId,
@@ -503,6 +522,7 @@ public sealed class WalkSession(
         state.SentConversations = state.Conversations;
         state.SentDoors = state.Doors;
         state.LastSentAt = piece.At;
+        return true;
     }
 
     private async Task RememberAsync(WalkState state, WalkProgress? progress, IReadOnlySet<int> walkedSteps)

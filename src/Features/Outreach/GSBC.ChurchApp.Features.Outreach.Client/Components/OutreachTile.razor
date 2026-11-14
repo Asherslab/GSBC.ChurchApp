@@ -20,14 +20,22 @@ else
     [CascadingParameter] public HubContext Hub { get; set; } = HubContext.Still;
     [Parameter, EditorRequired] public required ArrangedSurface Entry { get; set; }
 
+    private TileLook Look => TileLook.Of(OutreachTiles.Outreach, Entry.Values);
+
+    private TileVariant Variant => OutreachTiles.Outreach.VariantFor(Look, Hub.Columns);
+
+    private TileSpan Span => new(Math.Min(Look.Columns, Hub.Columns), Look.Rows);
+
     private RenderFragment Drawn(OutreachNow? now)
     {
-        TileLook look = TileLook.Of(OutreachTiles.Outreach, Entry.Values);
-        TileVariant variant = OutreachTiles.Outreach.VariantFor(look, Hub.Columns);
-        DateTime utc = Clock.GetUtcNow().UtcDateTime;
-        IReadOnlyList<string> lines = now is not null && OutreachDays.On(now, utc) is { } day
-            ? [OutreachPhoneWords.DayOn(day), OutreachPhoneWords.RoutesClaimed(OutreachDays.Claimed(now, day), now.RoutesOf(day.Id).Count())]
-            : [look.Text];
-        return @<HubTile Look="@(variant.Key == TileVariants.WordsKey ? look with { Image = null } : look)" Layout="WordsTileView.ShapeOf(variant)" Title="@look.Title" Lines="lines" PlacementId="@Entry.Placement?.Id" />;
+        OutreachDay? day = now is null ? null : OutreachDays.On(now, Clock.GetUtcNow().UtcDateTime);
+        if (Variant.Key == OutreachTiles.JustALink)
+            return @<HubTile Look="@(Look with { Image = null })" Layout="@(Span.Columns > 1 && Span.Rows == 1 ? TileShape.Row : TileShape.Square)" Title="@Look.Title" PlacementId="@Entry.Placement?.Id" />;
+        string title = day is null ? Look.Title : OutreachPhoneWords.DayOn(day);
+        IReadOnlyList<string> lines = Span is { Columns: 1, Rows: 1 } ? []
+            : day is not null && now is not null ? [OutreachPhoneWords.RoutesClaimed(OutreachDays.Claimed(now, day), now.RoutesOf(day.Id).Count())]
+            : [Look.Text];
+        string? go = Span.Rows > 1 ? day is null ? "Plan a walk" : "Pick a route" : null;
+        return @<HubTile Look="@(WordsTileView.ShapeOf(Variant) is null ? Look with { Image = null } : Look)" Layout="@WordsTileView.ShapeOf(Variant)" Title="@title" Lines="lines" Go="@go" PlacementId="@Entry.Placement?.Id" />;
     }
 }

@@ -9,6 +9,7 @@ public enum HereState
     Denied,
     Off,
     NotFound,
+    NotAsked,
 }
 
 public sealed record Here(HereState State, RoutingPoint? Point = null, double Accuracy = 0);
@@ -24,7 +25,7 @@ public sealed class WhereYouAre(ILocationSession location, WalkSession walk, Tim
 
     public bool CanAsk => location.IsAvailable;
 
-    public async Task<Here> FindAsync(bool again = false)
+    public async Task<Here> FindAsync(bool mayAsk, bool again = false)
     {
         if (walk.Progress?.You is { } walking)
             return new Here(HereState.Found, walking, walk.Progress.Accuracy);
@@ -32,6 +33,11 @@ public sealed class WhereYouAre(ILocationSession location, WalkSession walk, Tim
             return last;
         if (!location.IsAvailable)
             return new Here(HereState.Off);
+        LocationStatus status = await location.StateAsync();
+        if (status.Authorization is LocationAuthorization.Denied or LocationAuthorization.Off)
+            return new Here(status.Authorization == LocationAuthorization.Denied ? HereState.Denied : HereState.Off);
+        if (!mayAsk && status.Authorization == LocationAuthorization.NotDetermined)
+            return new Here(HereState.NotAsked);
         long since = (await location.FixesAsync(long.MaxValue)).Latest;
         LocationStart started = await location.StartAsync(Purpose);
         if (started != LocationStart.Running)

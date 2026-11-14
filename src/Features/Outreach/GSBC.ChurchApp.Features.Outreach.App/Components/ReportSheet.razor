@@ -1,0 +1,89 @@
+@using GSBC.ChurchApp.Platform.Contracts.Media
+@using GSBC.ChurchApp.Platform.Ui.Content
+@inject OutreachReports Reports
+
+<UnsavedGuard Changed="() => Open && (_note.Trim().Length > 0 || _photo is not null)" State="() => (_reason, _note, _photo?.Url)" What="this report" />
+
+<Sheet Open="Open" OpenChanged="CloseAsync" Title="Tell staff about this place" Lead="@Lead">
+    <ChildContent>
+        <Segmented TValue="ReportReason" Label="What's wrong" ShowLabel="true" Stacked="true" Options="Reasons" Value="_reason" ValueChanged="reason => _reason = reason" />
+        <TextField Label="What staff should know" Multiline="true" Required="true" MaxLength="OutreachRules.LongestNote" @bind-Value="_note"
+                   Hint="Nothing changes until staff look at it." />
+        @if (Reports.TakesPhotos)
+        {
+            @if (_photo is { } photo)
+            {
+                <div class="outreach-photo">
+                    <Icon Name="image" />
+                    <span>@photo.FileName</span>
+                    <Button Small="true" Variant="ButtonVariant.Quiet" OnClick="DropPhotoAsync">Take it out</Button>
+                </div>
+            }
+            else
+            {
+                <FilePick Box="true" Label="Add a photo (optional)" Hint="Of the place, not of people" ImagesOnly="true" OnPicked="photo => _photo = photo" />
+            }
+        }
+        <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+    </ChildContent>
+    <Actions>
+        <SaveBar Block="true" Label="Send for review" Busy="_busy" OnSave="SendAsync" OnCancel="() => CloseAsync(false)" Blocked="@Blocked" />
+    </Actions>
+</Sheet>
+
+@code {
+    private static readonly IReadOnlyList<SegmentOption<ReportReason>> Reasons =
+    [
+        new(ReportReason.NotAHome, OutreachWords.Reason(ReportReason.NotAHome)),
+        new(ReportReason.WrongOnTheMap, OutreachWords.Reason(ReportReason.WrongOnTheMap)),
+        new(ReportReason.Unsafe, OutreachWords.Reason(ReportReason.Unsafe)),
+        new(ReportReason.Complaint, OutreachWords.Reason(ReportReason.Complaint)),
+        new(ReportReason.Other, OutreachWords.Reason(ReportReason.Other)),
+    ];
+
+    private ReportReason _reason;
+    private string _note = "";
+    private MediaRef? _photo;
+    private bool _busy;
+    private string? _problem;
+
+    [Parameter] public bool Open { get; set; }
+    [Parameter] public EventCallback<bool> OpenChanged { get; set; }
+    [Parameter] public AddressPoint? Place { get; set; }
+
+    private string Lead => Place is { Label.Length: > 0 } place ? $"Near {place.Label}. Staff read it and decide what to do." : "Where you are now. Staff read it and decide what to do.";
+
+    private string? Blocked => Place is null ? "The app needs your location to say where this is."
+        : _note.Trim().Length == 0 ? "Say what's wrong to send it." : null;
+
+    private async Task SendAsync()
+    {
+        if (Place is null)
+            return;
+        _busy = true;
+        _problem = null;
+        try
+        {
+            await Reports.SendAsync(_reason, Place, _note, _photo);
+            _note = "";
+            _photo = null;
+            await OpenChanged.InvokeAsync(false);
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            _problem = "This couldn't be kept on the phone. Try again.";
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private async Task DropPhotoAsync()
+    {
+        await Reports.ForgetAsync(_photo);
+        _photo = null;
+    }
+
+    private Task CloseAsync(bool open) => OpenChanged.InvokeAsync(open);
+}

@@ -1,0 +1,65 @@
+@page "/outreach/offline-maps"
+@implements IDisposable
+@inject OfflineMaps Maps
+@inject RegionMaps Regions
+
+<Page Title="Offline maps" BackHref="@OutreachLinks.Home" BackLabel="Outreach">
+    <Masthead Title="Offline maps" Note="Outreach maps kept on this phone, so walks work without signal" />
+    <LiveData @ref="_live" TValue="IReadOnlyList<RegionOnPhone>" Load="Maps.LoadAsync" Feeds="OfflineMaps.Feeds">
+        @{
+            IReadOnlyList<RegionOnPhone> regions = context.Value;
+        }
+        @if (!Regions.KeepsFiles)
+        {
+            <Section First="true">
+                <Notice Text="Maps are kept on the phone in the app. Here they load as you go." />
+            </Section>
+        }
+        @if (regions.Count == 0)
+        {
+            <Section First="true">
+                <EmptyState Icon="map" Title="No maps yet" Body="The church's outreach maps come to this phone by themselves once staff have made them." />
+            </Section>
+        }
+        else
+        {
+            <Section First="true" Lead="The map you walk in is kept by itself. Keep others here before you go somewhere without signal.">
+                <ListGroup>
+                    @foreach (RegionOnPhone region in regions)
+                    {
+                        <ListRow @key="region.Region.Id" Title="@region.Region.Name" Subtitle="@Line(region)" Icon="map">
+                            <TrailingContent>
+                                @if (region.Kept)
+                                {
+                                    <Button Small="true" Variant="ButtonVariant.Quiet" OnClick="() => Maps.RemoveAsync(region.Region)">Remove</Button>
+                                }
+                                else
+                                {
+                                    <Button Small="true" Variant="ButtonVariant.Quiet" Icon="download" Disabled="@(!Regions.KeepsFiles)" OnClick="() => Maps.KeepAsync(region.Region)">Keep</Button>
+                                }
+                            </TrailingContent>
+                        </ListRow>
+                    }
+                </ListGroup>
+            </Section>
+        }
+    </LiveData>
+</Page>
+
+@code {
+    private LiveData<IReadOnlyList<RegionOnPhone>>? _live;
+
+    protected override void OnInitialized() => Regions.Changed += OnFilesChanged;
+
+    private static string Line(RegionOnPhone region) =>
+        region.Ready ? $"On this phone · {Megabytes(region.Bytes)}"
+        : region.Downloading ? $"Downloading · {Math.Round(region.Fraction * 100)}% of {Megabytes(region.Bytes)}"
+        : region.Failed ? "Couldn't download. It tries again when you walk there."
+        : $"{Megabytes(region.Bytes)} · {region.Region.Letterboxes:N0} letterboxes";
+
+    private static string Megabytes(long bytes) => bytes < 1_000_000 ? $"{Math.Max(1, bytes / 1000)} KB" : $"{bytes / 1_000_000.0:0.#} MB";
+
+    private void OnFilesChanged() => InvokeAsync(() => _live?.ReloadAsync() ?? Task.CompletedTask);
+
+    public void Dispose() => Regions.Changed -= OnFilesChanged;
+}

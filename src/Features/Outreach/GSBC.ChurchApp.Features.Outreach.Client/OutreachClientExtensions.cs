@@ -16,7 +16,14 @@ public static class OutreachClientExtensions
             .AddSingleton<WalkSession>()
             .AddSingleton<WhereYouAre>()
             .AddSingleton<WalkChoices>()
-            .AddSingleton<OutreachNearby>();
+            .AddSingleton<OutreachNearby>()
+            .AddSingleton<WalkPlans>()
+            .AddSingleton<WalkScreen>()
+            .AddSingleton<OutreachReports>()
+            .AddSingleton<OutreachClaims>()
+            .AddSingleton<OutreachDayRoutes>()
+            .AddSingleton<MyOutreach>()
+            .AddSingleton<OfflineMaps>();
 
     public static IServiceCollection AddOutreachClient(this IServiceCollection services) =>
         services
