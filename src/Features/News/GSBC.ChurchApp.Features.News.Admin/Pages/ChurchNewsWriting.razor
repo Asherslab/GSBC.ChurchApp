@@ -27,23 +27,23 @@
     else
     {
         <TitleBand Title="Church news" BackHref="news" BackText="Church news" />
-        <EmptyState Icon="@AppIcons.News" Title="This post isn't here any more" Body="It may have been deleted, or it's a ministry's post you change in the ministry." />
+        <EmptyState Icon="@AppIcons.News" Title="This post isn't here to change" Body="It may have been archived or deleted, or it's a ministry's post you change in the ministry." />
     }
 </LiveData>
 
-<Sheet Open="_deleting" OpenChanged="open => _deleting = open" Title="Delete this post?"
-       Lead="It goes from everyone's phone and its notification is taken back. This can't be undone.">
+<Sheet Open="_archiving" OpenChanged="open => _archiving = open" Title="Archive this post?"
+       Lead="It leaves everyone's News, and its notification is taken back from phones that haven't opened it. You can put it back from Archived.">
     <Actions>
-        <Button Variant="ButtonVariant.Danger" Busy="_busy" OnClick="DeleteAsync">Delete the post</Button>
-        <Button Variant="ButtonVariant.Quiet" OnClick="() => _deleting = false">Keep it</Button>
+        <Button OnClick="ArchiveAsync">Archive it</Button>
+        <Button Variant="ButtonVariant.Quiet" OnClick="() => _archiving = false">Keep it</Button>
     </Actions>
 </Sheet>
 
 @code {
     private static readonly IReadOnlyList<string> DeskFeeds = [NewsFeeds.Desk];
 
-    private bool _deleting, _busy;
     private NewsPost? _writing;
+    private bool _archiving;
     private string? _problem;
 
     [Parameter] public string? Id { get; set; }
@@ -59,7 +59,7 @@
         if (Id is null)
             return new EditedPost(new NewsPost { LinkPath = Opens ?? "" });
         NewsPost? post = (await News.DeskAsync()).FirstOrDefault(post => post.Id == Id);
-        return new EditedPost(post is { Shared: false } ? post : null);
+        return new EditedPost(post is { Shared: false } and not { State: NewsState.Archived } ? post : null);
     }
 
     private IReadOnlyList<MenuItem> Actions(NewsPost post)
@@ -72,22 +72,25 @@
             items.Add(this.Item("Back to writing", () => RunAsync(() => Writes.BackToWritingAsync(post.Id)), "pencil",
                 post.State == NewsState.Scheduled ? "It won't publish until it's posted again" : "Nobody is asked to publish it any more"));
         if (publishes || post.State is NewsState.Draft or NewsState.WaitingToPublish)
-            items.Add(this.Item("Delete the post…", () => { _deleting = true; }, "trash-2", danger: true, startsGroup: true));
+            items.Add(post.State == NewsState.Published
+                ? this.Item("Archive…", () => { _archiving = true; }, "archive", "Takes it out of everyone's News. You can put it back.", startsGroup: true)
+                : this.Item("Archive", ArchiveAsync, "archive", "Keeps it under Archived. You can put it back.", startsGroup: true));
         return items;
     }
 
-    private async Task DeleteAsync()
+    private async Task ArchiveAsync()
     {
         if (Id is not { } id)
             return;
-        await RunAsync(() => Writes.DeleteAsync(id));
+        await RunAsync(() => Writes.ArchiveAsync(id));
+        _archiving = false;
         if (_problem is null)
             Navigation.NavigateTo(Back);
     }
 
     private async Task RunAsync(Func<Task> work)
     {
-        (_busy, _problem) = (true, null);
+        _problem = null;
         try
         {
             await work();
@@ -95,10 +98,6 @@
         catch (RpcException exception)
         {
             _problem = exception.Status.Detail;
-        }
-        finally
-        {
-            _busy = false;
         }
     }
 }

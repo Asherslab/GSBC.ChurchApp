@@ -241,13 +241,46 @@ The owner's tickets from the admin panel in Safari (#92 to #96).
 - **A post that starts with a picture keeps its formatting** (found while checking these on the phone): the editor
   skipped every heading, bold word and list when the very first thing in a post was a picture, a video or a card.
 
+## Drafts, and archiving instead of deleting (owner, 2026-11-14)
+
+The owner, on the desk's *Being written 0*: "why does this exist if there's no way to save a post without actually
+publishing it? to be clear, it'd be a nice feature to draft news posts before publishing them. Also - archive news posts
+instead of deleting them".
+
+- **Save as a draft:** anyone who writes church news (`news.write`) has *Save as a draft* beside the main button, in the
+  save bar, when writing a new post or changing one that isn't published. A draft shows under *Being written* on the desk
+  (admin panel and the phone's News desk) for everyone with news access, never in anyone's News. Saving a post that was
+  waiting to be published or scheduled as a draft takes it back to writing (the ask is settled; the schedule is
+  dropped). Opening a draft and publishing, scheduling or asking works as before.
+- **Archive instead of delete:** a post's ⋯ menu has *Archive* where *Delete the post…* was, for the same people who
+  could delete it (publishers; writers for a draft or a post waiting to be published). Archiving takes it out of
+  everyone's News and recalls its notification, as deleting did, and keeps it on the desk under a new **Archived**
+  group. An archived post can't be changed or published until it's put back.
+- **Archiving a published post asks first** (owner, 2026-11-14): *Archive…* opens a short sheet, "Archive this post?",
+  saying it leaves everyone's News and its notification is taken back, with *Archive it* and *Keep it*, like the delete
+  sheet. A draft, a scheduled post or one waiting to be published archives straight away.
+- **The sand foot says "Posted" only for a published post** (*fixed*, 2026-11-14): on the desk and the phone's post
+  page, a draft, a post waiting or scheduled, and an archived one say what they are instead ("A draft by … It isn't
+  posted, and nobody sees it yet.", "Archived before it was posted …"). The editor's *Preview on a phone* keeps
+  "Posted today", as it shows how the post will look once posted.
+- **Putting back makes a draft** (*default*, the safer choice): it never re-appears in News by surprise, and its
+  notification doesn't go again, even when it's published again (it was sent once; the post keeps that). A writer can
+  put back only a post that was never published.
+- **Delete for good** is only in Archived, with the confirm sheet; the server refuses to delete a church news post that
+  isn't archived. Taking a ministry's post off church news is unchanged.
+- **Ministries' posts in church news** (not changed here): a shared post can't be archived (it's the ministry's post);
+  church news still only takes it off. If ministries get archiving, it belongs on the ministry's own post, with church
+  news following it as it follows edits now: archiving the ministry's post would take it off church news, and putting it
+  back would leave it out until it's shared again. A ministry's post has no drafts of its own yet; it reaches church
+  news only once it's published in the ministry.
+
 ## How it's built
 
 - **News feature** (schema `news`): `posts` holds church news and ministries' posts in it (`source`, `source_id`).
   States: Draft, Waiting to publish (a writer asked), Scheduled, Published, Asked (a ministry asked), Declined (kept in
-  the ministry). `NewsDesk` does the work; `NewsSchedule` publishes due posts each minute, claiming each with one update
-  so two API servers never publish or notify twice. Deleting a post recalls its notification
-  (`INotifications.RecallAsync(subject)`).
+  the ministry), Archived (kept on the desk, out of News). `NewsDesk` does the work; `NewsSchedule` publishes due posts each minute, claiming each with one update
+  so two API servers never publish or notify twice. Archiving or deleting a post recalls its
+  notification (`INotifications.RecallAsync(subject)`).
 - **Feeds:** `news.posts` (everyone, published for everyone), `news.posts.private` (each row's audience), `news.desk`
   (holders of `news.write`). The phone reads them (`StoredNews`); the admin panel reads the desk online (`OnlineNews`).
 - **Permissions and roles:** `news.write` and `news.publish`. *Church news Writer* and *Church news Publisher* replace

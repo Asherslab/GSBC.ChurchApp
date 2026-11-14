@@ -30,8 +30,24 @@ public static class NewsWords
         NewsState.Scheduled => "Scheduled",
         NewsState.Asked => $"{post.From} asks for church news",
         NewsState.Declined => $"Kept in {post.From}'s news",
+        NewsState.Archived => "Archived",
         _ => "",
     };
+
+    public static string ArchivedLine(NewsPost post, TimeProvider clock) =>
+        post.PublishedAt is null ? "Archived before it was posted" : $"Archived, was posted {When(post, clock)}";
+
+    public static string? NotPosted(NewsPost post, TimeProvider clock) => post.State switch
+    {
+        NewsState.Draft => $"A draft{By(post)}. It isn't posted, and nobody sees it yet.",
+        NewsState.WaitingToPublish => $"Not posted yet.{(post.Author.Length > 0 ? $" {post.Author} asks for it to be published." : "")}",
+        NewsState.Scheduled when post.PublishAt is { } at => $"Not posted yet. It's posted by itself {ChurchDates.Describe(at, DateLineStyle.Long, withTime: true, clock.GetUtcNow().UtcDateTime)}.",
+        NewsState.Archived when post.PublishedAt is null => $"Archived before it was posted{By(post)}. Nobody sees it.",
+        NewsState.Archived => $"Archived. It was posted {When(post, clock)}{By(post)}, and nobody sees it now.",
+        _ => null,
+    };
+
+    private static string By(NewsPost post) => post.Author.Length > 0 ? $" by {post.Author}" : "";
 
     public static string When(NewsPost post, TimeProvider clock) =>
         ChurchDates.Describe(PostedAt(post), DateLineStyle.Long, withTime: false, clock.GetUtcNow().UtcDateTime) + (post.EditedAt is null ? "" : " · edited");
@@ -44,6 +60,7 @@ public static class NewsWords
         NewsState.WaitingToPublish => $"{post.Author} asks for it to be published.",
         NewsState.Asked => $"{post.From}'s leaders ask for it to go in church news.",
         NewsState.Declined => $"Kept in {post.From}'s news{(post.AnsweredBy.Length > 0 ? $" by {post.AnsweredBy}" : "")}.",
+        NewsState.Archived => "Archived. It's out of everyone's News. Put it back to change it or publish it again.",
         _ => "Being written. Nobody sees it yet.",
     };
 }

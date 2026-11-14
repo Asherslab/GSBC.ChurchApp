@@ -26,6 +26,12 @@ internal sealed class NewsService(NewsDesk desk, NewsTelling telling, IAccessEva
     public async ValueTask<NewsPost> BackToWritingAsync(NewsRef request, CallContext context = default) =>
         await desk.BackToWritingAsync(await WriterAsync(context), NewsDesk.ParseId(request.Id), context.CancellationToken);
 
+    public async ValueTask<NewsPost> ArchiveAsync(NewsRef request, CallContext context = default) =>
+        await desk.ArchiveAsync(await WriterAsync(context), NewsDesk.ParseId(request.Id), context.CancellationToken);
+
+    public async ValueTask<NewsPost> PutBackAsync(NewsRef request, CallContext context = default) =>
+        await desk.PutBackAsync(await WriterAsync(context), NewsDesk.ParseId(request.Id), context.CancellationToken);
+
     public async ValueTask<Done> DeleteAsync(NewsRef request, CallContext context = default)
     {
         await desk.DeleteAsync(await WriterAsync(context), NewsDesk.ParseId(request.Id), context.CancellationToken);

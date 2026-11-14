@@ -8,6 +8,8 @@ public static class NewsMethods
     public const string Publish = News + "Publish";
     public const string AskToPublish = News + "AskToPublish";
     public const string BackToWriting = News + "BackToWriting";
+    public const string Archive = News + "Archive";
+    public const string PutBack = News + "PutBack";
     public const string Delete = News + "Delete";
     public const string TryOnMyPhone = News + "TryOnMyPhone";
     public const string AnswerAsk = News + "AnswerAsk";

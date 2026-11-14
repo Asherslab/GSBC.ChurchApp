@@ -38,7 +38,8 @@ internal static class NewsRules
 
     public static bool IsShared(PostRecord post) => post.Source is not null;
 
-    public static bool WritersMayChange(PostRecord post) => post.State is NewsState.Draft or NewsState.WaitingToPublish && !IsShared(post);
+    public static bool WritersMayChange(PostRecord post) =>
+        !IsShared(post) && (post.State is NewsState.Draft or NewsState.WaitingToPublish || post is { State: NewsState.Archived, PublishedAt: null });
 
     public static RichText BodyOf(PostRecord post) => ContentJson.TryRead(post.Body, out RichText? body) ? body! : new RichText();
 

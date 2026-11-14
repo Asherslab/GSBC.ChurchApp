@@ -3,6 +3,7 @@
 @inject NewsWrites Writes
 @inject IAccess Access
 @inject NavigationManager Navigation
+@inject TimeProvider Clock
 
 <LiveData @key="Id" TValue="ShownPost" Load="LoadAsync" Feeds="News.Feeds" ReloadOn="Reload" Remember="@($"news.post.{Id}")">
     <Page Title="@(context.Value.Post?.Title ?? "News")" BackHref="news" BackLabel="News" TopBar="TopBarStyle.SolidTitleOnScroll">
@@ -23,7 +24,7 @@
             {
                 <div class="section section--first">
                     <PostView FillsPage="true" Title="@post.Title" Content="post.Body" From="@post.From" FromHref="@post.FromLink.TrimStart('/')" Author="@post.Author"
-                              Posted="NewsWords.PostedAt(post)" Edited="post.EditedAt is not null" For="@NewsWords.AudienceWords(post.Audience)" LinkPath="@post.LinkPath" LinkLabel="@post.LinkLabel">
+                              Posted="NewsWords.PostedAt(post)" Edited="post.EditedAt is not null" For="@NewsWords.AudienceWords(post.Audience)" LinkPath="@post.LinkPath" LinkLabel="@post.LinkLabel" NotPosted="@NewsWords.NotPosted(post, Clock)">
                         <Status>
                             @if (NewsWords.State(post) is { Length: > 0 } state)
                             {
@@ -51,14 +52,25 @@
     </Page>
 </LiveData>
 
-<Sheet Open="_deleting" OpenChanged="open => _deleting = open" Title="@(_shown?.Shared == true ? "Take it off church news?" : "Delete this post?")"
-       Lead="@(_shown?.Shared == true ? $"It stays in {_shown.From}'s news. Its notification is taken back from phones that haven't opened it." : "It goes from everyone's phone, and its notification is taken back. This can't be undone.")">
+<Sheet Open="_deleting" OpenChanged="open => _deleting = open" Title="@(_shown?.Shared == true ? "Take it off church news?" : "Delete this post for good?")"
+       Lead="@(_shown?.Shared == true ? $"It stays in {_shown.From}'s news. Its notification is taken back from phones that haven't opened it." : "It goes from Archived, and nobody can put it back. This can't be undone.")">
     <ChildContent>
         <Notice Tone="NoticeTone.Warning" Text="@_problem" />
     </ChildContent>
     <Actions>
-        <Button Block="true" Variant="ButtonVariant.Danger" Busy="_busy" OnClick="DeleteAsync">@(_shown?.Shared == true ? "Take it off" : "Delete the post")</Button>
+        <Button Block="true" Variant="ButtonVariant.Danger" Busy="_busy" OnClick="DeleteAsync">@(_shown?.Shared == true ? "Take it off" : "Delete it for good")</Button>
         <Button Block="true" Variant="ButtonVariant.Quiet" OnClick="() => _deleting = false">Keep it</Button>
+    </Actions>
+</Sheet>
+
+<Sheet Open="_archiving" OpenChanged="open => _archiving = open" Title="Archive this post?"
+       Lead="It leaves everyone's News, and its notification is taken back from phones that haven't opened it. You can put it back from Archived.">
+    <ChildContent>
+        <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+    </ChildContent>
+    <Actions>
+        <Button Block="true" Busy="_busy" OnClick="ArchiveShownAsync">Archive it</Button>
+        <Button Block="true" Variant="ButtonVariant.Quiet" OnClick="() => _archiving = false">Keep it</Button>
     </Actions>
 </Sheet>
 
@@ -66,7 +78,7 @@
     private const ChangeKind Reload = ChangeKind.Reconnected | ChangeKind.Session | ChangeKind.Access | ChangeKind.Outbox;
 
     private NewsPost? _shown;
-    private bool _deleting, _busy, _tell = true;
+    private bool _deleting, _archiving, _busy, _tell = true;
     private string? _problem;
 
     [Parameter] public Guid Id { get; set; }
@@ -83,18 +95,33 @@
     private IReadOnlyList<MenuItem> Actions(NewsPost post)
     {
         bool publishes = Access.Can(NewsPermissions.Publish);
-        bool mayChange = !post.Shared && (publishes || post.State is NewsState.Draft or NewsState.WaitingToPublish) && Access.Can(NewsPermissions.Write);
+        bool mayChange = !post.Shared && Access.Can(NewsPermissions.Write)
+                         && (publishes || post.State is NewsState.Draft or NewsState.WaitingToPublish || post is { State: NewsState.Archived, PublishedAt: null });
         List<MenuItem> items = [];
-        if (mayChange)
-            items.Add(this.Item("Change the post", () => Navigation.NavigateTo($"news/{post.Id}/change"), "pencil"));
         if (post.Shared && publishes && post.State == NewsState.Published)
             items.Add(this.Item("Take it off church news…", () => (_deleting, _problem) = (true, null), "trash-2", danger: true, startsGroup: true));
+        else if (mayChange && post.State == NewsState.Archived)
+        {
+            items.Add(this.Item("Put it back", () => RunAsync(() => Writes.PutBackAsync(post.Id)), "rotate-ccw", "It comes back as a draft, to change or publish again"));
+            items.Add(this.Item("Delete it for good…", () => (_deleting, _problem) = (true, null), "trash-2", danger: true, startsGroup: true));
+        }
         else if (mayChange)
-            items.Add(this.Item("Delete the post…", () => (_deleting, _problem) = (true, null), "trash-2", danger: true, startsGroup: true));
+        {
+            items.Add(this.Item("Change the post", () => Navigation.NavigateTo($"news/{post.Id}/change"), "pencil"));
+            items.Add(post.State == NewsState.Published
+                ? this.Item("Archive…", () => (_archiving, _problem) = (true, null), "archive", "Takes it out of everyone's News. You can put it back.", startsGroup: true)
+                : this.Item("Archive", () => RunAsync(() => Writes.ArchiveAsync(post.Id)), "archive", "Keeps it under Archived. You can put it back.", startsGroup: true));
+        }
         return items;
     }
 
     private async Task AnswerAsync(NewsPost post, bool yes) => await RunAsync(() => Writes.AnswerAskAsync(post.Id, yes, yes && _tell));
+
+    private async Task ArchiveShownAsync()
+    {
+        if (_shown is not null)
+            await RunAsync(() => Writes.ArchiveAsync(_shown.Id));
+    }
 
     private async Task DeleteAsync()
     {
@@ -111,7 +138,7 @@
         try
         {
             await work();
-            _deleting = false;
+            (_deleting, _archiving) = (false, false);
         }
         catch (Exception exception) when (exception is Grpc.Core.RpcException or InvalidOperationException)
         {

@@ -20,6 +20,12 @@ public interface INewsService
     ValueTask<NewsPost> BackToWritingAsync(NewsRef request, CallContext context = default);
 
     [SignedIn]
+    ValueTask<NewsPost> ArchiveAsync(NewsRef request, CallContext context = default);
+
+    [SignedIn]
+    ValueTask<NewsPost> PutBackAsync(NewsRef request, CallContext context = default);
+
+    [SignedIn]
     ValueTask<Done> DeleteAsync(NewsRef request, CallContext context = default);
 
     [SignedIn]

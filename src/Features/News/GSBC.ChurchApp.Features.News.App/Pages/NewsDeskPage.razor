@@ -20,7 +20,7 @@
                 </Section>
             }
         }
-        @if (!context.Value.Any(post => post.State != NewsState.Published))
+        @if (!context.Value.Any(post => post.State is not (NewsState.Published or NewsState.Declined)))
         {
             <Section First="true">
                 <EmptyState Icon="check" Title="Nothing to look at" Body="Drafts, posts waiting to be published and ministries' asks show here." />
@@ -38,6 +38,7 @@
         ("Waiting to be published", "Written by someone who asks for it to be published.", [NewsState.WaitingToPublish]),
         ("Scheduled", "These publish by themselves at their time.", [NewsState.Scheduled]),
         ("Being written", "Drafts nobody has posted yet.", [NewsState.Draft]),
+        ("Archived", "Out of everyone's News. Open one to put it back or delete it for good.", [NewsState.Archived]),
     ];
 
     private static string FirstShown(IReadOnlyList<NewsPost> posts) =>
@@ -47,6 +48,7 @@
     {
         NewsState.Asked => $"{post.From} · asked by {(post.AskedBy.Length > 0 ? post.AskedBy : "a leader")}",
         NewsState.Scheduled when post.PublishAt is { } at => $"Publishes {ChurchDates.Describe(at, DateLineStyle.Relative, withTime: true, Clock.GetUtcNow().UtcDateTime)}",
+        NewsState.Archived => NewsWords.ArchivedLine(post, Clock),
         _ => post.Author.Length > 0 ? $"By {post.Author}" : NewsWords.State(post),
     };
 
@@ -54,6 +56,7 @@
     {
         NewsState.Asked => "users-round",
         NewsState.Scheduled => "clock",
+        NewsState.Archived => "archive",
         _ => "pencil",
     };
 }
