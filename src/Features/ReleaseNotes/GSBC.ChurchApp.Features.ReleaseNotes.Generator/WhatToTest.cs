@@ -34,21 +34,22 @@ public static class WhatToTest
 
         StringBuilder text = new(string.Join("\n\n", blocks));
         if (named.Count > 0)
-        {
             text.Append(text.Length == 0 ? "" : "\n\n").Append(AlsoHeading);
-            for (int index = 0; index < named.Count; index++)
-            {
-                string rest = $"\n…and {named.Count - index} more under More → What's new in the app.";
-                bool last = index == named.Count - 1;
-                if (text.Length + 1 + named[index].Length + (last ? 0 : rest.Length) + 2 + InTheApp.Length > AppleLimit)
-                {
-                    text.Append(rest);
-                    return (text.ToString(), named.Count - index);
-                }
-                text.Append('\n').Append(named[index]);
-            }
+        int footing = 2 + InTheApp.Length;
+        if (text.Length + named.Sum(line => 1 + line.Length) + footing <= AppleLimit)
+        {
+            named.ForEach(line => text.Append('\n').Append(line));
+            return (text.Append("\n\n").Append(InTheApp).ToString(), 0);
         }
-        return (text.Append("\n\n").Append(InTheApp).ToString(), 0);
+
+        for (int index = 0; index < named.Count; index++)
+        {
+            string rest = $"\n…and {named.Count - index} more under More → What's new in the app.";
+            if (text.Length + 1 + named[index].Length + rest.Length > AppleLimit)
+                return (text.Append(rest).ToString(), named.Count - index);
+            text.Append('\n').Append(named[index]);
+        }
+        return (text.ToString(), 0);
     }
 
     private static string Heading(Note note) => $"{note.Title}{(note.Audience == NoteAudience.Staff ? " (staff only)" : "")}";

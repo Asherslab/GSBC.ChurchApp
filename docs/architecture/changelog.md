@@ -119,8 +119,11 @@ optional icon tile).
 
 1. checks out with full history and writes the text with `tools/release-notes/what-to-test.sh`: every note
    added or changed under `changelog/` since the nearest `testflight/uat/*` tag (all notes before the
-   first upload), staff wording, within Apple's 4,000 characters (it ends with "…and N more" when it
-   must). The text is also printed in the job summary.
+   first upload), within Apple's 4,000 characters. Highlights come first, each with its line, `Where:`
+   and `Try:`; then as many other notes in that form as fit; then every remaining note by title under
+   "Also in this build:" (ending "…and N more" only if even the titles don't fit). `Changed:` is left
+   to What's new in the app. Keep each slice's notes few, merged by feature, so the highlights fit
+   whole. The text is also printed in the job summary.
 2. publishes the app with staff notes, archives and uploads as before;
 3. tags the uploaded commit `testflight/uat/<build number>` and pushes the tag (the job has
    `contents: write`), so the next build's notes start there;
