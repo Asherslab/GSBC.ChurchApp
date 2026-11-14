@@ -432,11 +432,54 @@ built C, *Campaigns as the workbench*: campaigns are records, settings are setti
 owner). The planner, coverage map, day board and exclusions screens are stage 2. Notifications open its Follow-ups and
 Reports tabs; the phone's follow-up page is stage 2.
 
+### Coverage, numbers and places in the admin panel (built 2026-11-15)
+
+Built overnight by the reports station while the owner slept; *Claude's default* marks what's the owner's to change.
+Decision page: `.impeccable/mocks/outreach-coverage/` (A the map is the desk, B numbers lead, C a coverage map with a
+working rail). The station built **C** (*Claude's default*): coverage is a job of its own with the map and a rail ruled
+off where every workbench keeps its record, numbers get their own tab rather than hiding the map, and the places
+outreach skips are a list and record like every other admin list. A and B stay on the page.
+
+The Outreach page's tabs are now Campaigns, Coverage, Numbers, Places, Follow-ups, Reports and Settings.
+
+- **Coverage:** a campaign's streets done within its rest period, on the region's map, each side drawn in one deep-aqua
+  ramp that fades to the map's ground as the rest period ends (the legend is the same ramp: this week, half the rest
+  period, "open again"). Two figures: streets done of the region's streets with homes, and the share of its
+  letterboxes. No junk mail and hostile marks and the places outreach skips can be shown or hidden. **Mark as not
+  done**: click a street (both sides) or draw round streets (a lasso, by each stretch's middle, as the server matches);
+  the rail says how many sides and letterboxes and when they were done, and marking them applies at once with an
+  **Undo** (`UndoExpiryAsync`: the expiry's time is returned and puts back exactly the rows it expired). *Claude's
+  default*: undo rather than a confirm, since it is cheap to reverse and a confirm would be clicked through.
+- **Numbers:** letterboxes, km, walks and conversations (doors when any) for the last 13 weeks, this year or the last
+  12 months, all campaigns or one, each against the period before; letterboxes by week or month as a trend line with
+  the period before dashed; a table per outreach day (`TotalsBy.OutreachDay`: walks during the day, the day's date and
+  campaign); walkers counted by name ranked by letterboxes, then the walks of people counted without a name in one
+  line. The leaderboard switch stays on the campaign; the walkers list says which campaigns show one in the app.
+- **Places:** one workbench of areas and addresses outreach skips, No junk mail and hostile marks, filtered in the rail.
+  An area is drawn on the map (name, why, note); an address is clicked on the map (the nearest letterbox on that side)
+  with why, who asked (admin only) and whether walkers see a Don't letterbox marker. No junk mail and hostile marks are
+  cleared from the ⋯. Who marked anything is never shown. Areas need `outreach.settings.change`; marks
+  `outreach.review`.
+- **Reports:** the place on a map and the walker's photo (opens in the picture viewer); *Never deliver there* skips the
+  letterbox, *Skip an area round it* draws an area instead (`ReportResolve.Area`; the zone is named after the place and
+  keeps the walker's note), and the reason maps to the exclusion's.
+- **Settings:** every field says its usual value; *Spare tracts* (the engine's spare share, as a per cent) joins How
+  long a walk takes. **Map areas** (for `outreach.maps.manage`): each area's state, regions, letterboxes, download
+  size and version, with Rebuild, Rename and Delete in its ⋯, and Add a map area (a name, a centre typed as latitude
+  and longitude, and 1 to 30 km). *Claude's default*: a typed centre, because a campaign far away has no map yet to
+  click on.
+- **Seams:** `IOutreachMapsService.RegionsAsync` (signed in; the same as the public regions feed) gives staff without
+  `outreach.maps.manage` the regions; `StreetGraphLoader` (Outreach.Client) fetches and caches a region's streets for
+  the admin panel, shared with the planner. The shared map gained a `Covered` line style with an age, and colours given
+  as theme tokens.
+
 ### Open (for stage 2 and the owner)
 
 - Checking walked lengths against the street graph on the server (today the phone's figures are trusted within the
   speed and length limits).
 - A new exclusion zone doesn't yet flag the day routes it touches.
+- The coverage map shows one region at a time (a chooser when there are several); streets in two regions' overlap show
+  in both.
 - Taking an area as a claim (the 2026-10-27 draft's *Areas*) isn't built: areas are the planners' for now.
 
 ## Outreach days
