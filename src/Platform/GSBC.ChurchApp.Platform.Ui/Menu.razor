@@ -2,12 +2,12 @@
 @inject Shell Shell
 @inject IJSRuntime Js
 
-<div class="menu @(Block ? "menu--block" : "") @Class" @onkeydown="OnKeyAsync">
-    @if (Text is null)
+<div class="menu @(Block ? "menu--block" : "") @(Anchor is null ? "" : "menu--anchored") @Class" style="@Anchor?.Style" @onkeydown="OnKeyAsync">
+    @if (Anchor is null && Text is null)
     {
         <Button Variant="Variant" Small="Small" Icon="@Icon" AriaLabel="@Label" Tooltip="@Label" Expanded="_open" Disabled="Disabled" OnClick="ToggleAsync" />
     }
-    else
+    else if (Anchor is null)
     {
         <Button Variant="Variant" Small="Small" Block="Block" Icon="@Icon" AriaLabel="@(Chevron ? $"{Label}: {Text}" : null)" Expanded="_open" Disabled="Disabled" OnClick="ToggleAsync">
             <span class="menu__text-label">@Text</span>
@@ -19,7 +19,7 @@
     }
     @if (_open)
     {
-        <button type="button" class="menu__away" tabindex="-1" aria-label="Close the menu" @onclick="Close"></button>
+        <button type="button" class="menu__away" tabindex="-1" aria-label="Close the menu" @onclick="CloseAsync"></button>
         <div class="menu__panel @(AlignStart ? "menu__panel--start" : "")" role="menu" aria-label="@Label" @ref="_panel">
             @for (int index = 0; index < Items.Count; index++)
             {
@@ -76,25 +76,42 @@
     [Parameter] public bool Chevron { get; set; }
     [Parameter] public bool Disabled { get; set; }
     [Parameter] public string? Class { get; set; }
+    [Parameter] public MenuAnchor? Anchor { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+
+    protected override void OnParametersSet()
+    {
+        if (Anchor is null || _open)
+            return;
+        Open();
+    }
 
     private Task ToggleAsync()
     {
         if (_open)
-        {
-            Close();
-            return Task.CompletedTask;
-        }
-        _open = true;
-        _active = Math.Max(0, Items.ToList().FindIndex(item => item.Checked));
-        _focusPending = true;
+            return CloseAsync();
+        Open();
         return Task.CompletedTask;
     }
 
-    private void Close() => _open = false;
+    private void Open()
+    {
+        _open = true;
+        int chosen = Items.ToList().FindIndex(item => item.Checked);
+        _active = chosen >= 0 ? chosen : Math.Max(0, Items.ToList().FindIndex(item => !item.Disabled));
+        _focusPending = true;
+    }
+
+    private async Task CloseAsync()
+    {
+        _open = false;
+        if (Anchor is not null)
+            await OnClose.InvokeAsync();
+    }
 
     private async Task ChooseAsync(MenuItem item)
     {
-        _open = false;
+        await CloseAsync();
         await Shell.HapticAsync();
         await item.OnChoose.InvokeAsync();
     }
@@ -114,7 +131,7 @@
         };
         if (next is -1)
         {
-            Close();
+            await CloseAsync();
             return;
         }
         if (next is { } at)

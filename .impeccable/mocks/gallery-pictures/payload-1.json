@@ -1,0 +1,46 @@
+{
+  "title": "Taking out or moving one picture in a gallery (#93)",
+  "question": "A gallery in a post can't lose or reorder a single picture yet: its pill only moves, adds to or takes out the whole gallery. Each sketch shows one way to do it at a desk (left) and on the phone (right), with the same three pictures. Pick one; the other two go. Dragging whole blocks, the gallery's outline and the captions are being fixed meanwhile and don't depend on this.",
+  "reroll": true,
+  "steer": true,
+  "buildPath": { "value": "code", "toggle": false },
+  "options": [
+    {
+      "id": "arrange",
+      "kind": "assigned",
+      "kicker": "THE ROLL",
+      "label": "Arrange, then Done",
+      "thesis": "The gallery's pill gains Arrange. Arranging lays the pictures out in place as equal, numbered tiles, each with its own handle and ×: drag to change the order (a finger on the phone, Alt ← → on a keyboard), × to take one out, Done to put the gallery back as it reads.",
+      "palette": ["#009c8f", "#2a3d5e", "#2d374d", "#ffffff"],
+      "materials": ["numbered tiles", "handle and × on each", "aqua drop line", "Done"],
+      "viewport": "A post's gallery in Arranging: three equal tiles 1 2 3, the second being dragged after the third, a line under them saying how, and Done.",
+      "risk": "One more step (Arrange, then Done) before you can touch a picture; the tiles don't show the gallery's real layout while arranging.",
+      "html": ".impeccable/mocks/gallery-pictures/a-arrange.html",
+      "htmlFrame": "1440x900"
+    },
+    {
+      "id": "choose",
+      "kind": "dealt",
+      "label": "Click a picture to choose it",
+      "thesis": "Clicking one picture inside a chosen gallery rings it in aqua and swaps in its own pill: move earlier, move later, replace, take it out, and back to the whole gallery. Nothing new to find: you click what you want to change.",
+      "palette": ["#009c8f", "#2a3d5e", "#2d374d", "#ffffff"],
+      "materials": ["aqua ring on the chosen picture", "the picture's own pill", "Whole gallery to go back"],
+      "viewport": "The gallery chosen, its second picture ringed, its pill showing ‹ › replace and take out with the tooltip Take this picture out.",
+      "risk": "Moving a picture several places takes several clicks; two levels of choosing (gallery, then picture) to learn.",
+      "html": ".impeccable/mocks/gallery-pictures/b-choose-a-picture.html",
+      "htmlFrame": "1440x900"
+    },
+    {
+      "id": "menu",
+      "kind": "dealt",
+      "label": "A ⋯ on each picture",
+      "thesis": "Every picture in a gallery carries a small ⋯ at its corner (on hover at a desk, always on the phone) that opens the shared menu: Move earlier, Move later, Replace, Take this picture out. The gallery's own pill doesn't change.",
+      "palette": ["#009c8f", "#2a3d5e", "#2d374d", "#ffffff"],
+      "materials": ["⋯ on each picture", "the shared Menu", "a sheet on the phone"],
+      "viewport": "The gallery with its usual pill; the second picture's ⋯ open on Move earlier, Move later, Replace and Take this picture out.",
+      "risk": "Several ⋯ buttons on the pictures at once on the phone; reordering is one step at a time.",
+      "html": ".impeccable/mocks/gallery-pictures/c-picture-menu.html",
+      "htmlFrame": "1440x900"
+    }
+  ]
+}

@@ -218,6 +218,29 @@ looked like every other one; and a post opening with several pictures showed the
   the post's own title has scrolled under it, so it isn't shown twice; the admin panel's *Preview on a phone* draws the
   solid top bar with its back label and lets the foot fill the phone, as on the phone.
 
+## Moving blocks, and pictures in a gallery (owner's feedback, 2026-11-14)
+
+The owner's tickets from the admin panel in Safari (#92 to #96).
+
+- **Dragging a block by its handle works everywhere** (#92 "drag doesn't work"). The handle now drags with pointer
+  events, so a mouse in Safari or Chrome and a finger on the phone all move it the same way. While moving, the block
+  dims and an aqua line shows where it will land, only between blocks (never inside a list, a quote or a gallery); near
+  the top or bottom the page scrolls, Escape puts it back, and Alt ↑ or Alt ↓ on the handle moves it one block with the
+  keyboard. The browser's own drag never started before: the handle cancelled its press to keep the editor's cursor.
+- **One picture in a gallery** (#93 "how do I remove a single image from a gallery?"; the owner's pick on the decision
+  page, `.impeccable/mocks/gallery-pictures/`: "A ⋯ on each picture"). Each picture in a gallery carries a ⋯ at its
+  bottom right (on hover at a desk, always on the phone). It opens the shared menu (a sheet on the phone): *Move
+  earlier*, *Move later*, *Replace* and *Take this picture out*. The gallery's caption stays with the gallery whichever
+  picture moves, and a gallery left with one picture becomes a single picture.
+- **Every caption is the same quiet line** (#94): typing in one underlines it in aqua and nothing else. The admin
+  panel's focus style had rounded its underline into half a box.
+- **No gaps that aren't asked for** (#95): one-line menu items centre their label (they had all their spare height
+  under it, in every menu, not just Insert), and *Split into cards* and *Line across* are one line tall in the editor
+  instead of three.
+- **A card's look panel spans the editor** (#96), as the table's panel does.
+- **A post that starts with a picture keeps its formatting** (found while checking these on the phone): the editor
+  skipped every heading, bold word and list when the very first thing in a post was a picture, a video or a card.
+
 ## How it's built
 
 - **News feature** (schema `news`): `posts` holds church news and ministries' posts in it (`source`, `source_id`).

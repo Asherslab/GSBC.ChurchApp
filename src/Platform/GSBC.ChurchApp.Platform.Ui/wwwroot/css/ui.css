@@ -1472,7 +1472,9 @@ span.stage-pipeline__stage { pointer-events: none; }
 .popover { z-index: 40; display: grid; padding: var(--space-xs); border-radius: var(--radius-field); background: var(--surface); color: var(--ink); box-shadow: 0 0 0 1px var(--line), 0 18px 36px -16px var(--scrim); }
 .menu__panel--start { right: auto; left: 0; }
 .menu__item { display: flex; align-items: flex-start; gap: var(--space-sm); min-height: var(--touch); padding: var(--space-sm) var(--space-sm); border: 0; border-radius: var(--radius-inner); background: none; color: var(--ink); font: inherit; font-size: var(--text-row); font-weight: 600; text-align: left; cursor: pointer; }
+.menu__item:not(:has(.menu__detail)) { align-items: center; }
 .menu__item:hover, .menu__item:focus-visible { background: var(--selected-fill); outline: none; }
+.menu__panel:hover .menu__item:focus-visible:not(:hover) { background: none; }
 .menu__item:disabled { color: var(--ink-3); cursor: default; background: none; }
 .menu__item--danger { color: var(--danger); }
 .menu__lead { display: grid; place-items: center; width: 18px; height: 1.3em; flex: none; color: var(--accent); }
@@ -1590,6 +1592,7 @@ span.stage-pipeline__stage { pointer-events: none; }
 
 .menu--block { display: flex; }
 .menu--block .menu__panel { left: 0; right: 0; max-width: none; }
+.menu--anchored { position: fixed; z-index: 39; }
 .menu--block > .btn { justify-content: space-between; border-radius: var(--radius-field); }
 .menu__text-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .menu__chevron { flex: none; color: var(--ink-2); transition: transform 160ms ease-out; }
