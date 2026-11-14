@@ -146,6 +146,7 @@ else
 @code {
     private static readonly IReadOnlyList<string> BoardFeeds = [OutreachFeeds.Claims, OutreachFeeds.Coverage, OutreachFeeds.Desk];
     private static readonly TimeSpan SettleTime = TimeSpan.FromSeconds(1.2);
+    private static readonly TimeSpan ClickAfterDrawing = TimeSpan.FromMilliseconds(600);
 
     private static readonly IReadOnlyList<ToolChoice> Tools =
     [
@@ -170,6 +171,7 @@ else
     private PlanView _view;
     private int? _selected;
     private PlannedSection? _hovered;
+    private DateTime _drawnAt;
     private DayBoard? _board;
     private IReadOnlyList<MapLine> _lines = [];
     private IReadOnlyList<MapArea> _areas = [];
@@ -375,7 +377,7 @@ else
 
     private Task TappedAsync(MapPoint point)
     {
-        if (_planner is not { } planner)
+        if (_planner is not { } planner || Time.GetUtcNow().UtcDateTime - _drawnAt < ClickAfterDrawing)
             return Task.CompletedTask;
         switch (_tool)
         {
@@ -410,6 +412,7 @@ else
             return Task.CompletedTask;
         IReadOnlyList<GeoPoint> points = PlanDrawing.Points(stroke.Points);
         _preview = [];
+        _drawnAt = Time.GetUtcNow().UtcDateTime;
         return _tool switch
         {
             PlanTool.Area => EditAsync(planner =>

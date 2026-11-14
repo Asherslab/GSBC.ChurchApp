@@ -44,7 +44,7 @@
         _ => "About 100 is an hour's walk.",
     };
 
-    private double? Amount => double.TryParse(_amount, NumberStyles.Float, CultureInfo.InvariantCulture, out double amount) && amount >= 1 && amount <= 5000 ? amount : null;
+    private double? Amount => double.TryParse(_amount, NumberStyles.Float, CultureInfo.InvariantCulture, out double amount) && amount is >= 1 and <= 5000 ? amount : null;
 
     private string? Problem => _amount.Length > 0 && Amount is null ? "Give a number from 1 up." : null;
 

@@ -23,8 +23,8 @@ public sealed record PlannedSection(DraftSection Section, int Number, string Nam
 
 public sealed class DayPlanner
 {
-    public const int Colours = 9;
-    public const double DefaultPerRoute = 100;
+    private const int Colours = 9;
+    private const double DefaultPerRoute = 100;
 
     private readonly AreaSplitter _splitter;
     private readonly string _region;

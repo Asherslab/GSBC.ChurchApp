@@ -4,8 +4,8 @@ namespace GSBC.ChurchApp.Features.Outreach.Api;
 
 internal static class PlanRules
 {
-    public const int MostRoutes = 60;
-    public const int MostStretches = 20_000;
+    private const int MostRoutes = 60;
+    private const int MostStretches = 20_000;
 
     public static string? WhyNot(DayDraft draft) =>
         draft.Area.Count > 0 && !OutreachRules.IsAPolygon(draft.Area) ? "Draw the area with at least three points."

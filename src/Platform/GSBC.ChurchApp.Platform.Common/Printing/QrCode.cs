@@ -4,7 +4,7 @@ namespace GSBC.ChurchApp.Platform.Common.Printing;
 
 public sealed class QrCode
 {
-    public const int MaxVersion = 40;
+    private const int MaxVersion = 40;
     public const int QuietZone = 4;
 
     private static readonly int[] EccPerBlock =
@@ -30,7 +30,7 @@ public sealed class QrCode
 
     public int Size { get; }
 
-    public int Mask { get; private set; }
+    private int Mask { get; set; }
 
     public bool IsDark(int x, int y) => x >= 0 && y >= 0 && x < Size && y < Size && _dark[y, x];
 
@@ -260,8 +260,9 @@ public sealed class QrCode
         int result = 0;
         for (int line = 0; line < Size; line++)
         {
-            result += RunPenalty(i => _dark[line, i]);
-            result += RunPenalty(i => _dark[i, line]);
+            int row = line;
+            result += RunPenalty(i => _dark[row, i]);
+            result += RunPenalty(i => _dark[i, row]);
         }
         for (int y = 0; y < Size - 1; y++)
             for (int x = 0; x < Size - 1; x++)

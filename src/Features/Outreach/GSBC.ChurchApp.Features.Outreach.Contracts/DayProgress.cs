@@ -4,7 +4,7 @@ public readonly record struct CoveredPiece(string Street, StreetSide Side, int F
 
 public static class DayProgress
 {
-    public const double DoneShare = 0.9;
+    private const double DoneShare = 0.9;
 
     public static RouteProgress Of(DayRoute route, IEnumerable<string> claimedBy, IReadOnlyCollection<CoveredPiece> covered)
     {
@@ -24,7 +24,7 @@ public static class DayProgress
         streets.Where(street => street.Campaign == campaign)
             .SelectMany(street => street.Stretches.Where(stretch => stretch.At >= since).Select(stretch => new CoveredPiece(street.Street, stretch.Side, stretch.From, stretch.To)));
 
-    public static double Share(Stretch stretch, IEnumerable<CoveredPiece> covered)
+    private static double Share(Stretch stretch, IEnumerable<CoveredPiece> covered)
     {
         int length = stretch.To - stretch.From;
         if (length <= 0)

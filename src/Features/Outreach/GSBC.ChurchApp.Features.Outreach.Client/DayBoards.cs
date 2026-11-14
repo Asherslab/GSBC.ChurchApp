@@ -10,7 +10,7 @@ public enum BoardState
 
 public static class DayBoards
 {
-    public const double DoneShare = 0.95;
+    private const double DoneShare = 0.95;
 
     public static BoardState State(int claims, double done) =>
         done >= DoneShare ? BoardState.Done

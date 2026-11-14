@@ -55,9 +55,12 @@ public sealed partial class PrintingTests
         }
     }
 
-    private static List<Reference> Load() =>
-        JsonSerializer.Deserialize<List<Reference>>(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "Fixtures", "qr-reference.json")),
-            new JsonSerializerOptions { PropertyNameCaseInsensitive = true })!;
+    private static List<Reference> Load()
+    {
+        using JsonDocument document = JsonDocument.Parse(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "Fixtures", "qr-reference.json")));
+        return document.RootElement.EnumerateArray().Select(item => new Reference(item.GetProperty("text").GetString()!, item.GetProperty("version").GetInt32(),
+            item.GetProperty("mask").GetInt32(), item.GetProperty("rows").EnumerateArray().Select(row => row.GetString()!).ToArray())).ToList();
+    }
 
     private sealed record Reference(string Text, int Version, int Mask, string[] Rows);
 

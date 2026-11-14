@@ -120,7 +120,7 @@
         _points.Count > 0 ? OutreachRegions.For(place.Regions, _points.Average(point => point.Lat), _points.Average(point => point.Lng))
         : place.Regions.FirstOrDefault(region => region.Map.Url.Length > 0);
 
-    private static bool SameShape(IReadOnlyList<GeoPoint> a, IReadOnlyList<GeoPoint> b) => a.Count == b.Count && a.Zip(b).All(pair => pair.First.Lat == pair.Second.Lat && pair.First.Lng == pair.Second.Lng);
+    private static bool SameShape(IReadOnlyList<GeoPoint> a, IReadOnlyList<GeoPoint> b) => a.Select(point => (point.Lat, point.Lng)).SequenceEqual(b.Select(point => (point.Lat, point.Lng)));
 
     private void Drawn(MapSketchStroke stroke)
     {

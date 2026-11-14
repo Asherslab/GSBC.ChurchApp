@@ -25,7 +25,7 @@ public static class PlanDrawing
         List<MapLine> lines = [];
         HashSet<int> owned = planner.Draft.Sections.SelectMany(section => section.Pieces).Select(piece => network[piece].Street).ToHashSet();
         IEnumerable<int> left = planner.Draft.Streets.Where(street => !owned.Contains(street));
-        IEnumerable<int> rested = planner.Selection is { } selection && !planner.RestedToo ? selection.Rested : [];
+        IEnumerable<int> rested = planner is { Selection: { } selection, RestedToo: false } ? selection.Rested : [];
         foreach (int street in left.Concat(rested).Distinct())
             lines.Add(new MapLine(Points(network.Graph.ShapePoints(street)), MapLineStyle.Walked));
         foreach (PlannedSection section in planner.Sections.OrderBy(section => section.Id == selected))

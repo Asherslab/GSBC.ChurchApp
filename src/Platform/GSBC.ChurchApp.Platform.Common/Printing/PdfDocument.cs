@@ -166,8 +166,8 @@ public sealed class PdfPage(double width, double height)
 
     public void Circle(double x, double y, double radius, PdfColour? fill, PdfColour? stroke = null, double lineWidth = 0.5)
     {
-        const double k = 0.5523;
-        double cy = Height - y, r = radius, c = radius * k;
+        const double Bezier = 0.5523;
+        double cy = Height - y, r = radius, c = radius * Bezier;
         string path = $"{N(x + r)} {N(cy)} m {N(x + r)} {N(cy + c)} {N(x + c)} {N(cy + r)} {N(x)} {N(cy + r)} c "
             + $"{N(x - c)} {N(cy + r)} {N(x - r)} {N(cy + c)} {N(x - r)} {N(cy)} c "
             + $"{N(x - r)} {N(cy - c)} {N(x - c)} {N(cy - r)} {N(x)} {N(cy - r)} c "

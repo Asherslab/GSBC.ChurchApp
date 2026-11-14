@@ -37,7 +37,7 @@ else
     {
         <div class="plan-pane__more">
             <Button Variant="ButtonVariant.Link" OnClick="() => _sizing = !_sizing">@(_sizing ? "Done" : "Change how big routes are")</Button>
-            @if (Planner.HasArea && Planner.AreaId.Length == 0)
+            @if (Planner is { HasArea: true, AreaId.Length: 0 })
             {
                 <Button Variant="ButtonVariant.Link" OnClick="() => _naming = !_naming">Save this area for next time</Button>
             }
@@ -87,7 +87,7 @@ else
             {
                 0 => "all look fine",
                 1 => "1 needs a look",
-                int count => $"{count} need a look",
+                _ => $"{Planner.NeedingReview} need a look",
             };
             return $"{from} · {size} · {review}";
         }
