@@ -23,8 +23,8 @@ HOSTS = {
     "Hosts.Website": "website embeds · public feeds",
 }
 APP_PLATFORM = {"Platform.Common", "Platform.Permissions", "Platform.Contracts", "Platform.Client", "Platform.Ui"}
-APP_PARTS = (".Contracts", ".Client", ".App", ".Admin")
-PART_ORDER = ["Contracts", "Data", "Api", "Gateway", "Generator", "Client", "App", "Admin"]
+APP_PARTS = (".Contracts", ".Routing", ".Client", ".App", ".Admin")
+PART_ORDER = ["Contracts", "Routing", "Data", "Api", "Gateway", "Generator", "Client", "App", "Admin"]
 PLATFORM_ORDER = ["Common", "Permissions", "Contracts", "Client", "Ui", "Api", "Data", "Storage"]
 
 
