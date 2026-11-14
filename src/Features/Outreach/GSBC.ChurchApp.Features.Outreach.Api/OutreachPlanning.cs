@@ -220,10 +220,123 @@ internal sealed class OutreachPlanning(
             db.Claims.Remove(claim);
             publisher.ClaimGone(claim.Id, now);
         }
+        await db.Walks.Where(walk => walk.DayId == day.Id).ExecuteUpdateAsync(set => set.SetProperty(walk => walk.DayId, (Guid?)null).SetProperty(walk => walk.RouteId, (Guid?)null), cancellationToken);
+        await db.Coverage.Where(coverage => coverage.DayId == day.Id).ExecuteUpdateAsync(set => set.SetProperty(coverage => coverage.DayId, (Guid?)null), cancellationToken);
         publisher.DayGone(day.Id, routes.Select(route => route.Id), now);
         db.Routes.RemoveRange(routes);
         db.Days.Remove(day);
     }
+
+    public async Task<DayDeletion> DayDeletionAsync(ThingRef thing, CancellationToken cancellationToken)
+    {
+        await ministries.CheckAsync(thing.MinistryId, cancellationToken);
+        DayRecord day = await DayAsync(thing.Id, cancellationToken);
+        DateTime now = Now;
+        return new DayDeletion
+        {
+            Routes = await db.Routes.CountAsync(route => route.DayId == day.Id, cancellationToken),
+            Claims = await db.Claims.CountAsync(claim => claim.DayId == day.Id, cancellationToken),
+            Walks = await db.Walks.CountAsync(walk => walk.DayId == day.Id, cancellationToken),
+            OnNow = day.StartsAt <= now && now < day.EndsAt,
+        };
+    }
+
+    public async Task<DayPlan> PlanAsync(ThingRef thing, CancellationToken cancellationToken)
+    {
+        await ministries.CheckAsync(thing.MinistryId, cancellationToken);
+        DayRecord day = await DayAsync(thing.Id, cancellationToken);
+        return new DayPlan
+        {
+            Day = OutreachViews.Day(day),
+            Routes = (await db.Routes.AsNoTracking().Where(route => route.DayId == day.Id).OrderBy(route => route.Number).ToListAsync(cancellationToken))
+                .Select(route => OutreachPayloads.Decode<DayRoute>(route.Payload)).ToList(),
+            Draft = day.Draft is { Length: > 0 } draft ? OutreachPayloads.Decode<DayDraft>(draft) : null,
+            PublishedAt = day.RoutesPublishedAt,
+        };
+    }
+
+    public async Task SaveDraftAsync(DraftSave save, CancellationToken cancellationToken)
+    {
+        await ministries.CheckAsync(save.MinistryId, cancellationToken);
+        DayRecord day = await DayAsync(save.DayId, cancellationToken);
+        if (save.Draft is { } draft && PlanRules.WhyNot(draft) is { } why)
+            throw Invalid(why);
+        DateTime now = Now;
+        if (save.Draft is { } kept)
+            kept.ChangedAt = now;
+        day.Draft = save.Draft is null ? null : OutreachPayloads.Encode(save.Draft);
+        day.ChangedAt = now;
+        await db.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task<Published> PublishRoutesAsync(RoutesPublish publish, CancellationToken cancellationToken)
+    {
+        await ministries.CheckAsync(publish.MinistryId, cancellationToken);
+        DayRecord day = await DayAsync(publish.DayId, cancellationToken);
+        if (PlanRules.WhyNot(publish.Routes) is { } why)
+            throw Invalid(why);
+
+        DateTime now = Now;
+        List<RouteRecord> existing = await db.Routes.Where(route => route.DayId == day.Id).ToListAsync(cancellationToken);
+        HashSet<Guid> asked = publish.Routes.Select(route => Guid.TryParse(route.Id, out Guid id) ? id : Guid.Empty).Where(id => id != Guid.Empty).ToHashSet();
+        foreach (RouteRecord gone in existing.Where(route => !asked.Contains(route.Id)).ToList())
+        {
+            foreach (ClaimRecord claim in await db.Claims.Where(claim => claim.RouteId == gone.Id).ToListAsync(cancellationToken))
+            {
+                db.Claims.Remove(claim);
+                publisher.ClaimGone(claim.Id, now);
+            }
+            db.Routes.Remove(gone);
+            existing.Remove(gone);
+            publisher.RouteGone(gone.Id, now);
+        }
+
+        List<DayRoute> stored = [];
+        int number = 0;
+        foreach (DayRoute route in publish.Routes)
+        {
+            number++;
+            Guid id = Guid.TryParse(route.Id, out Guid given) && given != Guid.Empty ? given : Guid.CreateVersion7();
+            RouteRecord? record = existing.FirstOrDefault(found => found.Id == id);
+            if (record is null)
+            {
+                if (await db.Routes.AnyAsync(found => found.Id == id, cancellationToken))
+                    throw Invalid("That route belongs to another day.");
+                record = new RouteRecord { Id = id, DayId = day.Id, Code = await NewCodeAsync(cancellationToken) };
+                db.Routes.Add(record);
+                existing.Add(record);
+            }
+            record.Number = number;
+            DayRoute kept = Stored(route, id, day.Id, record);
+            record.Payload = OutreachPayloads.Encode(kept);
+            record.ChangedAt = now;
+            stored.Add(kept);
+        }
+
+        day.Published = true;
+        day.RoutesPublishedAt = now;
+        day.ChangedAt = now;
+        publisher.Day(day, existing, now);
+        await publisher.DeskAsync("day", day.Id, now, cancellationToken);
+        await db.SaveChangesAsync(cancellationToken);
+        return new Published { Routes = stored };
+    }
+
+    private static DayRoute Stored(DayRoute asked, Guid id, Guid dayId, RouteRecord record) => new()
+    {
+        Id = id.ToString(), DayId = dayId.ToString(), Number = record.Number, Code = record.Code,
+        Name = OutreachRules.Clip(asked.Name, OutreachRules.LongestName) is { Length: > 0 } name ? name : $"Route {record.Number}",
+        Stretches = asked.Stretches, Start = asked.Start,
+        Letterboxes = asked.Letterboxes > 0 ? asked.Letterboxes : asked.Stretches.Sum(stretch => stretch.Letterboxes),
+        Metres = asked.Metres > 0 ? asked.Metres : asked.Stretches.Sum(stretch => stretch.Metres),
+        Minutes = Math.Max(0, asked.Minutes),
+        Colour = Math.Max(0, asked.Colour),
+    };
+
+    private async Task<DayRecord> DayAsync(string id, CancellationToken cancellationToken) =>
+        Guid.TryParse(id, out Guid dayId) && await db.Days.FirstOrDefaultAsync(found => found.Id == dayId, cancellationToken) is { } day
+            ? day
+            : throw new RpcException(new Status(StatusCode.NotFound, "That outreach day isn't there any more."));
 
     public async Task<DayRoutes> RoutesAsync(ThingRef thing, CancellationToken cancellationToken)
     {
@@ -266,15 +379,7 @@ internal sealed class OutreachPlanning(
         else if (asked.Number > 0)
             route.Number = asked.Number;
 
-        DayRoute stored = new()
-        {
-            Id = id.ToString(), DayId = dayId.ToString(), Number = route.Number, Code = route.Code,
-            Name = OutreachRules.Clip(asked.Name, OutreachRules.LongestName) is { Length: > 0 } name ? name : $"Route {route.Number}",
-            Stretches = asked.Stretches, Start = asked.Start,
-            Letterboxes = asked.Letterboxes > 0 ? asked.Letterboxes : asked.Stretches.Sum(stretch => stretch.Letterboxes),
-            Metres = asked.Metres > 0 ? asked.Metres : asked.Stretches.Sum(stretch => stretch.Metres),
-            Minutes = Math.Max(0, asked.Minutes),
-        };
+        DayRoute stored = Stored(asked, id, dayId, route);
         route.Payload = OutreachPayloads.Encode(stored);
         route.ChangedAt = now;
         publisher.Day(day, routes, now);

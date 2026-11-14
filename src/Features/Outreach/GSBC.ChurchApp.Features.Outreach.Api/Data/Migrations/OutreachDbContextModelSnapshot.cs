@@ -274,6 +274,10 @@ namespace GSBC.ChurchApp.Features.Outreach.Api.Data.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("changed_at");
 
+                    b.Property<byte[]>("Draft")
+                        .HasColumnType("bytea")
+                        .HasColumnName("draft");
+
                     b.Property<DateTime>("EndsAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("ends_at");
@@ -307,6 +311,10 @@ namespace GSBC.ChurchApp.Features.Outreach.Api.Data.Migrations
                     b.Property<bool>("Published")
                         .HasColumnType("boolean")
                         .HasColumnName("published");
+
+                    b.Property<DateTime?>("RoutesPublishedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("routes_published_at");
 
                     b.Property<DateTime>("StartsAt")
                         .HasColumnType("timestamp with time zone")

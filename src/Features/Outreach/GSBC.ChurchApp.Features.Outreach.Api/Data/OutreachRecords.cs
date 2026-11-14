@@ -200,6 +200,8 @@ public sealed class DayRecord
     public WalkMode Mode { get; set; }
     public bool Published { get; set; }
     public bool OnPhones { get; set; }
+    public byte[]? Draft { get; set; }
+    public DateTime? RoutesPublishedAt { get; set; }
     public DateTime ChangedAt { get; set; }
 }
 

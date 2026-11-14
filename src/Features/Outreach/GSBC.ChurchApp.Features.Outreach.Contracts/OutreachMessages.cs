@@ -325,6 +325,7 @@ public sealed class DayRoute
     [ProtoMember(8)] public int Letterboxes { get; set; }
     [ProtoMember(9)] public int Metres { get; set; }
     [ProtoMember(10)] public int Minutes { get; set; }
+    [ProtoMember(11)] public int Colour { get; set; }
 }
 
 [ProtoContract]

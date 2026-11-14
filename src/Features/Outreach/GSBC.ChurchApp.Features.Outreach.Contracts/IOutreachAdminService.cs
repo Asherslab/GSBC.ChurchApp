@@ -31,6 +31,18 @@ public interface IOutreachAdminService
     [Requires(OutreachPermissions.PlanNode)]
     ValueTask<Done> DeleteDayAsync(ThingRef request, CallContext context = default);
 
+    [Requires(OutreachPermissions.PlanNode)]
+    ValueTask<DayDeletion> DayDeletionAsync(ThingRef request, CallContext context = default);
+
+    [Requires(OutreachPermissions.PlanNode)]
+    ValueTask<DayPlan> PlanAsync(ThingRef request, CallContext context = default);
+
+    [Requires(OutreachPermissions.PlanNode)]
+    ValueTask<Done> SaveDraftAsync(DraftSave request, CallContext context = default);
+
+    [Requires(OutreachPermissions.PlanNode)]
+    ValueTask<Published> PublishRoutesAsync(RoutesPublish request, CallContext context = default);
+
     [Requires(OutreachPermissions.ReportsNode)]
     ValueTask<DayRoutes> RoutesAsync(ThingRef request, CallContext context = default);
 

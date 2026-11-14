@@ -46,6 +46,21 @@ internal sealed class OutreachAdminService(OutreachPlanning planning, OutreachRe
         return new Done();
     }
 
+    public async ValueTask<DayDeletion> DayDeletionAsync(ThingRef request, CallContext context = default) =>
+        await planning.DayDeletionAsync(request, context.CancellationToken);
+
+    public async ValueTask<DayPlan> PlanAsync(ThingRef request, CallContext context = default) =>
+        await planning.PlanAsync(request, context.CancellationToken);
+
+    public async ValueTask<Done> SaveDraftAsync(DraftSave request, CallContext context = default)
+    {
+        await planning.SaveDraftAsync(request, context.CancellationToken);
+        return new Done();
+    }
+
+    public async ValueTask<Published> PublishRoutesAsync(RoutesPublish request, CallContext context = default) =>
+        await planning.PublishRoutesAsync(request, context.CancellationToken);
+
     public async ValueTask<DayRoutes> RoutesAsync(ThingRef request, CallContext context = default) =>
         await planning.RoutesAsync(request, context.CancellationToken);
 
