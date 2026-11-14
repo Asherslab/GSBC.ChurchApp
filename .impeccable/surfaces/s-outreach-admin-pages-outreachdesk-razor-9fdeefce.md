@@ -42,3 +42,36 @@ FORM: seed:a95f774a928224cc, dealt structure 3 of 3 (campaign records), chosen b
   out of the list.
 - Settings save per group, each card with its own sand foot, as the pattern map's *A group of settings* asks.
 - The campaign record's save bar docks at the pane's foot (`editor-foot`), as the event editor's does.
+
+## Stage 2: coverage, numbers and places (2026-11-15)
+
+Scope: three new tabs on the same page, Coverage, Numbers and Places, plus Regions as a group on Settings. Mode: operate.
+Audience as above. Interview substituted by the owner's brief and docs/features/outreach.md (owner asleep). Decision
+page: `.impeccable/mocks/outreach-coverage/` (A the map is the desk, B numbers lead, C a coverage map with a working
+rail); the station picked C and built it; A and B stay on the page.
+
+### Direction contract (stage 2)
+
+THESIS: Coverage is a job of its own: a map with a ruled-off rail at the right, where the record pane sits on every
+workbench, holding the campaign, the age legend, what to show and the selection with Mark as not done. It refuses the
+map as a junk drawer of every pin, and refuses numbers hiding the map.
+
+OWN-WORLD: The admin bulletin unchanged; the map is the outreach base map (`mapStyle`), coverage drawn as one
+sequential deep-aqua ramp that fades to the base map's white exactly when the rest period ends; exclusions in danger,
+dashed; No junk mail as small navy dots; the selection navy and dashed.
+
+STORY: A leader opens Coverage, sees General outreach's last three months fade across the suburb, draws round an area
+the council asked to redo, reads "86 street sides, 1,140 letterboxes" and marks it not done, with an undo. In Numbers
+they read the quarter's letterboxes and who walked; in Places they draw a zone or pick an address on the same map.
+
+FIRST VIEWPORT: Title band; tabs Campaigns, Coverage, Numbers, Places, Follow-ups, Reports, Settings; the map filling
+the work area to the left, the 360px rail ruled off on the right: Campaign menu, the ramp "This week → rest period:
+open again", two figures (streets done, share of letterboxes), Show on the map ticks with counts, then Chosen with Mark
+as not done.
+
+SIGNATURE: the age ramp: the same colour scale in the legend and on the streets, ending in the map's own white at the
+rest period, so "open again" is visible, not explained.
+
+FORM: seed:5d8bb9f46b4c42a0, dealt structure 3 of 3 (coverage rail), chosen by the station.
+
+FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, DESIGN.md, and every shipping raster carrying its provenance

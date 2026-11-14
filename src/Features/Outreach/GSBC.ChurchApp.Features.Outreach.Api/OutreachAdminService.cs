@@ -97,6 +97,9 @@ internal sealed class OutreachAdminService(OutreachPlanning planning, OutreachRe
     public async ValueTask<Expired> ExpireAsync(ExpireCoverage request, CallContext context = default) =>
         await review.ExpireAsync(request, context.CancellationToken);
 
+    public async ValueTask<Expired> UndoExpiryAsync(ExpiryUndo request, CallContext context = default) =>
+        await review.UndoExpiryAsync(request, context.CancellationToken);
+
     public async ValueTask<Totals> TotalsAsync(TotalsQuery request, CallContext context = default) =>
         await review.TotalsAsync(request, context.CancellationToken);
 

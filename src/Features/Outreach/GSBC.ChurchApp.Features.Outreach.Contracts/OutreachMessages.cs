@@ -67,6 +67,7 @@ public enum TotalsBy
     Month = 1,
     Day = 2,
     Campaign = 3,
+    OutreachDay = 4,
 }
 
 [ProtoContract]
@@ -442,6 +443,7 @@ public sealed class ReportResolve : IScopedRequest
     [ProtoMember(3)] public ReportState Outcome { get; set; }
     [ProtoMember(4)] public ExclusionReason ExcludeAs { get; set; }
     [ProtoMember(5)] public bool ShowMarker { get; set; }
+    [ProtoMember(6)] public List<GeoPoint> Area { get; set; } = [];
     public string ScopeId => MinistryId;
 }
 
@@ -504,6 +506,16 @@ public sealed class ExpireCoverage : IScopedRequest
 public sealed class Expired
 {
     [ProtoMember(1)] public int Stretches { get; set; }
+    [ProtoMember(2)] public DateTime At { get; set; }
+}
+
+[ProtoContract]
+public sealed class ExpiryUndo : IScopedRequest
+{
+    [ProtoMember(1)] public string MinistryId { get; set; } = "";
+    [ProtoMember(2)] public string Campaign { get; set; } = "";
+    [ProtoMember(3)] public DateTime At { get; set; }
+    public string ScopeId => MinistryId;
 }
 
 [ProtoContract]

@@ -1,11 +1,13 @@
 @inject OutreachDeskClient Outreach
+@using GSBC.ChurchApp.Platform.Contracts.Media
+@using GSBC.ChurchApp.Platform.Ui.Maps
 
 <LiveData @ref="_live" TValue="Lists" Feeds="Feeds" Load="LoadAsync" FailedTitle="Can't load the reports right now">
     <OutreachHead Tab="OutreachTab.Reports" FollowUps="context.Value.Desk.OpenFollowUps" Reports="context.Value.Desk.NewReports" />
     <Workbench DetailLabel="The report" Showing="@(Chosen(context.Value) is null ? WorkbenchPane.Main : WorkbenchPane.Detail)">
         <ChildContent>
             <DataTable TItem="ReportLine" Label="Reports" Items="context.Value.Reports.Lines" Columns="Columns" Key="report => report.Id"
-                       Selected="Chosen(context.Value)" SelectedChanged="report => _chosen = report.Id">
+                       Selected="Chosen(context.Value)" SelectedChanged="report => Choose(report.Id)">
                 <Empty>
                     <EmptyState Icon="flag" Title="No reports"
                                 Body="When a walker reports a place (not a home, unsafe, a complaint, wrong on the map) it comes here to be looked at." />
@@ -18,27 +20,45 @@
                 {
                     <PaneHead Title="@OutreachWords.Reason(report.Reason)" Lead="@($"Sent {OutreachWords.At(report.At)}{(report.From.Length > 0 ? $" by {report.From}" : "")}")"
                               Actions="@([this.Item("Delete this report…", () => _deleting = true, "trash-2", "Its photo goes too", danger: true, disabled: _busy)])"
-                              OnClose="() => _chosen = null" />
+                              OnClose="() => Choose(null)" />
                     <FactList>
                         <Fact Label="Where" Icon="map-pin" Text="@OutreachWords.Place(report.Place)" />
                         <Fact Label="Now" Icon="flag" Text="@OutreachWords.State(report.State)" />
                     </FactList>
+                    <PlaceMap @key="report.Id" Label="@($"{OutreachWords.Place(report.Place)} on the map")" Point="@PointOf(report.Place)"
+                              Area="_area" Mode="@(_skippingArea ? PlaceMapMode.DrawArea : PlaceMapMode.Show)" OnArea="area => _area = area" />
                     <p class="outreach-desk__note">@report.Note</p>
-                    @if (report.Photo is not null)
+                    @if (report.Photo is { } photo)
                     {
-                        <p class="field__hint">A photo came with it. Photos show the place, never people, and are deleted once the report is dealt with.</p>
+                        <PictureOpen Label="Open the walker's photo bigger" OnOpen="() => _viewing = true" Class="outreach-report__photo">
+                            <MediaImage Media="photo" Size="MediaSizeName.ForPhones" Alt="The walker's photo of the place" />
+                        </PictureOpen>
+                        <PictureViewer @bind-Open="_viewing" Pictures="@([photo])" Noun="Photo" About="@OutreachWords.Reason(report.Reason)" />
+                        <p class="field__hint">Photos show the place, never people, and are deleted once the report is dealt with.</p>
                     }
                     <Notice Tone="NoticeTone.Warning" Text="@_problem" />
                     @if (report.State == ReportState.New)
                     {
-                        <p class="field__hint">Never deliver there adds the place to the addresses outreach skips, without saying why to walkers. A fixed or dismissed report changes nothing on the map.</p>
+                        @if (_skippingArea)
+                        {
+                            <p class="field__hint">Streets inside the area are walked through, never delivered to; walkers aren't told why.</p>
+                            <div class="outreach-desk__decide">
+                                <Button Block="true" Busy="_busy" Disabled="@(_area is not { Count: >= 3 })" OnClick="() => ResolveAsync(report, ReportState.Excluded, _area)">Skip this area</Button>
+                                <Button Variant="ButtonVariant.Quiet" OnClick="StopArea">Back</Button>
+                            </div>
+                        }
+                        else
+                        {
+                        <p class="field__hint">Never deliver there adds the letterbox to the places outreach skips, or draw an area round it to skip a whole block. Walkers aren't told why. A fixed or dismissed report changes nothing on the map.</p>
                         <div class="outreach-desk__decide">
                             <Button Block="true" Busy="_busy" OnClick="() => ResolveAsync(report, ReportState.Excluded)">Never deliver there</Button>
+                            <Button Variant="ButtonVariant.Quiet" Icon="pencil" OnClick="() => _skippingArea = true">Skip an area round it…</Button>
                             <div class="outreach-desk__actions">
                                 <Button Variant="ButtonVariant.Quiet" Busy="_busy" OnClick="() => ResolveAsync(report, ReportState.Fixed)">It's been fixed</Button>
                                 <Button Variant="ButtonVariant.Quiet" Busy="_busy" OnClick="() => ResolveAsync(report, ReportState.Dismissed)">Dismiss it</Button>
                             </div>
                         </div>
+                        }
                     }
                 }
                 else
@@ -86,7 +106,30 @@
 
     private ReportLine? Chosen(Lists lists) => lists.Reports.Lines.FirstOrDefault(report => report.Id == _chosen);
 
-    private Task ResolveAsync(ReportLine report, ReportState outcome) => RunAsync(() => Outreach.ResolveReportAsync(Scope, report.Id, outcome));
+    private bool _viewing, _skippingArea;
+    private IReadOnlyList<MapPoint>? _area;
+
+    private void Choose(string? id) => (_chosen, _viewing, _skippingArea, _area, _problem) = (id, false, false, null, null);
+
+    private void StopArea() => (_skippingArea, _area) = (false, null);
+
+    private static MapPoint? PointOf(AddressPoint place) => place.Point is { Lat: not 0 } point ? new MapPoint(point.Lat, point.Lng) : null;
+
+    private static ExclusionReason ExcludeAs(ReportReason reason) => reason switch
+    {
+        ReportReason.NotAHome => ExclusionReason.NotHomes,
+        ReportReason.Unsafe => ExclusionReason.Unsafe,
+        ReportReason.Complaint => ExclusionReason.Complaint,
+        ReportReason.WrongOnTheMap => ExclusionReason.WrongData,
+        _ => ExclusionReason.Other,
+    };
+
+    private Task ResolveAsync(ReportLine report, ReportState outcome, IReadOnlyList<MapPoint>? area = null) => RunAsync(async () =>
+    {
+        await Outreach.ResolveReportAsync(Scope, report.Id, outcome, ExcludeAs(report.Reason),
+            area is null ? null : [.. area.Select(point => new GeoPoint { Lat = point.Lat, Lng = point.Lon })]);
+        StopArea();
+    });
 
     private Task DeleteAsync(ReportLine? report) => report is null ? Task.CompletedTask : RunAsync(async () =>
     {

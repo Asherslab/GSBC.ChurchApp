@@ -1085,6 +1085,8 @@ Detail of where each role is used: [foundations.md](docs/design/foundations.md),
 - **Danger**: only what has failed or run out (a run-out safeguarding item, a failing check, danger actions, a field's
   problem line). Due soon stays the marker.
 - **Beige**: text on navy only.
+- **Map land** (`--map-land`): the base map's ground in each scheme; outreach coverage fades into it as a street's rest
+  period ends.
 
 ### Named Rules
 **The Roles Not Hexes Rule.** Components use the semantic roles, never a palette hex: every role is redefined by
@@ -1200,7 +1202,7 @@ file for what you touch:
 | [ministries.md](docs/design/ministries.md) | A ministry's page, leading it, its roster, the Ministries desk, Life Groups |
 | [people.md](docs/design/people.md) | A person's page and roles, safeguarding, finding someone, families, the blue card |
 | [prayer.md](docs/design/prayer.md) | The Prayer desk, its settings, a prayer request's page |
-| [outreach.md](docs/design/outreach.md) | The Outreach page: campaigns, follow-ups, reports and settings; the walker's side on the phone |
+| [outreach.md](docs/design/outreach.md) | The Outreach page: campaigns, the coverage map, numbers, places outreach skips, follow-ups, reports, settings and map areas; the walker's side on the phone |
 | [chats.md](docs/design/chats.md) | The chats desk and checking a chat |
 | [feedback.md](docs/design/feedback.md) | Send feedback on both sides, the Feedback board |
 | [media.md](docs/design/media.md) | The media library |

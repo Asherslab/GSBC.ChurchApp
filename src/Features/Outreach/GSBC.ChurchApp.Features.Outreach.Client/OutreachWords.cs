@@ -65,5 +65,15 @@ public static class OutreachWords
     private static string Clock(DateTime local, bool withPart) =>
         local.ToString(local.Minute == 0 ? "h" : "h:mm", English) + (withPart ? (local.Hour < 12 ? "am" : "pm") : "");
 
+    public static string Reason(ExclusionReason reason) => reason switch
+    {
+        ExclusionReason.NotHomes => "Not homes",
+        ExclusionReason.Complaint => "A complaint",
+        ExclusionReason.WrongData => "Wrong on the map",
+        ExclusionReason.Unsafe => "Unsafe",
+        ExclusionReason.PrivateEstate => "A private estate",
+        _ => "Something else",
+    };
+
     public static string Place(AddressPoint place) => place.Label.Length > 0 ? place.Label : "A place on the map";
 }

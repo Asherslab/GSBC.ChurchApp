@@ -51,6 +51,7 @@ namespace GSBC.ChurchApp.Features.Outreach.Contracts;
 [ProtoSerializable(typeof(SkipLines))]
 [ProtoSerializable(typeof(ExpireCoverage))]
 [ProtoSerializable(typeof(Expired))]
+[ProtoSerializable(typeof(ExpiryUndo))]
 [ProtoSerializable(typeof(CoverageQuery))]
 [ProtoSerializable(typeof(CoverageMap))]
 [ProtoSerializable(typeof(TotalsQuery))]

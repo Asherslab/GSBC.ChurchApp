@@ -84,6 +84,22 @@ public sealed class CoverageTests : OutreachHost
     }
 
     [Fact]
+    public async Task UndoingAnExpiryPutsBackOnlyWhatThatExpiryOpened()
+    {
+        await WalkAsync(walking => walking.RecordAsync(Phone, null,
+            Piece(Guid.NewGuid().ToString(), 0, [Side("1/2/3"), Side("4/5/6")], 600, TimeSpan.FromMinutes(20)), Cancel));
+        Expired first = await ReviewAsync(review => review.ExpireAsync(new ExpireCoverage { Campaign = General, Stretches = [Side("1/2/3")] }, Cancel));
+        Clock.Advance(TimeSpan.FromMinutes(1));
+        await ReviewAsync(review => review.ExpireAsync(new ExpireCoverage { Campaign = General, Stretches = [Side("4/5/6")] }, Cancel));
+        Assert.Empty(await FeedAsync<StreetCoverage>(OutreachFeeds.Coverage));
+
+        Expired undone = await ReviewAsync(review => review.UndoExpiryAsync(new ExpiryUndo { Campaign = General, At = first.At }, Cancel));
+
+        Assert.Equal(1, undone.Stretches);
+        Assert.Equal(["1/2/3"], (await FeedAsync<StreetCoverage>(OutreachFeeds.Coverage)).Select(street => street.Street));
+    }
+
+    [Fact]
     public async Task ACampaignWithDaysToComeCantBeDeletedAndDeletingOneForgetsItsCoverage()
     {
         string carols = await CampaignAsync("Carols 2026");
