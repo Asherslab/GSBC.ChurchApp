@@ -14,12 +14,12 @@
 @inject IEnumerable<IAppCardSource> CardSources
 
 <div class="rich-text-field @(Host.Desktop ? "" : "rich-text-field--phone") @Class" data-headings="@(Headings ? "true" : "false")">
-    <div class="rich-text-field__bar" role="toolbar" aria-label="Formatting" data-look-scroll data-look-bleed>
+    <div class="rich-text-field__bar" role="toolbar" aria-label="Formatting" data-look-scroll data-look-bleed data-folded="@_folded" @ref="_bar">
         @if (Inserts.Count > 0)
         {
             @if (Host.Desktop)
             {
-                <Menu Label="Insert" Text="Insert" Icon="@AppIcons.Insert" Variant="ButtonVariant.Primary" Small="true" Items="InsertItems()" Class="rich-text-field__insert" />
+                <Menu Label="Insert" Text="@(InsertIconOnly ? null : "Insert")" Icon="@AppIcons.Insert" Variant="ButtonVariant.Primary" Small="true" Items="InsertItems()" Class="rich-text-field__insert" />
             }
             else
             {
@@ -38,16 +38,14 @@
             }
             <span class="rich-text-field__divider" aria-hidden="true"></span>
         }
-        @Tool(Format.Bold, AppIcons.Bold, "Bold", "⌘B")
-        @Tool(Format.Italic, AppIcons.Italic, "Italic", "⌘I")
-        @Tool(Format.Strike, AppIcons.Strikethrough, "Strikethrough", "⌘⇧X")
-        @Tool(Format.Highlight, AppIcons.Highlight, "Highlight", "⌘⇧H")
-        <span class="rich-text-field__divider" aria-hidden="true"></span>
-        @Tool(Format.Bullets, AppIcons.BulletedList, "Bulleted list", "⌘⇧8")
-        @Tool(Format.Numbers, AppIcons.NumberedList, "Numbered list", "⌘⇧7")
-        @Tool(Format.Quote, AppIcons.Quote, "Quote", "⌘⇧9")
-        @Tool(Format.Link, AppIcons.Link, "Link", "⌘K")
-        @Tool(Format.Code, AppIcons.Code, "Code", "⌘E")
+        @foreach (BarTool tool in BarTools.Where(tool => !Folded(tool)))
+        {
+            @if (tool.Group > 0 && BarTools.First(other => other.Group == tool.Group && !Folded(other)) == tool)
+            {
+                <span class="rich-text-field__divider" aria-hidden="true"></span>
+            }
+            @Tool(tool.Mark, tool.Icon, tool.Name, tool.Shortcut)
+        }
         @if (Host.Desktop)
         {
             <Menu Label="More formatting" Small="true" Items="MoreItems()" />
@@ -254,6 +252,8 @@
     private MarkdownTable? _table;
     private int? _tableAt;
     private PictureAt? _picture;
+    private ElementReference _bar;
+    private int _folded;
 
     [Parameter, EditorRequired] public required RichText Content { get; set; }
     [Parameter] public EventCallback<RichText> ContentChanged { get; set; }
@@ -308,6 +308,40 @@
         public const string Bold = "bold", Italic = "italic", Strike = "strike", Highlight = "highlight", Code = "code", Sub = "sub", Sup = "sup",
             Bullets = "bullets", Numbers = "numbers", Quote = "quote", Link = "link", Text = "text", H1 = "h1", H2 = "h2", H3 = "h3",
             Style = "style", More = "more";
+    }
+
+    private const int NeverFolds = int.MaxValue;
+
+    private sealed record BarTool(string Mark, string Icon, string Name, string Shortcut, int Group, int FoldOrder);
+
+    private static readonly IReadOnlyList<BarTool> BarTools =
+    [
+        new(Format.Bold, AppIcons.Bold, "Bold", "⌘B", 0, NeverFolds),
+        new(Format.Italic, AppIcons.Italic, "Italic", "⌘I", 0, NeverFolds),
+        new(Format.Strike, AppIcons.Strikethrough, "Strikethrough", "⌘⇧X", 0, 2),
+        new(Format.Highlight, AppIcons.Highlight, "Highlight", "⌘⇧H", 0, 1),
+        new(Format.Bullets, AppIcons.BulletedList, "Bulleted list", "⌘⇧8", 1, 5),
+        new(Format.Numbers, AppIcons.NumberedList, "Numbered list", "⌘⇧7", 1, 4),
+        new(Format.Quote, AppIcons.Quote, "Quote", "⌘⇧9", 1, 3),
+        new(Format.Link, AppIcons.Link, "Link", "⌘K", 1, 6),
+        new(Format.Code, AppIcons.Code, "Code", "⌘E", 1, 0),
+    ];
+
+    private static readonly int Foldable = BarTools.Count(tool => tool.FoldOrder != NeverFolds);
+
+    private bool Folded(BarTool tool) => tool.FoldOrder < _folded;
+
+    private bool InsertIconOnly => _folded > Foldable;
+
+    [JSInvokable]
+    public Task FoldAsync(int count)
+    {
+        int folded = Math.Clamp(count, 0, Foldable + 1);
+        if (folded == _folded)
+            return Task.CompletedTask;
+        _folded = folded;
+        StateHasChanged();
+        return Task.CompletedTask;
     }
 
     private static readonly IReadOnlyDictionary<string, (string Marker, string Placeholder)> Wraps = new Dictionary<string, (string, string)>
@@ -422,9 +456,12 @@
 
     private IReadOnlyList<MenuItem> MoreItems() =>
     [
-        this.Item("Superscript", () => FormatAsync(Format.Sup), AppIcons.Superscript, "x²", @checked: _active.Contains(Format.Sup)),
+        .. BarTools.Where(Folded).Select(tool => this.Item(tool.Name, () => FormatAsync(tool.Mark), tool.Icon, tool.Shortcut, @checked: IsOn(tool.Mark))),
+        this.Item("Superscript", () => FormatAsync(Format.Sup), AppIcons.Superscript, "x²", @checked: _active.Contains(Format.Sup), startsGroup: _folded > 0),
         this.Item("Subscript", () => FormatAsync(Format.Sub), AppIcons.Subscript, "H₂O", @checked: _active.Contains(Format.Sub)),
     ];
+
+    private bool IsOn(string format) => format == Format.Link ? _panel == Panel.Link : _active.Contains(format);
 
     private static string StyleName(LineStyle style) => style switch
     {
@@ -436,7 +473,7 @@
 
     private RenderFragment Tool(string format, string icon, string name, string? shortcut, bool? pressed = null, bool open = false) =>
         @<Button Variant="ButtonVariant.Quiet" Small="true" Icon="@icon" Class="rich-text-field__tool" AriaLabel="@name" Tooltip="@(shortcut is null ? name : $"{name} ({shortcut})")"
-                 Pressed="@(open ? null : pressed ?? (format == Format.Link ? _panel == Panel.Link : _active.Contains(format)))" Expanded="@(open ? false : null)" OnClick="() => FormatAsync(format)" />;
+                 Pressed="@(open ? null : pressed ?? IsOn(format))" Expanded="@(open ? false : null)" OnClick="() => FormatAsync(format)" />;
 
     protected override async Task OnParametersSetAsync()
     {
@@ -463,6 +500,8 @@
                 writer.WriteString(code, character);
         });
         _editor = await _module.InvokeAsync<IJSObjectReference>("attach", _host, _self, _markdown, Label, Placeholder, emoji);
+        if (Host.Desktop)
+            await _editor.InvokeVoidAsync("foldBar", _bar);
         _sentMedia = "";
         await SendMediaAsync();
         if (Allowed.HasFlag(RichTextMedia.AppCards))
@@ -478,7 +517,7 @@
             return;
         List<(MediaRef Media, string? Url)> shown = [];
         foreach (MediaRef media in _media)
-            shown.Add((media, media.IsImage ? await SourceOfAsync(media) : null));
+            shown.Add((media, media.IsImage || media.IsVideo ? await SourceOfAsync(media) : null));
         string json = Json(writer =>
         {
             foreach ((MediaRef media, string? url) in shown)

@@ -113,9 +113,17 @@
 }
 
 .rich-text-table {
+    --table-edge: color-mix(in srgb, var(--ink) 18%, transparent);
     overflow-x: auto;
+    overscroll-behavior-x: contain;
     border: 1px solid var(--line);
     border-radius: var(--radius-inner);
+    background:
+        linear-gradient(to right, var(--surface) 40%, transparent) left / 28px 100% no-repeat local,
+        linear-gradient(to left, var(--surface) 40%, transparent) right / 28px 100% no-repeat local,
+        radial-gradient(farthest-side at 0 50%, var(--table-edge), transparent) left / 10px 100% no-repeat scroll,
+        radial-gradient(farthest-side at 100% 50%, var(--table-edge), transparent) right / 10px 100% no-repeat scroll,
+        var(--surface);
 }
 
 .rich-text-table table {
@@ -127,10 +135,16 @@
 
 .rich-text-table th,
 .rich-text-table td {
+    min-width: 12em;
     padding: var(--space-sm) var(--space-md);
     text-align: left;
     vertical-align: top;
     overflow-wrap: normal;
+}
+
+.rich-text-table [data-short] {
+    min-width: 0;
+    white-space: nowrap;
 }
 
 .rich-text-table th {
@@ -403,6 +417,7 @@
 
 .rich-text-field {
     display: grid;
+    grid-template-columns: minmax(0, 1fr);
     gap: var(--space-xs);
     min-width: 0;
 }
@@ -417,7 +432,7 @@
     top: 0;
     z-index: 5;
     padding: var(--space-2xs) 0 var(--space-xs);
-    background: var(--surface);
+    background: var(--rich-text-ground, var(--surface));
     box-shadow: 0 1px 0 var(--line);
 }
 
@@ -846,6 +861,27 @@
     color: var(--on-video);
 }
 
+.cm-media__still {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    max-height: none;
+    object-fit: cover;
+    pointer-events: none;
+}
+
+.cm-media__play,
+.cm-media__label {
+    position: relative;
+}
+
+.cm-media__still ~ .cm-media__label {
+    padding: var(--space-3xs) var(--space-sm);
+    border-radius: var(--radius-full);
+    background: var(--video-shade);
+}
+
 .cm-media__play {
     display: grid;
     place-items: center;
@@ -953,8 +989,8 @@
 
 .cm-media__more {
     position: absolute;
-    right: var(--space-xs);
-    bottom: var(--space-xs);
+    right: var(--space-sm);
+    bottom: var(--space-sm);
     display: grid;
     place-items: center;
     width: 32px;
@@ -977,6 +1013,10 @@
     .cm-media__face:not(:hover, :focus-within) .cm-media__more:not([aria-expanded="true"]) {
         opacity: 0;
     }
+}
+
+.cm-media__face--picture:not(:has(img)) .cm-media__more {
+    box-shadow: 0 0 0 1px var(--field-edge), var(--lift);
 }
 
 .rich-text-field--phone .cm-media__more {
@@ -1119,6 +1159,7 @@
 .cm-media__table {
     margin: 0;
     white-space: normal;
+    contain: inline-size;
 }
 
 .rich-text-panel > .segmented,
@@ -1141,6 +1182,7 @@
 .rich-text-table-editor {
     width: 100%;
     overflow-x: auto;
+    padding: var(--space-2xs);
 }
 
 .rich-text-table-editor table {

@@ -31,6 +31,7 @@ public static class ConfigurationClientExtensions
             .AddSingleton<IPreviewMode, DraftPreview>()
             .AddSingleton<ISurfaceLayout, LocalSurfaceLayout>()
             .AddSingleton<PhoneTabs>()
+            .AddSingleton<ITabBarNow>(provider => provider.GetRequiredService<PhoneTabs>())
             .AddMediaPrefetch(provider => PlacementMedia.Prefetch(provider.GetRequiredService<SurfaceCatalog>()));
     }
 }

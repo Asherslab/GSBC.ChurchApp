@@ -5,7 +5,7 @@ using GSBC.ChurchApp.Platform.Contracts.Configuration;
 
 namespace GSBC.ChurchApp.Platform.Ui.Tabs;
 
-public sealed class PhoneTabs(ISurfaceLayout layout, ClientModules modules, IAccess access)
+public sealed class PhoneTabs(ISurfaceLayout layout, ClientModules modules, IAccess access) : ITabBarNow
 {
     public const string MoreRoute = "more";
 
