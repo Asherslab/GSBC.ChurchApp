@@ -6,7 +6,7 @@ import UIKit
 public class DataLayerPlugin: CAPPlugin, CAPBridgedPlugin {
     public let identifier = "DataLayerPlugin"
     public let jsName = "DataLayer"
-    public let pluginMethods: [CAPPluginMethod] = DataLayerPlugin.dataMethods + DataLayerPlugin.audioMethods
+    public let pluginMethods: [CAPPluginMethod] = DataLayerPlugin.dataMethods + DataLayerPlugin.audioMethods + DataLayerPlugin.keyboardMethods
 
     private static let dataMethods: [CAPPluginMethod] = [
         "unary",

@@ -94,7 +94,17 @@ window.gsbcShell = (() => {
     const root = document.documentElement;
     const overlaysPage = cap().getPlatform() === 'ios';
     const afterLayout = (then) => requestAnimationFrame(() => requestAnimationFrame(then));
-    keyboard.setAccessoryBarVisible({ isVisible: true }).catch(() => { });
+    const dataLayer = plugin('DataLayer');
+    let accessoryWanted = null;
+    let accessoryShown = false;
+    const showAccessory = (visible, refresh) => {
+      if (visible === accessoryWanted && (!refresh || visible === accessoryShown)) return;
+      accessoryWanted = visible;
+      if (refresh) accessoryShown = visible;
+      (dataLayer ? dataLayer.showKeyboardAccessory({ visible, refresh }) : keyboard.setAccessoryBarVisible({ isVisible: visible })).catch(() => { });
+    };
+    const wantsAccessory = (field) => !field.closest(ownKeyboardBar);
+    showAccessory(false, false);
     keyboard.addListener('keyboardWillShow', ({ keyboardHeight }) => {
       root.style.setProperty('--kb', `${overlaysPage ? keyboardHeight : 0}px`);
       root.classList.add('keyboard-open');
@@ -105,13 +115,20 @@ window.gsbcShell = (() => {
       root.classList.remove('keyboard-open');
       root.style.setProperty('--kb', '0px');
     });
-    const accessoryBarFor = (field) => keyboard.setAccessoryBarVisible({ isVisible: !field?.closest?.('.composer, .rich-text-field') }).catch(() => { });
-    document.addEventListener('focusin', (event) => {
-      accessoryBarFor(event.target);
+    const accessoryForFocused = () => {
+      if (document.activeElement instanceof Element && document.activeElement.matches(typing)) showAccessory(wantsAccessory(document.activeElement), true);
+    };
+    document.addEventListener('focusin', () => {
+      afterLayout(accessoryForFocused);
       if (root.classList.contains('keyboard-open')) afterLayout(keepFieldInView);
     });
-    document.addEventListener('pointerdown', (event) => accessoryBarFor(event.target), true);
-    document.addEventListener('focusout', () => accessoryBarFor(null));
+    document.addEventListener('pointerdown', (event) => {
+      const field = event.target instanceof Element ? event.target.closest(typing) : null;
+      if (field) showAccessory(wantsAccessory(field), false);
+    }, true);
+    const tapSettles = 400;
+    document.addEventListener('pointerup', () => setTimeout(accessoryForFocused, tapSettles), true);
+    document.addEventListener('pointercancel', () => setTimeout(accessoryForFocused, tapSettles), true);
 
     let tapAway = null;
     document.addEventListener('pointerdown', (event) => {
