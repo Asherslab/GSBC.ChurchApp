@@ -1,6 +1,7 @@
 @using GSBC.ChurchApp.Platform.Client.Content
 @using GSBC.ChurchApp.Platform.Contracts.Content
 @inject IEnumerable<IAppCardSource> Sources
+@inject UiHost Host
 
 <Sheet Open="true" OpenChanged="OpenChangedAsync" Title="@Heading" Lead="@(_regular is null ? $"Only {Plural} you can see are listed." : "It's a regular event. Which should the card show?")">
     <ChildContent>
@@ -10,7 +11,7 @@
         }
         else if (Sources.FirstOrDefault(source => source.Kinds.Contains(Kind)) is { } source)
         {
-            <SearchField Label="@($"Find {AppCards.WithArticle(Kind)}")" Placeholder="Type part of its name" Value="@_text" ValueChanged="text => _text = text" AutoFocus="true" />
+            <SearchField Label="@($"Find {AppCards.WithArticle(Kind)}")" Placeholder="Type part of its name" Value="@_text" ValueChanged="text => _text = text" AutoFocus="Host.Desktop" />
             <LiveData @key="_text" TValue="IReadOnlyList<AppCardChoice>" Load="() => source.ChoicesAsync(Kind, _text)" Feeds="source.Feeds">
                 @if (context.Value.Count == 0)
                 {
