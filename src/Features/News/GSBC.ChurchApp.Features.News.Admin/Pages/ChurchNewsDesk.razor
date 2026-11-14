@@ -63,6 +63,14 @@
     </Actions>
 </Sheet>
 
+<Sheet Open="_archiving" OpenChanged="open => _archiving = open" Title="Archive this post?"
+       Lead="It leaves everyone's News, and its notification is taken back from phones that haven't opened it. You can put it back from Archived.">
+    <Actions>
+        <Button Busy="_busy" OnClick="ArchiveChosenAsync">Archive it</Button>
+        <Button Variant="ButtonVariant.Quiet" OnClick="() => _archiving = false">Keep it</Button>
+    </Actions>
+</Sheet>
+
 @code {
     private RenderFragment DetailOf(IReadOnlyList<NewsPost> posts) => @<text>
             @if (Chosen(posts) is { } post)
@@ -85,7 +93,7 @@
                 }
                 <div class="news-desk__preview">
                     <PostView Title="@post.Title" Content="post.Body" From="@post.From" FromHref="@post.FromLink.TrimStart('/')" Author="@post.Author"
-                              Posted="NewsWords.PostedAt(post)" Edited="post.EditedAt is not null" For="@NewsWords.AudienceWords(post.Audience)" LinkPath="@post.LinkPath" LinkLabel="@post.LinkLabel" />
+                              Posted="NewsWords.PostedAt(post)" Edited="post.EditedAt is not null" For="@NewsWords.AudienceWords(post.Audience)" LinkPath="@post.LinkPath" LinkLabel="@post.LinkLabel" NotPosted="@NewsWords.NotPosted(post, Clock)" />
                 </div>
                 <Notice Tone="NoticeTone.Warning" Text="@_problem" />
             }
@@ -100,7 +108,7 @@
     private LiveData<IReadOnlyList<NewsPost>>? _live;
     private string? _filter;
     private string? _chosen;
-    private bool _deleting, _deletingShared, _busy, _tell = true;
+    private bool _deleting, _deletingShared, _archiving, _busy, _tell = true;
     private string? _problem;
 
     [Parameter] public string? Id { get; set; }
@@ -208,12 +216,22 @@
             items.Add(this.Item("Delete it for good…", () => (_deleting, _deletingShared) = (true, false), "trash-2", danger: true, startsGroup: true));
         }
         else if (mayPutAway)
-            items.Add(this.Item("Archive", () => RunAsync(() => Writes.ArchiveAsync(post.Id)), "archive",
-                post.State == NewsState.Published ? "Takes it out of everyone's News and takes back its notification. You can put it back." : "Keeps it under Archived. You can put it back.", startsGroup: true));
+            items.Add(post.State == NewsState.Published
+                ? this.Item("Archive…", () => (_archiving, _problem) = (true, null), "archive", "Takes it out of everyone's News. You can put it back.", startsGroup: true)
+                : this.Item("Archive", () => RunAsync(() => Writes.ArchiveAsync(post.Id)), "archive", "Keeps it under Archived. You can put it back.", startsGroup: true));
         return items;
     }
 
     private Task AnswerAsync(NewsPost post, bool yes) => RunAsync(() => Writes.AnswerAskAsync(post.Id, yes, yes && _tell));
+
+    private async Task ArchiveChosenAsync()
+    {
+        if (_chosen is not { } id)
+            return;
+        await RunAsync(() => Writes.ArchiveAsync(id));
+        if (_problem is null)
+            _archiving = false;
+    }
 
     private async Task DeleteAsync()
     {

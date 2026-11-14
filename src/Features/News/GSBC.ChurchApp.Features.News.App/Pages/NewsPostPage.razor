@@ -3,6 +3,7 @@
 @inject NewsWrites Writes
 @inject IAccess Access
 @inject NavigationManager Navigation
+@inject TimeProvider Clock
 
 <LiveData @key="Id" TValue="ShownPost" Load="LoadAsync" Feeds="News.Feeds" ReloadOn="Reload" Remember="@($"news.post.{Id}")">
     <Page Title="@(context.Value.Post?.Title ?? "News")" BackHref="news" BackLabel="News" TopBar="TopBarStyle.SolidTitleOnScroll">
@@ -23,7 +24,7 @@
             {
                 <div class="section section--first">
                     <PostView FillsPage="true" Title="@post.Title" Content="post.Body" From="@post.From" FromHref="@post.FromLink.TrimStart('/')" Author="@post.Author"
-                              Posted="NewsWords.PostedAt(post)" Edited="post.EditedAt is not null" For="@NewsWords.AudienceWords(post.Audience)" LinkPath="@post.LinkPath" LinkLabel="@post.LinkLabel">
+                              Posted="NewsWords.PostedAt(post)" Edited="post.EditedAt is not null" For="@NewsWords.AudienceWords(post.Audience)" LinkPath="@post.LinkPath" LinkLabel="@post.LinkLabel" NotPosted="@NewsWords.NotPosted(post, Clock)">
                         <Status>
                             @if (NewsWords.State(post) is { Length: > 0 } state)
                             {
@@ -62,11 +63,22 @@
     </Actions>
 </Sheet>
 
+<Sheet Open="_archiving" OpenChanged="open => _archiving = open" Title="Archive this post?"
+       Lead="It leaves everyone's News, and its notification is taken back from phones that haven't opened it. You can put it back from Archived.">
+    <ChildContent>
+        <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+    </ChildContent>
+    <Actions>
+        <Button Block="true" Busy="_busy" OnClick="ArchiveShownAsync">Archive it</Button>
+        <Button Block="true" Variant="ButtonVariant.Quiet" OnClick="() => _archiving = false">Keep it</Button>
+    </Actions>
+</Sheet>
+
 @code {
     private const ChangeKind Reload = ChangeKind.Reconnected | ChangeKind.Session | ChangeKind.Access | ChangeKind.Outbox;
 
     private NewsPost? _shown;
-    private bool _deleting, _busy, _tell = true;
+    private bool _deleting, _archiving, _busy, _tell = true;
     private string? _problem;
 
     [Parameter] public Guid Id { get; set; }
@@ -96,13 +108,20 @@
         else if (mayChange)
         {
             items.Add(this.Item("Change the post", () => Navigation.NavigateTo($"news/{post.Id}/change"), "pencil"));
-            items.Add(this.Item("Archive", () => RunAsync(() => Writes.ArchiveAsync(post.Id)), "archive",
-                post.State == NewsState.Published ? "Takes it out of everyone's News and takes back its notification. You can put it back." : "Keeps it under Archived. You can put it back.", startsGroup: true));
+            items.Add(post.State == NewsState.Published
+                ? this.Item("Archive…", () => (_archiving, _problem) = (true, null), "archive", "Takes it out of everyone's News. You can put it back.", startsGroup: true)
+                : this.Item("Archive", () => RunAsync(() => Writes.ArchiveAsync(post.Id)), "archive", "Keeps it under Archived. You can put it back.", startsGroup: true));
         }
         return items;
     }
 
     private async Task AnswerAsync(NewsPost post, bool yes) => await RunAsync(() => Writes.AnswerAskAsync(post.Id, yes, yes && _tell));
+
+    private async Task ArchiveShownAsync()
+    {
+        if (_shown is not null)
+            await RunAsync(() => Writes.ArchiveAsync(_shown.Id));
+    }
 
     private async Task DeleteAsync()
     {
@@ -119,7 +138,7 @@
         try
         {
             await work();
-            _deleting = false;
+            (_deleting, _archiving) = (false, false);
         }
         catch (Exception exception) when (exception is Grpc.Core.RpcException or InvalidOperationException)
         {

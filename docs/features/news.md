@@ -256,6 +256,13 @@ instead of deleting them".
   could delete it (publishers; writers for a draft or a post waiting to be published). Archiving takes it out of
   everyone's News and recalls its notification, as deleting did, and keeps it on the desk under a new **Archived**
   group. An archived post can't be changed or published until it's put back.
+- **Archiving a published post asks first** (owner, 2026-11-14): *Archive…* opens a short sheet, "Archive this post?",
+  saying it leaves everyone's News and its notification is taken back, with *Archive it* and *Keep it*, like the delete
+  sheet. A draft, a scheduled post or one waiting to be published archives straight away.
+- **The sand foot says "Posted" only for a published post** (*fixed*, 2026-11-14): on the desk and the phone's post
+  page, a draft, a post waiting or scheduled, and an archived one say what they are instead ("A draft by … It isn't
+  posted, and nobody sees it yet.", "Archived before it was posted …"). The editor's *Preview on a phone* keeps
+  "Posted today", as it shows how the post will look once posted.
 - **Putting back makes a draft** (*default*, the safer choice): it never re-appears in News by surprise, and its
   notification doesn't go again, even when it's published again (it was sent once; the post keeps that). A writer can
   put back only a post that was never published.

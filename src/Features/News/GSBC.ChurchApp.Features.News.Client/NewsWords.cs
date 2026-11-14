@@ -37,6 +37,18 @@ public static class NewsWords
     public static string ArchivedLine(NewsPost post, TimeProvider clock) =>
         post.PublishedAt is null ? "Archived before it was published" : $"Archived, was published {When(post, clock)}";
 
+    public static string? NotPosted(NewsPost post, TimeProvider clock) => post.State switch
+    {
+        NewsState.Draft => $"A draft{By(post)}. It isn't posted, and nobody sees it yet.",
+        NewsState.WaitingToPublish => $"Not posted yet.{(post.Author.Length > 0 ? $" {post.Author} asks for it to be published." : "")}",
+        NewsState.Scheduled when post.PublishAt is { } at => $"Not posted yet. It's posted by itself {ChurchDates.Describe(at, DateLineStyle.Long, withTime: true, clock.GetUtcNow().UtcDateTime)}.",
+        NewsState.Archived when post.PublishedAt is null => $"Archived before it was posted{By(post)}. Nobody sees it.",
+        NewsState.Archived => $"Archived. It was posted {When(post, clock)}{By(post)}, and nobody sees it now.",
+        _ => null,
+    };
+
+    private static string By(NewsPost post) => post.Author.Length > 0 ? $" by {post.Author}" : "";
+
     public static string When(NewsPost post, TimeProvider clock) =>
         ChurchDates.Describe(PostedAt(post), DateLineStyle.Long, withTime: false, clock.GetUtcNow().UtcDateTime) + (post.EditedAt is null ? "" : " · edited");
 

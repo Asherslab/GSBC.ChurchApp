@@ -31,10 +31,19 @@
     }
 </LiveData>
 
+<Sheet Open="_archiving" OpenChanged="open => _archiving = open" Title="Archive this post?"
+       Lead="It leaves everyone's News, and its notification is taken back from phones that haven't opened it. You can put it back from Archived.">
+    <Actions>
+        <Button OnClick="ArchiveAsync">Archive it</Button>
+        <Button Variant="ButtonVariant.Quiet" OnClick="() => _archiving = false">Keep it</Button>
+    </Actions>
+</Sheet>
+
 @code {
     private static readonly IReadOnlyList<string> DeskFeeds = [NewsFeeds.Desk];
 
     private NewsPost? _writing;
+    private bool _archiving;
     private string? _problem;
 
     [Parameter] public string? Id { get; set; }
@@ -63,8 +72,9 @@
             items.Add(this.Item("Back to writing", () => RunAsync(() => Writes.BackToWritingAsync(post.Id)), "pencil",
                 post.State == NewsState.Scheduled ? "It won't publish until it's posted again" : "Nobody is asked to publish it any more"));
         if (publishes || post.State is NewsState.Draft or NewsState.WaitingToPublish)
-            items.Add(this.Item("Archive", ArchiveAsync, "archive",
-                post.State == NewsState.Published ? "Takes it out of everyone's News and takes back its notification. You can put it back." : "Keeps it under Archived. You can put it back.", startsGroup: true));
+            items.Add(post.State == NewsState.Published
+                ? this.Item("Archive…", () => { _archiving = true; }, "archive", "Takes it out of everyone's News. You can put it back.", startsGroup: true)
+                : this.Item("Archive", ArchiveAsync, "archive", "Keeps it under Archived. You can put it back.", startsGroup: true));
         return items;
     }
 
@@ -73,6 +83,7 @@
         if (Id is not { } id)
             return;
         await RunAsync(() => Writes.ArchiveAsync(id));
+        _archiving = false;
         if (_problem is null)
             Navigation.NavigateTo(Back);
     }
