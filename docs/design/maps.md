@@ -74,3 +74,23 @@ ground). Pass `look` to `mapStyle`, or change `defaultLook` to move every map. T
 and punctuation only, as the brand fonts are subset. They are made from the fonts in `wwwroot/fonts` by
 `tools/outreach/map/glyphs.mjs` (`npm install`, then `node glyphs.mjs` in `tools/outreach/map`). Run it again whenever
 those fonts change; never edit the files by hand.
+
+## The component
+
+`MapView` (Platform.Ui `Maps/`) is the one map on both sides: MapLibre in the web view over a region's PMTiles file, with
+`mapStyle` and the overlays below. Pass the map file as `MapSource.KeptFile(id, attribution)` on the phone (the file kept
+on the phone, read by byte ranges through the native layer, so it works offline) or `MapSource.Url(url, attribution)` in
+the admin panel. It follows light and dark by itself.
+
+- **Lines** (`MapLine`, by `MapLineStyle`): `Walk` (deep aqua, white edge, arrows along it from zoom 15), `WalkDone` (a walk's
+  part already covered, ink-3), `Walked` (streets walked recently, ink-3 at 45%), `Connector` (dashed), `LongWalk` (dotted, with
+  its label, such as "290 m, no letterboxes"), `Route` (a planned route in its own `Colour`, with a label).
+- **Areas** (`MapArea`): a polygon in its colour at 12% with an edge.
+- **Markers** (`MapMarker`): `Start`, `Pin`, `Meeting` (with a label), and from zoom 15 `NoJunkMail`, `DontLetterbox`, `Skip`,
+  `Check` (small dots; the first two labelled from zoom 17).
+- **You** (`MapYou`): the orange dot with its accuracy ring; `Follow` keeps it in the middle until someone drags the map
+  (`OnStoppedFollowing`).
+- `Frame` fits the map to a box once; `OnTap` gives the point tapped (dropping a pin). Its attribution sits under it.
+
+The libraries are vendored in `wwwroot/map/vendor` by `tools/outreach/map/vendor.mjs` (`npm install`, then
+`node vendor.mjs`), so the app never fetches them.
