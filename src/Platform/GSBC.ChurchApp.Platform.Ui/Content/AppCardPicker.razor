@@ -1,0 +1,83 @@
+@using GSBC.ChurchApp.Platform.Client.Content
+@using GSBC.ChurchApp.Platform.Contracts.Content
+@inject IEnumerable<IAppCardSource> Sources
+
+<Sheet Open="true" OpenChanged="OpenChangedAsync" Title="@Heading" Lead="@(_regular is null ? $"Only {Plural} you can see are listed." : "It's a regular event. Which should the card show?")">
+    <ChildContent>
+        @if (_regular is { } regular)
+        {
+            <Segmented TValue="EventShows" Label="What the card shows" Rows="true" Options="RegularOptions(regular)" @bind-Value="_shows" />
+        }
+        else if (Sources.FirstOrDefault(source => source.Kinds.Contains(Kind)) is { } source)
+        {
+            <SearchField Label="@($"Find {AppCards.WithArticle(Kind)}")" Placeholder="Type part of its name" Value="@_text" ValueChanged="text => _text = text" AutoFocus="true" />
+            <LiveData @key="_text" TValue="IReadOnlyList<AppCardChoice>" Load="() => source.ChoicesAsync(Kind, _text)" Feeds="source.Feeds">
+                @if (context.Value.Count == 0)
+                {
+                    <EmptyState Icon="search" Title="@(_text.Length > 0 ? "Nothing matches" : $"No {Plural} yet")" Body="@(_text.Length > 0 ? "Try fewer letters, or another word from its name." : null)" />
+                }
+                else
+                {
+                    <div class="app-card-picker">
+                        @foreach (AppCardChoice choice in context.Value)
+                        {
+                            <ListRow @key="choice.Card.Id" Title="@choice.Title" Subtitle="@(choice.Repeats is { Length: > 0 } repeats ? $"{choice.Line} · {repeats}" : choice.Line)"
+                                     Leading="@Leading(choice)" Chevron="true" OnClick="() => ChooseAsync(choice)" />
+                        }
+                    </div>
+                }
+            </LiveData>
+        }
+    </ChildContent>
+    <Actions>
+        @if (_regular is { } chosen)
+        {
+            <Button Block="true" OnClick="() => OnChosen.InvokeAsync(CardFor(chosen))">Put it in</Button>
+            <Button Block="true" Variant="ButtonVariant.Quiet" OnClick="() => _regular = null">Back to the list</Button>
+        }
+    </Actions>
+</Sheet>
+
+@code {
+    private string _text = "";
+    private AppCardChoice? _regular;
+    private EventShows _shows = EventShows.NextDate;
+
+    [Parameter, EditorRequired] public required AppCardKind Kind { get; set; }
+    [Parameter] public AppCardLook Look { get; set; }
+    [Parameter] public EventCallback<AppCard> OnChosen { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+
+    private string Heading => $"Put in a card for {AppCards.WithArticle(Kind)}";
+
+    private string Plural => Kind == AppCardKind.LifeGroup ? "Life Groups" : Kind == AppCardKind.Ministry ? "ministries" : $"{AppCards.Noun(Kind)}s";
+
+    private static RenderFragment? Leading(AppCardChoice choice) =>
+        choice.Picture is { } picture ? @<MediaImage Media="picture" Alt="" Class="app-card-picker__picture" /> : null;
+
+    private static IReadOnlyList<SegmentOption<EventShows>> RegularOptions(AppCardChoice choice) =>
+    [
+        new(EventShows.NextDate, "The next date, rolling on", Detail: "After each date it shows the one after"),
+        new(EventShows.Pattern, $"When it's on: {choice.Repeats}", Detail: "No particular date"),
+        new(EventShows.OneDate, $"Only {choice.Line}", Detail: "Just this one date"),
+    ];
+
+    private async Task ChooseAsync(AppCardChoice choice)
+    {
+        if (choice.RegularId is not null)
+        {
+            (_regular, _shows) = (choice, EventShows.NextDate);
+            return;
+        }
+        await OnChosen.InvokeAsync(choice.Card with { Look = Look });
+    }
+
+    private AppCard CardFor(AppCardChoice choice) =>
+        _shows == EventShows.OneDate ? choice.Card with { Look = Look } : new AppCard(AppCardKind.Event, choice.RegularId!, _shows, Look);
+
+    private async Task OpenChangedAsync(bool open)
+    {
+        if (!open)
+            await OnCancel.InvokeAsync();
+    }
+}

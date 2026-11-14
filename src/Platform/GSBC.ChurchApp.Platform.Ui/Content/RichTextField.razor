@@ -1,5 +1,6 @@
 @using System.Globalization
 @using System.Text.Json
+@using GSBC.ChurchApp.Platform.Client.Content
 @using GSBC.ChurchApp.Platform.Client.Media
 @using GSBC.ChurchApp.Platform.Client.Uploads
 @using GSBC.ChurchApp.Platform.Contracts.Content
@@ -11,6 +12,7 @@
 @inject FileUploads Uploads
 @inject UiHost Host
 @inject IServiceProvider Services
+@inject IEnumerable<IAppCardSource> CardSources
 
 <div class="rich-text-field @(Host.Desktop ? "" : "rich-text-field--phone") @Class" data-headings="@(Headings ? "true" : "false")">
     <div class="rich-text-field__bar" role="toolbar" aria-label="Formatting" data-look-scroll data-look-bleed>
@@ -79,6 +81,15 @@
             </div>
         </div>
     }
+    else if (_panel == Panel.Look && _cardAt is { } looking)
+    {
+        <div class="rich-text-panel" role="group" aria-label="How the card looks">
+            <Segmented TValue="AppCardLook" Label="How the card looks" Rows="true" Options="Looks" Value="looking.Card.Look" ValueChanged="LookChosenAsync" />
+            <div class="rich-text-panel__actions">
+                <Button Variant="ButtonVariant.Quiet" Small="true" OnClick="ClosePanel">Done</Button>
+            </div>
+        </div>
+    }
     else if (_panel == Panel.Emoji)
     {
         <div class="rich-text-panel rich-text-panel--emoji" role="group" aria-label="Emoji">
@@ -94,7 +105,23 @@
         </div>
     }
     <div class="rich-text-field__editor" @ref="_host"></div>
+    @if (Allowed.HasFlag(RichTextMedia.AppCards))
+    {
+        <div class="rich-text-field__cards" @ref="_shelf" aria-hidden="true">
+            @foreach (AppCard card in CardsInText())
+            {
+                <div @key="card.Directive" data-card="@card.Directive" data-label="@($"A card for {AppCards.WithArticle(card.Kind)}")">
+                    <AppCardBlock Card="card" Editing="true" />
+                </div>
+            }
+        </div>
+    }
 </div>
+
+@if (_picking is { } picking)
+{
+    <AppCardPicker Kind="picking.Kind" Look="picking.Look" OnChosen="CardChosenAsync" OnCancel="() => _picking = null" />
+}
 
 @if (_choosing is { } choosing)
 {
@@ -155,6 +182,11 @@
     private EditorText _before;
     private Choosing? _choosing;
     private string _sentMedia = "";
+    private ElementReference _shelf;
+    private bool _watchingCards;
+    private Picking? _picking;
+    private CardAt? _cardAt;
+    private string _cardLines = "";
 
     [Parameter, EditorRequired] public required RichText Content { get; set; }
     [Parameter] public EventCallback<RichText> ContentChanged { get; set; }
@@ -171,6 +203,7 @@
         Link,
         VideoLink,
         Emoji,
+        Look,
     }
 
     private enum Sheet
@@ -182,6 +215,17 @@
     }
 
     private sealed record Choosing(PickableFiles Kinds, string Mode, int At);
+
+    private sealed record Picking(AppCardKind Kind, AppCardLook Look, int? At);
+
+    private sealed record CardAt(AppCard Card, int At);
+
+    private static readonly IReadOnlyList<SegmentOption<AppCardLook>> Looks =
+    [
+        new(AppCardLook.Rule, "Side rule", Detail: "Quiet, part of the text, its actions as words"),
+        new(AppCardLook.Line, "Timetable line", Detail: "The date or picture at the left, with buttons"),
+        new(AppCardLook.Box, "Box", Detail: "Its picture across the top and a wide main button"),
+    ];
 
     private sealed record InsertChoice(string Group, string Label, string Icon, string? Detail, Func<Task> Action);
 
@@ -232,7 +276,22 @@
                 new InsertChoice("In the text", "Emoji", AppIcons.Emoji, null, () => OpenPanel(Panel.Emoji)),
             ]
             : Array.Empty<InsertChoice>(),
+        .. Allowed.HasFlag(RichTextMedia.AppCards)
+            ? AppCards.All.Where(kind => CardSources.Any(source => source.Kinds.Contains(kind)))
+                .Select(kind => new InsertChoice("From the app", AppCards.Title(kind), CardIcon(kind), null, () => PickCardAsync(kind)))
+            : [],
     ];
+
+    private static string CardIcon(AppCardKind kind) => kind switch
+    {
+        AppCardKind.Event => AppIcons.Calendar,
+        AppCardKind.Sermon => AppIcons.Sermons,
+        AppCardKind.Ministry => AppIcons.Ministries,
+        _ => AppIcons.LifeGroups,
+    };
+
+    private IReadOnlyList<AppCard> CardsInText() =>
+        RichTextParser.Parse(_markdown).AppCards.DistinctBy(card => card.Directive).ToList();
 
     private IReadOnlyList<MenuItem> InsertItems()
     {
@@ -299,6 +358,11 @@
         _editor = await _module.InvokeAsync<IJSObjectReference>("attach", _host, _self, _markdown, Label, Placeholder, emoji);
         _sentMedia = "";
         await SendMediaAsync();
+        if (Allowed.HasFlag(RichTextMedia.AppCards))
+        {
+            await _editor.InvokeVoidAsync("watchCards", _shelf);
+            _watchingCards = true;
+        }
     }
 
     private async Task SendMediaAsync()
@@ -381,6 +445,60 @@
             return;
         _markdown = markdown;
         await ContentChanged.InvokeAsync(Current());
+        string lines = string.Join('\n', CardsInText().Select(card => card.Directive));
+        if (_watchingCards && lines != _cardLines)
+        {
+            _cardLines = lines;
+            StateHasChanged();
+        }
+    }
+
+    [JSInvokable]
+    public Task CardWantedAsync(string mode, int at)
+    {
+        if (AppCards.OfLine(LineAt(at)) is not { } card)
+            return Task.CompletedTask;
+        _cardAt = new CardAt(card, at);
+        if (mode == "look")
+            _panel = Panel.Look;
+        else
+            _picking = new Picking(card.Kind, card.Look, at);
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+    private async Task PickCardAsync(AppCardKind kind)
+    {
+        _before = await CurrentAsync();
+        _picking = new Picking(kind, AppCardLook.Rule, null);
+    }
+
+    private async Task CardChosenAsync(AppCard card)
+    {
+        Picking? picking = _picking;
+        _picking = null;
+        if (picking is null || _editor is null)
+            return;
+        if (picking.At is { } at)
+            await _editor.InvokeVoidAsync("replaceLine", at, card.Directive);
+        else
+            await ApplyAsync(RichTextEdits.Block(_before, card.Directive));
+    }
+
+    private async Task LookChosenAsync(AppCardLook look)
+    {
+        if (_cardAt is not { } at || _editor is null)
+            return;
+        AppCard changed = at.Card with { Look = look };
+        _cardAt = at with { Card = changed };
+        await _editor.InvokeVoidAsync("replaceLine", at.At, changed.Directive);
+    }
+
+    private string LineAt(int at)
+    {
+        string before = _markdown[..Math.Clamp(at, 0, _markdown.Length)];
+        int lineEnd = _markdown.IndexOf('\n', before.Length);
+        return _markdown[(before.LastIndexOf('\n') + 1)..(lineEnd < 0 ? _markdown.Length : lineEnd)].Trim();
     }
 
     private RichText Current() => RichTextRules.WithOnlyUsedMedia(new RichText { Markdown = _markdown, Media = [.. _media] });
@@ -407,10 +525,7 @@
 
     private PickableFiles KindAt(int at)
     {
-        string before = _markdown[..Math.Clamp(at, 0, _markdown.Length)];
-        int lineEnd = _markdown.IndexOf('\n', before.Length);
-        string line = _markdown[(before.LastIndexOf('\n') + 1)..(lineEnd < 0 ? _markdown.Length : lineEnd)].Trim();
-        return RichTextParser.Parse(line).MediaIds.FirstOrDefault() is { } id && _media.FirstOrDefault(media => media.Id == id) is { } media
+        return RichTextParser.Parse(LineAt(at)).MediaIds.FirstOrDefault() is { } id && _media.FirstOrDefault(media => media.Id == id) is { } media
             ? media.IsVideo ? PickableFiles.Videos : media.IsImage ? PickableFiles.Pictures : PickableFiles.Documents
             : PickableFiles.Pictures;
     }

@@ -243,6 +243,7 @@ function decorate(view, emoji) {
 
 const mediaPattern = /^!\[([^\]]*)\]\((media:[^\s)"]+|https:\/\/[^\s)"]+)(?:\s+"([^"]*)")?\)\s*$/;
 const setMediaInfo = StateEffect.define();
+const cardPattern = /^::(?:event|sermon|ministry|lifegroup)\{[^{}]*\}\s*$/;
 
 function parseMediaLine(text) {
   const found = mediaPattern.exec(text);
@@ -267,6 +268,10 @@ function mediaRanges(state, info) {
   const ranges = [];
   for (let number = 1; number <= state.doc.lines; number++) {
     const line = state.doc.line(number);
+    if (cardPattern.test(line.text)) {
+      ranges.push({ from: line.from, to: line.to, lastLine: number, kind: 'card', items: [{ card: line.text.trim(), line: number }] });
+      continue;
+    }
     const item = parseMediaLine(line.text);
     if (!item) continue;
     const kind = kindOf(item, info);
@@ -289,7 +294,7 @@ class MediaWidget extends WidgetType {
     this.info = info;
     this.selected = selected;
     this.actions = actions;
-    this.key = `${range.kind}:${range.items.map(item => item.id ?? item.link).join(',')}:${info.version}`;
+    this.key = `${range.kind}:${range.items.map(item => item.id ?? item.link ?? item.card).join(',')}:${info.version}`;
   }
 
   eq(other) { return other.key === this.key && other.selected === this.selected && other.caption === this.caption; }
@@ -314,40 +319,16 @@ class MediaWidget extends WidgetType {
     const name = item => info.media[item.id]?.name || item.alt || 'File';
     dom.setAttribute('aria-label', range.kind === 'link' ? 'Video link' : range.items.length > 1 ? `Gallery of ${range.items.length} pictures` : `${range.kind[0].toUpperCase()}${range.kind.slice(1)}: ${name(first)}`);
 
+    if (range.kind === 'card') return this.cardDOM(view, dom);
+
     const frame = document.createElement('div');
     frame.className = 'cm-media__frame';
     frame.dataset.count = String(Math.min(range.items.length, 4));
     for (const item of range.items) frame.append(this.face(item, name(item)));
     dom.append(frame);
 
-    const tools = document.createElement('div');
-    tools.className = 'cm-media__tools';
-    const button = (label, icon, action) => {
-      const tool = document.createElement('button');
-      tool.type = 'button';
-      tool.className = 'cm-media__tool';
-      tool.setAttribute('aria-label', label);
-      tool.title = label;
-      tool.innerHTML = icon;
-      tool.addEventListener('mousedown', event => event.preventDefault());
-      tool.addEventListener('click', event => {
-        event.preventDefault();
-        action(view.posAtDOM(dom));
-      });
-      return tool;
-    };
-    const grip = button('Drag to move it', icons.grip, () => {});
-    grip.draggable = true;
-    grip.classList.add('cm-media__grip');
-    grip.addEventListener('dragstart', event => {
-      const from = view.posAtDOM(dom);
-      const found = view.state.field(mediaField).ranges.find(each => each.from === from);
-      if (!found) return;
-      event.dataTransfer.setData('application/x-gsbc-media', JSON.stringify({ from: found.from, to: found.to }));
-      event.dataTransfer.setData('text/plain', view.state.doc.sliceString(found.from, found.to));
-      event.dataTransfer.effectAllowed = 'move';
-      event.dataTransfer.setDragImage(dom, 24, 24);
-    });
+    const { tools, button } = this.tools(view, dom);
+    const grip = this.grip(view, dom, button);
     tools.append(grip);
     if (range.kind === 'picture') tools.append(button('Add a picture beside it', icons.plus, at => this.actions.add(at)));
     if (range.kind !== 'link' && range.items.length === 1) tools.append(button('Replace it', icons.replace, at => this.actions.replace(at)));
@@ -390,6 +371,67 @@ class MediaWidget extends WidgetType {
     return dom;
   }
 
+  tools(view, dom) {
+    const tools = document.createElement('div');
+    tools.className = 'cm-media__tools';
+    const button = (label, icon, action) => {
+      const tool = document.createElement('button');
+      tool.type = 'button';
+      tool.className = 'cm-media__tool';
+      tool.setAttribute('aria-label', label);
+      tool.title = label;
+      tool.innerHTML = icon;
+      tool.addEventListener('mousedown', event => event.preventDefault());
+      tool.addEventListener('click', event => {
+        event.preventDefault();
+        action(view.posAtDOM(dom));
+      });
+      return tool;
+    };
+    return { tools, button };
+  }
+
+  grip(view, dom, button) {
+    const grip = button('Drag to move it', icons.grip, () => {});
+    grip.draggable = true;
+    grip.classList.add('cm-media__grip');
+    grip.addEventListener('dragstart', event => {
+      const from = view.posAtDOM(dom);
+      const found = view.state.field(mediaField).ranges.find(each => each.from === from);
+      if (!found) return;
+      event.dataTransfer.setData('application/x-gsbc-media', JSON.stringify({ from: found.from, to: found.to }));
+      event.dataTransfer.setData('text/plain', view.state.doc.sliceString(found.from, found.to));
+      event.dataTransfer.effectAllowed = 'move';
+      event.dataTransfer.setDragImage(dom, 24, 24);
+    });
+    return grip;
+  }
+
+  cardDOM(view, dom) {
+    const card = this.range.items[0].card;
+    dom.setAttribute('aria-label', this.info.cards?.[card]?.label ?? 'A card');
+    const face = document.createElement('div');
+    face.className = 'cm-media__card';
+    face.innerHTML = this.info.cards?.[card]?.html ?? '<p class="app-card-missing">Getting the card…</p>';
+    face.setAttribute('inert', '');
+    dom.append(face);
+    const { tools, button } = this.tools(view, dom);
+    tools.append(this.grip(view, dom, button));
+    tools.append(button('Change how it looks', icons.look, at => this.actions.cardLook(at)));
+    tools.append(button('Replace it', icons.replace, at => this.actions.cardReplace(at)));
+    tools.append(button('Take it out', icons.remove, at => this.actions.remove(at)));
+    dom.append(tools);
+    dom.addEventListener('mousedown', event => {
+      if (event.target.closest('button')) return;
+      event.preventDefault();
+      const from = view.posAtDOM(dom);
+      const found = view.state.field(mediaField).ranges.find(each => each.from === from);
+      if (found) view.dispatch({ selection: EditorSelection.range(found.from, found.to) });
+      view.focus();
+    });
+    return dom;
+  }
+
   face(item, name) {
     const known = this.info.media[item.id];
     const kind = item.link ? 'link' : known?.kind ?? 'picture';
@@ -423,7 +465,7 @@ class MediaWidget extends WidgetType {
 
   ignoreEvent() { return true; }
 
-  get estimatedHeight() { return this.range.kind === 'file' ? 72 : 260; }
+  get estimatedHeight() { return this.range.kind === 'file' ? 72 : this.range.kind === 'card' ? 160 : 260; }
 }
 
 function linkSite(link) {
@@ -438,11 +480,12 @@ const icons = {
   remove: svg('<path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>'),
   play: svg('<path d="M6 3l14 9-14 9V3z" fill="currentColor"/>'),
   file: svg('<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/>'),
+  look: svg('<rect width="18" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/><path d="M14 15h7"/><path d="M14 20h7"/>'),
   image: svg('<rect width="18" height="18" x="3" y="3" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/>'),
 };
 
 const mediaField = StateField.define({
-  create: state => ({ info: { media: {}, version: 0 }, ranges: mediaRanges(state, { media: {} }) }),
+  create: state => ({ info: { media: {}, cards: {}, version: 0 }, ranges: mediaRanges(state, { media: {}, cards: {} }) }),
   update(value, transaction) {
     let info = value.info;
     for (const effect of transaction.effects) if (effect.is(setMediaInfo)) info = effect.value;
@@ -597,6 +640,7 @@ export function attach(host, field, value, label, placeholderText, emojiJson) {
     return true;
   };
   let view;
+  let cardWatcher;
   const actions = {
     remove: at => {
       const range = rangeAt(view.state, at);
@@ -604,6 +648,8 @@ export function attach(host, field, value, label, placeholderText, emojiJson) {
       view.focus();
     },
     replace: at => field.invokeMethodAsync('MediaWantedAsync', 'replace', at),
+    cardReplace: at => field.invokeMethodAsync('CardWantedAsync', 'replace', at),
+    cardLook: at => field.invokeMethodAsync('CardWantedAsync', 'look', at),
     add: at => field.invokeMethodAsync('MediaWantedAsync', 'add', at),
     caption: (at, caption) => {
       const range = rangeAt(view.state, at);
@@ -728,7 +774,27 @@ export function attach(host, field, value, label, placeholderText, emojiJson) {
     },
     setMedia: json => {
       const previous = view.state.field(mediaField).info;
-      view.dispatch({ effects: setMediaInfo.of({ media: JSON.parse(json), version: previous.version + 1 }) });
+      view.dispatch({ effects: setMediaInfo.of({ ...previous, media: JSON.parse(json), version: previous.version + 1 }) });
+    },
+    watchCards: shelf => {
+      const send = () => {
+        const cards = {};
+        for (const each of shelf.querySelectorAll('[data-card]')) cards[each.dataset.card] = { html: each.innerHTML, label: each.dataset.label };
+        const previous = view.state.field(mediaField).info;
+        if (JSON.stringify(previous.cards) === JSON.stringify(cards)) return;
+        view.dispatch({ effects: setMediaInfo.of({ ...previous, cards, version: previous.version + 1 }) });
+      };
+      cardWatcher?.disconnect();
+      cardWatcher = new MutationObserver(send);
+      cardWatcher.observe(shelf, { subtree: true, childList: true, characterData: true, attributes: true });
+      send();
+    },
+    replaceLine: (at, text) => {
+      const range = rangeAt(view.state, at);
+      if (!range) return;
+      const line = view.state.doc.line(range.items[0].line);
+      view.dispatch({ changes: { from: line.from, to: line.to, insert: text }, userEvent: 'input' });
+      view.focus();
     },
     placeMedia: (mode, at, lines) => {
       const range = rangeAt(view.state, at);
@@ -764,6 +830,7 @@ export function attach(host, field, value, label, placeholderText, emojiJson) {
     },
     focus: () => view.focus(),
     dispose: () => {
+      cardWatcher?.disconnect();
       tools?.removeEventListener('pointerdown', keepFocus);
       tools?.removeEventListener('mousedown', keepFocus);
       view.destroy();

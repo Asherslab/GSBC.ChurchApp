@@ -99,6 +99,11 @@ public sealed class RichTextView : ComponentBase
                 builder.AddComponentParameter(33, nameof(RichTextMediaBlock.About), About);
                 builder.CloseComponent();
                 break;
+            case DirectiveBlock directive when AppCards.Of(directive) is { } card:
+                builder.OpenComponent<AppCardBlock>(40);
+                builder.AddComponentParameter(41, nameof(AppCardBlock.Card), card);
+                builder.CloseComponent();
+                break;
         }
     }
 

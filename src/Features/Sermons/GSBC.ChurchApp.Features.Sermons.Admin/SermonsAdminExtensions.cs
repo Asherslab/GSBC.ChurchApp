@@ -13,6 +13,6 @@ public static class SermonsAdminExtensions
         modules.Add(new ClientModule("Sermons", typeof(SermonsAdminExtensions).Assembly,
             [new NavEntry("Sermons", "sermons", AppIcons.Sermons, SermonsPermissions.Upload, Area: NavAreas.SundaysAndSermons,
                 Summary: "Check new sermons, fix their details, and upload them")]));
-        return services.AddSermonsClient().AddSingleton<SermonsAdminClient>().AddSingleton<ILatestSermonsOnline, LatestSermonsOnline>();
+        return services.AddSermonsClient().AddSingleton<SermonsAdminClient>().AddSingleton<ILatestSermonsOnline, LatestSermonsOnline>().AddSingleton<ISermonCards, OnlineSermonCards>();
     }
 }
