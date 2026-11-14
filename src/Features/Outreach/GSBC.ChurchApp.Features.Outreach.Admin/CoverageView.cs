@@ -113,8 +113,8 @@ public sealed class CoverageView
     {
         0 => "today",
         1 => "yesterday",
-        < 14 => $"{days} days ago",
-        _ => $"{days / 7} weeks ago",
+        < 14 => $"{days}\u00a0days ago",
+        _ => $"{days / 7}\u00a0weeks ago",
     };
 
     private GeoPoint Middle(SideStretch stretch)

@@ -7,8 +7,14 @@
     <OutreachHead Tab="OutreachTab.Numbers" FollowUps="numbers.Desk.OpenFollowUps" Reports="numbers.Desk.NewReports" />
     <div class="outreach-numbers">
         <div class="outreach-numbers__filters">
-            <FilterChips TValue="NumbersSpan" Label="When" Options="Spans" Value="_span" ValueChanged="span => ChooseAsync(() => _span = span)" />
-            <FilterChips TValue="string" Label="Campaign" Options="CampaignOptions(numbers.Desk)" Value="_campaign" ValueChanged="campaign => ChooseAsync(() => _campaign = campaign)" />
+            <div class="outreach-numbers__filter">
+                <p class="outreach-numbers__filter-label" aria-hidden="true">When</p>
+                <FilterChips TValue="NumbersSpan" Label="When" Options="Spans" Value="_span" ValueChanged="span => ChooseAsync(() => _span = span)" />
+            </div>
+            <div class="outreach-numbers__filter">
+                <p class="outreach-numbers__filter-label" aria-hidden="true">Campaign</p>
+                <FilterChips TValue="string" Label="Campaign" Options="CampaignOptions(numbers.Desk)" Value="_campaign" ValueChanged="campaign => ChooseAsync(() => _campaign = campaign)" />
+            </div>
         </div>
 
         <div class="stat-tiles outreach-numbers__tiles">

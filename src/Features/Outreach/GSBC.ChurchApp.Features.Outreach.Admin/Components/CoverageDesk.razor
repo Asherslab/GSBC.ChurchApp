@@ -29,7 +29,7 @@
                          Lines="@Lines(view)" Areas="@Areas(shown)" Markers="@Markers(shown)" Frame="@view.Frame()" OnTap="TapAsync">
                     <Overlay>
                         <div class="outreach-coverage__tools">
-                            <Button Variant="@(_drawing ? ButtonVariant.Primary : ButtonVariant.Quiet)" Icon="pencil" OnClick="ToggleDrawing">@(_drawing ? "Stop drawing" : "Draw round streets")</Button>
+                            <Button Variant="@(_drawing ? ButtonVariant.Primary : ButtonVariant.Quiet)" Icon="pencil" OnClick="ToggleDrawing" Class="outreach-coverage__tool">@(_drawing ? "Stop drawing" : "Draw round streets")</Button>
                             @if (_drawing)
                             {
                                 <p class="outreach-coverage__hint" role="status">Drag a loop round the streets. Escape stops.</p>
@@ -52,24 +52,17 @@
                     <p class="outreach-coverage__label">When it was last done</p>
                     <div class="outreach-coverage__ramp" aria-hidden="true"></div>
                     <p class="outreach-coverage__ramp-key"><span>This week</span><span>@Weeks(view.RestDays / 2)</span><span>@Weeks(view.RestDays): open again</span></p>
+                    @if (_showPlaces && shown.Exclusions.Zones.Count > 0)
+                    {
+                        <p class="outreach-coverage__key"><span class="outreach-coverage__swatch" aria-hidden="true"></span>Outlined in red: an area outreach skips</p>
+                    }
                 </div>
                 <div class="outreach-coverage__figures">
-                    <StatTile Value="@OutreachWords.Count(view.StreetsDone)" Label="@($"of {OutreachWords.Count(view.DeliverableStreets)} streets done")" Quiet="true" />
-                    <StatTile Value="@Percent(view.HomesDone, view.AllHomes)" Label="of letterboxes" Quiet="true" />
+                    <StatTile Value="@OutreachWords.Count(view.StreetsDone)" Label="@($"streets done, of {OutreachWords.Count(view.DeliverableStreets)} in this region")" Quiet="true" />
+                    <StatTile Value="@Percent(view.HomesDone, view.AllHomes)" Label="of this region's letterboxes done" Quiet="true" />
                 </div>
                 <ToggleChips TValue="string" Label="Show on the map" Chips="Layers(shown)" Toggled="Toggle" Class="toggle-chips--wrap" />
 
-                <div class="outreach-coverage__choice">
-                    <p class="outreach-coverage__label">Choose streets</p>
-                    <p class="field__hint">Click a street on the map, or draw round several with the pencil at the map's top left.</p>
-                    @if (_undo is { } undo)
-                    {
-                        <p class="outreach-coverage__done" role="status">
-                            @OutreachWords.Plural(undo.Stretches, "stretch", "stretches") marked not done.
-                            <Button Variant="ButtonVariant.Link" Busy="_busy" OnClick="UndoAsync">Undo</Button>
-                        </p>
-                    }
-                </div>
                 </div>
             </Pane>
             <Foot>
@@ -80,7 +73,7 @@
                         <p class="outreach-coverage__chosen-sub">@ChoiceLine(view, chosen)</p>
                         @if (CanExpire && chosen.Pieces.Count > 0)
                         {
-                            <p class="field__hint">Marking them not done opens them to walks in @CampaignName(shown) straight away. Other campaigns keep theirs.</p>
+                            <p class="field__hint">@(chosen.Street is null ? "Marking them not done opens them" : "Marking it not done opens it") to walks in @CampaignName(shown) straight away. Other campaigns keep theirs.</p>
                         }
                     </div>
                     <Notice Tone="NoticeTone.Warning" Text="@_problem" />
@@ -94,7 +87,17 @@
                 }
                 else
                 {
-                    <p class="field__hint">Choose streets on the map to mark them not done.</p>
+                    @if (_undo is not null)
+                    {
+                        <p class="outreach-coverage__done" role="status">
+                            Those streets are open again for @CampaignName(shown).
+                            <Button Variant="ButtonVariant.Link" Busy="_busy" OnClick="UndoAsync">Undo</Button>
+                        </p>
+                    }
+                    else
+                    {
+                        <p class="field__hint">Click a street on the map, or draw round several, to mark them not done.</p>
+                    }
                 }
             </Foot>
         </MapDesk>

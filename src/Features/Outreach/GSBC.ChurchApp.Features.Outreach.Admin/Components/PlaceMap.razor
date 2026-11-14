@@ -11,7 +11,7 @@
     @if (RegionFor(context.Value) is { } region)
     {
         <MapView @ref="_map" Class="place-map__map" Source="@MapSource.Url(region.Map.Url, region.Attribution)" Label="@Label"
-                 Areas="@Shapes" Markers="@Pins" Frame="@Framed" Centre="@_centre" Zoom="16" OnTap="TapAsync" />
+                 Areas="@Shapes" Markers="@Pins" Frame="@Framed" Centre="@_centre" Zoom="15" OnTap="TapAsync" />
         <MapSketch Map="_map" Tool="@(Mode == PlaceMapMode.DrawArea ? MapSketchTool.Polygon : MapSketchTool.None)" OnDrawn="DrawnAsync" />
         @if (Mode != PlaceMapMode.Show)
         {

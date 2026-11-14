@@ -88,7 +88,7 @@
         </Detail>
     </Workbench>
     <Sheet Open="_deleting" OpenChanged="open => _deleting = open" Title="@DeleteTitle(Chosen(lists))"
-           Lead="Walks deliver there again from now. This can't be undone; a walker or staff can mark it again.">
+           Lead="Walks deliver there again from now. A walker or staff can mark it again later.">
         <Actions>
             <Button Block="true" Variant="ButtonVariant.Danger" Busy="_busy" OnClick="() => DeleteAsync(Chosen(lists))">@DeleteAction(Chosen(lists))</Button>
             <Button Block="true" Variant="ButtonVariant.Quiet" OnClick="() => _deleting = false">Keep it</Button>
@@ -191,7 +191,7 @@
     private RenderFragment Foot(string id) => CanChangeExclusions
         ? @<div class="editor-foot">
             <Notice Tone="NoticeTone.Warning" Text="@_problem" />
-            <SaveBar New="IsNew" Label="@(IsNew ? "Add it" : "Save")" Busy="_busy" OnSave="SaveAsync" OnCancel="() => OpenAsync(null)" State="SaveBar.For(Changed, _saved)" Blocked="@Blocked" />
+            <SaveBar New="IsNew" Label="@(IsNew ? (_open?.Kind == PlaceKind.Zone ? "Add the area" : "Add the address") : "Save")" Busy="_busy" OnSave="SaveAsync" OnCancel="() => OpenAsync(null)" State="SaveBar.For(Changed, _saved)" Blocked="@Blocked" />
         </div>
         : @<p class="field__hint">Only outreach leaders can change this.</p>;
 
