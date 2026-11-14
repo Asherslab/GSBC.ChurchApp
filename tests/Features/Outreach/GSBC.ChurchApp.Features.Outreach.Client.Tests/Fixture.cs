@@ -9,4 +9,6 @@ internal static class Fixture
     public static GeoPoint Church => new(-27.34335, 152.96467);
 
     public static StreetGraph AlbanyCreek() => Graph.Value;
+
+    public static byte[] AlbanyCreekBytes() => File.ReadAllBytes(Path.Combine(AppContext.BaseDirectory, "Fixtures", "albany-creek.streets"));
 }

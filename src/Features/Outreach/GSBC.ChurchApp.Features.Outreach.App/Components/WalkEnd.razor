@@ -1,0 +1,97 @@
+@inject WalkSession Walk
+
+<UnsavedGuard Changed="() => _changed" State="() => string.Join(',', _walked.Order())" What="what you covered" />
+
+<Masthead Title="@(View.State!.Mode == WalkMode.Doorknock ? "Thanks for knocking" : "Well walked")" Note="@Note" />
+<Section First="true">
+    <p class="outreach-figures__big">@OutreachPhoneWords.Distance(View.Progress?.Metres ?? 0) · @OutreachPhoneWords.Duration(View.Progress?.Elapsed ?? TimeSpan.Zero)</p>
+    <p class="outreach-figures__line">@Totals()</p>
+    @if (View.Failed > 0)
+    {
+        <Notice Tone="NoticeTone.Warning" Text="Some of this walk couldn't be sent yet. It's kept on this phone; My outreach shows what's waiting." />
+    }
+    else if (View.Waiting > 0)
+    {
+        <Notice Text="@($"{OutreachWords.Plural(View.Waiting, "part", "parts")} of this walk {(View.Waiting == 1 ? "is" : "are")} waiting for signal. They send by themselves.")" />
+    }
+</Section>
+<Section Title="Check what you covered" Lead="The app marked what it saw you walk. Change anything it got wrong; what you leave unticked stays open for someone else.">
+    @if (Delivering.Count == 0)
+    {
+        <EmptyState Icon="footprints" Title="Nothing on the plan to check" Body="Save the walk to keep what you did." />
+    }
+    else
+    {
+        <ol class="outreach-order">
+            @foreach (StepProgress step in Delivering)
+            {
+                bool on = _walked.Contains(step.Index);
+                <li @key="step.Index" class="outreach-order__stop @(on ? "outreach-order__stop--done" : "")">
+                    <ToggleRow Title="@OutreachPhoneWords.SideOf(step.Step)" Description="@StepLine(step, on)" Checked="on" CheckedChanged="value => Toggle(step.Index, value)" />
+                </li>
+            }
+        </ol>
+    }
+    <SaveBar Block="true" Label="Save the walk" CancelLabel="Keep walking" Busy="_busy" OnSave="SaveAsync" OnCancel="Walk.KeepWalkingAsync" />
+</Section>
+
+@code {
+    private HashSet<int> _walked = [];
+    private bool _seeded;
+    private bool _changed;
+    private bool _busy;
+
+    [Parameter, EditorRequired] public required WalkView View { get; set; }
+    [Parameter] public EventCallback OnSaved { get; set; }
+
+    private IReadOnlyList<StepProgress> Delivering => [.. (View.Progress?.Steps ?? []).Where(step => step.Step.Delivers)];
+
+    private string Note => $"{OutreachPhoneWords.Walked(View.State!.StartedAt)}, from {OutreachPhoneWords.Clock(View.State.StartedAt)} · {View.Carrying}";
+
+    protected override void OnParametersSet()
+    {
+        if (_seeded || View.Progress is null)
+            return;
+        _walked = [.. Delivering.Where(step => step.Share >= WalkSession.StepDoneShare).Select(step => step.Index)];
+        _seeded = true;
+    }
+
+    private string Totals()
+    {
+        WalkState state = View.State!;
+        int letterboxes = Walk.LetterboxesOf(_walked);
+        List<string> parts = [state.Mode == WalkMode.Doorknock ? OutreachPhoneWords.Doors(state.Doors) : OutreachPhoneWords.Letterboxes(letterboxes)];
+        if (state.Conversations > 0)
+            parts.Add(OutreachWords.Plural(state.Conversations, "conversation", "conversations"));
+        return string.Join(" · ", parts);
+    }
+
+    private static string StepLine(StepProgress step, bool on) =>
+        on ? step.Share >= WalkSession.StepDoneShare ? $"{OutreachPhoneWords.Letterboxes(step.Step.Letterboxes)} · walked" : $"{OutreachPhoneWords.Letterboxes(step.Step.Letterboxes)} · you ticked it"
+        : step.Share >= WalkSession.StepDoneShare ? "Walked, but taken back · stays open for someone else"
+        : step.Done > 0 ? $"Partly walked ({step.Done} of {step.Step.Letterboxes}) · stays open" : "Not walked · stays open for someone else";
+
+    private void Toggle(int index, bool on)
+    {
+        if (on)
+            _walked.Add(index);
+        else
+            _walked.Remove(index);
+        _changed = true;
+    }
+
+    private async Task SaveAsync()
+    {
+        _busy = true;
+        try
+        {
+            await Walk.SaveAsync(_walked);
+            _changed = false;
+            await OnSaved.InvokeAsync();
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+}

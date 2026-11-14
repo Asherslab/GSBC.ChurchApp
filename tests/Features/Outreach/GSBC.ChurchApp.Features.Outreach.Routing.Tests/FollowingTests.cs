@@ -23,6 +23,20 @@ public sealed class FollowingTests
     }
 
     [Fact]
+    public void AJumpTooFarToBridgeAddsNothingToTheDistanceWalked()
+    {
+        StreetGraph graph = Fixture.AlbanyCreek();
+        Flat church = graph.Projection.ToFlat(Fixture.Church);
+        WalkFollower follower = new(graph);
+        List<GpsFix> before = Tracks.Straight(graph, church + new Flat(-5000, 0), church + new Flat(-4900, 0), TrackStyle.Clean);
+        List<GpsFix> after = Tracks.Straight(graph, church, church + new Flat(100, 0), TrackStyle.Clean);
+        foreach (GpsFix fix in before.Concat(after.Select(fix => fix with { At = fix.At.AddMinutes(1) + (before[^1].At - after[0].At) })))
+            follower.Add(fix);
+
+        Assert.InRange(follower.WalkedMetres, 190, 210);
+    }
+
+    [Fact]
     public void CrossingAStreetDoesNotMarkIt()
     {
         StreetGraph graph = Fixture.AlbanyCreek();

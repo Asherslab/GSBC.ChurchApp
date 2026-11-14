@@ -1,6 +1,6 @@
 # Outreach
 
-Detail behind [DESIGN.md](../../DESIGN.md) for the admin panel's Outreach page. Read DESIGN.md first; its rules win.
+Detail behind [DESIGN.md](../../DESIGN.md) for the admin panel's Outreach page and the walker's side on the phone. Read DESIGN.md first; its rules win.
 
 ## Outreach page (admin)
 `/outreach` and `/outreach/{tab}`, for the leaders of the ministry that runs outreach. Every tab opens on the title band "Outreach" with a lead, then a `TabStrip`: Campaigns, Coverage, Numbers, Places, Follow-ups (counted), Reports (counted), Settings (`OutreachHead`). With no ministry running outreach, the page is the title band over an `EmptyState` that says where to turn it on.
@@ -71,3 +71,42 @@ Back.
 A `Section Grouped` card after the settings groups, only for those who manage maps: a `ListGroup` of areas (state as the
 subtitle, the regions' counts, size and version under it, ⋯ with Rebuild, Rename, Delete), *Add a map area* (quiet,
 opening a `Sheet` with Name, Centre and How far around it), and a foot saying these change straight away.
+
+## On the phone
+
+The walker's side of Outreach (`Features.Outreach.App`), built on the decision page's *Words first*
+(`.impeccable/mocks/outreach-walking/`, 2026-11-15): a walk is read at a glance, so the street you're on leads in the
+masthead's navy at display size and the map supports it. Maps are `MapView` ([maps.md](maps.md)).
+
+- **Outreach** (`/outreach`): the masthead, then your walk if one is on (a navy `Card`), the outreach day if one is on
+  (a section with *Pick a route*), then the ask: a sand box with *Got an hour? Walk from your door*, a line on how it
+  works, a `Segmented` length (30 min, 1 hr, 2 hr, Distance, then 1 to 8 km), what you carry as a row opening a `Sheet` of
+  `ToggleRow`s, and the block *Plan my walk*. *Around you* is a 13.5rem rounded map, not interactive, with streets walked
+  lately in grey. Then the next outreach days and the rows My outreach and Offline maps.
+- **Your walk** (`/outreach/walk`, solid top bar): the map full width (38% of the screen, at least 14rem), framed on
+  the walk, connectors, a long walk dotted and labelled, recent coverage and the start; then the figures (distance and time at headline size,
+  letterboxes, bundles and *back by* in a caption), the reach note in a sand box with its two ways to get more as link
+  buttons, warnings as `Notice`s, and *Start the walk*. *Change the walk* holds the length, letterboxes or doorknocking,
+  *I'm walking with someone*, where you start (tap the map, or find a street in a `Sheet` with a `SearchField`). Empty
+  states say why there's no plan (no location, no maps yet, outside the area, getting the map, no street near).
+- **Walking** (`/outreach/walking`): the masthead is the walk: a status line (Walking or Paused and the time at the
+  left, the campaigns at the right), the street at display size, *Houses on your left · 4 to go* at title size, and the
+  next turn with its arrow over a hairline (*Then left into …* and its letterboxes). Then the map, centred on you at
+  street level while it follows you, framing you, the street you're on and the next one (the whole route and you before the first fix); a drag stops that and puts a quiet small *Follow me* at the map's bottom right. Then
+  progress (letterboxes and distance over the orange `ProgressTrack`), what you just marked as a status line with Undo
+  (for 12 seconds), a warning `Notice` if location is off, two 3.5rem quiet buttons side by side (No junk mail or At a
+  door; Spoke to someone), and a bar: Pause (Carry on when paused) at the left, the walk's ⋯ `Menu` in the middle (Not a
+  home or wrong on the map, Skipped this bit, Follow me on the map or Stop following me), Finish at the right.
+- **The end** (on the walking page once finished): a masthead (*Well walked*, or *Thanks for knocking*), the figures, and
+  *Check what you covered*: the planned streets as a line of stops (a 3px rule with a dot per stop, deep aqua once
+  walked), each a `ToggleRow` saying walked, partly walked or not; the `SaveBar` with *Keep walking* and *Save the walk*.
+- **Sheets:** *Tell staff about this place* (a stacked `Segmented` reason, a required note, an optional photo in a
+  `FilePick` box, *Send for review*); *At this door* (four block buttons, then the follow-up with its consent
+  `ToggleRow` and fields, or the hostile explanation and *Don't come back here*). Both ask before losing what was typed.
+- **An outreach day** (`/outreach/days/{id}`): masthead with the campaign and when, a `FactList` (meet at, what it is,
+  what's handed out), the day's note, *How the day is going* for leaders, and the routes as rows with *Open* or *Yours*
+  `Pill`s and who's taking them. **A route** (`/outreach/r/{code}`, the QR's link): the map with the route and the meeting
+  point, the route's title and figures, *Start this route*, *Who's taking it* (first name and *I'll take this route*),
+  and its streets.
+- **My outreach** and **Offline maps**: masthead pages; totals at headline size over a caption, walks as rows; *Count me by
+  name* in a grouped section that changes straight away; each region a row with its size and Keep or Remove.
