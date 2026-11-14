@@ -32,14 +32,7 @@ internal sealed class AreaBuilder(OutreachMapsDbContext db, IMapSources sources,
         List<RegionCell> cells = RegionGrid.Cut(area.Id, bounds);
         GeoBounds reach = bounds.Grown(RegionGrid.OverlapMetres);
 
-        await StageAsync(area, "Fetching streets from OpenStreetMap", cancellationToken);
-        OsmData osm = await sources.StreetsAsync(reach.Grown(StreetMarginMetres), cancellationToken);
-        await StageAsync(area, "Fetching addresses", cancellationToken);
-        IReadOnlyList<AddressPoint> addresses = await sources.AddressesAsync(reach, cancellationToken);
-        await StageAsync(area, "Fetching land use and zoning", cancellationToken);
-        LandUseMap landUse = await sources.LandUseAsync(reach, cancellationToken);
-        await StageAsync(area, "Placing letterboxes on streets", cancellationToken);
-        AreaStreets streets = AreaStreets.Build(osm, addresses, landUse, bounds.Centre);
+        AreaStreets streets = await PlaceLetterboxesAsync(area, reach, bounds.Centre, cancellationToken);
         IRangeReader tiles = await sources.TilesAsync(cancellationToken);
 
         List<(RegionCell Cell, string Name)> kept = Named(cells.Where(cell => streets.HomesIn(cell.Core) > 0).Select(cell => (cell, streets.NameFor(cell.Core))).ToList(), area.Name);
@@ -75,6 +68,18 @@ internal sealed class AreaBuilder(OutreachMapsDbContext db, IMapSources sources,
         });
         db.FeedChanges.Add(RegionFeed.BuildChanged(area.Id, Now));
         await db.SaveChangesAsync(cancellationToken);
+    }
+
+    private async Task<AreaStreets> PlaceLetterboxesAsync(MapAreaRecord area, GeoBounds reach, GeoPoint origin, CancellationToken cancellationToken)
+    {
+        await StageAsync(area, "Fetching streets from OpenStreetMap", cancellationToken);
+        OsmData osm = await sources.StreetsAsync(reach.Grown(StreetMarginMetres), cancellationToken);
+        await StageAsync(area, "Fetching addresses", cancellationToken);
+        IReadOnlyList<AddressPoint> addresses = await sources.AddressesAsync(reach, cancellationToken);
+        await StageAsync(area, "Fetching land use and zoning", cancellationToken);
+        LandUseMap landUse = await sources.LandUseAsync(reach, cancellationToken);
+        await StageAsync(area, "Placing letterboxes on streets", cancellationToken);
+        return AreaStreets.Build(osm, addresses, landUse, origin);
     }
 
     private static List<(RegionCell Cell, string Name)> Named(List<(RegionCell Cell, string Name)> cells, string areaName)

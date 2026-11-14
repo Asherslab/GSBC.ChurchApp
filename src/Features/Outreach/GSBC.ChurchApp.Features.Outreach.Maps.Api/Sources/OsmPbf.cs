@@ -112,21 +112,15 @@ internal static class OsmPbf
         }
         if (!keys.Any(key => strings[(int)key] == HighwayKey))
             return;
-        Dictionary<string, string> tags = [];
-        for (int i = 0; i < keys.Length; i++)
-            tags[strings[(int)keys[i]]] = strings[(int)values[i]];
-        if (!keepWay(tags))
-            return;
         List<long> longest = [];
         List<long> run = [];
         long node = 0;
         foreach (long delta in refs)
         {
             node += delta;
-            if (nodes.Find(node) is { } point)
+            if (nodes.Find(node) is not null)
             {
                 run.Add(node);
-                data.Nodes[node] = point;
                 continue;
             }
             if (run.Count > longest.Count)
@@ -135,8 +129,16 @@ internal static class OsmPbf
         }
         if (run.Count > longest.Count)
             longest = run;
-        if (longest.Count >= 2)
-            data.Ways[id] = new OsmWay(id, [.. longest], tags);
+        if (longest.Count < 2)
+            return;
+        Dictionary<string, string> tags = [];
+        for (int i = 0; i < keys.Length; i++)
+            tags[strings[(int)keys[i]]] = strings[(int)values[i]];
+        if (!keepWay(tags))
+            return;
+        foreach (long kept in longest)
+            data.Nodes[kept] = nodes.Find(kept)!.Value;
+        data.Ways[id] = new OsmWay(id, [.. longest], tags);
     }
 
     private static (string Type, int Size) BlobHeader(byte[] header)

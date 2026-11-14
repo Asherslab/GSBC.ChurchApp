@@ -85,7 +85,7 @@ internal sealed class AreaStreets
     public string NameFor(GeoBounds core)
     {
         List<(string Locality, int Count)> localities = Letterboxes.Where(box => box.Kind.IsHome() && core.Contains(box.Point) && box.Locality.Length > 0)
-            .GroupBy(box => box.Locality).Select(group => (group.Key, group.Count()))
+            .GroupBy(box => Suburb(box.Locality)).Select(group => (group.Key, group.Count()))
             .OrderByDescending(locality => locality.Item2).ThenBy(locality => locality.Key, StringComparer.Ordinal).ToList();
         return localities switch
         {
@@ -94,4 +94,6 @@ internal sealed class AreaStreets
             [var first, ..] => first.Locality,
         };
     }
+
+    public static string Suburb(string locality) => locality.Split(" (")[0];
 }
