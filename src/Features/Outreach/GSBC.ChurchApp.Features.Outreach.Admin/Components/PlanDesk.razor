@@ -8,12 +8,13 @@
 @inject OutreachDeskClient Outreach
 @inject TimeProvider Time
 @inject IAccess Access
+@using Microsoft.JSInterop
 
 <UnsavedGuard What="the routes" Autosave="() => _save" Save="SaveBeforeLeavingAsync" />
 
 <TitleBand Title="@($"Outreach {OutreachWords.DayTitle(Setup.Day)}")" BackHref="@OutreachLinks.DayDesk(Setup.Day.Id)" BackText="Outreach days" Lead="@Lead">
     <Actions>
-        @if (CanPlan)
+        @if (CanPlan && _view == PlanView.Plan)
         {
             <SaveStatus State="_save" SavedText="@(_draftChangedAt is null ? "Saves as you go" : "Draft saved")" Retry="SaveNowAsync" Detail="@_saveProblem" />
         }
@@ -78,9 +79,11 @@ else
                             else
                             {
                                 <span class="plan-chosen__what"><span class="plan-dot" style="--route: @RouteColours.Of(chosen.Colour)"></span><strong>Route @chosen.Number</strong> · @chosen.Letterboxes · @OutreachWords.Minutes(chosen.Minutes)</span>
-                                <Button Small="true" Variant="ButtonVariant.Quiet" Icon="@(chosen.Locked ? AppIcons.Unlock : AppIcons.Lock)" OnClick="LockAsync">@(chosen.Locked ? "Unlock" : "Lock")</Button>
-                                <Button Small="true" Variant="ButtonVariant.Quiet" Icon="@AppIcons.SplitInTwo" Disabled="chosen.Locked" OnClick="SplitAsync">Split in two</Button>
-                                <Menu Label="@($"More for route {chosen.Number}")" Small="true" Items="ChosenItems(chosen)" />
+                                <span class="plan-chosen__actions">
+                                    <Button Small="true" Variant="ButtonVariant.Quiet" Icon="@(chosen.Locked ? AppIcons.Unlock : AppIcons.Lock)" OnClick="LockAsync">@(chosen.Locked ? "Unlock" : "Lock")</Button>
+                                    <Button Small="true" Variant="ButtonVariant.Quiet" Icon="@AppIcons.SplitInTwo" Disabled="chosen.Locked" OnClick="SplitAsync">Split in two</Button>
+                                    <Menu Label="@($"More for route {chosen.Number}")" Small="true" Items="ChosenItems(chosen)" />
+                                </span>
                             }
                         </div>
                     }
@@ -95,7 +98,7 @@ else
             {
                 <PlanPane Planner="_planner" Areas="Setup.Areas" AreaName="@AreaName" CanPlan="CanPlan" Selected="_selected" Busy="_busy"
                           OnSelect="SelectAsync" OnDraw="() => ChooseTool(PlanTool.Area)" OnUseArea="UseAreaAsync" OnSize="SizeAsync"
-                          OnIncludeRested="IncludeRestedAsync" OnSaveArea="SaveAreaAsync" OnRebalance="RebalanceAsync" OnRegenerate="RegenerateAsync" />
+                          OnIncludeRested="IncludeRestedAsync" OnSaveArea="SaveAreaAsync" OnNextReview="NextReviewAsync" />
             }
             else
             {
@@ -110,6 +113,9 @@ else
             {
                 <p class="plan-desk__published">@PublishedLine</p>
                 <div class="plan-desk__actions">
+                    <Button Variant="ButtonVariant.Quiet" Icon="@AppIcons.Rebalance" AriaLabel="Rebalance" Tooltip="Rebalance: even out the routes that aren't locked" Disabled="_busy" OnClick="RebalanceAsync" />
+                    <Button Variant="ButtonVariant.Quiet" Icon="@AppIcons.Regenerate" AriaLabel="Regenerate" Tooltip="Regenerate: split the area again, keeping locked routes" Disabled="@(_busy || !_planner.HasArea)" OnClick="RegenerateAsync" />
+                    <span class="plan-desk__gap"></span>
                     <Button Busy="_busy" Disabled="!Unpublished" OnClick="AskToPublish">@PublishLabel</Button>
                 </div>
             }
@@ -336,10 +342,25 @@ else
         return _board;
     }
 
-    private Task ShowAsync(PlanView view)
+    private async Task ShowAsync(PlanView view)
     {
         _view = view;
         _tool = PlanTool.Select;
+        Redraw();
+        StateHasChanged();
+        await Task.Yield();
+        if (_map?.Handle is { } handle)
+            await handle.InvokeVoidAsync("resize");
+    }
+
+    private Task NextReviewAsync()
+    {
+        List<PlannedSection> flagged = _planner?.Sections.Where(section => section.Review is not null).ToList() ?? [];
+        if (flagged.Count == 0)
+            return Task.CompletedTask;
+        PlannedSection next = flagged.FirstOrDefault(section => section.Number > (Selected?.Number ?? 0)) ?? flagged[0];
+        _selected = next.Id;
+        _renaming = false;
         Redraw();
         return Task.CompletedTask;
     }

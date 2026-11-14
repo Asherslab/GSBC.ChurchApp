@@ -16,7 +16,13 @@ public enum MapSketchTool
 
 public sealed record MapSketchStroke(MapSketchTool Tool, IReadOnlyList<MapPoint> Points);
 
-public sealed record MapLabel(MapPoint Point, string Text, string Colour, int Order = 0, string? Ink = null);
+public enum MapLabelStyle
+{
+    Ring,
+    Filled,
+}
+
+public sealed record MapLabel(MapPoint Point, string Text, string Colour, int Order = 0, MapLabelStyle Style = MapLabelStyle.Ring);
 
 public static class MapSketchTools
 {
@@ -58,8 +64,7 @@ public static class MapSketchJson
             json.WriteString("text", label.Text);
             json.WriteString("colour", label.Colour);
             json.WriteNumber("order", label.Order);
-            if (label.Ink is not null)
-                json.WriteString("ink", label.Ink);
+            json.WriteBoolean("filled", label.Style == MapLabelStyle.Filled);
             json.WritePropertyName("point");
             Point(json, label.Point);
             json.WriteEndObject();

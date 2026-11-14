@@ -45,9 +45,10 @@ public static class PlanDrawing
         planner.Sections.Select(section =>
         {
             GeoPoint middle = Middle(planner, section);
-            string colour = selected is null || selected == section.Id ? RouteColours.Of(section.Colour) : RouteColours.Pale(section.Colour);
-            string ink = selected is null || selected == section.Id ? "#ffffff" : RouteColours.Of(section.Colour);
-            return new MapLabel(Point(middle), $"{section.Number} · {section.Letterboxes} · {OutreachWords.Minutes(section.Minutes)}", colour, section.Id == selected ? -1 : section.Number, ink);
+            bool chosen = section.Id == selected;
+            string text = selected is not null && !chosen ? $"{section.Number}"
+                : $"{section.Number} · {section.Letterboxes} · {OutreachWords.Minutes(section.Minutes)}{(section.Review is null ? "" : " · needs review")}";
+            return new MapLabel(Point(middle), text, RouteColours.Of(section.Colour), chosen ? -1 : section.Number, chosen ? MapLabelStyle.Filled : MapLabelStyle.Ring);
         }).ToList();
 
     public static IReadOnlyList<MapLine> CutPreview(DayPlanner planner, IReadOnlyList<CutPreview> cuts) =>
@@ -77,7 +78,7 @@ public static class PlanDrawing
             all = [Point(planner.Network.Graph.Projection.ToGeo(centre + new Flat(-OpeningMetres, -OpeningMetres))),
                 Point(planner.Network.Graph.Projection.ToGeo(centre + new Flat(OpeningMetres, OpeningMetres)))];
         }
-        return MapFrame.Around(all, padding: 60, maxZoom: 16);
+        return MapFrame.Around(all, padding: 90, maxZoom: 16);
     }
 
     private static GeoPoint Middle(DayPlanner planner, PlannedSection section)

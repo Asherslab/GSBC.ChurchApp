@@ -25,7 +25,7 @@
 }
 else
 {
-    <p class="plan-pane__from">@From</p>
+    <p class="plan-pane__from">@From@if (Planner.NeedingReview > 0) { <text> · </text><Button Variant="ButtonVariant.Link" OnClick="OnNextReview">@(Planner.NeedingReview == 1 ? "1 needs a look" : $"{Planner.NeedingReview} need a look")</Button> }</p>
     @if (Planner.RestedLetterboxes > 0)
     {
         <ToggleRow Title="Include streets done recently" Checked="Planner.RestedToo" CheckedChanged="OnIncludeRested" Disabled="!CanPlan"
@@ -35,10 +35,6 @@ else
                Selected="Chosen" SelectedChanged="section => OnSelect.InvokeAsync(section.Id)" Class="plan-pane__routes" />
     @if (CanPlan)
     {
-        <div class="plan-pane__tools">
-            <Button Small="true" Variant="ButtonVariant.Quiet" Icon="@AppIcons.Rebalance" Disabled="Busy" Tooltip="Even out the routes that aren't locked" OnClick="OnRebalance">Rebalance</Button>
-            <Button Small="true" Variant="ButtonVariant.Quiet" Icon="@AppIcons.Regenerate" Disabled="@(Busy || !Planner.HasArea)" Tooltip="Split the area again, keeping locked routes" OnClick="OnRegenerate">Regenerate</Button>
-        </div>
         <div class="plan-pane__more">
             <Button Variant="ButtonVariant.Link" OnClick="() => _sizing = !_sizing">@(_sizing ? "Done" : "Change how big routes are")</Button>
             @if (Planner is { HasArea: true, AreaId.Length: 0 })
@@ -73,8 +69,7 @@ else
     [Parameter] public EventCallback<(PlanTarget Target, double PerRoute)> OnSize { get; set; }
     [Parameter] public EventCallback<bool> OnIncludeRested { get; set; }
     [Parameter] public EventCallback<string> OnSaveArea { get; set; }
-    [Parameter] public EventCallback OnRebalance { get; set; }
-    [Parameter] public EventCallback OnRegenerate { get; set; }
+    [Parameter] public EventCallback OnNextReview { get; set; }
 
     private string _area = "", _areaName = "";
     private bool _sizing, _naming;
@@ -89,13 +84,7 @@ else
         {
             string from = AreaName.Length > 0 ? $"From the saved area {AreaName}" : Planner.HasArea ? "From the area you drew" : "The published routes";
             string size = $"about {RouteSize.Words(Planner.Target, Planner.PerRoute)} a route";
-            string review = Planner.NeedingReview switch
-            {
-                0 => "all look fine",
-                1 => "1 needs a look",
-                _ => $"{Planner.NeedingReview} need a look",
-            };
-            return $"{from} · {size} · {review}";
+            return Planner.NeedingReview == 0 ? $"{from} · {size} · all look fine" : $"{from} · {size}";
         }
     }
 
@@ -106,7 +95,7 @@ else
             <span class="outreach-desk__cell">
                 <span class="outreach-desk__name">@section.Number · @section.Name</span>
                 @if (section.Locked) { <span class="outreach-desk__sub plan-pane__locked"><Icon Name="@AppIcons.Lock" Size="IconSize.Small" />Locked</span> }
-                @if (section.Review is { } review) { <span class="plan-pane__review">@review</span> }
+                @if (section.Review is { } review) { <span class="plan-pane__review"><Pill Tone="PillTone.Marker">Needs review</Pill> @review</span> }
             </span>
         </span>, section => section.Number),
         new("Letterboxes", section => @<span>@OutreachWords.Count(section.Letterboxes)</span>, section => section.Letterboxes, "num"),

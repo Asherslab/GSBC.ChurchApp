@@ -41,26 +41,32 @@ The same `Workbench` as Campaigns. *New outreach day* in the title band.
 A page of its own, `/outreach/days/{id}/plan`: the title band ("Outreach Saturday 6 December", the times, the meeting
 place, the campaign and the totals; back to Outreach days) with `SaveStatus` ("Saves as you go", "Draft saved") and
 *Print the maps*, over a `MapDesk`.
-- **The map:** the brand base map; each route in its colour with a capsule label "4 · 137 · 74 min" (`MapSketch`
-  labels); the chosen route full colour and the rest faded; streets left out or done recently in ink-3; the area drawn
-  at 12%; the meeting point and the chosen route's start.
+- **The map:** the brand base map; each route in its colour with a ring label (a page-coloured capsule ringed in the
+  route's colour) "4 · 137 · 74 min", "· needs review" when flagged. Choosing a route fills its label in its colour and
+  shortens the others to their number; their lines fade toward grey. Streets left out or done recently in ink-3; the
+  area at 12%; the meeting point (the map's navy place marker, *Claude's adaptation*: orange means "you" on the phone)
+  and the chosen route's start. Labels give way to each other, the chosen one first. The nine route colours
+  (`RouteColours`) each hold 4.5:1 with white text and 3:1 against the dark map and pane.
 - **The rail** (top left, a white panel on the Pop shadow): select, draw the area, scissors, brush, lasso, eraser, start
   pin, meeting point, a rule, undo, redo; the tool in use is navy. Tools that need a chosen route are disabled until
   there is one. Each tool's one-line instruction shows as a navy capsule top centre.
 - **Hover** (top right): the route's number, name, letterboxes, km, time, bundles, its claims on the day, and why it
   needs review in marker ink.
-- **The chosen route** (bottom centre): its dot, number, letterboxes and time; Lock, Split in two, and a ⋯ with Rename,
-  Merge with route N and Leave its streets out (red, last).
+- **The chosen route** (bottom centre, above the map's credits): its dot, number, letterboxes and time; Lock, Split in
+  two, and a ⋯ with Rename, Merge with route N and Leave its streets out (red, last). On a map narrower than 640px the
+  bar and the hint sit beside the rail instead of centred.
 - **The pane:** `Segmented` Plan / On the day. Plan with no routes: a `PaneHead` "Plan the routes", *Draw the area on the
   map*, *Or start from a saved area*, and how big each route is (`RouteSize`: by letterboxes, minutes or bundles, in a
-  sand box). With routes: one caption line (where they came from, the size, how many need a look), *Include streets
-  done recently* when there are any, the routes `DataTable` (dot, number and name over a review line in marker ink,
-  letterboxes, time), then *Change how big routes are* and *Save this area for next time* as links.
+  sand box). With routes: one caption line (where they came from, the size, and *5 need a look* as a link that picks the
+  next flagged route), *Include streets done recently* when there are any, the routes `DataTable` (dot, number and name
+  over a *Needs review* pill and the reason, letterboxes, time; the time column drops at 1360px and under), then
+  *Change how big routes are* and *Save this area for next time* as links.
 - **The foot:** a status line at the right ("Not published yet: walkers can't see these routes."), then Rebalance and
-  Regenerate (quiet, left) and *Publish 9 routes* or *Publish the changes* (right). Publishing asks in a `Sheet`, listing
+  Regenerate as quiet icon buttons with tooltips (left) and *Publish 9 routes* or *Publish the changes* (right). Publishing asks in a `Sheet`, listing
   routes that still need a look.
 - **On the day:** three quiet `StatTile`s (walking now, % of letterboxes done, routes with no one), an info `Notice`
-  naming the open routes, and the routes table with who has each and a `ProgressTrack` in live aqua; open routes first.
+  naming the open routes, and the routes table with who has each and a state `Pill` (Open in marker, Walking in accent, Claimed and
+  Done quiet) with a ringed `ProgressTrack` in live aqua once walking; open routes first. The draft's save status hides.
   What's walked is drawn on the map.
 - **At 760px and under** the map sits above the pane; the hint moves to the map's foot and the chosen route's bar to its
   top right; hover facts don't show.

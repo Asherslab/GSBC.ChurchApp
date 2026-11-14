@@ -5,20 +5,25 @@ const spacingPixels = 4;
 const drawingEveryMs = 80;
 const hoverEveryMs = 60;
 
-function capsule(map) {
-  if (map.hasImage("tools-capsule")) return;
-  const size = 40, radius = 13, scale = 2;
+function capsule(map, colour, filled) {
+  const id = `tools-capsule-${colour}-${filled ? "filled" : "ring"}`;
+  if (map.hasImage(id)) return id;
+  const size = 40, scale = 2;
   const canvas = document.createElement("canvas");
   canvas.width = canvas.height = size * scale;
   const g = canvas.getContext("2d");
   g.scale(scale, scale);
-  g.fillStyle = "#000";
   g.beginPath();
-  g.roundRect(4, 7, size - 8, 26, radius);
+  g.roundRect(5, 8, size - 10, 24, 12);
+  g.fillStyle = filled ? colour : token("--surface");
   g.fill();
-  map.addImage("tools-capsule", g.getImageData(0, 0, size * scale, size * scale), {
-    pixelRatio: scale, sdf: true, stretchX: [[18 * scale, 22 * scale]], stretchY: [[18 * scale, 22 * scale]], content: [12 * scale, 9 * scale, 28 * scale, 31 * scale],
+  g.lineWidth = 2.5;
+  g.strokeStyle = colour;
+  g.stroke();
+  map.addImage(id, g.getImageData(0, 0, size * scale, size * scale), {
+    pixelRatio: scale, stretchX: [[18 * scale, 22 * scale]], stretchY: [[18 * scale, 22 * scale]], content: [12 * scale, 10 * scale, 28 * scale, 30 * scale],
   });
+  return id;
 }
 
 const addLayer = (map, layer) => {
@@ -32,7 +37,6 @@ const addLayer = (map, layer) => {
 function layers(map) {
   if (map.getLayer("tools-labels")) return;
   const accent = token("--accent"), surface = token("--surface");
-  capsule(map);
   for (const id of ["tools-sketch", "tools-labels"]) {
     if (!map.getSource(id)) map.addSource(id, { type: "geojson", data: empty });
   }
@@ -49,10 +53,10 @@ function layers(map) {
     paint: { "circle-radius": 5, "circle-color": surface, "circle-stroke-color": accent, "circle-stroke-width": 2 } });
   addLayer(map, { id: "tools-labels", type: "symbol", source: "tools-labels",
     layout: {
-      "icon-image": "tools-capsule", "icon-text-fit": "both", "icon-text-fit-padding": [3, 9, 3, 9], "icon-allow-overlap": false, "text-allow-overlap": false, "symbol-z-order": "source",
+      "icon-image": ["get", "image"], "icon-text-fit": "both", "icon-text-fit-padding": [3, 9, 3, 9], "icon-allow-overlap": false, "text-allow-overlap": false, "symbol-z-order": "source",
       "text-field": ["get", "text"], "text-font": ["montserrat-semibold"], "text-size": 12, "symbol-sort-key": ["get", "order"],
     },
-    paint: { "icon-color": ["get", "colour"], "text-color": ["coalesce", ["get", "ink"], "#ffffff"], "icon-halo-color": surface, "icon-halo-width": 2 } });
+    paint: { "text-color": ["get", "ink"] } });
 }
 
 const pointOf = (e) => [e.lngLat.lng, e.lngLat.lat];
@@ -66,11 +70,17 @@ export function attach(handle, receiver) {
   let lastDrawing = 0;
   let lastHover = 0;
   let labels = empty;
+  let shownLabels = [];
+  const labelFeatures = () => ({ type: "FeatureCollection", features: shownLabels.map((l, i) => ({
+    type: "Feature",
+    properties: { text: l.text, image: capsule(map, l.colour, l.filled), ink: l.filled ? "#ffffff" : token("--ink"), order: l.order ?? i },
+    geometry: { type: "Point", coordinates: l.point } })) });
 
   const sketch = (features) => map.getSource("tools-sketch")?.setData({ type: "FeatureCollection", features });
   const ensure = () => {
     if (!map.getLayer("areas-fill")) return;
     layers(map);
+    labels = labelFeatures();
     map.getSource("tools-labels")?.setData(labels);
   };
   map.on("style.load", ensure);
@@ -200,10 +210,10 @@ export function attach(handle, receiver) {
     },
     setBrushColour: (colour) => { handle.brushColour = colour; },
     setLabels: (json) => {
-      labels = { type: "FeatureCollection", features: JSON.parse(json).map((l, i) => ({
-        type: "Feature", properties: { text: l.text, colour: l.colour, ink: l.ink ?? "#ffffff", order: l.order ?? i },
-        geometry: { type: "Point", coordinates: l.point } })) };
-      map.getSource("tools-labels")?.setData(labels);
+      shownLabels = JSON.parse(json);
+      if (!map.getSource("tools-labels")) return;
+      labels = labelFeatures();
+      map.getSource("tools-labels").setData(labels);
     },
     preview: (json) => {
       const lines = JSON.parse(json);

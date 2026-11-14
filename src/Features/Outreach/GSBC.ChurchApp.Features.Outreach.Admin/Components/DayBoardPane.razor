@@ -50,11 +50,18 @@
                 <span class="outreach-desk__sub">@Who(line.Progress)</span>
             </span>
         </span>, line => line.Route.Number),
-        new("Done", line => @<span class="day-board__done">
-            <ProgressTrack Fraction="line.Done" Label="@($"Route {line.Route.Number} done")" />
-            <span>@DayBoards.Words(line.State, line.Done)</span>
+        new("Now", line => @<span class="day-board__done">
+            <Pill Tone="@Tone(line.State)">@DayBoards.Words(line.State, line.Done)</Pill>
+            @if (line.State is BoardState.Walking or BoardState.Done) { <ProgressTrack Fraction="line.Done" Label="@($"Route {line.Route.Number} done")" /> }
         </span>, line => line.Done, "day-board__done-cell"),
     ];
+
+    private static PillTone Tone(BoardState state) => state switch
+    {
+        BoardState.Open => PillTone.Marker,
+        BoardState.Walking => PillTone.Accent,
+        _ => PillTone.Quiet,
+    };
 
     private static string Who(RouteProgress progress) =>
         progress.ClaimedBy.Count == 0 ? "No one yet"
