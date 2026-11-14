@@ -30,13 +30,16 @@
                     <PaneHead Title="@(IsNew ? "A new outreach day" : OutreachWords.DayTitle(editing))" Lead="@Lead(editing, facts)"
                               Actions="@(IsNew ? null : [this.Item("Delete this outreach day…", AskToDeleteAsync, "trash-2", "Says first what goes with it", danger: true, disabled: _busy)])"
                               OnClose="() => OpenAsync(Close)" />
-                    @if (!IsNew)
+                    @if (!IsNew && facts.Routes > 0)
                     {
                         <div class="outreach-desk__totals">
                             <StatTile Value="@OutreachWords.Count(facts.Routes)" Label="@(facts.Routes == 1 ? "route" : "routes")" Quiet="true" />
                             <StatTile Value="@OutreachWords.Count(facts.Letterboxes)" Label="letterboxes" Quiet="true" />
                             <StatTile Value="@OutreachWords.Count(facts.Claims)" Label="@(facts.Claims == 1 ? "claim" : "claims")" Quiet="true" />
                         </div>
+                    }
+                    @if (!IsNew)
+                    {
                         <div class="outreach-day__go">
                             <Button Variant="ButtonVariant.Primary" Icon="map" Href="@OutreachLinks.DayPlan(editing.Id)">
                                 @(facts.Routes > 0 ? "Open the routes" : facts.HasDraft ? "Carry on planning" : "Plan the routes")
@@ -145,9 +148,8 @@
 
     private IReadOnlyList<TableColumn<OutreachDay>> Columns(OutreachDesk desk) =>
     [
-        new("Outreach day", day => @<span class="outreach-desk__cell"><span class="outreach-desk__name">@OutreachWords.DayTitle(day)</span><span class="outreach-desk__sub">@OutreachWords.Window(day) · @CampaignName(desk, day.Campaign)</span></span>, day => day.StartsAt),
-        new("Routes", day => @<span class="outreach-desk__cell"><span>@Routes(FactsOf(desk, day))</span><span class="outreach-desk__sub">@OutreachWords.Plural(FactsOf(desk, day).Letterboxes, "letterbox", "letterboxes")</span></span>, day => FactsOf(desk, day).Routes),
-        new("", day => @<Pill Tone="@Tone(day, FactsOf(desk, day))">@State(day, FactsOf(desk, day))</Pill>, null, "outreach-day__state"),
+        new("Outreach day", day => @<span class="outreach-desk__cell"><span class="outreach-desk__name">@OutreachWords.DayTitle(day) <Pill Tone="@Tone(day, FactsOf(desk, day))">@State(day, FactsOf(desk, day))</Pill></span><span class="outreach-desk__sub">@OutreachWords.Window(day) · @CampaignName(desk, day.Campaign)</span></span>, day => day.StartsAt),
+        new("Routes", day => @<span class="outreach-desk__cell"><span>@Routes(FactsOf(desk, day))</span>@if (FactsOf(desk, day).Routes > 0) { <span class="outreach-desk__sub">@OutreachWords.Plural(FactsOf(desk, day).Letterboxes, "letterbox", "letterboxes")</span> }</span>, day => FactsOf(desk, day).Routes),
     ];
 
     private static string Routes(DayFacts facts) => facts.Routes == 0 ? (facts.HasDraft ? "Being planned" : "None yet") : OutreachWords.Plural(facts.Routes, "route", "routes");
@@ -170,7 +172,7 @@
 
     private string Lead(OutreachDay day, DayFacts facts) =>
         day.Id.Length == 0 ? "When it runs, where people meet and the campaign it's for. Its routes come next, on the map."
-        : $"{OutreachWords.Window(day)}{(day.MeetingPlace.Length > 0 ? $", meeting at {day.MeetingPlace}" : "")}. {State(day, facts)}.";
+        : $"{OutreachWords.Window(day)}{(day.MeetingPlace.Length > 0 ? $", meeting at {day.MeetingPlace}" : "")}.";
 
     private string GoHint(OutreachDay day, DayFacts facts)
     {

@@ -20,7 +20,6 @@
 .outreach-areas__form { display: grid; gap: var(--stack); }
 .outreach-day__go { display: grid; justify-items: start; gap: var(--space-xs); padding-bottom: var(--space-xl); border-bottom: 1px solid var(--line); }
 .outreach-day__go .field__hint { margin: 0; }
-.outreach-day__state { text-align: right; white-space: nowrap; }
 
 .plan-desk__map { --map-float: 0 0 0 1px var(--line), 0 18px 36px -16px var(--scrim); }
 .plan-desk__views { margin-bottom: var(--space-lg); }
