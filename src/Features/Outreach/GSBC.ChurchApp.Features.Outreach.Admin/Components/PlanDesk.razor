@@ -113,8 +113,8 @@ else
             {
                 <p class="plan-desk__published">@PublishedLine</p>
                 <div class="plan-desk__actions">
-                    <Button Variant="ButtonVariant.Quiet" Icon="@AppIcons.Rebalance" AriaLabel="Rebalance" Tooltip="Rebalance: even out the routes that aren't locked" Disabled="_busy" OnClick="RebalanceAsync" />
-                    <Button Variant="ButtonVariant.Quiet" Icon="@AppIcons.Regenerate" AriaLabel="Regenerate" Tooltip="Regenerate: split the area again, keeping locked routes" Disabled="@(_busy || !_planner.HasArea)" OnClick="RegenerateAsync" />
+                    <Button Small="true" Variant="ButtonVariant.Quiet" Icon="@AppIcons.Rebalance" Tooltip="Even out the routes that aren't locked" Disabled="_busy" OnClick="RebalanceAsync">Rebalance</Button>
+                    <Button Small="true" Variant="ButtonVariant.Quiet" Icon="@AppIcons.Regenerate" Tooltip="Split the area again, keeping locked routes" Disabled="@(_busy || !_planner.HasArea)" OnClick="RegenerateAsync">Regenerate</Button>
                     <span class="plan-desk__gap"></span>
                     <Button Busy="_busy" Disabled="!Unpublished" OnClick="AskToPublish">@PublishLabel</Button>
                 </div>

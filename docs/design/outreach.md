@@ -29,9 +29,9 @@ The settings in the work area, each group a `Section Grouped` card with short fi
 
 ## Days
 The same `Workbench` as Campaigns. *New outreach day* in the title band.
-- **The table:** *Outreach day* (the weekday and date over a caption: the times and the campaign), *Routes* (how many over
-  a caption of letterboxes, or "Being planned" / "None yet") and a `Pill` for its state: To plan (marker), Ready, On now
-  (accent), Done (quiet). Days still to come first, soonest first, then past days, newest first.
+- **The table** has two columns. *Outreach day* is the weekday and date with a `Pill` for its state beside it (To plan
+  in marker, On now in accent, Ready and Done quiet) over a caption: the times and the campaign. *Routes* is how many
+  over a caption of letterboxes, or "Being planned" / "None yet". Days still to come first, soonest first, then past days, newest first.
 - **The record pane:** `PaneHead` (Delete in its ⋯), three quiet `StatTile`s (routes, letterboxes, claims), then the way
   in: one primary button, *Plan the routes*, *Carry on planning* or *Open the routes*, over a hint that says where the
   day stands. Then Campaign, Day, Starts and Ends two to a line, Where people meet, What people do (`Segmented`), Note
@@ -42,10 +42,11 @@ A page of its own, `/outreach/days/{id}/plan`: the title band ("Outreach Saturda
 place, the campaign and the totals; back to Outreach days) with `SaveStatus` ("Saves as you go", "Draft saved") and
 *Print the maps*, over a `MapDesk`.
 - **The map:** the brand base map; each route in its colour with a ring label (a page-coloured capsule ringed in the
-  route's colour) "4 · 137 · 74 min", "· needs review" when flagged. Choosing a route fills its label in its colour and
-  shortens the others to their number; their lines fade toward grey. Streets left out or done recently in ink-3; the
+  route's colour): the number when zoomed out ("8 · review" when flagged), "4 · 137 · 74 min" from zoom 15 ("· needs
+  review" after it when flagged). Every route keeps its label. Choosing a route fills its label in its colour, on top, and keeps the others to
+  their number; their lines fade toward grey. Streets left out or done recently in ink-3; the
   area at 12%; the meeting point (the map's navy place marker, *Claude's adaptation*: orange means "you" on the phone)
-  and the chosen route's start. Labels give way to each other, the chosen one first. The nine route colours
+  and the chosen route's start. The nine route colours
   (`RouteColours`) each hold 4.5:1 with white text and 3:1 against the dark map and pane.
 - **The rail** (top left, a white panel on the Pop shadow): select, draw the area, scissors, brush, lasso, eraser, start
   pin, meeting point, a rule, undo, redo; the tool in use is navy. Tools that need a chosen route are disabled until
@@ -62,16 +63,16 @@ place, the campaign and the totals; back to Outreach days) with `SaveStatus` ("S
   over a *Needs review* pill and the reason, letterboxes, time; the time column drops at 1360px and under), then
   *Change how big routes are* and *Save this area for next time* as links.
 - **The foot:** a status line at the right ("Not published yet: walkers can't see these routes."), then Rebalance and
-  Regenerate as quiet icon buttons with tooltips (left) and *Publish 9 routes* or *Publish the changes* (right). Publishing asks in a `Sheet`, listing
+  Regenerate as small quiet buttons (left) and *Publish 9 routes* or *Publish the changes* (right). Publishing asks in a `Sheet`, listing
   routes that still need a look.
 - **On the day:** three quiet `StatTile`s (walking now, % of letterboxes done, routes with no one), an info `Notice`
   naming the open routes, and the routes table with who has each and a state `Pill` (Open in marker, Walking in accent, Claimed and
-  Done quiet) with a ringed `ProgressTrack` in live aqua once walking; open routes first. The draft's save status hides.
+  Done quiet) with a ringed `ProgressTrack` in live aqua once walking (and when done); open routes first. The draft's save status hides.
   What's walked is drawn on the map.
 - **At 760px and under** the map sits above the pane and hover facts don't show.
 
 ## Areas
-The same `Workbench`. The record pane has a 288px map of the area with *Draw it on the map* / *Draw it again*, Name and
+The same `Workbench`. The record pane has a map of the area (288px tall, 224px at 1360px and under, at the field radius with a hairline) with *Draw it on the map* / *Draw it again*, Name and
 Note, and the `SaveBar`. A new area starts with the drawing tool on.
 
 ## Printed route maps

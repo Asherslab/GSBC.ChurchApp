@@ -1,4 +1,5 @@
 const empty = { type: "FeatureCollection", features: [] };
+const fullLabelsFrom = 15;
 const token = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
 const closeEnoughPixels = 12;
 const spacingPixels = 4;
@@ -53,8 +54,8 @@ function layers(map) {
     paint: { "circle-radius": 5, "circle-color": surface, "circle-stroke-color": accent, "circle-stroke-width": 2 } });
   addLayer(map, { id: "tools-labels", type: "symbol", source: "tools-labels",
     layout: {
-      "icon-image": ["get", "image"], "icon-text-fit": "both", "icon-text-fit-padding": [3, 9, 3, 9], "icon-allow-overlap": false, "text-allow-overlap": false, "symbol-z-order": "source",
-      "text-field": ["get", "text"], "text-font": ["montserrat-semibold"], "text-size": 12, "symbol-sort-key": ["get", "order"],
+      "icon-image": ["get", "image"], "icon-text-fit": "both", "icon-text-fit-padding": [3, 9, 3, 9], "icon-allow-overlap": true, "text-allow-overlap": true, "symbol-z-order": "source",
+      "text-field": ["step", ["zoom"], ["get", "short"], fullLabelsFrom, ["get", "text"]], "text-font": ["montserrat-semibold"], "text-size": 12, "symbol-sort-key": ["get", "order"],
     },
     paint: { "text-color": ["get", "ink"] } });
 }
@@ -73,7 +74,7 @@ export function attach(handle, receiver) {
   let shownLabels = [];
   const labelFeatures = () => ({ type: "FeatureCollection", features: shownLabels.map((l, i) => ({
     type: "Feature",
-    properties: { text: l.text, image: capsule(map, l.colour, l.filled), ink: l.filled ? "#ffffff" : token("--ink"), order: l.order ?? i },
+    properties: { text: l.text, short: l.short ?? l.text, image: capsule(map, l.colour, l.filled), ink: l.filled ? "#ffffff" : token("--ink"), order: l.order ?? i },
     geometry: { type: "Point", coordinates: l.point } })) });
 
   const sketch = (features) => map.getSource("tools-sketch")?.setData({ type: "FeatureCollection", features });

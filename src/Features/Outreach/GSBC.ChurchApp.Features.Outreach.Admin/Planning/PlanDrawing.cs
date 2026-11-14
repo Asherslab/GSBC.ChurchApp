@@ -11,6 +11,8 @@ public static class PlanDrawing
 {
     private const double ReachMetres = 30;
     private const double OpeningMetres = 900;
+    private const int ChosenOnTop = 10_000;
+    private const double RailShare = 0.25;
 
     public static MapPoint Point(GeoPoint point) => new(point.Lat, point.Lon);
 
@@ -46,9 +48,11 @@ public static class PlanDrawing
         {
             GeoPoint middle = Middle(planner, section);
             bool chosen = section.Id == selected;
-            string text = selected is not null && !chosen ? $"{section.Number}"
-                : $"{section.Number} · {section.Letterboxes} · {OutreachWords.Minutes(section.Minutes)}{(section.Review is null ? "" : " · needs review")}";
-            return new MapLabel(Point(middle), text, RouteColours.Of(section.Colour), chosen ? -1 : section.Number, chosen ? MapLabelStyle.Filled : MapLabelStyle.Ring);
+            string full = $"{section.Number} · {section.Letterboxes} · {OutreachWords.Minutes(section.Minutes)}{(section.Review is null ? "" : " · needs review")}";
+            string brief = section.Review is null ? $"{section.Number}" : $"{section.Number} · review";
+            return chosen
+                ? new MapLabel(Point(middle), full, RouteColours.Of(section.Colour), ChosenOnTop, MapLabelStyle.Filled)
+                : new MapLabel(Point(middle), selected is null ? full : brief, RouteColours.Of(section.Colour), section.Number, MapLabelStyle.Ring, brief);
         }).ToList();
 
     public static IReadOnlyList<MapLine> CutPreview(DayPlanner planner, IReadOnlyList<CutPreview> cuts) =>
@@ -78,7 +82,9 @@ public static class PlanDrawing
             all = [Point(planner.Network.Graph.Projection.ToGeo(centre + new Flat(-OpeningMetres, -OpeningMetres))),
                 Point(planner.Network.Graph.Projection.ToGeo(centre + new Flat(OpeningMetres, OpeningMetres)))];
         }
-        return MapFrame.Around(all, padding: 90, maxZoom: 16);
+        double west = all.Min(point => point.Lon), east = all.Max(point => point.Lon);
+        all.Add(new MapPoint(all.Average(point => point.Lat), west - (east - west) * RailShare));
+        return MapFrame.Around(all, padding: 50, maxZoom: 16);
     }
 
     private static GeoPoint Middle(DayPlanner planner, PlannedSection section)

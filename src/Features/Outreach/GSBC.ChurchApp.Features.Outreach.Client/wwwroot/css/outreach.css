@@ -24,7 +24,7 @@
 .plan-desk__map { --map-float: 0 0 0 1px var(--line), 0 18px 36px -16px var(--scrim); }
 .plan-desk__views { margin-bottom: var(--space-lg); }
 .plan-desk__published { margin: 0 0 var(--space-sm); color: var(--ink-2); font-size: var(--text-caption); text-align: right; }
-.plan-desk__actions { display: flex; align-items: center; gap: var(--space-2xs); }
+.plan-desk__actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-xs) var(--space-2xs); }
 .plan-desk__gap { flex: 1 1 auto; }
 .plan-rail { position: absolute; top: var(--space-md); left: var(--space-md); z-index: 2; display: grid; gap: var(--space-3xs); padding: var(--space-2xs); border-radius: var(--radius-field); background: var(--surface); box-shadow: var(--map-float); }
 .plan-rail__tool.btn { width: 40px; min-height: 40px; padding: 0; justify-content: center; }

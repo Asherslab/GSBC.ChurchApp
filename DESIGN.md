@@ -1166,7 +1166,7 @@ Drag lift (a Home tile on the canvas only).
 ### Named Rules
 **The Flat Page Rule.** Rows, callouts, the sermon head and the player sit flat; only a boxed list, a picture card and a
 Card-toned Home tile lift. Need separation? Use sand, not a shadow. In the admin panel only the sign-in card, account
-panels, settings groups, the selection tray, menus and popovers, and the floating Feedback ticket lift; tables, the
+panels, settings groups, the selection tray, menus and popovers, the tools floating on a map (on Pop), and the floating Feedback ticket lift; tables, the
 office week, board columns and the record pane are flat.
 
 **The Tonal Selection Rule.** A selected row is a fill one tonal step off its ground (Selected Fill, at the field

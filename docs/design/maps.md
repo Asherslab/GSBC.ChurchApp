@@ -113,6 +113,6 @@ planner draws, on its own layers over the overlays:
   still while drawing; scroll and the zoom buttons still zoom.
 - **`OnDrawn`** gives the finished stroke's points (`MapSketchStroke`); what they select is the screen's business.
 - **`Labels`** (`MapLabel`): a capsule at a point, such as a route's "4 · 137 · 74 min": `Ring` (the page colour, ringed in
-  the label's colour, ink text) or `Filled` (the colour with white text, for the chosen one). Labels give way to each
-  other, lowest `Order` first. Every colour a label uses holds 4.5:1 against white.
+  the label's colour, ink text) or `Filled` (the colour with white text, for the chosen one). Below zoom 15 a label shows
+  its `Short` text, from 15 its full text; every label draws, highest `Order` on top. Every colour a label uses holds 4.5:1 against white.
 - **`Preview`**: lines drawn over everything while a gesture is under way (a cut's pieces, a brush's stretch).
