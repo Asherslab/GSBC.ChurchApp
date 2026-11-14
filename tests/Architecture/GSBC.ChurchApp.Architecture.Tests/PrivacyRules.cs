@@ -7,6 +7,7 @@ namespace GSBC.ChurchApp.Architecture.Tests;
 public sealed partial class PrivacyRules
 {
     private const string InfoPlist = "src/Hosts/App/shell/ios/App/App/Info.plist";
+    private const string BackgroundMode = "UIBackgroundModes:";
 
     private static readonly (string Uses, Regex Found, string[] Keys)[] NativeNeeds =
     [
@@ -15,6 +16,7 @@ public sealed partial class PrivacyRules
         ("the photo library", new(@"\bPHPhotoLibrary\b|\bPHAsset\b"), ["NSPhotoLibraryUsageDescription"]),
         ("saving to Photos", new("UIImageWriteToSavedPhotosAlbum|UISaveVideoAtPathToSavedPhotosAlbum"), ["NSPhotoLibraryAddUsageDescription"]),
         ("location", new(@"\bCLLocationManager\b"), ["NSLocationWhenInUseUsageDescription"]),
+        ("location in the background", new(@"\ballowsBackgroundLocationUpdates\b"), ["NSLocationWhenInUseUsageDescription", "NSLocationAlwaysAndWhenInUseUsageDescription", BackgroundMode + "location"]),
         ("contacts", new(@"\bCNContactStore\b"), ["NSContactsUsageDescription"]),
         ("the calendar", new(@"\bEKEventStore\b"), ["NSCalendarsFullAccessUsageDescription", "NSCalendarsWriteOnlyAccessUsageDescription"]),
         ("speech recognition", new(@"\bSFSpeechRecognizer\b"), ["NSSpeechRecognitionUsageDescription"]),
@@ -57,9 +59,14 @@ public sealed partial class PrivacyRules
     {
         using XmlReader reader = XmlReader.Create(Path.Combine(RepoRoot.Path, InfoPlist), new XmlReaderSettings { DtdProcessing = DtdProcessing.Ignore });
         XElement root = XElement.Load(reader).Element("dict")!;
+        IEnumerable<string> modes = root.Elements("key")
+            .Where(key => key.Value == "UIBackgroundModes")
+            .SelectMany(key => key.ElementsAfterSelf().FirstOrDefault()?.Elements("string") ?? [])
+            .Select(mode => BackgroundMode + mode.Value.Trim());
         return root.Elements("key")
             .Where(key => key.ElementsAfterSelf().FirstOrDefault() is { Name.LocalName: "string" } value && value.Value.Trim().Length > 0)
             .Select(key => key.Value)
+            .Concat(modes)
             .ToHashSet();
     }
 

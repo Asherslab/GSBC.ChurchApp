@@ -2,6 +2,8 @@ using GSBC.ChurchApp.Platform.Client.Access;
 using GSBC.ChurchApp.Platform.Client.Analytics;
 using GSBC.ChurchApp.Platform.Client.Audio;
 using GSBC.ChurchApp.Platform.Client.Diagnostics;
+using GSBC.ChurchApp.Platform.Client.Files;
+using GSBC.ChurchApp.Platform.Client.Location;
 using GSBC.ChurchApp.Platform.Client.Scopes;
 using GSBC.ChurchApp.Platform.Client.Media;
 using GSBC.ChurchApp.Platform.Client.Modules;
@@ -32,6 +34,8 @@ public static class ClientServiceCollectionExtensions
         services.TryAddSingleton<IUsage, NoUsage>();
         services.TryAddSingleton<IAudioPlayer, AudioPlayer>();
         services.TryAddSingleton<IAudioDownloads, AudioDownloads>();
+        services.TryAddSingleton<ILocationSession, LocationSession>();
+        services.TryAddSingleton<IKeptFiles, KeptFiles>();
         return services;
     }
 }
