@@ -1,5 +1,6 @@
 using GSBC.ChurchApp.Features.News.Contracts;
 using GSBC.ChurchApp.Platform.Client.News;
+using GSBC.ChurchApp.Platform.Contracts.Configuration;
 using GSBC.ChurchApp.Platform.Ui;
 
 namespace GSBC.ChurchApp.Features.News.Client;
@@ -15,6 +16,12 @@ public static class NewsWords
 
     public static NewsItem Item(NewsPost post) => new(
         post.Id, post.Title, post.Body, post.Picture, PostedAt(post), post.EditedAt, post.Author, post.From, Href(post.Id), post.Urgent);
+
+    public static string AudienceWords(string audience) =>
+        !Audience.TryParse(audience, out Audience? parsed) || parsed == Audience.Everyone ? "Everyone"
+        : parsed == Audience.SignedIn ? "Everyone signed in"
+        : parsed.IsForRoles ? parsed.RoleIds.Count == 1 ? "People in a role" : $"People in {parsed.RoleIds.Count} roles"
+        : "Some people";
 
     public static string State(NewsPost post) => post.State switch
     {

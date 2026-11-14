@@ -11,7 +11,7 @@ public sealed class RichTextView : ComponentBase
     [Parameter, EditorRequired] public required RichText Content { get; set; }
     [Parameter] public string? Class { get; set; }
     [Parameter] public string About { get; set; } = "";
-    [Parameter] public bool SkipLeadingMedia { get; set; }
+    [Parameter] public int SkipBlocks { get; set; }
     [Parameter] public RichTextScope Scope { get; set; }
     [Parameter] public RenderFragment<string>? TextTemplate { get; set; }
 
@@ -20,7 +20,7 @@ public sealed class RichTextView : ComponentBase
         RichTextDocument document = RichTextParser.Parse(Content.Markdown, Scope);
         builder.OpenElement(0, "div");
         builder.AddAttribute(1, "class", Class is null ? "rich-text" : $"rich-text {Class}");
-        IReadOnlyList<Block> blocks = SkipLeadingMedia && document.Blocks is [MediaBlock or GalleryBlock or EmbedBlock, ..] ? document.Blocks.Skip(1).ToList() : document.Blocks;
+        IReadOnlyList<Block> blocks = SkipBlocks > 0 ? document.Blocks.Skip(SkipBlocks).ToList() : document.Blocks;
         if (blocks.Any(block => block is CardSplitBlock))
             AddCards(builder, new RichTextDocument(blocks, [], [], [], []).Cards());
         else

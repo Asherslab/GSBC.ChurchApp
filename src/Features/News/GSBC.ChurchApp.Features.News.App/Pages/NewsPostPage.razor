@@ -2,11 +2,10 @@
 @inject INewsReads News
 @inject NewsWrites Writes
 @inject IAccess Access
-@inject TimeProvider Clock
 @inject NavigationManager Navigation
 
 <LiveData @key="Id" TValue="ShownPost" Load="LoadAsync" Feeds="News.Feeds" ReloadOn="Reload" Remember="@($"news.post.{Id}")">
-    <Page Title="@(context.Value.Post?.Title ?? "News")" BackHref="news" BackLabel="News" TopBar="TopBarStyle.Solid">
+    <Page Title="@(context.Value.Post?.Title ?? "News")" BackHref="news" BackLabel="News" TopBar="TopBarStyle.SolidTitleOnScroll">
         <Actions>
             @if (context.Value.Post is { } shown && Actions(shown) is { Count: > 0 } actions)
             {
@@ -23,8 +22,8 @@
             else
             {
                 <div class="section section--first">
-                    <PostView Band="true" Title="@post.Title" Content="post.Body" From="@post.From" FromHref="@post.FromLink.TrimStart('/')" Author="@post.Author"
-                              When="@When(post)" LinkPath="@post.LinkPath" LinkLabel="@post.LinkLabel">
+                    <PostView FillsPage="true" Title="@post.Title" Content="post.Body" From="@post.From" FromHref="@post.FromLink.TrimStart('/')" Author="@post.Author"
+                              Posted="NewsWords.PostedAt(post)" Edited="post.EditedAt is not null" For="@NewsWords.AudienceWords(post.Audience)" LinkPath="@post.LinkPath" LinkLabel="@post.LinkLabel">
                         <Status>
                             @if (NewsWords.State(post) is { Length: > 0 } state)
                             {
@@ -80,9 +79,6 @@
         _shown = (await News.PublishedAsync()).FirstOrDefault(post => post.Id == id) ?? (await News.DeskAsync()).FirstOrDefault(post => post.Id == id);
         return new ShownPost(_shown);
     }
-
-    private string When(NewsPost post) =>
-        ChurchDates.Describe(NewsWords.PostedAt(post), DateLineStyle.Long, withTime: false, Clock.GetUtcNow().UtcDateTime) + (post.EditedAt is null ? "" : " · edited");
 
     private IReadOnlyList<MenuItem> Actions(NewsPost post)
     {

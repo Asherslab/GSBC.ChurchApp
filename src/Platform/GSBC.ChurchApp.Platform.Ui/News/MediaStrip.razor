@@ -7,7 +7,7 @@
 {
     <div class="media-strip">
         <div class="media-strip__track" @ref="_track" tabindex="0" data-look-scroll aria-label="@($"{Frames.Count} pictures and videos")">
-            @foreach ((StripFrame frame, int index) in Frames.Select((frame, index) => (frame, index)))
+            @foreach ((OpeningFrame frame, int index) in Frames.Select((frame, index) => (frame, index)))
             {
                 <figure class="media-strip__frame" @key="index" aria-label="@($"{index + 1} of {Frames.Count}")">
                     @if (frame.Video is { } video)
@@ -53,35 +53,21 @@
     [Parameter, EditorRequired] public required RichText Content { get; set; }
     [Parameter] public string About { get; set; } = "";
 
-    private sealed record StripFrame(MediaRef? Media, VideoLink? Video, string Caption);
-
-    private IReadOnlyList<StripFrame> Frames { get; set; } = [];
+    private IReadOnlyList<OpeningFrame> Frames { get; set; } = [];
 
     private IReadOnlyList<MediaRef> Pictures => Frames.Select(frame => frame.Media).OfType<MediaRef>().Where(media => media.IsImage).ToList();
 
-    public const int LeastForAStrip = 2;
+    private const int LeastForAStrip = 2;
 
     public static bool Leads(RichText content) => FramesOf(content).Count >= LeastForAStrip;
 
     protected override void OnParametersSet() => Frames = FramesOf(Content);
 
-    private static IReadOnlyList<StripFrame> FramesOf(RichText content) =>
-        RichTextParser.Parse(content.Markdown).Blocks.SelectMany(block => block switch
-        {
-            GalleryBlock gallery => gallery.Items.Select(item => Frame(content, item)),
-            MediaBlock single => [Frame(content, single)],
-            EmbedBlock { Video.Site: VideoSite.YouTube } embed => [new StripFrame(null, embed.Video, embed.Title)],
-            _ => [],
-        }).OfType<StripFrame>().ToList();
-
-    private static StripFrame? Frame(RichText content, MediaBlock block) =>
-        content.MediaById(block.MediaId) is { } media && (media.IsImage || media.IsVideo)
-            ? new StripFrame(media, null, block.Caption.Length > 0 ? block.Caption : block.Alt)
-            : null;
+    private static IReadOnlyList<OpeningFrame> FramesOf(RichText content) => PostOpening.Of(content).Frames;
 
     private void Open(MediaRef picture) => (_viewingAt, _viewing) = (Math.Max(0, Pictures.ToList().FindIndex(each => each.Id == picture.Id)), true);
 
-    private static string Describe(StripFrame frame) => frame.Caption.Length > 0 ? frame.Caption : frame.Media?.FileName ?? "the picture";
+    private static string Describe(OpeningFrame frame) => frame.Caption.Length > 0 ? frame.Caption : frame.Media?.FileName ?? "the picture";
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {

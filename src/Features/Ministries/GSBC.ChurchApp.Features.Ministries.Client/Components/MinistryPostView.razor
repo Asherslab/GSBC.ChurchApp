@@ -4,7 +4,6 @@
 @inject IMinistryReads Reads
 @inject IMinistryWrites Writes
 @inject IAccess Access
-@inject TimeProvider Clock
 @inject NavigationManager Navigation
 
 <LiveData @ref="_live" @key="@($"{MinistryId}/{PostId}")" TValue="MinistryPage" Load="() => Reads.MinistryAsync(MinistryId)" Feeds="Reads.Feeds"
@@ -14,7 +13,7 @@
         Post? post = loaded.Posts.FirstOrDefault(each => each.Id == PostId);
         string newsTab = MinistriesPlaces.Of(MinistryId, MinistriesPlaces.News);
     }
-    <Page Title="@(post?.Title ?? loaded.Ministry.Name)" BackHref="@newsTab" BackLabel="@loaded.Ministry.Name" TopBar="TopBarStyle.Solid">
+    <Page Title="@(post?.Title ?? loaded.Ministry.Name)" BackHref="@newsTab" BackLabel="@loaded.Ministry.Name" TopBar="TopBarStyle.SolidTitleOnScroll">
         <Actions>
             @if (post is not null && Actions(loaded, post) is { Count: > 0 } actions)
             {
@@ -32,8 +31,8 @@
             {
                 <div class="section section--first">
                     <WaitingToSend MethodsUnder="@MinistryMethods.Under" Describe="MinistryMethods.Describe" First="true" />
-                    <PostView Band="true" Title="@post.Title" Content="ContentOf(post)" From="@(post.From.Length > 0 ? post.From : loaded.Ministry.Name)" FromHref="@newsTab"
-                              Author="@post.Author" When="@When(post)">
+                    <PostView FillsPage="true" Title="@post.Title" Content="ContentOf(post)" From="@(post.From.Length > 0 ? post.From : loaded.Ministry.Name)" FromHref="@newsTab"
+                              Author="@post.Author" Posted="post.PostedAt" Edited="post.EditedAt is not null" For="@MinistryWords.Short(post.Audience, loaded.Ministry)">
                         <Status>
                             <span class="post-view__status">
                                 @if (post.Important)
@@ -95,9 +94,6 @@
     [Parameter, EditorRequired] public required string PostId { get; set; }
 
     private static RichText ContentOf(Post post) => post.Content ?? PlainText.AsRichText(post.Body);
-
-    private string When(Post post) =>
-        ChurchDates.Describe(post.PostedAt, DateLineStyle.Long, withTime: false, Clock.GetUtcNow().UtcDateTime) + (post.EditedAt is null ? "" : " · edited");
 
     private IReadOnlyList<MenuItem> Actions(MinistryPage page, Post post)
     {

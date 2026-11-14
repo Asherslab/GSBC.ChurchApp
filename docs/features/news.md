@@ -149,14 +149,8 @@ markdown ... plenty of it could be under a 'extras' dropdown".
   instead, e.g. `===`"): `===` on a line of its own where a block starts. Under a line of text it stays text (never a
   setext heading). On the post page each part is separated by a sand bar across the page; a notification's line and a
   list's excerpt come from the first part with text.
-- **The post page** (feedback #88, "incredibly barren looking"): *default (owner to review)*, as the owner went to bed
-  before answering the second question on the decision page. Built **A quiet band when there's no picture**
-  (`.impeccable/mocks/markdown-editor/p-a-band.html`): with no strip leading, the title sits on a navy band that
-  continues the top bar; then who and when, the text with real paragraph spacing and type scale, and the sand bar
-  between cards. The alternatives were *A reading page* (type only, a larger lead paragraph, dots between cards) and
-  *Each part a card* (the post on sand, one white card per part). Chosen because it gives the picture-less posts the
-  presence the owner asked for while matching the picture-led posts they already chose. The admin panel's *Preview
-  on a phone* shows the same.
+- **The post page** (feedback #88, "incredibly barren looking"): a quiet navy band for picture-less posts was the
+  station's default here; replaced on 2026-11-14 by the owner's pick, *The bulletin item* (see *Reading a post* below).
 - **App-specific embeds** came next: see *Cards for app content* below. Emoji show as boxes in the dev Simulator only (it has no emoji font); phones
   show them.
 
@@ -192,6 +186,37 @@ lifegroups, etc)").
   panel. Cell text stays plain Markdown; a typed `|` is kept.
 - **Not yet:** a card for a sermon series, a speaker or a calendar; cards in a ministry's *About* (it still uses the old
   editor).
+
+## Reading a post: the bulletin item (owner, 2026-11-14)
+
+After the band the owner said: "still unsure about the actual display on the mobile phone. still seems a little barren,
+it's missing something, idk". Looking at real posts on a phone, what was missing: a short notice was two-thirds empty
+white with nothing marking where it ended; picture and picture-less posts looked like two different apps; the title and
+date were timid ("Saturday 14 November" for something posted today); the first paragraph, which carries a notice,
+looked like every other one; and a post opening with several pictures showed them twice.
+
+- **Interview (owner, 2026-11-14):** a post should feel like *a noticeboard item*; posts will be every kind (short
+  notices with no picture, a picture and a few paragraphs, long updates, posts pointing at something in the app); the
+  reading app they like is Apple News. At the end of a post: "Nothing more". A masthead of who it's from, as Apple News
+  puts above a story: "don't think that'll really work here".
+- **Picked on the decision page: *The bulletin item*** (`.impeccable/mocks/post-page/a-bulletin-item.html`; the others
+  were *The post rises over its picture* and *The notice as a poster*). Each post is set like an item in the printed
+  bulletin: a navy rule, a date block beside a bigger title (Today, 14 Nov), who it's from under the title, then the
+  opening pictures and the text with its first paragraph a little larger, and a sand foot that ends it: "Posted today by
+  … for everyone." On the phone's post pages the foot fills the rest of the screen, so a short notice ends rather than
+  trailing into white. The band is gone; every post looks the same at the top.
+- **Decided while building:** the date block says Today, Yesterday, the weekday, or the year for an older year, and the
+  long date is read out to screen readers from it, so it isn't repeated under the title ("Edited" is). Who it's for in
+  the foot is the post's audience (church news: everyone, everyone signed in, people in a role; a ministry's post:
+  everyone, the team, parents …).
+- **Only the pictures a post opens with lead it** (*fixed*): since 2026-11-14 pictures sit in place in the text, so the
+  strip takes only the pictures and videos at the very start of a post (two or more), and the text skips exactly those
+  (`PostOpening`, Platform.Contracts). Before, the strip gathered every picture in the post and they showed twice. The
+  strip now sits under the title, as the bulletin item puts its picture.
+- **After the finish review (2026-11-14):** a split into cards (`===`) starts the next card under the same navy rule
+  that opens the post, rather than a sand bar (sand now means the post has ended); the top bar's title appears only once
+  the post's own title has scrolled under it, so it isn't shown twice; the admin panel's *Preview on a phone* draws the
+  solid top bar with its back label and lets the foot fill the phone, as on the phone.
 
 ## How it's built
 

@@ -29,8 +29,8 @@
             <Section Grouped="true" Title="Telling people">@Telling</Section>
         </Settings>
         <Preview>
-            <PhoneFrame Label="The post, as it will look in the ministry's News" OnRoute="">
-                <Section First="true"><PostView Band="true" Title="@(Draft.Title.Trim().Length > 0 ? Draft.Title.Trim() : "Its title")" Content="_body" From="@Page.Ministry.Name" When="Just now" /></Section>
+            <PhoneFrame Label="The post, as it will look in the ministry's News" OnRoute="" Back="@Page.Ministry.Name" Title="@Draft.Title.Trim()">
+                <Section First="true"><PostView FillsPage="true" Title="@(Draft.Title.Trim().Length > 0 ? Draft.Title.Trim() : "Its title")" Content="_body" From="@Page.Ministry.Name" Posted="Clock.GetUtcNow().UtcDateTime" For="@MinistryWords.Short(Draft.Audience, Page.Ministry)" /></Section>
             </PhoneFrame>
         </Preview>
         <Foot>@Saving</Foot>

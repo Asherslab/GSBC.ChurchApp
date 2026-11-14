@@ -265,8 +265,8 @@
             @<NewsStory Title="Holiday program volunteers needed" Href="gallery" Excerpt="Three mornings in January." From="Kids ministry" When="Yesterday" Picture="SamplePicture" />)
         @Item("A post's pictures and videos: MediaStrip", "Leads a post: swipe through what it holds, tap a picture to see it bigger.",
             @<MediaStrip Content="SamplePost" About="Carols on the lawn" />)
-        @Item("Reading one post: PostView", "Its strip, title, who posted it and when, the text, and its link at the end.",
-            @<PostView Title="Carols on the lawn" Content="SamplePost" From="Music" FromHref="gallery" When="Thursday 13 November" LinkPath="/events" LinkLabel="See it in the calendar" />)
+        @Item("Reading one post: PostView", "An item in the bulletin: a navy rule, the day beside the title with who and when, the opening pictures, the text with its first paragraph larger, its link, and a sand foot saying who posted it and for whom.",
+            @<PostView Title="Carols on the lawn" Content="SamplePost" From="Music" FromHref="gallery" Author="Church office" Posted="Clock.GetUtcNow().UtcDateTime.AddDays(-1)" For="Everyone" LinkPath="/events" LinkLabel="See it in the calendar" />)
         @Item("Writing a post: PostEditor", "A title and one editor: formatting in the bar, pictures, video, files, cards and tables under Insert, each shown in place with its caption; and one row for who it's for and telling them.",
             @<PostEditor Title="@_postTitle" TitleChanged="title => _postTitle = title" @bind-Body="_postBody" SettingsSummary="Everyone · Notification on · Now">
                 <Settings><p class="gallery__note">The feature's own settings go here.</p></Settings>

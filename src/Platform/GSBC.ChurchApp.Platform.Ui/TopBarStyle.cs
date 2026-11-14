@@ -4,4 +4,5 @@ public enum TopBarStyle
 {
     OverMasthead,
     Solid,
+    SolidTitleOnScroll,
 }

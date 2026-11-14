@@ -30,8 +30,8 @@
             <Section Grouped="true" Title="A link at the end">@Linking</Section>
         </Settings>
         <Preview>
-            <PhoneFrame Label="The post, as it will look in the app's News" OnRoute="news">
-                <Section First="true"><PostView Band="true" Title="@(_title.Trim().Length > 0 ? _title.Trim() : "Its title")" Content="Draft" Author="@Post.Author" When="Just now" LinkPath="@_linkPath.Trim()" LinkLabel="@_linkLabel.Trim()" /></Section>
+            <PhoneFrame Label="The post, as it will look in the app's News" OnRoute="news" Back="News" Title="@_title.Trim()">
+                <Section First="true"><PostView FillsPage="true" Title="@(_title.Trim().Length > 0 ? _title.Trim() : "Its title")" Content="Draft" Author="@Post.Author" Posted="Clock.GetUtcNow().UtcDateTime" For="@NewsWords.AudienceWords(_audience)" LinkPath="@_linkPath.Trim()" LinkLabel="@_linkLabel.Trim()" /></Section>
             </PhoneFrame>
         </Preview>
         <Foot>@Saving</Foot>
@@ -152,16 +152,10 @@ else
 
     private string Summary => string.Join(" · ", new[]
     {
-        AudienceWords(_audience),
+        NewsWords.AudienceWords(_audience),
         Post.ToldAt is not null ? "Notification sent" : _tell ? _urgent ? "Urgent notification" : "Notification on" : "No notification",
         !MayPublish ? "Asks to be published" : _later && Later is { } at ? $"At {ChurchDates.Describe(at, DateLineStyle.Short, withTime: true, Clock.GetUtcNow().UtcDateTime)}" : Post.State == NewsState.Published ? "Published" : "Now",
     });
-
-    private static string AudienceWords(string audience) =>
-        !Audience.TryParse(audience, out Audience? parsed) || parsed == Audience.Everyone ? "Everyone"
-        : parsed == Audience.SignedIn ? "Everyone signed in"
-        : parsed.IsForRoles ? parsed.RoleIds.Count == 1 ? "People in a role" : $"People in {parsed.RoleIds.Count} roles"
-        : "Some people";
 
     private DateTime? Later => DateTime.TryParseExact(_publishAt, LocalFormats, CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime local)
         ? ChurchTime.ToUtc(local)
@@ -175,7 +169,7 @@ else
         Post.State == NewsState.Published ? "Save"
         : !MayPublish ? "Ask for it to be published"
         : _later ? "Schedule it"
-        : AudienceWords(_audience) == "Everyone" ? "Post for everyone" : "Post it";
+        : NewsWords.AudienceWords(_audience) == "Everyone" ? "Post for everyone" : "Post it";
 
     private string? Blocked =>
         _title.Trim().Length == 0 ? "Give it a title to post it."

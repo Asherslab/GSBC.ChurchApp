@@ -85,7 +85,7 @@
                 }
                 <div class="news-desk__preview">
                     <PostView Title="@post.Title" Content="post.Body" From="@post.From" FromHref="@post.FromLink.TrimStart('/')" Author="@post.Author"
-                              When="@When(post)" LinkPath="@post.LinkPath" LinkLabel="@post.LinkLabel" />
+                              Posted="NewsWords.PostedAt(post)" Edited="post.EditedAt is not null" For="@NewsWords.AudienceWords(post.Audience)" LinkPath="@post.LinkPath" LinkLabel="@post.LinkLabel" />
                 </div>
                 <Notice Tone="NoticeTone.Warning" Text="@_problem" />
             }
