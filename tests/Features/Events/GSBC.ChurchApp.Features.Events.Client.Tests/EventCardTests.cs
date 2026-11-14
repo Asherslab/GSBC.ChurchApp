@@ -1,4 +1,3 @@
-using GSBC.ChurchApp.Features.Events.Client;
 using GSBC.ChurchApp.Features.Events.Contracts;
 using GSBC.ChurchApp.Platform.Client.Content;
 using GSBC.ChurchApp.Platform.Contracts.Content;

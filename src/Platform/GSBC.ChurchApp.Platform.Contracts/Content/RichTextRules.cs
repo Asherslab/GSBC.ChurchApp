@@ -69,9 +69,8 @@ public static class RichTextRules
     }
 
     private static string? ProblemWith(DirectiveBlock directive, RichTextMedia allowed) =>
-        AppCards.ProblemWith(directive) is { } problem ? problem
-        : allowed.HasFlag(RichTextMedia.AppCards) ? null
-        : $"A card for {AppCards.WithArticle(AppCards.Of(directive)!.Kind)} can't go in here. Link to it instead.";
+        AppCards.ProblemWith(directive) ?? (allowed.HasFlag(RichTextMedia.AppCards) ? null
+        : $"A card for {AppCards.WithArticle(AppCards.Of(directive)!.Kind)} can't go in here. Link to it instead.");
 
     private static string Shortened(string href) => href.Length <= 60 ? href : href[..57] + "…";
 }

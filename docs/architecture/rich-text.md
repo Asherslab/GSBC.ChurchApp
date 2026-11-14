@@ -27,10 +27,15 @@ where it has one:
 | Footnotes | `[^label]` in the text and `[^label]: note` on a line of its own; numbered in the order used |
 | Emoji | the character itself, or a shortcode from `Emoji.Common` (`:pray:`) |
 
-**Our own additions are directives,** a line of its own: `::name{key=value key2="quoted value"}`. Reserved for the
-app's things (owner, 2026-11-14): `::event{id=…}`, `::sermon{id=…}`, `::ministry{id=…}`, `::lifegroup{id=…}`. They parse
-today as `DirectiveBlock` and the server refuses them ("isn't ready yet"), so nothing can be saved that a later app
-would misread; showing them is the next round. Any other name is refused.
+**Our own additions are directives,** a line of its own: `::name{key=value key2="quoted value"}`. The app's things
+(owner, 2026-11-14) are cards (`AppCard`, `AppCards`): `::event{id=…}` (an occurrence id: one date, or `show=next` /
+`show=pattern` with a regular event's id), `::sermon{id=…}`, `::ministry{id=…}`, `::lifegroup{id=…}`, each with an
+optional `look=line` or `look=box` (no `look` is the side rule). A place takes them with `RichTextMedia.AppCards`
+(posts do); a malformed card, or one where it isn't allowed, is refused, and any other directive name is refused. On
+save the feature also asks `AppCardChecks` (Platform.Api) whether each card points at something that exists and the
+writer may see; features answer through `IAppCardSource` (Events, Sermons, Ministries). On screen `RichTextView` draws a
+card with `AppCardBlock`, which opens the component the feature registered for its kind (`AddAppCardView`, Platform.Client);
+the picker searches each feature's `IAppCardSource` (Platform.Client). See [news.md](../features/news.md), *Cards for app content*.
 
 **Chats use a smaller scope** (`RichTextScope.Chat`): inline marks, links, lists, quotes and code blocks; headings,
 tables, card splits, lines, footnotes and pictures stay as typed text. A message's links are checked when it's sent

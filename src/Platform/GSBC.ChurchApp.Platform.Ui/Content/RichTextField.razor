@@ -92,7 +92,7 @@
     }
     else if (_panel == Panel.Table && _table is { } table)
     {
-        <div class="rich-text-panel rich-text-panel--table" role="group" aria-label="The table">
+        <div class="rich-text-panel" role="group" aria-label="The table">
             <div class="rich-text-table-editor">
                 <table>
                     @for (int row = 0; row < table.Rows.Count; row++)
@@ -608,7 +608,7 @@
 
     private PickableFiles KindAt(int at)
     {
-        return RichTextParser.Parse(LineAt(at)).MediaIds.FirstOrDefault() is { } id && _media.FirstOrDefault(media => media.Id == id) is { } media
+        return RichTextParser.Parse(LineAt(at)).MediaIds.FirstOrDefault() is { } id && _media.FirstOrDefault(known => known.Id == id) is { } media
             ? media.IsVideo ? PickableFiles.Videos : media.IsImage ? PickableFiles.Pictures : PickableFiles.Documents
             : PickableFiles.Pictures;
     }

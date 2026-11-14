@@ -67,8 +67,6 @@ public static partial class AppCards
 
     public static string Title(AppCardKind kind) => kind == AppCardKind.LifeGroup ? "Life Group" : char.ToUpperInvariant(Noun(kind)[0]) + Noun(kind)[1..];
 
-    public static bool IsAppCard(DirectiveBlock directive) => Kinds.ContainsKey(directive.Name);
-
     public static AppCard? Of(DirectiveBlock directive) => Read(directive).Card;
 
     public static AppCard? OfLine(string line) =>

@@ -26,8 +26,8 @@ public sealed class MarkdownTable
         if (lines.Length < 2 || Cells(lines[1]) is not { Count: > 0 } delimiters || !delimiters.All(IsDelimiter))
             return null;
         List<TableAlignment> alignments = delimiters.Select(AlignmentOf).ToList();
-        List<List<string>> rows = [Fitted(Cells(lines[0]), alignments.Count)];
-        rows.AddRange(lines.Skip(2).Where(line => line.Trim().Length > 0).Select(line => Fitted(Cells(line), alignments.Count)));
+        List<List<string>> rows =
+            [Fitted(Cells(lines[0]), alignments.Count), .. lines.Skip(2).Where(line => line.Trim().Length > 0).Select(line => Fitted(Cells(line), alignments.Count))];
         return new MarkdownTable(alignments, rows);
     }
 

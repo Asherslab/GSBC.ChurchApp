@@ -21,5 +21,5 @@ internal sealed class OnlineSermonCards(ILatestSermonsOnline latest, TimeProvide
     }
 
     private async Task<SermonCardShelf> LoadNowAsync() =>
-        new(await latest.LatestAsync(SermonsFeeds.CatalogueWindow), SermonCardShelf.Empty.Progress);
+        SermonCardShelf.Empty with { Sermons = await latest.LatestAsync(SermonsFeeds.CatalogueWindow) };
 }
