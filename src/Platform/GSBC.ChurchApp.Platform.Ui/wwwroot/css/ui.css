@@ -1717,3 +1717,10 @@ span.stage-pipeline__stage { pointer-events: none; }
 .month-days__day--part { background: color-mix(in srgb, var(--marker) 25%, var(--surface)); color: var(--marker-ink); }
 .month-days__day--skipped span { text-decoration: line-through; text-decoration-thickness: 2px; color: var(--ink-3); }
 .month-days__key { color: var(--ink-2); font-size: var(--text-caption); }
+
+.map-view { position: relative; display: flex; flex-direction: column; margin: 0; min-height: 0; }
+.map-view__map { position: relative; flex: 1; min-height: 180px; background: var(--sand); }
+.map-view__overlay { position: absolute; inset: 0; pointer-events: none; }
+.map-view__overlay > * { pointer-events: auto; }
+.map-view__attribution { padding: var(--space-2xs) 0 0; font-size: var(--text-micro); font-weight: 400; color: var(--ink-3); }
+.map-view .maplibregl-canvas:focus { outline: none; }
