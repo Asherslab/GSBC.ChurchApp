@@ -43,7 +43,7 @@ public final class DownloadShelf: @unchecked Sendable {
     public func entry(_ id: String) -> DownloadEntry? { lock.withLock { entries[id] } }
 
     public func fileURL(_ id: String) -> URL? {
-        guard let entry = entry(id), entry.state == .done, let name = entry.fileName else { return nil }
+        guard let name = entry(id)?.fileName else { return nil }
         let file = directory.appendingPathComponent(name)
         return FileManager.default.fileExists(atPath: file.path) ? file : nil
     }
@@ -53,6 +53,27 @@ public final class DownloadShelf: @unchecked Sendable {
             entry = DownloadEntry(id: id, url: url, title: title, fileName: nil, bytes: 0, expected: 0, state: .downloading,
                                   addedAt: Int64(Date().timeIntervalSince1970 * 1000))
         }
+    }
+
+    public func replacing(_ id: String, url: String, title: String) {
+        change(id) { entry in
+            let kept = entry?.fileName
+            entry = DownloadEntry(id: id, url: url, title: title, fileName: kept, bytes: 0, expected: 0, state: .downloading,
+                                  addedAt: entry?.addedAt ?? Int64(Date().timeIntervalSince1970 * 1000))
+        }
+    }
+
+    public func read(_ id: String, offset: Int64, length: Int64) throws -> Data {
+        guard let file = fileURL(id) else { throw CocoaError(.fileNoSuchFile) }
+        let handle = try FileHandle(forReadingFrom: file)
+        defer { try? handle.close() }
+        let size = try handle.seekToEnd()
+        let start = UInt64(max(offset, 0))
+        guard start < size else { return Data() }
+        let available = size - start
+        let count = length < 0 ? available : min(UInt64(length), available)
+        try handle.seek(toOffset: start)
+        return try handle.read(upToCount: Int(count)) ?? Data()
     }
 
     public func progressed(_ id: String, written: Int64, expected: Int64) {
@@ -68,6 +89,7 @@ public final class DownloadShelf: @unchecked Sendable {
         let name = freeName(for: entry(id)?.title ?? id, extension: fileExtension)
         var file = directory.appendingPathComponent(name)
         try FileManager.default.moveItem(at: location, to: file)
+        let previous = entry(id)?.fileName
         var values = URLResourceValues()
         values.isExcludedFromBackup = true
         try? file.setResourceValues(values)
@@ -78,6 +100,7 @@ public final class DownloadShelf: @unchecked Sendable {
             entry?.expected = size
             entry?.state = .done
         }
+        if let previous, previous != name { try? FileManager.default.removeItem(at: directory.appendingPathComponent(previous)) }
         return file
     }
 

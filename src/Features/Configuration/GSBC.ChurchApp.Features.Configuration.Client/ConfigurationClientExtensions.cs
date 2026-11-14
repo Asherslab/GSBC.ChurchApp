@@ -17,9 +17,8 @@ public static class ConfigurationClientExtensions
     {
         services.AddDestinations(ConfigurationDestinations.All).AddDestinations(ComingSoonDestinations.All)
             .AddSurfaces(HubSurfaces.All).AddSurfaces(AppearanceSurfaces.All).AddSurfaces(TabBarSurfaces.All)
-            .AddHubTile<BulletinTile>(WaitingTiles.Bulletin)
-            .AddHubTile<OutreachTile>(WaitingTiles.Outreach);
-        foreach (HubTileKind kind in WaitingTiles.All.Except([WaitingTiles.Bulletin, WaitingTiles.Outreach]))
+            .AddHubTile<BulletinTile>(WaitingTiles.Bulletin);
+        foreach (HubTileKind kind in WaitingTiles.All.Except([WaitingTiles.Bulletin]))
             services.AddHubTile<WordsTileView>(kind);
         return services;
     }

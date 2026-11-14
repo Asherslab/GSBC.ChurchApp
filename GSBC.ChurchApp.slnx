@@ -250,6 +250,7 @@
   <Folder Name="/tests/Features/Outreach/">
     <Project Path="tests/Features/Outreach/GSBC.ChurchApp.Features.Outreach.Api.Tests/GSBC.ChurchApp.Features.Outreach.Api.Tests.csproj" />
     <Project Path="tests/Features/Outreach/GSBC.ChurchApp.Features.Outreach.Maps.Api.Tests/GSBC.ChurchApp.Features.Outreach.Maps.Api.Tests.csproj" />
+    <Project Path="tests/Features/Outreach/GSBC.ChurchApp.Features.Outreach.Client.Tests/GSBC.ChurchApp.Features.Outreach.Client.Tests.csproj" />
     <Project Path="tests/Features/Outreach/GSBC.ChurchApp.Features.Outreach.Routing.Tests/GSBC.ChurchApp.Features.Outreach.Routing.Tests.csproj" />
   </Folder>
   <Folder Name="/tests/Features/Prayer/">

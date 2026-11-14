@@ -1,0 +1,223 @@
+@page "/outreach/walking"
+@implements IDisposable
+@using GSBC.ChurchApp.Platform.Client.Location
+@inject WalkSession Walk
+@inject WalkScreen Screen
+@inject ILocationSession Location
+@inject Shell Shell
+@inject NavigationManager Nav
+@inject TimeProvider Clock
+
+<Page Title="Walking" BackHref="@OutreachLinks.Home" BackLabel="Outreach">
+    <LiveData @ref="_live" TValue="WalkView" Load="Screen.LoadAsync" Feeds="WalkScreen.Feeds" ReloadOn="Reload">
+        @{
+            WalkView view = context.Value;
+        }
+        @if (view.State is not { } state)
+        {
+            <Masthead Title="No walk on" Note="Plan one from the Outreach page." />
+            <Section>
+                <Button Block="true" Icon="footprints" Href="@OutreachLinks.Home">Go to Outreach</Button>
+            </Section>
+        }
+        else if (state.Finished)
+        {
+            <WalkEnd View="view" OnSaved="SavedAsync" />
+        }
+        else
+        {
+            @Walking(view, state)
+        }
+    </LiveData>
+</Page>
+
+<ReportSheet @bind-Open="_reporting" Place="_reportPlace" />
+<DoorSheet @bind-Open="_door" />
+
+@code {
+    private const ChangeKind Reload = ChangeKind.Reconnected | ChangeKind.Session | ChangeKind.Outbox;
+    private static readonly TimeSpan DrainEvery = TimeSpan.FromSeconds(8);
+    private static readonly TimeSpan SaidFor = TimeSpan.FromSeconds(12);
+
+    private LiveData<WalkView>? _live;
+    private Timer? _timer;
+    private bool _reporting;
+    private bool _door;
+    private bool _following = true;
+    private AddressPoint? _reportPlace;
+    private string? _marked;
+    private string? _said;
+    private DateTimeOffset _saidAt;
+
+    protected override void OnInitialized()
+    {
+        Walk.Changed += OnWalkChanged;
+        Location.FixArrived += OnFix;
+        _timer = new Timer(_ => InvokeAsync(DrainAsync), null, DrainEvery, DrainEvery);
+    }
+
+    private RenderFragment Walking(WalkView view, WalkState state) => __builder =>
+    {
+        WalkProgress? progress = view.Progress;
+        StepProgress? now = progress?.Now;
+        StepProgress? next = progress?.Next;
+        int left = Math.Max(0, state.PlannedLetterboxes - (progress?.LetterboxesDone ?? 0));
+        bool doorknock = state.Mode == WalkMode.Doorknock;
+        <header class="masthead outreach-now">
+            <p class="outreach-now__status">
+                <span>@(state.Paused ? "Paused" : "Walking") · @OutreachPhoneWords.Duration(Clock.GetUtcNow().UtcDateTime - state.StartedAt)</span>
+                <span>@view.Carrying</span>
+            </p>
+            @if (now is null)
+            {
+                <h1 class="outreach-now__street">@(progress?.HasFixes == false ? "Finding you" : "That's the route")</h1>
+                <p class="outreach-now__side">@(progress?.HasFixes == false ? "Walk to the start; the app follows you once it has a fix." : "Every street on the plan is done. Finish when you're ready.")</p>
+            }
+            else
+            {
+                <h1 class="outreach-now__street">@now.Step.Title</h1>
+                <p class="outreach-now__side">@OutreachPhoneWords.Side(now.Step.Delivers) · @OutreachPhoneWords.Remaining(now.Step.Letterboxes - now.Done)</p>
+                @if (next is not null)
+                {
+                    <p class="outreach-now__next"><Icon Name="@OutreachPhoneWords.TurnIcon(now.Step, next.Step)" />@OutreachPhoneWords.Turn(now.Step, next.Step) · @next.Step.Letterboxes</p>
+                }
+            }
+        </header>
+        @if (view.Source is not null)
+        {
+            <MapView Class="outreach-walk-map" Source="view.Source" Label="Your walk, with you on it" Lines="view.Lines" Markers="view.Markers" Frame="view.Frame"
+                     You="view.You" Follow="_following" OnStoppedFollowing="() => _following = false" Zoom="17">
+                <Overlay>
+                    @if (!_following)
+                    {
+                        <Button Class="outreach-walk-map__follow" Variant="ButtonVariant.Quiet" Small="true" Icon="map-pin" OnClick="() => _following = true">Follow me</Button>
+                    }
+                </Overlay>
+            </MapView>
+        }
+        <div class="outreach-walk-foot">
+            <div class="outreach-walk-foot__progress">
+                <p>
+                    <span>@($"{OutreachWords.Count(progress?.LetterboxesDone ?? 0)} of {(doorknock ? OutreachPhoneWords.Doors(state.PlannedLetterboxes) : OutreachPhoneWords.Letterboxes(state.PlannedLetterboxes))}")</span>
+                    <span>@($"{OutreachPhoneWords.Distance(progress?.Metres ?? 0)} of {OutreachPhoneWords.Distance(state.PlannedMetres)}")</span>
+                </p>
+                <ProgressTrack Fraction="@(state.PlannedLetterboxes == 0 ? 0 : (double)(state.PlannedLetterboxes - left) / state.PlannedLetterboxes)" Label="Letterboxes done" />
+            </div>
+            @if (_said is not null)
+            {
+                <p class="outreach-walk-foot__said" role="status">
+                    @_said
+                    @if (_marked is not null)
+                    {
+                        <Button Variant="ButtonVariant.Link" OnClick="UndoAsync">Undo</Button>
+                    }
+                </p>
+            }
+            @if (!view.Tracking)
+            {
+                <Notice Tone="NoticeTone.Warning" Text="Location is off, so the app can't mark streets as you walk. You can mark what you covered when you finish." />
+            }
+            <div class="outreach-walk-foot__marks">
+                @if (doorknock)
+                {
+                    <Button Variant="ButtonVariant.Quiet" Icon="door-open" OnClick="() => _door = true">At a door</Button>
+                }
+                else
+                {
+                    <Button Variant="ButtonVariant.Quiet" Icon="circle-off" OnClick="NoJunkMailAsync">No junk mail</Button>
+                }
+                <Button Variant="ButtonVariant.Quiet" Icon="message-square" OnClick="SpokeAsync">Spoke to someone</Button>
+            </div>
+            <div class="outreach-walk-foot__bar">
+                <Button Variant="ButtonVariant.Link" Icon="@(state.Paused ? "play" : "pause")" OnClick="() => Walk.PauseAsync(!state.Paused)">@(state.Paused ? "Carry on" : "Pause")</Button>
+                <Menu Label="More for this walk" Items="More(state)" />
+                <Button Variant="ButtonVariant.Link" Icon="check" OnClick="FinishAsync">Finish</Button>
+            </div>
+        </div>
+    };
+
+    private IReadOnlyList<MenuItem> More(WalkState state) =>
+    [
+        this.Item("Not a home, or wrong on the map", OpenReport, "flag", "Tell staff, with a note"),
+        this.Item("Skipped this bit", SkipAsync, "redo", "Leaves this street open for someone else"),
+        this.Item(_following ? "Stop following me" : "Follow me on the map", () => _following = !_following, "map-pin"),
+    ];
+
+    private async Task DrainAsync()
+    {
+        if (_said is not null && Clock.GetUtcNow() - _saidAt > SaidFor)
+        {
+            _said = null;
+            _marked = null;
+            StateHasChanged();
+        }
+        if (await Walk.DrainAsync())
+            await Shell.HapticAsync(Haptic.Success);
+    }
+
+    private async Task NoJunkMailAsync()
+    {
+        _marked = await Walk.NoJunkMailAsync();
+        _said = _marked is null
+            ? Walk.Progress?.HasFixes == true ? "No letterbox near you on this street. Stand at it and try again." : "The app needs your location to mark a letterbox."
+            : $"Marked No junk mail{(Walk.NearestAddress(out _) is { Label.Length: > 0 } address ? $" ({address.Label})" : "")}. It's skipped from now on.";
+        _saidAt = Clock.GetUtcNow();
+        await Shell.HapticAsync();
+    }
+
+    private async Task UndoAsync()
+    {
+        if (_marked is not null)
+            await Walk.UndoNoJunkMailAsync(_marked);
+        _marked = null;
+        _said = "Taken back.";
+        _saidAt = Clock.GetUtcNow();
+    }
+
+    private async Task SpokeAsync()
+    {
+        await Walk.SpokeAsync();
+        _marked = null;
+        _said = $"Counted. {OutreachWords.Plural(Walk.Current?.Conversations ?? 0, "conversation", "conversations")} on this walk.";
+        _saidAt = Clock.GetUtcNow();
+        await Shell.HapticAsync();
+    }
+
+    private async Task SkipAsync()
+    {
+        await Walk.SkipThisBitAsync();
+        _marked = null;
+        _said = "Left open for someone else.";
+        _saidAt = Clock.GetUtcNow();
+    }
+
+    private void OpenReport()
+    {
+        _reportPlace = Walk.NearestAddress(out _);
+        _reporting = true;
+    }
+
+    private async Task FinishAsync()
+    {
+        await Walk.FinishAsync();
+        _said = null;
+        await Shell.ScrollToTopAsync();
+    }
+
+    private Task SavedAsync()
+    {
+        Nav.NavigateTo(OutreachLinks.Mine);
+        return Task.CompletedTask;
+    }
+
+    private void OnWalkChanged() => InvokeAsync(() => _live?.ReloadAsync() ?? Task.CompletedTask);
+
+    private void OnFix() => InvokeAsync(DrainAsync);
+
+    public void Dispose()
+    {
+        Walk.Changed -= OnWalkChanged;
+        Location.FixArrived -= OnFix;
+        _timer?.Dispose();
+    }
+}
