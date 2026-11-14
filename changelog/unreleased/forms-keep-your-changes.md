@@ -1,13 +1,13 @@
 ---
-title: Forms ask before you lose changes
-audience: staff
+title: Nothing you type is lost without asking
+audience: everyone
 added: 2026-11-10
 icon: pencil
-area: Admin panel
+area: Everywhere
 ---
-Leaving a form with changes you haven't saved now asks first, everywhere in the admin panel.
+Leaving a form with changes you haven't saved now asks first, in the app and the admin panel, and every form says why it can't save yet.
 
 ## For staff
-Changed: Forms with a Save button say "You have changes that aren't saved" beside it, say why it can't save yet ("Give it a name to add it."), and show "Saved" only once it has. Leaving one (another page, a sidebar link, Back, or closing the tab) asks: save, discard the changes, or stay. Forms that save by themselves, like app styling drafts, keep saying "Saving…", "Saved" or "Couldn't save", and ask only if you leave while a save is still going or failed.
-Where: Ministries (posts, links, calendars, Sundays, Life Groups); App styling drafts; Sermons (checking a sermon, uploading one, series and speakers); a person's Safeguarding and Family tabs; adding a child, asking a parent and a child's details in the app; Add someone, demo accounts, review codes, connecting a tool, your name on Account and creating an account; Media (a picture you chose but haven't uploaded, naming a folder).
-Try: Change something in a draft and click another page straight away: it asks while it's still saving. Wait for "Saved" and it lets you go.
+Changed: Forms with a Save button say "You have changes that aren't saved", why they can't save yet ("Give it a title to add it."), and "Saved" once they have. Leaving one (another page, Back, another event or ministry, or closing the tab) asks: save, discard the changes, or stay. Forms that save by themselves, like App styling drafts and the weekly digest, ask only if you leave while a save is still going or failed. Adding a regular event works again as soon as it has a title.
+Where: Every form: events and calendars, ministry settings and posts, App styling, Sermons, a person's tabs, Account, Media and more.
+Try: In Calendar, start a new event, type a title and click another event: choose Stay, then Save and go on. Change something in an App styling draft and click another page at once: it asks while it's still saving.

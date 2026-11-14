@@ -1,14 +1,14 @@
 ---
 title: Ministries and Life Groups
 audience: everyone
-added: 2026-11-10
+added: 2026-11-12
 icon: users
 area: Ministries
 highlight: true
 ---
-Join a ministry's team or come along, for you or your children, and see its news, calendars and files. Choose a Life Group too.
+Join a ministry's team or come along, for you or your children, and see its news, calendars and files, even offline. Choose a Life Group too.
 
 ## For staff
-Changed: Ministries are real. Each has a team and attendees, each with its own joining (Open, Ask or Invite only), and ministries nest to any depth: Music's leaders lead Choir and Production too. News, calendars and files are for everyone, attendees and their parents, parents, or the team, and the page boxes them by who they're for. An important post notifies the people it's for straight away; one for the whole church is marked for staff. A ministry's calendars are Events calendars, so its events show in people's week and calendar links. Leaders answer asks, keep the team and attendee lists, link a child's parent, post, add links, add calendars and teams under theirs, all from their phone or the admin panel. Life Groups show what's on now, the next groups and the all-year groups; staff set them up in the admin panel. The Ministries and Life Groups tiles on Home open them.
-Where: More → Ministries and Life Groups in the app (and Home's tiles); People → Ministries and Life Groups in the admin panel.
-Try: Make yourself a leader of a ministry, then on your phone open it, post something for the team only, and check a team member sees it and a visitor doesn't. Ask a parent to join their child to Impact Kids and answer the ask from the People tab. In the admin panel, plan the next Life Groups with their Sundays and add a group.
+Changed: Each ministry has a team and attendees, each with its own joining (Open, Ask or Invite only, each saying what it means), and ministries sit under ministries to any depth, shown as a tree. News, calendars and files are for everyone, attendees and their parents, parents, or the team. Settings → What it uses turns News, Calendar, Files, Chats and Roster on or off and puts the tabs in order; it can also show the news and calendars of the ministries under it. *Where it sits* moves a ministry under another and says first what changes. A person's role is one menu (Attendee, Team, Admin, Leader, or take them off). Archive and Delete are in the ministry's ⋯ menu. Every ministry you can see is kept on the phone, so it opens at once offline; changes wait to send ("1 change waiting to send"). Leaders do all of this from the phone or the admin panel, and add documents from the computer. A new ministry starts with only News, Calendar and Chats on.
+Where: More → Ministries in the app; Ministries & groups → Ministries in the admin panel.
+Try: Lead a ministry, post for the team only and check a visitor can't see it. Drag a tab in Settings. Turn on flight mode and open another ministry.

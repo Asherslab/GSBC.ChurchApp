@@ -1,4 +1,5 @@
 #:project ../../src/Features/ReleaseNotes/GSBC.ChurchApp.Features.ReleaseNotes.Generator/GSBC.ChurchApp.Features.ReleaseNotes.Generator.csproj
+#:property PublishAot=false
 
 using GSBC.ChurchApp.Features.ReleaseNotes.Generator;
 

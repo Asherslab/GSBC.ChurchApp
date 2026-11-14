@@ -239,8 +239,9 @@ is already shared. Start empty only for an explicit reason (testing first-run se
 from scratch), and say so.
 
 To run a worktree's backend **beside** the owner's instead of stopping it, start the AppHost with
-`Dev__PortOffset=100`: its fixed ports move up by 100 (the gateway on 5400), it starts no Cloudflare tunnel and
-its media store gets its own volume. The copy script needs the main database stopped, so once your AppHost is up run
+`Dev__PortOffset=100`: its fixed ports move up by 100 (the gateway on 5400), it starts no Cloudflare tunnel,
+its media store gets its own volume, and it sends no email or push (a station's backend emailed the owner an
+App health alert, 2026-11-14). The copy script needs the main database stopped, so once your AppHost is up run
 `tools/dev/copy-main-db-live.sh` instead: it reads main's with `pg_dump`, gives the copy a new `sync.origin` and empties
 its `notifications.devices` (otherwise your backend pushes to the owner's phone, as happened 2026-11-12). Don't
 hand-roll the copy: a `docker exec … rm` stops the station on a permission prompt. Give it its own

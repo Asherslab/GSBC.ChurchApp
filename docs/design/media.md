@@ -5,7 +5,7 @@ Detail behind [DESIGN.md](../../DESIGN.md) for the media library in the admin pa
 ## Media library
 Two shelves: the Library, which staff organise in folders, and Made by the app, which the app fills. Reached from the sidebar's The app area. Its bars stay above the split view (the Still Frame Rule).
 - **Shelf switch:** a `Segmented` of Library and Made by the app (a lock), beside the type chips (All, Pictures, PDFs and files, Not used, with counts) and a Grid/List `Segmented`.
-- **Path row:** breadcrumbs to the open folder, each a drop target. A staff folder adds quiet Rename… and Move to… and a danger Delete folder…. Searching shows "Results for “…” in every folder" and Clear search instead.
+- **Path row:** breadcrumbs to the open folder, each a drop target. A staff folder adds its ⋯ menu after the last crumb: Rename…, Move to… and, last and red after a rule, Delete folder…, which opens the confirm sheet. Searching shows "Results for “…” in every folder" and Clear search instead.
 - **Folder tiles:** name over a count ("3 files · 1 folder", "Empty", or "Shared with others" for one the viewer can't open); app folders show a lock; a tile under a drag is tinted deep aqua. A folder holding only folders says "No files here, only the folders above…" rather than empty.
 - **Picture grid:** 4:3 thumbnails over the name and how it's used. Hover and chosen are marker rings; a corner tick shows on hover, focus, when chosen and on every card while two or more are chosen. Files drag onto folder tiles and crumbs. List view is the data table.
 - **Detail:** the split view's detail; its Folder fact links to the folder (after a lock when the app owns it), and Move to… leads its actions.
