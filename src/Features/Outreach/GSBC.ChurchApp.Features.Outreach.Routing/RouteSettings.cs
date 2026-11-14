@@ -34,6 +34,8 @@ public sealed record RouteSettings
 
     public double MaxHopMetres { get; init; } = 600;
 
+    public double MaxApproachMetres { get; init; } = 500;
+
     public double ShortOf { get; init; } = 0.9;
 
     public double LongOf { get; init; } = 1.25;
