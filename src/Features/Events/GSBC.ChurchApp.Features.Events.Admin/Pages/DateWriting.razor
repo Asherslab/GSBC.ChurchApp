@@ -1,0 +1,24 @@
+@page "/calendar/regular/{CalendarId}/{RegularEventId}/{Day}"
+@inject NavigationManager Navigation
+
+@if (EventDates.Parse(Day) is { } date)
+{
+    <DateEditor @key="@($"{RegularEventId}-{Day}")" CalendarId="@CalendarId" RegularEventId="@RegularEventId" Date="date" OnAPage="true"
+                BackHref="@CalendarWorkbenchLinks.Back(From)" BackText="@CalendarWorkbenchLinks.BackText(From)" Closed="Back" OpenRegular="OpenRegular" />
+}
+else
+{
+    <TitleBand Title="Calendar" BackHref="@CalendarWorkbenchLinks.Page" BackText="Calendar" />
+    <EmptyState Icon="calendar" Title="That date isn't one the calendar knows" Body="Open the event from the calendar again." />
+}
+
+@code {
+    [Parameter] public required string CalendarId { get; set; }
+    [Parameter] public required string RegularEventId { get; set; }
+    [Parameter] public required string Day { get; set; }
+    [SupplyParameterFromQuery(Name = "from")] public string? From { get; set; }
+
+    private void Back() => Navigation.NavigateTo(CalendarWorkbenchLinks.Back(From));
+
+    private void OpenRegular() => Navigation.NavigateTo(CalendarWorkbenchLinks.Regular(CalendarId, RegularEventId, CalendarWorkbenchLinks.Back(From)));
+}

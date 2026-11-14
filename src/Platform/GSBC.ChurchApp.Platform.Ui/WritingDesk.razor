@@ -1,6 +1,6 @@
 @using GSBC.ChurchApp.Platform.Icons
 
-<div class="writing-desk @(_folded ? "writing-desk--folded" : "")">
+<div class="writing-desk @(Settings is null ? "writing-desk--single" : _folded ? "writing-desk--folded" : "")">
     <div class="writing-desk__main">
         <div class="writing-desk__page">
             <TabStrip TValue="bool" Label="Write or preview" Options="Views" Value="_previewing" ValueChanged="previewing => _previewing = previewing">

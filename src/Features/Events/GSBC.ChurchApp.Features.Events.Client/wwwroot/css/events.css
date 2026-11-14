@@ -215,7 +215,6 @@
 .date-of p { margin: 0; }
 .date-of__link { display: inline; padding: 0; border: 0; background: none; color: var(--accent); font: inherit; font-weight: 700; cursor: pointer; white-space: nowrap; }
 .date-of__link:hover { text-decoration: underline; text-underline-offset: 3px; }
-.event-panel .date-of { padding: 10px 16px; }
 .usual-line { margin: -2px 0 4px; color: var(--ink-2); font-size: var(--text-caption); line-height: 1.4; }
 .usual-line__back { padding: 0; border: 0; background: none; color: var(--accent); font: inherit; font-weight: 600; cursor: pointer; }
 .usual-line__back:hover { text-decoration: underline; text-underline-offset: 3px; }
@@ -230,10 +229,6 @@
 .once-or-regularly__words strong { font-size: var(--text-row); font-weight: 700; }
 .once-or-regularly__words span { color: var(--ink-2); font-size: var(--text-caption); line-height: 1.4; }
 
-.calendar-regular { margin: -24px -32px -48px; }
-.calendar-regular__back { margin: var(--space-md) var(--space-lg) var(--space-2xs); }
-.calendar-regular .regular-page { --gutter: 32px; }
-.calendar-regular .event-head--compact { padding: 22px var(--gutter) 14px; }
 .regular-list__ended .row__title { color: var(--ink-3); font-weight: 400; }
 .calendar-regular__add { display: flex; padding-top: 8px; }
 .title-fields { display: grid; gap: 8px; }

@@ -64,9 +64,10 @@ public static class EventWords
     };
 
     public static string LabelOf(EventOccurrence occurrence, CalendarInfo? calendar) =>
-        occurrence.Fields.Label.Length > 0 ? occurrence.Fields.Label : calendar?.Name ?? "";
+        LabelOf(occurrence.Fields.Label, occurrence.Fields.Title, calendar?.Name ?? "");
 
-    public static string Missing(IEnumerable<string> keys) => string.Join(" · ", keys.Select(EventFieldKeys.Missing));
+    public static string LabelOf(string label, string title, string calendarName) =>
+        label.Trim() is { Length: > 0 } own && !title.Contains(own, StringComparison.CurrentCultureIgnoreCase) ? own : calendarName;
 
     public static string NeedsLine(IEnumerable<string> keys)
     {
@@ -84,7 +85,7 @@ public static class EventWords
         _ => key,
     };
 
-    public static string Span(string from, string to)
+    private static string Span(string from, string to)
     {
         string fromSuffix = from[^2..], toSuffix = to[^2..];
         return fromSuffix == toSuffix ? $"{from[..^2]}–{to}" : $"{from}–{to}";

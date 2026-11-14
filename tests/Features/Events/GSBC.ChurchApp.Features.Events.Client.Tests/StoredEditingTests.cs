@@ -1,4 +1,3 @@
-using GSBC.ChurchApp.Features.Events.Client;
 using GSBC.ChurchApp.Features.Events.Contracts;
 using GSBC.ChurchApp.Platform.Client.Access;
 using GSBC.ChurchApp.Platform.Client.Feeds;
@@ -72,6 +71,26 @@ public sealed class StoredEditingTests
     }
 
     [Fact]
+    public async Task AFileAddedToTheAboutOfflineGoesWithItsSaveAndItsMediaIdLandsInUploaded()
+    {
+        Outbox outbox = new();
+        FileUploads uploads = new(new Shelf(), new Services());
+        StoredEventEditing editing = Editing(outbox, new EventDetail { Id = EventId, CalendarId = Calendar, Fields = new EventFields { Title = "Carols night" } }, uploads);
+
+        MediaRef file = (await uploads.KeepAsync(default, "map.jpg", "image/jpeg", PickableFiles.Pictures)).Media!;
+        EventSave save = EditSaves.SaveOf(EditSaves.Copy((await editing.EventAsync(Calendar, EventId))!));
+        await editing.SaveEventAsync(save, [file]);
+
+        QueuedUpload upload = Assert.Single(Assert.Single(outbox.Queued).Uploads);
+        IReadOnlyList<int> slot = Assert.Single(upload.Slots).Path;
+        string mediaId = Guid.CreateVersion7().ToString();
+        EventSave sent = EventsContractsModel.Instance.Deserialize<EventSave>(new MemoryStream([.. Encode(save), .. Spliced(mediaId, slot)]));
+
+        Assert.Equal([mediaId], sent.Uploaded);
+        Assert.Equal("Carols night", sent.Fields.Title);
+    }
+
+    [Fact]
     public async Task ANewEventDeletedWhileItsPictureWaitsIsNeverSent()
     {
         Outbox outbox = new();
@@ -79,8 +98,11 @@ public sealed class StoredEditingTests
         StoredEventEditing editing = Editing(outbox, new EventDetail { Id = EventId, CalendarId = Calendar }, uploads);
         string newId = Guid.CreateVersion7().ToString();
 
-        EventSave save = new() { CalendarId = Calendar, NewId = newId, Fields = new EventFields { Title = "Picnic" } };
-        save.Fields.Picture = (await uploads.KeepAsync(default, "picnic.png", "image/png", PickableFiles.Pictures)).Media;
+        EventSave save = new()
+        {
+            CalendarId = Calendar, NewId = newId,
+            Fields = new EventFields { Title = "Picnic", Picture = (await uploads.KeepAsync(default, "picnic.png", "image/png", PickableFiles.Pictures)).Media },
+        };
         await editing.SaveEventAsync(save);
         outbox.UploadPending();
         await editing.DeleteEventAsync(new EventRef { CalendarId = Calendar, EventId = newId });
@@ -139,7 +161,7 @@ public sealed class StoredEditingTests
         public void Follow(IEnumerable<string> feeds) { }
 
         public ValueTask<IReadOnlyList<StoredRecord>> ReadPageAsync(FeedPageQuery query) =>
-            ValueTask.FromResult(query.Feed == EventsFeeds.Editing && query.Offset == 0 ? editing : []);
+            ValueTask.FromResult(query is { Feed: EventsFeeds.Editing, Offset: 0 } ? editing : []);
 
         public ValueTask<StoreInfo> InfoAsync() => ValueTask.FromResult(new StoreInfo(0, []));
 

@@ -1,5 +1,3 @@
-@using GSBC.ChurchApp.Platform.Contracts.Content
-@using GSBC.ChurchApp.Platform.Ui.Content
 @inject IEventEditing Editing
 @inject TimeProvider Clock
 @inject Shell Shell
@@ -8,9 +6,9 @@
 <UnsavedGuard Changed="() => Changed" What="this date" Save="SaveBeforeLeavingAsync" />
 <RefreshOn Feeds="Editing.Feeds" On="ChangeKind.Reconnected | ChangeKind.Session | ChangeKind.Access | ChangeKind.Outbox" Changed="_ => RefreshAsync()" />
 
-@if (InPanel)
+@if (OnAPage)
 {
-    <div class="event-panel"><EditScope Edited="() => { }">@Body</EditScope></div>
+    @Desk
 }
 else
 {
@@ -35,6 +33,7 @@ else
     private string _tellBody = "";
     private string _savedOccurrenceId = "";
     private int _aboutVersion;
+    private EventAbout? _about;
     private string? _inBreak;
     private (string By, string At) _kept = ("", "");
     private (string, DateOnly)? _loadedFor;
@@ -42,7 +41,9 @@ else
     [Parameter, EditorRequired] public required string CalendarId { get; set; }
     [Parameter, EditorRequired] public required string RegularEventId { get; set; }
     [Parameter, EditorRequired] public required DateOnly Date { get; set; }
-    [Parameter] public bool InPanel { get; set; }
+    [Parameter] public bool OnAPage { get; set; }
+    [Parameter] public string BackHref { get; set; } = "";
+    [Parameter] public string BackText { get; set; } = "Calendar";
     [Parameter] public EventCallback Closed { get; set; }
     [Parameter] public EventCallback<string> Saved { get; set; }
     [Parameter] public EventCallback OpenRegular { get; set; }
@@ -102,70 +103,134 @@ else
     private RenderFragment Body => @<text>
         @if (_loadProblem is not null)
         {
-            <EmptyState Icon="cloud-off" Title="Can't open this date" Body="@_loadProblem">
-                <Button Variant="ButtonVariant.Quiet" OnClick="Closed">Back</Button>
-            </EmptyState>
+            @CantOpen
         }
         else if (_draft is not { } draft)
         {
-            <EventHead Day="Date" Title="" Compact="InPanel" />
+            <EventHead Day="Date" Title="" />
             <div class="event-body"><Skeleton Shape="SkeletonShape.Lines" Count="5" /></div>
         }
         else
         {
-            <EventHead Day="Date" Label="@(OnDate.Fields.Label.Length > 0 ? OnDate.Fields.Label : CalendarName)" Title="@(OnDate.Fields.Title.Length > 0 ? OnDate.Fields.Title : draft.Every.Fields.Title)"
-                       When="@(draft.NotOnThisDate ? "Not on this date" : EventWords.Join(EventDates.Times(OnDate.StartMinute, OnDate.EndMinute), "this\u00A0date\u00A0only"))" Compact="InPanel"
-                       Actions="@(_kept.By.Length > 0 ? null : DateActions(draft))" />
-            <div class="date-of">
-                <Icon Name="repeat" Size="IconSize.Small" />
-                <p>
-                    One of the @draft.Every.Fields.Title, @draft.RepeatWords.
-                    @if (_kept.By.Length == 0)
-                    {
-                        <button type="button" class="date-of__link" @onclick="OpenRegular">Edit the regular event ›</button>
-                    }
-                </p>
-            </div>
+            @Head(draft, _kept.By.Length > 0 ? null : DateActions(draft))
+            @DateOf(draft)
             @if (_kept.By.Length > 0)
             {
                 <KeptNotice KeptBy="@_kept.By" OpensAt="@_kept.At" />
-                return;
             }
-            <div class="event-body event-body--editing">
-                @if (draft.NotOnThisDate)
-                {
-                    <p class="event-off"><Icon Name="circle-off" Size="IconSize.Small" />Not on this date. People see it as not on, and calendar apps leave it out.</p>
-                }
-                else if (_inBreak is not null)
-                {
-                    <p class="event-off"><Icon Name="circle-off" Size="IconSize.Small" />Not on: it's in @(_inBreak.Length > 0 ? _inBreak : "a break"). Breaks are changed on the regular event.</p>
-                }
-                <TextField Label="Title on this date" Value="@OnDate.Fields.Title" ValueChanged="value => OnDate.Fields.Title = value" MaxLength="120" Required="true"
-                           Placeholder="@draft.Every.Fields.Title" />
-                @Usual(draft, EventFieldKeys.Title, $"Usually “{draft.Every.Fields.Title}”.")
-                <div class="field">
-                    <span class="field__label">Time on this date</span>
-                    <TimesEditor Timed="OnDate" />
+            else
+            {
+                <div class="event-body event-body--editing">@FieldsOf(draft)</div>
+                <div class="editor-foot">
+                    <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+                    <div class="editor-foot__actions">@Saving(draft)</div>
                 </div>
-                @Usual(draft, EventFieldKeys.Time, $"Usually {UsualTime(draft)}.")
-                <PlaceEditor Place="OnDate.Fields.Place" PlaceChanged="place => OnDate.Fields.Place = place" Used="_placesUsed" Missing="@(draft.Needs.Contains(EventFieldKeys.Place))" />
-                @Usual(draft, EventFieldKeys.Place, draft.Every.Fields.Place is { } usual ? $"Usually at {PlaceName(usual)}." : "Usually no place.")
-                <div class="field">
-                    <span class="field__label" aria-hidden="true">About this date</span>
-                    <RichTextEditor @key="_aboutVersion" Label="About this date" Value="@(OnDate.Fields.Description ?? new RichText())" ValueChanged="text => OnDate.Fields.Description = text" Rows="4"
-                                    Placeholder="What's different this time" />
-                </div>
-                @Usual(draft, EventFieldKeys.Description, "This date has its own About.")
-            </div>
-            <div class="editor-foot @(InPanel ? "editor-foot--panel" : "")">
-                <Notice Tone="NoticeTone.Warning" Text="@_problem" />
-                <div class="editor-foot__actions">
-                    <SaveBar Block="!InPanel" Label="Save this date" Busy="_saving" OnSave="() => SaveAsync(draft.NotOnThisDate)" OnCancel="LeaveAsync" Blocked="@(OnDate.Fields.Title.Trim().Length == 0 ? "Give it a title to save it." : null)" State="SaveLine" SavedText="@SavedWords"
-                             WaitingText="@EditWaiting.WaitingWords" FailedText="@EditWaiting.FailedWords" Detail="@Waiting?.Problem" Retry="() => Editing.RetryAsync(ItemKey)" />
-                </div>
-            </div>
+            }
         }
     </text>;
+
+    private RenderFragment Desk => @<text>
+        <TitleBand Title="Change this date" BrowserTitle="@(_draft is null ? null : HeadTitle(_draft))" BackHref="@BackHref" BackText="@BackText"
+                   Lead="@(_draft is { } shown ? $"{EventWords.LongDate(Date)}, one date of the {shown.Every.Fields.Title}" : null)">
+            <Actions>
+                @if (_draft is { } draft && _kept.By.Length == 0)
+                {
+                    <Menu Label="More for this date" Items="DateActions(draft)" />
+                }
+            </Actions>
+        </TitleBand>
+        @if (_loadProblem is not null)
+        {
+            @CantOpen
+        }
+        else if (_draft is not { } draft)
+        {
+            <Skeleton Shape="SkeletonShape.Lines" Count="8" />
+        }
+        else
+        {
+            <WritingDesk>
+                <ChildContent>
+                    <EditScope Edited="() => { }">
+                        @Head(draft, null)
+                        @DateOf(draft)
+                        @if (_kept.By.Length > 0)
+                        {
+                            <KeptNotice KeptBy="@_kept.By" OpensAt="@_kept.At" />
+                        }
+                        else
+                        {
+                            <div class="event-body event-body--editing">@FieldsOf(draft)</div>
+                        }
+                    </EditScope>
+                    <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+                </ChildContent>
+                <Preview>
+                    <EventPreview Day="Date" Label="@HeadLabel" Title="@HeadTitle(draft)" When="@(draft.NotOnThisDate ? null : EventWords.Join(EventDates.Times(OnDate.StartMinute, OnDate.EndMinute), draft.RepeatWords))" Fields="OnDate.Fields" NotOn="draft.NotOnThisDate" />
+                </Preview>
+                <Foot>
+                    @if (_kept.By.Length == 0)
+                    {
+                        @Saving(draft)
+                    }
+                </Foot>
+            </WritingDesk>
+        }
+    </text>;
+
+    private RenderFragment CantOpen => @<EmptyState Icon="cloud-off" Title="Can't open this date" Body="@_loadProblem">
+        <Button Variant="ButtonVariant.Quiet" OnClick="Closed">Back</Button>
+    </EmptyState>;
+
+    private string HeadLabel => EventWords.LabelOf(OnDate.Fields.Label, OnDate.Fields.Title, CalendarName);
+
+    private string HeadTitle(EventDraft draft) => OnDate.Fields.Title.Length > 0 ? OnDate.Fields.Title : draft.Every.Fields.Title;
+
+    private string When(EventDraft draft) =>
+        draft.NotOnThisDate ? "Not on this date" : EventWords.Join(EventDates.Times(OnDate.StartMinute, OnDate.EndMinute), "this\u00A0date\u00A0only");
+
+    private RenderFragment Head(EventDraft draft, IReadOnlyList<MenuItem>? actions) =>
+        @<EventHead Day="Date" Label="@HeadLabel" Title="@HeadTitle(draft)" When="@When(draft)" Compact="OnAPage" Actions="actions" />;
+
+    private RenderFragment DateOf(EventDraft draft) =>
+        @<div class="date-of">
+            <Icon Name="repeat" Size="IconSize.Small" />
+            <p>
+                One of the @draft.Every.Fields.Title, @draft.RepeatWords.
+                @if (_kept.By.Length == 0)
+                {
+                    <button type="button" class="date-of__link" @onclick="OpenRegular">Edit the regular event ›</button>
+                }
+            </p>
+        </div>;
+
+    private RenderFragment FieldsOf(EventDraft draft) => @<text>
+        @if (draft.NotOnThisDate)
+        {
+            <p class="event-off"><Icon Name="circle-off" Size="IconSize.Small" />Not on this date. People see it as not on, and calendar apps leave it out.</p>
+        }
+        else if (_inBreak is not null)
+        {
+            <p class="event-off"><Icon Name="circle-off" Size="IconSize.Small" />Not on: it's in @(_inBreak.Length > 0 ? _inBreak : "a break"). Breaks are changed on the regular event.</p>
+        }
+        <TextField Label="Title on this date" Value="@OnDate.Fields.Title" ValueChanged="value => OnDate.Fields.Title = value" MaxLength="120" Required="true"
+                   Placeholder="@draft.Every.Fields.Title" />
+        @Usual(draft, EventFieldKeys.Title, $"Usually “{draft.Every.Fields.Title}”.")
+        <div class="field">
+            <span class="field__label">Time on this date</span>
+            <TimesEditor Timed="OnDate" />
+        </div>
+        @Usual(draft, EventFieldKeys.Time, $"Usually {UsualTime(draft)}.")
+        <PlaceEditor Place="OnDate.Fields.Place" PlaceChanged="place => OnDate.Fields.Place = place" Used="_placesUsed" Missing="@(draft.Needs.Contains(EventFieldKeys.Place))" />
+        @Usual(draft, EventFieldKeys.Place, draft.Every.Fields.Place is { } usual ? $"Usually at {PlaceName(usual)}." : "Usually no place.")
+        <EventAbout @ref="_about" @key="_aboutVersion" Label="About this date" Text="OnDate.Fields.Description" TextChanged="text => OnDate.Fields.Description = text"
+                    Placeholder="What's different this time" />
+        @Usual(draft, EventFieldKeys.Description, "This date has its own About.")
+    </text>;
+
+    private RenderFragment Saving(EventDraft draft) =>
+        @<SaveBar Block="!OnAPage" Label="Save this date" Busy="_saving" OnSave="() => SaveAsync(draft.NotOnThisDate)" OnCancel="LeaveAsync" Blocked="@(OnDate.Fields.Title.Trim().Length == 0 ? "Give it a title to save it." : null)" State="SaveLine" SavedText="@SavedWords"
+                  WaitingText="@EditWaiting.WaitingWords" FailedText="@EditWaiting.FailedWords" Detail="@Waiting?.Problem" Retry="() => Editing.RetryAsync(ItemKey)" />;
 
     private IReadOnlyList<MenuItem> DateActions(EventDraft draft) =>
     [
@@ -229,7 +294,7 @@ else
         DateSave? before = _base;
         DateSave save = draft.ToDateSave(notOn);
         save.Base = before;
-        EditSent sent = await Editing.SaveDateAsync(save);
+        EditSent sent = await Editing.SaveDateAsync(save, _about?.WaitingFiles());
         _saving = false;
         if (!sent.Succeeded)
         {
@@ -256,7 +321,6 @@ else
         _telling = false;
         _savedWords = done;
         await Saved.InvokeAsync(_savedOccurrenceId);
-        if (!InPanel)
-            await Closed.InvokeAsync();
+        await Closed.InvokeAsync();
     }
 }

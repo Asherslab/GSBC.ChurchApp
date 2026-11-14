@@ -54,7 +54,8 @@ Detail behind [DESIGN.md](../../DESIGN.md) for the news page, a post's page, wri
 - **A link:** a panel under the bar, *Link to* (https, an app page, mailto or tel, else a problem line) with Cancel and *Add the link*. Video link and Emoji open panels the same way.
 - **Pasting:** from Word or Google Docs keeps bold, italic, lists and links, the rest plain; `- `, `# `, `> ` start a list, heading or quote.
 - **Phone:** the bar is one row that slides sideways, Insert first and pinned at its left; Insert opens a sheet of tiles under its group names, the style and ⋯ open sheets of rows. While the keyboard is up the bar docks on it, full width, with 44px-wide buttons, and the page gains room so the text clears it.
-- **Not moved yet:** events' and ministries' *About* and the app's formatted settings keep `RichTextEditor` until the owner decides; moving is a component swap.
+- **Events:** an event's *About* (and *About this date*) is `RichTextField` with `Headings` and `RichTextMedia.Posts` on both sides (`EventAbout`; owner, 2026-11-14, #98).
+- **Not moved yet:** ministries' *About* and the app's formatted settings keep `RichTextEditor` until the owner decides; moving is a component swap.
 - **In chat bubbles:** `RichTextScope.Chat` in `.chat-text`; in your own bubbles links, code and highlight take on-primary. The composer stays plain (*default, owner to review*: a bar didn't fit beside attach and send).
 
 ## Church news desk (admin)

@@ -1,5 +1,4 @@
 @using GSBC.ChurchApp.Platform.Contracts.Media
-@using GSBC.ChurchApp.Platform.Common
 @inject IEventEditing Editing
 @inject TimeProvider Clock
 @inject Shell Shell
@@ -8,9 +7,9 @@
 <UnsavedGuard Changed="() => Changed" What="this regular event" Save="SaveBeforeLeavingAsync" />
 <RefreshOn Feeds="Editing.Feeds" On="ChangeKind.Reconnected | ChangeKind.Session | ChangeKind.Access | ChangeKind.Outbox" Changed="_ => RefreshAsync()" />
 
-@if (InPanel)
+@if (OnAPage)
 {
-    <div class="regular-page"><EditScope Edited="() => { }">@Body</EditScope></div>
+    @Desk
 }
 else
 {
@@ -74,6 +73,7 @@ else
     private enum EditorSheet { None, Repeats, Breaks, Needs, AlsoOn, Showing, KeepOwn, Tell, Delete }
 
     private EventDraft? _draft;
+    private EventFieldsEditor? _fields;
     private IReadOnlyList<RegularDate> _dates = [];
     private CalendarDesk _desk = new();
     private BreakList _breaks = new();
@@ -95,7 +95,9 @@ else
 
     [Parameter, EditorRequired] public required string CalendarId { get; set; }
     [Parameter] public string? RegularEventId { get; set; }
-    [Parameter] public bool InPanel { get; set; }
+    [Parameter] public bool OnAPage { get; set; }
+    [Parameter] public string BackHref { get; set; } = "";
+    [Parameter] public string BackText { get; set; } = "Calendar";
     [Parameter] public string? SelectedDate { get; set; }
     [Parameter] public string BackLabel { get; set; } = "Back";
     [Parameter] public int DatesVersion { get; set; }
@@ -116,7 +118,7 @@ else
 
     private bool MustAsk => DeskCalendar is { Settings.NeedsPublisher: true, CanPublish: false };
 
-    private IReadOnlyList<DeskCalendar> Editable => _desk.Calendars.Where(calendar => calendar.CanEdit && !calendar.Settings.Calendar.ReadOnly).ToList();
+    private IReadOnlyList<DeskCalendar> Editable => _desk.Calendars.Where(calendar => calendar is { CanEdit: true, Settings.Calendar.ReadOnly: false }).ToList();
 
     private IReadOnlyList<FieldOption> CalendarOptions => Editable.Select(calendar => new FieldOption(calendar.Settings.Calendar.Id, calendar.Settings.Calendar.Name)).ToList();
 
@@ -219,91 +221,160 @@ else
     private RenderFragment Body => @<text>
         @if (_loadProblem is not null)
         {
-            <EmptyState Icon="cloud-off" Title="Can't open this regular event" Body="@_loadProblem">
-                <Button Variant="ButtonVariant.Quiet" OnClick="Closed">Back</Button>
-            </EmptyState>
+            @CantOpen
         }
         else if (_draft is not { } draft)
         {
-            <EventHead Title="" Compact="InPanel" />
+            <EventHead Title="" />
             <div class="event-body"><Skeleton Shape="SkeletonShape.Lines" Count="6" /></div>
         }
         else
         {
-            <div class="regular-head">
-                <EventHead Label="@(Fields.Label.Length > 0 ? Fields.Label : CalendarName)" Title="@(Fields.Title.Length > 0 ? Fields.Title : "New regular event")" Compact="InPanel"
-                           Actions="@(_kept.By.Length > 0 ? null : RegularActions(draft))">
-                    <p class="event-head__when regular-head__pattern"><Icon Name="repeat" Size="IconSize.Small" />@Pattern(draft)</p>
-                    @if (InPanel)
-                    {
-                        <p class="event-head__label">@ShowingWords(draft)</p>
-                    }
-                </EventHead>
-                <DateStrip Dates="_dates" Today="Today" Selected="@SelectedDate" Picked="PickAsync" Hint="@(_kept.By.Length > 0 ? "Choose a date to see it" : "Choose a date to change only that date")"
-                           Empty="@(draft.IsNew ? "Its dates show here once it's added." : "It has no more dates. Change how it repeats to carry it on.")" />
-            </div>
+            @Head(draft, _kept.By.Length > 0 ? null : RegularActions(draft))
             @if (_kept.By.Length > 0)
             {
                 <KeptNotice KeptBy="@_kept.By" OpensAt="@_kept.At" />
-                return;
             }
-            <div class="regular-body">
-                @if (_asked)
-                {
-                    <p class="event-saved regular-body__wide" role="status"><Icon Name="check" Size="IconSize.Small" />Asked. The calendar's publishers have been told.</p>
-                }
-                @if (InPanel && _problem is not null)
-                {
-                    <div class="regular-body__wide"><Notice Tone="NoticeTone.Warning" Text="@_problem" /></div>
-                }
-                <section class="regular-col" aria-labelledby="regular-every">
-                    <h2 class="regular-col__head" id="regular-every">Every date</h2>
-                    <p class="regular-col__lead">What each date has, unless that date is changed on its own.</p>
-                    @if (draft.IsNew)
+            else
+            {
+                <div class="regular-body">
+                    @if (_asked)
                     {
-                        <SelectField Label="Calendar" Options="CalendarOptions" Value="@draft.CalendarId" ValueChanged="ChooseCalendar" />
+                        <div class="regular-body__wide">@Asked</div>
                     }
-                    <TitleFields Fields="Fields" CalendarName="@CalendarName" Placeholder="Morning service" />
-                    <TimesEditor Timed="draft.Every" />
-                    <EventFieldsEditor Fields="Fields" PlacesUsed="_placesUsed" PicturesUsed="_pictures" Needs="draft.Needs" />
-                </section>
-                <section class="regular-col" aria-labelledby="regular-runs">
-                    <h2 class="regular-col__head" id="regular-runs">How it runs</h2>
-                    <p class="regular-col__lead">How it repeats, its breaks, and what each date needs before it's on.</p>
-                    <div class="list regular-runs">
-                        <ListRow Chevron="true" Title="Repeats" Trailing="@RepeatsLine(draft)" OnClick="() => OpenAsync(EditorSheet.Repeats)" />
-                        <ListRow Chevron="true" Title="Breaks" Trailing="@BreaksLine(draft)" OnClick="() => OpenAsync(EditorSheet.Breaks)" />
-                        <ListRow Chevron="true" Title="Each date needs" Trailing="@NeedsLine(draft)" OnClick="() => OpenAsync(EditorSheet.Needs)" />
-                        <ListRow Chevron="true" Title="Also shown on" Trailing="@AlsoOnLine(draft)" OnClick="() => OpenAsync(EditorSheet.AlsoOn)" />
-                        <ListRow Chevron="true" Title="Shown in the app" Trailing="@ShowingWords(draft)" OnClick="() => OpenAsync(EditorSheet.Showing)" />
-                        <ToggleRow Title="List every date on the website" Description="Off: the website lists it once under Every week, with its changed dates." Checked="draft.ListEveryDate" CheckedChanged="listed => draft.ListEveryDate = listed" />
-                    </div>
-                    @if (!draft.IsNew && RegularEventId is { } regularEventId && Organisers is not null)
-                    {
-                        @Organisers(regularEventId)
-                    }
-                </section>
-            </div>
-            <div class="editor-foot @(InPanel ? "editor-foot--panel" : "")">
-                @if (!InPanel)
-                {
-                    <Notice Tone="NoticeTone.Warning" Text="@_problem" />
-                }
-                <div class="editor-foot__actions">
-                    <SaveBar Block="!InPanel" New="draft.IsNew" Label="@(draft.IsNew ? "Add the regular event" : "Save every date")" Busy="_saving" OnCancel="LeaveAsync"
-                             Blocked="@(Fields.Title.Trim().Length == 0 ? $"Give it a title to {(draft.IsNew ? "add" : "save")} it." : null)" State="SaveLine" SavedText="@SavedWords"
-                             WaitingText="@EditWaiting.WaitingWords" FailedText="@EditWaiting.FailedWords" Detail="@Waiting?.Problem" Retry="() => Editing.RetryAsync(ItemKey)"
-                             OnSave="() => SaveAsync(keepOwnConfirmed: false)" />
+                    <section class="regular-col" aria-labelledby="regular-every">
+                        <h2 class="regular-col__head" id="regular-every">Every date</h2>
+                        <p class="regular-col__lead">What each date has, unless that date is changed on its own.</p>
+                        @if (draft.IsNew)
+                        {
+                            @CalendarChoice(draft)
+                        }
+                        @EveryDate(draft)
+                    </section>
+                    <section class="regular-col" aria-labelledby="regular-runs">
+                        <h2 class="regular-col__head" id="regular-runs">How it runs</h2>
+                        <p class="regular-col__lead">How it repeats, its breaks, and what each date needs before it's on.</p>
+                        @HowItRuns(draft)
+                    </section>
                 </div>
-            </div>
+                <div class="editor-foot">
+                    <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+                    <div class="editor-foot__actions">@Saving(draft)</div>
+                </div>
+            }
         }
     </text>;
+
+    private RenderFragment Desk => @<text>
+        <TitleBand Title="@(RegularEventId is null ? "New regular event" : "Change the regular event")" BrowserTitle="@(Fields.Title.Length > 0 ? Fields.Title : null)" BackHref="@BackHref" BackText="@BackText"
+                   Lead="@(_draft is { } shown ? EventWords.Join($"On {CalendarName}", ShowingEditor.Words(shown)) : null)">
+            <Actions>
+                @if (_draft is { } draft && _kept.By.Length == 0 && RegularActions(draft) is { Count: > 0 } actions)
+                {
+                    <Menu Label="@($"More for {(Fields.Title.Length > 0 ? Fields.Title : "this regular event")}")" Items="actions" />
+                }
+            </Actions>
+            <LeadContent>@Asked</LeadContent>
+        </TitleBand>
+        @if (_loadProblem is not null)
+        {
+            @CantOpen
+        }
+        else if (_draft is not { } draft)
+        {
+            <Skeleton Shape="SkeletonShape.Lines" Count="8" />
+        }
+        else if (_kept.By.Length > 0)
+        {
+            <WritingDesk>
+                <ChildContent>
+                    @Head(draft, null)
+                    <KeptNotice KeptBy="@_kept.By" OpensAt="@_kept.At" />
+                </ChildContent>
+            </WritingDesk>
+        }
+        else
+        {
+            <WritingDesk SettingsTitle="How it runs" SettingsSummary="@EventWords.Join(RepeatsLine(draft), ShowingEditor.Words(draft))">
+                <ChildContent>
+                    <EditScope Edited="() => { }">
+                        @Head(draft, null)
+                        <div class="event-body event-body--editing">@EveryDate(draft)</div>
+                    </EditScope>
+                    <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+                </ChildContent>
+                <Settings>
+                    <EditScope Edited="() => { }">
+                        @if (draft.IsNew)
+                        {
+                            <Section Grouped="true" Title="Its calendar">@CalendarChoice(draft)</Section>
+                        }
+                        <Section Grouped="true" Title="Its dates and where it shows" Lead="How it repeats, its breaks, and what each date needs before it's on.">@HowItRuns(draft)</Section>
+                    </EditScope>
+                </Settings>
+                <Preview>
+                    <EventPreview Label="@HeadLabel" Title="@HeadTitle" When="@Pattern(draft)" Fields="Fields" />
+                </Preview>
+                <Foot>@Saving(draft)</Foot>
+            </WritingDesk>
+        }
+    </text>;
+
+    private RenderFragment CantOpen => @<EmptyState Icon="cloud-off" Title="Can't open this regular event" Body="@_loadProblem">
+        <Button Variant="ButtonVariant.Quiet" OnClick="Closed">Back</Button>
+    </EmptyState>;
+
+    private RenderFragment? Asked => !_asked ? null :
+        @<p class="event-saved" role="status"><Icon Name="check" Size="IconSize.Small" />Asked. The calendar's publishers have been told.</p>;
+
+    private string HeadLabel => EventWords.LabelOf(Fields.Label, Fields.Title, CalendarName);
+
+    private string HeadTitle => Fields.Title.Length > 0 ? Fields.Title : "New regular event";
+
+    private RenderFragment Head(EventDraft draft, IReadOnlyList<MenuItem>? actions) =>
+        @<div class="regular-head">
+            <EventHead Label="@HeadLabel" Title="@HeadTitle" Compact="OnAPage" Actions="actions">
+                <p class="event-head__when regular-head__pattern"><Icon Name="repeat" Size="IconSize.Small" />@Pattern(draft)</p>
+            </EventHead>
+            <DateStrip Dates="_dates" Today="Today" Selected="@SelectedDate" Picked="PickAsync" Hint="@(_kept.By.Length > 0 ? "Choose a date to see it" : "Choose a date to change only that date")"
+                       Empty="@(draft.IsNew ? "Its dates show here once it's added." : "It has no more dates. Change how it repeats to carry it on.")" />
+        </div>;
+
+    private RenderFragment CalendarChoice(EventDraft draft) =>
+        @<SelectField Label="Calendar" Options="CalendarOptions" Value="@draft.CalendarId" ValueChanged="ChooseCalendar" />;
+
+    private RenderFragment EveryDate(EventDraft draft) => @<text>
+        <TitleFields Fields="Fields" CalendarName="@CalendarName" Placeholder="Morning service" />
+        <TimesEditor Timed="draft.Every" />
+        <EventFieldsEditor @ref="_fields" Fields="Fields" PlacesUsed="_placesUsed" PicturesUsed="_pictures" Needs="draft.Needs" />
+    </text>;
+
+    private RenderFragment HowItRuns(EventDraft draft) => @<text>
+        <div class="list regular-runs">
+            <ListRow Chevron="true" Title="Repeats" Trailing="@RepeatsLine(draft)" OnClick="() => OpenAsync(EditorSheet.Repeats)" />
+            <ListRow Chevron="true" Title="Breaks" Trailing="@BreaksLine(draft)" OnClick="() => OpenAsync(EditorSheet.Breaks)" />
+            <ListRow Chevron="true" Title="Each date needs" Trailing="@NeedsLine(draft)" OnClick="() => OpenAsync(EditorSheet.Needs)" />
+            <ListRow Chevron="true" Title="Also shown on" Trailing="@AlsoOnLine(draft)" OnClick="() => OpenAsync(EditorSheet.AlsoOn)" />
+            <ListRow Chevron="true" Title="Shown in the app" Trailing="@ShowingEditor.Words(draft)" OnClick="() => OpenAsync(EditorSheet.Showing)" />
+            <ToggleRow Title="List every date on the website" Description="Off: the website lists it once under Every week, with its changed dates." Checked="draft.ListEveryDate" CheckedChanged="listed => draft.ListEveryDate = listed" />
+        </div>
+        @if (!draft.IsNew && RegularEventId is { } regularEventId && Organisers is not null)
+        {
+            @Organisers(regularEventId)
+        }
+    </text>;
+
+    private RenderFragment Saving(EventDraft draft) =>
+        @<SaveBar Block="!OnAPage" New="draft.IsNew" Label="@(draft.IsNew ? "Add the regular event" : "Save every date")" Busy="_saving" OnCancel="LeaveAsync"
+                  Blocked="@(Fields.Title.Trim().Length == 0 ? $"Give it a title to {(draft.IsNew ? "add" : "save")} it." : null)" State="SaveLine" SavedText="@SavedWords"
+                  WaitingText="@EditWaiting.WaitingWords" FailedText="@EditWaiting.FailedWords" Detail="@Waiting?.Problem" Retry="() => Editing.RetryAsync(ItemKey)"
+                  OnSave="() => SaveAsync(keepOwnConfirmed: false)" />;
 
     private IReadOnlyList<MenuItem> RegularActions(EventDraft draft) => draft.IsNew
         ? []
         :
         [
-            .. MustAsk && !draft.Asked && !draft.WasShown ? [this.Item("Ask to publish", AskAsync, "send", "The calendar's publishers are told")] : Array.Empty<MenuItem>(),
+            .. MustAsk && draft is { Asked: false, WasShown: false } ? [this.Item("Ask to publish", AskAsync, "send", "The calendar's publishers are told")] : Array.Empty<MenuItem>(),
             this.Item("Delete the regular event", () => OpenAsync(EditorSheet.Delete), "trash-2", danger: true, startsGroup: true),
         ];
 
@@ -350,8 +421,8 @@ else
 
     private string BreaksLine(EventDraft draft)
     {
-        List<string> names = _breaks.Breaks.Where(entry => draft.BreakIds.Contains(entry.Id)).Select(entry => entry.Name)
-            .Concat(draft.OwnBreaks.Select(entry => entry.Name).Where(name => name.Length > 0)).ToList();
+        List<string> names = [.. _breaks.Breaks.Where(entry => draft.BreakIds.Contains(entry.Id)).Select(entry => entry.Name)
+            .Concat(draft.OwnBreaks.Select(entry => entry.Name).Where(name => name.Length > 0))];
         return names.Count == 0 ? "None" : string.Join(", ", names);
     }
 
@@ -366,13 +437,6 @@ else
             .OfType<string>().ToList();
         return names.Count == 0 ? $"Only {CalendarName}" : string.Join(", ", names);
     }
-
-    private static string ShowingWords(EventDraft draft) => draft.Showing switch
-    {
-        Showing.Shown => "Shown",
-        Showing.ShownFrom when draft.ShowFrom is { } from => $"Shown from {EventWords.Date(ChurchTime.DayOf(from))}",
-        _ => "Not shown yet",
-    };
 
     private static string Pattern(EventDraft draft) => EventWords.Join(Capital(draft.RepeatsNow), EventDates.Times(draft.Every.StartMinute, draft.Every.EndMinute));
 
@@ -422,9 +486,9 @@ else
             return;
         }
         _saving = true;
-        bool wasShown = draft.WasShown && !draft.IsNew;
+        bool wasShown = draft is { WasShown: true, IsNew: false };
         save.Base = before;
-        EditSent sent = await Editing.SaveRegularEventAsync(save);
+        EditSent sent = await Editing.SaveRegularEventAsync(save, _fields?.WaitingFiles());
         _saving = false;
         if (!sent.Succeeded)
         {
