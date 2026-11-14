@@ -163,6 +163,7 @@ flowchart LR
         OutreachClient["Features.Outreach.Client"]
         OutreachApi["Features.Outreach.Api"]
         OutreachContracts["Features.Outreach.Contracts"]
+        OutreachRouting["Features.Outreach.Routing"]
     end
 
     subgraph Feedback["Features / Feedback"]
@@ -259,6 +260,7 @@ flowchart LR
         EventsTests["Features.Events.Api.Tests"]
         EventsClientTests["Features.Events.Client.Tests"]
         ReleaseNotesTests["Features.ReleaseNotes.App.Tests"]
+        OutreachRoutingTests["Features.Outreach.Routing.Tests"]
         WebsiteTests["Hosts.Website.Tests"]
         Testing["Testing"]
     end
@@ -401,6 +403,7 @@ flowchart LR
     NewsClientTests --> NewsClient
     WebsiteTests --> HostsWebsite
     ReleaseNotesTests --> ReleaseNotesApp & ReleaseNotesGenerator
+    OutreachRoutingTests --> OutreachRouting
 ```
 
 At run time:
@@ -506,6 +509,7 @@ flowchart LR
 | `GSBC.ChurchApp.Features.Sermons.App` | The phone's Sermons tab: the latest and what you're part-way through, series, speakers, search, a sermon with its audio and video | Yes |
 | `GSBC.ChurchApp.Features.Sermons.Import.Contracts` | **Temporary, removed after go-live** ([sermons-import.md](../features/sermons-import.md)): the `Import` service, its progress messages, its feed and the `sermons.import` permission | Yes |
 | `GSBC.ChurchApp.Features.Sermons.Import.Api` | **Temporary:** reads every sermon off the old website (its listing pages, each sermon's page and its series pages), copies the audio and pictures into our storage and adds the sermons through Sermons.Api, skipping what it brought across before (schema `sermons_import`) | No |
+| `GSBC.ChurchApp.Features.Outreach.Routing` | The outreach route engine, shared by the phone, the admin panel and the API: the street graph of a region and its compact file (`.streets`), Walk now loops, reach and "start somewhere better", coverage per campaign, the area splitter and its edits, route summaries, and following a walk from GPS ([outreach.md](../features/outreach.md), *The route engine*) | Yes |
 | `GSBC.ChurchApp.Features.Sermons.Import.Admin` | **Temporary:** the admin panel's *Import from the website* page: start, live progress, failures to try again | Yes |
 | `GSBC.ChurchApp.Features.Events.Contracts` | The `Events`, `Editing`, `Setup` and `CalendarFiles` services, the iCal link paths, calendars, events, regular events and their patterns, specials, breaks, the dated rows phones hold, the *in your week* rule (`CalendarChoices`), feeds, places and the `events.*` permission nodes | Yes |
 | `GSBC.ChurchApp.Features.Events.Api` | Calendars, one-off and regular events, specials, breaks and showing on other calendars (schema `events`); each regular event worked out into dated rows for 30 days back and 12 months ahead, public calendars' rows in a public feed and the rest in per-row-audience feeds; Ask to publish, *Tell people* and *Needs details*; iCal files for calendar apps and their secret links, calendars copied from an iCal address, and reminders to organisers for missing details | No |
@@ -545,6 +549,7 @@ flowchart LR
 | `GSBC.ChurchApp.Features.People.Api.Tests` | Unit: someone is under 18 until their birthday; which blue cards and training are flagged and when; who may unlink whom; who is left alone when a parent goes. Against Postgres: deleting a parent removes the children left with no parent and no sign-in, and forgets every link, ask and record of whoever goes | No |
 | `GSBC.ChurchApp.Features.Sermons.Api.Tests` | Against Postgres: phones hold the newest 400; listening progress merges by the rule, in any order, and reaches only its person; uploaded audio is stored once; deletes move or release what used the deleted thing; the app-only migration wipes the website's sermons | No |
 | `GSBC.ChurchApp.Features.Sermons.Import.Api.Tests` | Unit, against saved sample pages with made-up names: listing pages, a sermon's page, a series page, a guest speaker's name and honorific out of the title, the service from old and new labels. Against Postgres: a re-run skips what was brought across and retries only what failed; one recording under two addresses is one sermon | No |
+| `GSBC.ChurchApp.Features.Outreach.Routing.Tests` | Unit, over real Albany Creek streets from the POC (`Fixtures/albany-creek.streets`, made by `tools/outreach/poc-fixture.cs`): the file reads back exactly, loops cover both sides, the doc's rules (main roads kept in the network, no empty walking, reach), coverage per campaign, the splitter and its edits, following recorded and synthetic GPS tracks; and the benchmark | No |
 | `GSBC.ChurchApp.Features.Events.Client.Tests` | Unit tests, no I/O: Coming up leaves ordinary regular dates out; a date edited on its own starts from the regular event with only what its special changed, and never changes every date; a date not on says why on its own line; the widening sentence is one full sentence, and silent when nothing widens | No |
 | `GSBC.ChurchApp.Features.ReleaseNotes.App.Tests` | Highlights show once after an update and never on a fresh install; a production build carries no staff notes or staff wording | No |
 | `GSBC.ChurchApp.Hosts.Website.Tests` | Unit tests, no I/O: an event or calendar the API takes away leaves the website, a reset feed forgets what it held, ready only after the first full read; an embed limited to calendars includes events shown on them; weeks and what's still ahead; each page's share address on the website; caching and framing headers | No |
