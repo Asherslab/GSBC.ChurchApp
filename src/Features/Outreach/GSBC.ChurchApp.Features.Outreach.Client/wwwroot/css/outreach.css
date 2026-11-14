@@ -23,3 +23,5 @@
 .outreach-numbers__quiet { margin: var(--space-md) 0 0; color: var(--ink-3); font-size: var(--text-caption); line-height: 1.45; }
 @media (max-width: 1272px) { .outreach-numbers__body { grid-template-columns: minmax(0, 1fr); } }
 .outreach-places__about { margin: var(--space-lg) 0 0; color: var(--ink-3); font-size: var(--text-caption); line-height: 1.45; }
+.outreach-areas__regions { margin: var(--space-2xs) 0 0; color: var(--ink-3); font-size: var(--text-caption); font-variant-numeric: tabular-nums; }
+.outreach-areas__form { display: grid; gap: var(--stack); }
