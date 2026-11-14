@@ -36,7 +36,8 @@
                     @if (Region(context.Value) is { } region)
                     {
                         <div class="area-map">
-                            <MapView @ref="_map" Source="MapSource.Url(region.Map.Url, region.Attribution)" Label="Map of the area" Areas="Shape" Frame="_frame" />
+                            <MapView @ref="_map" Source="MapSource.Url(region.Map.Url, region.Attribution)" Label="Map of the area" Areas="Shape" Frame="_frame"
+                                     Centre="@CentreOf(region)" Zoom="13.5" />
                             <MapSketch Map="_map" Tool="@(_drawing ? MapSketchTool.Polygon : MapSketchTool.None)" OnDrawn="Drawn" OnCancelled="() => _drawing = false" />
                         </div>
                         <div class="area-map__tools">
@@ -119,6 +120,12 @@
     private OutreachRegion? Region(AreasPlace place) =>
         _points.Count > 0 ? OutreachRegions.For(place.Regions, _points.Average(point => point.Lat), _points.Average(point => point.Lng))
         : place.Regions.FirstOrDefault(region => region.Map.Url.Length > 0);
+
+    private static MapPoint CentreOf(OutreachRegion region)
+    {
+        (double lat, double lon) = OutreachRegions.Centre(region);
+        return new MapPoint(lat, lon);
+    }
 
     private static bool SameShape(IReadOnlyList<GeoPoint> a, IReadOnlyList<GeoPoint> b) => a.Select(point => (point.Lat, point.Lng)).SequenceEqual(b.Select(point => (point.Lat, point.Lng)));
 
