@@ -101,14 +101,15 @@ public sealed class RegionMaps(IKeptFiles kept, ILocalPreferences preferences)
 
     private async Task<byte[]?> StreetsBytesAsync(OutreachRegion region)
     {
-        if (kept.IsAvailable)
+        if (!kept.IsAvailable)
+            return null;
+        KeptFile? file = (await kept.ListAsync()).FirstOrDefault(entry => entry.Id == StreetsId(region));
+        if (file is null || file.Url != region.Streets.Url)
         {
-            KeptFile? file = (await kept.ListAsync()).FirstOrDefault(entry => entry.Id == StreetsId(region));
-            if (file is null || file.Url != region.Streets.Url)
-                await KeepAsync(region, false);
-            return file?.State == KeptFileState.Done ? await kept.ReadAsync(StreetsId(region)) : null;
+            await KeepAsync(region, false);
+            file = (await kept.ListAsync()).FirstOrDefault(entry => entry.Id == StreetsId(region)) ?? file;
         }
-        return null;
+        return file?.State == KeptFileState.Done ? await kept.ReadAsync(StreetsId(region)) : null;
     }
 
     private async Task<HashSet<string>> ChosenAsync() =>
