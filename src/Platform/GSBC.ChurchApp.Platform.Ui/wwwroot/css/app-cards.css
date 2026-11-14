@@ -316,3 +316,15 @@
     border-radius: var(--radius-inner);
     object-fit: cover;
 }
+
+.cm-media--card:has(.app-card--box) {
+    max-width: 34rem;
+}
+
+.rich-text .app-card .btn--primary {
+    color: var(--on-primary);
+}
+
+.rich-text .app-card .btn--tinted {
+    color: var(--accent);
+}

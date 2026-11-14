@@ -6,7 +6,7 @@ icon: newspaper
 area: News
 highlight: true
 ---
-A post can now show an event, a sermon, a ministry or a Life Group as a card. You can add the event to your calendar, open the sermon, or join the group right from the post. Cards stay up to date, say when something changes or is cancelled, and work offline.
+A post can show an event, sermon, ministry or Life Group as a card: add it to your calendar or join from the post. Cards stay current and work offline.
 
 ## For staff
 Changed: Insert in the post editor has a new group, From the app: Event, Sermon, Ministry and Life Group. Search for one and it goes into the post as a card. A regular event can show one date, the next date (moving on by itself), or just when it's on. While you write, the card shows as itself. Its buttons let you move it, change how it looks (a side rule, the default; a timetable line; or a box with its picture across the top), replace it, or take it out. If the post is for more people than can see the card, it says so under the card. Anyone who can't see the item just doesn't see the card.
