@@ -1,0 +1,120 @@
+@using GSBC.ChurchApp.Features.Outreach.Client.Planning
+@using GSBC.ChurchApp.Platform.Icons
+
+@if (Planner.Sections.Count == 0)
+{
+    <PaneHead Title="Plan the routes" Lead="Draw the area to cover and it's split into even routes for you to check. Streets this campaign did recently are left out." />
+    @if (CanPlan)
+    {
+        <div class="plan-pane__start">
+            <Button Icon="@AppIcons.DrawArea" OnClick="OnDraw">Draw the area on the map</Button>
+            @if (Areas.Count > 0)
+            {
+                <div class="plan-pane__area">
+                    <SelectField Label="Or start from a saved area" Options="AreaOptions" @bind-Value="_area" />
+                    <Button Variant="ButtonVariant.Quiet" Disabled="@(_area.Length == 0)" OnClick="UseAreaAsync">Use it</Button>
+                </div>
+            }
+        </div>
+        <RouteSize Target="Planner.Target" PerRoute="Planner.PerRoute" OnChange="OnSize" />
+    }
+    else
+    {
+        <p class="field__hint">Only the outreach leaders plan the routes.</p>
+    }
+}
+else
+{
+    <p class="plan-pane__from">@From@if (Planner.NeedingReview > 0) { <text> · </text><Button Variant="ButtonVariant.Link" OnClick="OnNextReview">@(Planner.NeedingReview == 1 ? "1 needs a look" : $"{Planner.NeedingReview} need a look")</Button> }</p>
+    @if (Planner.RestedLetterboxes > 0)
+    {
+        <ToggleRow Title="Include streets done recently" Checked="Planner.RestedToo" CheckedChanged="OnIncludeRested" Disabled="!CanPlan"
+                   Description="@($"{OutreachWords.Plural(Planner.RestedLetterboxes, "letterbox", "letterboxes")} in the area had this campaign within the rest period. They're grey on the map and left out unless you include them.")" />
+    }
+    <DataTable TItem="PlannedSection" Label="The routes" Items="Planner.Sections" Columns="Columns" Key="section => section.Id.ToString()"
+               Selected="Chosen" SelectedChanged="section => OnSelect.InvokeAsync(section.Id)" Class="plan-pane__routes" />
+    @if (CanPlan)
+    {
+        <div class="plan-pane__more">
+            <Button Variant="ButtonVariant.Link" OnClick="() => _sizing = !_sizing">@(_sizing ? "Done" : "Change how big routes are")</Button>
+            @if (Planner is { HasArea: true, AreaId.Length: 0 })
+            {
+                <Button Variant="ButtonVariant.Link" OnClick="() => _naming = !_naming">Save this area for next time</Button>
+            }
+        </div>
+        @if (_sizing)
+        {
+            <RouteSize Target="Planner.Target" PerRoute="Planner.PerRoute" OnChange="SizeAsync" Apply="true" />
+        }
+        @if (_naming)
+        {
+            <div class="plan-pane__area">
+                <TextField Label="Name the area" @bind-Value="_areaName" MaxLength="80" Placeholder="Albany Creek north" />
+                <Button Variant="ButtonVariant.Quiet" Disabled="@(_areaName.Trim().Length == 0)" OnClick="SaveAreaAsync">Save the area</Button>
+            </div>
+        }
+    }
+}
+
+@code {
+    [Parameter, EditorRequired] public required DayPlanner Planner { get; set; }
+    [Parameter, EditorRequired] public required IReadOnlyList<SavedArea> Areas { get; set; }
+    [Parameter] public string AreaName { get; set; } = "";
+    [Parameter] public bool CanPlan { get; set; }
+    [Parameter] public int? Selected { get; set; }
+    [Parameter] public bool Busy { get; set; }
+    [Parameter] public EventCallback<int?> OnSelect { get; set; }
+    [Parameter] public EventCallback OnDraw { get; set; }
+    [Parameter] public EventCallback<SavedArea> OnUseArea { get; set; }
+    [Parameter] public EventCallback<(PlanTarget Target, double PerRoute)> OnSize { get; set; }
+    [Parameter] public EventCallback<bool> OnIncludeRested { get; set; }
+    [Parameter] public EventCallback<string> OnSaveArea { get; set; }
+    [Parameter] public EventCallback OnNextReview { get; set; }
+
+    private string _area = "", _areaName = "";
+    private bool _sizing, _naming;
+
+    private IReadOnlyList<FieldOption> AreaOptions => [new("", "Choose an area"), .. Areas.Select(area => new FieldOption(area.Id, area.Name))];
+
+    private PlannedSection? Chosen => Selected is { } id ? Planner.Section(id) : null;
+
+    private string From
+    {
+        get
+        {
+            string from = AreaName.Length > 0 ? $"From the saved area {AreaName}" : Planner.HasArea ? "From the area you drew" : "The published routes";
+            string size = $"about {RouteSize.Words(Planner.Target, Planner.PerRoute)} a route";
+            return Planner.NeedingReview == 0 ? $"{from} · {size} · all look fine" : $"{from} · {size}";
+        }
+    }
+
+    private static readonly IReadOnlyList<TableColumn<PlannedSection>> Columns =
+    [
+        new("Route", section => @<span class="plan-pane__route">
+            <span class="plan-dot" style="--route: @RouteColours.Of(section.Colour)"></span>
+            <span class="outreach-desk__cell">
+                <span class="outreach-desk__name">@section.Number · @section.Name</span>
+                @if (section.Locked) { <span class="outreach-desk__sub plan-pane__locked"><Icon Name="@AppIcons.Lock" Size="IconSize.Small" />Locked</span> }
+                @if (section.Review is { } review) { <span class="plan-pane__review"><Pill Tone="PillTone.Marker">Needs review</Pill> @review</span> }
+            </span>
+        </span>, section => section.Number),
+        new("Letterboxes", section => @<span>@OutreachWords.Count(section.Letterboxes)</span>, section => section.Letterboxes, "num"),
+        new("Time", section => @<span>@OutreachWords.Minutes(section.Minutes)</span>, section => section.Minutes, "num plan-pane__time"),
+    ];
+
+    private Task UseAreaAsync() => Areas.FirstOrDefault(area => area.Id == _area) is { } area ? OnUseArea.InvokeAsync(area) : Task.CompletedTask;
+
+    private async Task SizeAsync((PlanTarget Target, double PerRoute) size)
+    {
+        _sizing = false;
+        await OnSize.InvokeAsync(size);
+    }
+
+    private async Task SaveAreaAsync()
+    {
+        string name = _areaName.Trim();
+        _naming = false;
+        _areaName = "";
+        await OnSaveArea.InvokeAsync(name);
+    }
+}

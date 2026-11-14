@@ -115,16 +115,10 @@ internal sealed class OutreachPublisher(OutreachDbContext db, OutreachMinistries
 
     public void SkipGone(Guid skip, DateTime now) => db.FeedChanges.Add(Gone(OutreachFeeds.Skips, skip.ToString(), now));
 
-    public void Zone(ExclusionZoneRecord zone, DateTime now) =>
-        db.FeedChanges.Add(Row(OutreachFeeds.Exclusions, ZoneId(zone.Id), now, new Exclusion { Id = zone.Id.ToString(), Area = OutreachViews.Polygon(zone.AreaLats, zone.AreaLngs) }));
+    public void Zone(ExclusionZoneRecord zone, DateTime now) => db.FeedChanges.Add(Row(OutreachFeeds.Exclusions, ZoneId(zone.Id), now, OutreachViews.Exclusion(zone)));
 
     public void Address(ExclusionAddressRecord address, DateTime now) =>
-        db.FeedChanges.Add(Row(OutreachFeeds.Exclusions, AddressId(address.Id), now, new Exclusion
-        {
-            Id = address.Id.ToString(), Address = OutreachViews.Address(address.AddressKey, address.Region, address.Street, address.Side, address.Along,
-                address.Lat, address.Lng, address.ShowMarker ? address.Label : ""),
-            ShowMarker = address.ShowMarker,
-        }));
+        db.FeedChanges.Add(Row(OutreachFeeds.Exclusions, AddressId(address.Id), now, OutreachViews.Exclusion(address)));
 
     public void ZoneGone(Guid zone, DateTime now) => db.FeedChanges.Add(Gone(OutreachFeeds.Exclusions, ZoneId(zone), now));
 

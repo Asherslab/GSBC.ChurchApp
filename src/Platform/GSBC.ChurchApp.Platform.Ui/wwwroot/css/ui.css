@@ -1727,7 +1727,10 @@ span.stage-pipeline__stage { pointer-events: none; }
 
 .map-desk { display: grid; grid-template-columns: minmax(0, 1fr) minmax(360px, 460px); min-height: 0; }
 .map-desk__map { position: relative; min-width: 0; min-height: 0; }
-.map-desk__map > .map-view { position: absolute; inset: 0; }
+.map-desk__map > .map-view { position: absolute; inset: 0; display: grid; grid-template-rows: minmax(0, 1fr) auto; }
+.map-desk__map .map-view__map, .map-desk__map .map-view__overlay { grid-area: 1 / 1; }
+.map-desk__map .map-view__overlay { position: relative; inset: auto; }
+.map-desk__map .map-view__attribution { padding: var(--space-2xs) var(--space-sm) var(--space-xs); }
 .map-desk__pane { display: flex; flex-direction: column; min-width: 0; min-height: 0; border-left: 1px solid var(--line); background: var(--page); }
 .map-desk__body { flex: 1 1 auto; min-height: 0; overflow-y: auto; scrollbar-width: thin; padding: var(--space-xl) var(--space-2xl) var(--space-2xl); }
 .map-desk__foot { flex: none; padding: var(--space-md) var(--space-2xl) var(--space-lg); border-top: 1px solid var(--line); background: var(--page); }

@@ -1,46 +1,63 @@
 const empty = { type: "FeatureCollection", features: [] };
+const fullLabelsFrom = 15;
 const token = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
 const closeEnoughPixels = 12;
 const spacingPixels = 4;
 const drawingEveryMs = 80;
 const hoverEveryMs = 60;
 
-function capsule(map) {
-  if (map.hasImage("tools-capsule")) return;
-  const size = 40, radius = 13, scale = 2;
+function capsule(map, colour, filled) {
+  const id = `tools-capsule-${colour}-${filled ? "filled" : "ring"}`;
+  if (map.hasImage(id)) return id;
+  const size = 40, scale = 2;
   const canvas = document.createElement("canvas");
   canvas.width = canvas.height = size * scale;
   const g = canvas.getContext("2d");
   g.scale(scale, scale);
-  g.fillStyle = "#000";
   g.beginPath();
-  g.roundRect(4, 7, size - 8, 26, radius);
+  g.roundRect(5, 8, size - 10, 24, 12);
+  g.fillStyle = filled ? colour : token("--surface");
   g.fill();
-  map.addImage("tools-capsule", g.getImageData(0, 0, size * scale, size * scale), {
-    pixelRatio: scale, sdf: true, stretchX: [[18 * scale, 22 * scale]], stretchY: [[18 * scale, 22 * scale]], content: [12 * scale, 9 * scale, 28 * scale, 31 * scale],
+  g.lineWidth = 2.5;
+  g.strokeStyle = colour;
+  g.stroke();
+  map.addImage(id, g.getImageData(0, 0, size * scale, size * scale), {
+    pixelRatio: scale, stretchX: [[18 * scale, 22 * scale]], stretchY: [[18 * scale, 22 * scale]], content: [12 * scale, 10 * scale, 28 * scale, 30 * scale],
   });
+  return id;
 }
 
+const addLayer = (map, layer) => {
+  if (map.getLayer(layer.id)) return;
+  try {
+    map.addLayer(layer);
+  } catch {
+  }
+};
+
 function layers(map) {
-  if (map.getSource("tools-sketch")) return;
+  if (map.getLayer("tools-labels")) return;
   const accent = token("--accent"), surface = token("--surface");
-  capsule(map);
-  map.addSource("tools-sketch", { type: "geojson", data: empty });
-  map.addSource("tools-labels", { type: "geojson", data: empty });
-  map.addLayer({ id: "tools-sketch-fill", type: "fill", source: "tools-sketch", filter: ["==", ["geometry-type"], "Polygon"],
+  for (const id of ["tools-sketch", "tools-labels"]) {
+    if (!map.getSource(id)) map.addSource(id, { type: "geojson", data: empty });
+  }
+  for (const id of ["tools-sketch-fill", "tools-sketch-edge", "tools-sketch-points"]) {
+    if (map.getLayer(id)) map.removeLayer(id);
+  }
+  addLayer(map, { id: "tools-sketch-fill", type: "fill", source: "tools-sketch", filter: ["==", ["geometry-type"], "Polygon"],
     paint: { "fill-color": accent, "fill-opacity": 0.1 } });
-  map.addLayer({ id: "tools-sketch-edge", type: "line", source: "tools-sketch", filter: ["!=", ["geometry-type"], "Point"],
+  addLayer(map, { id: "tools-sketch-edge", type: "line", source: "tools-sketch", filter: ["!=", ["geometry-type"], "Point"],
     layout: { "line-cap": "round", "line-join": "round" },
     paint: { "line-color": ["coalesce", ["get", "colour"], accent], "line-width": ["coalesce", ["get", "width"], 2.5],
       "line-dasharray": ["case", ["==", ["get", "dashed"], true], ["literal", [2, 1.5]], ["literal", [1, 0]]] } });
-  map.addLayer({ id: "tools-sketch-points", type: "circle", source: "tools-sketch", filter: ["==", ["geometry-type"], "Point"],
+  addLayer(map, { id: "tools-sketch-points", type: "circle", source: "tools-sketch", filter: ["==", ["geometry-type"], "Point"],
     paint: { "circle-radius": 5, "circle-color": surface, "circle-stroke-color": accent, "circle-stroke-width": 2 } });
-  map.addLayer({ id: "tools-labels", type: "symbol", source: "tools-labels",
+  addLayer(map, { id: "tools-labels", type: "symbol", source: "tools-labels",
     layout: {
-      "icon-image": "tools-capsule", "icon-text-fit": "both", "icon-text-fit-padding": [3, 9, 3, 9], "icon-allow-overlap": true, "text-allow-overlap": true,
-      "text-field": ["get", "text"], "text-font": ["montserrat-semibold"], "text-size": 12, "symbol-sort-key": ["get", "order"],
+      "icon-image": ["get", "image"], "icon-text-fit": "both", "icon-text-fit-padding": [3, 9, 3, 9], "icon-allow-overlap": true, "text-allow-overlap": true, "symbol-z-order": "source",
+      "text-field": ["step", ["zoom"], ["get", "short"], fullLabelsFrom, ["get", "text"]], "text-font": ["montserrat-semibold"], "text-size": 12, "symbol-sort-key": ["get", "order"],
     },
-    paint: { "icon-color": ["get", "colour"], "text-color": ["coalesce", ["get", "ink"], "#ffffff"], "icon-halo-color": surface, "icon-halo-width": 2 } });
+    paint: { "text-color": ["get", "ink"] } });
 }
 
 const pointOf = (e) => [e.lngLat.lng, e.lngLat.lat];
@@ -54,15 +71,23 @@ export function attach(handle, receiver) {
   let lastDrawing = 0;
   let lastHover = 0;
   let labels = empty;
+  let shownLabels = [];
+  const labelFeatures = () => ({ type: "FeatureCollection", features: shownLabels.map((l, i) => ({
+    type: "Feature",
+    properties: { text: l.text, short: l.short ?? l.text, image: capsule(map, l.colour, l.filled), ink: l.filled ? "#ffffff" : token("--ink"), order: l.order ?? i },
+    geometry: { type: "Point", coordinates: l.point } })) });
 
   const sketch = (features) => map.getSource("tools-sketch")?.setData({ type: "FeatureCollection", features });
   const ensure = () => {
-    if (!map.isStyleLoaded()) return;
+    if (!map.getLayer("areas-fill")) return;
     layers(map);
+    labels = labelFeatures();
     map.getSource("tools-labels")?.setData(labels);
   };
+  map.on("style.load", ensure);
   map.on("styledata", ensure);
-  if (map.isStyleLoaded()) ensure(); else map.once("load", ensure);
+  handle.ready().then(ensure);
+  ensure();
 
   const reset = () => {
     points = [];
@@ -186,10 +211,10 @@ export function attach(handle, receiver) {
     },
     setBrushColour: (colour) => { handle.brushColour = colour; },
     setLabels: (json) => {
-      labels = { type: "FeatureCollection", features: JSON.parse(json).map((l, i) => ({
-        type: "Feature", properties: { text: l.text, colour: l.colour, ink: l.ink ?? "#ffffff", order: l.order ?? i },
-        geometry: { type: "Point", coordinates: l.point } })) };
-      map.getSource("tools-labels")?.setData(labels);
+      shownLabels = JSON.parse(json);
+      if (!map.getSource("tools-labels")) return;
+      labels = labelFeatures();
+      map.getSource("tools-labels").setData(labels);
     },
     preview: (json) => {
       const lines = JSON.parse(json);
@@ -199,7 +224,7 @@ export function attach(handle, receiver) {
     dispose: () => {
       document.removeEventListener("keydown", onKey, true);
       for (const [name, fn] of [["click", onClick], ["dblclick", onDoubleClick], ["mousedown", onDown], ["touchstart", onDown], ["mousemove", onMove],
-        ["touchmove", onMove], ["mouseup", onUp], ["touchend", onUp], ["mouseout", onLeave], ["styledata", ensure]]) map.off(name, fn);
+        ["touchmove", onMove], ["mouseup", onUp], ["touchend", onUp], ["mouseout", onLeave], ["styledata", ensure], ["style.load", ensure]]) map.off(name, fn);
       map.dragPan.enable();
       map.doubleClickZoom.enable();
     },

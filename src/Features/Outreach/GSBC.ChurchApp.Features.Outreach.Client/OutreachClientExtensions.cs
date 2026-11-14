@@ -22,6 +22,7 @@ public static class OutreachClientExtensions
             .AddSingleton<OutreachReports>()
             .AddSingleton<OutreachClaims>()
             .AddSingleton<OutreachDayRoutes>()
+            .AddSingleton<OutreachDayBoard>()
             .AddSingleton<MyOutreach>()
             .AddSingleton<OfflineMaps>();
 

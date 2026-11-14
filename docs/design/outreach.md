@@ -3,7 +3,7 @@
 Detail behind [DESIGN.md](../../DESIGN.md) for the admin panel's Outreach page and the walker's side on the phone. Read DESIGN.md first; its rules win.
 
 ## Outreach page (admin)
-`/outreach` and `/outreach/{tab}`, for the leaders of the ministry that runs outreach. Every tab opens on the title band "Outreach" with a lead, then a `TabStrip`: Campaigns, Coverage, Numbers, Places, Follow-ups (counted), Reports (counted), Settings (`OutreachHead`). With no ministry running outreach, the page is the title band over an `EmptyState` that says where to turn it on.
+`/outreach` and `/outreach/{tab}`, for the leaders of the ministry that runs outreach. Every tab opens on the title band "Outreach" with a lead, then a `TabStrip`: Campaigns, Days, Areas, Coverage, Numbers, Places, Follow-ups (counted), Reports (counted), Settings (`OutreachHead`). With no ministry running outreach, the page is the title band over an `EmptyState` that says where to turn it on.
 
 ## Campaigns
 A `Workbench`: the campaigns `DataTable` in the main pane, the chosen campaign in the record pane. *New campaign* sits in the title band's actions for those who may plan.
@@ -26,6 +26,65 @@ The settings in the work area, each group a `Section Grouped` card with short fi
 - **Each group saves by itself:** its own `SaveBar` in its own sand foot, saving or cancelling only that group's fields, with its own warning. A group still being changed keeps what was typed when the page reloads.
 - **Read only:** fields are disabled and each foot says "Only outreach leaders can change these."
 - **Leaving with changes** asks first (`UnsavedGuard`), on Settings and on a campaign.
+
+## Days
+The same `Workbench` as Campaigns. *New outreach day* in the title band.
+- **The table** has two columns. *Outreach day* is the weekday and date with a `Pill` for its state beside it (To plan
+  in marker, On now in accent, Ready and Done quiet) over a caption: the times and the campaign. *Routes* is how many
+  over a caption of letterboxes, or "Being planned" / "None yet". Days still to come first, soonest first, then past days, newest first.
+- **The record pane:** `PaneHead` (Delete in its ⋯), three quiet `StatTile`s (routes, letterboxes, claims), then the way
+  in: one primary button, *Plan the routes*, *Carry on planning* or *Open the routes*, over a hint that says where the
+  day stands. Then Campaign, Day, Starts and Ends two to a line, Where people meet, What people do (`Segmented`), Note
+  for walkers, and the `SaveBar` in the pane's foot.
+
+## The day's routes (the planner)
+A page of its own, `/outreach/days/{id}/plan`: the title band ("Outreach Saturday 6 December", the times, the meeting
+place, the campaign and the totals; back to Outreach days) with `SaveStatus` ("Saves as you go", "Draft saved") and
+*Print the maps*, over a `MapDesk`.
+- **The map:** the brand base map; each route in its colour with a ring label (a page-coloured capsule ringed in the
+  route's colour): the number when zoomed out ("8 · review" when flagged), "4 · 137 · 74 min" from zoom 15 ("· needs
+  review" after it when flagged). Every route keeps its label. Choosing a route fills its label in its colour, on top, and keeps the others to
+  their number; their lines fade toward grey. Streets left out or done recently in ink-3; the
+  area at 12%; the meeting point (the map's navy place marker, *Claude's adaptation*: orange means "you" on the phone)
+  and the chosen route's start. The nine route colours
+  (`RouteColours`) each hold 4.5:1 with white text and 3:1 against the dark map and pane.
+- **The rail** (top left, a white panel on the Pop shadow): select, draw the area, scissors, brush, lasso, eraser, start
+  pin, meeting point, a rule, undo, redo; the tool in use is navy. Tools that need a chosen route are disabled until
+  there is one. Each tool's one-line instruction shows as a navy capsule top centre.
+- **Hover** (top right): the route's number, name, letterboxes, km, time, bundles, its claims on the day, and why it
+  needs review in marker ink.
+- **The chosen route** (bottom centre, above the map's credits): its dot, number, letterboxes and time; Lock, Split in
+  two, and a ⋯ with Rename, Merge with route N and Leave its streets out (red, last). On a map narrower than 640px the
+  bar and the hint sit beside the rail instead of centred.
+- **The pane:** `Segmented` Plan / On the day. Plan with no routes: a `PaneHead` "Plan the routes", *Draw the area on the
+  map*, *Or start from a saved area*, and how big each route is (`RouteSize`: by letterboxes, minutes or bundles, in a
+  sand box). With routes: one caption line (where they came from, the size, and *5 need a look* as a link that picks the
+  next flagged route), *Include streets done recently* when there are any, the routes `DataTable` (dot, number and name
+  over a *Needs review* pill and the reason, letterboxes, time; the time column drops at 1360px and under), then
+  *Change how big routes are* and *Save this area for next time* as links.
+- **The foot:** a status line at the right ("Not published yet: walkers can't see these routes."), then Rebalance and
+  Regenerate as small quiet buttons (left) and *Publish 9 routes* or *Publish the changes* (right). Publishing asks in a `Sheet`, listing
+  routes that still need a look.
+- **On the day:** three quiet `StatTile`s (walking now, % of letterboxes done, routes with no one), an info `Notice`
+  naming the open routes, and the routes table with who has each and a state `Pill` (Open in marker, Walking in accent, Claimed and
+  Done quiet) with a ringed `ProgressTrack` in live aqua once walking (and when done); open routes first. The draft's save status hides.
+  What's walked is drawn on the map.
+- **At 760px and under** the map sits above the pane and hover facts don't show.
+
+## Areas
+The same `Workbench`. The record pane has a map of the area (288px tall, 224px at 1360px and under, at the field radius with a hairline) with *Draw it on the map* / *Draw it again*, Name and
+Note, and the `SaveBar`. A new area starts with the drawing tool on.
+
+## Printed route maps
+One A4 page a route, black on white: the route number at 26pt and its name, the day's line, the facts in bold, the QR
+code top right with "Scan to open it in the app" and the code; the map in a ruled frame (route 3.4pt black, connectors
+dashed, streets 1pt grey, main roads 2.4pt grey, arrows, Start and Meet here, street names with a white halo, scale,
+north, a key under it); the streets in order in two columns; a hairline over the notes; the attribution at the foot.
+
+## How the day is going (phone)
+Masthead "How the day is going" with the day and "on now". Two quiet `StatTile`s, an info `Notice` with the open routes,
+then a `Section` *Routes* of `ListRow`s (route title, who and letterboxes, a state `Pill`, a `ProgressTrack` below),
+open routes first; a row opens the route.
 
 ## Coverage
 The map (`MapView` over the region's map file) fills the work area to the left; the pane is ruled off on the right,

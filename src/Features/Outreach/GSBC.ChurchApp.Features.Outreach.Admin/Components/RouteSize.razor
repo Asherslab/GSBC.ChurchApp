@@ -1,0 +1,87 @@
+@using System.Globalization
+
+<div class="route-size">
+    <Segmented TValue="PlanTarget" Label="Size each route by" ShowLabel="true" Options="Targets" Value="_target" ValueChanged="TargetChangedAsync" />
+    <TextField Label="@Label" Type="number" Min="1" Value="@_amount" ValueChanged="AmountChangedAsync" Hint="@Hint" Problem="@Problem" />
+    @if (Apply)
+    {
+        <Button Variant="ButtonVariant.Quiet" Disabled="@(Amount is null)" OnClick="ApplyAsync">Split the area again</Button>
+        <p class="field__hint">Locked routes stay as they are.</p>
+    }
+</div>
+
+@code {
+    private static readonly IReadOnlyList<SegmentOption<PlanTarget>> Targets =
+        [new(PlanTarget.Letterboxes, "Letterboxes"), new(PlanTarget.Minutes, "Minutes"), new(PlanTarget.Bundles, "Bundles")];
+
+    [Parameter] public PlanTarget Target { get; set; }
+    [Parameter] public double PerRoute { get; set; }
+    [Parameter] public bool Apply { get; set; }
+    [Parameter] public EventCallback<(PlanTarget Target, double PerRoute)> OnChange { get; set; }
+
+    private PlanTarget _target;
+    private string _amount = "";
+    private (PlanTarget, double)? _shown;
+
+    public static string Words(PlanTarget target, double amount) => target switch
+    {
+        PlanTarget.Minutes => OutreachWords.Minutes((int)Math.Round(amount)),
+        PlanTarget.Bundles => OutreachWords.Plural((int)Math.Round(amount), "bundle", "bundles"),
+        _ => OutreachWords.Plural((int)Math.Round(amount), "letterbox", "letterboxes"),
+    };
+
+    private string Label => _target switch
+    {
+        PlanTarget.Minutes => "Minutes a route",
+        PlanTarget.Bundles => "Bundles a route",
+        _ => "Letterboxes a route",
+    };
+
+    private string Hint => _target switch
+    {
+        PlanTarget.Minutes => "Walking there and back included. 60 minutes is about 100 letterboxes.",
+        PlanTarget.Bundles => "Bundles of 50.",
+        _ => "About 100 is an hour's walk.",
+    };
+
+    private double? Amount => double.TryParse(_amount, NumberStyles.Float, CultureInfo.InvariantCulture, out double amount) && amount is >= 1 and <= 5000 ? amount : null;
+
+    private string? Problem => _amount.Length > 0 && Amount is null ? "Give a number from 1 up." : null;
+
+    protected override void OnParametersSet()
+    {
+        if (_shown == (Target, PerRoute))
+            return;
+        _shown = (Target, PerRoute);
+        _target = Target;
+        _amount = PerRoute.ToString("0", CultureInfo.InvariantCulture);
+    }
+
+    private async Task TargetChangedAsync(PlanTarget target)
+    {
+        if (target == _target)
+            return;
+        double hours = _target switch
+        {
+            PlanTarget.Minutes => (Amount ?? 60) / 60,
+            PlanTarget.Bundles => (Amount ?? 2) * 50 / 100,
+            _ => (Amount ?? 100) / 100,
+        };
+        _target = target;
+        _amount = (target switch { PlanTarget.Minutes => hours * 60, PlanTarget.Bundles => Math.Max(1, Math.Round(hours * 2)), _ => hours * 100 })
+            .ToString("0", CultureInfo.InvariantCulture);
+        if (!Apply)
+            await ChangedAsync();
+    }
+
+    private async Task AmountChangedAsync(string amount)
+    {
+        _amount = amount;
+        if (!Apply)
+            await ChangedAsync();
+    }
+
+    private Task ApplyAsync() => ChangedAsync();
+
+    private Task ChangedAsync() => Amount is { } amount ? OnChange.InvokeAsync((_target, amount)) : Task.CompletedTask;
+}

@@ -326,6 +326,7 @@ public sealed class DayRoute
     [ProtoMember(8)] public int Letterboxes { get; set; }
     [ProtoMember(9)] public int Metres { get; set; }
     [ProtoMember(10)] public int Minutes { get; set; }
+    [ProtoMember(11)] public int Colour { get; set; }
 }
 
 [ProtoContract]
@@ -642,6 +643,7 @@ public sealed class OutreachDesk
     [ProtoMember(6)] public List<CampaignTotals> Totals { get; set; } = [];
     [ProtoMember(7)] public int OpenFollowUps { get; set; }
     [ProtoMember(8)] public int NewReports { get; set; }
+    [ProtoMember(9)] public List<DayFacts> DayFacts { get; set; } = [];
 }
 
 [ProtoContract]

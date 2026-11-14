@@ -14,6 +14,12 @@
     {
         @switch (OutreachTabs.Of(Slug))
         {
+            case OutreachTab.Days:
+                <DaysDesk Scope="@scope" Open="@Day" />
+                break;
+            case OutreachTab.Areas:
+                <AreasDesk Scope="@scope" />
+                break;
             case OutreachTab.Coverage:
                 <CoverageDesk Scope="@scope" />
                 break;
@@ -44,13 +50,9 @@
 
     [Parameter] public string? Slug { get; set; }
 
+    [SupplyParameterFromQuery(Name = "day")] public string? Day { get; set; }
+
     private sealed record Place(string? Scope);
 
-    private async Task<Place> ScopeAsync()
-    {
-        RunningMinistries running = await Outreach.MinistriesAsync();
-        return Access.Can(OutreachPermissions.Reports)
-            ? new Place(running.Ministries.FirstOrDefault()?.Id ?? "")
-            : new Place(running.Ministries.FirstOrDefault(ministry => Access.Can(OutreachPermissions.Reports, ministry.Id))?.Id);
-    }
+    private async Task<Place> ScopeAsync() => new(await OutreachScopes.FindAsync(Outreach, Access));
 }

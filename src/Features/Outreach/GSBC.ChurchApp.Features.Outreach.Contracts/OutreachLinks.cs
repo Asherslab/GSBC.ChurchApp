@@ -7,6 +7,11 @@ public static class OutreachLinks
     public const string Desk = "/outreach";
     public const string FollowUps = "/outreach/follow-ups";
     public const string Reports = "/outreach/reports";
+    public const string Days = "/outreach/days";
+
+    public static string DayPlan(string dayId) => $"/outreach/days/{dayId}/plan";
+
+    public static string DayDesk(string dayId) => $"/outreach/days?day={dayId}";
 
     public const string Home = "outreach";
     public const string PlanWalk = "outreach/walk";

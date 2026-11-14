@@ -70,4 +70,21 @@ public static class AppIcons
     public const string MoveLater = "chevron-right";
     public const string ReplaceIt = "refresh";
     public const string TakeOut = "trash";
+    public const string SelectOnMap = "mouse-pointer-2";
+    public const string CutRoutes = "scissors";
+    public const string PaintStreets = "brush";
+    public const string LassoStreets = "lasso";
+    public const string LeaveOut = "eraser";
+    public const string DrawArea = "pentagon";
+    public const string RouteStart = "flag-triangle-right";
+    public const string MeetingPoint = "map-pin";
+    public const string PrintMaps = "printer";
+    public const string Rebalance = "scale";
+    public const string Lock = "lock";
+    public const string Unlock = "lock-open";
+    public const string Merge = "merge";
+    public const string SplitInTwo = "split";
+    public const string Undo = "undo";
+    public const string Redo = "redo";
+    public const string Regenerate = "shuffle";
 }

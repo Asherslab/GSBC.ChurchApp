@@ -567,6 +567,86 @@ The Outreach page's tabs are now Campaigns, Coverage, Numbers, Places, Follow-up
   in both.
 - Taking an area as a claim (the 2026-10-27 draft's *Areas*) isn't built: areas are the planners' for now.
 
+## Planning outreach days (built 2026-11-15)
+
+Built overnight by the planner station while the owner slept. *Claude's default* marks a choice the owner hasn't made.
+
+### Where it is
+
+- **Admin panel → Outreach → Days:** the `Workbench` list of days (when, routes, a state: To plan, Ready, On now, Done)
+  and the chosen day's details: campaign, date, start and end, where people meet, letterboxing or doorknocking, a note
+  for walkers; its routes, letterboxes and claims; and the way into its routes. New outreach day suggests the next
+  Saturday at the last day's times and meeting place.
+- **The day's routes** (`/outreach/days/{id}/plan`): the map and the routes table side by side (`MapDesk`), the same page
+  before and on the day (*Plan* and *On the day*). Decision page `.impeccable/mocks/outreach-planner/`: three
+  structures; the station built C, *the map and the routes table*, because planning and the day itself both happen on
+  the map. A (the day as a board of routes) and B (the day as its printed maps) stay on the page for the owner.
+- **Outreach → Areas:** saved, named areas drawn on the map, with a note; renamed and deleted there, also saved from the
+  planner ("Save this area for next time").
+- **The phone:** *How the day is going* (`outreach/days/{id}/board`), linked from the day's page for anyone with
+  `outreach.reports.view`. Read from the store (Sync), so it works at the meeting point with poor signal.
+
+### Planning
+
+- **Draw the area** (click the corners) or **start from a saved area**; it's split by the engine's splitter into routes of
+  about a target size, in letterboxes (default 100, about an hour), minutes or bundles. The campaign's coverage within
+  the rest period is left out (grey on the map) unless *Include streets done recently* is on. Coverage is judged on the
+  day's own date, so streets done long enough before the day are open again.
+- **Tools** (the rail on the map, as the POC had them): select, draw the area, scissors, brush (drag; a click takes the
+  whole street), lasso (into the chosen route, or a new one), eraser (leave streets out of the day), start pin, meeting
+  point, undo and redo. The chosen route floats a bar: lock or unlock, split in two, rename, merge with another route,
+  leave its streets out. Rebalance and Regenerate leave locked routes alone. Hovering a route shows its letterboxes, km,
+  time, bundles and why it needs review.
+- **Needs review** (from the engine): in pieces; more than 150 m between streets in one go; more than 250 m in all.
+- **The draft saves as you go** (to the day, `SaveDraft`), so a day can be left half planned. Sections are kept as
+  stretches by the streets' stable keys, so a rebuild of the region doesn't lose it (`RouteDraft.Restore`).
+- **Publish** sends the whole set of routes (`PublishRoutes`). Nothing reaches walkers before that, and publishing with
+  routes still flagged asks first, listing them. A route kept from before keeps its six-letter code, so maps already
+  printed still open it; routes taken away lose their claims. A published day with no draft opens its routes for
+  editing as they are.
+- **The meeting point** is set with its pin on the map (*Claude's default*: the day's form only names the place; the
+  centre of the region until a pin is set).
+
+### Printed route maps
+
+*Claude's decision*: made in the admin panel as a real PDF (`PdfDocument` in Platform.Common, `RouteSheets` in
+Outreach.Client), downloaded as a file; no new server path. One A4 page a route, in black for any printer:
+
+- Route number and name, the day, its times and where to meet, letterboxes, bundles to take of what's handed out, time
+  and km; the route's **QR code** (`OutreachLinks.RouteLink`, the app's shared link, `/open/outreach/r/<code>`) with the
+  code printed under it for typing in.
+- **The map is drawn from the street graph** in vector, not from the tiles: every street in view in grey (main roads
+  heavier), the route's streets thick black, walk-through stretches dashed, arrows along the way, the start, the meeting
+  point when it's in view, street names (the route's in bold, others for finding your way, never overlapping or cut by
+  the frame), a scale and north. *Why:* tiles printed in grey wash out on black-and-white printers, and vector stays
+  sharp at any size. The brand base map stays on screen.
+- **The streets in order**, with "both sides" or "one side", "(part)" streets, and letterboxes each; skips and
+  "Don't letterbox" counts; "Keep the houses on your left and you'll cover both sides. Please walk in pairs."; the day's
+  note; the map data attribution.
+- Printing waits for the routes to be published, and for changes to be published, so a map never shows a route walkers
+  can't open. Fonts are the PDF's own Helvetica (*Claude's default*; embedding Montserrat is open).
+- **Open:** a web page with the route's map for someone without the app is a new non-gRPC path and needs the owner's
+  yes (the walking station asked); today the QR without the app lands on the /open page that says how to get it.
+
+### On the day
+
+- The board shows each route's claims (first names), how much is walked (a stretch counts once 90% of it is covered
+  since the day began; `DayProgress`, one rule for the server and the phone), and a state: Open, Claimed (not started),
+  Walking, Done (95%). **Open routes come first**, with "Someone just arrived? Routes 3, 6 and 8 have no one yet."
+- Admin: the same map, with what's walked drawn over the routes, and how many people are walking now. Phone: the list,
+  with no map (*Claude's default*: a leader at the meeting point needs the gaps, one-handed).
+
+### Deleting
+
+- **A day** (*Claude's default*): its routes and claims go, and printed QR codes stop opening them; its walks and the
+  streets they covered stay, as ordinary walks (the streets were walked). The Sheet says so, and warns when it's on now.
+- **A saved area:** days planned from it keep their routes.
+- **A route:** by leaving its streets out, or merging it, then publishing.
+
+### Colours
+
+Nine route colours (`RouteColours`), each 4.5:1 with white label text, on the map and in the tables; the chosen route
+stays full colour and the rest fade.
 ## The phone (built 2026-11-15)
 
 Built overnight by the walking station while the owner slept; *Claude's default* marks what is the owner's to change.

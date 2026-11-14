@@ -11,7 +11,7 @@ global.json                    the SDK (10.0.401, Homebrew's; SPEC §9)
 
 src/
   Platform/                    what every feature stands on; never feature code
-    GSBC.ChurchApp.Platform.Common          (AOT) church time, small shared types
+    GSBC.ChurchApp.Platform.Common          (AOT) church time, small shared types, QR codes and PDFs
     GSBC.ChurchApp.Platform.Permissions     (AOT) permission nodes, scopes, the matcher
     GSBC.ChurchApp.Platform.Contracts       (AOT) Sync contracts, service tiers
     GSBC.ChurchApp.Platform.Client          (AOT) module registration, sync reader, access checks
@@ -239,6 +239,7 @@ flowchart LR
     subgraph Tests
         ArchitectureTests["Architecture.Tests"]
         PermissionsTests["Platform.Permissions.Tests"]
+        CommonTests["Platform.Common.Tests"]
         ContractsTests["Platform.Contracts.Tests"]
         ApiTests["Platform.Api.Tests"]
         GatewayTests["Features.Accounts.Gateway.Tests"]
@@ -262,8 +263,8 @@ flowchart LR
         EventsTests["Features.Events.Api.Tests"]
         EventsClientTests["Features.Events.Client.Tests"]
         ReleaseNotesTests["Features.ReleaseNotes.App.Tests"]
-        OutreachMapsTests["Features.Outreach.Maps.Api.Tests"]
         OutreachClientTests["Features.Outreach.Client.Tests"]
+        OutreachMapsTests["Features.Outreach.Maps.Api.Tests"]
         OutreachRoutingTests["Features.Outreach.Routing.Tests"]
         WebsiteTests["Hosts.Website.Tests"]
         Testing["Testing"]
@@ -339,7 +340,7 @@ flowchart LR
     PrayerContracts --> PlatformContracts
     OutreachApp --> OutreachClient
     OutreachAdmin --> OutreachClient
-    OutreachClient --> OutreachContracts & OutreachRouting & OutreachMapsContracts & PlatformClient & PlatformUi & PlatformCommon
+    OutreachClient --> OutreachContracts & OutreachMapsContracts & OutreachRouting & PlatformClient & PlatformUi & PlatformCommon
     OutreachApi --> OutreachContracts & PlatformApi & PlatformCommon
     OutreachContracts --> PlatformContracts
     FeedbackApp --> FeedbackClient
@@ -385,6 +386,7 @@ flowchart LR
 
     ArchitectureTests --> HostsApi & HostsGateway & HostsWebsite & HostsAdmin & PlatformUi & MinistriesClient
     PermissionsTests --> PlatformPermissions
+    CommonTests --> PlatformCommon
     ContractsTests --> PlatformContracts
     ApiTests --> PlatformApi & PlatformClient & Testing
     GatewayTests --> AccountsGateway & Testing
@@ -409,8 +411,8 @@ flowchart LR
     NewsClientTests --> NewsClient
     WebsiteTests --> HostsWebsite
     ReleaseNotesTests --> ReleaseNotesApp & ReleaseNotesGenerator
-    OutreachMapsTests --> OutreachMapsApi & Testing
     OutreachClientTests --> OutreachClient
+    OutreachMapsTests --> OutreachMapsApi & Testing
     OutreachRoutingTests --> OutreachRouting
 ```
 
@@ -433,7 +435,7 @@ flowchart LR
 
 | Project | What it is and does | AOT |
 |---|---|---|
-| `GSBC.ChurchApp.Platform.Common` | Church time (`Australia/Brisbane`) and small shared types | Yes |
+| `GSBC.ChurchApp.Platform.Common` | Church time (`Australia/Brisbane`), small shared types, and printing: QR codes (`QrCode`) and simple vector PDFs (`PdfDocument`: A4 pages, lines, shapes, Helvetica text) | Yes |
 | `GSBC.ChurchApp.Platform.Permissions` | Permission nodes, scopes, patterns and the grant matcher; the same code decides on server and phone | Yes |
 | `GSBC.ChurchApp.Platform.Contracts` | Tier attributes (`[Public]`, `[SignedIn]`, `[Requires]`, `[AppInstall]`), the Sync service contract, and configuration's descriptors (areas, surfaces, setting fields, audiences, layout composition, and the Hub area), `MediaRef` (how any feature's record points at an image or file), rich text (`RichText`, its parser and save rules), the Hub's tiles, grid and icon cleaning (`HubGrid`, `SvgIcons`), places (`DestinationPage`, `DestinationKind`), notification kinds, and usage measures | Yes |
 | `GSBC.ChurchApp.Platform.Client` | Client plumbing: module registry and startup tasks, `IAccess`, the session signal and `IPeopleDirectory` (how features cooperate without referencing each other), `PersonTab` and `AccountSection` (what features add to a person's page and to your Account page), the native bridge, local feed reads (`ILocalFeeds`), the outbox (`IOutbox`, with quiet entries that never show), `IClientDiagnostics` and `CurrentPage` (errors and failed calls, seen by the channel every feature calls through), `ISurfaceLayout` (an area as staff arranged it), `ClientSignals` (every change the client knows about, in one event), media files (`IMediaFiles`: the phone's file cache, or the URL in a browser; `MediaPrefetch` rules; the `MediaPicker` registration), and the audio player (`IAudioPlayer`: the native player on the phone, an audio element in a browser, with a playback journal that survives the app being closed) | Yes |
@@ -497,7 +499,7 @@ flowchart LR
 | `GSBC.ChurchApp.Features.Prayer.Admin` | The admin panel's Prayer page: the pastoral inbox and choosing what the prayer wall shows | Yes |
 | `GSBC.ChurchApp.Features.Outreach.Contracts` | The `Outreach` (app writes: walks recorded as they go, No junk mail, doors, reports, route claims) and `OutreachAdmin` (staff) services, the settings the route engine runs on, campaigns, coverage, days and routes, the `outreach.*` feeds and permission nodes, the shared rules (dates, polygons, stretches) | Yes |
 | `GSBC.ChurchApp.Features.Outreach.Api` | Outreach (schema `outreach`): campaigns with their own coverage, settings, walks and their plausibility, coverage per street side and its rest period and expiry, No junk mail and hostile marks, doorknock records and follow-ups for the outreach leaders, reports with a photo, exclusions, outreach days, routes and claims, totals and leaderboards, the Outreach ministry's roles, forgetting a deleted person | No |
-| `GSBC.ChurchApp.Features.Outreach.Client` | Outreach's gRPC calls for the admin panel, map areas included, and loading a region's streets for the admin coverage map; `EngineInputs`, which turns synced or fetched records into the route engine's inputs and back (stretches, coverage, marks, settings, addresses); the printed route maps | Yes |
+| `GSBC.ChurchApp.Features.Outreach.Client` | Outreach's gRPC calls for the admin panel, map areas included, and loading a region's streets (`StreetGraphLoader`) for the planner and the coverage map; `EngineInputs`, which turns synced or fetched records into the route engine's inputs and back (stretches, coverage, marks, settings, addresses); the day planner and the printed route maps; on the phone, the outreach store, regions kept as files, planning a walk, the walk session that records as it goes, claims, reports and the Home tile | Yes |
 | `GSBC.ChurchApp.Features.Outreach.App` | Outreach on the phone: the Outreach page, planning a walk from your door, the walk and its end, doorknocking, outreach days and a route from its QR code, My outreach and Offline maps; syncs the outreach feeds and regions | Yes |
 | `GSBC.ChurchApp.Features.Outreach.Admin` | The admin panel's Outreach page: campaigns and settings | Yes |
 | `GSBC.ChurchApp.Features.Feedback.Contracts` | The `Feedback` (sending from the app) and `Desk` (staff) services, tickets, statuses and limits, the `feedback.desk` feed, the `feedback.*` permissions and the new-feedback notification | Yes |
@@ -559,12 +561,13 @@ flowchart LR
 | `GSBC.ChurchApp.Features.People.Api.Tests` | Unit: someone is under 18 until their birthday; which blue cards and training are flagged and when; who may unlink whom; who is left alone when a parent goes. Against Postgres: deleting a parent removes the children left with no parent and no sign-in, and forgets every link, ask and record of whoever goes | No |
 | `GSBC.ChurchApp.Features.Sermons.Api.Tests` | Against Postgres: phones hold the newest 400; listening progress merges by the rule, in any order, and reaches only its person; uploaded audio is stored once; deletes move or release what used the deleted thing; the app-only migration wipes the website's sermons | No |
 | `GSBC.ChurchApp.Features.Sermons.Import.Api.Tests` | Unit, against saved sample pages with made-up names: listing pages, a sermon's page, a series page, a guest speaker's name and honorific out of the title, the service from old and new labels. Against Postgres: a re-run skips what was brought across and retries only what failed; one recording under two addresses is one sermon | No |
-| `GSBC.ChurchApp.Features.Outreach.Maps.Api.Tests` | Unit: an address lands on its own street's side; businesses skipped and mixed use checked; footpaths beside a road left out and those through a park kept; a rebuilt region's version; a region's map file holds exactly its tiles | No |
 | `GSBC.ChurchApp.Features.Outreach.Client.Tests` | Unit, over the Albany Creek fixture: records and the engine agree both ways (stretches, marks), and the printed route maps | No |
+| `GSBC.ChurchApp.Features.Outreach.Maps.Api.Tests` | Unit: an address lands on its own street's side; businesses skipped and mixed use checked; footpaths beside a road left out and those through a park kept; a rebuilt region's version; a region's map file holds exactly its tiles | No |
 | `GSBC.ChurchApp.Features.Outreach.Routing.Tests` | Unit, over real Albany Creek streets from the POC (`Fixtures/albany-creek.streets`, made by `tools/outreach/poc-fixture.cs`): the file reads back exactly, loops cover both sides, the doc's rules (main roads kept in the network, no empty walking, reach), coverage per campaign, the splitter and its edits, following recorded and synthetic GPS tracks; and the benchmark | No |
 | `GSBC.ChurchApp.Features.Events.Client.Tests` | Unit tests, no I/O: Coming up leaves ordinary regular dates out; a date edited on its own starts from the regular event with only what its special changed, and never changes every date; a date not on says why on its own line; the widening sentence is one full sentence, and silent when nothing widens | No |
 | `GSBC.ChurchApp.Features.ReleaseNotes.App.Tests` | Highlights show once after an update and never on a fresh install; a production build carries no staff notes or staff wording | No |
 | `GSBC.ChurchApp.Hosts.Website.Tests` | Unit tests, no I/O: an event or calendar the API takes away leaves the website, a reset feed forgets what it held, ready only after the first full read; an embed limited to calendars includes events shown on them; weeks and what's still ahead; each page's share address on the website; caching and framing headers | No |
+| `GSBC.ChurchApp.Platform.Common.Tests` | Unit: QR codes match a reference encoder module for module, and a printed PDF is well formed with its pages, text and fonts | No |
 | `GSBC.ChurchApp.Platform.Contracts.Tests` | Sync's wire format, pinned as bytes the Swift codec's tests decode too; how the phone composes an area from defaults, placements, dates and audience; rich text refuses unsafe links and foreign images, and HTML is only text | No |
 | `GSBC.ChurchApp.Testing` | What the tests share ([testing.md](testing.md)): `TestDatabase` gives each test its own database on one Postgres for the whole run, which every test project joins and which stops by itself once no test has used it for 30 seconds; `TestBuckets` gives each test its own buckets on one S3 server; `TestClock` is the time tests run at | No |
 

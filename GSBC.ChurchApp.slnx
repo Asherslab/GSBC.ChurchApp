@@ -249,8 +249,8 @@
   </Folder>
   <Folder Name="/tests/Features/Outreach/">
     <Project Path="tests/Features/Outreach/GSBC.ChurchApp.Features.Outreach.Api.Tests/GSBC.ChurchApp.Features.Outreach.Api.Tests.csproj" />
-    <Project Path="tests/Features/Outreach/GSBC.ChurchApp.Features.Outreach.Maps.Api.Tests/GSBC.ChurchApp.Features.Outreach.Maps.Api.Tests.csproj" />
     <Project Path="tests/Features/Outreach/GSBC.ChurchApp.Features.Outreach.Client.Tests/GSBC.ChurchApp.Features.Outreach.Client.Tests.csproj" />
+    <Project Path="tests/Features/Outreach/GSBC.ChurchApp.Features.Outreach.Maps.Api.Tests/GSBC.ChurchApp.Features.Outreach.Maps.Api.Tests.csproj" />
     <Project Path="tests/Features/Outreach/GSBC.ChurchApp.Features.Outreach.Routing.Tests/GSBC.ChurchApp.Features.Outreach.Routing.Tests.csproj" />
   </Folder>
   <Folder Name="/tests/Features/Prayer/">
@@ -274,6 +274,7 @@
   </Folder>
   <Folder Name="/tests/Platform/">
     <Project Path="tests/Platform/GSBC.ChurchApp.Platform.Api.Tests/GSBC.ChurchApp.Platform.Api.Tests.csproj" />
+    <Project Path="tests/Platform/GSBC.ChurchApp.Platform.Common.Tests/GSBC.ChurchApp.Platform.Common.Tests.csproj" />
     <Project Path="tests/Platform/GSBC.ChurchApp.Platform.Contracts.Tests/GSBC.ChurchApp.Platform.Contracts.Tests.csproj" />
     <Project Path="tests/Platform/GSBC.ChurchApp.Platform.Permissions.Tests/GSBC.ChurchApp.Platform.Permissions.Tests.csproj" />
   </Folder>

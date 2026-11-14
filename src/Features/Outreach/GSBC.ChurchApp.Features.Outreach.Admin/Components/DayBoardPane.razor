@@ -1,0 +1,70 @@
+@using GSBC.ChurchApp.Features.Outreach.Client.Planning
+@inject TimeProvider Time
+
+<div class="outreach-desk__totals">
+    <StatTile Value="@OutreachWords.Count(Board.Walking)" Label="walking now" Quiet="true" />
+    <StatTile Value="@($"{DonePercent}%")" Label="of letterboxes done" Quiet="true" />
+    <StatTile Value="@OutreachWords.Count(Open.Count)" Label="@(Open.Count == 1 ? "route with no one" : "routes with no one")" Quiet="true" />
+</div>
+@if (Open.Count > 0 && Time.GetUtcNow().UtcDateTime < Day.EndsAt)
+{
+    <Notice Tone="NoticeTone.Info" Text="@Gaps" />
+}
+<DataTable TItem="BoardLine" Label="How each route is going" Items="Lines" Columns="Columns" Key="line => line.Route.Id"
+           Selected="Chosen" SelectedChanged="line => OnSelect.InvokeAsync(line.Section?.Id)" Class="day-board">
+    <Empty>
+        <EmptyState Icon="map" Title="No routes published yet" Body="Publish the routes and they show here, with who has each one and how much is done." />
+    </Empty>
+</DataTable>
+
+@code {
+    [Parameter, EditorRequired] public required DayBoard Board { get; set; }
+    [Parameter, EditorRequired] public required DayPlanner Planner { get; set; }
+    [Parameter, EditorRequired] public required OutreachDay Day { get; set; }
+    [Parameter] public int? Selected { get; set; }
+    [Parameter] public EventCallback<int?> OnSelect { get; set; }
+
+    private sealed record BoardLine(DayRoute Route, RouteProgress Progress, PlannedSection? Section, BoardState State, double Done);
+
+    private IReadOnlyList<BoardLine> Lines => Board.Routes.Select(route =>
+    {
+        RouteProgress progress = Board.Progress.FirstOrDefault(found => found.RouteId == route.Id) ?? new RouteProgress { RouteId = route.Id, Letterboxes = route.Letterboxes };
+        double done = progress.Letterboxes == 0 ? 0 : (double)progress.LetterboxesDone / progress.Letterboxes;
+        return new BoardLine(route, progress, Planner.Sections.FirstOrDefault(section => section.Number == route.Number), DayBoards.State(progress.ClaimedBy.Count, done), done);
+    }).OrderBy(line => line.State).ThenBy(line => line.Done).ThenBy(line => line.Route.Number).ToList();
+
+    private IReadOnlyList<BoardLine> Open => Lines.Where(line => line.State == BoardState.Open).ToList();
+
+    private BoardLine? Chosen => Selected is { } id ? Lines.FirstOrDefault(line => line.Section?.Id == id) : null;
+
+    private int DonePercent => DayBoards.Percent(Board.Progress.Sum(progress => progress.LetterboxesDone), Board.Progress.Sum(progress => progress.Letterboxes));
+
+    private string Gaps => DayBoards.Gaps(Open.Select(line => line.Route.Number).ToList());
+
+    private static readonly IReadOnlyList<TableColumn<BoardLine>> Columns =
+    [
+        new("Route", line => @<span class="plan-pane__route">
+            <span class="plan-dot" style="--route: @RouteColours.Of(line.Route.Colour)"></span>
+            <span class="outreach-desk__cell">
+                <span class="outreach-desk__name">@line.Route.Number · @line.Route.Name</span>
+                <span class="outreach-desk__sub">@Who(line.Progress)</span>
+            </span>
+        </span>, line => line.Route.Number),
+        new("Now", line => @<span class="day-board__done">
+            <Pill Tone="@Tone(line.State)">@DayBoards.Words(line.State, line.Done)</Pill>
+            @if (line.State is BoardState.Walking or BoardState.Done) { <ProgressTrack Fraction="line.Done" Label="@($"Route {line.Route.Number} done")" /> }
+        </span>, line => line.Done, "day-board__done-cell"),
+    ];
+
+    private static PillTone Tone(BoardState state) => state switch
+    {
+        BoardState.Open => PillTone.Marker,
+        BoardState.Walking => PillTone.Accent,
+        _ => PillTone.Quiet,
+    };
+
+    private static string Who(RouteProgress progress) =>
+        progress.ClaimedBy.Count == 0 ? "No one yet"
+        : progress.ClaimedBy.Count <= 3 ? string.Join(", ", progress.ClaimedBy)
+        : $"{string.Join(", ", progress.ClaimedBy.Take(2))} + {progress.ClaimedBy.Count - 2}";
+}
