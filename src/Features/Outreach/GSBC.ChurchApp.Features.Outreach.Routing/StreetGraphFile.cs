@@ -255,23 +255,23 @@ public static class StreetGraphFile
 
     private sealed class PayloadWriter
     {
-        private readonly MemoryStream buffer = new();
+        private readonly MemoryStream _buffer = new();
 
-        public void Byte(byte value) => buffer.WriteByte(value);
+        public void Byte(byte value) => _buffer.WriteByte(value);
 
         public void Unsigned(ulong value)
         {
             while (value >= 0x80)
             {
-                buffer.WriteByte((byte)(value | 0x80));
+                _buffer.WriteByte((byte)(value | 0x80));
                 value >>= 7;
             }
-            buffer.WriteByte((byte)value);
+            _buffer.WriteByte((byte)value);
         }
 
         public void Signed(long value) => Unsigned((ulong)((value << 1) ^ (value >> 63)));
 
-        public void Double(double value) => buffer.Write(BitConverter.GetBytes(value));
+        public void Double(double value) => _buffer.Write(BitConverter.GetBytes(value));
 
         public void Bounds(GeoBounds bounds)
         {
@@ -285,21 +285,21 @@ public static class StreetGraphFile
         {
             byte[] bytes = Encoding.UTF8.GetBytes(value);
             Unsigned((ulong)bytes.Length);
-            buffer.Write(bytes);
+            _buffer.Write(bytes);
         }
 
         public void CopyTo(Stream output)
         {
-            buffer.Position = 0;
-            buffer.CopyTo(output);
+            _buffer.Position = 0;
+            _buffer.CopyTo(output);
         }
     }
 
     private sealed class PayloadReader(byte[] bytes)
     {
-        private int at;
+        private int _at;
 
-        public byte Byte() => at < bytes.Length ? bytes[at++] : throw Truncated();
+        public byte Byte() => _at < bytes.Length ? bytes[_at++] : throw Truncated();
 
         public ulong Unsigned()
         {
@@ -323,7 +323,7 @@ public static class StreetGraphFile
         public int Count()
         {
             ulong value = Unsigned();
-            return value <= int.MaxValue && (long)value <= bytes.Length - at + 1L ? (int)value : throw Truncated();
+            return value <= int.MaxValue && (long)value <= bytes.Length - _at + 1L ? (int)value : throw Truncated();
         }
 
         public int Index(int limit)
@@ -334,10 +334,10 @@ public static class StreetGraphFile
 
         public double Double()
         {
-            if (at + 8 > bytes.Length)
+            if (_at + 8 > bytes.Length)
                 throw Truncated();
-            double value = BitConverter.ToDouble(bytes, at);
-            at += 8;
+            double value = BitConverter.ToDouble(bytes, _at);
+            _at += 8;
             return value;
         }
 
@@ -346,10 +346,10 @@ public static class StreetGraphFile
         public string String()
         {
             int length = Count();
-            if (at + length > bytes.Length)
+            if (_at + length > bytes.Length)
                 throw Truncated();
-            string value = Encoding.UTF8.GetString(bytes, at, length);
-            at += length;
+            string value = Encoding.UTF8.GetString(bytes, _at, length);
+            _at += length;
             return value;
         }
 

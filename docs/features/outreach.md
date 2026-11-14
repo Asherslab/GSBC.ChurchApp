@@ -201,6 +201,86 @@ Checked against each publisher's own metadata, 2026-10-27:
 
 The app shows the attributions under the map and in More → About.
 
+## The route engine (built 2026-11-14)
+
+`GSBC.ChurchApp.Features.Outreach.Routing`: one AOT-safe C# library with no feature or host dependencies, used by the
+phone (from the synced street graph), the admin panel (the splitter and its tools) and the API. Its tests run over the
+POC's real Albany Creek data, converted by `tools/outreach/poc-fixture.cs`. This section records what the engine does,
+and where it differs from the draft above; the draft's rules still hold unless a line here says otherwise.
+
+### The street graph and its file
+
+- **A region's streets** are nodes (with their OpenStreetMap ids), streets between them (name, road kind, shape,
+  length) and letterboxes along each side. Each letterbox has its own kind (house, unit, check, skip), its position
+  along the street (a fraction, stored to 1/10,000), a label for skips and checks ("shop", "check: mixed use") and an
+  optional address key. Sides are left and right of the street's drawing direction, which is the OpenStreetMap way's.
+- **Stable keys** (agreed with the data and foundations stations): a street is `way/from node/to node` in OpenStreetMap
+  ids, so a rebuild with unchanged streets keeps every coverage record; a stretch is that key, a side, and from and to
+  in thousandths; a letterbox's address key is a 32-bit hash of the Queensland address's own id, which No junk mail,
+  hostile and excluded addresses key on (with street, side and position as the fallback). In-memory indices are never
+  stored.
+- **The file** (`.streets`, deflated, delta-coded): Albany Creek's 4,338 streets and 17,839 letterboxes are 152 KB,
+  against the draft's 450 KB estimate. **Regions** are cut by the data job: a 10 km core and 2 km of overlap on each
+  side. The phone uses the region whose core holds the start; it doesn't stitch regions together, and the overlap is
+  enough for a two-hour walk. Shared OpenStreetMap keys make a street in two regions one coverage record.
+
+### Walk now
+
+- **Unchanged:** both sides of every street, the sharpest left at each corner, main roads walked but never delivered
+  (and kept in the network: with trunk roads 99% of homes are in one piece, without them under 90%), no street added
+  that needs more than 150 m of empty walking, 4 km/h, 8 s a house and 3 s a unit, bundles of 50 with a spare.
+  Measured on the fixture: an hour from church is 3.0 km and 109 letterboxes.
+- **Changed:** the loop grows street by street from a frontier ordered by distance from its first street, instead of
+  the POC's repeated sweeps; same rules, a single pass. The walk to the first open street is limited to **500 m**
+  (`MaxApproachMetres`, a setting). Past that, nearby is done: the walk is empty, the reach note says so ("all done
+  nearby", naming the streets done recently) and offers the nearest start with room for the whole walk and how far
+  away it is. The POC would walk any distance to the first street.
+- **Coverage is per letterbox, per campaign.** Each carried campaign's coverage within the rest period (from
+  settings, default 91 days) marks the letterboxes it covers; a letterbox is open while any carried campaign hasn't
+  covered it, so carrying carols flyers and general tracts walks a street either still needs. A street half covered
+  is still walked for its open half. A doorknock's "no answer" reopens that door for the campaign.
+- **Marks:** No junk mail is skipped when letterboxing but still knocked on; hostile is skipped for both; excluded
+  addresses are skipped, and shown as "Don't letterbox" only when staff chose to; a street whose middle is inside an
+  exclusion zone is walked through, never delivered.
+- **Doorknocking** uses the same planner with its own pace: 90 s a house and 60 s a unit (to tune in settings).
+- **Reach** works as the draft says (short by 10%, long by 25%, the two ways to get more, at most two reasons), with
+  the pockets worked out around the walk only, not over the whole region. "The edge of the area" is the region's edge.
+
+### Outreach days: the splitter and its tools
+
+The splitter is the POC's, with its rules unchanged (even sections grown from seeds, joined only through connectors up
+to 125 m, scraps under a third merged into a neighbour, then balanced). A cut-off group stays its own route. **The
+draft is a value:** every tool (merge, scissors, brush with ends snapping to a corner within 15 m, lasso, eraser,
+lock, rename, start pin, rebalance, regenerate) returns a new draft and leaves the old one as it was, and undo and redo
+step through the last 50. Sections are saved as stretches, so a draft survives a rebuild of the streets.
+
+**Route summaries** give the walking screen and the printed map the same things: each step (one side of one street),
+its letterboxes, time and line, its markers (Skip: shop, Check, No junk mail, Don't letterbox; never why), the street
+list with sides, distance, bundles and time.
+
+### Following a walk
+
+The follower turns GPS fixes into the street sides actually walked, whatever the plan was. Fixes worse than 40 m are
+ignored; fixes up to 50 m apart are joined straight, and gaps up to 600 m (a phone in a pocket) are bridged along the
+streets when the detour and the speed are plausible. Each point is matched to a street by distance, heading and
+staying on the street it was on. A side is decided by the fixes' average offset when it's clearly one kerb (4 m or
+more), otherwise by the walking direction (the routes keep the houses on your left). Crossing a street doesn't mark it
+(less than 14 m along it), turning back starts a new side, a stretch walked to within 15 m of a corner counts to the
+corner, and "Skipped this bit" stays open. Measured on synthetic tracks over the fixture, an hour's route walked on
+the kerb: 100% of its letterboxes marked with fixes every second or every five seconds, 97% with a fix every 45
+seconds (10 m noise and drift), and no letterboxes marked that weren't walked. Someone on the other kerb is marked on
+the side they were on in at least 8 of 10 test streets. **Open:** these are synthetic tracks; a few real recorded
+walks (in hand and in a pocket) should become test fixtures once stage 2's walking screen can record them.
+
+### Speed (measured 2026-11-15)
+
+On an Apple M3 Pro, with the region-sized graph made by `tools/outreach/benchmark.cs` (Albany Creek six times over:
+26,028 streets, 107,034 letterboxes, 789 KB), under WebAssembly AOT (the app's runtime, run in Node): loading the
+region takes 16 ms (30 ms with its street index), working out what's open 3 ms, an hour's walk 0.5 ms, and an hour's
+walk with its reach note from 50 places 0.6 ms on average and 4.7 ms at worst. On the JIT the numbers are about the
+same. Even an older phone tens of times slower plans a walk well under a second. The whole 40 km church area (48 copies,
+856,272 letterboxes, 6 MB) loads in 66 ms on the JIT, so a phone could hold it whole if regions ever needed to go.
+
 ## Outreach days
 
 - **Made in the admin panel** (decided 2026-10-27): a day (date, time window, meeting point, note) and

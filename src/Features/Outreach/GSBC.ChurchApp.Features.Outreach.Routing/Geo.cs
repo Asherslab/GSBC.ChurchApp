@@ -47,15 +47,15 @@ public sealed class LocalProjection(GeoPoint origin)
     private const double EarthMetres = 6_371_000;
     private const double MetresPerDegree = EarthMetres * Math.PI / 180;
 
-    private readonly double cosLat = Math.Cos(origin.Lat * Math.PI / 180);
+    private readonly double _cosLat = Math.Cos(origin.Lat * Math.PI / 180);
 
     public GeoPoint Origin => origin;
 
     public Flat ToFlat(GeoPoint point) =>
-        new((point.Lon - origin.Lon) * MetresPerDegree * cosLat, (point.Lat - origin.Lat) * MetresPerDegree);
+        new((point.Lon - origin.Lon) * MetresPerDegree * _cosLat, (point.Lat - origin.Lat) * MetresPerDegree);
 
     public GeoPoint ToGeo(Flat flat) =>
-        new(origin.Lat + flat.Y / MetresPerDegree, origin.Lon + flat.X / (MetresPerDegree * cosLat));
+        new(origin.Lat + flat.Y / MetresPerDegree, origin.Lon + flat.X / (MetresPerDegree * _cosLat));
 
     public double Distance(GeoPoint a, GeoPoint b) => Flat.Distance(ToFlat(a), ToFlat(b));
 }
