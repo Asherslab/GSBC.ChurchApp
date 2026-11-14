@@ -4,7 +4,7 @@ public sealed class MapSourcesOptions
 {
     public const string Section = "Outreach:Maps";
 
-    public Uri[] Overpass { get; set; } = [new("https://overpass-api.de/api/interpreter"), new("https://overpass.private.coffee/api/interpreter")];
+    public Uri Streets { get; set; } = new("https://download.geofabrik.de/australia-oceania/australia/queensland-latest.osm.pbf");
     public Uri Addresses { get; set; } = new("https://spatial-gis.information.qld.gov.au/arcgis/rest/services/PlanningCadastre/LandParcelPropertyFramework/MapServer/0/query");
     public Uri MoretonBayLots { get; set; } = new("https://services-ap1.arcgis.com/152ojN3Ts9H3cdtl/arcgis/rest/services/ZM_Zones_WebMercator_OpenData/FeatureServer/0/query");
     public Uri BrisbaneZones { get; set; } = new("https://services2.arcgis.com/dEKgZETqwmDAh1rP/arcgis/rest/services/Zoning_opendata/FeatureServer/0/query");
