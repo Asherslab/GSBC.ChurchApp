@@ -22,6 +22,7 @@ public sealed class GalleryRules
         ["EditScope"] = "tells an unsaved-changes guard that something changed",
         ["LiveData"] = "loads data from a feed; the gallery has no feeds",
         ["Maps/MapView"] = "draws a region's map file, which comes from the outreach.regions feed; the gallery has no feeds",
+        ["Maps/MapSketch"] = "draws on a MapView, which needs a region's map file from the outreach.regions feed; the gallery has no feeds",
         ["RefreshOn"] = "reloads when feeds change; nothing to see",
         ["AddressWatch"] = "tells a page its address moved; nothing to see",
         ["UnsavedGuard"] = "asks before leaving with unsaved changes; nothing to see",

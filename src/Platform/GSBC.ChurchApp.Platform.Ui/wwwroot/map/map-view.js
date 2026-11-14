@@ -173,6 +173,7 @@ export async function create(element, optionsJson, receiver) {
   const ready = new Promise((resolve) => map.once("load", resolve));
 
   return {
+    map,
     setLines: (json) => set("lines", { type: "FeatureCollection", features: JSON.parse(json).map(line) }),
     setAreas: (json) => set("areas", { type: "FeatureCollection", features: JSON.parse(json).map(area) }),
     setMarkers: (json) => set("markers", { type: "FeatureCollection", features: JSON.parse(json).map(marker) }),
