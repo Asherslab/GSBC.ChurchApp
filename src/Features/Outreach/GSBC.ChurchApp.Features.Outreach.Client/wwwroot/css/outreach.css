@@ -26,7 +26,7 @@
 .outreach-areas__regions { margin: var(--space-2xs) 0 0; color: var(--ink-3); font-size: var(--text-caption); font-variant-numeric: tabular-nums; }
 .outreach-areas__form { display: grid; gap: var(--stack); }
 .outreach-coverage { grid-template-rows: minmax(0, 1fr); margin-top: var(--after-tabs); border-top: 1px solid var(--line); height: calc(100dvh - 190px); min-height: 520px; }
-.outreach-coverage__rail { display: grid; align-content: start; gap: var(--space-xl); }
+.outreach-coverage__rail { display: grid; align-content: start; gap: var(--space-lg); }
 .outreach-coverage__tools { position: absolute; top: var(--space-md); left: var(--space-md); display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-sm); }
 .outreach-coverage__hint { margin: 0; padding: var(--space-xs) var(--space-md); border-radius: var(--radius-full); background: var(--page); color: var(--ink); font-size: var(--text-caption); box-shadow: 0 0 0 1px var(--line), 0 18px 36px -16px var(--scrim); }
 .outreach-coverage__label { margin: 0 0 var(--space-sm); color: var(--ink-3); font-size: var(--text-caption); font-weight: 600; }
