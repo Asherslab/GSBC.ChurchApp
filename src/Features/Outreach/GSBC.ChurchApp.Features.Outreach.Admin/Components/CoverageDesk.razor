@@ -61,7 +61,13 @@
                     <StatTile Value="@OutreachWords.Count(view.StreetsDone)" Label="@($"streets done, of {OutreachWords.Count(view.DeliverableStreets)} in this region")" Quiet="true" />
                     <StatTile Value="@Percent(view.HomesDone, view.AllHomes)" Label="of this region's letterboxes done" Quiet="true" />
                 </div>
-                <ToggleChips TValue="string" Label="Show on the map" Chips="Layers(shown)" Toggled="Toggle" Class="toggle-chips--wrap" />
+                <div class="outreach-coverage__layers">
+                    <p class="outreach-coverage__label">Show on the map</p>
+                    <ToggleRow Title="No junk mail and hostile marks" Description="@($"{OutreachWords.Plural(shown.Skips.Lines.Count, "mark", "marks")}, as dots once you zoom in to the street")"
+                               Checked="_showMarks" CheckedChanged="on => _showMarks = on" />
+                    <ToggleRow Title="Places outreach skips" Description="@($"{OutreachWords.Plural(shown.Exclusions.Zones.Count, "area", "areas")} outlined in red and {OutreachWords.Plural(shown.Exclusions.Addresses.Count, "address", "addresses")}")"
+                               Checked="_showPlaces" CheckedChanged="on => _showPlaces = on" />
+                </div>
 
                 </div>
             </Pane>
@@ -106,8 +112,6 @@
 
 @code {
     private static readonly IReadOnlyList<string> Feeds = [OutreachFeeds.Desk, OutreachFeeds.Coverage, OutreachFeeds.Settings, OutreachFeeds.Skips, OutreachFeeds.Exclusions];
-    private const string MarksLayer = "marks";
-    private const string PlacesLayer = "places";
 
     [Parameter, EditorRequired] public required string Scope { get; set; }
 
@@ -157,17 +161,17 @@
 
     private IReadOnlyList<MapLine> Lines(CoverageView view) =>
         _choice is { Street: { } street }
-            ? [.. view.Lines(), new MapLine(view.StreetShape(street), MapLineStyle.Route, Colour: "--marker")]
+            ? [.. view.Lines(), new MapLine(view.StreetShape(street), MapLineStyle.Route, Colour: "--primary")]
             : view.Lines();
 
     private IReadOnlyList<MapAreaShape> Areas(Shown shown)
     {
         List<MapAreaShape> areas = _showPlaces
             ? [.. shown.Exclusions.Zones.Where(zone => zone.Area.Count >= 3)
-                .Select(zone => new MapAreaShape([.. zone.Area.Select(point => new MapPoint(point.Lat, point.Lng))], "--danger", zone.Id))]
+                .Select(zone => new MapAreaShape([.. zone.Area.Select(point => new MapPoint(point.Lat, point.Lng))], "--danger", zone.Id, Dashed: true))]
             : [];
         if (_choice is { Area: { } drawn })
-            areas.Add(new MapAreaShape(drawn, "--primary"));
+            areas.Add(new MapAreaShape(drawn, "--primary", Dashed: true));
         return areas;
     }
 
@@ -183,20 +187,6 @@
                 .Select(address => new MapMarker(new MapPoint(address.Address.Point.Lat, address.Address.Point.Lng), MapMarkerKind.DontLetterbox, "Don't letterbox",
                     address.Id)));
         return markers;
-    }
-
-    private IReadOnlyList<ToggleChip<string>> Layers(Shown shown) =>
-    [
-        new(MarksLayer, $"No junk mail ({OutreachWords.Count(shown.Skips.Lines.Count)})", _showMarks),
-        new(PlacesLayer, $"Places skipped ({OutreachWords.Count(shown.Exclusions.Zones.Count + shown.Exclusions.Addresses.Count)})", _showPlaces),
-    ];
-
-    private void Toggle(ToggleChip<string> chip)
-    {
-        if (chip.Value == MarksLayer)
-            _showMarks = !_showMarks;
-        else
-            _showPlaces = !_showPlaces;
     }
 
     private static IReadOnlyList<FieldOption> CampaignOptions(OutreachDesk desk) => [.. desk.Campaigns.Select(campaign => new FieldOption(campaign.Id, campaign.Name))];

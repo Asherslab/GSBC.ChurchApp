@@ -25,7 +25,7 @@ public enum MapLineStyle
 
 public sealed record MapLine(IReadOnlyList<MapPoint> Points, MapLineStyle Style, string? Label = null, string? Colour = null, string? Id = null, double? Age = null);
 
-public sealed record MapArea(IReadOnlyList<MapPoint> Points, string? Colour = null, string? Id = null);
+public sealed record MapArea(IReadOnlyList<MapPoint> Points, string? Colour = null, string? Id = null, bool Dashed = false);
 
 public enum MapMarkerKind
 {

@@ -29,19 +29,21 @@ The settings in the work area, each group a `Section Grouped` card with short fi
 
 ## Coverage
 The map (`MapView` over the region's map file) fills the work area to the left; a 360px rail is ruled off on the right,
-where every workbench keeps its record. The rail, top to bottom: Campaign (and Region when there are several), the
-legend, two quiet `StatTile`s (streets done, share of letterboxes), `ToggleChips` for what else the map shows, then
-*Choose streets* ruled off above.
-- **The ramp** is the signature: covered sides are drawn in deep aqua (bright aqua at night) fading to the map's ground
-  as the rest period ends (`MapLineStyle.Covered` with an age), and the legend is the same ramp with "This week",
+where every workbench keeps its record. It is the shared `MapDesk`. The pane, top to bottom: Campaign (and Region when there are several), the
+legend (with a dashed red key when areas are skipped), two quiet `StatTile`s (streets done of the region's, share of
+its letterboxes), and *Show on the map* as two `ToggleRow`s with what each draws. The pane's foot holds the chosen
+streets (title, sides, letterboxes, when done), Clear and *Mark as not done*, or the undo line.
+- **The ramp** is the signature: covered sides are drawn in deep aqua (bright aqua at night) fading to the map's own
+  ground (`--map-land`, the base map's land colour in each scheme) as the rest period ends (`MapLineStyle.Covered` with an
+  age), and the legend is the same ramp with "This week",
   half the rest period and "open again". Each side is drawn 3.5 m off the centre line, so a half-done street shows which.
-- **Choosing:** a click picks a street, drawn in the marker orange; *Draw round streets* turns on the lasso
-  (`MapSketch`), and the drawn area shows in the primary colour. The chosen streets' sides, letterboxes and when they
+- **Choosing:** a click picks a street, drawn in navy; *Draw round streets* (floating top left on the map) turns on the
+  lasso (`MapSketch`), and the drawn area shows dashed in navy. The chosen streets' sides, letterboxes and when they
   were done read under its title, then Clear (quiet, left) and *Mark as not done* (right). Marking applies at once and a
   status line under it offers *Undo*.
-- **Exclusion areas** draw in danger at 12% with their edge; Don't letterbox, No junk mail and hostile marks are the
+- **Exclusion areas** draw in danger at 12% with a dashed edge (`MapArea Dashed`); Don't letterbox, No junk mail and hostile marks are the
   map's own markers.
-- At 1272px of window and under, the rail moves under the map (62% of the window's height).
+- At 760px and under, MapDesk puts the pane under the map.
 
 ## Numbers
 Two rows of `FilterChips` (when; which campaign), four `StatTile`s with the change on the period before, then two

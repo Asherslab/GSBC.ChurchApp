@@ -109,3 +109,11 @@ planner draws, on its own layers over the overlays:
 - **`Labels`** (`MapLabel`): a capsule in a colour with white text at a point, such as a route's "4 · 137 · 74 min". Every
   colour a label uses holds 4.5:1 against white.
 - **`Preview`**: lines drawn over everything while a gesture is under way (a cut's pieces, a brush's stretch).
+
+## Coverage and dashed areas (reports station, 2026-11-15)
+
+- `MapLineStyle.Covered` with `MapLine.Age` (0 today, 1 the rest period over) draws a street side in the walk colour
+  fading to `--map-land`, the base map's land colour in each scheme, so a side at the end of its rest period disappears
+  into the map.
+- `MapArea.Dashed` draws the edge dashed: areas outreach skips (in danger) and a drawn selection (in primary).
+- `Colour` on a line or area may be a theme token name (`--danger`, `--primary`); the map reads it when it draws.

@@ -44,7 +44,7 @@
 
     private MapFrame? Framed => Area is { Count: >= 3 } area ? MapFrame.Around(area, padding: 40, maxZoom: 17) : null;
 
-    private IReadOnlyList<MapAreaShape> Shapes => Area is { Count: >= 3 } area ? [new MapAreaShape(area, "--danger")] : [];
+    private IReadOnlyList<MapAreaShape> Shapes => Area is { Count: >= 3 } area ? [new MapAreaShape(area, "--danger", Dashed: true)] : [];
 
     private IReadOnlyList<MapMarker> Pins => (_placed ?? Point) is { } point ? [new MapMarker(point, MapMarkerKind.Pin)] : [];
 

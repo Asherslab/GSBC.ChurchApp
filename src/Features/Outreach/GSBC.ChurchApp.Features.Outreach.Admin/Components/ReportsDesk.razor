@@ -41,7 +41,7 @@
                     {
                         @if (_skippingArea)
                         {
-                            <p class="field__hint">Draw round the area on the map. Streets inside it are walked through, never delivered to; walkers aren't told why.</p>
+                            <p class="field__hint">Streets inside the area are walked through, never delivered to; walkers aren't told why.</p>
                             <div class="outreach-desk__decide">
                                 <Button Block="true" Busy="_busy" Disabled="@(_area is not { Count: >= 3 })" OnClick="() => ResolveAsync(report, ReportState.Excluded, _area)">Skip this area</Button>
                                 <Button Variant="ButtonVariant.Quiet" OnClick="StopArea">Back</Button>

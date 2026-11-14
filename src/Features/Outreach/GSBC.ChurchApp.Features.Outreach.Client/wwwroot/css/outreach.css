@@ -25,12 +25,12 @@
 .outreach-places__about { margin: var(--space-lg) 0 0; color: var(--ink-3); font-size: var(--text-caption); line-height: 1.45; }
 .outreach-areas__regions { margin: var(--space-2xs) 0 0; color: var(--ink-3); font-size: var(--text-caption); font-variant-numeric: tabular-nums; }
 .outreach-areas__form { display: grid; gap: var(--stack); }
-.outreach-coverage { margin-top: var(--after-tabs); border-top: 1px solid var(--line); height: calc(100dvh - 190px); min-height: 520px; }
+.outreach-coverage { grid-template-rows: minmax(0, 1fr); margin-top: var(--after-tabs); border-top: 1px solid var(--line); height: calc(100dvh - 190px); min-height: 520px; }
 .outreach-coverage__rail { display: grid; align-content: start; gap: var(--space-xl); }
 .outreach-coverage__tools { position: absolute; top: var(--space-md); left: var(--space-md); display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-sm); }
 .outreach-coverage__hint { margin: 0; padding: var(--space-xs) var(--space-md); border-radius: var(--radius-full); background: var(--page); color: var(--ink); font-size: var(--text-caption); box-shadow: 0 0 0 1px var(--line), 0 18px 36px -16px var(--scrim); }
 .outreach-coverage__label { margin: 0 0 var(--space-sm); color: var(--ink-3); font-size: var(--text-caption); font-weight: 600; }
-.outreach-coverage__ramp { height: 12px; border-radius: var(--radius-full); border: 1px solid var(--line); background: linear-gradient(90deg, var(--accent), color-mix(in oklch, var(--accent) 45%, var(--surface)) 55%, var(--surface)); }
+.outreach-coverage__ramp { height: 12px; border-radius: var(--radius-full); border: 1px solid var(--line); background: linear-gradient(90deg, var(--accent), color-mix(in oklch, var(--accent) 45%, var(--map-land)) 55%, var(--map-land)); }
 .outreach-coverage__ramp-key { display: flex; justify-content: space-between; gap: var(--space-sm); margin: var(--space-2xs) 0 0; color: var(--ink-3); font-size: var(--text-caption); font-variant-numeric: tabular-nums; }
 .outreach-coverage__figures { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-lg); }
 .outreach-coverage__figures .stat-tile__value { font-variant-numeric: tabular-nums; }
@@ -51,7 +51,7 @@
 .outreach-coverage__chosen-block { display: grid; gap: var(--space-3xs); margin-bottom: var(--space-md); }
 .outreach-coverage .map-view__attribution { padding-inline: var(--space-md); }
 .outreach-coverage__key { display: flex; align-items: center; gap: var(--space-sm); margin: var(--space-md) 0 0; color: var(--ink-2); font-size: var(--text-caption); }
-.outreach-coverage__swatch { flex: none; width: 18px; height: 12px; border: 1.5px solid var(--danger); border-radius: 3px; background: color-mix(in srgb, var(--danger) 12%, transparent); }
+.outreach-coverage__swatch { flex: none; width: 18px; height: 12px; border: 1.5px dashed var(--danger); border-radius: 3px; background: color-mix(in srgb, var(--danger) 12%, transparent); }
 .outreach-coverage__tool { box-shadow: 0 0 0 1px var(--line), 0 18px 36px -16px var(--scrim); }
 .outreach-coverage__tool.btn--quiet { background: var(--surface); }
 .outreach-numbers__filter { display: grid; gap: var(--space-xs); min-width: 0; }
@@ -59,3 +59,5 @@
 .outreach-numbers__tiles { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 @media (max-width: 1272px) { .outreach-numbers__tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 480px) { .outreach-numbers__tiles { grid-template-columns: minmax(0, 1fr); } }
+.outreach-coverage__layers { display: grid; }
+.outreach-coverage__layers .outreach-coverage__label { margin-bottom: 0; }

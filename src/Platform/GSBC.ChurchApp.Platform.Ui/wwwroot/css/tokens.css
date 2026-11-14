@@ -19,6 +19,7 @@
   --field-edge: color-mix(in srgb, var(--ink-3) 70%, transparent);
   --page: #ffffff;
   --surface: #ffffff;
+  --map-land: #f7f4ee;
   --sand: #f4efe7;
   --sand-strong: #e9e1d4;
   --segment-on: var(--surface);
@@ -123,6 +124,7 @@
   --field: #2d374d;
   --page: #141d31;
   --surface: #1d2840;
+  --map-land: #141d31;
   --sand: #1d2840;
   --sand-strong: #26334f;
   --segment-on: #34446a;
