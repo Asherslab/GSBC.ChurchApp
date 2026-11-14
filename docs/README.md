@@ -21,6 +21,11 @@
 | [testing.md](architecture/testing.md) | How tests get a database, buckets and the time; isolation; waiting for signals; running subsets; a flake is a bug |
 | [destinations.md](architecture/destinations.md) | Places in the app: pages and items features declare, finding them over gRPC, the picker, shared `/open` links, the phone's one router |
 
+## Design
+
+[DESIGN.md](../DESIGN.md) is the design guide: tokens, the pattern map and the rules. [design/](design/) holds the
+detail for each component and screen, one file per area, listed in DESIGN.md's *Components*.
+
 ## Features
 
 One doc per feature in [features/](features/), written before its code.

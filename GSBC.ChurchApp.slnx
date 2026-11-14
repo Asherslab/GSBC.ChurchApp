@@ -30,6 +30,24 @@
     <File Path="docs/architecture/rich-text.md" />
     <File Path="docs/architecture/storage.md" />
   </Folder>
+  <Folder Name="/docs/design/">
+    <File Path="docs/design/admin-shell.md" />
+    <File Path="docs/design/app-shell.md" />
+    <File Path="docs/design/calendar.md" />
+    <File Path="docs/design/chats.md" />
+    <File Path="docs/design/components.md" />
+    <File Path="docs/design/controls.md" />
+    <File Path="docs/design/feedback.md" />
+    <File Path="docs/design/home.md" />
+    <File Path="docs/design/lists-and-cards.md" />
+    <File Path="docs/design/media.md" />
+    <File Path="docs/design/ministries.md" />
+    <File Path="docs/design/people.md" />
+    <File Path="docs/design/places-and-styling.md" />
+    <File Path="docs/design/posts.md" />
+    <File Path="docs/design/prayer.md" />
+    <File Path="docs/design/saving.md" />
+  </Folder>
   <Folder Name="/docs/features/">
     <File Path="docs/features/access.md" />
     <File Path="docs/features/accounts.md" />
