@@ -35,7 +35,7 @@ public static class NewsWords
     };
 
     public static string ArchivedLine(NewsPost post, TimeProvider clock) =>
-        post.PublishedAt is null ? "Archived before it was published" : $"Archived, was published {When(post, clock)}";
+        post.PublishedAt is null ? "Archived before it was posted" : $"Archived, was posted {When(post, clock)}";
 
     public static string? NotPosted(NewsPost post, TimeProvider clock) => post.State switch
     {
