@@ -43,10 +43,13 @@ public static class OutreachPhoneWords
     public static string Bundles(int count, int bundleSize) =>
         count == 0 ? "No bundles needed" : $"Take {OutreachWords.Plural(count, "bundle", "bundles")} of {bundleSize}";
 
-    public static string Campaigns(IEnumerable<Campaign> carried) => string.Join(" and ", carried.Select(campaign => campaign.Name));
-
     public static string Carrying(IReadOnlyList<Campaign> carried) =>
-        carried.Count == 0 ? "General outreach" : $"Carrying {string.Join(" and ", carried.Select(HandedOut))}";
+        carried.Count == 0 ? OutreachCampaigns.GeneralName : string.Join(" and ", carried.Select(campaign => campaign.Name));
+
+    public static string HandedOut(IReadOnlyList<Campaign> carried) =>
+        carried.Any(campaign => campaign.HandedOut.Trim().Length > 0)
+            ? $"Carrying {string.Join(" and ", carried.Select(HandedOut))}"
+            : "What you're walking for";
 
     private static string HandedOut(Campaign campaign) => campaign.HandedOut.Trim() is { Length: > 0 } what ? what : campaign.Name;
 
@@ -86,23 +89,56 @@ public static class OutreachPhoneWords
 
     public static string Side(bool houses) => houses ? "Houses on your left" : "Nothing to deliver here";
 
-    public static string Turn(SavedStep from, SavedStep to)
+    public static string Turn(SavedStep from, SavedStep to) => TurnOf(from, to) switch
+    {
+        TurnKind.OtherSide => $"Then back along the other side of {to.Title}",
+        TurnKind.Back => $"Then turn back into {to.Title}",
+        TurnKind.Left => $"Then left into {to.Title}",
+        TurnKind.Right => $"Then right into {to.Title}",
+        _ => $"Then straight on into {to.Title}",
+    };
+
+    public static string TurnIcon(SavedStep from, SavedStep to) => TurnOf(from, to) switch
+    {
+        TurnKind.OtherSide or TurnKind.Back => "rotate-ccw",
+        TurnKind.Left => "arrow-left",
+        TurnKind.Right => "arrow-right",
+        _ => "arrow-up",
+    };
+
+    private enum TurnKind
+    {
+        Straight,
+        Left,
+        Right,
+        Back,
+        OtherSide,
+    }
+
+    private static TurnKind TurnOf(SavedStep from, SavedStep to)
     {
         if (to.Street == from.Street)
-            return $"Then back along the other side of {to.Title}";
+            return TurnKind.OtherSide;
         if (from.Line.Count < 2 || to.Line.Count < 2)
-            return $"Then {to.Title}";
-        double inBearing = Bearing(from.Line[^2], from.Line[^1]);
-        double outBearing = Bearing(to.Line[0], to.Line[1]);
-        double turn = (outBearing - inBearing + 540) % 360 - 180;
-        string way = turn switch
+            return TurnKind.Straight;
+        double turn = (Bearing(to.Line[0], to.Line[1]) - Bearing(from.Line[^2], from.Line[^1]) + 540) % 360 - 180;
+        return turn switch
         {
-            < -150 or > 150 => "turn back into",
-            < -30 => "left into",
-            > 30 => "right into",
-            _ => "straight on into",
+            < -150 or > 150 => TurnKind.Back,
+            < -30 => TurnKind.Left,
+            > 30 => TurnKind.Right,
+            _ => TurnKind.Straight,
         };
-        return $"Then {way} {to.Title}";
+    }
+
+    public static string SideOf(SavedStep step)
+    {
+        if (step.Line.Count < 2)
+            return step.Title;
+        double bearing = Bearing(step.Line[0], step.Line[^1]);
+        string[] compass = ["north", "east", "south", "west"];
+        string facing = compass[(int)Math.Round(((bearing - 90 + 360) % 360) / 90) % 4];
+        return $"{step.Title}, {facing} side";
     }
 
     public static string Remaining(int letterboxesLeft) => letterboxesLeft <= 0 ? "done" : $"{OutreachWords.Count(letterboxesLeft)} to go";

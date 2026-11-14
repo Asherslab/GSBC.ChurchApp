@@ -57,7 +57,11 @@
                                     }
                                     else if (line.Claims.Count == 0)
                                     {
-                                        <Pill Tone="PillTone.Marker">Open</Pill>
+                                        <Pill Tone="PillTone.Accent">Open</Pill>
+                                    }
+                                    else
+                                    {
+                                        <Pill Tone="PillTone.Quiet">Taken</Pill>
                                     }
                                 </TrailingContent>
                             </ListRow>

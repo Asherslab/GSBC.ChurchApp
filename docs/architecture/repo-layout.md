@@ -166,8 +166,6 @@ flowchart LR
         OutreachMapsApi["Features.Outreach.Maps.Api"]
         OutreachMapsContracts["Features.Outreach.Maps.Contracts"]
         OutreachRouting["Features.Outreach.Routing"]
-        OutreachMapsApi["Features.Outreach.Maps.Api"]
-        OutreachMapsContracts["Features.Outreach.Maps.Contracts"]
     end
 
     subgraph Feedback["Features / Feedback"]

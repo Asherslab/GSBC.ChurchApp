@@ -1,0 +1,47 @@
+{
+  "title": "Outreach on the phone: how a walk reads",
+  "question": "The whole walker's side of Outreach: the Outreach page, planning a walk from your door, the walk itself (GPS marks the streets; glance, don't tick) and the end where you correct what was covered. Each sketch shows the same four screens in one structure, light and dark (the switch at the bottom right). Owner asleep 2026-11-15: the station built A, Words first, borrowing B's running order for the end of a walk and for outreach-day routes (marked Built). Pick another and it changes.",
+  "reroll": true,
+  "steer": true,
+  "buildPath": { "value": "code", "toggle": false },
+  "options": [
+    {
+      "id": "words-first",
+      "kind": "assigned",
+      "kicker": "THE ROLL",
+      "label": "Words first (Built)",
+      "thesis": "The walk leads with the street you're on and its side, in the masthead's navy at display size, with what's next under it; the map sits below and the marks sit in the thumb's reach. Glanced at from a pocket, the screen answers 'where am I and what now' before the map does. The Outreach page asks the one question first: Got an hour?",
+      "palette": ["#2a3d5e", "#f4efe7", "#00776d", "#e7ae74", "#141d31"],
+      "materials": ["masthead navy", "display street name", "map below", "two big marks", "orange progress"],
+      "viewport": "Outreach page (the question, a length, Plan my walk; around you on a map; the next outreach day; My outreach), the plan (map, figures, the reach note with its two ways to get more, Start), the walk (street, side, letterboxes, next turn; map; progress; No junk mail and Spoke to someone; Pause, ⋯, Finish), the end (figures, what you covered, Save).",
+      "risk": "The navy panel takes a third of the screen, so the map is smaller than a map app's; at the largest text sizes the street name needs two lines.",
+      "raised": [{ "from": "running-order", "raise": "The end of a walk and an outreach day's route keep B's line of stops, so a correction is a tap on a step and a skipped bit stays visible, struck through." }],
+      "html": ".impeccable/mocks/outreach-walking/a-words-first.html",
+      "htmlFrame": "1440x900"
+    },
+    {
+      "id": "running-order",
+      "kind": "dealt",
+      "label": "The route as a running order",
+      "thesis": "Every step of a walk on one vertical line, like the bulletin's order of service: streets as stops, the empty walks between them as quiet links, you as the orange stop, the line filling in deep aqua as GPS passes each one. The plan, the walk and the end are the same list in three states. During an outreach day the page leads with the day's routes.",
+      "palette": ["#2a3d5e", "#f4efe7", "#00776d", "#e7ae74", "#141d31"],
+      "materials": ["map strip", "a line of stops", "orange 'here' stop", "struck skipped steps"],
+      "viewport": "Outreach on an outreach day (campaign chips on the masthead, routes with claims), the plan as a running order under a map strip, the walk with the current stop large, the end with each step ticked or struck.",
+      "risk": "The street you're on is one row among many: less glanceable from arm's length, and a long route scrolls.",
+      "html": ".impeccable/mocks/outreach-walking/b-running-order.html",
+      "htmlFrame": "1440x900"
+    },
+    {
+      "id": "page-and-map",
+      "kind": "dealt",
+      "label": "A page, and a map app",
+      "thesis": "Outreach is an ordinary page of sections (length chips, campaigns as chips, outreach days, my outreach). The walk is a full-screen map with a small navy card for the street and a bottom sheet of tools (No junk mail, Spoke to someone, Not a home, Skip this bit), like a maps app.",
+      "palette": ["#2a3d5e", "#f4efe7", "#00776d", "#e7ae74"],
+      "materials": ["sections", "chips", "full-screen map", "floating street card", "tool sheet"],
+      "viewport": "Outreach as sections, the plan as a page with the map on top and facts, the walk as a full-screen map, the end as a sheet over the walked map.",
+      "risk": "The most familiar; the street card is small for a glance, and four equal tool buttons invite tapping when nothing needs it.",
+      "html": ".impeccable/mocks/outreach-walking/c-page-and-map.html",
+      "htmlFrame": "1440x900"
+    }
+  ]
+}

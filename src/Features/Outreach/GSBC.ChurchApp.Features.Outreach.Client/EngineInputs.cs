@@ -33,9 +33,9 @@ public static class EngineInputs
 
     public static RecordPoint Point(RoutingPoint point) => new() { Lat = point.Lat, Lng = point.Lon };
 
-    private static Side Side(StreetSide side) => side == StreetSide.Right ? Routing.Side.Right : Routing.Side.Left;
+    public static Side Side(StreetSide side) => side == StreetSide.Right ? Routing.Side.Right : Routing.Side.Left;
 
-    private static StreetSide Side(Side side) => side == Routing.Side.Right ? StreetSide.Right : StreetSide.Left;
+    public static StreetSide Side(Side side) => side == Routing.Side.Right ? StreetSide.Right : StreetSide.Left;
 
     public static SideStretch? SideStretch(StreetGraph graph, RecordStretch stretch) =>
         StreetKey.TryParse(stretch.Street, out StreetKey key) && graph.StreetOf(key) is { } street && stretch.From < stretch.To
@@ -94,7 +94,7 @@ public static class EngineInputs
         List<Exclusion> excluded = [.. exclusions];
         return new OutreachMarks
         {
-            NoJunkMail = kept.Where(skip => skip is { Letterbox: true, Door: false }).Select(skip => skip.Address.AddressKey).ToHashSet(),
+            NoJunkMail = kept.Where(skip => skip.Letterbox && !skip.Door).Select(skip => skip.Address.AddressKey).ToHashSet(),
             Hostile = kept.Where(skip => skip.Door).Select(skip => skip.Address.AddressKey).ToHashSet(),
             Excluded = excluded.Where(exclusion => exclusion.Address is { AddressKey: not 0 }).Select(exclusion => exclusion.Address!.AddressKey).ToHashSet(),
             ShownToWalkers = excluded.Where(exclusion => exclusion is { ShowMarker: true, Address.AddressKey: not 0 }).Select(exclusion => exclusion.Address!.AddressKey).ToHashSet(),

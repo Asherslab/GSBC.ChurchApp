@@ -7,6 +7,7 @@
   </ItemGroup>
   <ItemGroup>
     <Using Include="Xunit" />
+    <Compile Include="..\GSBC.ChurchApp.Features.Outreach.Routing.Tests\Tracks.cs" Link="Tracks.cs" />
     <None Include="..\GSBC.ChurchApp.Features.Outreach.Routing.Tests\Fixtures\albany-creek.streets" Link="Fixtures\albany-creek.streets" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

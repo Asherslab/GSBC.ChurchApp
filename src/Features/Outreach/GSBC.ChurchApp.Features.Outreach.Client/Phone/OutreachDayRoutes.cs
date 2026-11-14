@@ -32,7 +32,8 @@ public sealed record DayRouteView(
     IReadOnlyList<MapLine> Lines,
     IReadOnlyList<MapMarker> Markers,
     MapFrame? Frame,
-    WalkState? Walking);
+    WalkState? Walking,
+    int BundleSize = 50);
 
 public sealed class OutreachDayRoutes(OutreachStore store, OutreachClaims claims, RegionMaps regions, WalkChoices choices, WalkSession walk, TimeProvider time)
 {
@@ -99,13 +100,14 @@ public sealed class OutreachDayRoutes(OutreachStore store, OutreachClaims claims
             .. WalkPlans.Markers(planned.Summary),
         ];
         MapFrame frame = MapFrame.Around(planned.Summary.Line.Select(WalkPlans.Point), 36);
-        return new DayRouteView(RouteState.Ready, route, day, campaign, on, mine, firstName, onPhone, source, planned, lines, markers, frame, walking);
+        return new DayRouteView(RouteState.Ready, route, day, campaign, on, mine, firstName, onPhone, source, planned, lines, markers, frame, walking, now.Settings.BundleSize);
     }
 }
 
 public sealed record MyWalk(string Id, DateTime StartedAt, int Metres, int Letterboxes, int Doors, int Conversations, WalkMode Mode, string Campaigns, bool Counted);
 
-public sealed record MyOutreachView(IReadOnlyList<MyWalk> Walks, bool SignedIn, bool CountedByName, int Metres, int Letterboxes, int Conversations, int Doors);
+public sealed record MyOutreachView(IReadOnlyList<MyWalk> Walks, bool SignedIn, bool CountedByName, int Metres, int Letterboxes, int Conversations, int Doors,
+    int Waiting = 0, int Failed = 0);
 
 public sealed class MyOutreach(OutreachStore store, WalkSession walk, Platform.Client.Access.IAccess access, Platform.Client.Outbox.IOutbox outbox)
 {
@@ -123,9 +125,19 @@ public sealed class MyOutreach(OutreachStore store, WalkSession walk, Platform.C
             walks[yours.Id] = new MyWalk(yours.Id, yours.StartedAt, yours.Metres, yours.Letterboxes, yours.Doors, yours.Conversations, yours.Mode,
                 Names(now, yours.Campaigns), yours.Counted);
         List<MyWalk> all = [.. walks.Values.OrderByDescending(entry => entry.StartedAt)];
+        List<Platform.Client.Outbox.OutboxEntry> queued = await QueuedAsync();
         return new MyOutreachView(all, access.SignedIn, now.CountedByName, all.Sum(entry => entry.Metres), all.Sum(entry => entry.Letterboxes),
-            all.Sum(entry => entry.Conversations), all.Sum(entry => entry.Doors));
+            all.Sum(entry => entry.Conversations), all.Sum(entry => entry.Doors), queued.Count(entry => !entry.Failed), queued.Count(entry => entry.Failed));
     }
+
+    public async Task RetryAsync()
+    {
+        foreach (Platform.Client.Outbox.OutboxEntry entry in (await QueuedAsync()).Where(entry => entry.Failed))
+            await outbox.RetryAsync(entry.Id);
+    }
+
+    private async Task<List<Platform.Client.Outbox.OutboxEntry>> QueuedAsync() =>
+        [.. (await outbox.ListAsync()).Where(entry => entry.Method.StartsWith(OutreachMethods.Under, StringComparison.Ordinal))];
 
     public async Task CountByNameAsync(bool byName) =>
         await outbox.EnqueueAsync("/gsbc.outreach.Outreach/Counting", new CountingSave { ByName = byName }, OutreachContractsModel.Instance);

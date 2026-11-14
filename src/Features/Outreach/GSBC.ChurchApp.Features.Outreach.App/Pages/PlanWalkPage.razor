@@ -74,7 +74,7 @@
     private const int MostMatches = 12;
     private const string DistanceKey = "distance";
     private static readonly IReadOnlyList<SegmentOption<string>> LengthOptions =
-        [.. WalkLength.Times.Select(length => new SegmentOption<string>(length.Label, length.Label)), new SegmentOption<string>(DistanceKey, "Distance")];
+        [.. WalkLength.Times.Select(length => new SegmentOption<string>(length.Label, length.Label)), new(DistanceKey, "Distance")];
     private static readonly IReadOnlyList<SegmentOption<string>> DistanceOptions =
         [.. WalkLength.Distances.Select(length => new SegmentOption<string>(length.Label, length.Label))];
     private static readonly IReadOnlyList<SegmentOption<WalkMode>> ModeOptions =
@@ -159,18 +159,28 @@
                         {
                             <p>@OutreachPhoneWords.Reach(reason)</p>
                         }
-                        @if (walk.Plan.Hop is not null)
-                        {
-                            <Button Variant="ButtonVariant.Link" OnClick="() => HopAsync(false)">Leave out the long walk</Button>
-                        }
-                        else if (walk.Reach.Hop is { } hop)
-                        {
-                            <Button Variant="ButtonVariant.Link" OnClick="() => HopAsync(true)">@OutreachPhoneWords.Hop(hop)</Button>
-                        }
-                        @if (walk.Reach.Elsewhere is { } elsewhere)
-                        {
-                            <Button Variant="ButtonVariant.Link" OnClick="() => StartAtAsync(elsewhere.Point)">@OutreachPhoneWords.Elsewhere(elsewhere, walk.Ask.Budget)</Button>
-                        }
+                        <div class="outreach-reach__ways">
+                            @if (walk.Plan.Hop is not null)
+                            {
+                                <Button Variant="ButtonVariant.Link" OnClick="() => HopAsync(false)">Leave out the long walk</Button>
+                            }
+                            else if (walk.Reach.Hop is { } hop)
+                            {
+                                <Button Variant="ButtonVariant.Link" OnClick="() => HopAsync(true)">@OutreachPhoneWords.Hop(hop)</Button>
+                            }
+                            @if (walk.Reach.Elsewhere is { } elsewhere)
+                            {
+                                <Button Variant="ButtonVariant.Link" OnClick="() => StartAtAsync(elsewhere.Point)">@OutreachPhoneWords.Elsewhere(elsewhere, walk.Ask.Budget)</Button>
+                            }
+                            @if (walk.Reach.Hop is null && walk.Plan.Hop is null && walk.Reach.Elsewhere is null)
+                            {
+                                @if (walk.Reach.Status == ReachStatus.Short && Longer() is { } longer)
+                                {
+                                    <Button Variant="ButtonVariant.Link" OnClick="() => ChangeLengthAsync(longer.Label)">@($"Make it {longer.Label} instead")</Button>
+                                }
+                                <Button Variant="ButtonVariant.Link" OnClick="() => _finding = true">Start from another street</Button>
+                            }
+                        </div>
                     }
                 </div>
             }
@@ -261,6 +271,9 @@
         _takeHop = false;
         return ReloadAsync();
     }
+
+    private WalkLength? Longer() =>
+        (_length.ByTime ? WalkLength.Times : WalkLength.Distances).FirstOrDefault(length => _length.ByTime ? length.Minutes > _length.Minutes : length.Kilometres > _length.Kilometres);
 
     private Task HopAsync(bool take)
     {

@@ -10,15 +10,4 @@ public static class OutreachDays
 
     public static int Claimed(OutreachNow now, OutreachDay day) =>
         now.RoutesOf(day.Id).Count(route => now.Claims.Any(claim => claim.RouteId == route.Id));
-
-    public static string ClaimedBy(OutreachNow now, DayRoute route)
-    {
-        List<string> names = [.. now.ClaimsOf(route.Id).Select(claim => claim.FirstName)];
-        return names.Count switch
-        {
-            0 => "",
-            1 or 2 => string.Join(", ", names),
-            _ => $"{names[0]}, {names[1]} + {names.Count - 2}",
-        };
-    }
 }

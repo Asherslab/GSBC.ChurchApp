@@ -127,6 +127,7 @@ export async function create(element, optionsJson, receiver) {
   const data = { lines: empty, areas: empty, markers: empty, you: empty };
   let you = null;
   let following = !!options.follow;
+  let dragged = false;
   let shownScheme = scheme();
 
   const styleNow = () => withOverlays(mapStyle({ tiles, glyphs, scheme: shownScheme, attribution: options.source.attribution ?? "" }), data);
@@ -157,14 +158,21 @@ export async function create(element, optionsJson, receiver) {
   };
 
   let framed = null;
-  const fit = (b) => map.fitBounds([[b.west, b.south], [b.east, b.north]], { padding: b.padding ?? 40, duration: 0, maxZoom: b.maxZoom ?? 17 });
+  const fit = (b, animate = false) =>
+    map.fitBounds([[b.west, b.south], [b.east, b.north]], { padding: b.padding ?? 40, duration: animate ? 600 : 0, maxZoom: b.maxZoom ?? 17 });
+  const showYou = (animate = false) => {
+    if (framed) fit(framed, animate);
+    else map.easeTo({ center: you.point, zoom: Math.max(map.getZoom(), 17), duration: animate ? 600 : 0 });
+  };
   map.on("load", () => {
     Object.entries(data).forEach(([name, value]) => map.getSource(name)?.setData(value));
     if (framed) fit(framed);
+    else if (following && you) showYou();
   });
   map.on("zoomend", drawYou);
   map.on("click", (e) => receiver?.invokeMethodAsync("OnTap", e.lngLat.lat, e.lngLat.lng));
   map.on("dragstart", () => {
+    dragged = true;
     if (!following) return;
     following = false;
     receiver?.invokeMethodAsync("OnStoppedFollowing");
@@ -187,16 +195,17 @@ export async function create(element, optionsJson, receiver) {
     setYou: (json) => {
       you = json ? JSON.parse(json) : null;
       drawYou();
-      if (following && you) map.easeTo({ center: you.point, duration: 600 });
+      if (following && you && !framed) showYou(true);
     },
     follow: (on) => {
       following = on;
-      if (on && you) map.easeTo({ center: you.point, zoom: Math.max(map.getZoom(), 17), duration: 600 });
+      if (on) dragged = false;
+      if (on && you) showYou(true);
     },
     fit: (json) => {
       framed = JSON.parse(json);
       map.resize();
-      fit(framed);
+      if (following || !dragged) fit(framed, map.loaded());
     },
     centre: (lat, lon, zoom) => map.jumpTo({ center: [lon, lat], zoom: zoom ?? map.getZoom() }),
     resize: () => map.resize(),
