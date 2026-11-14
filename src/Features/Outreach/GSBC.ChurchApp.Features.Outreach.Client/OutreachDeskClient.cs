@@ -34,8 +34,8 @@ public sealed class OutreachDeskClient(ChannelBase channel)
 
     public async Task<Reports> ReportsAsync(string ministryId) => await _admin.ReportsAsync(new MinistryRef { MinistryId = ministryId });
 
-    public async Task ResolveReportAsync(string ministryId, string id, ReportState outcome) =>
-        await _admin.ResolveReportAsync(new ReportResolve { MinistryId = ministryId, Id = id, Outcome = outcome, ExcludeAs = ExclusionReason.NotHomes });
+    public async Task ResolveReportAsync(string ministryId, string id, ReportState outcome, ExclusionReason excludeAs = ExclusionReason.NotHomes, List<GeoPoint>? area = null) =>
+        await _admin.ResolveReportAsync(new ReportResolve { MinistryId = ministryId, Id = id, Outcome = outcome, ExcludeAs = excludeAs, Area = area ?? [] });
 
     public async Task DeleteReportAsync(string ministryId, string id) => await _admin.DeleteReportAsync(new ThingRef { MinistryId = ministryId, Id = id });
 

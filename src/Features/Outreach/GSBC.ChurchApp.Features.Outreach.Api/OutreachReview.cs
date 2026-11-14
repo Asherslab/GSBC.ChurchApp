@@ -41,7 +41,20 @@ internal sealed class OutreachReview(
         if (!Guid.TryParse(resolve.Id, out Guid id) || await db.Reports.FirstOrDefaultAsync(found => found.Id == id, cancellationToken) is not { } report)
             return;
         DateTime now = Now;
-        if (resolve.Outcome == ReportState.Excluded)
+        if (resolve.Area.Count > 0 && !OutreachRules.IsAPolygon(resolve.Area))
+            throw Invalid("Draw the area with at least three points.");
+        if (resolve.Outcome == ReportState.Excluded && resolve.Area.Count > 0)
+        {
+            ExclusionZoneRecord zone = new()
+            {
+                Id = Guid.CreateVersion7(), Name = OutreachRules.Clip(report.Label.Length > 0 ? report.Label : "An area from a walker's report", OutreachRules.LongestName),
+                AreaLats = resolve.Area.Select(point => point.Lat).ToList(), AreaLngs = resolve.Area.Select(point => point.Lng).ToList(),
+                Reason = Enum.IsDefined(resolve.ExcludeAs) ? resolve.ExcludeAs : ExclusionReason.Other, Note = report.Note, ChangedAt = now, ChangedBy = by,
+            };
+            db.ExclusionZones.Add(zone);
+            publisher.Zone(zone, now);
+        }
+        else if (resolve.Outcome == ReportState.Excluded)
         {
             ExclusionAddressRecord excluded = new()
             {

@@ -1,12 +1,22 @@
 @inject OutreachDeskClient Outreach
 @inject UnsavedChanges Unsaved
 @inject IAccess Access
+@using GSBC.ChurchApp.Platform.Ui.Maps
 
 <UnsavedGuard Changed="() => Changed" What="this place" Save="SaveBeforeLeavingAsync" />
 
 <LiveData @ref="_live" TValue="Lists" Feeds="Feeds" Load="LoadAsync" FailedTitle="Can't load the places right now">
     @{ Lists lists = context.Value; }
-    <OutreachHead Tab="OutreachTab.Places" FollowUps="lists.Desk.OpenFollowUps" Reports="lists.Desk.NewReports" />
+    <OutreachHead Tab="OutreachTab.Places" FollowUps="lists.Desk.OpenFollowUps" Reports="lists.Desk.NewReports">
+        <Actions>
+            @if (CanChangeExclusions)
+            {
+                <Menu Label="Add a place outreach skips" Text="Add a place" Icon="plus" Variant="ButtonVariant.Primary" Chevron="true"
+                      Items="@([this.Item("An area", () => OpenAsync(NewZone()), "map", "Streets inside are walked through, never delivered to"),
+                               this.Item("An address", () => OpenAsync(NewAddress()), "map-pin", "One letterbox, for someone who asked not to get anything")])" />
+            }
+        </Actions>
+    </OutreachHead>
     <Workbench AsideLabel="Show" FoldAside="true" DetailLabel="The place" Showing="@(Chosen(lists) is null ? WorkbenchPane.Main : WorkbenchPane.Detail)">
         <Aside>
             <FilterChips TValue="PlaceKind?" Label="Show" Rail="true" Options="Filters(lists)" Value="_filter" ValueChanged="kind => _filter = kind" />
@@ -28,18 +38,22 @@
                     @switch (line.Item)
                     {
                         case ExclusionZone zone:
-                            <PaneHead Title="@line.Title" Lead="Streets inside it are walked through to get somewhere, never delivered to."
-                                      Actions="@(CanChangeExclusions ? [this.Item("Delete this area…", () => _deleting = true, "trash-2", "Walks deliver there again", danger: true, disabled: _busy)] : null)"
+                            <PaneHead Title="@(IsNew ? "A new area to skip" : line.Title)" Lead="Streets inside it are walked through to get somewhere, never delivered to."
+                                      Actions="@(CanChangeExclusions && !IsNew ? [this.Item("Redraw the area", () => _redrawing = true, "pencil"), this.Item("Delete this area…", () => _deleting = true, "trash-2", "Walks deliver there again", danger: true, startsGroup: true, disabled: _busy)] : null)"
                                       OnClose="() => OpenAsync(null)" />
+                            <PlaceMap @key="line.Key" Label="@($"{line.Title} on the map")" Area="_area" Mode="@(IsNew || _redrawing ? PlaceMapMode.DrawArea : PlaceMapMode.Show)"
+                                      OnArea="area => { _area = area; _redrawing = false; }" />
                             <TextField Label="Name" @bind-Value="_name" MaxLength="80" Disabled="!CanChangeExclusions" />
                             <SelectField Label="Why it's skipped" Options="Reasons" @bind-Value="_reason" Disabled="!CanChangeExclusions" Hint="Only staff see why." />
                             <TextField Label="Note" @bind-Value="_note" Multiline="true" MaxLength="1000" Disabled="!CanChangeExclusions" />
                             @Foot(zone.Id)
                             break;
                         case ExclusionAddress address:
-                            <PaneHead Title="@line.Title" Lead="Every campaign skips this letterbox and door."
-                                      Actions="@(CanChangeExclusions ? [this.Item("Delete this address…", () => _deleting = true, "trash-2", "Walks deliver there again", danger: true, disabled: _busy)] : null)"
+                            <PaneHead Title="@(IsNew ? (_address is { } picked ? OutreachWords.Place(picked) : "A new address to skip") : line.Title)" Lead="Every campaign skips this letterbox and door."
+                                      Actions="@(CanChangeExclusions && !IsNew ? [this.Item("Delete this address…", () => _deleting = true, "trash-2", "Walks deliver there again", danger: true, disabled: _busy)] : null)"
                                       OnClose="() => OpenAsync(null)" />
+                            <PlaceMap @key="line.Key" Label="@($"{line.Title} on the map")" Point="@PointOf(_address ?? address.Address)" Mode="@(IsNew ? PlaceMapMode.PickAddress : PlaceMapMode.Show)"
+                                      OnAddress="picked => _address = picked" />
                             <SelectField Label="Why it's skipped" Options="Reasons" @bind-Value="_reason" Disabled="!CanChangeExclusions" />
                             <TextField Label="Who asked" @bind-Value="_caller" MaxLength="200" Disabled="!CanChangeExclusions"
                                        Hint="A name and how to reach them, if they called. Only outreach leaders see it." />
@@ -52,6 +66,7 @@
                             <PaneHead Title="@line.Title" Lead="@(skip.Hostile ? "A walker marked this door: they want nothing to do with outreach." : "A walker marked a No junk mail sign here.")"
                                       Actions="@(CanClearMarks ? [this.Item(skip.Hostile ? "Clear this mark…" : "Clear No junk mail…", () => _deleting = true, "trash-2", "Walks deliver there again", danger: true, disabled: _busy)] : null)"
                                       OnClose="() => OpenAsync(null)" />
+                            <PlaceMap @key="line.Key" Label="@($"{line.Title} on the map")" Point="@PointOf(skip.Address)" />
                             <FactList>
                                 <Fact Label="Marked" Icon="calendar" Text="@OutreachWords.Date(skip.At)" />
                                 <Fact Label="Kept until" Icon="clock" Text="@(skip.Hostile ? "Someone clears it" : $"{OutreachWords.Date(skip.Until)}, unless a walker marks it again")" />
@@ -110,12 +125,38 @@
 
     private bool CanClearMarks => Access.Can(OutreachPermissions.Review, MinistryScope);
 
+    private const string NewKey = "new/";
+
+    private IReadOnlyList<MapPoint>? _area;
+    private AddressPoint? _address;
+    private bool _redrawing;
+
+    private bool IsNew => _open?.Key.StartsWith(NewKey, StringComparison.Ordinal) == true;
+
     private bool Changed => _open?.Item switch
     {
-        ExclusionZone zone => _name != zone.Name || _reason != Code(zone.Reason) || _note != zone.Note,
-        ExclusionAddress address => _reason != Code(address.Reason) || _note != address.Note || _caller != address.Caller || _marker != address.ShowMarker,
+        ExclusionZone zone => _name != zone.Name || _reason != Code(zone.Reason) || _note != zone.Note || !SameArea(zone),
+        ExclusionAddress address => _reason != Code(address.Reason) || _note != address.Note || _caller != address.Caller || _marker != address.ShowMarker
+                                    || (IsNew && _address is not null),
         _ => false,
     };
+
+    private string? Blocked => _open?.Item switch
+    {
+        ExclusionZone when _area is not { Count: >= 3 } => "Draw the area on the map to save it.",
+        ExclusionZone when _name.Trim().Length == 0 => "Give the area a name to save it.",
+        ExclusionAddress when IsNew && _address is null => "Click the letterbox on the map to save it.",
+        _ => null,
+    };
+
+    private bool SameArea(ExclusionZone zone) =>
+        _area is { } area && area.Count == zone.Area.Count && area.Zip(zone.Area).All(pair => pair.First.Lat == pair.Second.Lat && pair.First.Lon == pair.Second.Lng);
+
+    private static MapPoint? PointOf(AddressPoint place) => place.Point is { Lat: not 0 } point ? new MapPoint(point.Lat, point.Lng) : null;
+
+    private static PlaceLine NewZone() => new($"{NewKey}zone", PlaceKind.Zone, "A new area", "", null, new ExclusionZone { Reason = ExclusionReason.NotHomes });
+
+    private static PlaceLine NewAddress() => new($"{NewKey}address", PlaceKind.Address, "A new address", "", null, new ExclusionAddress { Reason = ExclusionReason.Complaint });
 
     private async Task<Lists> LoadAsync()
     {
@@ -145,12 +186,12 @@
 
     private IEnumerable<PlaceLine> Shown(Lists lists) => lists.Places.Where(line => _filter is null || line.Kind == _filter);
 
-    private PlaceLine? Chosen(Lists lists) => _open is { } open ? lists.Places.FirstOrDefault(line => line.Key == open.Key) : null;
+    private PlaceLine? Chosen(Lists lists) => _open is { } open ? IsNew ? open : lists.Places.FirstOrDefault(line => line.Key == open.Key) : null;
 
     private RenderFragment Foot(string id) => CanChangeExclusions
         ? @<div class="editor-foot">
             <Notice Tone="NoticeTone.Warning" Text="@_problem" />
-            <SaveBar Label="Save" Busy="_busy" OnSave="SaveAsync" OnCancel="() => OpenAsync(null)" State="SaveBar.For(Changed, _saved)" />
+            <SaveBar New="IsNew" Label="@(IsNew ? "Add it" : "Save")" Busy="_busy" OnSave="SaveAsync" OnCancel="() => OpenAsync(null)" State="SaveBar.For(Changed, _saved)" Blocked="@Blocked" />
         </div>
         : @<p class="field__hint">Only outreach leaders can change this.</p>;
 
@@ -162,7 +203,7 @@
     {
         if (!await Unsaved.MayLeaveAsync())
             return;
-        (_open, _saved, _problem, _deleting) = (null, false, null, false);
+        (_open, _saved, _problem, _deleting, _redrawing, _address) = (null, false, null, false, false, null);
         if (line is not null)
             Take(line);
     }
@@ -174,6 +215,7 @@
         {
             case ExclusionZone zone:
                 (_name, _reason, _note) = (zone.Name, Code(zone.Reason), zone.Note);
+                _area = [.. zone.Area.Select(point => new MapPoint(point.Lat, point.Lng))];
                 break;
             case ExclusionAddress address:
                 (_reason, _note, _caller, _marker) = (Code(address.Reason), address.Note, address.Caller, address.ShowMarker);
@@ -192,13 +234,21 @@
         switch (_open?.Item)
         {
             case ExclusionZone zone:
-                await Outreach.SaveZoneAsync(Scope, new ExclusionZone { Id = zone.Id, Name = _name.Trim(), Area = zone.Area, Reason = ReasonChosen, Note = _note.Trim() });
+                string zoneId = IsNew ? Guid.CreateVersion7().ToString() : zone.Id;
+                await Outreach.SaveZoneAsync(Scope, new ExclusionZone
+                {
+                    Id = zoneId, Name = _name.Trim(), Reason = ReasonChosen, Note = _note.Trim(),
+                    Area = [.. (_area ?? []).Select(point => new GeoPoint { Lat = point.Lat, Lng = point.Lon })],
+                });
+                _open = _open! with { Key = $"zone/{zoneId}" };
                 break;
             case ExclusionAddress address:
+                string addressId = IsNew ? Guid.CreateVersion7().ToString() : address.Id;
                 await Outreach.SaveAddressAsync(Scope, new ExclusionAddress
                 {
-                    Id = address.Id, Address = address.Address, Reason = ReasonChosen, Note = _note.Trim(), Caller = _caller.Trim(), ShowMarker = _marker,
+                    Id = addressId, Address = _address ?? address.Address, Reason = ReasonChosen, Note = _note.Trim(), Caller = _caller.Trim(), ShowMarker = _marker,
                 });
+                _open = _open! with { Key = $"address/{addressId}" };
                 break;
         }
         _saved = true;

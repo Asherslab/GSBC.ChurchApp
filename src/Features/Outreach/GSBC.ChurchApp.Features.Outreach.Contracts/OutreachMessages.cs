@@ -442,6 +442,7 @@ public sealed class ReportResolve : IScopedRequest
     [ProtoMember(3)] public ReportState Outcome { get; set; }
     [ProtoMember(4)] public ExclusionReason ExcludeAs { get; set; }
     [ProtoMember(5)] public bool ShowMarker { get; set; }
+    [ProtoMember(6)] public List<GeoPoint> Area { get; set; } = [];
     public string ScopeId => MinistryId;
 }
 

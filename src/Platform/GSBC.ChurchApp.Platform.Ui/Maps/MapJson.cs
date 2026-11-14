@@ -35,6 +35,8 @@ public static class MapJson
             Optional(json, "label", line.Label);
             Optional(json, "colour", line.Colour);
             Optional(json, "id", line.Id);
+            if (line.Age is { } age)
+                json.WriteNumber("age", Math.Round(Math.Clamp(age, 0, 1), 3));
             json.WritePropertyName("points");
             Points(json, line.Points);
             json.WriteEndObject();
