@@ -21,6 +21,7 @@ public sealed class GalleryRules
         ["Can"] = "shows or hides by permission; nothing of its own to see",
         ["EditScope"] = "tells an unsaved-changes guard that something changed",
         ["LiveData"] = "loads data from a feed; the gallery has no feeds",
+        ["MapSketch"] = "draws on a MapView, which needs a region's map file from the outreach.regions feed; the gallery has no feeds",
         ["MapView"] = "draws a region's map file, which comes from the outreach.regions feed; the gallery has no feeds",
         ["RefreshOn"] = "reloads when feeds change; nothing to see",
         ["AddressWatch"] = "tells a page its address moved; nothing to see",
