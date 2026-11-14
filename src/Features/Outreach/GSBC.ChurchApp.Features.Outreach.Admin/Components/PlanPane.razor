@@ -35,6 +35,10 @@ else
                Selected="Chosen" SelectedChanged="section => OnSelect.InvokeAsync(section.Id)" Class="plan-pane__routes" />
     @if (CanPlan)
     {
+        <div class="plan-pane__tools">
+            <Button Small="true" Variant="ButtonVariant.Quiet" Icon="@AppIcons.Rebalance" Disabled="Busy" Tooltip="Even out the routes that aren't locked" OnClick="OnRebalance">Rebalance</Button>
+            <Button Small="true" Variant="ButtonVariant.Quiet" Icon="@AppIcons.Regenerate" Disabled="@(Busy || !Planner.HasArea)" Tooltip="Split the area again, keeping locked routes" OnClick="OnRegenerate">Regenerate</Button>
+        </div>
         <div class="plan-pane__more">
             <Button Variant="ButtonVariant.Link" OnClick="() => _sizing = !_sizing">@(_sizing ? "Done" : "Change how big routes are")</Button>
             @if (Planner is { HasArea: true, AreaId.Length: 0 })
@@ -69,6 +73,8 @@ else
     [Parameter] public EventCallback<(PlanTarget Target, double PerRoute)> OnSize { get; set; }
     [Parameter] public EventCallback<bool> OnIncludeRested { get; set; }
     [Parameter] public EventCallback<string> OnSaveArea { get; set; }
+    [Parameter] public EventCallback OnRebalance { get; set; }
+    [Parameter] public EventCallback OnRegenerate { get; set; }
 
     private string _area = "", _areaName = "";
     private bool _sizing, _naming;

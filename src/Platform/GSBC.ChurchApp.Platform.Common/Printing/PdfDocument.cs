@@ -254,6 +254,7 @@ public sealed class PdfPage(double width, double height)
         '’' => (byte)0x92,
         '“' => (byte)0x93,
         '”' => (byte)0x94,
+        '…' => (byte)0x85,
         '•' => (byte)0x95,
         '–' => (byte)0x96,
         '—' => (byte)0x97,

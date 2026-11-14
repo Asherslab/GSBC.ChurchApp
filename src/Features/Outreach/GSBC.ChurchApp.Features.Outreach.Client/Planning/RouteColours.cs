@@ -8,7 +8,7 @@ public static class RouteColours
 
     public static string Of(int colour) => All[Math.Abs(colour) % All.Length];
 
-    public static string Faded(int colour) => Mix(Of(colour), 0.32);
+    public static string Faded(int colour) => Mix(Of(colour), 0.5);
 
     private static string Mix(string hex, double share)
     {

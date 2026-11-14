@@ -8,7 +8,7 @@
 </div>
 @if (Open.Count > 0 && Time.GetUtcNow().UtcDateTime < Day.EndsAt)
 {
-    <Notice Tone="NoticeTone.Info" Text="@($"Someone just arrived? {Gaps}")" />
+    <Notice Tone="NoticeTone.Info" Text="@Gaps" />
 }
 <DataTable TItem="BoardLine" Label="How each route is going" Items="Lines" Columns="Columns" Key="line => line.Route.Id"
            Selected="Chosen" SelectedChanged="line => OnSelect.InvokeAsync(line.Section?.Id)" Class="day-board">
@@ -39,11 +39,7 @@
 
     private int DonePercent => DayBoards.Percent(Board.Progress.Sum(progress => progress.LetterboxesDone), Board.Progress.Sum(progress => progress.Letterboxes));
 
-    private string Gaps => Open.Count switch
-    {
-        1 => $"Route {Open[0].Route.Number} has no one yet.",
-        _ => $"Routes {string.Join(", ", Open.Take(Open.Count - 1).Select(line => line.Route.Number))} and {Open[^1].Route.Number} have no one yet.",
-    };
+    private string Gaps => DayBoards.Gaps(Open.Select(line => line.Route.Number).ToList());
 
     private static readonly IReadOnlyList<TableColumn<BoardLine>> Columns =
     [

@@ -95,7 +95,7 @@ else
             {
                 <PlanPane Planner="_planner" Areas="Setup.Areas" AreaName="@AreaName" CanPlan="CanPlan" Selected="_selected" Busy="_busy"
                           OnSelect="SelectAsync" OnDraw="() => ChooseTool(PlanTool.Area)" OnUseArea="UseAreaAsync" OnSize="SizeAsync"
-                          OnIncludeRested="IncludeRestedAsync" OnSaveArea="SaveAreaAsync" />
+                          OnIncludeRested="IncludeRestedAsync" OnSaveArea="SaveAreaAsync" OnRebalance="RebalanceAsync" OnRegenerate="RegenerateAsync" />
             }
             else
             {
@@ -110,9 +110,6 @@ else
             {
                 <p class="plan-desk__published">@PublishedLine</p>
                 <div class="plan-desk__actions">
-                    <Button Variant="ButtonVariant.Quiet" Icon="@AppIcons.Rebalance" Disabled="_busy" Tooltip="Even out the routes that aren't locked" OnClick="RebalanceAsync">Rebalance</Button>
-                    <Button Variant="ButtonVariant.Quiet" Icon="@AppIcons.Regenerate" Disabled="@(_busy || !_planner.HasArea)" Tooltip="Split the area again, keeping locked routes" OnClick="RegenerateAsync">Regenerate</Button>
-                    <span class="plan-desk__gap"></span>
                     <Button Busy="_busy" Disabled="!Unpublished" OnClick="AskToPublish">@PublishLabel</Button>
                 </div>
             }

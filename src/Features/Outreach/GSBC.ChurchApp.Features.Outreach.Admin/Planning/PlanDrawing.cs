@@ -10,6 +10,7 @@ namespace GSBC.ChurchApp.Features.Outreach.Admin.Planning;
 public static class PlanDrawing
 {
     private const double ReachMetres = 30;
+    private const double OpeningMetres = 900;
 
     public static MapPoint Point(GeoPoint point) => new(point.Lat, point.Lon);
 
@@ -46,7 +47,7 @@ public static class PlanDrawing
             GeoPoint middle = Middle(planner, section);
             string colour = selected is null || selected == section.Id ? RouteColours.Of(section.Colour) : RouteColours.Faded(section.Colour);
             string ink = selected is null || selected == section.Id ? "#ffffff" : RouteColours.Of(section.Colour);
-            return new MapLabel(Point(middle), $"{section.Number} · {section.Letterboxes} · {OutreachWords.Minutes(section.Minutes)}", colour, section.Id == selected ? 1000 : section.Number, ink);
+            return new MapLabel(Point(middle), $"{section.Number} · {section.Letterboxes} · {OutreachWords.Minutes(section.Minutes)}", colour, section.Id == selected ? -1 : section.Number, ink);
         }).ToList();
 
     public static IReadOnlyList<MapLine> CutPreview(DayPlanner planner, IReadOnlyList<CutPreview> cuts) =>
@@ -70,6 +71,12 @@ public static class PlanDrawing
         IEnumerable<GeoPoint> points = planner.HasArea ? planner.Area
             : planner.Sections.SelectMany(section => section.Section.Pieces).Select(piece => planner.Network.Graph.Projection.ToGeo(planner.Network.Midpoint(piece)));
         List<MapPoint> all = [.. Points(points), Point(meeting)];
+        if (all.Count == 1)
+        {
+            Flat centre = planner.Network.Graph.Projection.ToFlat(meeting);
+            all = [Point(planner.Network.Graph.Projection.ToGeo(centre + new Flat(-OpeningMetres, -OpeningMetres))),
+                Point(planner.Network.Graph.Projection.ToGeo(centre + new Flat(OpeningMetres, OpeningMetres)))];
+        }
         return MapFrame.Around(all, padding: 60, maxZoom: 16);
     }
 

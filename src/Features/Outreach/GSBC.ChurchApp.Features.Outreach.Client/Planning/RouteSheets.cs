@@ -65,8 +65,9 @@ public static class RouteSheets
 
     private static string Facts(PlannedSection section, RouteSummary summary, SheetDay day)
     {
-        string handed = day.HandedOut.Length > 0 ? day.HandedOut.ToLowerInvariant() : "bundles";
-        string bundles = summary.BundlesToTake == 1 ? $"1 bundle of {handed}" : $"{summary.BundlesToTake} bundles of {handed}";
+        string bundles = summary.BundlesToTake == 1 ? "1 bundle" : $"{summary.BundlesToTake} bundles";
+        if (day.HandedOut.Length > 0)
+            bundles += $" of {day.HandedOut.ToLowerInvariant()}";
         return $"{section.Letterboxes} letterboxes · take {bundles} · about {OutreachWords.Minutes(section.Minutes)} · {summary.Metres / 1000:0.0} km";
     }
 
@@ -271,7 +272,12 @@ public static class RouteSheets
             page.Text(left, noteY, line, PdfFont.Regular, 8, Ink2);
             noteY += 10;
         }
-        page.Text(left, page.Height - Margin + 6, Clip(day.Attribution, width), PdfFont.Regular, 6.5, Ink2);
+        double attributionY = page.Height - Margin + 2;
+        foreach (string line in page.Wrap(day.Attribution, PdfFont.Regular, 6.5, width).Take(2))
+        {
+            page.Text(left, attributionY, line, PdfFont.Regular, 6.5, Ink2);
+            attributionY += 8;
+        }
     }
 
     private static IEnumerable<StreetLine> Ordered(RouteSummary summary)
