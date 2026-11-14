@@ -566,8 +566,8 @@ stops for the end of a walk; B and C stay on the page for the owner). Detail: [d
   route*. Leaders who can see reports get *How the day is going* (the planner station's live board).
 - **The QR on a printed map** is `https://<app host>/open/outreach/r/<code>` (`OutreachLinks.RouteLink`), the app's
   existing universal link, so it opens the route ready to start. **Without the app** it lands on the existing `/open` page,
-  which names nothing for this route and says how to get the app. A web page with the route's map would be a new non-gRPC
-  path, so it isn't built: **open for the owner** (below).
+  which says how to get the app. **No web page with the route's map for now** (owner, 2026-11-15: keep the get-the-app
+  page), so no new path.
 - **My outreach:** every walk saved on this phone, and your walks from wherever you're signed in, with totals; *Count me
   by name* for signed-in walkers (off: counted anonymously). Signed-out walks are kept on the phone (the last 200).
 - **Offline maps:** each region with its size; the one you walk in is kept by itself, others by choice; Remove takes the
@@ -575,9 +575,6 @@ stops for the end of a walk; B and C stay on the page for the owner). Detail: [d
 
 Open for the owner:
 
-- **The QR without the app:** should scanning a route's QR on a phone without the app show a web page with the route's
-  map? That is a server-rendered page or a public data path on the gateway, which AGENTS.md needs your yes for. Today it
-  shows the existing "get the app" page.
 - **Android:** the background location and kept files are iOS only; Android's data layer is still a stub.
 - **Design, left open after two review rounds** (impeccable's finish reviewer, 2026-11-15): day routes are rows, not the
   line of stops the end of a walk uses; the walking screen keeps the tab bar (the shell has no per-page way to hide it)

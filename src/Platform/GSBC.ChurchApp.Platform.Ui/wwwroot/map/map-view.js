@@ -127,6 +127,7 @@ export async function create(element, optionsJson, receiver) {
   const data = { lines: empty, areas: empty, markers: empty, you: empty };
   let you = null;
   let following = !!options.follow;
+  let dragged = false;
   let shownScheme = scheme();
 
   const styleNow = () => withOverlays(mapStyle({ tiles, glyphs, scheme: shownScheme, attribution: options.source.attribution ?? "" }), data);
@@ -157,24 +158,21 @@ export async function create(element, optionsJson, receiver) {
   };
 
   let framed = null;
-  const fit = (b) => map.fitBounds([[b.west, b.south], [b.east, b.north]], { padding: b.padding ?? 40, duration: 0, maxZoom: b.maxZoom ?? 17 });
-  const inside = (b, [lon, lat]) => lon >= b.west && lon <= b.east && lat >= b.south && lat <= b.north;
-  const showYou = () => {
-    if (framed && !inside(framed, you.point)) {
-      const [lon, lat] = you.point;
-      fit({ ...framed, west: Math.min(framed.west, lon), east: Math.max(framed.east, lon), south: Math.min(framed.south, lat), north: Math.max(framed.north, lat) });
-      return;
-    }
-    map.jumpTo({ center: you.point, zoom: Math.max(map.getZoom(), 17) });
+  const fit = (b, animate = false) =>
+    map.fitBounds([[b.west, b.south], [b.east, b.north]], { padding: b.padding ?? 40, duration: animate ? 600 : 0, maxZoom: b.maxZoom ?? 17 });
+  const showYou = (animate = false) => {
+    if (framed) fit(framed, animate);
+    else map.easeTo({ center: you.point, zoom: Math.max(map.getZoom(), 17), duration: animate ? 600 : 0 });
   };
   map.on("load", () => {
     Object.entries(data).forEach(([name, value]) => map.getSource(name)?.setData(value));
-    if (following && you) showYou();
-    else if (framed) fit(framed);
+    if (framed) fit(framed);
+    else if (following && you) showYou();
   });
   map.on("zoomend", drawYou);
   map.on("click", (e) => receiver?.invokeMethodAsync("OnTap", e.lngLat.lat, e.lngLat.lng));
   map.on("dragstart", () => {
+    dragged = true;
     if (!following) return;
     following = false;
     receiver?.invokeMethodAsync("OnStoppedFollowing");
@@ -196,18 +194,17 @@ export async function create(element, optionsJson, receiver) {
     setYou: (json) => {
       you = json ? JSON.parse(json) : null;
       drawYou();
-      if (following && you && framed && !inside(framed, you.point)) showYou();
-      else if (following && you) map.easeTo({ center: you.point, duration: 600 });
+      if (following && you && !framed) showYou(true);
     },
     follow: (on) => {
       following = on;
-      if (on && you) map.easeTo({ center: you.point, zoom: Math.max(map.getZoom(), 17), duration: 600 });
+      if (on) dragged = false;
+      if (on && you) showYou(true);
     },
     fit: (json) => {
       framed = JSON.parse(json);
       map.resize();
-      if (following && you) showYou();
-      else fit(framed);
+      if (following || !dragged) fit(framed, map.loaded());
     },
     centre: (lat, lon, zoom) => map.jumpTo({ center: [lon, lat], zoom: zoom ?? map.getZoom() }),
     resize: () => map.resize(),

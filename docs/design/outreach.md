@@ -47,7 +47,7 @@ masthead's navy at display size and the map supports it. Maps are `MapView` ([ma
 - **Walking** (`/outreach/walking`): the masthead is the walk: a status line (Walking or Paused and the time at the
   left, the campaigns at the right), the street at display size, *Houses on your left · 4 to go* at title size, and the
   next turn with its arrow over a hairline (*Then left into …* and its letterboxes). Then the map, centred on you at
-  zoom 17 while it follows you (the walk and you together while you're off it); a drag stops that and puts a quiet small *Follow me* at the map's bottom right. Then
+  street level while it follows you, framing you, the street you're on and the next one (the whole route and you before the first fix); a drag stops that and puts a quiet small *Follow me* at the map's bottom right. Then
   progress (letterboxes and distance over the orange `ProgressTrack`), what you just marked as a status line with Undo
   (for 12 seconds), a warning `Notice` if location is off, two 3.5rem quiet buttons side by side (No junk mail or At a
   door; Spoke to someone), and a bar: Pause (Carry on when paused) at the left, the walk's ⋯ `Menu` in the middle (Not a

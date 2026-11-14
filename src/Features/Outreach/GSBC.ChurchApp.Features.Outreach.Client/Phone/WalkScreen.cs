@@ -47,12 +47,25 @@ public sealed class WalkScreen(WalkSession walk, OutreachStore store, RegionMaps
                 MarkerKind.Check => MapMarkerKind.Check,
                 _ => MapMarkerKind.Skip,
             }, (MarkerKind)marker.Kind is MarkerKind.NoJunkMail or MarkerKind.DontLetterbox ? marker.Label : null))];
-        MapFrame frame = MapFrame.Around(state.Steps.SelectMany(step => step.Line).Select(point => new MapPoint(point[0], point[1])), 32);
         MapYou? you = progress?.You is { } at ? new MapYou(new MapPoint(at.Lat, at.Lon), progress.Accuracy) : null;
+        MapFrame frame = Frame(state, progress, you);
         List<Campaign> carried = [.. state.Campaigns.Select(now.CampaignOf).OfType<Campaign>()];
         bool tracking = state.Tracking && (await location.StateAsync()).Running || state.Paused;
         List<OutboxEntry> queued = [.. (await outbox.ListAsync()).Where(entry => entry.Method.StartsWith(OutreachMethods.Under, StringComparison.Ordinal))];
         return new WalkView(state, progress, source, lines, markers, frame, you, carried.Count == 0 ? "General outreach" : string.Join(" + ", carried.Select(c => c.Name)),
             tracking, now.Settings.BundleSize, queued.Count(entry => !entry.Failed), queued.Count(entry => entry.Failed));
+    }
+
+    private const int StreetPadding = 56;
+    private const int StreetZoom = 18;
+    private const int RoutePadding = 32;
+
+    private static MapFrame Frame(WalkState state, WalkProgress? progress, MapYou? you)
+    {
+        IEnumerable<MapPoint> Line(SavedStep? step) => step?.Line.Select(point => new MapPoint(point[0], point[1])) ?? [];
+        if (you is not null && progress?.Now is { } now)
+            return MapFrame.Around([you.Point, .. Line(now.Step), .. Line(progress.Next?.Step)], StreetPadding, StreetZoom);
+        List<MapPoint> route = [.. state.Steps.SelectMany(step => Line(step))];
+        return MapFrame.Around(you is null ? route : [.. route, you.Point], RoutePadding);
     }
 }

@@ -37,7 +37,8 @@
 .outreach-reach { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-xs); margin-bottom: var(--stack); padding: var(--space-md) var(--space-lg); border-radius: var(--radius-field); background: var(--sand); color: var(--ink-2); font-size: var(--text-caption); line-height: 1.45; }
 .outreach-reach p { margin: 0; }
 .outreach-reach strong { color: var(--ink); font-weight: 600; }
-.outreach-reach .btn--link { justify-self: start; min-height: var(--touch); text-align: left; white-space: normal; }
+.outreach-reach .btn--link { justify-self: start; text-align: left; white-space: normal; }
+.outreach-reach__ways { display: grid; justify-items: start; gap: var(--space-sm); margin-top: var(--space-2xs); }
 .outreach-reach .btn--block { margin-top: var(--space-xs); }
 .section > .notice { margin-bottom: var(--stack); }
 .section > .segmented, .section > .field { margin-bottom: var(--stack); }
