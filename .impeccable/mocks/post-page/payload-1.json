@@ -1,0 +1,46 @@
+{
+  "title": "Reading a post on the phone",
+  "question": "You said a post should feel like a noticeboard item with Apple News's clean presentation, nothing added at the end, and no masthead of who it's from. What's missing, from my look at it on a phone: a short notice is two-thirds empty white with nothing marking where it ends; picture posts and picture-less posts look like two different apps; the title and date are timid (\"Saturday 14 November\" for something posted today); and the opening paragraph, which carries a notice, looks like every other one. Each option shows a picture post with an event card (left) and a short notice with no picture (right). Every option also gets: \"Today\" and \"Yesterday\" in the date, the first paragraph set a little larger, and a fix for pictures showing twice when a post leads with several.",
+  "options": [
+    {
+      "id": "bulletin-item",
+      "kind": "assigned",
+      "kicker": "THE ROLL",
+      "label": "The bulletin item",
+      "thesis": "Set like an item in the printed bulletin: a navy rule, a date block (Today, 14 Nov) beside a big title, then the picture and text; the notice ends on a sand foot saying when and who posted it.",
+      "palette": ["#ffffff", "#2a3d5e", "#f4efe7", "#00776d"],
+      "materials": ["navy rule over the head", "date block beside the title", "sand foot where the notice ends"],
+      "viewport": "‹ News; a navy rule; the date block TODAY 14 NOV beside the title and Church office; the picture with its caption; the larger first paragraph. The short notice ends on a sand foot: Posted today by the church office for everyone.",
+      "risk": "The date block repeats what the meta line says, and a long title beside it wraps into three or four lines.",
+      "html": ".impeccable/mocks/post-page/a-bulletin-item.html",
+      "htmlFrame": "800x844"
+    },
+    {
+      "id": "rises-over-picture",
+      "kind": "dealt",
+      "label": "The post rises over its picture",
+      "thesis": "Every post has a cover: its picture full-bleed behind a clear top bar, or with no picture the navy with the church's mark; the post is a white sheet that rises over it and scrolls up across it, sitting on sand when it's short.",
+      "palette": ["#2a3d5e", "#ffffff", "#f4efe7", "#00776d"],
+      "materials": ["full-bleed cover under a clear top bar", "white sheet with rounded corners", "sand ground under a short post"],
+      "viewport": "The carols picture across the top with ‹ News and ⋯ as round chips over it and its caption on a pill; the sheet rises over it: Church news, Church office · Today, the title, the first paragraph. A short notice is a white sheet on sand under the navy cover.",
+      "risk": "The biggest change to the page, and a picture-led post shows its picture before its title.",
+      "html": ".impeccable/mocks/post-page/b-rises-over-picture.html",
+      "htmlFrame": "800x844"
+    },
+    {
+      "id": "poster",
+      "kind": "dealt",
+      "label": "The notice as a poster",
+      "thesis": "The top of every post is a navy poster with the title set large and who and when under it, under the picture when there is one; a short notice's first paragraph goes on the poster too, so the notice is read at a glance.",
+      "palette": ["#2a3d5e", "#d5c9b7", "#ffffff", "#00776d"],
+      "materials": ["navy poster block with the church's mark", "picture full width above it", "first paragraph on the poster when there's no picture"],
+      "viewport": "The carols picture across the column, then the navy poster: Carols by Candlelight: help us set up, Church office · Today, then the caption and text on white. The short notice is a navy poster holding the title, its first paragraph and Church office · Today.",
+      "risk": "Closest to today's navy band, so it may feel like more of the same, only bigger.",
+      "html": ".impeccable/mocks/post-page/c-poster.html",
+      "htmlFrame": "800x844"
+    }
+  ],
+  "reroll": true,
+  "steer": true,
+  "buildPath": { "value": "code" }
+}

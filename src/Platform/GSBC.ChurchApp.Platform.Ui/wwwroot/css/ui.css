@@ -58,6 +58,7 @@
   transition: opacity 180ms, transform 180ms;
 }
 .topbar.is-stuck .topbar__title, .topbar--solid .topbar__title { opacity: 1; transform: none; }
+.topbar--late-title:not(.is-stuck) .topbar__title { opacity: 0; transform: translateY(4px); }
 .topbar__start { justify-self: start; display: flex; align-items: center; min-width: 0; }
 .topbar__end { justify-self: end; display: flex; align-items: center; gap: 2px; }
 
@@ -600,6 +601,7 @@ button.text-link:disabled { color: var(--ink-3); cursor: default; }
 .writing-desk__settings .section__group { display: grid; gap: var(--space-lg); }
 .writing-desk__settings .field__input { text-overflow: ellipsis; }
 .writing-desk__preview .phone-frame__status, .writing-desk__preview .phone-frame .topbar { color: var(--ink); }
+.writing-desk__preview .phone-frame:has(.topbar--solid) .phone-frame__status, .writing-desk__preview .phone-frame .topbar--solid { color: var(--on-masthead); }
 .writing-desk--folded .writing-desk__side { padding-inline: var(--space-sm); }
 .writing-desk--folded .writing-desk__side-head { justify-content: center; }
 .writing-desk--folded :is(.writing-desk__side-title, .writing-desk__settings) { display: none; }

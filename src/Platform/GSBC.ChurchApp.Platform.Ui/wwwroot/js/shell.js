@@ -19,9 +19,10 @@ window.gsbcShell = (() => {
     if (!topbar) return;
     const masthead = page.querySelector('.masthead');
     const bottom = topbar.getBoundingClientRect().bottom;
-    const title = masthead?.querySelector('h1')?.getBoundingClientRect();
+    const marked = page.querySelector('[data-page-title]');
+    const title = (masthead?.querySelector('h1') ?? marked)?.getBoundingClientRect();
     const titleGone = !!title && title.bottom <= bottom;
-    topbar.classList.toggle('is-stuck', titleGone || page.scrollTop > Number(page.dataset.stuckAt ?? 44));
+    topbar.classList.toggle('is-stuck', titleGone || (!marked && page.scrollTop > Number(page.dataset.stuckAt ?? 44)));
     topbar.classList.toggle('is-solid', !!masthead && page.scrollTop > 0 && (masthead.getBoundingClientRect().bottom < bottom + mastheadLead || (!!title && title.top < bottom)));
   }, { capture: true, passive: true });
 

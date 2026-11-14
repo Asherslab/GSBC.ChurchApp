@@ -2,43 +2,41 @@
 @using GSBC.ChurchApp.Platform.Icons
 @using GSBC.ChurchApp.Platform.Ui.Content
 @inject Shell Shell
+@inject TimeProvider Clock
 
-<article class="post-view">
-    <MediaStrip Content="Content" About="@Title" />
-    @if (Banded)
-    {
-        <div class="post-view__band">
-            <h1 class="post-view__title">@Title</h1>
-        </div>
-    }
+<article class="@(FillsPage ? "post-view post-view--fills" : "post-view")">
     <header class="post-view__head">
-        @if (!Banded)
-        {
-            <h1 class="post-view__title">@Title</h1>
-        }
-        <p class="post-view__meta">
-            @if (From.Length > 0)
-            {
-                @if (FromHref.Length > 0)
+        <p class="post-view__day"><span class="visually-hidden">@LongDate</span><small aria-hidden="true">@Day.Word</small><b aria-hidden="true">@Day.Number</b><span aria-hidden="true">@Day.Month</span></p>
+        <div class="post-view__heading">
+            <h1 class="post-view__title" data-page-title>@Title</h1>
+            <p class="post-view__meta">
+                @if (From.Length > 0)
                 {
-                    <a class="post-view__from" href="@FromHref"><Icon Name="@AppIcons.Ministries" />@From</a>
+                    @if (FromHref.Length > 0)
+                    {
+                        <a class="post-view__from" href="@FromHref"><Icon Name="@AppIcons.Ministries" Size="IconSize.Small" />@From</a>
+                    }
+                    else
+                    {
+                        <span class="post-view__from"><Icon Name="@AppIcons.Ministries" Size="IconSize.Small" />@From</span>
+                    }
                 }
-                else
+                @if (Author.Length > 0)
                 {
-                    <span class="post-view__from"><Icon Name="@AppIcons.Ministries" />@From</span>
+                    <span class="post-view__author">@Author</span>
                 }
-            }
-            @if (Author.Length > 0)
-            {
-                <span>@Author</span>
-            }
-            <span>@When</span>
-        </p>
-        @Status
+                @if (Edited)
+                {
+                    <span>Edited</span>
+                }
+            </p>
+            @Status
+        </div>
     </header>
+    <MediaStrip Content="Content" About="@Title" />
     @if (!Content.IsEmpty)
     {
-        <RichTextView Content="Content" Class="post-view__body" About="@Title" SkipLeadingMedia="MediaStrip.Leads(Content)" />
+        <RichTextView Content="Content" Class="post-view__body" About="@Title" SkipBlocks="Leading" />
     }
     @if (LinkPath.Length > 0)
     {
@@ -54,27 +52,35 @@
         </div>
     }
     @ChildContent
+    <footer class="post-view__end">
+        <p>Posted <b>@Day.Phrase</b>@if (By.Length > 0) { <text> by <b>@By</b></text> }@if (For.Length > 0) { <text> for @ForWords</text> }.</p>
+    </footer>
 </article>
 
 @code {
     [Parameter, EditorRequired] public required string Title { get; set; }
     [Parameter, EditorRequired] public required RichText Content { get; set; }
+    [Parameter, EditorRequired] public required DateTime Posted { get; set; }
+    [Parameter] public bool Edited { get; set; }
     [Parameter] public string Author { get; set; } = "";
     [Parameter] public string From { get; set; } = "";
     [Parameter] public string FromHref { get; set; } = "";
-    [Parameter] public string When { get; set; } = "";
+    [Parameter] public string For { get; set; } = "";
     [Parameter] public string LinkPath { get; set; } = "";
     [Parameter] public string LinkLabel { get; set; } = "";
+    [Parameter] public bool FillsPage { get; set; }
     [Parameter] public RenderFragment? Status { get; set; }
     [Parameter] public RenderFragment? ChildContent { get; set; }
-    [Parameter] public bool Band { get; set; }
 
-    private bool Banded => Band && !MediaStrip.Leads(Content) && !OpensWithAPicture;
+    private DateTime Now => Clock.GetUtcNow().UtcDateTime;
 
-    private bool OpensWithAPicture => RichTextParser.Parse(Content.Markdown).Blocks.FirstOrDefault() switch
-    {
-        MediaBlock single => Content.MediaById(single.MediaId) is { IsImage: true },
-        GalleryBlock => true,
-        _ => false,
-    };
+    private PostDay Day => PostDay.Of(Posted, Now);
+
+    private string LongDate => ChurchDates.Describe(Posted, DateLineStyle.Long, withTime: false, Now);
+
+    private string ForWords => For.Length == 0 ? "" : char.ToLowerInvariant(For[0]) + For[1..];
+
+    private string By => Author.Length > 0 ? Author : From;
+
+    private int Leading => MediaStrip.Leads(Content) ? PostOpening.Of(Content).Blocks : 0;
 }

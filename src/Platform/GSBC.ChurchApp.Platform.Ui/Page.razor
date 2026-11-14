@@ -3,7 +3,7 @@
 <PageTitle>@Title · Good Shepherd</PageTitle>
 
 <div class="page-scroll" data-stuck-at="@StuckAt" data-back-href="@BackHref">
-    <header class="topbar @(TopBar == TopBarStyle.Solid ? "topbar--solid" : "")">
+    <header class="topbar @(TopBar switch { TopBarStyle.Solid => "topbar--solid", TopBarStyle.SolidTitleOnScroll => "topbar--solid topbar--late-title", _ => "" })">
         <div class="topbar__start">
             @if (BackHref is not null || OnBack.HasDelegate)
             {
