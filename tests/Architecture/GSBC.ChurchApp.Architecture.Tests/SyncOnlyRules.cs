@@ -52,8 +52,6 @@ public sealed partial class SyncOnlyRules
         "src/Platform/GSBC.ChurchApp.Platform.Client/Diagnostics/ObservedChannel.cs",
     ];
 
-    private const string AppHost = "src/Hosts/App/GSBC.ChurchApp.Hosts.App/GSBC.ChurchApp.Hosts.App.csproj";
-
     [Fact]
     public void TheAppCallsTheServerOnlyThroughSyncTheOutboxOrAnApprovedException()
     {
@@ -161,27 +159,13 @@ public sealed partial class SyncOnlyRules
             .ToDictionary(match => match.Groups["path"].Value, match => match.Groups["service"].Value);
 
     private static IEnumerable<AppFile> AppFiles() =>
-        AppProjects().SelectMany(project =>
+        Projects.InTheApp().SelectMany(project =>
         {
             string folder = Path.GetRelativePath(RepoRoot.Path, Path.GetDirectoryName(project)!).Replace(Path.DirectorySeparatorChar, '/');
             return RepoFiles.Under(folder, ".cs").Concat(RepoFiles.Under(folder, ".razor"))
                 .Where(path => !path.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}", StringComparison.Ordinal))
-                .Select(path => AppFile.Read(path));
+                .Select(AppFile.Read);
         });
-
-    private static IEnumerable<string> AppProjects()
-    {
-        HashSet<string> seen = [];
-        Stack<string> waiting = new([Path.Combine(RepoRoot.Path, AppHost)]);
-        while (waiting.TryPop(out string? project))
-        {
-            if (!seen.Add(project))
-                continue;
-            foreach (string reference in Projects.ReferencesOf(project))
-                waiting.Push(reference);
-        }
-        return seen;
-    }
 
     private sealed record AppFile(string Path, string Text, bool AdminOnly, IReadOnlyList<string> Types)
     {

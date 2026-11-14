@@ -26,6 +26,7 @@
     {
         Task<PersonAbilities> abilities = Access.ExplainAsync(Person.Id).AsTask();
         Task<Catalog> catalog = Access.ListCatalogAsync().AsTask();
+        await Task.WhenAll(abilities, catalog);
         PersonAbilities explained = await abilities;
         Dictionary<string, string> names = [];
         foreach (IGrouping<string, PlaceAbilities> kind in explained.Places.Where(place => place.ObjectId is not null).GroupBy(place => place.ScopeKind))

@@ -67,6 +67,13 @@ window.gsbcShell = (() => {
   edgeSwipe();
 
   const typing = 'input, textarea, select, [contenteditable]:not([contenteditable="false"])';
+  const ownKeyboardBar = '.composer, .rich-text-field';
+  const answersATap = `${typing}, button, a, label, summary, [role="button"], [tabindex]:not([tabindex="-1"]), .sheet-layer`;
+
+  const hideKeyboard = () => {
+    if (document.activeElement instanceof HTMLElement && document.activeElement.matches(typing)) document.activeElement.blur();
+    plugin('Keyboard')?.hide().catch(() => { });
+  };
 
   const keepFieldInView = () => {
     const field = document.activeElement;
@@ -87,7 +94,17 @@ window.gsbcShell = (() => {
     const root = document.documentElement;
     const overlaysPage = cap().getPlatform() === 'ios';
     const afterLayout = (then) => requestAnimationFrame(() => requestAnimationFrame(then));
-    keyboard.setAccessoryBarVisible({ isVisible: true }).catch(() => { });
+    const dataLayer = plugin('DataLayer');
+    let accessoryWanted = null;
+    let accessoryShown = false;
+    const showAccessory = (visible, refresh) => {
+      if (visible === accessoryWanted && (!refresh || visible === accessoryShown)) return;
+      accessoryWanted = visible;
+      if (refresh) accessoryShown = visible;
+      (dataLayer ? dataLayer.showKeyboardAccessory({ visible, refresh }) : keyboard.setAccessoryBarVisible({ isVisible: visible })).catch(() => { });
+    };
+    const wantsAccessory = (field) => !field.closest(ownKeyboardBar);
+    showAccessory(false, false);
     keyboard.addListener('keyboardWillShow', ({ keyboardHeight }) => {
       root.style.setProperty('--kb', `${overlaysPage ? keyboardHeight : 0}px`);
       root.classList.add('keyboard-open');
@@ -98,13 +115,33 @@ window.gsbcShell = (() => {
       root.classList.remove('keyboard-open');
       root.style.setProperty('--kb', '0px');
     });
-    const accessoryBarFor = (field) => keyboard.setAccessoryBarVisible({ isVisible: !field?.closest?.('.composer, .rich-text-field') }).catch(() => { });
-    document.addEventListener('focusin', (event) => {
-      accessoryBarFor(event.target);
+    const accessoryForFocused = () => {
+      if (document.activeElement instanceof Element && document.activeElement.matches(typing)) showAccessory(wantsAccessory(document.activeElement), true);
+    };
+    document.addEventListener('focusin', () => {
+      afterLayout(accessoryForFocused);
       if (root.classList.contains('keyboard-open')) afterLayout(keepFieldInView);
     });
-    document.addEventListener('pointerdown', (event) => accessoryBarFor(event.target), true);
-    document.addEventListener('focusout', () => accessoryBarFor(null));
+    document.addEventListener('pointerdown', (event) => {
+      const field = event.target instanceof Element ? event.target.closest(typing) : null;
+      if (field) showAccessory(wantsAccessory(field), false);
+    }, true);
+    const tapSettles = 400;
+    document.addEventListener('pointerup', () => setTimeout(accessoryForFocused, tapSettles), true);
+    document.addEventListener('pointercancel', () => setTimeout(accessoryForFocused, tapSettles), true);
+
+    let tapAway = null;
+    document.addEventListener('pointerdown', (event) => {
+      const own = document.activeElement?.closest?.(ownKeyboardBar);
+      const target = event.target instanceof Element ? event.target : null;
+      tapAway = root.classList.contains('keyboard-open') && own && target && !own.contains(target) && !target.closest(answersATap)
+        ? { x: event.clientX, y: event.clientY }
+        : null;
+    }, true);
+    document.addEventListener('pointerup', (event) => {
+      if (tapAway && Math.hypot(event.clientX - tapAway.x, event.clientY - tapAway.y) < 10) hideKeyboard();
+      tapAway = null;
+    }, true);
   };
   followKeyboard();
 
@@ -117,6 +154,7 @@ window.gsbcShell = (() => {
 
   return {
     isNative,
+    hideKeyboard,
 
     fitToSpace(frame, width, height) {
       const bezel = 18;

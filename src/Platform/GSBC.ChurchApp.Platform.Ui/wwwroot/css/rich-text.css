@@ -621,6 +621,7 @@
 }
 
 .rich-text-field .cm-placeholder {
+    margin-inline-start: var(--space-2xs);
     color: var(--ink-3);
 }
 
@@ -1150,6 +1151,31 @@
     left: 0;
     z-index: 1;
     box-shadow: 0 0 0 var(--space-xs) var(--surface), calc(-1 * var(--space-sm)) 0 0 var(--space-sm) var(--surface);
+}
+
+.rich-text-field .rich-text-field__hide-keyboard {
+    display: none;
+}
+
+.keyboard-open .rich-text-field:focus-within .rich-text-field__hide-keyboard {
+    display: inline-grid;
+    position: sticky;
+    right: 0;
+    z-index: 1;
+    margin-left: auto;
+    background: var(--surface);
+    box-shadow: 0 0 0 var(--space-xs) var(--surface), var(--space-sm) 0 0 var(--space-sm) var(--surface);
+}
+
+.keyboard-open .rich-text-field:focus-within .rich-text-field__hide-keyboard::before {
+    content: "";
+    position: absolute;
+    top: calc(-1 * var(--space-xs));
+    bottom: calc(-1 * var(--space-xs));
+    right: calc(100% + var(--space-xs));
+    width: var(--space-sm);
+    background: linear-gradient(to right, transparent, var(--surface));
+    pointer-events: none;
 }
 
 .cm-media--table {

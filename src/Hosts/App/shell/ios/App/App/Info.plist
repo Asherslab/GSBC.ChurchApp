@@ -31,6 +31,10 @@
 		<key>NSAllowsLocalNetworking</key>
 		<true/>
 	</dict>
+	<key>NSCameraUsageDescription</key>
+	<string>Takes a photo or video to add to a post, a message or your feedback.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Records sound with a video you take to add to a post, a message or your feedback.</string>
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>Connects to a church server on your local network.</string>
 	<key>CFBundleDevelopmentRegion</key>

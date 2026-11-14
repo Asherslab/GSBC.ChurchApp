@@ -11,6 +11,7 @@
 @inject IMediaFiles Files
 @inject FileUploads Uploads
 @inject UiHost Host
+@inject Shell Shell
 @inject IEnumerable<IAppCardSource> CardSources
 
 <div class="rich-text-field @(Host.Desktop ? "" : "rich-text-field--phone") @Class" data-headings="@(Headings ? "true" : "false")">
@@ -53,6 +54,8 @@
         else
         {
             @Tool(Format.More, AppIcons.More, "More formatting", null, pressed: false, open: true)
+            <Button Variant="ButtonVariant.Quiet" Small="true" Icon="@AppIcons.HideKeyboard" Class="rich-text-field__tool rich-text-field__hide-keyboard"
+                    AriaLabel="Hide the keyboard" OnClick="() => Shell.HideKeyboardAsync()" />
         }
     </div>
     @if (_panel == Panel.Link)

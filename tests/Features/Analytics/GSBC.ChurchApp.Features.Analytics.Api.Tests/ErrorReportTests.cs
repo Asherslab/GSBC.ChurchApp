@@ -45,6 +45,19 @@ public sealed class ErrorReportTests
     }
 
     [Fact]
+    public void AnAnswerTheServerMeantToGiveIsNotAFailedCall()
+    {
+        DiagnosticsReport report = Report(ReportOrigin.Admin, Crash(Today));
+        report.FailedCalls.Add(new FailedCallCount { Day = Today.DayNumber, Method = Pull, Status = (int)StatusCode.NotFound, Count = 2 });
+        report.FailedCalls.Add(new FailedCallCount { Day = Today.DayNumber, Method = Pull, Status = (int)StatusCode.Unauthenticated, Count = 1 });
+        report.FailedCalls.Add(new FailedCallCount { Day = Today.DayNumber, Method = Pull, Status = (int)StatusCode.Internal, Count = 1 });
+
+        Assert.Equal((int)StatusCode.Internal, Assert.Single(DiagnosticsReading.Read(report, Today)!.FailedCalls).Status);
+        Assert.False(FailedCalls.IsAFailure(StatusCode.InvalidArgument));
+        Assert.True(FailedCalls.IsAFailure(StatusCode.Unavailable));
+    }
+
+    [Fact]
     public void ANewKindsEmailNamesTheEnvironmentAndLinksToItOnAppHealth()
     {
         AnalyticsEnvironment uat = new(new ConfigurationBuilder().AddInMemoryCollection([new("Accounts:SiteUrl", "https://uat-app.baptist.com.au/")]).Build());

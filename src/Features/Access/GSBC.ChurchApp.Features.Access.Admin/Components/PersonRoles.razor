@@ -69,11 +69,15 @@
 
     [Inject] private TimeProvider Time { get; set; } = null!;
 
+    private static Thing Named(IGrouping<string, AssignmentInfo> place, string scopeKind, ScopeChoice named) =>
+        new(AccessWords.OneThing(AccessWords.And(place.Select(assignment => assignment.RoleName).Distinct()), scopeKind, named.Name == named.Id ? null : named.Name), named.Href);
+
     private async Task<RolesView> LoadAsync()
     {
         Task<PlacePeople> listing = Access.ListPlaceAsync(ScopeKind.Global.Name, null).AsTask();
         Task<AssignmentList> theirs = Access.ListAssignmentsAsync(Person.Id).AsTask();
         Task<RoleList> roles = Access.ListRolesAsync().AsTask();
+        await Task.WhenAll(listing, theirs, roles);
         PlacePeople everywhere = await listing;
         List<AssignmentInfo> held = (await theirs).Assignments;
         List<RoleInfo> allRoles = (await roles).Roles;
@@ -83,9 +87,7 @@
                      .GroupBy(assignment => allRoles.FirstOrDefault(role => role.Id == assignment.RoleId)?.ScopeKind ?? ""))
         {
             IReadOnlyDictionary<string, ScopeChoice> places = await ScopeNames.PlacesAsync(kind.Key, kind.Select(assignment => assignment.ScopeObjectId!).ToList());
-            things.AddRange(kind.GroupBy(assignment => assignment.ScopeObjectId!).Select(place => places[place.Key] is var named
-                ? new Thing(AccessWords.OneThing(AccessWords.And(place.Select(assignment => assignment.RoleName).Distinct()), kind.Key, named.Name == named.Id ? null : named.Name), named.Href)
-                : null).OfType<Thing>());
+            things.AddRange(kind.GroupBy(assignment => assignment.ScopeObjectId!).Select(place => Named(place, kind.Key, places[place.Key])));
         }
 
         return new RolesView(

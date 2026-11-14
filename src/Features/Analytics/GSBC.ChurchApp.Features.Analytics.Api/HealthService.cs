@@ -33,7 +33,7 @@ internal sealed class HealthService(AnalyticsDbContext db, AnalyticsEnvironment 
         Dictionary<Guid, ErrorKindRecord> kinds = await db.ErrorKinds.Where(kind => ids.Contains(kind.Id)).ToDictionaryAsync(kind => kind.Id, cancellationToken);
 
         List<FailedCallSummary> calls = await db.FailedCalls
-            .Where(call => call.Day >= since)
+            .Where(call => call.Day >= since && FailedCalls.Failures.Contains(call.Status))
             .GroupBy(call => new { call.Origin, call.Method, call.Status })
             .Select(group => new FailedCallSummary
             {

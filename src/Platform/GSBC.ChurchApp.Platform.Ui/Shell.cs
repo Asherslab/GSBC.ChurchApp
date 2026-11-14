@@ -33,6 +33,8 @@ public sealed class Shell(IJSRuntime js) : IDisposable
     public ValueTask FitToSpaceAsync(ElementReference frame, int width, int height) =>
         js.InvokeVoidAsync("gsbcShell.fitToSpace", frame, width, height);
 
+    public ValueTask HideKeyboardAsync() => js.InvokeVoidAsync("gsbcShell.hideKeyboard");
+
     public ValueTask ShowModalAsync(ElementReference dialog) => js.InvokeVoidAsync("gsbcShell.showModal", dialog);
 
     public ValueTask OpenWindowAsync(string url, string name, int width, int height) =>

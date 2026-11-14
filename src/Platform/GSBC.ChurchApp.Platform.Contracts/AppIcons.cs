@@ -64,6 +64,7 @@ public static class AppIcons
     public const string File = "file";
     public const string Emoji = "smile";
     public const string Insert = "plus";
+    public const string HideKeyboard = "keyboard-down";
     public const string PlainText = "type";
     public const string MoveEarlier = "chevron-left";
     public const string MoveLater = "chevron-right";
