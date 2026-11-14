@@ -21,7 +21,7 @@ internal sealed class RosterReminders(RostersDbContext db, RosterMessenger messe
             .ToDictionary(each => each.MinistryId, RosterRules.SettingsOf);
         var waiting = await db.Assignments
             .Where(assignment => ids.Contains(assignment.MinistryId) && assignment.PersonId != null && (assignment.RemindedAt == null || assignment.NudgedAt == null))
-            .Join(db.Dates.AsNoTracking().Where(date => date.StartsAt > now && date.StartsAt <= horizon && !date.NotOn && !date.Gone),
+            .Join(db.Dates.Where(date => date.StartsAt > now && date.StartsAt <= horizon && !date.NotOn && !date.Gone),
                 assignment => assignment.DateId, date => date.Id, (assignment, date) => new { assignment, date })
             .ToListAsync(cancellationToken);
 
