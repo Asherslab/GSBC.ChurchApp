@@ -52,4 +52,38 @@ final class DownloadShelfTests: XCTestCase {
         XCTAssertFalse(FileManager.default.fileExists(atPath: file.path))
         XCTAssertNil(shelf.entry("sermon-b"))
     }
+
+    func testAFileKeptForANewLinkStaysReadableUntilTheNewOneArrivesAndThenReplacesIt() throws {
+        let shelf = DownloadShelf(directory: directory.appendingPathComponent("Kept"), indexDirectory: directory.appendingPathComponent("Index"))
+        shelf.replacing("region", url: "https://media.example/v1.pmtiles", title: "Region")
+        let old = try shelf.finished("region", movingFrom: temporaryFile(Data(repeating: 1, count: 8)), extension: "pmtiles")
+
+        shelf.replacing("region", url: "https://media.example/v2.pmtiles", title: "Region")
+        XCTAssertEqual(shelf.entry("region")?.state, .downloading)
+        XCTAssertEqual(try shelf.read("region", offset: 0, length: -1), Data(repeating: 1, count: 8))
+
+        let new = try shelf.finished("region", movingFrom: temporaryFile(Data(repeating: 2, count: 4)), extension: "pmtiles")
+        XCTAssertFalse(FileManager.default.fileExists(atPath: old.path))
+        XCTAssertEqual(shelf.fileURL("region"), new)
+        XCTAssertEqual(shelf.entry("region")?.url, "https://media.example/v2.pmtiles")
+        XCTAssertEqual(try shelf.read("region", offset: 0, length: -1), Data(repeating: 2, count: 4))
+    }
+
+    func testAReadOfARangeStopsAtTheEndOfTheFile() throws {
+        let shelf = DownloadShelf(directory: directory.appendingPathComponent("Kept"), indexDirectory: directory.appendingPathComponent("Index"))
+        XCTAssertThrowsError(try shelf.read("map", offset: 0, length: 4))
+        shelf.replacing("map", url: "https://media.example/map.pmtiles", title: "Map")
+        try shelf.finished("map", movingFrom: temporaryFile(Data(0..<10)), extension: "pmtiles")
+
+        XCTAssertEqual(try shelf.read("map", offset: 2, length: 3), Data([2, 3, 4]))
+        XCTAssertEqual(try shelf.read("map", offset: 7, length: 100), Data([7, 8, 9]))
+        XCTAssertEqual(try shelf.read("map", offset: 6, length: -1), Data([6, 7, 8, 9]))
+        XCTAssertEqual(try shelf.read("map", offset: 20, length: 4), Data())
+    }
+
+    private func temporaryFile(_ data: Data) throws -> URL {
+        let file = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try data.write(to: file)
+        return file
+    }
 }
