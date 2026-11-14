@@ -225,9 +225,16 @@ public actor Outbox {
             ? await advanceUpload(entry.id)
             : await call(entry.method, entry.request, requestId: entry.id)
 
+        record(entry, status: status, message: message)
+        if !entry.quiet {
+            onChanged()
+        }
+    }
+
+    private func record(_ entry: DueEntry, status: Int, message: String) {
         let now = Self.now()
         let attempts = entry.attempts + 1
-        let forgotten = (try? await database.write { db -> [String] in
+        let forgotten = (try? database.write { db -> [String] in
             if status == GrpcWebTransport.ok {
                 return entry.isUpload ? [] : try Self.remove(entry.id, db)
             } else if Self.retriedStatuses.contains(status) && now - entry.createdAt < Self.giveUpAfterMilliseconds {
@@ -250,9 +257,6 @@ public actor Outbox {
             return []
         }) ?? []
         forgotten.forEach { shelf?.forget($0) }
-        if !entry.quiet {
-            onChanged()
-        }
     }
 
     private func advanceUpload(_ id: String) async -> (Int, String) {
