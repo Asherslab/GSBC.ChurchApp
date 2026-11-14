@@ -4,7 +4,6 @@ audience: everyone
 added: 2026-11-14
 icon: newspaper
 area: News
-highlight: true
 ---
 A post can show an event, sermon, ministry or Life Group as a card: add it to your calendar or join from the post. Cards stay current and work offline.
 

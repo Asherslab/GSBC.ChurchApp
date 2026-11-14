@@ -61,11 +61,28 @@ public sealed class BuildNotesTests
     [Fact]
     public void WhatToTestStaysWithinApplesLimit()
     {
-        Note[] notes = Enumerable.Range(1, 60).Select(index => NoteFile.Parse("unreleased", $"change-{index}.md", Passkeys)).ToArray();
+        Note[] notes = Enumerable.Range(1, 300).Select(index => NoteFile.Parse("unreleased", $"change-{index}.md", Passkeys)).ToArray();
 
         string text = WhatToTest.Render(notes);
 
         Assert.InRange(text.Length, 1, WhatToTest.AppleLimit);
         Assert.EndsWith("more under More → What's new in the app.", text);
+    }
+
+    [Fact]
+    public void WhatToTestGivesHighlightsInFullAndNamesEveryOtherChange()
+    {
+        Note[] notes =
+        [
+            .. Enumerable.Range(1, 30).Select(index => NoteFile.Parse("unreleased", $"admin-{index}.md", AdminScreen.Replace("A new admin screen", $"Admin change {index}"))),
+            NoteFile.Parse("unreleased", "passkeys.md", Passkeys),
+        ];
+
+        string text = WhatToTest.Render(notes);
+
+        Assert.InRange(text.Length, 1, WhatToTest.AppleLimit);
+        Assert.StartsWith("Sign in with Face ID\nSign in with Face ID or Touch ID.\nWhere: More → Account\nTry: Sign in, close the app, open it again.", text);
+        Assert.All(Enumerable.Range(1, 30), index => Assert.Contains($"Admin change {index} (staff only)", text));
+        Assert.DoesNotContain("…and", text);
     }
 }

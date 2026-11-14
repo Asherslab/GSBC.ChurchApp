@@ -4,7 +4,6 @@ audience: staff
 added: 2026-11-11
 icon: file
 area: Ministries
-highlight: true
 ---
 A picture or document you add on your phone is kept on the phone and sent with your change as soon as there's a signal, even if you've closed the app.
 
