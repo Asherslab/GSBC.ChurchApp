@@ -816,7 +816,7 @@ approved mocks (surface briefs `.impeccable/surfaces/tures-events-admin-pages-di
   the finish review. Rows are a grid with a when column that wraps and ends at the same place in every row, arrows
   always shown; From, How long and To in one row with the range under them; the calendars as Platform.Ui's new quiet
   toggle chips under a label. Keyboard: moving a row keeps focus on it and says where it went, and Platform.Ui's
-  Segmented now moves with the arrow keys (every segmented control). DESIGN.md has *Weekly digest desk*.
+  Segmented now moves with the arrow keys (every segmented control). [posts.md](../design/posts.md) has *Weekly digest desk*.
 - **Checked** on a backend of its own (`Dev__PortOffset=1000`, main's database copied with pg_dump): the migration on
   the owner's two unsent digests; the desk from today with *Two weeks* (the AGM, Kids camp and Anniversary Sunday Service
   in); the editor with a portrait picture (pictures stubbed, as the dev media tunnel was down); on a Simulator of its own

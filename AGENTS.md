@@ -151,7 +151,8 @@ interview or substitute your judgement for its decision round. "Lightly" or "qui
   (`serve-question`) with several real HTML sketches in the app's or admin panel's look, kept in
   `.impeccable/mocks/<feature>/` → **wait for the owner's pick in the browser page** (never re-ask in chat, never ASCII
   previews) → the surface brief with its direction contract → build, reading `craft-floor.md` just before UI edits →
-  `impeccable detect` → the `impeccable-finish-reviewer` agent, fixing what it finds → the documenter for DESIGN.md.
+  `impeccable detect` → the `impeccable-finish-reviewer` agent, fixing what it finds → the documenter for DESIGN.md
+  (kept short: a pattern-map row or a rule there, the detail in the area's `docs/design/` file).
 - **Every sketch on the decision page is one self-contained HTML file:** styles, fonts, icons and pictures inlined
   (`<style>`, `data:` URLs). The page serves each sketch alone at `/sketch/<n>`, so anything linked by a relative path
   (`<link href="sketch.css">`, `<img src="art/x.svg">`) never loads and the owner sees an unstyled sketch (happened
@@ -169,7 +170,8 @@ interview or substitute your judgement for its decision round. "Lightly" or "qui
 **Start from the pattern map at the top of the body of [DESIGN.md](DESIGN.md)** (owner, 2026-11-12: "buttons placed in
 the same places"; "make a proper rule or something to catch these"). It names the one shared component and placement
 for each job, and every component is live in the gallery (`/gallery`). `DesignDriftRules` and `IconRules` hold it:
-their ratchets in `design-ratchets.json` only ever go down.
+their ratchets in `design-ratchets.json` only ever go down. DESIGN.md is short: read it all, then the
+[docs/design/](docs/design/) file for the component or screen you touch.
 
 Before writing any Blazor UI:
 

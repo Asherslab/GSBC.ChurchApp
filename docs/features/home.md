@@ -77,7 +77,7 @@ layouts (`TileVariant`: key, label, the sizes it suits, when it's the default) a
 (Automatic or one of them). Automatic picks the default for the tile's size (read against the grid, so a
 3-wide tile on 2 columns is 2 × 1) and whether it has a picture; a chosen layout that doesn't suit the size
 falls back to the default. The settings panel lists *Automatic: …* and every layout, with ones that don't
-suit the size disabled. The catalogue is in DESIGN.md (*Home tiles and their layouts*); the decision pages,
+suit the size disabled. The catalogue is in [docs/design/home.md](../design/home.md) (*Home tiles and their layouts*); the decision pages,
 one concept-seed round per kind with sketches at 1 × 1, 2 × 1, 1 × 2 and 2 × 2, are in
 `.impeccable/mocks/decision/hub-variants/`. A future kind (Sermons, Events) declares its own the same way.
 
@@ -298,7 +298,7 @@ declaring one path fail at start-up, so it can't be forgotten.
 - **Layout defaults** (from the decision pages): words tiles show words and icon without a picture, the
   picture behind at 1 × 1 and above when larger; the sermon is cover first; the bulletin is the poster
   family; This week is the agenda; Notifications is count and newest at 1 × 1, newest in full one row
-  wide, unread dots when tall; Outreach is the invitation. Alternatives are listed in DESIGN.md.
+  wide, unread dots when tall; Outreach is the invitation. Alternatives are listed in [docs/design/home.md](../design/home.md).
 - **Margins** match the POC (20 px gutter, 12 px gap, 22 px under the masthead); the first install had a
   doubled inset, fixed before the owner's note A was written up. This week's *Calendar ›* sits beside its
   heading again.
