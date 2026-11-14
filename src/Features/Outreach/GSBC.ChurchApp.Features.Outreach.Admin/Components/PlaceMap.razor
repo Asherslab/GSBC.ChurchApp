@@ -11,7 +11,7 @@
     @if (RegionFor(context.Value) is { } region)
     {
         <MapView @ref="_map" Class="place-map__map" Source="@MapSource.Url(region.Map.Url, region.Attribution)" Label="@Label"
-                 Areas="@Shapes" Markers="@Pins" Frame="@Framed" Centre="@Middle" Zoom="16" OnTap="TapAsync" />
+                 Areas="@Shapes" Markers="@Pins" Frame="@Framed" Centre="@_centre" Zoom="16" OnTap="TapAsync" />
         <MapSketch Map="_map" Tool="@(Mode == PlaceMapMode.DrawArea ? MapSketchTool.Polygon : MapSketchTool.None)" OnDrawn="DrawnAsync" />
         @if (Mode != PlaceMapMode.Show)
         {
@@ -53,11 +53,21 @@
     private OutreachRegion? RegionFor(RegionList list)
     {
         List<OutreachRegion> regions = list.Regions;
-        _region = Middle is { } middle
-            ? regions.FirstOrDefault(region => Inside(region.Core, middle)) ?? regions.FirstOrDefault(region => Inside(region.Bounds, middle)) ?? regions.FirstOrDefault()
-            : regions.FirstOrDefault(found => found.Id == _region?.Id) ?? regions.FirstOrDefault();
+        MapPoint? middle = Middle ?? MiddleOf(regions);
+        _region = middle is { } point
+            ? regions.FirstOrDefault(region => Inside(region.Core, point)) ?? regions.FirstOrDefault(region => Inside(region.Bounds, point)) ?? regions.FirstOrDefault()
+            : null;
+        _centre = middle;
         return _region;
     }
+
+    private MapPoint? _centre;
+
+    private static MapPoint? MiddleOf(IReadOnlyList<OutreachRegion> regions) =>
+        regions.Count == 0
+            ? null
+            : new MapPoint((regions.Min(region => region.Core.South) + regions.Max(region => region.Core.North)) / 2,
+                (regions.Min(region => region.Core.West) + regions.Max(region => region.Core.East)) / 2);
 
     private static bool Inside(MapBounds bounds, MapPoint point) =>
         point.Lat >= bounds.South && point.Lat <= bounds.North && point.Lon >= bounds.West && point.Lon <= bounds.East;
