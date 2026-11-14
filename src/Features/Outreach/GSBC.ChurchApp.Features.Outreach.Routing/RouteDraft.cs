@@ -7,6 +7,8 @@ public sealed record DraftSection(int Id, ImmutableHashSet<int> Pieces, string? 
     public IEnumerable<Stretch> Stretches(WalkNetwork network) => Pieces.Select(p => network[p].Stretch).OrderBy(s => s.Street).ThenBy(s => s.From);
 }
 
+public sealed record SavedSection(int Id, IReadOnlyList<Stretch> Pieces, string? Name, int Colour, bool Locked, GeoPoint? Start);
+
 public sealed record DraftEdit(RouteDraft Draft, bool Changed, string? Note = null);
 
 public sealed record CutPreview(int Section, ImmutableHashSet<int> Kept, IReadOnlyList<(ImmutableHashSet<int> Pieces, int Colour)> Pieces);
@@ -62,6 +64,25 @@ public sealed class RouteDraft
 
     public static RouteDraft Empty(AreaSplitter splitter, IEnumerable<int> streets, int colours) =>
         new(splitter, colours, streets.ToHashSet(), new Snapshot([], null, 1), [], []);
+
+    public static RouteDraft Restore(AreaSplitter splitter, IEnumerable<int> streets, int colours, IEnumerable<int> connectors, IReadOnlyList<SavedSection> sections)
+    {
+        HashSet<int> area = streets.ToHashSet();
+        WalkNetwork network = splitter.Planner.Network;
+        HashSet<int> taken = [];
+        List<DraftSection> restored = [];
+        foreach (SavedSection saved in sections)
+        {
+            ImmutableHashSet<int> pieces = saved.Pieces.Where(p => area.Contains(p.Street) && p.From < p.To).Select(network.PieceOf).Where(taken.Add).ToImmutableHashSet();
+            if (pieces.IsEmpty)
+                continue;
+            int? start = saved.Start is { } point ? splitter.Planner.NearestEnd(pieces, network.Graph.Projection.ToFlat(point)) : null;
+            restored.Add(new DraftSection(saved.Id, pieces, saved.Name, Math.Abs(saved.Colour) % Math.Max(1, colours), saved.Locked, start));
+        }
+        SplitGraph? graph = restored.Count == 0 ? null : splitter.Graph(area, connectors);
+        int next = restored.Count == 0 ? 1 : restored.Max(s => s.Id) + 1;
+        return new RouteDraft(splitter, colours, area, new Snapshot([.. restored], graph, next), [], []);
+    }
 
     public ImmutableList<DraftSection> Sections { get; }
 

@@ -199,11 +199,9 @@ public sealed class AreaSplitter(WalkPlanner planner)
     public (List<HashSet<int>> Sections, SplitGraph Graph) Split(IEnumerable<int> pieces, SplitTarget target, double perRoute, IEnumerable<int> connectors)
     {
         HashSet<int> streets = pieces.Where(_open.Live).ToHashSet();
-        SplitGraph graph = new(_network, connectors, streets, _open.Settings.SplitJoinMetres);
-        double total = streets.Sum(p => Weight(p, target));
-        if (total <= 0 || perRoute <= 0)
-            return ([], graph);
-        LinkNearbyIslands(graph, streets);
+        if (streets.Sum(p => Weight(p, target)) <= 0 || perRoute <= 0)
+            return ([], new SplitGraph(_network, connectors, streets, _open.Settings.SplitJoinMetres));
+        SplitGraph graph = Graph(streets, connectors);
 
         var islands = graph.Components(streets)
             .Select(c => (Pieces: c.ToHashSet(), Weight: c.Sum(p => Weight(p, target))))
@@ -218,6 +216,14 @@ public sealed class AreaSplitter(WalkPlanner planner)
         if (MergeScraps(graph, sections, target, perRoute))
             Balance(graph, sections, target);
         return (sections, graph);
+    }
+
+    public SplitGraph Graph(IEnumerable<int> pieces, IEnumerable<int> connectors)
+    {
+        HashSet<int> streets = pieces.Where(_open.Live).ToHashSet();
+        SplitGraph graph = new(_network, connectors, streets, _open.Settings.SplitJoinMetres);
+        LinkNearbyIslands(graph, streets);
+        return graph;
     }
 
     public List<HashSet<int>> SplitInTwo(SplitGraph graph, IReadOnlyCollection<int> section, SplitTarget target)

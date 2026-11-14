@@ -153,6 +153,23 @@ public sealed class SplitterTests
         Assert.Equal(0.6, stretch.To, 2);
     }
 
+    [Fact]
+    public void ADraftSavedAsStretchesRestoresToTheSameRoutesWithTheirNamesLocksAndStarts()
+    {
+        (AreaSplitter splitter, AreaSelection selection, RouteDraft draft) = Drafted();
+        WalkNetwork network = splitter.Planner.Network;
+        draft = draft.Paint(draft.Sections[1].Id, [new Stretch(draft.Sections[0].Pieces.First(p => network.Graph.Homes(p) >= 6), 0, 0.5)]).Draft;
+        draft = draft.Rename(draft.Sections[0].Id, "Kingfisher").Draft.SetLocked([draft.Sections[1].Id], true).Draft;
+        List<SavedSection> saved = draft.Sections.Select(s => new SavedSection(s.Id, [.. s.Stretches(network)], s.Name, s.Colour, s.Locked,
+            s.Start is { } node ? network.Graph.Projection.ToGeo(network.Node(node)) : null)).ToList();
+
+        RouteDraft restored = RouteDraft.Restore(splitter, selection.Fresh, Colours, selection.Connectors(false), saved);
+
+        Assert.Equal(draft.Sections.Select(s => (s.Id, s.Name, s.Colour, s.Locked)), restored.Sections.Select(s => (s.Id, s.Name, s.Colour, s.Locked)));
+        Assert.Equal(draft.Summaries(Fixture.Church).Select(s => s.Letterboxes), restored.Summaries(Fixture.Church).Select(s => s.Letterboxes));
+        Assert.True(restored.Merge([restored.Sections[2].Id, restored.Sections[3].Id]).Changed);
+    }
+
     private static GeoPoint[] Across(WalkNetwork network, int piece, double metres)
     {
         Flat middle = network.Midpoint(piece);
