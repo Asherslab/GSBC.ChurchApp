@@ -32,9 +32,10 @@ const inWindow = (panel, trigger, height, room) => {
   panel.style.top = `${top + (top - shown.top)}px`;
   panel.style.left = `${x + (x - shown.left)}px`;
   const follow = (event) => {
-    if (panel.contains(event.target)) return;
+    if (event.target instanceof Node && panel.contains(event.target)) return;
     if (!panel.isConnected) {
       removeEventListener('scroll', follow, true);
+      removeEventListener('resize', follow);
       return;
     }
     place(panel);
@@ -42,6 +43,7 @@ const inWindow = (panel, trigger, height, room) => {
   if (!panel.dataset.follows) {
     panel.dataset.follows = 'true';
     addEventListener('scroll', follow, { capture: true, passive: true });
+    addEventListener('resize', follow, { passive: true });
   }
 };
 

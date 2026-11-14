@@ -254,6 +254,8 @@
             </div>)
         @Item("A video: VideoEmbed", "A YouTube video, played from the church's own host.",
             @<VideoEmbed YouTubeId="fco2rSN9lUo" Title="Anchored In Hope" />)
+        @Item("A video link's picture: VideoThumbnail", "The YouTube or Vimeo video's own thumbnail behind a video link's play mark, until it plays.",
+            @<div class="video-embed"><span class="video-embed__poster"><VideoThumbnail Video="SampleVideoLink" /><span class="video-embed__play" aria-hidden="true"><Icon Name="play" /></span></span></div>)
         @Item("A theme's colours: ThemeSwatches", "Choosing a palette in App styling.",
             @<ThemeSwatches Palette="brand" />)
     </Section>
@@ -436,6 +438,8 @@
 </PagedSheet>
 
 @code {
+    private static readonly VideoLink SampleVideoLink = new(VideoSite.Vimeo, "76979871");
+
     private const string SampleMinistry = "Kids Ministries";
 
     private const string SampleSvg = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='1200' height='675'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%23e7ae74'/><stop offset='1' stop-color='%232a3d5e'/></linearGradient></defs><rect width='1200' height='675' fill='url(%23g)'/></svg>";

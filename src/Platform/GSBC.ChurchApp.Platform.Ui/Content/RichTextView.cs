@@ -7,6 +7,7 @@ namespace GSBC.ChurchApp.Platform.Ui.Content;
 public sealed class RichTextView : ComponentBase
 {
     private const int LowestHeading = 6;
+    private const int ShortCell = 24;
 
     [Parameter, EditorRequired] public required RichText Content { get; set; }
     [Parameter] public string? Class { get; set; }
@@ -111,8 +112,10 @@ public sealed class RichTextView : ComponentBase
     {
         builder.OpenElement(70, "div");
         builder.AddAttribute(71, "class", "rich-text-table");
+        builder.AddAttribute(79, "data-look-scroll", true);
         builder.OpenElement(72, "table");
         builder.OpenElement(73, "thead");
+        builder.AddAttribute(69, "data-look-bleed", true);
         AddRow(builder, table, table.Header, "th");
         builder.CloseElement();
         builder.OpenElement(74, "tbody");
@@ -131,6 +134,8 @@ public sealed class RichTextView : ComponentBase
             builder.OpenElement(76, cell);
             if (table.Alignments[column] is not TableAlignment.None and var alignment)
                 builder.AddAttribute(77, "data-align", alignment.ToString().ToLowerInvariant());
+            if (PlainText.OfInlines(row.Cells[column]).Length <= ShortCell)
+                builder.AddAttribute(78, "data-short", true);
             AddInlines(builder, row.Cells[column]);
             builder.CloseElement();
         }

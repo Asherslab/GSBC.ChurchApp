@@ -12,6 +12,7 @@ else
 }
 
 @code {
+    private const string FirstFrame = "#t=0.1";
     private string? _source;
     private string? _resolvedKey;
 
@@ -20,12 +21,14 @@ else
     [Parameter] public string? Label { get; set; }
     [Parameter] public string? Class { get; set; }
 
+    private static string WithFirstFrame(string source) => source.Contains('#', StringComparison.Ordinal) ? source : source + FirstFrame;
+
     protected override async Task OnParametersSetAsync()
     {
         string key = Media.Key.Length > 0 ? Media.Key : Media.Url ?? "";
         if (key == _resolvedKey)
             return;
         _resolvedKey = key;
-        _source = await Files.SourceOfAsync(Media);
+        _source = await Files.SourceOfAsync(Media) is { } source ? WithFirstFrame(source) : null;
     }
 }
