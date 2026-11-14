@@ -15,8 +15,9 @@ admin panel, no comments, release notes, public repo) bind you and every brief y
 
 ## What you do yourself, and what you hand off
 
-- **Yourself:** one-file fixes and small, obvious changes (a nav entry's area, a stray button, a CSS rule, a doc line),
-  merges and conflict resolution, deploys, checks, clean-up, answering the owner's questions about how things work
+- **Yourself:** one- or two-file fixes and small, obvious changes (a nav entry's area, a stray button, a CSS rule, a
+  divider that stops short, a doc line), checked at the size they ship at. Don't bundle these into a station to save
+  yourself the work; a station's setup alone costs more than the fix (owner, 2026-11-14). Also merges and conflict resolution, deploys, checks, clean-up, answering the owner's questions about how things work
   (read the code before explaining it).
 - **A station:** anything with design choices, more than a few files, a migration, a new screen, or an in-depth review.
   Use the canvas, not background subagents: the owner wants to see and talk to stations.
@@ -42,8 +43,14 @@ Write it to a file in your scratchpad and start the station with `--prompt-file`
    "Report the cause of each in a sentence."
 6. **Who else is working nearby,** and the order (e.g. "the Roles station will merge first; merge `skeleton/backbone`
    before touching X; I'll message you").
-7. **The shared bar,** appended verbatim from [station-bar.md](station-bar.md), with the date for release notes and
-   the list of stations running at the same time filled in.
+7. **The shared bar,** appended verbatim, with the date for release notes and the stations running at the same time
+   filled in. **Size it to the work:** [fix-bar.md](fix-bar.md) for fixes to existing screens (feedback tickets, bugs,
+   layout and styling corrections); [station-bar.md](station-bar.md) for new screens, redesigns, new features and
+   migrations. Don't add checks of your own to a fix brief (browsers × widths × themes); the bar says what to check.
+
+**Keep the bars from only growing.** When a miss makes you want a new step, prefer an automated check (a rule test, the
+look check, the sketch check) over another manual step for every station, and take a manual step out once a check
+covers it. A manual step goes in the bar where the miss happened, not in both.
 
 Never put the owner's employer, its systems, real people's names or emails into a brief that could end up in the repo.
 If the owner shows how a work system does something, describe the pattern in words, say "never name that system", and
