@@ -13,9 +13,8 @@ internal static class MapAreas
     public const double SmallestRadiusKm = 1;
     public static readonly IReadOnlyList<string> Reserved = ["new"];
 
-    public static (MapAreaRecord Area, List<MapCellRecord> Cells) New(string id, string name, GeoPoint centre, double radiusMetres, DateTime now)
+    public static (MapAreaRecord Area, List<MapCellRecord> Cells) New(string id, string name, MapGrid grid, List<CellRef> cells, DateTime now)
     {
-        (MapGrid grid, List<CellRef> cells) = RegionGrid.Plan(centre, radiusMetres);
         MapAreaRecord area = new() { Id = id, Name = name, State = MapAreaStates.Waiting, CreatedAt = now };
         RegionGrid.SetGrid(area, grid);
         List<MapCellRecord> records = cells.Select(cell => new MapCellRecord

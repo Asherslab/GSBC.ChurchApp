@@ -20,8 +20,9 @@ public sealed class OutreachAtlas
             .Where(cell => cell.Look is CellLook.Waiting or CellLook.Off or CellLook.Empty)
             .Select(cell => cell with { Name = Note(area, cell) }))];
         List<MapFrame> covered = [.. Regions.Select(region => Box(region.Core))];
-        List<MapMarker> notes = [.. unbuilt.Select(cell => new MapMarker(cell.Middle, MapMarkerKind.Note, cell.Name))];
-        IReadOnlyList<MapAreaShape> others = MapAreaDrawing.Shapes(unbuilt);
+        MapReach built = new(covered, [], []);
+        List<MapMarker> notes = [.. unbuilt.Select(cell => built.FreeSpot(Box(cell.Core)) is { } spot ? new MapMarker(spot, MapMarkerKind.Note, cell.Name) : null).OfType<MapMarker>()];
+        IReadOnlyList<MapAreaShape> others = MapAreaDrawing.ShapesOutside(unbuilt, built);
         Reach = new MapReach(covered, others, notes);
         Limits = new MapReach(covered, others, notes, Padded(MapFrame.Around(covered.Concat(unbuilt.Select(cell => Box(cell.Core))).SelectMany(MapReach.Ring))));
     }
@@ -52,6 +53,8 @@ public sealed class OutreachAtlas
         Regions.FirstOrDefault(region => MapReach.Inside(Box(region.Core), point))
         ?? Regions.FirstOrDefault(region => MapReach.Inside(Box(region.Bounds), point));
 
+    public Func<MapPoint, bool> Owns(OutreachRegion region) => point => RegionAt(point)?.Id == region.Id;
+
     public IEnumerable<OutreachRegion> In(MapFrame view) =>
         Regions.Where(region => region.Core.South < view.North && region.Core.North > view.South && region.Core.West < view.East && region.Core.East > view.West);
 
@@ -63,7 +66,7 @@ public sealed class OutreachAtlas
         return new OutreachAtlas((await regions).Regions, (await areas).Areas);
     }
 
-    private static MapFrame Box(MapBounds bounds) => new(bounds.South, bounds.West, bounds.North, bounds.East);
+    private static MapFrame Box(MapBounds bounds) => MapAreaDrawing.Box(bounds);
 
     private static string Note(Maps.Contracts.MapArea area, AreaCell cell) => cell.Look switch
     {

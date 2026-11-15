@@ -66,6 +66,13 @@ public static class MapJson
                 json.WriteBoolean("outline", true);
             json.WritePropertyName("points");
             Points(json, [.. area.Points, area.Points[0]]);
+            if (area.Holes is { Count: > 0 } holes)
+            {
+                json.WriteStartArray("holes");
+                foreach (IReadOnlyList<MapPoint> hole in holes)
+                    Points(json, hole);
+                json.WriteEndArray();
+            }
             json.WriteEndObject();
         }
         json.WriteEndArray();
