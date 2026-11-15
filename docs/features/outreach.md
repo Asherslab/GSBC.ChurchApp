@@ -376,6 +376,12 @@ outreach works on come in **regions**, which the API builds itself, and which ph
   after a failure builds what was waiting. A square added while the area builds waits for the next run, which starts
   straight after. New regions' names avoid the area's existing names. The build reports its steps (four fetches, then a
   region at a time) so the admin panel shows a progress bar.
+- **A slow source no longer fails the build (2026-11-15).** Dev's first build of *Around the church* stopped at region
+  22 of 25: a map read of up to 16 MB from the Protomaps build stalled past the HTTP client's 5-minute limit, which .NET
+  reports as a cancellation, so it was never retried. Now no request has a blanket limit: each range read gets 30 s
+  plus a second per 100 KB and is retried five times (timeouts and dropped connections included), an address or
+  land-use page gets 2 minutes and four tries, and the Queensland extract 30 minutes and three tries. A build that
+  still fails keeps every region it finished; *Try again* builds only the squares still waiting.
 - **What uses a region** (*Claude's default*): before a region goes, the admin panel lists the outreach days not yet
   over that plan routes there (from the day's draft or its routes) and the campaigns not yet ended that name it, as the
   "what goes" previews elsewhere do, and asks once. Nothing is changed or refused: the day keeps its routes and printed

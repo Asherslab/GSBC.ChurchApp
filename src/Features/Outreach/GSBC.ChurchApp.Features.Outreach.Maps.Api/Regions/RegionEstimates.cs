@@ -18,7 +18,7 @@ internal sealed class RegionEstimates(IMapSources sources, IMemoryCache cache)
 
     public async Task<List<CellEstimate>> EstimateAsync(MapGrid grid, IEnumerable<CellRef> cells, CancellationToken cancellationToken)
     {
-        using SemaphoreSlim gate = new(AtOnce);
+        SemaphoreSlim gate = new(AtOnce);
         return [.. await Task.WhenAll(cells.Select(async cell =>
         {
             await gate.WaitAsync(cancellationToken);

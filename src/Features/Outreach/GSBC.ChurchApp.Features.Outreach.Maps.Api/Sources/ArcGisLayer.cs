@@ -9,6 +9,7 @@ internal sealed record ArcGisFeature(IReadOnlyDictionary<string, string> Attribu
 internal sealed class ArcGisLayer(HttpClient http)
 {
     private const int Attempts = 4;
+    private static readonly TimeSpan PageTime = TimeSpan.FromMinutes(2);
 
     public async Task<List<ArcGisFeature>> QueryAsync(Uri layer, GeoBounds bounds, string fields, string where, string orderBy, int pageSize, bool geometry,
         CancellationToken cancellationToken)
@@ -70,25 +71,15 @@ internal sealed class ArcGisLayer(HttpClient http)
 
     private static string Envelope(GeoBounds bounds) => string.Create(CultureInfo.InvariantCulture, $"{bounds.West},{bounds.South},{bounds.East},{bounds.North}");
 
-    private async Task<JsonDocument> PageAsync(Uri layer, Dictionary<string, string> query, CancellationToken cancellationToken)
-    {
-        for (int attempt = 1; ; attempt++)
+    private Task<JsonDocument> PageAsync(Uri layer, Dictionary<string, string> query, CancellationToken cancellationToken) =>
+        Patience.TryAsync(async limit =>
         {
-            try
-            {
-                using FormUrlEncodedContent body = new(query);
-                using HttpResponseMessage response = await http.PostAsync(layer, body, cancellationToken);
-                response.EnsureSuccessStatusCode();
-                await using Stream stream = await response.Content.ReadAsStreamAsync(cancellationToken);
-                return await JsonDocument.ParseAsync(stream, cancellationToken: cancellationToken);
-            }
-            catch (Exception exception) when (exception is HttpRequestException or JsonException or TaskCanceledException
-                                              && attempt < Attempts && !cancellationToken.IsCancellationRequested)
-            {
-                await Task.Delay(TimeSpan.FromSeconds(10 * attempt), cancellationToken);
-            }
-        }
-    }
+            using FormUrlEncodedContent body = new(query);
+            using HttpResponseMessage response = await http.PostAsync(layer, body, limit);
+            response.EnsureSuccessStatusCode();
+            await using Stream stream = await response.Content.ReadAsStreamAsync(limit);
+            return await JsonDocument.ParseAsync(stream, cancellationToken: limit);
+        }, PageTime, Attempts, TimeSpan.FromSeconds(10), cancellationToken);
 
     private static ArcGisFeature Read(JsonElement feature)
     {

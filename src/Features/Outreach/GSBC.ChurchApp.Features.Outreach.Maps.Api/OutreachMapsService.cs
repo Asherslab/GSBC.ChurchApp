@@ -39,7 +39,8 @@ internal sealed class OutreachMapsService(
         string name = request.Name.Trim();
         if (name.Length == 0)
             throw Invalid("Give the area a name.");
-        GeoPoint centre = Centre(request.CentreLatitude, request.CentreLongitude, request.RadiusKm);
+        CheckRadius(request.RadiusKm);
+        GeoPoint centre = Centre(request.CentreLatitude, request.CentreLongitude);
         HashSet<string> taken = [.. await db.Areas.Select(area => area.Id).ToListAsync(cancellationToken), .. MapAreas.Reserved];
         (MapAreaRecord added, List<MapCellRecord> cells) = MapAreas.New(MapAreas.Slug(name, taken), name, centre, request.RadiusKm * 1000, Now);
         db.Areas.Add(added);
@@ -98,7 +99,8 @@ internal sealed class OutreachMapsService(
     public async ValueTask<MapAreaPreview> PreviewAsync(MapAreaPlan request, CallContext context = default)
     {
         CancellationToken cancellationToken = context.CancellationToken;
-        GeoPoint centre = Centre(request.CentreLatitude, request.CentreLongitude, request.RadiusKm);
+        CheckRadius(request.RadiusKm);
+        GeoPoint centre = Centre(request.CentreLatitude, request.CentreLongitude);
         (MapGrid grid, List<CellRef> cells) = RegionGrid.Plan(centre, request.RadiusKm * 1000);
         GeoBounds reach = RegionGrid.Union(cells.Select(cell => RegionGrid.Core(grid, cell.Row, cell.Column)));
         return new MapAreaPreview
@@ -206,10 +208,14 @@ internal sealed class OutreachMapsService(
         await db.Areas.FirstOrDefaultAsync(area => area.Id == id && area.DeletedAt == null, cancellationToken)
         ?? throw new RpcException(new Status(StatusCode.NotFound, "That area isn't here any more."));
 
-    private static GeoPoint Centre(double latitude, double longitude, double radiusKm)
+    private static void CheckRadius(double radiusKm)
     {
         if (radiusKm is < MapAreas.SmallestRadiusKm or > MapAreas.LargestRadiusKm)
             throw Invalid($"An area reaches between {MapAreas.SmallestRadiusKm:0} and {MapAreas.LargestRadiusKm:0} km from its centre.");
+    }
+
+    private static GeoPoint Centre(double latitude, double longitude)
+    {
         if (latitude is < -90 or > 90 || longitude is < -180 or > 180)
             throw Invalid("That centre isn't a place on the map.");
         return new GeoPoint(latitude, longitude);

@@ -54,6 +54,8 @@ public static class MapJson
             Optional(json, "id", area.Id);
             if (area.Dashed)
                 json.WriteBoolean("dashed", true);
+            if (area.Outline)
+                json.WriteBoolean("outline", true);
             json.WritePropertyName("points");
             Points(json, [.. area.Points, area.Points[0]]);
             json.WriteEndObject();

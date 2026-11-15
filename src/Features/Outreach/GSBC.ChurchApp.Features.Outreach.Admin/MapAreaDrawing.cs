@@ -58,13 +58,22 @@ public static class MapAreaDrawing
         return cells.FirstOrDefault(cell => cell.Cell.Equals(at));
     }
 
-    public static IReadOnlyList<MapAreaShape> Shapes(IEnumerable<AreaCell> cells) =>
-        cells.Where(cell => cell.Look != CellLook.Edge).Select(cell => new MapAreaShape(Ring(cell.Core), Colour(cell.Look), Key(cell.Cell),
-            Dashed: cell.Look is CellLook.Off or CellLook.Waiting or CellLook.SwitchingOff or CellLook.Empty)).ToList();
+    public static IReadOnlyList<MapAreaShape> Shapes(IEnumerable<AreaCell> cells, CellRef? chosen = null)
+    {
+        List<MapAreaShape> shapes = cells.OrderBy(cell => Layer(cell.Look)).Select(cell => new MapAreaShape(Ring(cell.Core), Colour(cell.Look), Key(cell.Cell),
+            Dashed: cell.Look is CellLook.Off or CellLook.Waiting or CellLook.SwitchingOff or CellLook.Edge,
+            Outline: cell.Look is CellLook.Edge or CellLook.Empty)).ToList();
+        if (chosen is not null && cells.FirstOrDefault(cell => cell.Cell.Equals(chosen)) is { } picked)
+            shapes.Add(new MapAreaShape(Ring(picked.Core), "--ink", "chosen", Outline: true));
+        return shapes;
+    }
 
     public static IReadOnlyList<MapLabel> Labels(IEnumerable<AreaCell> cells) =>
-        cells.Where(cell => cell.Look is not (CellLook.Built or CellLook.Waiting or CellLook.Empty)).Select((cell, index) => new MapLabel(cell.Middle, MapAreaWords.Label(cell), Colour(cell.Look), index,
+        cells.Select((cell, index) => new MapLabel(Named(cell.Look) ? Corner(cell.Core) : cell.Middle, MapAreaWords.Label(cell), Colour(cell.Look), index,
             cell.Look == CellLook.Adding ? MapLabelStyle.Filled : MapLabelStyle.Ring, MapAreaWords.ShortLabel(cell))).ToList();
+
+    public static MapPoint Corner(MapBounds core) =>
+        new(core.North - (core.North - core.South) * 0.14, core.West + (core.East - core.West) * 0.3);
 
     public static MapFrame Frame(IEnumerable<AreaCell> cells) =>
         MapFrame.Around(cells.SelectMany(cell => Ring(cell.Core)), padding: 44, maxZoom: 14);
@@ -74,7 +83,16 @@ public static class MapAreaDrawing
         new(core.North, core.West), new(core.North, core.East), new(core.South, core.East), new(core.South, core.West), new(core.North, core.West),
     ];
 
-    public static string Colour(CellLook look) => look switch
+    private static bool Named(CellLook look) => look is CellLook.Built or CellLook.Waiting or CellLook.Empty;
+
+    private static int Layer(CellLook look) => look switch
+    {
+        CellLook.Edge => 0,
+        CellLook.Built or CellLook.Empty or CellLook.Waiting => 1,
+        _ => 2,
+    };
+
+    private static string Colour(CellLook look) => look switch
     {
         CellLook.Built or CellLook.Waiting => "--live",
         CellLook.Adding => "--marker-ink",
@@ -91,7 +109,7 @@ public static class MapAreaDrawing
     public static OutreachRegion? Nearest(IEnumerable<OutreachRegion> regions, MapPoint point) =>
         regions.MinBy(region => Math.Pow((region.Core.South + region.Core.North) / 2 - point.Lat, 2) + Math.Pow((region.Core.West + region.Core.East) / 2 - point.Lon, 2));
 
-    public static bool Inside(MapBounds bounds, MapPoint point) =>
+    private static bool Inside(MapBounds bounds, MapPoint point) =>
         point.Lat >= bounds.South && point.Lat <= bounds.North && point.Lon >= bounds.West && point.Lon <= bounds.East;
 
     private static string Key(CellRef cell) => $"{cell.Row}:{cell.Column}";

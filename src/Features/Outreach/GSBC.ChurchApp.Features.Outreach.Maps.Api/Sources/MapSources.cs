@@ -28,6 +28,7 @@ internal sealed class MapSources(HttpClient http, IOptions<MapSourcesOptions> op
 {
     private const string PrimaryAddress = "address_status='P'";
     private const string AddressFields = "address_pid,street_full,unit_number,lotplan,locality,local_authority";
+    private static readonly TimeSpan ExtractDownload = TimeSpan.FromMinutes(30);
     private MapSourcesOptions Options => options.Value;
 
     public Task<OsmData> StreetsAsync(GeoBounds bounds, CancellationToken cancellationToken) =>
@@ -44,9 +45,13 @@ internal sealed class MapSources(HttpClient http, IOptions<MapSourcesOptions> op
         string file = Path.Combine(Path.GetTempPath(), $"gsbc-outreach-{Guid.NewGuid():N}.osm.pbf");
         try
         {
-            await using (Stream download = await http.GetStreamAsync(Options.Streets, cancellationToken))
-            await using (FileStream saved = File.Create(file))
-                await download.CopyToAsync(saved, cancellationToken);
+            await Patience.TryAsync(async limit =>
+            {
+                await using Stream download = await http.GetStreamAsync(Options.Streets, limit);
+                await using FileStream saved = File.Create(file);
+                await download.CopyToAsync(saved, limit);
+                return true;
+            }, ExtractDownload, 3, TimeSpan.FromMinutes(1), cancellationToken);
             await using FileStream pbf = File.OpenRead(file);
             return await read(pbf);
         }
@@ -81,8 +86,11 @@ internal sealed class MapSources(HttpClient http, IOptions<MapSourcesOptions> op
 
     public async Task<IRangeReader> TilesAsync(CancellationToken cancellationToken)
     {
-        await using Stream stream = await http.GetStreamAsync(Options.TileBuilds, cancellationToken);
-        using JsonDocument builds = await JsonDocument.ParseAsync(stream, cancellationToken: cancellationToken);
+        using JsonDocument builds = await Patience.TryAsync(async limit =>
+        {
+            await using Stream stream = await http.GetStreamAsync(Options.TileBuilds, limit);
+            return await JsonDocument.ParseAsync(stream, cancellationToken: limit);
+        }, TimeSpan.FromMinutes(1), 4, TimeSpan.FromSeconds(10), cancellationToken);
         string latest = builds.RootElement.EnumerateArray()
             .Select(build => build.GetProperty("key").GetString() ?? "")
             .Where(key => key.EndsWith(".pmtiles", StringComparison.Ordinal))

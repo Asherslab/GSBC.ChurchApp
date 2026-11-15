@@ -22,7 +22,7 @@
         <MapDesk PaneLabel="The new map area">
             <Map>
                 <MapView @ref="_map" Source="MapSource.Url(source.Map.Url, source.Attribution)" Label="Map of the new area's regions"
-                         Areas="_shapes" Markers="_markers" Frame="_frame" Centre="@Start(context.Value)" Zoom="9" OnTap="TapAsync" Class="plan-desk__map">
+                         Areas="_shapes" Markers="_markers" Frame="_frame" Centre="@Start(context.Value)" Zoom="9" OnTap="TapAsync" Class="area-desk__map">
                     <Overlay>
                         <p class="plan-hint" role="status">@(_centre is null ? "Find a place, or click the map where the area's middle should be" : "Click the map to move the middle")</p>
                     </Overlay>
@@ -50,7 +50,7 @@
                         <div class="area-desk__places" role="list">
                             @foreach (MapPlace place in found.Places)
                             {
-                                <ListRow Title="@place.Name" Subtitle="@MapAreaWords.Place(place)" Current="@(ReferenceEquals(place, _place))" OnClick="() => ChooseAsync(place)" />
+                                <ListRow Title="@place.Name" Subtitle="@MapAreaWords.Place(place)" Current="@(Same(place, _place))" OnClick="() => ChooseAsync(place)" />
                             }
                         </div>
                     }
@@ -63,6 +63,10 @@
                         <TextField Label="Name" @bind-Value="_name" MaxLength="80" Hint="What staff call the place." />
                     </div>
                     <p class="area-desk__estimate" role="status">@EstimateLine</p>
+                    @if (_preview is { } shown && !Mapped(shown))
+                    {
+                        <p class="field__hint area-desk__hint">There's no street map here yet, so the map shows only the places' names. Its own maps come with the build.</p>
+                    }
                 }
                 <Notice Tone="NoticeTone.Warning" Text="@_problem" />
             </Pane>
@@ -203,9 +207,20 @@
             return new MapLabel(corner, text, cell.HasHomes ? "--live" : "--ink-3", index, Short: cell.HasHomes ? MapAreaWords.Megabytes(cell.Bytes) : "No homes");
         }).ToList();
         if (!Mapped(preview))
-            labels.AddRange(preview.Places.Select((place, index) => new MapLabel(new MapPoint(place.Latitude, place.Longitude), place.Name, "--ink-2", preview.Cells.Count + index)));
+        {
+            double apart = Math.Min(preview.Grid.CellLatitude, preview.Grid.CellLongitude) * 0.22;
+            foreach (MapPlace place in preview.Places)
+            {
+                MapPoint at = new(place.Latitude, place.Longitude);
+                if (labels.All(label => Math.Abs(label.Point.Lat - at.Lat) > apart / 2 || Math.Abs(label.Point.Lon - at.Lon) > apart * 1.6))
+                    labels.Add(new MapLabel(at, place.Name, "--ink-2", labels.Count));
+            }
+        }
         _labels = labels;
     }
+
+    private static bool Same(MapPlace place, MapPlace? other) =>
+        other is not null && place.Name == other.Name && place.Latitude.Equals(other.Latitude) && place.Longitude.Equals(other.Longitude);
 
     private bool Mapped(MapAreaPreview preview) =>
         preview.Cells.Select(cell => preview.Grid.Core(cell.Row, cell.Column))

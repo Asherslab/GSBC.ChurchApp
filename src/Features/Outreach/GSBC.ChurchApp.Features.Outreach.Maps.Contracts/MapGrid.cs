@@ -12,8 +12,6 @@ public sealed class MapGrid
     [ProtoMember(5)] public int OriginRow { get; set; }
     [ProtoMember(6)] public int OriginColumn { get; set; }
 
-    public bool IsEmpty => CellLatitude <= 0 || CellLongitude <= 0;
-
     public MapBounds Core(int row, int column)
     {
         double latitude = CentreLatitude - (row - OriginRow) * CellLatitude;

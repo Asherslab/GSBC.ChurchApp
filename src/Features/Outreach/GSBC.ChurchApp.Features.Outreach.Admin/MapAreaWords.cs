@@ -16,10 +16,14 @@ public static class MapAreaWords
         _ => area.BuiltAt is { } built ? $"Built {OutreachWords.Date(built)}" : "Built",
     };
 
+    private static string BuiltDetail(MapArea area) =>
+        area.BuiltAt is { } built ? $"Streets, addresses and maps from {OutreachWords.Date(built)}" : "Streets, addresses and maps are ready";
+
     public static string StateDetail(MapArea area) => area.State switch
     {
         MapAreaStates.Building => area.Stage is { Length: > 0 } stage ? stage : "Starting",
         MapAreaStates.Waiting => "Builds as soon as the one before it finishes",
+        MapAreaStates.Built => BuiltDetail(area),
         _ => State(area),
     };
 
@@ -36,6 +40,8 @@ public static class MapAreaWords
     }
 
     public static string Megabytes(long bytes) => (bytes / 1_000_000.0).ToString(bytes < 10_000_000 ? "0.0" : "N0", Invariant) + "\u00a0MB";
+
+    private const int LongestShortName = 13;
 
     public static string Label(AreaCell cell) => cell.Look switch
     {
@@ -55,7 +61,7 @@ public static class MapAreaWords
         CellLook.SwitchingOff => "Switching off",
         CellLook.Off => "Off",
         CellLook.Empty => "No homes",
-        CellLook.Waiting => "Waiting",
+        CellLook.Waiting when cell.Name.Length == 0 => "Waiting",
         _ => FirstSuburb(cell.Name),
     };
 
@@ -138,7 +144,11 @@ public static class MapAreaWords
     public static double? Radius(string text) =>
         double.TryParse(text.Trim(), NumberStyles.Float, Invariant, out double km) && km is >= 1 and <= 30 ? km : null;
 
-    private static string FirstSuburb(string name) => name.Split(" and ")[0];
+    private static string FirstSuburb(string name)
+    {
+        string first = name.Split(" and ")[0];
+        return first.Length <= LongestShortName ? first : first[..(LongestShortName - 1)].TrimEnd() + "…";
+    }
 
     private static int Rounded(int count) => count < 1_000 ? count : (int)(Math.Round(count / 100.0) * 100);
 }

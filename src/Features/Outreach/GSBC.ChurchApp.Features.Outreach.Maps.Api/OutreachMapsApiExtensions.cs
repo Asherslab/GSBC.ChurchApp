@@ -22,7 +22,7 @@ public static class OutreachMapsApiExtensions
         services.Configure<MapSourcesOptions>(configuration.GetSection(MapSourcesOptions.Section));
         services.AddHttpClient<IMapSources, MapSources>(client =>
         {
-            client.Timeout = TimeSpan.FromMinutes(5);
+            client.Timeout = Timeout.InfiniteTimeSpan;
             client.DefaultRequestHeaders.UserAgent.ParseAdd(UserAgent);
         });
         services.AddMemoryCache();

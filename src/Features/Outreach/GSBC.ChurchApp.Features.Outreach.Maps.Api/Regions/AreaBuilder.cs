@@ -106,7 +106,7 @@ internal sealed class AreaBuilder(OutreachMapsDbContext db, IMapSources sources,
         return AreaStreets.Build(osm, addresses, landUse, origin);
     }
 
-    public static List<(RegionCell Cell, string Name)> Named(List<(RegionCell Cell, string Name)> cells, string areaName, IReadOnlySet<string> taken)
+    private static List<(RegionCell Cell, string Name)> Named(List<(RegionCell Cell, string Name)> cells, string areaName, IReadOnlySet<string> taken)
     {
         Dictionary<string, int> uses = cells.GroupBy(cell => cell.Name).ToDictionary(group => group.Key, group => group.Count());
         HashSet<string> given = [.. taken];
@@ -115,11 +115,10 @@ internal sealed class AreaBuilder(OutreachMapsDbContext db, IMapSources sources,
             string name = cell.Name.Length == 0 ? areaName : cell.Name;
             if (uses.GetValueOrDefault(cell.Name) < 2 && cell.Name.Length > 0 && given.Add(name))
                 return (cell.Cell, name);
-            string numbered = name;
-            for (int number = 1; !given.Add(numbered = $"{name} {number}"); number++)
-            {
-            }
-            return (cell.Cell, numbered);
+            int number = 1;
+            while (!given.Add($"{name} {number}"))
+                number++;
+            return (cell.Cell, $"{name} {number}");
         }).ToList();
     }
 

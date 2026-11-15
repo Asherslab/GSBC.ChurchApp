@@ -53,7 +53,7 @@ async function tilesFor(source) {
 
 function overlayLayers(c) {
   return [
-    { id: "areas-fill", type: "fill", source: "areas", paint: { "fill-color": ["coalesce", ["get", "colour"], c.walk], "fill-opacity": 0.12 } },
+    { id: "areas-fill", type: "fill", source: "areas", paint: { "fill-color": ["coalesce", ["get", "colour"], c.walk], "fill-opacity": ["case", ["get", "outline"], 0, 0.12] } },
     { id: "areas-edge", type: "line", source: "areas", filter: ["!", ["get", "dashed"]], paint: { "line-color": ["coalesce", ["get", "colour"], c.walk], "line-width": 1.5 } },
     { id: "areas-edge-dashed", type: "line", source: "areas", filter: ["get", "dashed"], paint: { "line-color": ["coalesce", ["get", "colour"], c.walk], "line-width": 2, "line-dasharray": [3, 2] } },
     { id: "covered", type: "line", source: "lines", filter: styleIs("covered"), layout: { "line-cap": "round", "line-join": "round" },
@@ -117,7 +117,7 @@ function withOverlays(base, data) {
 const colourOf = (value) => (value?.startsWith("--") ? token(value) : value);
 const line = (l) => ({ type: "Feature", properties: { style: l.style, ...(l.label ? { label: l.label } : {}), ...(l.colour ? { colour: colourOf(l.colour) } : {}), ...(l.age != null ? { age: l.age } : {}), id: l.id ?? "" },
   geometry: { type: "LineString", coordinates: l.points } });
-const area = (a) => ({ type: "Feature", properties: { ...(a.colour ? { colour: colourOf(a.colour) } : {}), dashed: !!a.dashed, id: a.id ?? "" }, geometry: { type: "Polygon", coordinates: [a.points] } });
+const area = (a) => ({ type: "Feature", properties: { ...(a.colour ? { colour: colourOf(a.colour) } : {}), dashed: !!a.dashed, outline: !!a.outline, id: a.id ?? "" }, geometry: { type: "Polygon", coordinates: [a.points] } });
 const marker = (m) => ({ type: "Feature", properties: { kind: m.kind, ...(m.label ? { label: m.label } : {}), id: m.id ?? "" }, geometry: { type: "Point", coordinates: m.point } });
 
 function metresToPixels(map, metres, lat) {

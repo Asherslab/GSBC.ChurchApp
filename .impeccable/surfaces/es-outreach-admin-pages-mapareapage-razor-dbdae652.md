@@ -23,7 +23,7 @@ the squares drawn over the region's map, clicked to switch off, on, or add on th
 foot until saved. It refuses a list of coordinates and a form that only describes a place.
 
 OWN-WORLD: The admin bulletin and the outreach base map unchanged: navy title band, the map edge to edge under it, the
-460px pane ruled off at the right with a sand foot. Squares that are on in live aqua at 12%, switched off dashed in
+460px pane ruled off at the right with its foot on the page colour (MapDesk's own). Squares that are on in live aqua at 12%, switched off dashed in
 ink 3, being added in orange ink, empty (no homes) quiet; labels as the planner's capsules.
 
 STORY: The Outreach Manager opens Around the church, clicks the three south-side squares, reads that Carols 2026 uses
