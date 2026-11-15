@@ -13,6 +13,7 @@ internal sealed class OutreachPlanning(
     OutreachSettingsStore settingsStore,
     OutreachMinistries ministries,
     OutreachLeaderboards leaderboards,
+    OutreachTelling telling,
     TimeProvider time)
 {
     private const string CodeLetters = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
@@ -66,6 +67,7 @@ internal sealed class OutreachPlanning(
         DateTime now = Now;
         DateOnly today = ChurchTime.DayOf(now);
         DateTime monthStarts = ChurchTime.ToUtc(new DateOnly(today.Year, today.Month, 1).ToDateTime(TimeOnly.MinValue));
+        DateTime weekStarts = ChurchTime.ToUtc(today.AddDays(-(((int)today.DayOfWeek + 6) % 7)).ToDateTime(TimeOnly.MinValue));
         List<WalkRecord> walks = await db.Walks.AsNoTracking().Where(walk => walk.Doubtful == "").ToListAsync(cancellationToken);
         Dictionary<Guid, int> days = await db.Days.AsNoTracking().GroupBy(day => day.CampaignId).Select(group => new { group.Key, Count = group.Count() })
             .ToDictionaryAsync(group => group.Key, group => group.Count, cancellationToken);
@@ -76,6 +78,7 @@ internal sealed class OutreachPlanning(
                 {
                     Campaign = group.Key.ToString(),
                     LetterboxesThisMonth = group.Where(pair => pair.walk.StartedAt >= monthStarts).Sum(pair => pair.walk.Letterboxes),
+                    LetterboxesThisWeek = group.Where(pair => pair.walk.StartedAt >= weekStarts).Sum(pair => pair.walk.Letterboxes),
                     Letterboxes = group.Sum(pair => pair.walk.Letterboxes),
                     Metres = group.Sum(pair => pair.walk.Metres),
                     Walks = group.Count(),
@@ -110,27 +113,41 @@ internal sealed class OutreachPlanning(
             throw Invalid("A campaign ends on or after the day it starts.");
         if (asked.Area.Count > 0 && !OutreachRules.IsAPolygon(asked.Area))
             throw Invalid("Draw the campaign's area with at least three points.");
+        if (CampaignRules.WhyNotNumbers(asked) is { } numbers)
+            throw Invalid(numbers);
 
         DateTime now = Now;
+        DateOnly today = ChurchTime.DayOf(now);
         Guid id = Guid.TryParse(asked.Id, out Guid given) && given != Guid.Empty ? given : Guid.CreateVersion7();
         CampaignRecord? campaign = await db.Campaigns.FirstOrDefaultAsync(found => found.Id == id, cancellationToken);
+        bool isNew = campaign is null;
         if (campaign is null)
         {
-            campaign = new CampaignRecord { Id = id, CreatedAt = now };
+            campaign = new CampaignRecord { Id = id, CreatedAt = now, StageSetOn = today };
             db.Campaigns.Add(campaign);
         }
+        int wrapUpDays = asked.WrapUpDays > 0 ? asked.WrapUpDays : CampaignStages.DefaultWrapUpDays;
+        bool timingChanged = !campaign.General && (isNew || starts != campaign.StartsOn || ends != campaign.EndsOn || wrapUpDays != campaign.WrapUpDays);
+        if (campaign.Stage == CampaignStage.Finished && (timingChanged || asked.BundleSize != campaign.BundleSize))
+            throw Invalid("It's finished, so its dates and bundles stay as they were. Move it back to Ongoing to change them.");
+
         bool leaderboardWas = campaign.Leaderboard;
         campaign.Name = name;
         campaign.HandedOut = OutreachRules.Clip(asked.HandedOut, OutreachRules.LongestName);
         campaign.Leaderboard = asked.Leaderboard;
+        campaign.BundleSize = asked.BundleSize;
+        campaign.BundlesMade = asked.BundlesMade;
         if (!campaign.General)
         {
-            (campaign.StartsOn, campaign.EndsOn) = (starts, ends);
+            (campaign.StartsOn, campaign.EndsOn, campaign.WrapUpDays) = (starts, ends, wrapUpDays);
             campaign.AreaLats = asked.Area.Select(point => point.Lat).ToList();
             campaign.AreaLngs = asked.Area.Select(point => point.Lng).ToList();
             campaign.Regions = asked.Regions.Select(region => OutreachRules.Clip(region, OutreachRules.LongestName)).Where(region => region.Length > 0).Distinct().ToList();
         }
+        if (timingChanged)
+            (campaign.Stage, campaign.StageSetOn) = (CampaignStages.Initial(starts, ends, wrapUpDays, today), today);
         campaign.ChangedAt = now;
+        bool tell = Tell(campaign, now);
         publisher.Campaign(campaign, now);
         if (campaign.Leaderboard)
             await leaderboards.PublishAsync(campaign.Id, now, cancellationToken);
@@ -138,6 +155,36 @@ internal sealed class OutreachPlanning(
             publisher.LeaderboardGone(campaign.Id, now);
         await publisher.DeskAsync("campaign", campaign.Id, now, cancellationToken);
         await db.SaveChangesAsync(cancellationToken);
+        if (tell)
+            await telling.EndingSoonAsync(campaign, cancellationToken);
+    }
+
+    public async Task MoveCampaignAsync(CampaignMove move, CancellationToken cancellationToken)
+    {
+        await ministries.CheckAsync(move.MinistryId, cancellationToken);
+        if (!Enum.IsDefined(move.Stage))
+            throw Invalid("Choose a stage.");
+        CampaignRecord campaign = await CampaignAsync(move.Id, cancellationToken);
+        if (campaign.General)
+            throw Invalid("General outreach is always on, so it has no stages.");
+        if (campaign.Stage == move.Stage)
+            return;
+        DateTime now = Now;
+        (campaign.Stage, campaign.StageSetOn, campaign.ChangedAt) = (move.Stage, ChurchTime.DayOf(now), now);
+        bool tell = Tell(campaign, now);
+        publisher.Campaign(campaign, now);
+        await publisher.DeskAsync("campaign", campaign.Id, now, cancellationToken);
+        await db.SaveChangesAsync(cancellationToken);
+        if (tell)
+            await telling.EndingSoonAsync(campaign, cancellationToken);
+    }
+
+    private static bool Tell(CampaignRecord campaign, DateTime now)
+    {
+        if (!CampaignTelling.ShouldTell(campaign))
+            return false;
+        campaign.ToldEndingAt = now;
+        return true;
     }
 
     public async Task<CampaignDeletion> CampaignDeletionAsync(ThingRef thing, CancellationToken cancellationToken)
@@ -186,7 +233,7 @@ internal sealed class OutreachPlanning(
     {
         await ministries.CheckAsync(save.MinistryId, cancellationToken);
         OutreachDay asked = save.Day;
-        if (!Guid.TryParse(asked.Campaign, out Guid campaignId) || !await db.Campaigns.AnyAsync(campaign => campaign.Id == campaignId, cancellationToken))
+        if (!Guid.TryParse(asked.Campaign, out Guid campaignId) || await db.Campaigns.FirstOrDefaultAsync(found => found.Id == campaignId, cancellationToken) is not { } campaign)
             throw Invalid("Choose the campaign the day is for.");
         DateTime starts = DateTime.SpecifyKind(asked.StartsAt, DateTimeKind.Utc);
         DateTime ends = DateTime.SpecifyKind(asked.EndsAt, DateTimeKind.Utc);
@@ -201,6 +248,8 @@ internal sealed class OutreachPlanning(
             day = new DayRecord { Id = id };
             db.Days.Add(day);
         }
+        if (day.CampaignId != campaignId && CampaignRules.WhyNotPlanDay(campaign) is { } finished)
+            throw Invalid(finished);
         day.CampaignId = campaignId;
         (day.StartsAt, day.EndsAt) = (starts, ends);
         (day.MeetingLat, day.MeetingLng) = (asked.MeetingPoint.Lat, asked.MeetingPoint.Lng);
@@ -488,6 +537,17 @@ internal sealed class OutreachPlanning(
 
 internal static class CampaignRules
 {
+    public const int LargestBundle = 1000;
+
+    public static string? WhyNotNumbers(Campaign campaign) =>
+        campaign.WrapUpDays is < 0 or > CampaignStages.LongestWrapUpDays ? $"Wrapping up starts between 1 and {CampaignStages.LongestWrapUpDays} days before it ends."
+        : campaign.BundleSize is < 0 or > LargestBundle ? $"A bundle holds between 1 and {LargestBundle:N0} letterboxes."
+        : campaign.BundlesMade is < 0 or > CampaignStages.MostBundlesMade ? $"Bundles made is between 0 and {CampaignStages.MostBundlesMade:N0}."
+        : null;
+
+    public static string? WhyNotPlanDay(CampaignRecord campaign) =>
+        campaign.Stage == CampaignStage.Finished ? $"{campaign.Name} has finished. Move it back to Ongoing to plan a day for it." : null;
+
     public static string? WhyNotDelete(CampaignRecord campaign, int upcomingDays) =>
         campaign.General ? "General outreach is always there, so it can't be deleted."
         : upcomingDays > 0 ? $"It has {upcomingDays} outreach {(upcomingDays == 1 ? "day" : "days")} still to come. Delete or move {(upcomingDays == 1 ? "it" : "them")} first."

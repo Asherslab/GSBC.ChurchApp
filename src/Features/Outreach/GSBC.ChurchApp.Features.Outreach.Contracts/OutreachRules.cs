@@ -26,9 +26,7 @@ public static class OutreachRules
 
     public static string Format(DateOnly date) => date.ToString(IsoDate, CultureInfo.InvariantCulture);
 
-    public static bool IsActive(Campaign campaign, DateOnly today) =>
-        campaign.General
-        || ((DateOf(campaign.StartsOn) is not { } starts || starts <= today) && (DateOf(campaign.EndsOn) is not { } ends || ends >= today));
+    public static bool IsActive(Campaign campaign, DateOnly today) => campaign.General || CampaignStages.Carried(CampaignStages.Now(campaign, today));
 
     public static bool Contains(IReadOnlyList<GeoPoint> polygon, GeoPoint point)
     {

@@ -17,6 +17,7 @@
     [Parameter] public PlanTarget Target { get; set; }
     [Parameter] public double PerRoute { get; set; }
     [Parameter] public bool Apply { get; set; }
+    [Parameter] public int BundleSize { get; set; } = CampaignStages.UsualBundleSize;
     [Parameter] public EventCallback<(PlanTarget Target, double PerRoute)> OnChange { get; set; }
 
     private PlanTarget _target;
@@ -40,7 +41,7 @@
     private string Hint => _target switch
     {
         PlanTarget.Minutes => "Walking there and back included. 60 minutes is about 100 letterboxes.",
-        PlanTarget.Bundles => "Bundles of 50.",
+        PlanTarget.Bundles => $"Bundles of {BundleSize}.",
         _ => "About 100 is an hour's walk.",
     };
 
@@ -64,11 +65,11 @@
         double hours = _target switch
         {
             PlanTarget.Minutes => (Amount ?? 60) / 60,
-            PlanTarget.Bundles => (Amount ?? 2) * 50 / 100,
+            PlanTarget.Bundles => (Amount ?? 2) * BundleSize / 100,
             _ => (Amount ?? 100) / 100,
         };
         _target = target;
-        _amount = (target switch { PlanTarget.Minutes => hours * 60, PlanTarget.Bundles => Math.Max(1, Math.Round(hours * 2)), _ => hours * 100 })
+        _amount = (target switch { PlanTarget.Minutes => hours * 60, PlanTarget.Bundles => Math.Max(1, Math.Round(hours * 100 / BundleSize)), _ => hours * 100 })
             .ToString("0", CultureInfo.InvariantCulture);
         if (!Apply)
             await ChangedAsync();

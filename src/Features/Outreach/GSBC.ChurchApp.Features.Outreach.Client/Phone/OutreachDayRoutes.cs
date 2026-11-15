@@ -100,7 +100,7 @@ public sealed class OutreachDayRoutes(OutreachStore store, OutreachClaims claims
             .. WalkPlans.Markers(planned.Summary),
         ];
         MapFrame frame = MapFrame.Around(planned.Summary.Line.Select(WalkPlans.Point), 36);
-        return new DayRouteView(RouteState.Ready, route, day, campaign, on, mine, firstName, onPhone, source, planned, lines, markers, frame, walking, now.Settings.BundleSize);
+        return new DayRouteView(RouteState.Ready, route, day, campaign, on, mine, firstName, onPhone, source, planned, lines, markers, frame, walking, CampaignStages.BundleSizeOf(campaign, now.Settings));
     }
 }
 

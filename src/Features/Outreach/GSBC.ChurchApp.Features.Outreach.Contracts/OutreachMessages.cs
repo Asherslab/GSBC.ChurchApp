@@ -70,6 +70,14 @@ public enum TotalsBy
     OutreachDay = 4,
 }
 
+public enum CampaignStage
+{
+    Ongoing = 0,
+    Preparing = 1,
+    WrappingUp = 2,
+    Finished = 3,
+}
+
 [ProtoContract]
 public sealed class GeoPoint
 {
@@ -159,6 +167,21 @@ public sealed class Campaign
     [ProtoMember(7)] public List<string> Regions { get; set; } = [];
     [ProtoMember(8)] public bool Leaderboard { get; set; }
     [ProtoMember(9)] public bool General { get; set; }
+    [ProtoMember(10)] public CampaignStage Stage { get; set; }
+    [ProtoMember(11)] public string StageSetOn { get; set; } = "";
+    [ProtoMember(12)] public int WrapUpDays { get; set; }
+    [ProtoMember(13)] public int BundleSize { get; set; }
+    [ProtoMember(14)] public int BundlesMade { get; set; }
+    [ProtoMember(15)] public string ToldEndingOn { get; set; } = "";
+}
+
+[ProtoContract]
+public sealed class CampaignMove : IScopedRequest
+{
+    [ProtoMember(1)] public string MinistryId { get; set; } = "";
+    [ProtoMember(2)] public string Id { get; set; } = "";
+    [ProtoMember(3)] public CampaignStage Stage { get; set; }
+    public string ScopeId => MinistryId;
 }
 
 [ProtoContract]
@@ -655,6 +678,7 @@ public sealed class CampaignTotals
     [ProtoMember(4)] public int Metres { get; set; }
     [ProtoMember(5)] public int Walks { get; set; }
     [ProtoMember(6)] public int Days { get; set; }
+    [ProtoMember(7)] public int LetterboxesThisWeek { get; set; }
 }
 
 [ProtoContract]

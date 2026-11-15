@@ -36,7 +36,7 @@ public static class WalkPlanning
             new WalkNetwork(graph),
             [.. campaigns.Select(campaign => EngineInputs.Coverage(graph, campaign, now.Coverage))],
             today,
-            EngineInputs.Settings(now.Settings),
+            EngineInputs.Settings(now.Settings, campaigns.Count > 0 ? now.CampaignOf(campaigns[0]) : null),
             mode == WalkMode.Doorknock ? WalkKind.Doorknock : WalkKind.Letterbox,
             EngineInputs.Marks(now.Skips, now.Exclusions));
         return new WalkPlanner(open);

@@ -1,5 +1,6 @@
 using GSBC.ChurchApp.Features.Outreach.Api.Data;
 using GSBC.ChurchApp.Features.Outreach.Contracts;
+using GSBC.ChurchApp.Platform.Common;
 using GSBC.ChurchApp.Platform.Contracts.Media;
 
 namespace GSBC.ChurchApp.Features.Outreach.Api;
@@ -17,6 +18,12 @@ internal static class OutreachViews
         Regions = [.. campaign.Regions],
         Leaderboard = campaign.Leaderboard,
         General = campaign.General,
+        Stage = campaign.General ? CampaignStage.Ongoing : campaign.Stage,
+        StageSetOn = OutreachRules.Format(campaign.StageSetOn),
+        WrapUpDays = campaign.WrapUpDays,
+        BundleSize = campaign.BundleSize,
+        BundlesMade = campaign.BundlesMade,
+        ToldEndingOn = campaign.ToldEndingAt is { } told ? OutreachRules.Format(ChurchTime.DayOf(told)) : "",
     };
 
     public static List<GeoPoint> Polygon(IReadOnlyList<double> lats, IReadOnlyList<double> lngs) =>

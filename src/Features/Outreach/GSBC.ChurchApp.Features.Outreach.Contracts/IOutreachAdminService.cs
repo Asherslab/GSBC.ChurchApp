@@ -20,6 +20,9 @@ public interface IOutreachAdminService
     ValueTask<Done> SaveCampaignAsync(CampaignSave request, CallContext context = default);
 
     [Requires(OutreachPermissions.PlanNode)]
+    ValueTask<Done> MoveCampaignAsync(CampaignMove request, CallContext context = default);
+
+    [Requires(OutreachPermissions.PlanNode)]
     ValueTask<CampaignDeletion> CampaignDeletionAsync(ThingRef request, CallContext context = default);
 
     [Requires(OutreachPermissions.PlanNode)]

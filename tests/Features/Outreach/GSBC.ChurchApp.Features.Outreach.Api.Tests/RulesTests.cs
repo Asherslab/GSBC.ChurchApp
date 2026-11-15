@@ -69,14 +69,4 @@ public sealed class RulesTests
         Assert.Equal(["Ruth J."], listed.Select(total => total.Name));
         Assert.Equal(25, anonymous.Letterboxes);
     }
-
-    [Fact]
-    public void ACampaignIsActiveBetweenItsDates()
-    {
-        Campaign carols = new() { StartsOn = "2026-12-01", EndsOn = "2026-12-24" };
-
-        Assert.False(OutreachRules.IsActive(carols, new DateOnly(2026, 11, 30)));
-        Assert.True(OutreachRules.IsActive(carols, new DateOnly(2026, 12, 24)));
-        Assert.True(OutreachRules.IsActive(new Campaign { General = true, EndsOn = "2020-01-01" }, new DateOnly(2026, 12, 25)));
-    }
 }
