@@ -83,6 +83,25 @@ public static class CampaignFacts
             ? $"{ChurchTime.ToChurch(day.Day.StartsAt).ToString("ddd d MMM", English)} · {(day.Routes == 0 ? "no routes yet" : OutreachWords.Plural(day.Routes, "route", "routes"))}"
             : stage == CampaignStage.WrappingUp ? "No outreach day before it ends" : "No outreach day planned";
 
+    public static string NextDate(Campaign campaign, CampaignStage stage, DateOnly today)
+    {
+        DateOnly? starts = OutreachRules.DateOf(campaign.StartsOn), ends = OutreachRules.DateOf(campaign.EndsOn);
+        return stage switch
+        {
+            CampaignStage.Preparing when starts > today => $"It starts on {Long(starts.Value)}.",
+            CampaignStage.Ongoing when CampaignStages.WrapsUpOn(ends, CampaignStages.WrapUpDaysOf(campaign)) is { } wrap && wrap > today => $"It wraps up on {Long(wrap)}.",
+            CampaignStage.WrappingUp when ends >= today => $"It ends on {Long(ends.Value)}.",
+            _ => "",
+        };
+    }
+
+    public static bool HasArea(Campaign campaign) => campaign.Area.Count > 0 || campaign.Regions.Count > 0;
+
+    public static string AreaWords(Campaign campaign) =>
+        campaign.Regions.Count > 0 ? $"{(campaign.Area.Count > 0 ? "Area drawn · " : "")}{OutreachWords.Plural(campaign.Regions.Count, "region", "regions")}"
+        : campaign.Area.Count > 0 ? "Area drawn"
+        : "No area yet";
+
     public static string Told(Campaign campaign) =>
         OutreachRules.DateOf(campaign.ToldEndingOn) is { } told ? $"Told the church it ends soon, {Short(told)}" : "";
 
@@ -90,6 +109,8 @@ public static class CampaignFacts
         (OutreachRules.DateOf(campaign.EndsOn) ?? OutreachRules.DateOf(campaign.StageSetOn) ?? DateOnly.MinValue).Year;
 
     public static string Short(DateOnly day) => day.ToString("d MMM", English);
+
+    private static string Long(DateOnly day) => day.ToString("ddd d MMM", English);
 
     private static string In(int days) => days switch
     {

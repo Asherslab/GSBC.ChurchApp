@@ -1,7 +1,7 @@
 @using System.Globalization
 
 <div class="span-line" role="img" aria-label="@Description" style="--done: @Percent(Done)%; --closing: @Percent(Closing)%">
-    <span class="span-line__track"><span class="span-line__closing"></span><span class="span-line__done"></span>@if (Done > 0 && Done < 1) {<span class="span-line__now"></span>}</span>
+    <span class="span-line__track"><span class="span-line__closing"></span><span class="span-line__done"></span>@if (Done is > 0 and < 1) {<span class="span-line__now"></span>}</span>
     <span class="span-line__ends"><span>@From</span><span>@To</span></span>
 </div>
 

@@ -9,7 +9,7 @@ public static class CampaignStages
 
     public static readonly IReadOnlyList<CampaignStage> InOrder = [CampaignStage.Preparing, CampaignStage.Ongoing, CampaignStage.WrappingUp, CampaignStage.Finished];
 
-    public static int Rank(CampaignStage stage) => stage switch
+    private static int Rank(CampaignStage stage) => stage switch
     {
         CampaignStage.Preparing => 0,
         CampaignStage.Ongoing => 1,
@@ -40,7 +40,7 @@ public static class CampaignStages
 
     public static DateOnly? WrapsUpOn(DateOnly? ends, int wrapUpDays) => ends?.AddDays(-wrapUpDays);
 
-    public static DateOnly? FinishesOn(DateOnly? ends) => ends?.AddDays(1);
+    private static DateOnly? FinishesOn(DateOnly? ends) => ends?.AddDays(1);
 
     public static int BundleSizeOf(Campaign? campaign, OutreachSettings settings) =>
         campaign is { BundleSize: > 0 } ? campaign.BundleSize : settings.BundleSize;

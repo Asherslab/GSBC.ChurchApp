@@ -539,7 +539,7 @@ internal sealed class OutreachPlanning(
 
 internal static class CampaignRules
 {
-    public const int LargestBundle = 1000;
+    private const int LargestBundle = 1000;
 
     public static string? WhyNotNumbers(Campaign campaign) =>
         campaign.WrapUpDays is < 0 or > CampaignStages.LongestWrapUpDays ? $"Wrapping up starts between 1 and {CampaignStages.LongestWrapUpDays} days before it ends."

@@ -36,6 +36,6 @@ open in a widened column with its stage line, three figures, fields, Cancel and 
 SIGNATURE: the card's time line, start to end with today's dot and the wrap-up stretch in marker, so how long is left
 reads before any words.
 
-FORM: seed:de3bb29b31b0de42332ddfb8486b3c39, dealt structure 2 of 3 (cards open in place), chosen by the owner.
+FORM: seed:00eec220f16c5747, dealt structure 2 of 3 (cards open in place), chosen by the owner.
 
 FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, DESIGN.md, and every shipping raster carrying its provenance

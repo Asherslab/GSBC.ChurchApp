@@ -8,7 +8,7 @@ internal static class CampaignTelling
 {
     private const string Tracts = "tracts";
 
-    public static bool ShouldTell(CampaignRecord campaign) => !campaign.General && campaign.Stage == CampaignStage.WrappingUp && campaign.ToldEndingAt is null;
+    public static bool ShouldTell(CampaignRecord campaign) => campaign is { General: false, Stage: CampaignStage.WrappingUp, ToldEndingAt: null };
 
     public static string Title(CampaignRecord campaign) =>
         campaign.EndsOn is { } ends ? $"{campaign.Name} ends on {ends.ToString("ddd d MMM", CultureInfo.InvariantCulture)}" : $"{campaign.Name} is ending soon";
@@ -17,6 +17,6 @@ internal static class CampaignTelling
 
     private static string Handed(string handedOut) =>
         handedOut.Length == 0 ? Tracts
-        : handedOut.Length > 1 && char.IsUpper(handedOut[0]) && !char.IsUpper(handedOut[1]) ? char.ToLowerInvariant(handedOut[0]) + handedOut[1..]
+        : handedOut is [var first, var second, ..] && char.IsUpper(first) && !char.IsUpper(second) ? char.ToLowerInvariant(handedOut[0]) + handedOut[1..]
         : handedOut;
 }
