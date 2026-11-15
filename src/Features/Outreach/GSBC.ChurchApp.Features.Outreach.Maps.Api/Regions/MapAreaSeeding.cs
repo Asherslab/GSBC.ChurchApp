@@ -22,7 +22,8 @@ internal static class MapAreaSeeding
         if (!options.SeedChurchArea || await db.Areas.AnyAsync(cancellationToken))
             return;
         DateTime now = scope.ServiceProvider.GetRequiredService<TimeProvider>().GetUtcNow().UtcDateTime;
-        (MapAreaRecord area, List<MapCellRecord> cells) = MapAreas.New(ChurchAreaId, ChurchAreaName, new GeoPoint(options.ChurchLatitude, options.ChurchLongitude), options.ChurchRadiusKm * 1000, now);
+        (MapGrid grid, List<CellRef> planned) = RegionGrid.Plan(new GeoPoint(options.ChurchLatitude, options.ChurchLongitude), options.ChurchRadiusKm * 1000);
+        (MapAreaRecord area, List<MapCellRecord> cells) = MapAreas.New(ChurchAreaId, ChurchAreaName, grid, planned, now);
         db.Areas.Add(area);
         db.Cells.AddRange(cells);
         await db.SaveChangesAsync(cancellationToken);

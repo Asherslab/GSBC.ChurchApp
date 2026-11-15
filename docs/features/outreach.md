@@ -424,6 +424,14 @@ over its own square); the drawing was at fault:
   region's view now sees the campaign's coverage whichever region it was recorded in.
 - **On the phone nothing changes:** a walk or a day's route uses one region, so one map and one set of streets, and
   coverage is keyed by OpenStreetMap street, so a street walked from either area is done in both.
+- **Areas share one grid from now on (owner, 2026-11-15:** "One shared grid", asked whether a new area that overlaps
+  another should snap to it). A new area takes the oldest area's grid (same square size and lines) and is the squares
+  of that grid that its square reaches by at least a quarter of a square, leaving out squares another area on the grid
+  has switched on; a square another area has switched off can be taken (the inner city out of *Around the church*).
+  Switching on a square another area has on is refused ("A region you add is already in another area. Switch it off
+  there first."). Adding an area where every square is taken is refused too. Areas made before this keep their own grid
+  and the drawing above copes with them; in dev, *South Brisbane* moves onto the shared grid by deleting it and adding it
+  again (its region ids change once).
 
 ### The map's look (2026-11-15)
 
