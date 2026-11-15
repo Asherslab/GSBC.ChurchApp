@@ -9,71 +9,67 @@
         <Section Grouped="true" Title="Rest period and what's kept" Lead="How long a street counts as done, and how long what walkers mark is kept.">
             <ChildContent>
                 <div class="ui-pair ui-pair--wide">
-                    <TextField Label="Rest period" Type="number" @bind-Value="_form.RestDays" Disabled="ReadOnly" Hint="@($"Days a street stays done before walks send people there again. Usually {U.RestDays}, about three months.")" />
-                    <TextField Label="No junk mail kept for" Type="number" @bind-Value="_form.NoJunkMailKeptDays" Disabled="ReadOnly" Hint="@($"Days, unless a walker marks it again. Usually {U.NoJunkMailKeptDays}, two years.")" />
+                    <TextField Label="Rest period" Type="number" Unit="days" @bind-Value="_form.RestDays" Disabled="ReadOnly" Hint="@($"How long a street stays done before walks send people there again. Usually {U.RestDays}, about three months.")" />
+                    <TextField Label="No junk mail kept for" Type="number" Unit="days" @bind-Value="_form.NoJunkMailKeptDays" Disabled="ReadOnly" Hint="@($"Unless a walker marks it again. Usually {U.NoJunkMailKeptDays}, two years.")" />
                 </div>
-                <TextField Label="Follow-ups kept for" Type="number" @bind-Value="_form.FollowUpsKeptDays" Disabled="ReadOnly" Hint="@($"Days after one is marked followed up; their name and contact go with it. Usually {U.FollowUpsKeptDays}.")" />
+                <TextField Label="Follow-ups kept for" Type="number" Unit="days" @bind-Value="_form.FollowUpsKeptDays" Disabled="ReadOnly" Hint="@($"After one is marked followed up; their name and contact go with it. Usually {U.FollowUpsKeptDays}.")" />
             </ChildContent>
             <Foot>@Footer(SettingsGroup.Keeping)</Foot>
         </Section>
         <Section Grouped="true" Title="How long a walk takes" Lead="The pace and times every route is planned with, on the phone and for outreach days.">
             <ChildContent>
                 <div class="ui-pair ui-pair--wide">
-                    <TextField Label="Walking pace" Type="number" @bind-Value="_form.WalkingKmh" Disabled="ReadOnly" Hint="@($"Kilometres an hour, walking between letterboxes. Usually {U.WalkingKmh}.")" />
-                    <TextField Label="Bundle size" Type="number" @bind-Value="_form.BundleSize" Disabled="ReadOnly" Hint="@($"Letterboxes in a bundle of tracts; walkers are told how many bundles to take. Usually {U.BundleSize}.")" />
+                    <TextField Label="Walking pace" Type="number" Unit="km/h" @bind-Value="_form.WalkingKmh" Disabled="ReadOnly" Hint="@($"Walking between letterboxes. Usually {U.WalkingKmh}.")" />
+                    <TextField Label="Bundle size for new campaigns" Type="number" Unit="letterboxes" @bind-Value="_form.BundleSize" Disabled="ReadOnly" Hint="@($"Each campaign sets its own, since thicker paper makes smaller bundles; a new campaign starts with this. Usually {U.BundleSize}.")" />
                 </div>
-                <TextField Label="Spare tracts" Type="number" @bind-Value="_form.SparePercent" Disabled="ReadOnly"
-                           Hint="@($"Per cent more than the walk's letterboxes, rounded up to whole bundles, so nobody runs out. Usually {U.SparePercent}.")" />
+                <TextField Label="Spare tracts" Type="number" Unit="%" @bind-Value="_form.SparePercent" Disabled="ReadOnly"
+                           Hint="@($"More than the walk's letterboxes, rounded up to whole bundles, so nobody runs out. Usually {U.SparePercent}.")" />
                 <div class="ui-pair ui-pair--wide">
-                    <TextField Label="A house's letterbox" Type="number" @bind-Value="_form.HouseSeconds" Disabled="ReadOnly" Hint="@($"Seconds at each house. Usually {U.HouseSeconds}.")" />
-                    <TextField Label="A unit's letterbox" Type="number" @bind-Value="_form.UnitSeconds" Disabled="ReadOnly" Hint="@($"Seconds at each unit, in a row of letterboxes. Usually {U.UnitSeconds}.")" />
+                    <TextField Label="A house's letterbox" Type="number" Unit="seconds" @bind-Value="_form.HouseSeconds" Disabled="ReadOnly" Hint="@($"At each house. Usually {U.HouseSeconds}.")" />
+                    <TextField Label="A unit's letterbox" Type="number" Unit="seconds" @bind-Value="_form.UnitSeconds" Disabled="ReadOnly" Hint="@($"At each unit, in a row of letterboxes. Usually {U.UnitSeconds}.")" />
                 </div>
                 <div class="ui-pair ui-pair--wide">
-                    <TextField Label="A house's door" Type="number" @bind-Value="_form.DoorSeconds" Disabled="ReadOnly" Hint="@($"Seconds at each door, when doorknocking. Usually {U.DoorSeconds}.")" />
-                    <TextField Label="A unit's door" Type="number" @bind-Value="_form.UnitDoorSeconds" Disabled="ReadOnly" Hint="@($"Seconds at each unit's door, when doorknocking. Usually {U.UnitDoorSeconds}.")" />
+                    <TextField Label="A house's door" Type="number" Unit="seconds" @bind-Value="_form.DoorSeconds" Disabled="ReadOnly" Hint="@($"At each door, when doorknocking. Usually {U.DoorSeconds}.")" />
+                    <TextField Label="A unit's door" Type="number" Unit="seconds" @bind-Value="_form.UnitDoorSeconds" Disabled="ReadOnly" Hint="@($"At each unit's door, when doorknocking. Usually {U.UnitDoorSeconds}.")" />
                 </div>
             </ChildContent>
             <Foot>@Footer(SettingsGroup.Times)</Foot>
         </Section>
-        <Section Grouped="true" Title="Daylight and pairs" Lead="Walks are offered only between these times.">
+        <Section Grouped="true" Title="Doorknocking" Lead="How a doorknocking walk starts.">
             <ChildContent>
-                <div class="ui-pair ui-pair--wide">
-                    <TimeField Label="From" @bind-Value="_form.DaylightStarts" Disabled="ReadOnly" Hint="Usually 7am." />
-                    <TimeField Label="Until" @bind-Value="_form.DaylightEnds" Disabled="ReadOnly" Hint="Usually 6pm." />
-                </div>
                 <ToggleRow Title="Doorknock in pairs" @bind-Checked="_form.DoorknockInPairs" Disabled="ReadOnly"
                            Description="A doorknocking walk starts only once the walker says someone is with them. Usually on." />
             </ChildContent>
-            <Foot>@Footer(SettingsGroup.Daylight)</Foot>
+            <Foot>@Footer(SettingsGroup.Doorknocking)</Foot>
         </Section>
         <Section Grouped="true" Title="Walking between streets" Lead="Streets with no homes are walked only to get somewhere. These keep those stretches short.">
             <ChildContent>
                 <div class="ui-pair ui-pair--wide">
-                    <TextField Label="Furthest to the first street" Type="number" @bind-Value="_form.MaxApproachMetres" Disabled="ReadOnly" Hint="@($"Metres to the first street not done. Past it, the app says nearby is done and suggests a better start. Usually {U.MaxApproachMetres}.")" />
-                    <TextField Label="Longest stretch without homes" Type="number" @bind-Value="_form.MaxConnectorLegMetres" Disabled="ReadOnly" Hint="@($"Metres in one go; Walk now adds no street further than this. Usually {U.MaxConnectorLegMetres}.")" />
+                    <TextField Label="Furthest to the first street" Type="number" Unit="metres" @bind-Value="_form.MaxApproachMetres" Disabled="ReadOnly" Hint="@($"To the first street not done. Past it, the app says nearby is done and suggests a better start. Usually {U.MaxApproachMetres}.")" />
+                    <TextField Label="Longest stretch without homes" Type="number" Unit="metres" @bind-Value="_form.MaxConnectorLegMetres" Disabled="ReadOnly" Hint="@($"In one go; Walk now adds no street further than this. Usually {U.MaxConnectorLegMetres}.")" />
                 </div>
                 <div class="ui-pair ui-pair--wide">
-                    <TextField Label="Stretches without homes in a route" Type="number" @bind-Value="_form.MaxConnectorTotalMetres" Disabled="ReadOnly" Hint="@($"Metres in all, before a planned route is flagged for review. Usually {U.MaxConnectorTotalMetres}.")" />
-                    <TextField Label="Joining streets when splitting an area" Type="number" @bind-Value="_form.SplitJoinMetres" Disabled="ReadOnly" Hint="@($"Metres without homes a planned route may cross; further apart, streets become separate routes. Usually {U.SplitJoinMetres}.")" />
+                    <TextField Label="Stretches without homes in a route" Type="number" Unit="metres" @bind-Value="_form.MaxConnectorTotalMetres" Disabled="ReadOnly" Hint="@($"In all, before a planned route is flagged for review. Usually {U.MaxConnectorTotalMetres}.")" />
+                    <TextField Label="Joining streets when splitting an area" Type="number" Unit="metres" @bind-Value="_form.SplitJoinMetres" Disabled="ReadOnly" Hint="@($"Without homes a planned route may cross; further apart, streets become separate routes. Usually {U.SplitJoinMetres}.")" />
                 </div>
-                <TextField Label="Longest walk a walker can add" Type="number" @bind-Value="_form.MaxHopMetres" Disabled="ReadOnly" Hint="@($"Metres, offered to reach more streets when the ones nearby run out. Usually {U.MaxHopMetres}.")" />
+                <TextField Label="Longest walk a walker can add" Type="number" Unit="metres" @bind-Value="_form.MaxHopMetres" Disabled="ReadOnly" Hint="@($"Offered to reach more streets when the ones nearby run out. Usually {U.MaxHopMetres}.")" />
             </ChildContent>
             <Foot>@Footer(SettingsGroup.Between)</Foot>
         </Section>
         <Section Grouped="true" Title="Telling walkers about the length" Lead="When a walk can't be as long as asked, the app says so under its figures.">
             <ChildContent>
                 <div class="ui-pair ui-pair--wide">
-                    <TextField Label="Say it's short below" Type="number" @bind-Value="_form.ShortOfPercent" Disabled="ReadOnly" Hint="@($"Per cent of what was asked. Usually {U.ShortOfPercent}.")" />
-                    <TextField Label="Say it's long above" Type="number" @bind-Value="_form.LongOfPercent" Disabled="ReadOnly" Hint="@($"Per cent of what was asked. Usually {U.LongOfPercent}.")" />
+                    <TextField Label="Say it's short below" Type="number" Unit="%" @bind-Value="_form.ShortOfPercent" Disabled="ReadOnly" Hint="@($"Of what was asked. Usually {U.ShortOfPercent}.")" />
+                    <TextField Label="Say it's long above" Type="number" Unit="%" @bind-Value="_form.LongOfPercent" Disabled="ReadOnly" Hint="@($"Of what was asked. Usually {U.LongOfPercent}.")" />
                 </div>
             </ChildContent>
             <Foot>@Footer(SettingsGroup.Length)</Foot>
         </Section>
-        <Section Grouped="true" Title="What counts as a walk" Lead="A walk faster or longer than this is kept but marks no streets done.">
+        <Section Grouped="true" Title="What counts as a walk" Lead="A walk faster or longer than this is kept but marks no streets done, so one left running in a car or on a bus doesn't count the streets it passed.">
             <ChildContent>
                 <div class="ui-pair ui-pair--wide">
-                    <TextField Label="Fastest" Type="number" @bind-Value="_form.FastestKmh" Disabled="ReadOnly" Hint="@($"Kilometres an hour, from start to finish. Usually {U.FastestKmh}.")" />
-                    <TextField Label="Longest" Type="number" @bind-Value="_form.LongestWalkKm" Disabled="ReadOnly" Hint="@($"Kilometres. Usually {U.LongestWalkKm}.")" />
+                    <TextField Label="Fastest" Type="number" Unit="km/h" @bind-Value="_form.FastestKmh" Disabled="ReadOnly" Hint="@($"From start to finish. Usually {U.FastestKmh}.")" />
+                    <TextField Label="Longest" Type="number" Unit="km" @bind-Value="_form.LongestWalkKm" Disabled="ReadOnly" Hint="@($"Usually {U.LongestWalkKm}.")" />
                 </div>
             </ChildContent>
             <Foot>@Footer(SettingsGroup.Counting)</Foot>
@@ -93,7 +89,7 @@
 
     private LiveData<OutreachDesk>? _live;
     private OutreachSettings _stored = OutreachDefaults.Settings();
-    private SettingsForm _form = SettingsForm.Of(OutreachDefaults.Settings());
+    private readonly SettingsForm _form = SettingsForm.Of(OutreachDefaults.Settings());
     private SettingsGroup? _busy, _saved, _failed;
     private string? _problem;
 

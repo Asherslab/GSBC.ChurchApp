@@ -54,11 +54,12 @@ public sealed class TextSetting(string key, string label, string defaultValue = 
         Uri.TryCreate(text, UriKind.Absolute, out Uri? uri) && uri.Scheme == Uri.UriSchemeHttps;
 }
 
-public sealed class NumberSetting(string key, string label, int defaultValue, int minimum, int maximum, string help = "")
+public sealed class NumberSetting(string key, string label, int defaultValue, int minimum, int maximum, string help = "", string? unit = null)
     : Setting<int>(key, label, defaultValue, help)
 {
     public int Minimum { get; } = minimum;
     public int Maximum { get; } = maximum;
+    public string? Unit { get; } = unit;
 
     public override bool TryParse(string text, out int value) =>
         int.TryParse(text, NumberStyles.Integer, CultureInfo.InvariantCulture, out value) && value >= Minimum && value <= Maximum;

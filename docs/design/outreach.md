@@ -22,7 +22,7 @@ The same `Workbench` shape. Each table has the item over a caption (the place), 
 - **A new report** has a block *Never deliver there* over two quiet buttons of equal width, *It's been fixed* and *Dismiss it*, with a hint above saying what each changes.
 
 ## Settings
-The settings in the work area, each group a `Section Grouped` card with short fields two to a line (`ui-pair--wide`) and a hint under each saying its unit. Six groups: Rest period and what's kept, How long a walk takes, Daylight and pairs, Walking between streets, Telling walkers about the length, What counts as a walk.
+The settings in the work area, each group a `Section Grouped` card with short fields two to a line (`ui-pair--wide`), each number's unit inside its field (`Unit`) and a hint under it saying what it's for. Six groups: Rest period and what's kept, How long a walk takes, Doorknocking (in pairs), Walking between streets, Telling walkers about the length, and What counts as a walk, whose lead says why: a walk left running in a car or on a bus marks nothing done (#104). There are no walking hours: people may walk at any time (owner, 2026-11-15, #103).
 - **Each group saves by itself:** its own `SaveBar` in its own sand foot, saving or cancelling only that group's fields, with its own warning. A group still being changed keeps what was typed when the page reloads.
 - **Read only:** fields are disabled and each foot says "Only outreach leaders can change these."
 - **Leaving with changes** asks first (`UnsavedGuard`), on Settings and on a campaign.

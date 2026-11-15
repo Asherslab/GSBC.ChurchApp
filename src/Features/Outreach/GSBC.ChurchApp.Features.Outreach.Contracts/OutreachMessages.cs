@@ -120,8 +120,6 @@ public sealed class OutreachSettings
     [ProtoMember(12)] public int MaxHopMetres { get; set; }
     [ProtoMember(13)] public double ShortOf { get; set; }
     [ProtoMember(14)] public double LongOf { get; set; }
-    [ProtoMember(15)] public int DaylightStartsMinute { get; set; }
-    [ProtoMember(16)] public int DaylightEndsMinute { get; set; }
     [ProtoMember(17)] public int NoJunkMailKeptDays { get; set; }
     [ProtoMember(18)] public int FollowUpsKeptDays { get; set; }
     [ProtoMember(19)] public double FastestKmh { get; set; }

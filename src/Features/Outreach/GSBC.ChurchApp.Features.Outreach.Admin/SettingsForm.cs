@@ -7,7 +7,7 @@ public enum SettingsGroup
 {
     Keeping,
     Times,
-    Daylight,
+    Doorknocking,
     Between,
     Length,
     Counting,
@@ -27,8 +27,6 @@ public sealed class SettingsForm
     public string UnitSeconds { get; set; } = "";
     public string DoorSeconds { get; set; } = "";
     public string UnitDoorSeconds { get; set; } = "";
-    public string DaylightStarts { get; set; } = "";
-    public string DaylightEnds { get; set; } = "";
     public bool DoorknockInPairs { get; set; }
     public string MaxApproachMetres { get; set; } = "";
     public string MaxConnectorLegMetres { get; set; } = "";
@@ -54,8 +52,6 @@ public sealed class SettingsForm
         UnitSeconds = Whole(settings.UnitSeconds),
         DoorSeconds = Whole(settings.DoorSeconds),
         UnitDoorSeconds = Whole(settings.UnitDoorSeconds),
-        DaylightStarts = Time(settings.DaylightStartsMinute),
-        DaylightEnds = Time(settings.DaylightEndsMinute),
         DoorknockInPairs = settings.DoorknockInPairs,
         MaxApproachMetres = Whole(settings.MaxApproachMetres),
         MaxConnectorLegMetres = Whole(settings.MaxConnectorLegMetres),
@@ -74,7 +70,7 @@ public sealed class SettingsForm
     {
         if (!(Int(RestDays) is { } rest && Int(NoJunkMailKeptDays) is { } noJunk && Int(FollowUpsKeptDays) is { } followUps && Double(WalkingKmh) is { } pace
               && Int(BundleSize) is { } bundle && Int(SparePercent) is { } spare && Int(HouseSeconds) is { } house && Int(UnitSeconds) is { } unit && Int(DoorSeconds) is { } door
-              && Int(UnitDoorSeconds) is { } unitDoor && Minute(DaylightStarts) is { } from && Minute(DaylightEnds) is { } until
+              && Int(UnitDoorSeconds) is { } unitDoor
               && Int(MaxApproachMetres) is { } approach && Int(MaxConnectorLegMetres) is { } leg && Int(MaxConnectorTotalMetres) is { } total
               && Int(SplitJoinMetres) is { } join && Int(MaxHopMetres) is { } hop && Int(ShortOfPercent) is { } shortOf && Int(LongOfPercent) is { } longOf
               && Double(FastestKmh) is { } fastest && Int(LongestWalkKm) is { } longest))
@@ -83,7 +79,7 @@ public sealed class SettingsForm
         (settings.RestDays, settings.NoJunkMailKeptDays, settings.FollowUpsKeptDays) = (rest, noJunk, followUps);
         (settings.WalkingKmh, settings.BundleSize, settings.HouseSeconds, settings.UnitSeconds) = (pace, bundle, house, unit);
         settings.SpareShare = spare / 100.0;
-        (settings.DoorSeconds, settings.UnitDoorSeconds, settings.DaylightStartsMinute, settings.DaylightEndsMinute) = (door, unitDoor, from, until);
+        (settings.DoorSeconds, settings.UnitDoorSeconds) = (door, unitDoor);
         settings.DoorknockInPairs = DoorknockInPairs;
         (settings.MaxApproachMetres, settings.MaxConnectorLegMetres, settings.MaxConnectorTotalMetres) = (approach, leg, total);
         (settings.SplitJoinMetres, settings.MaxHopMetres, settings.ShortOf, settings.LongOf) = (join, hop, shortOf / 100.0, longOf / 100.0);
@@ -100,7 +96,7 @@ public sealed class SettingsForm
         SettingsGroup.Keeping => (RestDays, NoJunkMailKeptDays, FollowUpsKeptDays) == (other.RestDays, other.NoJunkMailKeptDays, other.FollowUpsKeptDays),
         SettingsGroup.Times => (WalkingKmh, BundleSize, SparePercent, HouseSeconds, UnitSeconds, DoorSeconds, UnitDoorSeconds)
                                == (other.WalkingKmh, other.BundleSize, other.SparePercent, other.HouseSeconds, other.UnitSeconds, other.DoorSeconds, other.UnitDoorSeconds),
-        SettingsGroup.Daylight => (DaylightStarts, DaylightEnds, DoorknockInPairs) == (other.DaylightStarts, other.DaylightEnds, other.DoorknockInPairs),
+        SettingsGroup.Doorknocking => DoorknockInPairs == other.DoorknockInPairs,
         SettingsGroup.Between => (MaxApproachMetres, MaxConnectorLegMetres, MaxConnectorTotalMetres, SplitJoinMetres, MaxHopMetres)
                                  == (other.MaxApproachMetres, other.MaxConnectorLegMetres, other.MaxConnectorTotalMetres, other.SplitJoinMetres, other.MaxHopMetres),
         SettingsGroup.Length => (ShortOfPercent, LongOfPercent) == (other.ShortOfPercent, other.LongOfPercent),
@@ -118,8 +114,8 @@ public sealed class SettingsForm
                 (WalkingKmh, BundleSize, SparePercent, HouseSeconds) = (from.WalkingKmh, from.BundleSize, from.SparePercent, from.HouseSeconds);
                 (UnitSeconds, DoorSeconds, UnitDoorSeconds) = (from.UnitSeconds, from.DoorSeconds, from.UnitDoorSeconds);
                 break;
-            case SettingsGroup.Daylight:
-                (DaylightStarts, DaylightEnds, DoorknockInPairs) = (from.DaylightStarts, from.DaylightEnds, from.DoorknockInPairs);
+            case SettingsGroup.Doorknocking:
+                DoorknockInPairs = from.DoorknockInPairs;
                 break;
             case SettingsGroup.Between:
                 (MaxApproachMetres, MaxConnectorLegMetres, MaxConnectorTotalMetres) = (from.MaxApproachMetres, from.MaxConnectorLegMetres, from.MaxConnectorTotalMetres);
@@ -138,13 +134,9 @@ public sealed class SettingsForm
 
     private static string Decimal(double value) => value.ToString("0.##", Invariant);
 
-    private static string Time(int minute) => $"{minute / 60:00}:{minute % 60:00}";
-
     private static int? Int(string text) => int.TryParse(text.Trim(), NumberStyles.Integer, Invariant, out int value) ? value : null;
 
     private static double? Double(string text) => double.TryParse(text.Trim(), NumberStyles.Float, Invariant, out double value) ? value : null;
-
-    private static int? Minute(string text) => TimeOnly.TryParse(text, Invariant, out TimeOnly time) ? time.Hour * 60 + time.Minute : null;
 }
 
 internal static class OutreachPayloadCopy

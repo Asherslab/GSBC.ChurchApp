@@ -1,7 +1,6 @@
 using GSBC.ChurchApp.Features.Outreach.Contracts;
 using GSBC.ChurchApp.Features.Outreach.Maps.Contracts;
 using GSBC.ChurchApp.Features.Outreach.Routing;
-using GSBC.ChurchApp.Platform.Common;
 using RoutingPoint = GSBC.ChurchApp.Features.Outreach.Routing.GeoPoint;
 
 namespace GSBC.ChurchApp.Features.Outreach.Client.Phone;
@@ -75,24 +74,6 @@ public static class WalkPlanning
         double done = now.Coverage.Count == 0 ? 0 : DoneShare(now, graph, day, sides);
         return new RouteToWalk(route, region, graph, planner, plan, summary, done);
     }
-
-    public static bool InDaylight(OutreachSettings settings, DateTime utc, TimeSpan length)
-    {
-        DateTime start = ChurchTime.ToChurch(utc);
-        DateTime end = start + length;
-        TimeSpan opens = TimeSpan.FromMinutes(settings.DaylightStartsMinute);
-        TimeSpan closes = TimeSpan.FromMinutes(settings.DaylightEndsMinute);
-        return start.Date == end.Date && start.TimeOfDay >= opens && end.TimeOfDay <= closes;
-    }
-
-    public static bool BeforeDaylight(OutreachSettings settings, DateTime utc) =>
-        ChurchTime.ToChurch(utc).TimeOfDay < TimeSpan.FromMinutes(settings.DaylightStartsMinute);
-
-    public static DateTime DaylightStarts(OutreachSettings settings, DateTime utc) =>
-        ChurchTime.ToUtc(ChurchTime.ToChurch(utc).Date + TimeSpan.FromMinutes(settings.DaylightStartsMinute));
-
-    public static DateTime DaylightEnds(OutreachSettings settings, DateTime utc) =>
-        ChurchTime.ToUtc(ChurchTime.ToChurch(utc).Date + TimeSpan.FromMinutes(settings.DaylightEndsMinute));
 
     private static double DoneShare(OutreachNow now, StreetGraph graph, OutreachDay day, IReadOnlyList<SideStretch> sides)
     {

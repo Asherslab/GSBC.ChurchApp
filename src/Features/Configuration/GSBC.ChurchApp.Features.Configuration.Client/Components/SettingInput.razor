@@ -16,7 +16,7 @@
         <SelectField Label="@Setting.Label" Options="@choice.Choices.Select(option => new FieldOption(option.Value, option.Label)).ToList()" Value="@Value" ValueChanged="SetAsync" Hint="@Help" Problem="@Problem" />
         break;
     case NumberSetting number:
-        <TextField Label="@Setting.Label" Type="number" Min="@number.Minimum.ToString()" Max="@number.Maximum.ToString()" Value="@Value" ValueChanged="SetAsync" Hint="@Help" Problem="@Problem" />
+        <TextField Label="@Setting.Label" Type="number" Unit="@number.Unit" Min="@number.Minimum.ToString()" Max="@number.Maximum.ToString()" Value="@Value" ValueChanged="SetAsync" Hint="@Help" Problem="@Problem" />
         break;
     case DateSetting:
         <DateField Label="@Setting.Label" Value="@Value" ValueChanged="SetAsync" Hint="@Help" Problem="@Problem" />
