@@ -3,6 +3,10 @@
 
 <figure class="map-view @Class">
     <div class="map-view__map" @ref="_element" role="img" aria-label="@Label"></div>
+    @if (_outside && Outside is not null)
+    {
+        <div class="map-view__outside" role="status">@Outside</div>
+    }
     @if (Overlay is not null)
     {
         <div class="map-view__overlay">@Overlay</div>
@@ -18,6 +22,7 @@
     private static readonly IReadOnlyList<MapLine> NoLines = [];
     private static readonly IReadOnlyList<MapArea> NoAreas = [];
     private static readonly IReadOnlyList<MapMarker> NoMarkers = [];
+    private const double MostlyOutside = 0.25;
 
     private ElementReference _element;
     private IJSObjectReference? _module;
@@ -30,6 +35,8 @@
     private MapYou? _shownYou;
     private bool _shownFollow;
     private MapFrame? _shownFrame;
+    private MapReach? _shownReach;
+    private bool _outside;
     private bool _disposed;
     private Task? _creating;
 
@@ -47,6 +54,9 @@
     [Parameter] public EventCallback<MapPoint> OnTap { get; set; }
     [Parameter] public EventCallback OnStoppedFollowing { get; set; }
     [Parameter] public RenderFragment? Overlay { get; set; }
+    [Parameter] public MapReach? Reach { get; set; }
+    [Parameter] public RenderFragment? Outside { get; set; }
+    [Parameter] public EventCallback<MapFrame> OnMoved { get; set; }
     [Parameter] public string? Class { get; set; }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -77,6 +87,19 @@
 
     [JSInvokable("OnStoppedFollowing")]
     public Task StoppedFollowingAsync() => OnStoppedFollowing.InvokeAsync();
+
+    [JSInvokable("OnMoved")]
+    public async Task MovedAsync(double south, double west, double north, double east)
+    {
+        MapFrame view = new(south, west, north, east);
+        bool outside = Reach is { } reach && reach.ShareOf(view) < MostlyOutside;
+        if (outside != _outside)
+        {
+            _outside = outside;
+            StateHasChanged();
+        }
+        await OnMoved.InvokeAsync(view);
+    }
 
     public IJSObjectReference? Handle => _map;
 
@@ -121,6 +144,7 @@
         _shownLines = _shownAreas = _shownMarkers = null;
         _shownYou = null;
         _shownFrame = null;
+        _shownReach = null;
         _shownFollow = Follow;
         if (Created is { } created)
             await created();
@@ -130,6 +154,11 @@
     {
         if (_map is null)
             return;
+        if (!ReferenceEquals(_shownReach, Reach))
+        {
+            _shownReach = Reach;
+            await _map.InvokeVoidAsync("setReach", MapJson.Reach(Reach));
+        }
         if (!ReferenceEquals(_shownLines, Lines))
         {
             _shownLines = Lines;

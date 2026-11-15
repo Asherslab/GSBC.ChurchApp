@@ -9,10 +9,9 @@
 @inject TimeProvider Time
 @inject IAccess Access
 
-<LiveData @ref="_live" TValue="Shown" Feeds="Feeds" Load="LoadAsync" FailedTitle="Can't load the coverage map right now">
+<LiveData @ref="_live" TValue="Shown" Feeds="Feeds" Load="LoadAsync" Remember="@($"outreach.coverage.{Scope}.{_campaign}")" FailedTitle="Can't load the coverage map right now">
     @{ Shown shown = context.Value; }
-    <OutreachHead Tab="OutreachTab.Coverage" FollowUps="shown.Desk.OpenFollowUps" Reports="shown.Desk.NewReports" />
-    @if (shown.Region is null || shown.View is null)
+    @if (shown.Atlas.Source is not { } source)
     {
         <div class="outreach-coverage__none">
             <EmptyState Icon="map" Title="No map yet"
@@ -21,12 +20,11 @@
     }
     else
     {
-        CoverageView view = shown.View;
         <MapDesk PaneLabel="Coverage" Class="outreach-coverage">
             <Map>
-                <MapView @ref="_map" Source="@MapSource.Url(shown.Region.Map.Url, shown.Region.Attribution)"
-                         Label="@($"{CampaignName(shown)}: streets done in the last {view.RestDays} days, darker the more recently")"
-                         Lines="@Lines(view)" Areas="@Areas(shown)" Markers="@Markers(shown)" Frame="@view.Frame()" OnTap="TapAsync">
+                <MapView @ref="_map" Source="@source" Reach="@shown.Atlas.Limits"
+                         Label="@($"{CampaignName(shown)}: streets done in the last {RestDays(shown)} days, darker the more recently")"
+                         Lines="@Drawn()" Areas="@Areas(shown)" Markers="@Markers(shown)" Frame="@_frame" OnTap="TapAsync" OnMoved="MovedAsync">
                     <Overlay>
                         <div class="outreach-coverage__tools">
                             <Button Variant="@(_drawing ? ButtonVariant.Primary : ButtonVariant.Quiet)" Icon="pencil" OnClick="ToggleDrawing" Class="outreach-coverage__tool">@(_drawing ? "Stop drawing" : "Draw round streets")</Button>
@@ -36,29 +34,25 @@
                             }
                         </div>
                     </Overlay>
+                    <Outside><OutreachMapOutside /></Outside>
                 </MapView>
                 <MapSketch Map="_map" Tool="@(_drawing ? MapSketchTool.Lasso : MapSketchTool.None)" OnDrawn="DrawnAsync" OnCancelled="() => _drawing = false" />
             </Map>
             <Pane>
                 <div class="outreach-coverage__rail">
                 <SelectField Label="Campaign" Options="CampaignOptions(shown.Desk)" Value="@shown.Campaign" ValueChanged="ChooseCampaignAsync" />
-                @if (shown.Regions.Count > 1)
-                {
-                    <SelectField Label="Region" Options="@shown.Regions.Select(region => new FieldOption(region.Id, region.Name)).ToList()" Value="@shown.Region.Id"
-                                 ValueChanged="ChooseRegionAsync" />
-                }
                 <div>
                     <p class="outreach-coverage__label">When it was last done</p>
                     <div class="outreach-coverage__ramp" aria-hidden="true"></div>
-                    <p class="outreach-coverage__ramp-key"><span>This week</span><span>@Weeks(view.RestDays / 2)</span><span>@Weeks(view.RestDays): open again</span></p>
+                    <p class="outreach-coverage__ramp-key"><span>This week</span><span>@Weeks(RestDays(shown) / 2)</span><span>@Weeks(RestDays(shown)): open again</span></p>
                     @if (_showPlaces && shown.Exclusions.Zones.Count > 0)
                     {
                         <p class="outreach-coverage__key"><span class="outreach-coverage__swatch" aria-hidden="true"></span>Outlined in red: an area outreach skips</p>
                     }
                 </div>
                 <div class="outreach-coverage__figures">
-                    <StatTile Value="@OutreachWords.Count(view.StreetsDone)" Label="@($"streets done, of {OutreachWords.Count(view.DeliverableStreets)} in this region")" Quiet="true" />
-                    <StatTile Value="@Percent(view.HomesDone, view.AllHomes)" Label="of this region's letterboxes done" Quiet="true" />
+                    <StatTile Value="@OutreachWords.Count(_tally.StreetsDone)" Label="@($"streets done, of {OutreachWords.Count(_tally.Streets)} on the map in view")" Quiet="true" />
+                    <StatTile Value="@Percent(_tally.HomesDone, _tally.Homes)" Label="of the letterboxes in view done" Quiet="true" />
                 </div>
                 <div class="outreach-coverage__layers">
                     <p class="outreach-coverage__label">Show on the map</p>
@@ -75,7 +69,7 @@
                 {
                     <div class="outreach-coverage__chosen-block">
                         <p class="outreach-coverage__chosen">@chosen.Title</p>
-                        <p class="outreach-coverage__chosen-sub">@ChoiceLine(view, chosen)</p>
+                        <p class="outreach-coverage__chosen-sub">@ChoiceLine(chosen)</p>
                     </div>
                     <Notice Tone="NoticeTone.Warning" Text="@_problem" />
                     <div class="outreach-coverage__actions">
@@ -110,20 +104,24 @@
 
     [Parameter, EditorRequired] public required string Scope { get; set; }
 
-    private sealed record Shown(OutreachDesk Desk, string Campaign, IReadOnlyList<OutreachRegion> Regions, OutreachRegion? Region, CoverageView? View,
-        SkipLines Skips, Exclusions Exclusions);
+    private sealed record Shown(OutreachDesk Desk, string Campaign, OutreachAtlas Atlas, CoverageMap Coverage, SkipLines Skips, Exclusions Exclusions);
 
     private sealed record Undo(string Campaign, DateTime At);
 
     private LiveData<Shown>? _live;
     private MapView? _map;
     private string _campaign = OutreachCampaigns.GeneralId.ToString();
-    private string? _region;
     private CoverageChoice? _choice;
+    private CoverageView? _choiceView;
     private Undo? _undo;
     private bool _drawing, _busy, _showMarks = true, _showPlaces = true;
     private string? _problem;
-    private CoverageView? _view;
+    private Shown? _shown;
+    private MapFrame? _frame, _inView;
+    private string? _framedFor;
+    private Dictionary<string, CoverageView> _views = [];
+    private IReadOnlyList<MapLine> _lines = [];
+    private CoverageTally _tally;
 
     private string? MinistryScope => Scope.Length == 0 ? null : Scope;
 
@@ -132,32 +130,82 @@
     private async Task<Shown> LoadAsync()
     {
         Task<OutreachDesk> desk = Outreach.DeskAsync(Scope);
-        Task<RegionList> regions = Maps.RegionsAsync();
+        Task<OutreachAtlas> atlas = OutreachAtlas.LoadAsync(Maps, Access);
         Task<CoverageMap> coverage = Outreach.CoverageAsync(Scope, _campaign);
         Task<SkipLines> skips = Access.Can(OutreachPermissions.Review, MinistryScope) ? Outreach.SkipsAsync(Scope) : Task.FromResult(new SkipLines());
         Task<Exclusions> exclusions = Access.Can(OutreachPermissions.Settings, MinistryScope) ? Outreach.ExclusionsAsync(Scope) : Task.FromResult(new Exclusions());
-        await Task.WhenAll(desk, regions, coverage, skips, exclusions);
-        List<OutreachRegion> all = [.. (await regions).Regions.OrderBy(region => region.Name, StringComparer.Ordinal)];
-        Dictionary<string, int> covered = (await coverage).Streets.GroupBy(street => street.Region).ToDictionary(group => group.Key, group => group.Count());
-        OutreachRegion? region = all.FirstOrDefault(found => found.Id == _region)
-                                 ?? all.OrderByDescending(found => covered.GetValueOrDefault(found.Id)).ThenByDescending(found => found.Letterboxes).FirstOrDefault();
-        _region = region?.Id;
-        CoverageView? view = null;
-        if (region is not null)
-        {
-            StreetGraph graph = await Graphs.LoadAsync(region);
-            view = new CoverageView(graph, (await coverage).Streets, (await desk).Settings.RestDays, ChurchTime.Today(Time));
-        }
-        _view = view;
-        if (_choice is { } choice && view is not null)
-            _choice = choice.Street is { } street ? view.ForStreet(street) : choice.Area is { } area ? view.InArea(area) : null;
-        return new Shown(await desk, _campaign, all, region, view, await skips, await exclusions);
+        await Task.WhenAll(desk, atlas, coverage, skips, exclusions);
+        Shown shown = new(await desk, _campaign, await atlas, await coverage, await skips, await exclusions);
+        if (_framedFor != shown.Campaign)
+            (_frame, _framedFor) = (Opening(shown), shown.Campaign);
+        _shown = shown;
+        _views = [];
+        await ShowViewsAsync();
+        return shown;
     }
 
-    private IReadOnlyList<MapLine> Lines(CoverageView view) =>
-        _choice is { Street: { } street }
-            ? [new MapLine(view.StreetShape(street), MapLineStyle.Chosen), .. view.Lines()]
-            : view.Lines();
+    private static MapFrame Opening(Shown shown)
+    {
+        Campaign? campaign = shown.Desk.Campaigns.FirstOrDefault(found => found.Id == shown.Campaign);
+        if (campaign is { Area.Count: >= 3 })
+            return MapFrame.Around(campaign.Area.Select(point => new MapPoint(point.Lat, point.Lng)), padding: 32, maxZoom: 16);
+        List<OutreachRegion> regions = [.. shown.Atlas.Regions.Where(region => campaign?.Regions.Contains(region.Id) == true)];
+        return regions.Count > 0 ? OutreachAtlas.Around(regions) : shown.Atlas.Opening;
+    }
+
+    private Task MovedAsync(MapFrame view)
+    {
+        _inView = view;
+        return ShowViewsAsync();
+    }
+
+    private async Task ShowViewsAsync()
+    {
+        if (_shown is not { } shown || (_inView ?? _frame) is not { } view)
+            return;
+        List<OutreachRegion> missing = [.. shown.Atlas.In(view).Where(region => !_views.ContainsKey(region.Id))];
+        if (missing.Count > 0)
+        {
+            ILookup<string, StreetCoverage> covered = shown.Coverage.Streets.ToLookup(street => street.Region);
+            int restDays = RestDays(shown);
+            DateOnly today = ChurchTime.Today(Time);
+            StreetGraph[] graphs = await Task.WhenAll(missing.Select(Graphs.LoadAsync));
+            if (!ReferenceEquals(shown, _shown))
+                return;
+            for (int index = 0; index < missing.Count; index++)
+                _views[missing[index].Id] = new CoverageView(graphs[index], covered[missing[index].Id], restDays, today);
+            _lines = [.. _views.Values.SelectMany(each => each.Lines())];
+            RefreshChoice();
+        }
+        _tally = shown.Atlas.In(view).Select(region => _views.GetValueOrDefault(region.Id)).OfType<CoverageView>()
+            .Aggregate(new CoverageTally(), (sum, each) => sum + each.TallyIn(view));
+    }
+
+    private void RefreshChoice()
+    {
+        if (_choice is not { } choice)
+            return;
+        if (choice.Street is { } street && _choiceView is not null && _views.GetValueOrDefault(_choiceView.Graph.Region.Id) is { } fresh)
+            (_choice, _choiceView) = (fresh.ForStreet(street), fresh);
+        else if (choice.Area is { } area)
+            _choice = InArea(area);
+    }
+
+    private CoverageChoice InArea(IReadOnlyList<MapPoint> area) =>
+        new("The area you drew", [.. _views.Values.SelectMany(view => view.InArea(area).Pieces)], area, null);
+
+    private (CoverageChoice? Choice, IReadOnlyList<MapLine> Lines, IReadOnlyList<MapLine> Drawn) _drawn;
+
+    private IReadOnlyList<MapLine> Drawn()
+    {
+        if (!ReferenceEquals(_drawn.Choice, _choice) || !ReferenceEquals(_drawn.Lines, _lines))
+            _drawn = (_choice, _lines, _choice is { Street: { } street } && _choiceView is { } view
+                ? [new MapLine(view.StreetShape(street), MapLineStyle.Chosen), .. _lines]
+                : _lines);
+        return _drawn.Drawn;
+    }
+
+    private static int RestDays(Shown shown) => Math.Max(1, shown.Desk.Settings.RestDays);
 
     private IReadOnlyList<MapAreaShape> Areas(Shown shown)
     {
@@ -192,8 +240,8 @@
 
     private static string Percent(int part, int whole) => whole == 0 ? "0%" : $"{Math.Round(part * 100.0 / whole):0}%";
 
-    private string ChoiceLine(CoverageView view, CoverageChoice choice) =>
-        choice.Pieces.Count == 0
+    private string ChoiceLine(CoverageChoice choice) =>
+        choice.Pieces.Count == 0 || _views.Values.FirstOrDefault() is not { } view
             ? "Nothing done here in this campaign's rest period."
             : $"{OutreachWords.Plural(choice.Sides, "street side", "street sides")} · {OutreachWords.Plural(choice.Homes, "letterbox", "letterboxes")} · {view.DoneBetween(choice)}";
 
@@ -203,29 +251,24 @@
         return _live?.ReloadAsync() ?? Task.CompletedTask;
     }
 
-    private Task ChooseRegionAsync(string region)
-    {
-        (_region, _choice) = (region, null);
-        return _live?.ReloadAsync() ?? Task.CompletedTask;
-    }
-
     private static readonly TimeSpan DrawingsClosingClick = TimeSpan.FromMilliseconds(600);
     private DateTimeOffset _drewAt;
 
     private void TapAsync(MapPoint point)
     {
-        if (_drawing || _view is null || Time.GetUtcNow() - _drewAt < DrawingsClosingClick)
+        if (_drawing || Time.GetUtcNow() - _drewAt < DrawingsClosingClick)
             return;
-        _choice = _view.StreetAt(point);
+        _choiceView = _shown?.Atlas.RegionAt(point) is { } region ? _views.GetValueOrDefault(region.Id) : null;
+        _choice = _choiceView?.StreetAt(point);
         _problem = null;
     }
 
     private void DrawnAsync(MapSketchStroke stroke)
     {
         (_drawing, _drewAt) = (false, Time.GetUtcNow());
-        if (_view is null || stroke.Points.Count < 3)
+        if (stroke.Points.Count < 3)
             return;
-        _choice = _view.InArea(stroke.Points);
+        _choice = InArea(stroke.Points);
         _problem = null;
     }
 
@@ -242,8 +285,8 @@
     {
         await RunAsync(async () =>
         {
-            Expired expired = choice.Street is { } street && _view is not null
-                ? await Outreach.ExpireAsync(Scope, shown.Campaign, [], CoverageView.WholeStreet(_view.Graph, street))
+            Expired expired = choice.Street is { } street && _choiceView is not null
+                ? await Outreach.ExpireAsync(Scope, shown.Campaign, [], CoverageView.WholeStreet(_choiceView.Graph, street))
                 : await Outreach.ExpireAsync(Scope, shown.Campaign, [.. choice.Area!.Select(point => new GeoPoint { Lat = point.Lat, Lng = point.Lon })], []);
             _undo = new Undo(shown.Campaign, expired.At);
             _choice = null;

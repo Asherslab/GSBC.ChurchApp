@@ -11,7 +11,15 @@ public static class MapJson
         json.WriteStartObject();
         json.WriteStartObject("source");
         json.WriteString("kind", source.Kind);
-        json.WriteString(source.Kind == MapSource.FromKeptFile ? "id" : "url", source.Location);
+        if (source.Kind == MapSource.FromUrls)
+        {
+            json.WriteStartArray("urls");
+            foreach (string url in source.Locations)
+                json.WriteStringValue(url);
+            json.WriteEndArray();
+        }
+        else
+            json.WriteString(source.Kind == MapSource.FromKeptFile ? "id" : "url", source.Location);
         json.WriteString("attribution", source.Attribution);
         json.WriteEndObject();
         if (centre is { } point)
@@ -85,6 +93,36 @@ public static class MapJson
         json.WritePropertyName("point");
         Point(json, you.Point);
         json.WriteNumber("accuracy", Math.Round(you.AccuracyMetres, 1));
+        json.WriteEndObject();
+    });
+
+    public static string? Reach(MapReach? reach) => reach is null ? null : Write(json =>
+    {
+        json.WriteStartObject();
+        json.WritePropertyName("beyond");
+        json.WriteStartArray();
+        foreach (IReadOnlyList<IReadOnlyList<MapPoint>> polygon in reach.Beyond())
+        {
+            json.WriteStartArray();
+            foreach (IReadOnlyList<MapPoint> ring in polygon)
+                Points(json, ring);
+            json.WriteEndArray();
+        }
+        json.WriteEndArray();
+        json.WritePropertyName("edge");
+        json.WriteStartArray();
+        foreach (IReadOnlyList<MapPoint> line in reach.Edge())
+            Points(json, line);
+        json.WriteEndArray();
+        json.WritePropertyName("others");
+        json.WriteRawValue(Areas(reach.Others));
+        json.WritePropertyName("notes");
+        json.WriteRawValue(Markers(reach.Notes));
+        if (reach.Limit is { } limit)
+        {
+            json.WritePropertyName("limit");
+            json.WriteRawValue(Frame(limit));
+        }
         json.WriteEndObject();
     });
 

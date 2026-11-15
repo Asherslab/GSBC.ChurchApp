@@ -39,6 +39,7 @@ function colours() {
 }
 
 async function tilesFor(source) {
+  if (source.kind === "urls") return source.urls.map((url) => "pmtiles://" + url);
   if (source.kind !== "kept") return "pmtiles://" + source.url;
   if (!keptSources.has(source.id)) {
     const { readKept } = await import("../../GSBC.ChurchApp.Platform.Client/kept-files.js");
@@ -108,8 +109,50 @@ function overlayLayers(c) {
   ];
 }
 
+const hatch = "reach-hatch";
+
+function hatchImage(ground, stripe) {
+  const size = 16;
+  const ratio = 2;
+  const canvas = document.createElement("canvas");
+  canvas.width = canvas.height = size * ratio;
+  const draw = canvas.getContext("2d");
+  draw.scale(ratio, ratio);
+  draw.fillStyle = ground;
+  draw.fillRect(0, 0, size, size);
+  draw.strokeStyle = stripe;
+  draw.globalAlpha = 0.4;
+  draw.lineWidth = 1.5;
+  draw.beginPath();
+  for (const offset of [-size, 0, size]) {
+    draw.moveTo(offset, size);
+    draw.lineTo(offset + size, 0);
+  }
+  draw.stroke();
+  return { image: draw.getImageData(0, 0, size * ratio, size * ratio), ratio };
+}
+
+function reachLayers(c) {
+  return [
+    { id: "reach-beyond", type: "fill", source: "reach-beyond", paint: { "fill-pattern": hatch } },
+    { id: "reach-others", type: "fill", source: "reach-others", paint: { "fill-color": ["coalesce", ["get", "colour"], c.walked], "fill-opacity": ["case", ["get", "outline"], 0, 0.1] } },
+    { id: "reach-others-edge", type: "line", source: "reach-others", paint: { "line-color": ["coalesce", ["get", "colour"], c.walked], "line-width": 1.5, "line-dasharray": [3, 2] } },
+    { id: "reach-edge", type: "line", source: "reach-edge", layout: { "line-cap": "round" }, paint: { "line-color": c.ink, "line-opacity": 0.55, "line-width": 1.5 } },
+    { id: "reach-notes", type: "symbol", source: "reach-notes",
+      layout: { "text-field": ["get", "label"], "text-font": ["montserrat-semibold"], "text-size": 12, "text-max-width": 9 },
+      paint: { "text-color": c.ink, "text-halo-color": c.surface, "text-halo-width": 2 } },
+  ];
+}
+
 function withOverlays(base, data) {
   const c = colours();
+  const land = base.layers.find((layer) => layer.id === "land")?.paint["fill-color"] ?? c.surface;
+  base.hatch = { ground: land, stripe: c.walked };
+  base.sources["reach-beyond"] = { type: "geojson", data: data.reach?.beyond ?? empty };
+  base.sources["reach-others"] = { type: "geojson", data: data.reach?.others ?? empty };
+  base.sources["reach-edge"] = { type: "geojson", data: data.reach?.edge ?? empty };
+  base.sources["reach-notes"] = { type: "geojson", data: data.reach?.notes ?? empty };
+  base.layers.push(...reachLayers(c));
   base.sources.lines = { type: "geojson", data: data.lines };
   base.sources.areas = { type: "geojson", data: data.areas };
   base.sources.markers = { type: "geojson", data: data.markers };
@@ -138,13 +181,19 @@ export async function create(element, optionsJson, receiver) {
   loadStylesheet();
   const options = JSON.parse(optionsJson);
   const tiles = await tilesFor(options.source);
-  const data = { lines: empty, areas: empty, markers: empty, you: empty };
+  const data = { lines: empty, areas: empty, markers: empty, you: empty, reach: null };
   let you = null;
   let following = !!options.follow;
   let dragged = false;
   let shownScheme = scheme();
 
-  const styleNow = () => withOverlays(mapStyle({ tiles, glyphs, scheme: shownScheme, attribution: options.source.attribution ?? "" }), data);
+  let hatchColours = null;
+  const styleNow = () => {
+    const style = withOverlays(mapStyle({ tiles, glyphs, scheme: shownScheme, attribution: options.source.attribution ?? "" }), data);
+    hatchColours = style.hatch;
+    delete style.hatch;
+    return style;
+  };
   const map = new maplibregl.Map({
     container: element,
     style: styleNow(),
@@ -160,6 +209,13 @@ export async function create(element, optionsJson, receiver) {
     fadeDuration: 0,
   });
   map.touchZoomRotate.disableRotation();
+  const addHatch = () => {
+    if (map.hasImage(hatch)) return;
+    const { image, ratio } = hatchImage(hatchColours.ground, hatchColours.stripe);
+    map.addImage(hatch, image, { pixelRatio: ratio });
+  };
+  map.on("style.load", addHatch);
+  map.on("styleimagemissing", (e) => e.id === hatch && addHatch());
 
   const set = (name, value) => {
     data[name] = value;
@@ -178,8 +234,15 @@ export async function create(element, optionsJson, receiver) {
     if (framed) fit(framed, animate);
     else map.easeTo({ center: you.point, zoom: Math.max(map.getZoom(), 17), duration: animate ? 600 : 0 });
   };
+  const moved = () => {
+    const b = map.getBounds();
+    receiver?.invokeMethodAsync("OnMoved", b.getSouth(), b.getWest(), b.getNorth(), b.getEast());
+  };
+  map.on("moveend", moved);
   map.on("load", () => {
-    Object.entries(data).forEach(([name, value]) => map.getSource(name)?.setData(value));
+    Object.entries(data).filter(([name]) => name !== "reach").forEach(([name, value]) => map.getSource(name)?.setData(value));
+    showReach();
+    moved();
     if (framed) fit(framed);
     else if (following && you) showYou();
   });
@@ -195,14 +258,33 @@ export async function create(element, optionsJson, receiver) {
   const watcher = new MutationObserver(() => {
     if (scheme() === shownScheme) return;
     shownScheme = scheme();
+    if (map.hasImage(hatch)) map.removeImage(hatch);
     map.setStyle(styleNow());
   });
   watcher.observe(document.documentElement, { attributes: true, attributeFilter: ["data-scheme", "data-theme"] });
 
   const ready = new Promise((resolve) => map.once("load", resolve));
 
+  let limit = null;
+  const showReach = () => {
+    ["beyond", "others", "edge", "notes"].forEach((name) => map.getSource("reach-" + name)?.setData(data.reach?.[name] ?? empty));
+    map.setMaxBounds(limit);
+  };
+  const setReach = (json) => {
+    const reach = json ? JSON.parse(json) : null;
+    data.reach = reach && {
+      beyond: { type: "FeatureCollection", features: [{ type: "Feature", properties: {}, geometry: { type: "MultiPolygon", coordinates: reach.beyond } }] },
+      edge: { type: "FeatureCollection", features: reach.edge.map((points) => ({ type: "Feature", properties: {}, geometry: { type: "LineString", coordinates: points } })) },
+      others: { type: "FeatureCollection", features: reach.others.map(area) },
+      notes: { type: "FeatureCollection", features: reach.notes.map(marker) },
+    };
+    limit = reach?.limit ? [[reach.limit.west, reach.limit.south], [reach.limit.east, reach.limit.north]] : null;
+    if (map.isStyleLoaded()) showReach();
+  };
+
   return {
     map,
+    setReach,
     setLines: (json) => set("lines", { type: "FeatureCollection", features: JSON.parse(json).map(line) }),
     setAreas: (json) => set("areas", { type: "FeatureCollection", features: JSON.parse(json).map(area) }),
     setMarkers: (json) => set("markers", { type: "FeatureCollection", features: JSON.parse(json).map(marker) }),

@@ -15,6 +15,7 @@ public sealed record PlanSetup(
     DayPlan Plan,
     IReadOnlyList<SavedArea> Areas,
     OutreachRegion? Region,
+    OutreachAtlas Atlas,
     StreetGraph? Graph,
     CoverageMap Coverage,
     PlanningMarks Marks)
@@ -33,7 +34,7 @@ public sealed record PlanSetup(
         Task<PlanningMarks> marks = outreach.PlanningMarksAsync(scope);
         await Task.WhenAll(graph, coverage, marks);
         Campaign? campaign = desk.Campaigns.FirstOrDefault(found => found.Id == day.Campaign);
-        return new PlanSetup(scope, day, campaign?.Name ?? "", campaign?.HandedOut ?? "", desk.Settings, plan, desk.Areas, region, graph.Result, coverage.Result, marks.Result);
+        return new PlanSetup(scope, day, campaign?.Name ?? "", campaign?.HandedOut ?? "", desk.Settings, plan, desk.Areas, region, new OutreachAtlas(regions, []), graph.Result, coverage.Result, marks.Result);
     }
 
     private static async Task<StreetGraph?> LoadAsync(StreetGraphLoader streets, OutreachRegion region) => await streets.LoadAsync(region);

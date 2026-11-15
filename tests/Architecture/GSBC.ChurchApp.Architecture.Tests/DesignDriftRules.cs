@@ -93,6 +93,22 @@ public sealed partial class DesignDriftRules
         Assert.True(riding.Count == 0, string.Join(Environment.NewLine, riding));
     }
 
+    [Fact]
+    public void PageTabsAreDrawnOncePerPage()
+    {
+        List<(string Path, string Text)> razor = Razor().ToList();
+        List<string> repeated = razor
+            .Where(file => RouteTabs().IsMatch(file.Text))
+            .Select(file => (file.Path, Users: razor.Where(other => other.Path != file.Path && Uses(Path.GetFileNameWithoutExtension(file.Path)).IsMatch(other.Text)).Select(other => other.Path).ToList()))
+            .Where(head => head.Users.Count > 1)
+            .Select(head => $"{head.Path} draws a page's tabs and is drawn by each of {string.Join(", ", head.Users)}; draw it once in the page, outside what the tabs swap")
+            .ToList();
+
+        Assert.True(repeated.Count == 0, string.Join(Environment.NewLine, repeated));
+    }
+
+    private static Regex Uses(string component) => new($@"<{Regex.Escape(component)}\b");
+
     private static string? DockedClass(string selector) =>
         DefinedClass().Matches(selector).LastOrDefault()?.Groups[1].Value.Split("--")[0];
 
@@ -209,6 +225,9 @@ public sealed partial class DesignDriftRules
 
     [GeneratedRegex(@"<Button\b[^>]*>")]
     private static partial Regex ButtonTag();
+
+    [GeneratedRegex(@"<TabStrip\b[^>]*\bHref=")]
+    private static partial Regex RouteTabs();
 
     [GeneratedRegex(@"<SplitView\b")]
     private static partial Regex SplitViewTag();

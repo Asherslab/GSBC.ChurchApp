@@ -31,7 +31,7 @@
         {
             <MapDesk PaneLabel="@($"Regions of {area.Name}")">
                 <Map>
-                    <MapView @ref="_map" Source="MapSource.Url(_source.Map.Url, _source.Attribution)" Label="@($"Map of {area.Name}'s regions")"
+                    <MapView @ref="_map" Source="@(_atlas?.Source ?? MapSource.Url(_source.Map.Url, _source.Attribution))" Reach="@_atlas?.Reach" Label="@($"Map of {area.Name}'s regions")"
                              Areas="_shapes" Frame="_frame" OnTap="TapAsync" Class="area-desk__map">
                         <Overlay>
                             @if (_hovered is not { } hovered)
@@ -142,6 +142,7 @@
     private MapAreaSheets? _sheets;
     private Area? _area;
     private OutreachRegion? _source;
+    private OutreachAtlas? _atlas;
     private List<AreaCell> _cells = [];
     private IReadOnlyList<MapShape> _shapes = [];
     private IReadOnlyList<MapLabel> _labels = [];
@@ -168,6 +169,7 @@
         bool changedArea = _area is null || _area.Id != area.Id;
         _area = area;
         _source = MapAreaDrawing.MapFor(area, all.Areas.SelectMany(each => each.Regions));
+        _atlas = new OutreachAtlas([.. all.Areas.SelectMany(each => each.Regions)], []);
         Redraw();
         if (changedArea || _frame is null)
             _frame = MapAreaDrawing.Frame(_cells);

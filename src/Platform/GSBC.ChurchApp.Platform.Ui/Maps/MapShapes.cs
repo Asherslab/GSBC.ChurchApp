@@ -4,10 +4,15 @@ public readonly record struct MapPoint(double Lat, double Lon);
 
 public sealed record MapSource(string Kind, string Location, string Attribution)
 {
-    public const string FromUrl = "url";
+    private const string FromUrl = "url";
     public const string FromKeptFile = "kept";
+    public const string FromUrls = "urls";
 
     public static MapSource Url(string url, string attribution) => new(FromUrl, url, attribution);
+
+    public static MapSource Urls(IEnumerable<string> urls, string attribution) => new(FromUrls, string.Join('\n', urls), attribution);
+
+    public IReadOnlyList<string> Locations => Location.Split('\n');
 
     public static MapSource KeptFile(string id, string attribution) => new(FromKeptFile, id, attribution);
 }
@@ -37,6 +42,7 @@ public enum MapMarkerKind
     DontLetterbox,
     Skip,
     Check,
+    Note,
 }
 
 public sealed record MapMarker(MapPoint Point, MapMarkerKind Kind, string? Label = null, string? Id = null);

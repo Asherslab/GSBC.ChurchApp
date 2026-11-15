@@ -31,7 +31,7 @@ else
 {
     <MapDesk PaneLabel="The routes">
         <Map>
-            <MapView @ref="_map" Source="MapSource.Url(Setup.Region.Map.Url, Setup.Region.Attribution)" Label="@($"Map of the routes for {OutreachWords.DayTitle(Setup.Day)}")"
+            <MapView @ref="_map" Source="@(Setup.Atlas.Source ?? MapSource.Url(Setup.Region.Map.Url, Setup.Region.Attribution))" Reach="@Setup.Atlas.Limits" Label="@($"Map of the routes for {OutreachWords.DayTitle(Setup.Day)}")"
                      Lines="_lines" Areas="_areas" Markers="_markers" Frame="_frame" OnTap="TappedAsync" Class="plan-desk__map">
                 <Overlay>
                     @if (_view == PlanView.Plan && CanPlan)
@@ -88,6 +88,7 @@ else
                         </div>
                     }
                 </Overlay>
+                <Outside><OutreachMapOutside /></Outside>
             </MapView>
             <MapSketch Map="_map" Tool="SketchTool" Labels="_labels" Preview="_preview" BrushColour="@BrushColour"
                        OnDrawn="DrawnAsync" OnDrawing="Drawing" OnHover="Hover" OnHoverEnded="() => _hovered = null" OnCancelled="Cancelled" />

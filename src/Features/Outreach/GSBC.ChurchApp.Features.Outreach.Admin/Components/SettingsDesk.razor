@@ -4,8 +4,7 @@
 
 <UnsavedGuard Changed="() => Changed" What="the outreach settings" Save="SaveBeforeLeavingAsync" />
 
-<LiveData @ref="_live" TValue="OutreachDesk" Feeds="Feeds" Load="LoadAsync" FailedTitle="Can't load the outreach settings right now">
-    <OutreachHead Tab="OutreachTab.Settings" FollowUps="context.Value.OpenFollowUps" Reports="context.Value.NewReports" />
+<LiveData @ref="_live" TValue="OutreachDesk" Feeds="Feeds" Load="LoadAsync" Remember="@($"outreach.settings.{Scope}")" FailedTitle="Can't load the outreach settings right now">
     <div class="outreach-settings">
         <Section Grouped="true" Title="Rest period and what's kept" Lead="How long a street counts as done, and how long what walkers mark is kept.">
             <ChildContent>

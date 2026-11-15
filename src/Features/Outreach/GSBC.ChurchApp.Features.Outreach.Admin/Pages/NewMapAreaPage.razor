@@ -21,7 +21,7 @@
     {
         <MapDesk PaneLabel="The new map area">
             <Map>
-                <MapView @ref="_map" Source="MapSource.Url(source.Map.Url, source.Attribution)" Label="Map of the new area's regions"
+                <MapView @ref="_map" Source="@(_atlas?.Source ?? MapSource.Url(source.Map.Url, source.Attribution))" Reach="@_atlas?.Reach" Label="Map of the new area's regions"
                          Areas="_shapes" Markers="_markers" Frame="_frame" Centre="@Start(context.Value)" Zoom="9" OnTap="TapAsync" Class="area-desk__map">
                     <Overlay>
                         <p class="plan-hint" role="status">@(_centre is null ? "Find a place, or click the map where the area's middle should be" : "Click the map to move the middle")</p>
@@ -117,8 +117,12 @@
         }
     }
 
+    private OutreachAtlas? _atlas;
+
     private OutreachRegion? Source(RegionList list)
     {
+        if (!ReferenceEquals(_regions, list.Regions))
+            _atlas = new OutreachAtlas(list.Regions, []);
         _regions = list.Regions;
         return MapAreaDrawing.Nearest(list.Regions, _centre ?? Middle(list));
     }

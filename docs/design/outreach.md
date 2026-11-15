@@ -3,7 +3,7 @@
 Detail behind [DESIGN.md](../../DESIGN.md) for the admin panel's Outreach page and the walker's side on the phone. Read DESIGN.md first; its rules win.
 
 ## Outreach page (admin)
-`/outreach` and `/outreach/{tab}`, for the leaders of the ministry that runs outreach. Every tab opens on the title band "Outreach" with a lead, then a `TabStrip`: Campaigns, Days, Areas, Coverage, Numbers, Places, Follow-ups (counted), Reports (counted), Settings (`OutreachHead`). With no ministry running outreach, the page is the title band over an `EmptyState` that says where to turn it on.
+`/outreach` and `/outreach/{tab}`, for the leaders of the ministry that runs outreach. Every tab opens on the title band "Outreach" with a lead, then a `TabStrip`: Campaigns, Days, Areas, Coverage, Numbers, Places, Follow-ups (counted), Reports (counted), Settings (`OutreachHead`). The page draws the head once, outside the tab it swaps in, so it stays put while a tab loads; each tab puts its own buttons (*New campaign* …) in the band through `SectionContent` (`OutreachHead.ActionsSection`), and its body remembers what it last showed (`Remember`), so a tab opened again draws at once and refreshes in place. With no ministry running outreach, the page is the title band over an `EmptyState` that says where to turn it on.
 
 ## Campaigns
 A `Workbench`: the campaigns `DataTable` in the main pane, the chosen campaign in the record pane. *New campaign* sits in the title band's actions for those who may plan.
@@ -92,11 +92,23 @@ Masthead "How the day is going" with the day and "on now". Two quiet `StatTile`s
 then a `Section` *Routes* of `ListRow`s (route title, who and letterboxes, a state `Pill`, a `ProgressTrack` below),
 open routes first; a row opens the route.
 
+## The admin maps: one map of everywhere we have
+Every outreach map in the admin panel (Coverage, a place or a report, a saved area, the planner, map areas) draws every built
+region as one seamless map (`OutreachAtlas.Source`, one map file per region; owner, 2026-11-15: "i should be able to
+scroll around the whole map we have"). Where our maps end is plain (`MapReach`): everything outside the built regions'
+squares is hatched in the map's ground with ink-3 stripes, the edge is a thin ink line, and squares still to build or switched off
+show in the Map areas page's dashed looks with "Waiting to build", "Building…", "Switched off" or "No homes" (to people
+who look after maps). Panning stops a few kilometres past the edge. When the view is mostly beyond it, a card in the
+middle says "No map here yet" and that outreach maps cover the map areas in Settings, with *Open Map areas* for those
+who may change them (`OutreachMapOutside`). The phone keeps one region at a time (offline downloads).
+
 ## Coverage
-The map (`MapView` over the region's map file) fills the work area to the left; the pane is ruled off on the right,
-where every workbench keeps its record (460px, 380px at 1360px and under). It is the shared `MapDesk`. The pane, top to bottom: Campaign (and Region when there are several), the
-legend (with a dashed red key when areas are skipped), two quiet `StatTile`s (streets done of the region's, share of
-its letterboxes), and *Show on the map* as two `ToggleRow`s, each titled by what it draws with its count ("No junk mail
+The map (`MapView` over every built region at once, `OutreachAtlas`) fills the work area to the left; the pane is ruled off on the right,
+where every workbench keeps its record (460px, 380px at 1360px and under). It is the shared `MapDesk`. It opens on the church
+(the middle of the seeded area), or on a campaign's own area or regions, and pans anywhere we have maps; each region's
+streets load as it comes into view. The pane, top to bottom: Campaign, the
+legend (with a dashed red key when areas are skipped), two quiet `StatTile`s (streets done of those on the map in
+view, share of the letterboxes in view), and *Show on the map* as two `ToggleRow`s, each titled by what it draws with its count ("No junk mail
 and hostile (12)", "Places outreach skips (3)"). The pane's foot holds the chosen streets (title, sides, letterboxes,
 when done), Clear and *Mark as not done in* the campaign, the undo line, or with nothing chosen a hint saying how to
 choose.

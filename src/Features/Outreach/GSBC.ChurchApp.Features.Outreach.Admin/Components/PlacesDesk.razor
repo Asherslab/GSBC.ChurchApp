@@ -5,18 +5,16 @@
 
 <UnsavedGuard Changed="() => Changed" What="this place" Save="SaveBeforeLeavingAsync" />
 
-<LiveData @ref="_live" TValue="Lists" Feeds="Feeds" Load="LoadAsync" FailedTitle="Can't load the places right now">
+<LiveData @ref="_live" TValue="Lists" Feeds="Feeds" Load="LoadAsync" Remember="@($"outreach.places.{Scope}")" FailedTitle="Can't load the places right now">
     @{ Lists lists = context.Value; }
-    <OutreachHead Tab="OutreachTab.Places" FollowUps="lists.Desk.OpenFollowUps" Reports="lists.Desk.NewReports">
-        <Actions>
-            @if (CanChangeExclusions)
-            {
-                <Menu Label="Add a place outreach skips" Text="Add a place" Icon="plus" Variant="ButtonVariant.Primary" Chevron="true"
-                      Items="@([this.Item("An area", () => OpenAsync(NewZone()), "map", "Streets inside are walked through, never delivered to"),
-                               this.Item("An address", () => OpenAsync(NewAddress()), "map-pin", "One letterbox, for someone who asked not to get anything")])" />
-            }
-        </Actions>
-    </OutreachHead>
+    <SectionContent SectionName="@OutreachHead.ActionsSection">
+        @if (CanChangeExclusions)
+        {
+            <Menu Label="Add a place outreach skips" Text="Add a place" Icon="plus" Variant="ButtonVariant.Primary" Chevron="true"
+                  Items="@([this.Item("An area", () => OpenAsync(NewZone()), "map", "Streets inside are walked through, never delivered to"),
+                           this.Item("An address", () => OpenAsync(NewAddress()), "map-pin", "One letterbox, for someone who asked not to get anything")])" />
+        }
+    </SectionContent>
     <Workbench AsideLabel="Show" FoldAside="true" DetailLabel="The place" Showing="@(Chosen(lists) is null ? WorkbenchPane.Main : WorkbenchPane.Detail)">
         <Aside>
             <FilterChips TValue="PlaceKind?" Label="Show" Rail="true" Options="Filters(lists)" Value="_filter" ValueChanged="kind => _filter = kind" />
@@ -110,7 +108,7 @@
 
     [Parameter, EditorRequired] public required string Scope { get; set; }
 
-    private sealed record Lists(OutreachDesk Desk, List<PlaceLine> Places);
+    private sealed record Lists(List<PlaceLine> Places);
 
     private LiveData<Lists>? _live;
     private PlaceKind? _filter;
@@ -160,14 +158,13 @@
 
     private async Task<Lists> LoadAsync()
     {
-        Task<OutreachDesk> desk = Outreach.DeskAsync(Scope);
         Task<Exclusions> exclusions = CanChangeExclusions ? Outreach.ExclusionsAsync(Scope) : Task.FromResult(new Exclusions());
         Task<SkipLines> skips = CanClearMarks ? Outreach.SkipsAsync(Scope) : Task.FromResult(new SkipLines());
-        await Task.WhenAll(desk, exclusions, skips);
+        await Task.WhenAll(exclusions, skips);
         List<PlaceLine> places = PlaceLine.Of(await exclusions, await skips).ToList();
         if (_open is { } open && (!Changed || _saved) && places.FirstOrDefault(line => line.Key == open.Key) is { } fresh)
             Take(fresh);
-        return new Lists(await desk, places);
+        return new Lists(places);
     }
 
     private IReadOnlyList<FilterOption<PlaceKind?>> Filters(Lists lists) =>

@@ -3,7 +3,7 @@
 @inject OutreachDeskClient Outreach
 @inject IAccess Access
 
-<LiveData TValue="Place" Feeds="Feeds" Load="ScopeAsync" FailedTitle="Can't load Outreach right now">
+<LiveData TValue="Place" Feeds="Feeds" Load="ScopeAsync" Remember="outreach.scope" FailedTitle="Can't load Outreach right now">
     @if (context.Value.Scope is not { } scope)
     {
         <TitleBand Title="Outreach" Lead="Campaigns, the settings walks run on, and what walkers send in." />
@@ -12,7 +12,8 @@
     }
     else
     {
-        @switch (OutreachTabs.Of(Slug))
+        <OutreachHead Scope="@scope" Tab="Tab" />
+        @switch (Tab)
         {
             case OutreachTab.Days:
                 <DaysDesk Scope="@scope" Open="@Day" />
@@ -51,6 +52,8 @@
     [Parameter] public string? Slug { get; set; }
 
     [SupplyParameterFromQuery(Name = "day")] public string? Day { get; set; }
+
+    private OutreachTab Tab => OutreachTabs.Of(Slug);
 
     private sealed record Place(string? Scope);
 

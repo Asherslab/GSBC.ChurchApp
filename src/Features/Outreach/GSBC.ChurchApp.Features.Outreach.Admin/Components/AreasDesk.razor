@@ -1,21 +1,18 @@
-@using OutreachRegion = GSBC.ChurchApp.Features.Outreach.Maps.Contracts.OutreachRegion
-@using RegionList = GSBC.ChurchApp.Features.Outreach.Maps.Contracts.RegionList
 @using GSBC.ChurchApp.Platform.Icons
 @using GSBC.ChurchApp.Platform.Ui.Maps
 @inject OutreachDeskClient Outreach
 @inject OutreachMapsClient Maps
+@inject IAccess Access
 @inject UnsavedChanges Unsaved
 
 <UnsavedGuard Changed="() => Changed" What="this area" Save="SaveBeforeLeavingAsync" />
 
-<LiveData @ref="_live" TValue="AreasPlace" Feeds="Feeds" Load="LoadAsync" FailedTitle="Can't load the saved areas right now">
-    <OutreachHead Tab="OutreachTab.Areas" FollowUps="context.Value.Desk.OpenFollowUps" Reports="context.Value.Desk.NewReports">
-        <Actions>
-            <Can Permission="OutreachPermissions.Plan" ObjectId="@Scope">
-                <Button Icon="plus" OnClick="() => OpenAsync(() => Edit(new SavedArea()))">New area</Button>
-            </Can>
-        </Actions>
-    </OutreachHead>
+<LiveData @ref="_live" TValue="AreasPlace" Feeds="Feeds" Load="LoadAsync" Remember="@($"outreach.areas.{Scope}")" FailedTitle="Can't load the saved areas right now">
+    <SectionContent SectionName="@OutreachHead.ActionsSection">
+        <Can Permission="OutreachPermissions.Plan" ObjectId="@Scope">
+            <Button Icon="plus" OnClick="() => OpenAsync(() => Edit(new SavedArea()))">New area</Button>
+        </Can>
+    </SectionContent>
     <Workbench DetailLabel="The area" Showing="@(_editing is null ? WorkbenchPane.Main : WorkbenchPane.Detail)">
         <ChildContent>
             <DataTable TItem="SavedArea" Label="Saved areas" Items="context.Value.Desk.Areas" Columns="Columns" Key="area => area.Id"
@@ -33,11 +30,13 @@
                     <PaneHead Title="@(IsNew ? "A new area" : editing.Name)" Lead="An area planners can start a day's routes from. Changing it doesn't change days already planned."
                               Actions="@(IsNew ? null : [this.Item("Delete this area…", () => _deleting = true, "trash-2", "Days planned from it keep their routes", danger: true, disabled: _busy)])"
                               OnClose="() => OpenAsync(Close)" />
-                    @if (Region(context.Value) is { } region)
+                    @if (context.Value.Atlas.Source is { } source)
                     {
                         <div class="area-map">
-                            <MapView @ref="_map" Source="MapSource.Url(region.Map.Url, region.Attribution)" Label="Map of the area" Areas="Shape" Frame="_frame"
-                                     Centre="@CentreOf(region)" Zoom="13.5" />
+                            <MapView @ref="_map" Source="@source" Reach="@context.Value.Atlas.Limits" Label="Map of the area" Areas="Shape"
+                                     Frame="@(_frame ?? context.Value.Atlas.Opening)">
+                                <Outside><OutreachMapOutside /></Outside>
+                            </MapView>
                             <MapSketch Map="_map" Tool="@(_drawing ? MapSketchTool.Polygon : MapSketchTool.None)" OnDrawn="Drawn" OnCancelled="() => _drawing = false" />
                         </div>
                         <div class="area-map__tools">
@@ -84,7 +83,7 @@
 
     [Parameter, EditorRequired] public required string Scope { get; set; }
 
-    private sealed record AreasPlace(OutreachDesk Desk, IReadOnlyList<OutreachRegion> Regions);
+    private sealed record AreasPlace(OutreachDesk Desk, OutreachAtlas Atlas);
 
     private LiveData<AreasPlace>? _live;
     private MapView? _map;
@@ -110,22 +109,12 @@
     private async Task<AreasPlace> LoadAsync()
     {
         Task<OutreachDesk> desk = Outreach.DeskAsync(Scope);
-        Task<RegionList> regions = Maps.RegionsAsync();
-        await Task.WhenAll(desk, regions);
-        return new AreasPlace(desk.Result, regions.Result.Regions);
+        Task<OutreachAtlas> atlas = OutreachAtlas.LoadAsync(Maps, Access);
+        await Task.WhenAll(desk, atlas);
+        return new AreasPlace(await desk, await atlas);
     }
 
     private SavedArea? Chosen(OutreachDesk desk) => _editing is { Id.Length: > 0 } editing ? desk.Areas.FirstOrDefault(area => area.Id == editing.Id) : null;
-
-    private OutreachRegion? Region(AreasPlace place) =>
-        _points.Count > 0 ? OutreachRegions.For(place.Regions, _points.Average(point => point.Lat), _points.Average(point => point.Lng))
-        : place.Regions.FirstOrDefault(region => region.Map.Url.Length > 0);
-
-    private static MapPoint CentreOf(OutreachRegion region)
-    {
-        (double lat, double lon) = OutreachRegions.Centre(region);
-        return new MapPoint(lat, lon);
-    }
 
     private static bool SameShape(IReadOnlyList<GeoPoint> a, IReadOnlyList<GeoPoint> b) => a.Select(point => (point.Lat, point.Lng)).SequenceEqual(b.Select(point => (point.Lat, point.Lng)));
 
