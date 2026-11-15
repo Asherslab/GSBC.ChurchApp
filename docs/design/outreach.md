@@ -108,7 +108,7 @@ where every workbench keeps its record (460px, 380px at 1360px and under). It is
 (the middle of the seeded area), or on a campaign's own area or regions, and pans anywhere we have maps; each region's
 streets load as it comes into view. The pane, top to bottom: Campaign, the
 legend (with a dashed red key when areas are skipped), two quiet `StatTile`s (streets done of those on the map in
-view, share of the letterboxes in view), and *Show on the map* as two `ToggleRow`s, each titled by what it draws with its count ("No junk mail
+view, share of the letterboxes in view; "Counting…" until every region in view has its streets, never a part count), and *Show on the map* as two `ToggleRow`s, each titled by what it draws with its count ("No junk mail
 and hostile (12)", "Places outreach skips (3)"). The pane's foot holds the chosen streets (title, sides, letterboxes,
 when done), Clear and *Mark as not done in* the campaign, the undo line, or with nothing chosen a hint saying how to
 choose.

@@ -51,8 +51,16 @@
                     }
                 </div>
                 <div class="outreach-coverage__figures">
-                    <StatTile Value="@OutreachWords.Count(_tally.StreetsDone)" Label="@($"streets done, of {OutreachWords.Count(_tally.Streets)} on the map in view")" Quiet="true" />
-                    <StatTile Value="@Percent(_tally.HomesDone, _tally.Homes)" Label="of the letterboxes in view done" Quiet="true" />
+                    @if (_tally is { } tally)
+                    {
+                        <StatTile Value="@OutreachWords.Count(tally.StreetsDone)" Label="@($"streets done, of {OutreachWords.Count(tally.Streets)} on the map in view")" Quiet="true" />
+                        <StatTile Value="@Percent(tally.HomesDone, tally.Homes)" Label="of the letterboxes in view done" Quiet="true" />
+                    }
+                    else
+                    {
+                        <StatTile Value="Counting…" Label="streets done on the map in view" Quiet="true" />
+                        <StatTile Value="Counting…" Label="of the letterboxes in view done" Quiet="true" />
+                    }
                 </div>
                 <div class="outreach-coverage__layers">
                     <p class="outreach-coverage__label">Show on the map</p>
@@ -121,7 +129,7 @@
     private string? _framedFor;
     private Dictionary<string, CoverageView> _views = [];
     private IReadOnlyList<MapLine> _lines = [];
-    private CoverageTally _tally;
+    private CoverageTally? _tally;
 
     private string? MinistryScope => Scope.Length == 0 ? null : Scope;
 
@@ -166,6 +174,7 @@
         List<OutreachRegion> missing = [.. shown.Atlas.In(view).Where(region => !_views.ContainsKey(region.Id))];
         if (missing.Count > 0)
         {
+            _tally = null;
             ILookup<string, StreetCoverage> covered = shown.Coverage.Streets.ToLookup(street => street.Region);
             int restDays = RestDays(shown);
             DateOnly today = ChurchTime.Today(Time);
@@ -177,8 +186,17 @@
             _lines = [.. _views.Values.SelectMany(each => each.Lines())];
             RefreshChoice();
         }
-        _tally = shown.Atlas.In(view).Select(region => _views.GetValueOrDefault(region.Id)).OfType<CoverageView>()
-            .Aggregate(new CoverageTally(), (sum, each) => sum + each.TallyIn(view));
+        _tally = Tally(shown);
+    }
+
+    private CoverageTally? Tally(Shown shown)
+    {
+        if ((_inView ?? _frame) is not { } view)
+            return null;
+        List<CoverageView?> inView = [.. shown.Atlas.In(view).Select(region => _views.GetValueOrDefault(region.Id))];
+        return inView.Any(each => each is null)
+            ? null
+            : inView.OfType<CoverageView>().Aggregate(new CoverageTally(), (sum, each) => sum + each.TallyIn(view));
     }
 
     private void RefreshChoice()
