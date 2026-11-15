@@ -50,6 +50,19 @@ public sealed class PlaceRecord
     public DateTime IndexedAt { get; set; }
 }
 
+public sealed class AddressRecord
+{
+    public long Id { get; set; }
+    public required string RegionId { get; set; }
+    public required string Number { get; set; }
+    public required string Unit { get; set; }
+    public required string Street { get; set; }
+    public required string Locality { get; set; }
+    public required string Key { get; set; }
+    public double Latitude { get; set; }
+    public double Longitude { get; set; }
+}
+
 public sealed class RegionRecord
 {
     public required string Id { get; set; }

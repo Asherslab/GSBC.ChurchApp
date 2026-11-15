@@ -83,19 +83,21 @@
         await DetachAsync();
         if (_disposed || Map?.Handle is not { } handle)
             return;
-        IJSObjectReference tools;
+        IJSObjectReference? tools;
         try
         {
             _module ??= await Js.InvokeAsync<IJSObjectReference>("import", Module);
             if (IsStale(attempt, handle))
                 return;
             _receiver ??= DotNetObjectReference.Create(this);
-            tools = await _module.InvokeAsync<IJSObjectReference>("attach", handle, _receiver);
+            tools = await _module.InvokeAsync<IJSObjectReference?>("attach", handle, _receiver);
         }
         catch (Exception e) when (e is JSException or ObjectDisposedException && IsStale(attempt, handle))
         {
             return;
         }
+        if (tools is null)
+            return;
         if (IsStale(attempt, handle))
         {
             await DropAsync(tools);

@@ -282,8 +282,9 @@ export async function create(element, optionsJson, receiver) {
     if (map.isStyleLoaded()) showReach();
   };
 
-  return {
+  const handle = {
     map,
+    gone: false,
     setReach,
     setLines: (json) => set("lines", { type: "FeatureCollection", features: JSON.parse(json).map(line) }),
     setAreas: (json) => set("areas", { type: "FeatureCollection", features: JSON.parse(json).map(area) }),
@@ -307,8 +308,10 @@ export async function create(element, optionsJson, receiver) {
     resize: () => map.resize(),
     ready: () => ready,
     dispose: () => {
+      handle.gone = true;
       watcher.disconnect();
       map.remove();
     },
   };
+  return handle;
 }

@@ -1,3 +1,4 @@
+using GSBC.ChurchApp.Features.Outreach.Maps.Api.Addresses;
 using GSBC.ChurchApp.Features.Outreach.Maps.Api.Data;
 using GSBC.ChurchApp.Features.Outreach.Maps.Api.Places;
 using GSBC.ChurchApp.Features.Outreach.Maps.Contracts;
@@ -15,6 +16,7 @@ internal sealed class AreaBuildRunner(IServiceScopeFactory scopes, TimeProvider 
     private static readonly TimeSpan PlacesRetry = TimeSpan.FromHours(6);
     private readonly SemaphoreSlim _wake = new(0, 1);
     private DateTimeOffset _placesTriedAt = DateTimeOffset.MinValue;
+    private DateTimeOffset _addressesTriedAt = DateTimeOffset.MinValue;
 
     public void Wake()
     {
@@ -33,6 +35,7 @@ internal sealed class AreaBuildRunner(IServiceScopeFactory scopes, TimeProvider 
                 {
                 }
                 await IndexPlacesAsync(stoppingToken);
+                await IndexAddressesAsync(stoppingToken);
             }
             catch (Exception exception) when (exception is not OperationCanceledException)
             {
@@ -61,6 +64,32 @@ internal sealed class AreaBuildRunner(IServiceScopeFactory scopes, TimeProvider 
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
             logger.LogWarning(exception, "Indexing places for outreach map areas failed; trying again in {Hours} hours", PlacesRetry.TotalHours);
+        }
+        finally
+        {
+            await db.Database.ExecuteSqlAsync($"SELECT pg_advisory_unlock({AdvisoryLockKey})", CancellationToken.None);
+        }
+    }
+
+    private async Task IndexAddressesAsync(CancellationToken cancellationToken)
+    {
+        if (time.GetUtcNow() - _addressesTriedAt < PlacesRetry)
+            return;
+        await using AsyncServiceScope scope = scopes.CreateAsyncScope();
+        OutreachMapsDbContext db = scope.ServiceProvider.GetRequiredService<OutreachMapsDbContext>();
+        await db.Database.OpenConnectionAsync(cancellationToken);
+        if (!await db.Database.SqlQuery<bool>($"SELECT pg_try_advisory_lock({AdvisoryLockKey}) AS \"Value\"").SingleAsync(cancellationToken))
+            return;
+        try
+        {
+            _addressesTriedAt = time.GetUtcNow();
+            if (await scope.ServiceProvider.GetRequiredService<AddressIndex>().FillMissingAsync(cancellationToken))
+                logger.LogInformation("Indexed the addresses of outreach regions built before the address search");
+            _addressesTriedAt = DateTimeOffset.MinValue;
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            logger.LogWarning(exception, "Indexing addresses for outreach regions failed; trying again in {Hours} hours", PlacesRetry.TotalHours);
         }
         finally
         {

@@ -109,6 +109,7 @@ function layers(map) {
 const pointOf = (e) => [e.lngLat.lng, e.lngLat.lat];
 
 export function attach(handle, receiver) {
+  if (handle.gone) return null;
   const map = handle.map;
   const canvas = map.getCanvasContainer();
   let tool = "none";
@@ -288,6 +289,7 @@ export function attach(handle, receiver) {
         ["touchmove", onMove], ["mouseup", onUp], ["touchend", onUp], ["mouseout", onLeave], ["styledata", ensure], ["style.load", ensure],
         ["zoom", relabelSoon], ["zoomend", relabel]]) map.off(name, fn);
       cancelAnimationFrame(relabelling);
+      if (handle.gone) return;
       map.dragPan.enable();
       map.doubleClickZoom.enable();
     },

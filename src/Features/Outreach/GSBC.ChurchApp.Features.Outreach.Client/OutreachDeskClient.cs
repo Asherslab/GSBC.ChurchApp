@@ -77,6 +77,9 @@ public sealed class OutreachDeskClient(ChannelBase channel)
 
     public async Task ClearSkipAsync(string ministryId, string id) => await _admin.ClearSkipAsync(new ThingRef { MinistryId = ministryId, Id = id });
 
+    public async Task<IReadOnlyList<AddressMatch>> FindAddressesAsync(string ministryId, string text) =>
+        (await _admin.FindAddressesAsync(new AddressSearch { MinistryId = ministryId, Text = text })).Addresses;
+
     public async Task<Exclusions> ExclusionsAsync(string ministryId) => await _admin.ExclusionsAsync(new MinistryRef { MinistryId = ministryId });
 
     public async Task SaveZoneAsync(string ministryId, ExclusionZone zone) => await _admin.SaveZoneAsync(new ZoneSave { MinistryId = ministryId, Zone = zone });
