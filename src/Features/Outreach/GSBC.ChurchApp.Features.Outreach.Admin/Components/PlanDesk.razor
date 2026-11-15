@@ -317,7 +317,7 @@ else
     private DayBoard? BoardOrNull => _view == PlanView.OnTheDay ? _board : null;
 
     private RouteProgress? Board(PlannedSection section) =>
-        BoardOrNull is { } board && _published.FirstOrDefault(route => route.Number == section.Number) is { } route
+        BoardOrNull is { } board && _published.FirstOrDefault(published => published.Number == section.Number) is { } route
             ? board.Progress.FirstOrDefault(progress => progress.RouteId == route.Id)
             : null;
 

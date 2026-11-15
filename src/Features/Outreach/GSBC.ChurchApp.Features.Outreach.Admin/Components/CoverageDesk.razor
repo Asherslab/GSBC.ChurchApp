@@ -113,7 +113,7 @@
     private sealed record Shown(OutreachDesk Desk, string Campaign, IReadOnlyList<OutreachRegion> Regions, OutreachRegion? Region, CoverageView? View,
         SkipLines Skips, Exclusions Exclusions);
 
-    private sealed record Undo(string Campaign, DateTime At, int Stretches);
+    private sealed record Undo(string Campaign, DateTime At);
 
     private LiveData<Shown>? _live;
     private MapView? _map;
@@ -245,7 +245,7 @@
             Expired expired = choice.Street is { } street && _view is not null
                 ? await Outreach.ExpireAsync(Scope, shown.Campaign, [], CoverageView.WholeStreet(_view.Graph, street))
                 : await Outreach.ExpireAsync(Scope, shown.Campaign, [.. choice.Area!.Select(point => new GeoPoint { Lat = point.Lat, Lng = point.Lon })], []);
-            _undo = new Undo(shown.Campaign, expired.At, expired.Stretches);
+            _undo = new Undo(shown.Campaign, expired.At);
             _choice = null;
         });
     }

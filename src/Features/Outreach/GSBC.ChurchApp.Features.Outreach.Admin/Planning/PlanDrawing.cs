@@ -1,6 +1,5 @@
 using GSBC.ChurchApp.Features.Outreach.Client;
 using GSBC.ChurchApp.Features.Outreach.Client.Planning;
-using GSBC.ChurchApp.Features.Outreach.Contracts;
 using GSBC.ChurchApp.Features.Outreach.Routing;
 using GSBC.ChurchApp.Platform.Ui.Maps;
 using GeoPoint = GSBC.ChurchApp.Features.Outreach.Routing.GeoPoint;
@@ -61,7 +60,7 @@ public static class PlanDrawing
         cuts.SelectMany(cut => cut.Pieces.SelectMany(piece => piece.Pieces.Select(p =>
             new MapLine(Points(planner.Network.Line(p)), MapLineStyle.Route, Colour: RouteColours.Of(piece.Colour))))).ToList();
 
-    public static IReadOnlyList<MapLine> StretchPreview(DayPlanner planner, IEnumerable<Routing.Stretch> stretches, string colour) =>
+    public static IReadOnlyList<MapLine> StretchPreview(DayPlanner planner, IEnumerable<Stretch> stretches, string colour) =>
         stretches.Select(stretch => new MapLine(Points(planner.Network.Graph.ShapePoints(stretch.Street, stretch.From, stretch.To)), MapLineStyle.Route, Colour: colour)).ToList();
 
     public static (int Street, double Along)? StreetAt(DayPlanner planner, MapPoint point)

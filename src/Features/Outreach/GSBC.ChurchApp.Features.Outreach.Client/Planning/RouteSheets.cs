@@ -11,8 +11,6 @@ public static class RouteSheets
 {
     private readonly record struct Box(double X0, double Y0, double X1, double Y1)
     {
-        public bool Overlaps(Box other) => X0 < other.X1 && other.X0 < X1 && Y0 < other.Y1 && other.Y0 < Y1;
-
         public bool Holds(Box other) => other.X0 >= X0 && other.X1 <= X1 && other.Y0 >= Y0 && other.Y1 <= Y1;
 
         public bool Contains(PdfPoint point) => point.X >= X0 && point.X <= X1 && point.Y >= Y0 && point.Y <= Y1;
@@ -102,7 +100,7 @@ public static class RouteSheets
         page.Text(scanX + ScanSize / 2, Margin + ScanSize, "Scan to open it in the app", PdfFont.Regular, 7, Ink2, TextAlign.Centre);
         page.Text(scanX + ScanSize / 2, Margin + ScanSize + 11, $"Code {route.Code}", PdfFont.Bold, 9, Ink, TextAlign.Centre);
 
-        DrawMap(page, planner, section, summary, Margin, MapTop, width, MapHeight);
+        DrawMap(page, planner, summary, Margin, MapTop, width, MapHeight);
         DrawStreets(page, summary, day, Margin, MapTop + MapHeight + 42, width);
     }
 
@@ -114,7 +112,7 @@ public static class RouteSheets
         return $"{section.Letterboxes} letterboxes · take {bundles} · about {OutreachWords.Minutes(section.Minutes)} · {summary.Metres / 1000:0.0} km";
     }
 
-    private static void DrawMap(PdfPage page, DayPlanner planner, PlannedSection section, RouteSummary summary, double left, double top, double width, double height)
+    private static void DrawMap(PdfPage page, DayPlanner planner, RouteSummary summary, double left, double top, double width, double height)
     {
         StreetGraph graph = planner.Network.Graph;
         List<Flat> routeFlats = summary.Line.Select(graph.Projection.ToFlat).ToList();
@@ -188,7 +186,7 @@ public static class RouteSheets
                 PdfPoint tip = at(along), from = at(line[i - 1]), to = at(line[i]);
                 double angle = Math.Atan2(to.Y - from.Y, to.X - from.X);
                 PdfPoint Back(double turn) => new(tip.X - Math.Cos(angle + turn) * 4.2, tip.Y - Math.Sin(angle + turn) * 4.2);
-                page.Polygon([tip, Back(0.55), Back(-0.55)], PdfColour.White, Ink, 0.5);
+                page.Polygon([tip, Back(0.55), Back(-0.55)], PdfColour.White, Ink);
                 walked += ArrowEveryMetres;
             }
             walked -= length;
@@ -274,12 +272,18 @@ public static class RouteSheets
                 angle = Math.Atan2(from.Y - to.Y, from.X - to.X);
             double room = (runLength - length) / 2;
             int steps = Math.Min(MostPlacesARun, (int)(room / PlaceStep));
-            foreach (double shift in Enumerable.Range(0, steps * 2 + 1).Select(i => (i + 1) / 2 * PlaceStep * (i % 2 == 0 ? 1 : -1)))
+            foreach (double shift in Enumerable.Range(0, steps * 2 + 1).Select(Shift))
             {
                 double t = 0.5 + shift / runLength;
                 yield return (new PdfPoint(from.X + (to.X - from.X) * t, from.Y + (to.Y - from.Y) * t), angle);
             }
         }
+    }
+
+    private static double Shift(int place)
+    {
+        int step = (place + 1) / 2;
+        return step * PlaceStep * (place % 2 == 0 ? 1 : -1);
     }
 
     private static IEnumerable<(PdfPoint From, PdfPoint To, double Length)> Runs(List<PdfPoint> line)
