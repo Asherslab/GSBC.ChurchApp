@@ -1,5 +1,6 @@
 using System.Security.Cryptography;
 using GSBC.ChurchApp.Features.Outreach.Maps.Api.Data;
+using GSBC.ChurchApp.Features.Outreach.Maps.Api.Geo;
 using GSBC.ChurchApp.Features.Outreach.Maps.Api.Sources;
 using GSBC.ChurchApp.Features.Outreach.Maps.Api.Tiles;
 using GSBC.ChurchApp.Features.Outreach.Maps.Contracts;
@@ -65,6 +66,7 @@ internal sealed class OverviewMap(OutreachMapsDbContext db, IMapSources sources,
                 MaxZoom = built.MaxZoom,
                 BuiltAt = built.BuiltAt,
                 Attribution = Attribution,
+                Addable = [.. Queensland.Outline.Select(corner => new MapCorner { Latitude = corner.Lat, Longitude = corner.Lon })],
             }
             : new MapOverview();
 

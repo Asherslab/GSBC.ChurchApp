@@ -119,6 +119,14 @@ public sealed class MapOverview
     [ProtoMember(3)] public int MaxZoom { get; set; }
     [ProtoMember(4)] public DateTime BuiltAt { get; set; }
     [ProtoMember(5)] public string Attribution { get; set; } = "";
+    [ProtoMember(6)] public List<MapCorner> Addable { get; set; } = [];
+}
+
+[ProtoContract]
+public sealed class MapCorner
+{
+    [ProtoMember(1)] public double Latitude { get; set; }
+    [ProtoMember(2)] public double Longitude { get; set; }
 }
 
 [ProtoContract]
@@ -196,6 +204,7 @@ public sealed class CellEstimate
     [ProtoMember(2)] public int Column { get; set; }
     [ProtoMember(3)] public int Addresses { get; set; }
     [ProtoMember(4)] public long Bytes { get; set; }
+    [ProtoMember(5)] public bool OutsideQueensland { get; set; }
 
     public bool HasHomes => Addresses > 0;
 }

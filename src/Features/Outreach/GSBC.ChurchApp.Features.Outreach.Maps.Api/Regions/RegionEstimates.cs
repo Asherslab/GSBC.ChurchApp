@@ -1,4 +1,5 @@
 using System.Globalization;
+using GSBC.ChurchApp.Features.Outreach.Maps.Api.Geo;
 using GSBC.ChurchApp.Features.Outreach.Maps.Api.Sources;
 using GSBC.ChurchApp.Features.Outreach.Maps.Contracts;
 using GSBC.ChurchApp.Features.Outreach.Routing;
@@ -25,6 +26,8 @@ internal sealed class RegionEstimates(IMapSources sources, IMemoryCache cache)
             try
             {
                 RegionCell region = RegionGrid.CellOf("", grid, cell.Row, cell.Column);
+                if (!Queensland.Contains(region.Core.Centre))
+                    return new CellEstimate { Row = cell.Row, Column = cell.Column, OutsideQueensland = true };
                 int inCore = await CountAsync(region.Core, cancellationToken);
                 int inBounds = inCore == 0 ? 0 : await CountAsync(region.Bounds, cancellationToken);
                 return new CellEstimate { Row = cell.Row, Column = cell.Column, Addresses = inCore, Bytes = Bytes(inCore, inBounds) };
