@@ -33,9 +33,29 @@ namespace GSBC.ChurchApp.Features.Outreach.Maps.Api.Data.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("built_at");
 
+                    b.Property<double>("CellLatitude")
+                        .HasColumnType("double precision")
+                        .HasColumnName("cell_latitude");
+
+                    b.Property<double>("CellLongitude")
+                        .HasColumnType("double precision")
+                        .HasColumnName("cell_longitude");
+
+                    b.Property<double>("CentreLatitude")
+                        .HasColumnType("double precision")
+                        .HasColumnName("centre_latitude");
+
+                    b.Property<double>("CentreLongitude")
+                        .HasColumnType("double precision")
+                        .HasColumnName("centre_longitude");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("deleted_at");
 
                     b.Property<double>("East")
                         .HasColumnType("double precision")
@@ -49,6 +69,14 @@ namespace GSBC.ChurchApp.Features.Outreach.Maps.Api.Data.Migrations
                     b.Property<double>("North")
                         .HasColumnType("double precision")
                         .HasColumnName("north");
+
+                    b.Property<int>("OriginColumn")
+                        .HasColumnType("integer")
+                        .HasColumnName("origin_column");
+
+                    b.Property<int>("OriginRow")
+                        .HasColumnType("integer")
+                        .HasColumnName("origin_row");
 
                     b.Property<string>("Problem")
                         .HasColumnType("text")
@@ -83,6 +111,89 @@ namespace GSBC.ChurchApp.Features.Outreach.Maps.Api.Data.Migrations
                         .HasName("pk_areas");
 
                     b.ToTable("areas", "outreach_maps");
+                });
+
+            modelBuilder.Entity("GSBC.ChurchApp.Features.Outreach.Maps.Api.Data.MapCellRecord", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("text")
+                        .HasColumnName("id");
+
+                    b.Property<string>("AreaId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("area_id");
+
+                    b.Property<int>("Column")
+                        .HasColumnType("integer")
+                        .HasColumnName("column");
+
+                    b.Property<bool>("Empty")
+                        .HasColumnType("boolean")
+                        .HasColumnName("empty");
+
+                    b.Property<bool>("On")
+                        .HasColumnType("boolean")
+                        .HasColumnName("on");
+
+                    b.Property<bool>("Pending")
+                        .HasColumnType("boolean")
+                        .HasColumnName("pending");
+
+                    b.Property<int>("Row")
+                        .HasColumnType("integer")
+                        .HasColumnName("row");
+
+                    b.Property<long>("Version")
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id")
+                        .HasName("pk_cells");
+
+                    b.HasIndex("AreaId", "Row", "Column")
+                        .IsUnique()
+                        .HasDatabaseName("ix_cells_area_id_row_column");
+
+                    b.ToTable("cells", "outreach_maps");
+                });
+
+            modelBuilder.Entity("GSBC.ChurchApp.Features.Outreach.Maps.Api.Data.PlaceRecord", b =>
+                {
+                    b.Property<long>("Id")
+                        .HasColumnType("bigint")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime>("IndexedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("indexed_at");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("kind");
+
+                    b.Property<double>("Latitude")
+                        .HasColumnType("double precision")
+                        .HasColumnName("latitude");
+
+                    b.Property<double>("Longitude")
+                        .HasColumnType("double precision")
+                        .HasColumnName("longitude");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("name");
+
+                    b.Property<int>("Population")
+                        .HasColumnType("integer")
+                        .HasColumnName("population");
+
+                    b.HasKey("Id")
+                        .HasName("pk_places");
+
+                    b.ToTable("places", "outreach_maps");
                 });
 
             modelBuilder.Entity("GSBC.ChurchApp.Features.Outreach.Maps.Api.Data.RegionFileRecord", b =>

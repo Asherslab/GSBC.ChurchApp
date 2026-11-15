@@ -1,4 +1,5 @@
 using GSBC.ChurchApp.Features.Outreach.Maps.Api.Data;
+using GSBC.ChurchApp.Features.Outreach.Maps.Api.Places;
 using GSBC.ChurchApp.Features.Outreach.Maps.Api.Regions;
 using GSBC.ChurchApp.Features.Outreach.Maps.Api.Sources;
 using GSBC.ChurchApp.Features.Outreach.Maps.Contracts;
@@ -24,7 +25,10 @@ public static class OutreachMapsApiExtensions
             client.Timeout = TimeSpan.FromMinutes(5);
             client.DefaultRequestHeaders.UserAgent.ParseAdd(UserAgent);
         });
+        services.AddMemoryCache();
         services.AddScoped<AreaBuilder>();
+        services.AddScoped<PlaceIndex>();
+        services.AddScoped<RegionEstimates>();
         services.AddSingleton<AreaBuildRunner>();
         services.AddHostedService(provider => provider.GetRequiredService<AreaBuildRunner>());
         services.AddPermissions(OutreachMapsPermissions.All);

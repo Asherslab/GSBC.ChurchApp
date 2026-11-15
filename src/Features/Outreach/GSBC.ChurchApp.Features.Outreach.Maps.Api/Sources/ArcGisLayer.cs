@@ -18,7 +18,7 @@ internal sealed class ArcGisLayer(HttpClient http)
         {
             Dictionary<string, string> query = new()
             {
-                ["geometry"] = string.Create(CultureInfo.InvariantCulture, $"{bounds.West},{bounds.South},{bounds.East},{bounds.North}"),
+                ["geometry"] = Envelope(bounds),
                 ["geometryType"] = "esriGeometryEnvelope",
                 ["inSR"] = "4326",
                 ["spatialRel"] = "esriSpatialRelIntersects",
@@ -48,6 +48,27 @@ internal sealed class ArcGisLayer(HttpClient http)
             offset += count;
         }
     }
+
+    public async Task<int> CountAsync(Uri layer, GeoBounds bounds, string where, CancellationToken cancellationToken)
+    {
+        Dictionary<string, string> query = new()
+        {
+            ["geometry"] = Envelope(bounds),
+            ["geometryType"] = "esriGeometryEnvelope",
+            ["inSR"] = "4326",
+            ["spatialRel"] = "esriSpatialRelIntersects",
+            ["where"] = where,
+            ["returnCountOnly"] = "true",
+            ["f"] = "json",
+        };
+        using JsonDocument answer = await PageAsync(layer, query, cancellationToken);
+        JsonElement root = answer.RootElement;
+        if (root.TryGetProperty("error", out JsonElement error))
+            throw new HttpRequestException($"{layer.Host} answered: {error}");
+        return root.GetProperty("count").GetInt32();
+    }
+
+    private static string Envelope(GeoBounds bounds) => string.Create(CultureInfo.InvariantCulture, $"{bounds.West},{bounds.South},{bounds.East},{bounds.North}");
 
     private async Task<JsonDocument> PageAsync(Uri layer, Dictionary<string, string> query, CancellationToken cancellationToken)
     {

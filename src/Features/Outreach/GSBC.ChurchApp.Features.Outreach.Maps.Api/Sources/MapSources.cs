@@ -18,6 +18,10 @@ internal interface IMapSources
     Task<LandUseMap> LandUseAsync(GeoBounds bounds, CancellationToken cancellationToken);
 
     Task<IRangeReader> TilesAsync(CancellationToken cancellationToken);
+
+    Task<IReadOnlyList<OsmPlace>> PlacesAsync(CancellationToken cancellationToken);
+
+    Task<int> CountAddressesAsync(GeoBounds bounds, CancellationToken cancellationToken);
 }
 
 internal sealed class MapSources(HttpClient http, IOptions<MapSourcesOptions> options) : IMapSources
@@ -26,7 +30,16 @@ internal sealed class MapSources(HttpClient http, IOptions<MapSourcesOptions> op
     private const string AddressFields = "address_pid,street_full,unit_number,lotplan,locality,local_authority";
     private MapSourcesOptions Options => options.Value;
 
-    public async Task<OsmData> StreetsAsync(GeoBounds bounds, CancellationToken cancellationToken)
+    public Task<OsmData> StreetsAsync(GeoBounds bounds, CancellationToken cancellationToken) =>
+        WithExtractAsync(pbf => OsmPbf.ReadAsync(pbf, bounds, StreetNetwork.IsStreet, cancellationToken), cancellationToken);
+
+    public async Task<IReadOnlyList<OsmPlace>> PlacesAsync(CancellationToken cancellationToken) =>
+        await WithExtractAsync(pbf => OsmPbf.ReadPlacesAsync(pbf, cancellationToken), cancellationToken);
+
+    public Task<int> CountAddressesAsync(GeoBounds bounds, CancellationToken cancellationToken) =>
+        new ArcGisLayer(http).CountAsync(Options.Addresses, bounds, PrimaryAddress, cancellationToken);
+
+    private async Task<T> WithExtractAsync<T>(Func<Stream, Task<T>> read, CancellationToken cancellationToken)
     {
         string file = Path.Combine(Path.GetTempPath(), $"gsbc-outreach-{Guid.NewGuid():N}.osm.pbf");
         try
@@ -35,7 +48,7 @@ internal sealed class MapSources(HttpClient http, IOptions<MapSourcesOptions> op
             await using (FileStream saved = File.Create(file))
                 await download.CopyToAsync(saved, cancellationToken);
             await using FileStream pbf = File.OpenRead(file);
-            return await OsmPbf.ReadAsync(pbf, bounds, StreetNetwork.IsStreet, cancellationToken);
+            return await read(pbf);
         }
         finally
         {

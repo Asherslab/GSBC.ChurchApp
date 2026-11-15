@@ -15,6 +15,36 @@ public sealed class MapAreaRecord
     public DateTime? StartedAt { get; set; }
     public DateTime? BuiltAt { get; set; }
     public string? Report { get; set; }
+    public double CentreLatitude { get; set; }
+    public double CentreLongitude { get; set; }
+    public double CellLatitude { get; set; }
+    public double CellLongitude { get; set; }
+    public int OriginRow { get; set; }
+    public int OriginColumn { get; set; }
+    public DateTime? DeletedAt { get; set; }
+}
+
+public sealed class MapCellRecord
+{
+    public required string Id { get; set; }
+    public required string AreaId { get; set; }
+    public int Row { get; set; }
+    public int Column { get; set; }
+    public bool On { get; set; }
+    public bool Pending { get; set; }
+    public bool Empty { get; set; }
+    public long Version { get; set; }
+}
+
+public sealed class PlaceRecord
+{
+    public long Id { get; set; }
+    public required string Name { get; set; }
+    public required string Kind { get; set; }
+    public double Latitude { get; set; }
+    public double Longitude { get; set; }
+    public int Population { get; set; }
+    public DateTime IndexedAt { get; set; }
 }
 
 public sealed class RegionRecord

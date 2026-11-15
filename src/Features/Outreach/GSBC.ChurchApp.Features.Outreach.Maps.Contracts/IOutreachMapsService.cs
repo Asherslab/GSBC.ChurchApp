@@ -23,5 +23,20 @@ public interface IOutreachMapsService
     ValueTask<MapArea> RebuildAsync(MapAreaRef request, CallContext context = default);
 
     [Requires(OutreachMapsPermissions.ManageNode)]
+    ValueTask<MapArea> RetryAsync(MapAreaRef request, CallContext context = default);
+
+    [Requires(OutreachMapsPermissions.ManageNode)]
     ValueTask<MapAreaList> DeleteAsync(MapAreaRef request, CallContext context = default);
+
+    [Requires(OutreachMapsPermissions.ManageNode)]
+    ValueTask<PlaceList> FindPlacesAsync(PlaceSearch request, CallContext context = default);
+
+    [Requires(OutreachMapsPermissions.ManageNode)]
+    ValueTask<MapAreaPreview> PreviewAsync(MapAreaPlan request, CallContext context = default);
+
+    [Requires(OutreachMapsPermissions.ManageNode)]
+    ValueTask<RegionChangeCheck> CheckChangeAsync(RegionChange request, CallContext context = default);
+
+    [Requires(OutreachMapsPermissions.ManageNode)]
+    ValueTask<MapArea> ChangeRegionsAsync(RegionChange request, CallContext context = default);
 }

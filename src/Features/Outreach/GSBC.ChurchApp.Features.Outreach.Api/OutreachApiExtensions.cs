@@ -1,5 +1,6 @@
 using GSBC.ChurchApp.Features.Outreach.Api.Data;
 using GSBC.ChurchApp.Features.Outreach.Contracts;
+using GSBC.ChurchApp.Features.Outreach.Maps.Contracts;
 using GSBC.ChurchApp.Platform.Api.Access;
 using GSBC.ChurchApp.Platform.Api.Hosting;
 using GSBC.ChurchApp.Platform.Api.Media;
@@ -25,6 +26,7 @@ public static class OutreachApiExtensions
             .AddScoped<OutreachTelling>().AddScoped<OutreachLeaderboards>().AddScoped<Walking>().AddScoped<OutreachPlanning>().AddScoped<OutreachReview>()
             .AddScoped<OutreachKeeping>();
         services.AddScoped<IPersonData, OutreachPersonData>();
+        services.AddScoped<IRegionUses, OutreachRegionUses>();
         services.AddScoped<IMediaAreaAccess, ReportPhotoAccess>();
         services.AddMediaSystemArea(OutreachMedia.ReportPhotos);
         services.AddHostedService<OutreachSchedule>();

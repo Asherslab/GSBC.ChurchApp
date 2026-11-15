@@ -11,6 +11,9 @@ internal static class OsmPbf
     private const string DataBlock = "OSMData";
     private const double Nano = 1e-9;
     private const string HighwayKey = "highway";
+    private const string PlaceKey = "place";
+    private const string NameKey = "name";
+    private const string PopulationKey = "population";
 
     public static async Task<OsmData> ReadAsync(Stream pbf, GeoBounds area, Func<IReadOnlyDictionary<string, string>, bool> keepWay, CancellationToken cancellationToken)
     {
@@ -28,6 +31,90 @@ internal static class OsmPbf
                 ReadBlock(Inflate(blob), area, keepWay, nodes, data);
         }
         return data;
+    }
+
+    public static async Task<List<OsmPlace>> ReadPlacesAsync(Stream pbf, CancellationToken cancellationToken)
+    {
+        List<OsmPlace> places = [];
+        byte[] lengthBytes = new byte[4];
+        while (await ReadExactlyOrEndAsync(pbf, lengthBytes, cancellationToken))
+        {
+            byte[] header = new byte[BinaryPrimitives.ReadInt32BigEndian(lengthBytes)];
+            await pbf.ReadExactlyAsync(header, cancellationToken);
+            (string type, int size) = BlobHeader(header);
+            byte[] blob = new byte[size];
+            await pbf.ReadExactlyAsync(blob, cancellationToken);
+            if (type == DataBlock)
+                ReadPlaceBlock(Inflate(blob), places);
+        }
+        return places;
+    }
+
+    private static void ReadPlaceBlock(byte[] block, List<OsmPlace> places)
+    {
+        List<string> strings = [];
+        List<ReadOnlyMemory<byte>> groups = [];
+        long granularity = 100, latitudeOffset = 0, longitudeOffset = 0;
+        ProtoReader reader = new(block);
+        while (reader.Next(out int field, out int wire))
+        {
+            switch (field)
+            {
+                case 1:
+                    ProtoReader table = new(reader.Bytes());
+                    while (table.Next(out int f, out int w))
+                        if (f == 1) strings.Add(Encoding.UTF8.GetString(table.Bytes().Span));
+                        else table.Skip(w);
+                    break;
+                case 2: groups.Add(reader.Bytes()); break;
+                case 17: granularity = (long)reader.Varint(); break;
+                case 19: latitudeOffset = (long)reader.Varint(); break;
+                case 20: longitudeOffset = (long)reader.Varint(); break;
+                default: reader.Skip(wire); break;
+            }
+        }
+        if (!strings.Contains(PlaceKey))
+            return;
+        foreach (ReadOnlyMemory<byte> group in groups)
+        {
+            ProtoReader groupReader = new(group);
+            while (groupReader.Next(out int field, out int wire))
+                if (field == 2) ReadDensePlaces(groupReader.Bytes(), strings, places, granularity, latitudeOffset, longitudeOffset);
+                else groupReader.Skip(wire);
+        }
+    }
+
+    private static void ReadDensePlaces(ReadOnlyMemory<byte> dense, List<string> strings, List<OsmPlace> places, long granularity, long latitudeOffset, long longitudeOffset)
+    {
+        long[] ids = [], latitudes = [], longitudes = [], keysValues = [];
+        ProtoReader reader = new(dense);
+        while (reader.Next(out int field, out int wire))
+        {
+            switch (field)
+            {
+                case 1: ids = reader.PackedSigned(); break;
+                case 8: latitudes = reader.PackedSigned(); break;
+                case 9: longitudes = reader.PackedSigned(); break;
+                case 10: keysValues = reader.PackedUnsigned(); break;
+                default: reader.Skip(wire); break;
+            }
+        }
+        long id = 0, latitude = 0, longitude = 0;
+        int at = 0;
+        for (int i = 0; i < ids.Length; i++)
+        {
+            id += ids[i];
+            latitude += latitudes[i];
+            longitude += longitudes[i];
+            Dictionary<string, string>? tags = null;
+            for (; at < keysValues.Length && keysValues[at] != 0; at += 2)
+                (tags ??= [])[strings[(int)keysValues[at]]] = strings[(int)keysValues[at + 1]];
+            at++;
+            if (tags is null || !tags.TryGetValue(PlaceKey, out string? kind) || !tags.TryGetValue(NameKey, out string? name))
+                continue;
+            int population = int.TryParse(tags.GetValueOrDefault(PopulationKey), out int counted) ? counted : 0;
+            places.Add(new OsmPlace(id, name, kind, new GeoPoint(Nano * (latitudeOffset + granularity * latitude), Nano * (longitudeOffset + granularity * longitude)), population));
+        }
     }
 
     private static void ReadBlock(byte[] block, GeoBounds area, Func<IReadOnlyDictionary<string, string>, bool> keepWay, SortedNodes nodes, OsmData data)

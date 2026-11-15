@@ -6,9 +6,9 @@ internal static class RegionVersions
 {
     private const int KeptVersions = 2;
 
-    public static long Next(RegionRecord? current, string streetsFingerprint, string mapKey) => current switch
+    public static long Next(RegionRecord? current, string streetsFingerprint, string mapKey, long lastPublished = 0) => current switch
     {
-        null => 1,
+        null => lastPublished + 1,
         _ when current.StreetsFingerprint == streetsFingerprint && current.MapKey == mapKey => current.Version,
         _ => current.Version + 1,
     };

@@ -28,30 +28,51 @@ internal sealed class AreaBuilder(OutreachMapsDbContext db, IMapSources sources,
     public async Task BuildAsync(MapAreaRecord area, CancellationToken cancellationToken)
     {
         Stopwatch elapsed = Stopwatch.StartNew();
-        GeoBounds bounds = new(area.South, area.West, area.North, area.East);
-        List<RegionCell> cells = RegionGrid.Cut(area.Id, bounds);
-        GeoBounds reach = bounds.Grown(RegionGrid.OverlapMetres);
+        MapGrid grid = RegionGrid.GridOf(area);
+        List<MapCellRecord> pending = await db.Cells.Where(cell => cell.AreaId == area.Id && cell.On && cell.Pending)
+            .OrderBy(cell => cell.Row).ThenBy(cell => cell.Column).ToListAsync(cancellationToken);
+        if (pending.Count > 0)
+            await BuildCellsAsync(area, grid, pending, elapsed, cancellationToken);
 
-        AreaStreets streets = await PlaceLetterboxesAsync(area, reach, bounds.Centre, cancellationToken);
+        bool more = await db.Cells.AnyAsync(cell => cell.AreaId == area.Id && cell.On && cell.Pending, cancellationToken);
+        area.State = more ? MapAreaStates.Waiting : MapAreaStates.Built;
+        area.Stage = null;
+        area.Problem = null;
+        if (!more)
+            area.BuiltAt = Now;
+        db.FeedChanges.Add(RegionFeed.BuildChanged(area.Id, Now));
+        await db.SaveChangesAsync(cancellationToken);
+    }
+
+    private async Task BuildCellsAsync(MapAreaRecord area, MapGrid grid, List<MapCellRecord> pending, Stopwatch elapsed, CancellationToken cancellationToken)
+    {
+        Dictionary<string, MapCellRecord> records = pending.ToDictionary(cell => cell.Id);
+        List<RegionCell> cells = pending.Select(cell => RegionGrid.CellOf(area.Id, grid, cell.Row, cell.Column)).ToList();
+        GeoBounds reach = RegionGrid.Union(cells.Select(cell => cell.Bounds));
+
+        AreaStreets streets = await PlaceLetterboxesAsync(area, reach, reach.Centre, cancellationToken);
         IRangeReader tiles = await sources.TilesAsync(cancellationToken);
 
-        List<(RegionCell Cell, string Name)> kept = Named(cells.Where(cell => streets.HomesIn(cell.Core) > 0).Select(cell => (cell, streets.NameFor(cell.Core))).ToList(), area.Name);
-        long streetsBytes = 0;
-        long mapBytes = 0;
+        HashSet<string> building = records.Keys.ToHashSet();
+        HashSet<string> taken = (await db.Regions.Where(region => region.AreaId == area.Id && !building.Contains(region.Id))
+            .Select(region => region.Name).ToListAsync(cancellationToken)).ToHashSet();
+        List<(RegionCell Cell, string Name)> kept = Named(cells.Where(cell => streets.HomesIn(cell.Core) > 0).Select(cell => (cell, streets.NameFor(cell.Core))).ToList(), area.Name, taken);
         for (int i = 0; i < kept.Count; i++)
         {
             await StageAsync(area, $"Building {kept[i].Name} ({i + 1} of {kept.Count})", cancellationToken);
-            RegionRecord region = await PublishAsync(area, kept[i].Cell, kept[i].Name, streets, tiles, cancellationToken);
-            streetsBytes += region.StreetsBytes;
-            mapBytes += region.MapBytes;
+            MapCellRecord record = records[kept[i].Cell.Id];
+            RegionRecord region = await PublishAsync(area, kept[i].Cell, kept[i].Name, record.Version, streets, tiles, cancellationToken);
+            (record.Pending, record.Empty, record.Version) = (false, false, region.Version);
+            await db.SaveChangesAsync(cancellationToken);
         }
-        await RemoveAsync(area.Id, kept.Select(pair => pair.Cell.Id).ToHashSet(), cancellationToken);
+        HashSet<string> withHomes = kept.Select(pair => pair.Cell.Id).ToHashSet();
+        List<MapCellRecord> empty = pending.Where(cell => !withHomes.Contains(cell.Id)).ToList();
+        foreach (MapCellRecord cell in empty)
+            (cell.Pending, cell.Empty) = (false, true);
+        await RemoveAsync(empty.Select(cell => cell.Id).ToHashSet(), cancellationToken);
         await ForgetOldFilesAsync(cancellationToken);
 
-        area.State = MapAreaStates.Built;
-        area.Stage = null;
-        area.Problem = null;
-        area.BuiltAt = Now;
+        List<RegionRecord> regions = await db.Regions.AsNoTracking().Where(region => region.AreaId == area.Id).ToListAsync(cancellationToken);
         PlacementCounts counts = streets.Counts;
         area.Report = JsonSerializer.Serialize(new MapAreaReport
         {
@@ -62,12 +83,10 @@ internal sealed class AreaBuilder(OutreachMapsDbContext db, IMapSources sources,
             Checks = counts.Checks,
             Skipped = counts.Skipped,
             FootpathsBesideRoads = streets.Network.PathsBesideRoads,
-            StreetsBytes = streetsBytes,
-            MapBytes = mapBytes,
+            StreetsBytes = regions.Sum(region => region.StreetsBytes),
+            MapBytes = regions.Sum(region => region.MapBytes),
             Seconds = (int)elapsed.Elapsed.TotalSeconds,
         });
-        db.FeedChanges.Add(RegionFeed.BuildChanged(area.Id, Now));
-        await db.SaveChangesAsync(cancellationToken);
     }
 
     private async Task<AreaStreets> PlaceLetterboxesAsync(MapAreaRecord area, GeoBounds reach, GeoPoint origin, CancellationToken cancellationToken)
@@ -82,21 +101,24 @@ internal sealed class AreaBuilder(OutreachMapsDbContext db, IMapSources sources,
         return AreaStreets.Build(osm, addresses, landUse, origin);
     }
 
-    private static List<(RegionCell Cell, string Name)> Named(List<(RegionCell Cell, string Name)> cells, string areaName)
+    public static List<(RegionCell Cell, string Name)> Named(List<(RegionCell Cell, string Name)> cells, string areaName, IReadOnlySet<string> taken)
     {
         Dictionary<string, int> uses = cells.GroupBy(cell => cell.Name).ToDictionary(group => group.Key, group => group.Count());
-        Dictionary<string, int> seen = [];
+        HashSet<string> given = [.. taken];
         return cells.Select(cell =>
         {
             string name = cell.Name.Length == 0 ? areaName : cell.Name;
-            if (uses.GetValueOrDefault(cell.Name) < 2 && cell.Name.Length > 0)
+            if (uses.GetValueOrDefault(cell.Name) < 2 && cell.Name.Length > 0 && given.Add(name))
                 return (cell.Cell, name);
-            int number = seen[name] = seen.GetValueOrDefault(name) + 1;
-            return (cell.Cell, $"{name} {number}");
+            string numbered = name;
+            for (int number = 1; !given.Add(numbered = $"{name} {number}"); number++)
+            {
+            }
+            return (cell.Cell, numbered);
         }).ToList();
     }
 
-    private async Task<RegionRecord> PublishAsync(MapAreaRecord area, RegionCell cell, string name, AreaStreets streets, IRangeReader tiles, CancellationToken cancellationToken)
+    private async Task<RegionRecord> PublishAsync(MapAreaRecord area, RegionCell cell, string name, long lastPublished, AreaStreets streets, IRangeReader tiles, CancellationToken cancellationToken)
     {
         DateTime now = Now;
         string fingerprint = Sha256(StreetGraphFile.ToBytes(streets.GraphFor(cell, RegionOf(cell, name, 0, DateTimeOffset.UnixEpoch))));
@@ -109,7 +131,7 @@ internal sealed class AreaBuilder(OutreachMapsDbContext db, IMapSources sources,
             string mapKey = ContentAddress.KeyFor(await Sha256Async(mapFile, cancellationToken), MapExtension);
 
             RegionRecord? region = await db.Regions.FindAsync([cell.Id], cancellationToken);
-            long version = RegionVersions.Next(region, fingerprint, mapKey);
+            long version = RegionVersions.Next(region, fingerprint, mapKey, lastPublished);
             if (region is not null && version == region.Version)
             {
                 if (region.Name != name)
@@ -160,9 +182,9 @@ internal sealed class AreaBuilder(OutreachMapsDbContext db, IMapSources sources,
     private static StreetRegion RegionOf(RegionCell cell, string name, long version, DateTimeOffset built) =>
         new(cell.Id, name, version, built, cell.Bounds, cell.Core, cell.Core.Centre, RegionFeed.Attribution);
 
-    public async Task RemoveAsync(string areaId, IReadOnlySet<string> kept, CancellationToken cancellationToken)
+    public async Task RemoveAsync(IReadOnlySet<string> regionIds, CancellationToken cancellationToken)
     {
-        List<RegionRecord> gone = await db.Regions.Where(region => region.AreaId == areaId && !kept.Contains(region.Id)).ToListAsync(cancellationToken);
+        List<RegionRecord> gone = await db.Regions.Where(region => regionIds.Contains(region.Id)).ToListAsync(cancellationToken);
         foreach (RegionRecord region in gone)
         {
             db.Regions.Remove(region);
