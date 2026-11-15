@@ -21,7 +21,7 @@
                     @if (CanChangeExclusions)
                     {
                         <div>
-                            <SearchField Label="Type an address to skip" Placeholder="14 Kingfisher St" Value="@_search" ValueChanged="SearchAsync" />
+                            <SearchField Label="Type an address to skip" Placeholder="Type an address to skip…" Value="@_search" ValueChanged="SearchAsync" />
                             @if (_found is { } found)
                             {
                                 @if (found.Count == 0)

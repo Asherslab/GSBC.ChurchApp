@@ -199,7 +199,8 @@
 .outreach-map { margin-top: var(--after-tabs); }
 .outreach-map__stack { display: grid; align-content: start; gap: var(--space-lg); }
 .outreach-map__matches { margin-top: var(--space-xs); border-radius: var(--radius-field); box-shadow: 0 0 0 1px var(--line); overflow: hidden; }
-.outreach-map__list { display: grid; }
+.outreach-map__list { display: grid; margin-inline: calc(-1 * var(--space-sm)); }
+.outreach-map__list .row { padding-inline: var(--space-sm); border-radius: var(--radius-field); }
 .outreach-map__foot-actions { display: flex; flex-wrap: wrap; gap: var(--space-xs); }
 .outreach-map__foot-actions .btn { flex: 1 1 auto; justify-content: center; }
 .outreach-map__card-actions { display: flex; justify-content: space-between; gap: var(--space-sm); }

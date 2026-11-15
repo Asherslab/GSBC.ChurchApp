@@ -44,7 +44,7 @@ the whole map, or picks a day and plans its routes on the same map.
 FIRST VIEWPORT: Title band "Outreach" with the job's actions at the right, tabs under it; below, full bleed to the
 window's foot: dock (76px) at the left edge, the open job's drawer (320px, folds with a chevron in its head), then the
 map. On the map: the drawing bar top centre while drawing (instruction, Undo last point, Cancel, Finish in white), the
-chosen thing's card top right (330px), zoom at the right edge, the coverage legend and figures bottom left, the
+chosen thing's card top right (330px), the coverage legend and figures bottom left, the
 attribution bottom right, never under a control.
 
 FORM: structure 5 of 7 on my ordered list (icon dock with fold-out drawers), the dealt lead. seed:be1e16b7f838c0e7
@@ -54,4 +54,5 @@ that's switched on, and a click on any layer's thing opens its card whichever dr
 FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, DESIGN.md, and every shipping raster carrying its provenance
 
 ## Open
+- Planning a day swaps in the planner's own map (its labels, brush previews and hover are bound to it), so the view and Layers don't carry into planning; folding it into the one map is open.
 - Whether the number badge on Reports counts new reports only (built so) or all open ones.
