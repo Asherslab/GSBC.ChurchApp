@@ -1,3 +1,4 @@
+@using GSBC.ChurchApp.Platform.Icons
 @using GSBC.ChurchApp.Platform.Ui.Maps
 @using GSBC.ChurchApp.Platform.Client.People
 @using GSBC.ChurchApp.Platform.Contracts.Media
@@ -59,6 +60,22 @@
                     <Pane><PaneHead Title="Plan the routes" Lead="Draw the area to cover and it's split into even routes." /></Pane>
                     <Foot><Button>Publish</Button></Foot>
                 </MapDesk>
+            </div>)
+        @Item("A map with many jobs: MapWorkspace", "A dock of jobs down the map's left edge; the chosen job's drawer folds out beside it and folds away. What's chosen on the map shows in a MapCard top right; drawing shows a MapDrawBar with Undo last point, Cancel and Finish. Outreach's Map tab uses it.",
+            @<div class="gallery__frame gallery__frame--tall">
+                <MapWorkspace Label="Outreach map" Jobs="SampleJobs" Current="places" Class="gallery__map-desk">
+                    <Drawer><PaneHead Title="Places outreach skips" Lead="Walkers never get these on a route." /></Drawer>
+                    <DrawerFoot><Button Variant="ButtonVariant.Quiet" Block="true">Draw an area</Button></DrawerFoot>
+                    <Map>
+                        <div class="gallery__map-stand-in" role="img" aria-label="Where the map goes">
+                            <MapDrawBar Text="Skip area: click each corner" OnUndo="() => { }" CanUndo="true" OnCancel="() => { }" OnFinish="() => { }" CanFinish="true" />
+                            <MapCard Label="A report">
+                                <ChildContent><PaneHead Title="Not a home" Lead="Bunya Rd · sent Saturday" /></ChildContent>
+                                <Foot><Button Block="true">Never deliver there</Button></Foot>
+                            </MapCard>
+                        </div>
+                    </Map>
+                </MapWorkspace>
             </div>)
         @Item("The heading of a record: PaneHead", "Title, one line under it, and the record's own actions in its More menu (Delete is always there, last and red).",
             @<PaneHead Title="Jordan Example" Lead="jordan@example.com · joined Sun 1 Nov" Actions="RecordActions" OnClose="() => { }" OnOpen="() => { }" />)
@@ -499,6 +516,12 @@
 
     private static readonly IReadOnlyList<TabOption<string>> Tabs = [new("about", "About"), new("news", "News", 2), new("people", "People"), new("settings", "Settings")];
     private static readonly IReadOnlyList<Crumb> Trail = [new("Library", "library", "folder"), new("Events", "events"), new("2026", "2026")];
+    private static readonly IReadOnlyList<GSBC.ChurchApp.Platform.Ui.Maps.MapWorkspaceJob> SampleJobs =
+    [
+        new("coverage", "Coverage", AppIcons.Coverage), new("places", "Places", AppIcons.PlacesSkipped), new("reports", "Reports", AppIcons.WalkersReports, 3),
+        new("plan", "Plan a day", AppIcons.PlanADay, StartsGroup: true),
+    ];
+
     private static readonly IReadOnlyList<SegmentOption<string>> Views = [new("grid", "Grid"), new("list", "List")];
     private static readonly IReadOnlyList<AppCardAction> SampleCardActions = [new("Add to calendar", "calendar-plus", Main: true), new("Open", Href: "gallery")];
     private static readonly IReadOnlyList<AppCardAction> SampleOpenOnly = [new("Open", Href: "gallery")];

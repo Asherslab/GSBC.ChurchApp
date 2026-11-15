@@ -9,27 +9,27 @@
 @inject TimeProvider Time
 @inject IAccess Access
 @using Microsoft.JSInterop
+@using GSBC.ChurchApp.Features.Outreach.Admin.Map
 
 <UnsavedGuard What="the routes" Autosave="() => _save" Save="SaveBeforeLeavingAsync" />
 
-<TitleBand Title="@($"Outreach {OutreachWords.DayTitle(Setup.Day)}")" BackHref="@OutreachLinks.DayDesk(Setup.Day.Id)" BackText="Outreach days" Lead="@Lead">
-    <Actions>
-        @if (CanPlan && _view == PlanView.Plan)
-        {
-            <SaveStatus State="_save" SavedText="@(_draftChangedAt is null ? "Saves as you go" : "Draft saved")" Retry="SaveNowAsync" Detail="@_saveProblem" />
-        }
-        <RouteMapsButton Setup="Setup" Planner="_planner" Routes="_published" Changed="_changedSincePublished" />
-    </Actions>
-</TitleBand>
+<SectionContent SectionName="@OutreachHead.ActionsSection">
+    @if (CanPlan && _view == PlanView.Plan)
+    {
+        <SaveStatus State="_save" SavedText="@(_draftChangedAt is null ? "Saves as you go" : "Draft saved")" Retry="SaveNowAsync" Detail="@_saveProblem" />
+    }
+    <RouteMapsButton Setup="Setup" Planner="_planner" Routes="_published" Changed="_changedSincePublished" />
+</SectionContent>
 
 @if (Setup.Region is null || Setup.Graph is null || _planner is null)
 {
     <EmptyState Icon="map" Title="There's no map of the church's area yet"
-                Body="Someone who looks after Outreach's settings builds it once, under Settings, Map areas. Routes are planned on it." />
+                Body="Someone who looks after maps builds it once, under Map areas on the Map tab. Routes are planned on it." />
 }
 else
 {
-    <MapDesk PaneLabel="The routes">
+    <MapWorkspace Label="Outreach map" Jobs="Dock.Jobs" Current="@OutreachMapJobs.Slug(OutreachMapJob.Plan)" OnChoose="Dock.Choose" Open="_open" OpenChanged="open => _open = open"
+                  Wide="true" DrawerLabel="The routes" Class="outreach-map">
         <Map>
             <MapView @ref="_map" Source="@(Setup.Atlas.Source ?? MapSource.Url(Setup.Region.Map.Url, Setup.Region.Attribution))" Reach="@Setup.Atlas.Limits" Label="@($"Map of the routes for {OutreachWords.DayTitle(Setup.Day)}")"
                      Lines="_lines" Areas="_areas" Markers="_markers" Frame="_frame" OnTap="TappedAsync" Class="plan-desk__map">
@@ -47,7 +47,12 @@ else
                             <Button Variant="ButtonVariant.Quiet" Icon="@AppIcons.Undo" AriaLabel="Undo" Tooltip="Undo" Disabled="!_planner.Draft.CanUndo" Class="plan-rail__tool" OnClick="UndoAsync" />
                             <Button Variant="ButtonVariant.Quiet" Icon="@AppIcons.Redo" AriaLabel="Redo" Tooltip="Redo" Disabled="!_planner.Draft.CanRedo" Class="plan-rail__tool" OnClick="RedoAsync" />
                         </div>
-                        @if (ToolHint is { } hint)
+                        @if (_tool == PlanTool.Area)
+                        {
+                            <MapDrawBar Class="plan-draw-bar" Text="Area: click each corner" OnUndo="() => _sketch?.UndoPointAsync() ?? Task.CompletedTask" CanUndo="@(_placed > 0)"
+                                        OnCancel="Cancelled" OnFinish="() => _sketch?.FinishAsync() ?? Task.CompletedTask" CanFinish="@(_placed >= 3)" />
+                        }
+                        else if (ToolHint is { } hint)
                         {
                             <p class="plan-hint" role="status">@hint</p>
                         }
@@ -90,10 +95,12 @@ else
                 </Overlay>
                 <Outside><OutreachMapOutside /></Outside>
             </MapView>
-            <MapSketch Map="_map" Tool="SketchTool" Labels="_labels" Preview="_preview" BrushColour="@BrushColour"
+            <MapSketch @ref="_sketch" Map="_map" Tool="SketchTool" Labels="_labels" Preview="_preview" BrushColour="@BrushColour"
                        OnDrawn="DrawnAsync" OnDrawing="Drawing" OnHover="Hover" OnHoverEnded="() => _hovered = null" OnCancelled="Cancelled" />
         </Map>
-        <Pane>
+        <Drawer>
+            <PaneHead Title="@($"Outreach {OutreachWords.DayTitle(Setup.Day)}")" Lead="@Lead" />
+            <Button Variant="ButtonVariant.Link" Href="@OutreachMapJobs.Href(OutreachMapJob.Plan)" Class="plan-desk__leave">Leave this day's routes</Button>
             <Segmented TValue="PlanView" Label="Show" Options="Views" Value="_view" ValueChanged="ShowAsync" Class="plan-desk__views" />
             @if (_view == PlanView.Plan)
             {
@@ -108,8 +115,8 @@ else
                 </LiveData>
             }
             <Notice Tone="NoticeTone.Warning" Text="@_problem" />
-        </Pane>
-        <Foot>
+        </Drawer>
+        <DrawerFoot>
             @if (_view == PlanView.Plan && CanPlan && _planner.Sections.Count > 0)
             {
                 <p class="plan-desk__published">@PublishedLine</p>
@@ -124,8 +131,8 @@ else
             {
                 <p class="plan-desk__published">@DayLine</p>
             }
-        </Foot>
-    </MapDesk>
+        </DrawerFoot>
+    </MapWorkspace>
 }
 
 <Sheet Open="_publishing" OpenChanged="open => _publishing = open" Title="@PublishLabel">
@@ -167,6 +174,11 @@ else
     private static readonly IReadOnlyList<SegmentOption<PlanView>> Views = [new(PlanView.Plan, "Plan"), new(PlanView.OnTheDay, "On the day")];
 
     [Parameter, EditorRequired] public required PlanSetup Setup { get; set; }
+    [Parameter, EditorRequired] public required OutreachDock Dock { get; set; }
+
+    private MapSketch? _sketch;
+    private int _placed;
+    private bool _open = true;
 
     private PlanSetup? _shown;
     private DayPlanner? _planner;
@@ -369,6 +381,7 @@ else
     private void ChooseTool(PlanTool tool)
     {
         _tool = _tool == tool ? PlanTool.Select : tool;
+        _placed = 0;
         _preview = [];
         _renaming = false;
     }
@@ -382,6 +395,7 @@ else
 
     private void Cancelled()
     {
+        _placed = 0;
         _preview = [];
         _tool = PlanTool.Select;
     }
@@ -413,6 +427,11 @@ else
 
     private void Drawing(MapSketchStroke stroke)
     {
+        if (stroke.Tool == MapSketchTool.Polygon)
+        {
+            _placed = stroke.Points.Count;
+            return;
+        }
         if (_planner is not { } planner)
             return;
         IReadOnlyList<GeoPoint> points = PlanDrawing.Points(stroke.Points);

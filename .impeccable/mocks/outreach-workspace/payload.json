@@ -1,0 +1,43 @@
+{
+  "title": "Outreach → Map: one workspace for everything on the map",
+  "question": "One full-size map of every region we have, with tools floating on it and panes that fold away: coverage, places outreach skips (add by typing an address), saved areas, walkers' reports, map areas, and planning a day's routes as a mode of the same map (your answers, 2026-11-15). The three sketches differ in how the jobs are reached and where the panes sit. Pick the one to build; each opens on what you had last.",
+  "options": [
+    {
+      "id": "dock",
+      "kind": "assigned",
+      "kicker": "THE ROLL",
+      "label": "A dock of jobs down the map's left edge",
+      "thesis": "A slim icon dock on the map's left edge names each job (Coverage, Places, Saved areas, Reports 3, Map areas, Plan a day). Choosing one slides its drawer out beside the dock: its layers, legend, figures and list. Whatever you click on the map opens a card on the right. Both fold away to leave the whole map. Drawing tools float top centre with Finish and Undo last point.",
+      "palette": ["#2a3d5e", "#ffffff", "#00776d", "#e7ae74"],
+      "materials": ["icon dock", "fold-out drawer", "floating record card", "map toolbar with Finish", "address search in Places"],
+      "viewport": "Outreach, Map tab: the dock with Places open; its drawer lists 9 skip areas and 14 addresses with 'Type an address…' at its top; on the map the coverage ramp stays on underneath, Bunya Rd's skip area mid-draw with a navy toolbar 'Click round the area · Finish · Undo last point · Cancel'; a report pin's card on the right.",
+      "risk": "Six icons in a dock need their names beside them or a tooltip habit; a new leader has to learn which icon is which.",
+      "html": ".impeccable/mocks/outreach-workspace/dock.html"
+    },
+    {
+      "id": "search",
+      "kind": "dealt",
+      "label": "A search box that finds anything, with layers beside it",
+      "thesis": "Top left of the map, one wide box: type an address, a street, a suburb, a report or a saved area and the map goes there, with what you can do to it (skip it, mark it not done, plan a day round it). A Layers button beside it switches what's drawn. The chosen thing's pane opens on the right; the coverage figures for the view sit bottom left. No drawers until you need one.",
+      "palette": ["#2a3d5e", "#ffffff", "#00776d", "#e7ae74"],
+      "materials": ["search box with grouped results", "layers popover", "right record pane", "figures chip", "map toolbar"],
+      "viewport": "Outreach, Map tab: '14 Kingfi' typed, results grouped Addresses (14 Kingfisher St, Albany Creek: 'No junk mail since 3 Oct'), Streets, Saved areas; the Layers popover shows Coverage: General outreach on, Places on, Reports on, Map areas off; figures '1,912 of 4,338 streets · 44% of letterboxes in view' bottom left.",
+      "risk": "Everything leans on typing; jobs you do without a target (work through new reports, look after map areas) hide behind the Layers button and the right pane.",
+      "html": ".impeccable/mocks/outreach-workspace/search.html"
+    },
+    {
+      "id": "layers",
+      "kind": "dealt",
+      "label": "Layers on the left, the chosen thing on the right",
+      "thesis": "The map between two folding panes. Left: the layers, one section each (Coverage with its campaign, ramp and figures; Places; Saved areas; Reports 3; Map areas), each with its switch, count and add button; the section you're working in opens and the rest close to a line. Right: whatever you clicked, with its actions. Planning a day swaps the left pane for the day's routes.",
+      "palette": ["#2a3d5e", "#ffffff", "#00776d", "#e7ae74"],
+      "materials": ["layer sections that open one at a time", "right record pane", "floating tool rail", "fold buttons on both panes"],
+      "viewport": "Outreach, Map tab: left pane with Coverage open (General outreach, the ramp, 1,912 streets done, 44% of letterboxes in view, Mark streets not done) over closed lines for Places 23, Saved areas 6, Reports 3, Map areas 25 regions; the map with a lassoed group of streets; right pane '86 street sides, 1,140 letterboxes, done 12 to 40 days ago' with Mark as not done.",
+      "risk": "Two panes open leave a laptop's map about 700px wide; most of the time one of them should be folded.",
+      "html": ".impeccable/mocks/outreach-workspace/layers.html"
+    }
+  ],
+  "reroll": true,
+  "steer": true,
+  "buildPath": {"value": "code"}
+}

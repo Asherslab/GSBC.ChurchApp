@@ -1,0 +1,59 @@
+@using GSBC.ChurchApp.Features.Outreach.Admin.Map
+@using GSBC.ChurchApp.Platform.Icons
+@inherits OutreachMapLayer
+@inject OutreachDeskClient Outreach
+@inject TimeProvider Time
+
+<LiveData TValue="OutreachDesk" Feeds="Feeds" Load="() => Outreach.DeskAsync(Map.Scope)" Remember="@($"outreach.map.days.{Map.Scope}")" FailedTitle="Can't load the outreach days right now">
+    <ChildContent>
+        @if (IsOpen)
+        {
+            OutreachDesk desk = context.Value;
+            <SectionContent SectionName="@OutreachMap.DrawerSection">
+                <PaneHead Title="Plan an outreach day" Lead="Choose a day to split its area into routes on this map. The map shows its routes until you leave the day." />
+                @if (Coming(desk) is { Count: > 0 } days)
+                {
+                    <div class="outreach-map__list" role="list" aria-label="Outreach days to come">
+                        @foreach (OutreachDay day in days)
+                        {
+                            <ListRow Title="@OutreachWords.DayTitle(day)" Subtitle="@($"{OutreachWords.Window(day)} · {Routes(Facts(desk, day))}")" Chevron="true"
+                                     Href="@OutreachMapJobs.PlanHref(day.Id)" />
+                        }
+                    </div>
+                }
+                else
+                {
+                    <EmptyState Icon="@AppIcons.PlanADay" Title="No outreach days to come" Body="Set up the next outreach day under Days, then plan its routes here." />
+                }
+            </SectionContent>
+            <SectionContent SectionName="@OutreachMap.FootSection">
+                <Button Variant="ButtonVariant.Quiet" Icon="plus" Block="true" Href="@OutreachTabs.Href(OutreachTab.Days)">Set up a new day under Days</Button>
+            </SectionContent>
+        }
+    </ChildContent>
+    <Loading>
+        @if (IsOpen)
+        {
+            <SectionContent SectionName="@OutreachMap.DrawerSection">
+                <PaneHead Title="Plan an outreach day" Lead="Choose a day to split its area into routes." />
+                <Skeleton />
+            </SectionContent>
+        }
+    </Loading>
+</LiveData>
+
+@code {
+    private static readonly IReadOnlyList<string> Feeds = [OutreachFeeds.Desk, OutreachFeeds.Claims];
+
+    public override OutreachMapJob Job => OutreachMapJob.Plan;
+
+    private List<OutreachDay> Coming(OutreachDesk desk)
+    {
+        DateTime now = Time.GetUtcNow().UtcDateTime;
+        return [.. desk.Days.Where(day => day.EndsAt > now).OrderBy(day => day.StartsAt)];
+    }
+
+    private static DayFacts Facts(OutreachDesk desk, OutreachDay day) => desk.DayFacts.FirstOrDefault(facts => facts.DayId == day.Id) ?? new DayFacts();
+
+    private static string Routes(DayFacts facts) => facts.Routes == 0 ? (facts.HasDraft ? "being planned" : "no routes yet") : OutreachWords.Plural(facts.Routes, "route", "routes");
+}

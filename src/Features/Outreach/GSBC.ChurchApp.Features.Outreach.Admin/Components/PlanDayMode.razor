@@ -1,0 +1,29 @@
+@using GSBC.ChurchApp.Features.Outreach.Admin.Map
+@using GSBC.ChurchApp.Features.Outreach.Admin.Planning
+@using GSBC.ChurchApp.Platform.Client.Signals
+@inject OutreachDeskClient Outreach
+@inject OutreachMapsClient Maps
+@inject StreetGraphLoader Streets
+
+<LiveData @key="DayId" TValue="Found" Load="LoadAsync" ReloadOn="ChangeKind.Session | ChangeKind.Access" FailedTitle="Can't load this outreach day right now">
+    @if (context.Value.Setup is not { } setup)
+    {
+        <EmptyState Icon="calendar" Title="That outreach day isn't there any more" Body="It may have been deleted. The outreach days are listed under Days.">
+            <Button Variant="ButtonVariant.Quiet" Href="@OutreachMapJobs.Href(OutreachMapJob.Plan)">Choose another day</Button>
+        </EmptyState>
+    }
+    else
+    {
+        <PlanDesk Setup="setup" Dock="Dock" />
+    }
+</LiveData>
+
+@code {
+    [Parameter, EditorRequired] public required string DayId { get; set; }
+    [Parameter, EditorRequired] public required string Scope { get; set; }
+    [Parameter, EditorRequired] public required OutreachDock Dock { get; set; }
+
+    private sealed record Found(PlanSetup? Setup);
+
+    private async Task<Found> LoadAsync() => new(await PlanSetup.LoadAsync(Outreach, Maps, Streets, Scope, DayId));
+}

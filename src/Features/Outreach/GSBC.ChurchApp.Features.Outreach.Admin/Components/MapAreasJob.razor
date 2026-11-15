@@ -1,0 +1,655 @@
+@using GSBC.ChurchApp.Features.Outreach.Admin.Map
+@using GSBC.ChurchApp.Features.Outreach.Maps.Contracts
+@using GSBC.ChurchApp.Platform.Icons
+@using GSBC.ChurchApp.Platform.Ui.Maps
+@using Area = GSBC.ChurchApp.Features.Outreach.Maps.Contracts.MapArea
+@using MapShape = GSBC.ChurchApp.Platform.Ui.Maps.MapArea
+@inherits OutreachMapLayer
+@inject OutreachMapsClient Maps
+@inject UnsavedChanges Unsaved
+
+<UnsavedGuard Changed="() => Changed" What="@(_adding ? "the new map area" : "the change to its regions")" Save="SaveBeforeLeavingAsync" />
+
+<LiveData @ref="_live" TValue="MapAreaList" Feeds="Feeds" Load="LoadAsync" FailedTitle="Can't load the map areas right now">
+    <ChildContent>
+        @if (IsOpen)
+        {
+            @if (_adding)
+            {
+                <SectionContent SectionName="@OutreachMap.DrawerSection">@Adding</SectionContent>
+                <SectionContent SectionName="@OutreachMap.FootSection">
+                    <SaveBar Label="Add and build it" New="true" Busy="_busy" Blocked="@AddBlocked" OnSave="AddAsync" OnCancel="BackAsync" />
+                </SectionContent>
+            }
+            else if (_areaId is not null)
+            {
+                <SectionContent SectionName="@OutreachMap.DrawerSection">@Chosen</SectionContent>
+                <SectionContent SectionName="@OutreachMap.FootSection">@ChosenFoot</SectionContent>
+            }
+            else
+            {
+                <SectionContent SectionName="@OutreachMap.DrawerSection">@All(context.Value)</SectionContent>
+                <SectionContent SectionName="@OutreachMap.FootSection">
+                    <Button Variant="ButtonVariant.Quiet" Icon="plus" Block="true" OnClick="StartAddingAsync">Add a map area</Button>
+                </SectionContent>
+            }
+        }
+        <Sheet Open="_confirming" OpenChanged="open => _confirming = open" Title="@MapAreaWords.ChangeLabel(Off.Count, On.Count)">
+            <ChildContent>
+                <p class="sheet__lead">@ConfirmLead</p>
+                @if (_check is { Uses.Count: > 0 } check)
+                {
+                    <ul class="area-desk__uses">
+                        @foreach (RegionUse use in check.Uses)
+                        {
+                            <li>@MapAreaWords.Use(use) uses @NameOf(use.RegionId): its walkers would have no map there.</li>
+                        }
+                    </ul>
+                }
+            </ChildContent>
+            <Actions>
+                <Button Variant="ButtonVariant.Danger" Busy="_busy" OnClick="SaveAsync">@MapAreaWords.ChangeLabel(Off.Count, On.Count)</Button>
+                <Button Variant="ButtonVariant.Quiet" OnClick="() => _confirming = false">@(Off.Count == 1 ? "Keep it" : "Keep them")</Button>
+            </Actions>
+        </Sheet>
+        <MapAreaSheets @ref="_sheets" OnChanged="ReloadAsync" OnDeleted="DeletedAsync" />
+    </ChildContent>
+    <Loading>
+        @if (IsOpen)
+        {
+            <SectionContent SectionName="@OutreachMap.DrawerSection">
+                <PaneHead Title="Map areas" Lead="@Lead" />
+                <Skeleton />
+            </SectionContent>
+        }
+    </Loading>
+</LiveData>
+
+@code {
+    private const string NewArea = "new";
+    private const string Lead = "Where the app has maps and streets. Each area is cut into regions of about 10 km; phones download the map and streets of the region they walk in.";
+
+    private static readonly IReadOnlyList<string> Feeds = [OutreachMapsFeeds.Builds, OutreachMapsFeeds.Regions];
+
+    [Parameter] public string? Open { get; set; }
+
+    private LiveData<MapAreaList>? _live;
+    private MapAreaSheets? _sheets;
+    private MapAreaList? _list;
+    private string? _areaId, _applied;
+    private Area? _area;
+    private List<AreaCell> _cells = [];
+    private readonly HashSet<CellRef> _changed = [];
+    private RegionChangeCheck? _check;
+    private AreaCell? _hovered;
+    private bool _busy, _confirming, _adding, _estimating;
+    private string? _problem;
+
+    private string _search = "", _radius = "10", _name = "";
+    private PlaceList? _places;
+    private MapPlace? _place;
+    private MapPoint? _centre;
+    private MapAreaPreview? _preview;
+    private IReadOnlyList<MapShape> _previewShapes = [];
+    private IReadOnlyList<MapMarker> _previewNotes = [];
+    private CancellationTokenSource? _previewing;
+
+    public override OutreachMapJob Job => OutreachMapJob.MapAreas;
+
+    public override IReadOnlyList<MapShape> Areas => !IsOpen ? []
+        : _adding ? _previewShapes
+        : _area is not null ? MapAreaDrawing.Shapes(_cells, _hovered?.Cell)
+        : [];
+
+    public override IReadOnlyList<MapMarker> Markers => !IsOpen ? []
+        : _adding ? [.. _centre is { } centre ? [new MapMarker(centre, MapMarkerKind.Pin, _place?.Name)] : Array.Empty<MapMarker>(), .. _previewNotes]
+        : _area is not null ? [.. _cells.Select(cell => new MapMarker(cell.Look == CellLook.Edge ? cell.Middle : MapAreaDrawing.Corner(cell.Core), MapMarkerKind.Note, MapAreaWords.Label(cell)))]
+        : [];
+
+    private bool Changed => _adding ? _centre is not null : _changed.Count > 0;
+
+    private List<CellRef> Off => _cells.Where(cell => cell.Look == CellLook.SwitchingOff).Select(cell => cell.Cell).ToList();
+
+    private List<CellRef> On => _cells.Where(cell => cell.Look == CellLook.Adding).Select(cell => cell.Cell).ToList();
+
+    private string ConfirmLead =>
+        $"Phones drop {OutreachWords.Plural(Off.Count, "region", "regions")} and {(Off.Count == 1 ? "its" : "their")} maps and streets are deleted{(_check is { FreedBytes: > 0 } ? $" ({MapAreaWords.Megabytes(_check.FreedBytes)})" : "")}. "
+        + "What walkers did there, coverage and history, stays. Switch one back on to build it again."
+        + (On.Count > 0 ? $" {OutreachWords.Plural(On.Count, "new region builds", "new regions build")} straight after." : "");
+
+    private RenderFragment All(MapAreaList list) => @<div>
+        <PaneHead Title="Map areas" Lead="@Lead" />
+        <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+        @if (list.Areas.Count == 0)
+        {
+            <EmptyState Icon="@AppIcons.MapAreas" Title="No map areas yet" Body="Add the area around church first; a campaign far away gets its own." />
+        }
+        else
+        {
+            <div class="outreach-map__list" role="list" aria-label="Map areas">
+                @foreach (Area area in list.Areas)
+                {
+                    <ListRow Title="@area.Name" Subtitle="@MapAreaWords.State(area)" OnClick="() => OpenAsync(area, fly: true)" Actions="@ActionsFor(area)">
+                        <Below>
+                            @if (area.State == MapAreaStates.Building && area.Steps > 0)
+                            {
+                                <ProgressTrack Fraction="MapAreaWords.Progress(area)" Label="How far the build has got" Class="outreach-areas__progress" />
+                            }
+                            @if (area.Regions.Count > 0)
+                            {
+                                <p class="outreach-areas__regions">@MapAreaWords.Regions(area)</p>
+                            }
+                        </Below>
+                    </ListRow>
+                }
+            </div>
+            <p class="field__hint outreach-map-areas__hint">Open an area to switch its regions off or on, or to add regions on its edge. Building takes a few minutes; phones get the new maps by themselves.</p>
+        }
+    </div>;
+
+    private RenderFragment Back => @<div class="outreach-map-areas__back">
+        <Button Small="true" Variant="ButtonVariant.Quiet" Icon="arrow-left" OnClick="BackAsync">All map areas</Button>
+    </div>;
+
+    private RenderFragment Chosen => _area is not { } area
+        ? @<div>
+            @Back
+            <EmptyState Icon="@AppIcons.MapAreas" Title="That map area isn't there any more" Body="It may have been deleted. The other map areas are under All map areas." />
+        </div>
+        : @<div>
+            @Back
+            <PaneHead Title="@area.Name" Lead="@MapAreaWords.Regions(area)" Actions="@ActionsFor(area)" />
+            <div class="area-desk__state">
+                <p class="area-desk__state-line"><Pill Tone="StateTone(area)">@StateWord(area)</Pill> <span>@MapAreaWords.StateDetail(area)</span></p>
+                @if (area.State == MapAreaStates.Building && area.Steps > 0)
+                {
+                    <ProgressTrack Fraction="MapAreaWords.Progress(area)" Label="How far the build has got" />
+                }
+                @if (area.State == MapAreaStates.Failed)
+                {
+                    <Button Small="true" Variant="ButtonVariant.Quiet" Icon="refresh" Busy="_busy" Class="area-desk__retry" OnClick="() => RunAsync(() => Maps.RetryAsync(area.Id))">Try again</Button>
+                }
+            </div>
+            <p class="field__hint outreach-map-areas__hint">Click a region on the map to switch it off or on, or a + on its edge to add it.</p>
+            <ul class="area-desk__key" aria-label="What the squares mean">
+                <li><span class="area-desk__swatch"></span>Built</li>
+                <li><span class="area-desk__swatch area-desk__swatch--waiting"></span>Waiting to build</li>
+                <li><span class="area-desk__swatch area-desk__swatch--off"></span>Off</li>
+                <li><span class="area-desk__swatch area-desk__swatch--empty"></span>No homes</li>
+                <li><span class="area-desk__swatch area-desk__swatch--edge"></span>Can be added</li>
+            </ul>
+            @if (_check is { Uses.Count: > 0 } check)
+            {
+                <Notice Tone="NoticeTone.Warning">
+                    <p class="area-desk__uses-lead">Still in use:</p>
+                    <ul class="area-desk__uses">
+                        @foreach (RegionUse use in check.Uses)
+                        {
+                            <li>@MapAreaWords.Use(use) uses @NameOf(use.RegionId).</li>
+                        }
+                    </ul>
+                    <p>Walkers there would have no map or streets. Keep it on, or plan them somewhere else.</p>
+                </Notice>
+            }
+            <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+            @foreach ((string title, List<AreaCell> cells) in Groups())
+            {
+                <h3 class="area-desk__group">@title</h3>
+                <div class="area-desk__rows">
+                    @foreach (AreaCell cell in cells)
+                    {
+                        <div class="area-desk__row @(cell.Cell.Equals(_hovered?.Cell) ? "area-desk__row--chosen" : "")" @onmouseenter="() => Hover(cell)" @onmouseleave="() => Hover(null)">
+                            <ToggleRow Title="@MapAreaWords.Title(cell)" Description="@MapAreaWords.Facts(cell, _check)" Checked="cell.OnAfter"
+                                       CheckedChanged="_ => ToggleAsync(cell.Cell)" Disabled="_busy" />
+                        </div>
+                    }
+                </div>
+            }
+        </div>;
+
+    private RenderFragment? ChosenFoot => _area is null
+        ? null
+        : _changed.Count > 0
+            ? @<div>
+                <p class="outreach-map-areas__summary">@MapAreaWords.ChangeSummary(Off.Count, On.Count, _check)</p>
+                <SaveBar Label="@MapAreaWords.ChangeLabel(Off.Count, On.Count)" Busy="_busy" Blocked="@_check?.Problem" OnSave="AskToSaveAsync" OnCancel="Cancel" />
+            </div>
+            : @<p class="outreach-map-areas__summary">Phones download the region they walk in. Switching one off deletes its maps; coverage and history there stay.</p>;
+
+    private RenderFragment Adding => @<div>
+        @Back
+        <PaneHead Title="Add a map area" Lead="Find the town or suburb, or click the map. The area is cut into regions of about 10 km; once it's built you can switch regions off or add more on its edge." />
+        <SearchField Label="Find a town or suburb" Placeholder="A town or suburb in Queensland" Value="@_search" ValueChanged="SearchAsync" AutoFocus="true" />
+        @if (_places is null && _centre is null)
+        {
+            <p class="field__hint area-desk__hint">Type at least two letters of a town or suburb anywhere in Queensland, or click the map where the area's middle should be. You'll see its squares and how big they are before anything is built.</p>
+        }
+        @if (_places is { } found)
+        {
+            @if (!found.Indexed)
+            {
+                <p class="field__hint area-desk__hint">The list of places is still being made from OpenStreetMap. Click the map where the area should be.</p>
+            }
+            else if (found.Places.Count == 0 && _search.Trim().Length >= 2)
+            {
+                <p class="field__hint area-desk__hint">No town or suburb called that. Try another spelling, or click the map.</p>
+            }
+            else
+            {
+                <div class="outreach-map__list outreach-map-areas__places" role="list" aria-label="Places found">
+                    @foreach (MapPlace place in found.Places)
+                    {
+                        <ListRow Title="@place.Name" Subtitle="@MapAreaWords.Place(place)" Current="@(Same(place, _place))" OnClick="() => ChoosePlaceAsync(place)" />
+                    }
+                </div>
+            }
+        }
+        @if (_centre is not null)
+        {
+            <p class="field__hint area-desk__hint">Click the map to move the middle.</p>
+            <div class="area-desk__fields">
+                <TextField Label="How far around it" Type="number" Min="1" Max="30" Value="@_radius" ValueChanged="RadiusAsync"
+                           Hint="Kilometres each way, 1 to 30. Around the church is 20." Problem="@RadiusProblem" />
+                <TextField Label="Name" @bind-Value="_name" MaxLength="80" Hint="What staff call the place." />
+            </div>
+            <p class="area-desk__estimate" role="status">@EstimateLine</p>
+            @if (_preview is { } shown && !Mapped(shown))
+            {
+                <p class="field__hint area-desk__hint">There's no street map here yet, so the map shows only the places' names. Its own maps come with the build.</p>
+            }
+        }
+        <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+    </div>;
+
+    private string? RadiusProblem => _radius.Trim().Length > 0 && MapAreaWords.Radius(_radius) is null ? "Between 1 and 30 kilometres." : null;
+
+    private string? AddBlocked => _centre is null ? "Find a place or click the map first."
+        : MapAreaWords.Radius(_radius) is null ? "Say how far around it, 1 to 30 km."
+        : _name.Trim().Length == 0 ? "Give the area a name."
+        : _preview is { } preview && preview.Cells.All(cell => !cell.HasHomes) ? "There are no homes here, so there's nothing to build."
+        : null;
+
+    private string EstimateLine
+    {
+        get
+        {
+            if (_estimating || _preview is null)
+                return "Counting the letterboxes in each square…";
+            List<CellEstimate> homes = _preview.Cells.Where(cell => cell.HasHomes).ToList();
+            int empty = _preview.Cells.Count - homes.Count;
+            string none = empty == 0 ? "" : $" {OutreachWords.Plural(empty, "square has", "squares have")} no homes and isn't made.";
+            return $"{OutreachWords.Plural(homes.Count, "region", "regions")} with homes, about {OutreachWords.Plural(homes.Sum(cell => cell.Addresses), "letterbox", "letterboxes")}, "
+                   + $"about {MapAreaWords.Megabytes(homes.Sum(cell => cell.Bytes))} for phones in all.{none}";
+        }
+    }
+
+    private async Task<MapAreaList> LoadAsync()
+    {
+        MapAreaList list = await Maps.AreasAsync();
+        _list = list;
+        Refresh();
+        await ApplyAskedAsync();
+        Map.Redraw();
+        return list;
+    }
+
+    protected override Task OnParametersSetAsync() => _list is null ? Task.CompletedTask : ApplyAskedAsync();
+
+    private async Task ApplyAskedAsync()
+    {
+        if (Open == _applied || _list is not { } list)
+            return;
+        _applied = Open;
+        if (Open == NewArea)
+            await StartAddingAsync();
+        else if (list.Areas.FirstOrDefault(area => area.Id == Open) is { } asked)
+            await OpenAsync(asked, fly: true);
+    }
+
+    private void Refresh()
+    {
+        _area = _areaId is null ? null : _list?.Areas.FirstOrDefault(area => area.Id == _areaId);
+        _cells = _area is null ? [] : MapAreaDrawing.Cells(_area, _changed);
+        if (_hovered is { } hovered)
+            _hovered = _cells.FirstOrDefault(cell => cell.Cell.Equals(hovered.Cell));
+    }
+
+    public override async Task<bool> TapAsync(MapPoint point, double reachMetres)
+    {
+        if (!IsOpen || _busy)
+            return false;
+        if (_adding)
+        {
+            _place = null;
+            await CentreAsync(point, frame: _centre is null);
+            return true;
+        }
+        if (_area is { } area)
+        {
+            if (MapAreaDrawing.At(area, _cells, point) is not { } cell)
+                return false;
+            await ToggleAsync(cell.Cell);
+            return true;
+        }
+        if (_list?.Areas.FirstOrDefault(each => each.Cells.Any(cell => cell.Ref.Equals(each.Grid.CellAt(point.Lat, point.Lon)))) is not { } hit)
+            return false;
+        await OpenAsync(hit, fly: false);
+        return true;
+    }
+
+    private async Task OpenAsync(Area area, bool fly)
+    {
+        if ((_adding || _areaId != area.Id) && !await Unsaved.MayLeaveAsync())
+            return;
+        Reset();
+        _areaId = area.Id;
+        Refresh();
+        if (fly && _cells.Count > 0)
+            Map.FlyTo(MapAreaDrawing.Frame(_cells));
+        Map.Redraw();
+    }
+
+    private async Task StartAddingAsync()
+    {
+        if (!_adding && !await Unsaved.MayLeaveAsync())
+            return;
+        Reset();
+        _adding = true;
+        Map.Redraw();
+    }
+
+    private async Task BackAsync()
+    {
+        if (!await Unsaved.MayLeaveAsync())
+            return;
+        Reset();
+        Map.Redraw();
+    }
+
+    private void Reset()
+    {
+        _previewing?.Cancel();
+        (_areaId, _area, _adding, _hovered, _check, _problem, _confirming, _estimating) = (null, null, false, null, null, null, false, false);
+        _changed.Clear();
+        _cells = [];
+        (_search, _radius, _name, _places, _place, _centre, _preview) = ("", "10", "", null, null, null, null);
+        (_previewShapes, _previewNotes) = ([], []);
+    }
+
+    private IEnumerable<(string Title, List<AreaCell> Cells)> Groups()
+    {
+        List<AreaCell> changes = _cells.Where(cell => cell.Look is CellLook.Adding or CellLook.SwitchingOff).ToList();
+        List<AreaCell> on = _cells.Where(cell => cell.Look is CellLook.Built or CellLook.Waiting or CellLook.Empty).OrderBy(cell => cell.Name.Length == 0).ThenBy(cell => cell.Name).ToList();
+        List<AreaCell> off = _cells.Where(cell => cell.Look == CellLook.Off).OrderBy(cell => cell.Name).ToList();
+        if (changes.Count > 0)
+            yield return ("Changes", changes);
+        if (on.Count > 0)
+            yield return ($"On ({on.Count})", on);
+        if (off.Count > 0)
+            yield return ($"Off ({off.Count})", off);
+    }
+
+    private string NameOf(string regionId) => _area?.Regions.FirstOrDefault(region => region.Id == regionId)?.Name ?? "a region";
+
+    private void Hover(AreaCell? cell)
+    {
+        if (Equals(cell?.Cell, _hovered?.Cell))
+            return;
+        _hovered = cell;
+        Map.Redraw();
+    }
+
+    private async Task ToggleAsync(CellRef cell)
+    {
+        if (_busy || _area is null)
+            return;
+        if (!_changed.Remove(cell))
+            _changed.Add(cell);
+        _problem = null;
+        Refresh();
+        Map.Redraw();
+        await CheckAsync();
+        Map.Redraw();
+    }
+
+    private async Task CheckAsync()
+    {
+        if (_area is null || _changed.Count == 0)
+        {
+            _check = null;
+            return;
+        }
+        RegionChange change = Change(_area);
+        try
+        {
+            RegionChangeCheck check = await Maps.CheckChangeAsync(change);
+            if (_changed.SetEquals(change.Off.Concat(change.On)))
+                _check = check;
+        }
+        catch (RpcException exception)
+        {
+            _problem = exception.Status.Detail;
+        }
+    }
+
+    private RegionChange Change(Area area) => new() { AreaId = area.Id, Off = Off, On = On };
+
+    private async Task AskToSaveAsync()
+    {
+        if (Off.Count > 0)
+            _confirming = true;
+        else
+            await SaveAsync();
+    }
+
+    private async Task SaveAsync()
+    {
+        if (_area is not { } area)
+            return;
+        RegionChange change = Change(area);
+        await RunAsync(async () =>
+        {
+            await Maps.ChangeRegionsAsync(change);
+            _changed.Clear();
+            _check = null;
+        });
+        _confirming = false;
+    }
+
+    private void Cancel()
+    {
+        _changed.Clear();
+        (_check, _problem) = (null, null);
+        Refresh();
+        Map.Redraw();
+    }
+
+    private async Task<bool> SaveBeforeLeavingAsync()
+    {
+        if (_adding)
+        {
+            if (AddBlocked is not null)
+                return false;
+            await AddAsync();
+            return _problem is null;
+        }
+        if (Off.Count > 0)
+            return false;
+        await SaveAsync();
+        return _problem is null;
+    }
+
+    private async Task SearchAsync(string text)
+    {
+        _search = text;
+        try
+        {
+            _places = text.Trim().Length < 2 ? null : await Maps.FindPlacesAsync(text);
+        }
+        catch (RpcException exception)
+        {
+            _problem = exception.Status.Detail;
+        }
+    }
+
+    private Task ChoosePlaceAsync(MapPlace place)
+    {
+        _place = place;
+        if (_name.Trim().Length == 0 || _places?.Places.Any(found => found.Name == _name) == true)
+            _name = place.Name;
+        return CentreAsync(new MapPoint(place.Latitude, place.Longitude), frame: true);
+    }
+
+    private Task RadiusAsync(string radius)
+    {
+        _radius = radius;
+        return _centre is { } centre ? CentreAsync(centre, frame: true) : Task.CompletedTask;
+    }
+
+    private async Task CentreAsync(MapPoint centre, bool frame)
+    {
+        _centre = centre;
+        Map.Redraw();
+        if (MapAreaWords.Radius(_radius) is not { } radius)
+            return;
+        _previewing?.Cancel();
+        CancellationTokenSource previewing = _previewing = new CancellationTokenSource();
+        _estimating = true;
+        _problem = null;
+        try
+        {
+            MapAreaPreview preview = await Maps.PreviewAsync(centre.Lat, centre.Lon, radius);
+            if (previewing.IsCancellationRequested)
+                return;
+            _preview = preview;
+            Draw(preview);
+            if (frame)
+                Map.FlyTo(MapFrame.Around(_previewShapes.SelectMany(shape => shape.Points), padding: 48, maxZoom: 13));
+        }
+        catch (RpcException exception)
+        {
+            _problem = exception.Status.Detail;
+        }
+        finally
+        {
+            if (!previewing.IsCancellationRequested)
+                _estimating = false;
+            Map.Redraw();
+        }
+    }
+
+    private void Draw(MapAreaPreview preview)
+    {
+        _previewShapes = preview.Cells.Select(cell => new MapShape(MapAreaDrawing.Ring(preview.Grid.Core(cell.Row, cell.Column)),
+            cell.HasHomes ? "--live" : "--ink-3", $"{cell.Row}:{cell.Column}", Dashed: !cell.HasHomes)).ToList();
+        List<MapMarker> notes = preview.Cells.Select(cell =>
+        {
+            MapBounds core = preview.Grid.Core(cell.Row, cell.Column);
+            MapPoint corner = new(core.North - (core.North - core.South) * 0.12, core.West + (core.East - core.West) * 0.22);
+            return new MapMarker(corner, MapMarkerKind.Note, cell.HasHomes ? MapAreaWords.Estimate(cell) : "No homes");
+        }).ToList();
+        if (!Mapped(preview))
+        {
+            double apart = Math.Min(preview.Grid.CellLatitude, preview.Grid.CellLongitude) * 0.22;
+            foreach (MapPlace place in preview.Places)
+            {
+                MapPoint at = new(place.Latitude, place.Longitude);
+                if (notes.All(note => Math.Abs(note.Point.Lat - at.Lat) > apart / 2 || Math.Abs(note.Point.Lon - at.Lon) > apart * 1.6))
+                    notes.Add(new MapMarker(at, MapMarkerKind.Note, place.Name));
+            }
+        }
+        _previewNotes = notes;
+    }
+
+    private static bool Same(MapPlace place, MapPlace? other) =>
+        other is not null && place.Name == other.Name && place.Latitude.Equals(other.Latitude) && place.Longitude.Equals(other.Longitude);
+
+    private bool Mapped(MapAreaPreview preview) =>
+        preview.Cells.Select(cell => preview.Grid.Core(cell.Row, cell.Column))
+            .Any(core => Map.Atlas.Regions.Any(region => region.Bounds.South < core.North && region.Bounds.North > core.South && region.Bounds.West < core.East && region.Bounds.East > core.West));
+
+    private async Task AddAsync()
+    {
+        if (AddBlocked is not null || _centre is not { } centre || MapAreaWords.Radius(_radius) is not { } radius)
+            return;
+        _busy = true;
+        _problem = null;
+        try
+        {
+            Area added = await Maps.AddAsync(_name.Trim(), centre.Lat, centre.Lon, radius);
+            Reset();
+            _areaId = added.Id;
+            await ReloadAsync();
+            Refresh();
+            if (_cells.Count > 0)
+                Map.FlyTo(MapAreaDrawing.Frame(_cells));
+        }
+        catch (RpcException exception)
+        {
+            _problem = exception.Status.Detail;
+        }
+        finally
+        {
+            _busy = false;
+            Map.Redraw();
+        }
+    }
+
+    private IReadOnlyList<MenuItem> ActionsFor(Area area) => MapAreaSheets.Actions(this, area, _sheets, _busy, () => RunAsync(() => Maps.RebuildAsync(area.Id)));
+
+    private async Task DeletedAsync()
+    {
+        Reset();
+        await ReloadAsync();
+        Map.Redraw();
+    }
+
+    private async Task RunAsync(Func<Task> work)
+    {
+        _busy = true;
+        _problem = null;
+        try
+        {
+            await work();
+            await ReloadAsync();
+        }
+        catch (RpcException exception)
+        {
+            _problem = exception.Status.Detail;
+        }
+        finally
+        {
+            _busy = false;
+            Refresh();
+            Map.Redraw();
+        }
+    }
+
+    private async Task ReloadAsync()
+    {
+        if (_live is not null)
+            await _live.ReloadAsync();
+    }
+
+    private static PillTone StateTone(Area area) => area.State switch
+    {
+        MapAreaStates.Failed => PillTone.Danger,
+        MapAreaStates.Building => PillTone.Accent,
+        MapAreaStates.Waiting => PillTone.Marker,
+        _ => PillTone.Quiet,
+    };
+
+    private static string StateWord(Area area) => area.State switch
+    {
+        MapAreaStates.Failed => "Failed",
+        MapAreaStates.Building => "Building",
+        MapAreaStates.Waiting => "Waiting",
+        _ => "Built",
+    };
+
+    public override void Dispose()
+    {
+        _previewing?.Cancel();
+        base.Dispose();
+    }
+}

@@ -576,7 +576,7 @@ working rail). The station built **C** (*Claude's default*): coverage is a job o
 off where every workbench keeps its record, numbers get their own tab rather than hiding the map, and the places
 outreach skips are a list and record like every other admin list. A and B stay on the page.
 
-The Outreach page's tabs are now Campaigns, Coverage, Numbers, Places, Follow-ups, Reports and Settings.
+The Outreach page's tabs were then Campaigns, Coverage, Numbers, Places, Follow-ups, Reports and Settings (since 2026-11-15, Coverage, Places, Areas and Reports are jobs on the Map tab: *The Map tab*).
 
 - **Coverage:** a campaign's streets done within its rest period, on the region's map, each side drawn in one deep-aqua
   ramp that fades to the map's ground as the rest period ends (the legend is the same ramp: this week, half the rest
@@ -611,6 +611,38 @@ The Outreach page's tabs are now Campaigns, Coverage, Numbers, Places, Follow-up
   `outreach.maps.manage` the regions; `StreetGraphLoader` (Outreach.Client) fetches and caches a region's streets for
   the admin panel, shared with the planner. The shared map gained a `Covered` line style with an age, and colours given
   as theme tokens.
+
+### The Map tab: one workspace (built 2026-11-15)
+
+The owner, after #107 ("places should probably be more of a map admin screen, instead of a tab off the side with a tiny
+map") and seeing the same small side-pane map on Places, Areas and Reports: "I'd rather - a single large map "admin
+panel", that a lot of these things could be condenced into. a map, with a good overlay with tools/etc, collapsable
+panes, etc. can also be used to expand and change "Map Areas" and view coverage. all in one place".
+
+- **Settled in the interview (owner, 2026-11-15):** a **Map** tab in Outreach (the tabs are now Campaigns, Map, Days,
+  Numbers, Follow-ups, Settings); planning a day's routes is **a mode of the map**, not its own page; the map opens on
+  **whatever you had last** on that computer (first time: coverage); laptops (1280 to 1440) first.
+- **Chosen on the decision page** (`.impeccable/mocks/outreach-workspace/`): a dock of jobs down the map's left edge
+  (Coverage, Places, Saved areas, Reports, Map areas, Plan a day), each pulling out its own drawer, with what's chosen
+  on the map in a card at the top right. The other two (a search box that finds anything; layers on the left and the
+  record on the right) stay on the page.
+- **What went:** the Coverage, Places, Areas and Reports tabs; the Map areas group under Settings and its pages
+  (`/outreach/map-areas/…` now open the Map tab's Map areas); the planner's page (`/outreach/days/{id}/plan` forwards to
+  `/outreach/map?day={id}`). Every tool, layer and drawer is still behind the same permission as before. The phone is
+  unchanged.
+- **Typing an address (#105):** the map build keeps each built region's primary addresses (`outreach_maps.addresses`:
+  number, unit, street, suburb, a search key, the point), replaced when a region is rebuilt, removed when it's switched
+  off or its area deleted, and filled in by the build job for regions built before. `OutreachAdmin.FindAddresses`
+  (gRPC, `outreach.settings.change`, the same as saving a skipped address) matches "3/12 Smith St", "12 smith street
+  albany" and short or long street types, the house before its units; the admin panel turns a match into the
+  letterbox it belongs to. *Claude's default:* taken from a stopped station's unfinished branch after review, rather
+  than written again.
+- **Drawing (#106):** every polygon (a skip area, a saved area, an area round a report, a day's area) shows a navy bar
+  at the top of the map with the instruction, *Undo last point*, *Cancel* and *Finish*, never in the attribution's grey.
+- **App health errors fixed (dev, 2026-11-15):** `ObjectDisposedException` and `JSException` in `MapSketch.AttachAsync`
+  while the owner used Places: the drawing tools attached to a map that had just been replaced, or after the page that
+  owned them had gone. Each attach now checks it's still the latest for the map that's there and drops tools made too
+  late, and the map's handle says when it's gone.
 
 ### Open (for stage 2 and the owner)
 

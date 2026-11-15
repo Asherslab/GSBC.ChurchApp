@@ -87,4 +87,11 @@ public static class AppIcons
     public const string Undo = "undo";
     public const string Redo = "redo";
     public const string Regenerate = "shuffle";
+    public const string Coverage = "layers";
+    public const string PlacesSkipped = "ban";
+    public const string SavedAreas = "bookmark";
+    public const string WalkersReports = "flag";
+    public const string MapAreas = "grid";
+    public const string PlanADay = "route";
+    public const string HideDrawer = "panel-left-close";
 }

@@ -16,6 +16,6 @@ public static class OutreachAdminExtensions
             [OutreachFeeds.Desk], []));
         return services.AddOutreachClient().AddSingleton<OutreachDeskClient>().AddSingleton<OutreachMapsClient>()
             .AddSingleton(_ => new StreetGraphLoader(new HttpClient()))
-            .AddSingleton<Letterboxes>();
+            .AddSingleton<Letterboxes>().AddScoped<Map.OutreachMapMemory>();
     }
 }
