@@ -341,7 +341,7 @@ flowchart LR
     OutreachApp --> OutreachClient
     OutreachAdmin --> OutreachClient
     OutreachClient --> OutreachContracts & OutreachMapsContracts & OutreachRouting & PlatformClient & PlatformUi & PlatformCommon
-    OutreachApi --> OutreachContracts & PlatformApi & PlatformCommon
+    OutreachApi --> OutreachContracts & OutreachMapsContracts & PlatformApi & PlatformCommon
     OutreachContracts --> PlatformContracts
     FeedbackApp --> FeedbackClient
     FeedbackAdmin --> FeedbackClient
@@ -519,7 +519,7 @@ flowchart LR
 | `GSBC.ChurchApp.Features.Sermons.App` | The phone's Sermons tab: the latest and what you're part-way through, series, speakers, search, a sermon with its audio and video | Yes |
 | `GSBC.ChurchApp.Features.Sermons.Import.Contracts` | **Temporary, removed after go-live** ([sermons-import.md](../features/sermons-import.md)): the `Import` service, its progress messages, its feed and the `sermons.import` permission | Yes |
 | `GSBC.ChurchApp.Features.Sermons.Import.Api` | **Temporary:** reads every sermon off the old website (its listing pages, each sermon's page and its series pages), copies the audio and pictures into our storage and adds the sermons through Sermons.Api, skipping what it brought across before (schema `sermons_import`) | No |
-| `GSBC.ChurchApp.Features.Outreach.Maps.Contracts` | Outreach regions: the `outreach.regions` feed's record (a region's bounds, version and its streets and map files), the admin `Maps` service for the areas maps cover, and the `outreach.maps.manage` permission | Yes |
+| `GSBC.ChurchApp.Features.Outreach.Maps.Contracts` | Outreach regions: the `outreach.regions` feed's record (a region's bounds, version and its streets and map files), the admin `Maps` service for the areas maps cover (finding a place, an area's grid of regions, switching regions on and off), `IRegionUses` (Outreach answers what uses a region before it goes), and the `outreach.maps.manage` permission | Yes |
 | `GSBC.ChurchApp.Features.Outreach.Maps.Api` | Builds each area's regions (schema `outreach_maps`): fetches OpenStreetMap streets and paths, Queensland addresses and council land use, places letterboxes on their street's side, writes each region's `.streets` file through the route engine and cuts its map (PMTiles) from the Protomaps planet, stores both in the public media bucket and publishes `outreach.regions` ([outreach.md](../features/outreach.md), *Regions and maps*) | No |
 | `GSBC.ChurchApp.Features.Outreach.Routing` | The outreach route engine, shared by the phone, the admin panel and the API: the street graph of a region and its compact file (`.streets`), Walk now loops, reach and "start somewhere better", coverage per campaign, the area splitter and its edits, route summaries, and following a walk from GPS ([outreach.md](../features/outreach.md), *The route engine*) | Yes |
 | `GSBC.ChurchApp.Features.Sermons.Import.Admin` | **Temporary:** the admin panel's *Import from the website* page: start, live progress, failures to try again | Yes |

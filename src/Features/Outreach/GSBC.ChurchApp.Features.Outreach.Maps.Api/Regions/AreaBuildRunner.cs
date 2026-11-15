@@ -1,4 +1,5 @@
 using GSBC.ChurchApp.Features.Outreach.Maps.Api.Data;
+using GSBC.ChurchApp.Features.Outreach.Maps.Api.Places;
 using GSBC.ChurchApp.Features.Outreach.Maps.Contracts;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -11,7 +12,9 @@ internal sealed class AreaBuildRunner(IServiceScopeFactory scopes, TimeProvider 
 {
     private static readonly TimeSpan Every = TimeSpan.FromMinutes(5);
     private const long AdvisoryLockKey = 0x6773_6263_6f6d_6170;
+    private static readonly TimeSpan PlacesRetry = TimeSpan.FromHours(6);
     private readonly SemaphoreSlim _wake = new(0, 1);
+    private DateTimeOffset _placesTriedAt = DateTimeOffset.MinValue;
 
     public void Wake()
     {
@@ -29,12 +32,39 @@ internal sealed class AreaBuildRunner(IServiceScopeFactory scopes, TimeProvider 
                 while (await RunNextAsync(stoppingToken))
                 {
                 }
+                await IndexPlacesAsync(stoppingToken);
             }
             catch (Exception exception) when (exception is not OperationCanceledException)
             {
                 logger.LogError(exception, "Building outreach maps failed; trying again shortly");
             }
             await _wake.WaitAsync(Every, stoppingToken);
+        }
+    }
+
+    private async Task IndexPlacesAsync(CancellationToken cancellationToken)
+    {
+        await using AsyncServiceScope scope = scopes.CreateAsyncScope();
+        OutreachMapsDbContext db = scope.ServiceProvider.GetRequiredService<OutreachMapsDbContext>();
+        PlaceIndex places = scope.ServiceProvider.GetRequiredService<PlaceIndex>();
+        if (time.GetUtcNow() - _placesTriedAt < PlacesRetry || !await places.DueAsync(cancellationToken))
+            return;
+        await db.Database.OpenConnectionAsync(cancellationToken);
+        if (!await db.Database.SqlQuery<bool>($"SELECT pg_try_advisory_lock({AdvisoryLockKey}) AS \"Value\"").SingleAsync(cancellationToken))
+            return;
+        try
+        {
+            _placesTriedAt = time.GetUtcNow();
+            await places.RefreshAsync(cancellationToken);
+            logger.LogInformation("Indexed the places outreach map areas are found by");
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            logger.LogWarning(exception, "Indexing places for outreach map areas failed; trying again in {Hours} hours", PlacesRetry.TotalHours);
+        }
+        finally
+        {
+            await db.Database.ExecuteSqlAsync($"SELECT pg_advisory_unlock({AdvisoryLockKey})", CancellationToken.None);
         }
     }
 

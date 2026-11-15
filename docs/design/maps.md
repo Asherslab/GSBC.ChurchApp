@@ -85,7 +85,8 @@ the admin panel. It follows light and dark by itself.
 - **Lines** (`MapLine`, by `MapLineStyle`): `Walk` (deep aqua, white edge, arrows along it from zoom 15), `WalkDone` (a walk's
   part already covered, ink-3), `Walked` (streets walked recently, ink-3 at 45%), `Connector` (dashed), `LongWalk` (dotted, with
   its label, such as "290 m, no letterboxes"), `Route` (a planned route in its own `Colour`, with a label).
-- **Areas** (`MapArea`): a polygon in its colour at 12% with an edge.
+- **Areas** (`MapArea`): a polygon in its colour at 12% with an edge. `Outline` drops the fill and keeps the edge (a map
+  area's squares with no homes or still to add, and the hovered square in ink).
 - **Markers** (`MapMarker`): `Start`, `Pin`, `Meeting` (with a label), and from zoom 15 `NoJunkMail`, `DontLetterbox`, `Skip`,
   `Check` (small dots; the first two labelled from zoom 17).
 - **You** (`MapYou`): the orange dot with its accuracy ring.
@@ -118,7 +119,9 @@ planner draws, on its own layers over the overlays:
   ever overlap: highest `Order` first, each takes the first of its `Places` (spots on its own route, nearest the
   middle first), then a spot nudged a little way off, that touches no other label, stays on the map and stays clear of
   anything marked `data-map-cover` (the planner's rail and chosen-route bar). Labels are placed again as the map zooms.
-  Every colour a label uses holds 4.5:1 against white.
+  `Quiet` labels aren't moved: they stay on their point on a layer of their own beneath, and one that would overlap
+  another is hidden rather than drawn over it (a map area's square names, place names), so a screen can name many
+  things where they fit (2026-11-15). Every colour a label uses holds 4.5:1 against white.
 - **`Preview`**: lines drawn over everything while a gesture is under way (a cut's pieces, a brush's stretch).
 
 ## Coverage and dashed areas (reports station, 2026-11-15)

@@ -9,6 +9,8 @@ internal sealed record OsmWay(long Id, long[] Nodes, IReadOnlyDictionary<string,
     public string Name => Tags.GetValueOrDefault("name", "");
 }
 
+internal sealed record OsmPlace(long Id, string Name, string Kind, GeoPoint Point, int Population);
+
 internal sealed class OsmData
 {
     public Dictionary<long, GeoPoint> Nodes { get; } = [];

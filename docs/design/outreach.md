@@ -133,9 +133,34 @@ The report's record shows `PlaceMap` with the place, the note, and the photo (`P
 Back.
 
 ## Map areas (Settings)
-A `Section Grouped` card after the settings groups, only for those who manage maps: a `ListGroup` of areas (state as the
-subtitle, the regions' counts, size and version under it, ⋯ with Rebuild, Rename, Delete), *Add a map area* (quiet,
-opening a `Sheet` with Name, Centre and How far around it), and a foot saying these change straight away.
+Built on the decision page's *A map desk per area* (`.impeccable/mocks/outreach-areas/`, C; A and B kept), 2026-11-15:
+an area is a set of squares (regions of about 10 km), so it is worked on the map, never typed in as a latitude.
+
+- **The group** (`MapAreasGroup`): a `Section Grouped` card after the settings groups, only for those who manage maps.
+  Each area is a `ListRow` opening its page: the state as the subtitle, a `ProgressTrack` while it builds and its
+  regions' counts, size and version under it; ⋯ with Rebuild, Rename and Delete (`MapAreaSheets`, shared with the area
+  page; Delete asks once). Then *Add a map area* (a quiet button) and a foot saying how to open an area and that phones
+  get new maps by themselves.
+- **An area** (`/outreach/map-areas/{id}`, `MapAreaPage`): the title band names the area with its regions as the lead and
+  the same ⋯. A `MapDesk` draws the area's squares over the region's map; a click on a square switches it off or on,
+  and a + square on the edge adds one. The hint sits top centre; hovering a square shows its facts top right, outlines
+  it in ink and fills its pane row (and the other way round). The pane: the state `Pill` with its detail, a
+  `ProgressTrack` while building (Try again if it failed); a key drawn with the squares' own looks (Built, Waiting to
+  build, Off, No homes, Can be added); a warning `Notice` *Still in use* naming each campaign or outreach day that uses a
+  region being switched off; then the regions grouped *Changes*, *On (n)* and *Off (n)*, each a `ToggleRow` with its
+  facts. The foot says what the change frees and builds over the `SaveBar` (*Switch off 2 regions*, *Add 1 region*);
+  with no change it says what switching off deletes and what stays. Switching off asks once in a `Sheet` saying what
+  phones drop, its size, what uses it, and that coverage and history stay. `UnsavedGuard` holds the change.
+- **Square looks** (`MapAreaDrawing`): built in live, solid; waiting to build in live, dashed; off in ink 3, dashed with
+  the 12% wash; no homes an ink 3 outline; can be added an ink 3 dashed outline with a "+"; adding in orange ink with a
+  filled label; switching off in danger, dashed. Changed squares draw on top. A square's name is a quiet label in its
+  top-left corner (it gives way rather than overlap); changed squares and the + keep a ringed or filled label in the middle.
+- **Add a map area** (`/outreach/map-areas/new`, `NewMapAreaPage`): the title band's lead says how. A `MapDesk` with a
+  `SearchField` (*Find a town or suburb*) and the matches as `ListRow`s (kind, distance and direction from the church; the
+  chosen one `Current`), or a click on the map to set the middle (a pin). Then *How far around it* (1 to 30 km) and
+  *Name*, a status line with the regions that have homes, letterboxes and the download, and the squares drawn with
+  each one's estimated size in its corner (no homes dashed in ink 3). Where there's no street map yet, the places'
+  names show as quiet labels inside the squares, and a hint says so. The foot is the `SaveBar` `New` *Add and build it*.
 
 ## On the phone
 

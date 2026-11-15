@@ -11,18 +11,27 @@ internal static class MapAreas
 {
     public const double LargestRadiusKm = 30;
     public const double SmallestRadiusKm = 1;
+    public static readonly IReadOnlyList<string> Reserved = ["new"];
 
-    public static MapAreaRecord New(string id, string name, GeoBounds bounds, DateTime now) => new()
+    public static (MapAreaRecord Area, List<MapCellRecord> Cells) New(string id, string name, GeoPoint centre, double radiusMetres, DateTime now)
     {
-        Id = id,
-        Name = name,
-        South = bounds.South,
-        West = bounds.West,
-        North = bounds.North,
-        East = bounds.East,
-        State = MapAreaStates.Waiting,
-        CreatedAt = now,
-    };
+        (MapGrid grid, List<CellRef> cells) = RegionGrid.Plan(centre, radiusMetres);
+        MapAreaRecord area = new() { Id = id, Name = name, State = MapAreaStates.Waiting, CreatedAt = now };
+        RegionGrid.SetGrid(area, grid);
+        List<MapCellRecord> records = cells.Select(cell => new MapCellRecord
+        {
+            Id = RegionGrid.RegionId(id, cell.Row, cell.Column), AreaId = id, Row = cell.Row, Column = cell.Column, On = true, Pending = true,
+        }).ToList();
+        Fit(area, records);
+        return (area, records);
+    }
+
+    public static void Fit(MapAreaRecord area, IEnumerable<MapCellRecord> cells)
+    {
+        MapGrid grid = RegionGrid.GridOf(area);
+        GeoBounds bounds = RegionGrid.Union(cells.Where(cell => cell.On).Select(cell => RegionGrid.Core(grid, cell.Row, cell.Column)));
+        (area.South, area.West, area.North, area.East) = (bounds.South, bounds.West, bounds.North, bounds.East);
+    }
 
     public static string Slug(string name, IReadOnlySet<string> taken)
     {
@@ -41,8 +50,16 @@ internal static class MapAreas
         return id;
     }
 
-    public static MapArea ToMessage(MapAreaRecord area, IEnumerable<RegionRecord> regions, IBlobStore blobs) => new()
+    public static MapArea ToMessage(MapAreaRecord area, IEnumerable<MapCellRecord> cells, IEnumerable<RegionRecord> regions, IBlobStore blobs) => new()
     {
+        Grid = RegionGrid.GridOf(area),
+        Cells = cells.OrderBy(cell => cell.Row).ThenBy(cell => cell.Column).Select(cell => new MapCell
+        {
+            Row = cell.Row, Column = cell.Column, RegionId = cell.Id, On = cell.On, Pending = cell.Pending, Empty = cell.Empty, Name = cell.Name,
+        }).ToList(),
+        CellLimit = RegionGrid.MostCells,
+        StepsDone = area.StepsDone,
+        Steps = area.Steps,
         Id = area.Id,
         Name = area.Name,
         Bounds = new MapBounds { South = area.South, West = area.West, North = area.North, East = area.East },

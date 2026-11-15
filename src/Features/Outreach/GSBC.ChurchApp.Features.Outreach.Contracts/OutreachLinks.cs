@@ -13,6 +13,11 @@ public static class OutreachLinks
 
     public static string DayDesk(string dayId) => $"/outreach/days?day={dayId}";
 
+    public const string Settings = "/outreach/settings";
+    public const string NewMapArea = "/outreach/map-areas/new";
+
+    public static string MapArea(string areaId) => $"/outreach/map-areas/{areaId}";
+
     public const string Home = "outreach";
     public const string PlanWalk = "outreach/walk";
     public const string Walking = "outreach/walking";

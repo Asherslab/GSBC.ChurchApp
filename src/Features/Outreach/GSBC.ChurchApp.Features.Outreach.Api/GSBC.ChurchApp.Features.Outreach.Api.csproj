@@ -10,6 +10,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\GSBC.ChurchApp.Features.Outreach.Contracts\GSBC.ChurchApp.Features.Outreach.Contracts.csproj" />
+    <ProjectReference Include="..\GSBC.ChurchApp.Features.Outreach.Maps.Contracts\GSBC.ChurchApp.Features.Outreach.Maps.Contracts.csproj" />
     <ProjectReference Include="..\..\..\Platform\GSBC.ChurchApp.Platform.Api\GSBC.ChurchApp.Platform.Api.csproj" />
     <ProjectReference Include="..\..\..\Platform\GSBC.ChurchApp.Platform.Common\GSBC.ChurchApp.Platform.Common.csproj" />
   </ItemGroup>

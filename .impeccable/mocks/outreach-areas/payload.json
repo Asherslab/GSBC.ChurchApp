@@ -1,0 +1,43 @@
+{
+  "title": "Map areas: adding an area by name, and switching its regions on and off",
+  "question": "Staff with Map areas find a town or suburb by name, see the area's squares (regions) before it builds with the expected size, then switch regions off (the inner city, the south side) or add squares on the edge. Owner away 2026-11-15: the station builds C, each area on a map desk of its own, because the regions are places and need the map's room, and it matches the outreach planner. Adding an area (shown in A) works the same way in every card: search a place, choose how far, see the squares and the estimate, Add and build it. A and B stay here; pick another and it changes.",
+  "options": [
+    {
+      "id": "area-sheet",
+      "kind": "assigned",
+      "kicker": "THE ROLL",
+      "label": "Areas stay in Settings; each opens in a wide sheet",
+      "thesis": "Map areas stays one settings group. Add a map area and an area's Regions… open a wide sheet over Settings: a place search and reach on the left, the squares drawn over the places around it on the right, with each square's homes and the download estimate.",
+      "palette": ["#2a3d5e", "#f4efe7", "#008176", "#e7ae74"],
+      "materials": ["Section Grouped", "wide Sheet", "place search", "square grid over places", "SaveBar"],
+      "viewport": "Add a map area: Gympie found (Town, 132 km north of church), 15 km each way, nine squares over Gympie's suburbs, five with homes, about 9 MB.",
+      "risk": "A sheet is cramped for 25 to 40 regions; switching regions means scrolling a list under a small map.",
+      "html": ".impeccable/mocks/outreach-areas/a-area-sheet.html"
+    },
+    {
+      "id": "region-tiles",
+      "kind": "dealt",
+      "label": "Each area as a grid of tiles in the settings card",
+      "thesis": "The settings card draws each area as its grid of squares, named and sized, with + squares round the edge. Click a tile to switch it off or on, a + to add it; the change waits in the card's foot until you save. The chosen tile's map shows beside it.",
+      "palette": ["#2a3d5e", "#e2efec", "#00776d", "#e7ae74"],
+      "materials": ["Section Grouped", "tile grid", "dashed off and + tiles", "SaveBar", "side preview"],
+      "viewport": "Around the church as 5 × 5 named tiles, three dashed Off on the south side, two orange Adding below; Gympie building under it; Brisbane City's map at the right.",
+      "risk": "Tiles aren't a map: whether a square is the inner city or bush is read from its name, not seen; long names wrap.",
+      "html": ".impeccable/mocks/outreach-areas/b-region-tiles.html"
+    },
+    {
+      "id": "map-desk",
+      "kind": "dealt",
+      "label": "Each area on a map desk of its own (Built)",
+      "thesis": "Settings lists the areas; an area opens on its own page in the MapDesk: the squares over the map, a tool to switch regions or add on the edge, hover facts, and a pane of regions with switches, what uses a region going off, and the save in its foot. Adding an area is the same page with a place search in the pane.",
+      "palette": ["#2a3d5e", "#f4efe7", "#008176", "#e7ae74"],
+      "materials": ["MapDesk", "squares drawn on MapView", "floating tool rail", "region rows with switches", "SaveBar"],
+      "viewport": "Around the church: the 5 × 5 squares over the map, three dashed off on the south side, two orange being added; the pane says Carols 2026 uses Coorparoo & Carindale and lists the regions by On, Switching off, Adding.",
+      "risk": "One more page to reach; at 1024px the pane narrows the map.",
+      "html": ".impeccable/mocks/outreach-areas/c-map-desk.html"
+    }
+  ],
+  "reroll": true,
+  "steer": true,
+  "buildPath": { "value": "code" }
+}
