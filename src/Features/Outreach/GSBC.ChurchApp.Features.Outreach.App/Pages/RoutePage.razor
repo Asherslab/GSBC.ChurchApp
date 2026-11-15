@@ -122,7 +122,7 @@
         try
         {
             await Walk.StartAsync(new WalkStart(DayPage.RouteTitle(route), [day.Campaign], day.Mode, planned.Region, planned.Summary, day.Id, route.Id, _withPartner));
-            Nav.NavigateTo(OutreachLinks.Walking);
+            Nav.NavigateTo(OutreachLinks.Walking, replace: true);
         }
         catch (InvalidOperationException)
         {

@@ -8,7 +8,7 @@
 @inject NavigationManager Nav
 @inject TimeProvider Clock
 
-<Page Title="Walking" BackHref="@OutreachLinks.Home" BackLabel="Outreach">
+<Page Title="Walking" BackHref="@OutreachLinks.Home" BackLabel="Outreach" OnBack="() => Nav.NavigateTo(OutreachLinks.Home)" Focused="@(Walk.Current is not null)">
     <LiveData @ref="_live" TValue="WalkView" Load="Screen.LoadAsync" Feeds="WalkScreen.Feeds" ReloadOn="Reload">
         @{
             WalkView view = context.Value;

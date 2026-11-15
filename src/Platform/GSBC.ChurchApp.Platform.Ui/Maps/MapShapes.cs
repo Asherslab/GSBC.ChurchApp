@@ -21,6 +21,7 @@ public enum MapLineStyle
     LongWalk,
     Route,
     Covered,
+    Chosen,
 }
 
 public sealed record MapLine(IReadOnlyList<MapPoint> Points, MapLineStyle Style, string? Label = null, string? Colour = null, string? Id = null, double? Age = null);
@@ -42,7 +43,7 @@ public sealed record MapMarker(MapPoint Point, MapMarkerKind Kind, string? Label
 
 public sealed record MapYou(MapPoint Point, double AccuracyMetres);
 
-public sealed record MapFrame(double South, double West, double North, double East, int Padding = 40, int MaxZoom = 17)
+public sealed record MapFrame(double South, double West, double North, double East, int Padding = 40, int MaxZoom = 17, int StartPadding = 0)
 {
     public static MapFrame Around(IEnumerable<MapPoint> points, int padding = 40, int maxZoom = 17)
     {

@@ -246,7 +246,7 @@
         {
             string name = _mode == WalkMode.Doorknock ? "Doorknocking" : $"A {_length.Label} walk";
             await Walk.StartAsync(new WalkStart(name, walk.Ask.Campaigns, _mode, plan.Region.Region, walk.Summary, WithPartner: _withPartner));
-            Nav.NavigateTo(OutreachLinks.Walking);
+            Nav.NavigateTo(OutreachLinks.Walking, replace: true);
         }
         catch (InvalidOperationException)
         {

@@ -36,7 +36,7 @@ else
                 <Overlay>
                     @if (_view == PlanView.Plan && CanPlan)
                     {
-                        <div class="plan-rail" role="toolbar" aria-label="Map tools">
+                        <div class="plan-rail" role="toolbar" aria-label="Map tools" data-map-cover>
                             @foreach (ToolChoice choice in Tools)
                             {
                                 <Button Variant="ButtonVariant.Quiet" Icon="@choice.Icon" AriaLabel="@choice.Name" Tooltip="@choice.Tip" Pressed="@(_tool == choice.Tool)"
@@ -69,7 +69,7 @@ else
                     }
                     @if (_view == PlanView.Plan && CanPlan && Selected is { } chosen)
                     {
-                        <div class="plan-chosen" role="group" aria-label="@($"Route {chosen.Number}")">
+                        <div class="plan-chosen" role="group" aria-label="@($"Route {chosen.Number}")" data-map-cover>
                             @if (_renaming)
                             {
                                 <TextField Label="Route name" @bind-Value="_name" MaxLength="80" Class="plan-chosen__name" />

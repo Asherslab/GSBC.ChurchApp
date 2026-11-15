@@ -43,7 +43,7 @@ place, the campaign and the totals; back to Outreach days) with `SaveStatus` ("S
 *Print the maps*, over a `MapDesk`.
 - **The map:** the brand base map; each route in its colour with a ring label (a page-coloured capsule ringed in the
   route's colour): the number when zoomed out ("8 · review" when flagged), "4 · 137 · 74 min" from zoom 15 ("· needs
-  review" after it when flagged). Every route keeps its label. Choosing a route fills its label in its colour, on top, and keeps the others to
+  review" after it when flagged). Every route keeps its label and no two labels overlap (`MapSketch`, [maps.md](maps.md)). Choosing a route fills its label in its colour, on top, and keeps the others to
   their number; their lines fade toward grey. Streets left out or done recently in ink-3; the
   area at 12%; the meeting point (the map's navy place marker, *Claude's adaptation*: orange means "you" on the phone)
   and the chosen route's start. The nine route colours
@@ -78,7 +78,9 @@ Note, and the `SaveBar`. A new area starts with the drawing tool on.
 ## Printed route maps
 One A4 page a route, black on white: the route number at 26pt and its name, the day's line, the facts in bold, the QR
 code top right with "Scan to open it in the app" and the code; the map in a ruled frame (route 3.4pt black, connectors
-dashed, streets 1pt grey, main roads 2.4pt grey, arrows, Start and Meet here, street names with a white halo, scale,
+dashed, streets 1pt grey, main roads 2.4pt grey, arrows, Start and Meet here, street names with a white halo (the
+route's own in bold beside the line, or level beside a short street; every other named street in view along its
+straightest stretch, never over the route or another name), scale,
 north, a key under it); the streets in order in two columns; a hairline over the notes; the attribution at the foot.
 
 ## How the day is going (phone)
@@ -98,9 +100,9 @@ choose.
   ground (`--map-land`, the base map's land colour in each scheme) as the rest period ends (`MapLineStyle.Covered` with an
   age), and the legend is the same ramp with "This week",
   half the rest period and "open again". Each side is drawn 3.5 m off the centre line, so a half-done street shows which.
-- **Choosing:** a click picks a street, drawn in navy; *Draw round streets* (quiet, floating top left on the map) turns
+- **Choosing:** a click picks a street, outlined in ink with its coverage still showing inside (`MapLineStyle.Chosen`); *Draw round streets* (quiet, floating top left on the map) turns
   on the lasso (`MapSketch`) and becomes the primary *Stop drawing* with a hint beside it ("Drag a loop round the
-  streets. Escape stops."); the drawn area shows dashed in navy. The chosen streets' sides, letterboxes and when they
+  streets. Escape stops."); the drawn area shows dashed in ink. The chosen streets' sides, letterboxes and when they
   were done read under its title, then Clear (quiet, left) and *Mark as not done in* the campaign's name (right).
   Marking applies at once and a status line in its place offers *Undo*.
 - **Exclusion areas** draw in danger at 12% with a dashed edge (`MapArea Dashed`); Don't letterbox, No junk mail and hostile marks are the
@@ -148,7 +150,8 @@ masthead's navy at display size and the map supports it. Maps are `MapView` ([ma
   buttons, warnings as `Notice`s, and *Start the walk*. *Change the walk* holds the length, letterboxes or doorknocking,
   *I'm walking with someone*, where you start (tap the map, or find a street in a `Sheet` with a `SearchField`). Empty
   states say why there's no plan (no location, no maps yet, outside the area, getting the map, no street near).
-- **Walking** (`/outreach/walking`): the masthead is the walk: a status line (Walking or Paused and the time at the
+- **Walking** (`/outreach/walking`, a full-screen task: `Page Focused`, so the tab bar steps aside while a walk is on and
+  ‹ Outreach is the way back, the walk carrying on): the masthead is the walk: a status line (Walking or Paused and the time at the
   left, the campaigns at the right), the street at display size, *Houses on your left · 4 to go* at title size, and the
   next turn with its arrow over a hairline (*Then left into …* and its letterboxes). Then the map, centred on you at
   street level while it follows you, framing you, the street you're on and the next one (the whole route and you before the first fix); a drag stops that and puts a quiet small *Follow me* at the map's bottom right. Then
@@ -163,8 +166,9 @@ masthead's navy at display size and the map supports it. Maps are `MapView` ([ma
   `FilePick` box, *Send for review*); *At this door* (four block buttons, then the follow-up with its consent
   `ToggleRow` and fields, or the hostile explanation and *Don't come back here*). Both ask before losing what was typed.
 - **An outreach day** (`/outreach/days/{id}`): masthead with the campaign and when, a `FactList` (meet at, what it is,
-  what's handed out), the day's note, *How the day is going* for leaders, and the routes as rows with *Open* or *Yours*
-  `Pill`s and who's taking them. **A route** (`/outreach/r/{code}`, the QR's link): the map with the route and the meeting
+  what's handed out), the day's note, *How the day is going* for leaders, and the routes as `ListRow`s: the route's
+  number in a 34px disc of its colour, its name, distance · time · letterboxes in tabular figures, then who's on it
+  ("Sam and Jo are on it", or *Open: no one on it yet* in deep aqua) and a *Yours* `Pill` on your own. **A route** (`/outreach/r/{code}`, the QR's link): the map with the route and the meeting
   point, the route's title and figures, *Start this route*, *Who's taking it* (first name and *I'll take this route*),
   and its streets.
 - **My outreach** and **Offline maps**: masthead pages; totals at headline size over a caption, walks as rows; *Count me by
