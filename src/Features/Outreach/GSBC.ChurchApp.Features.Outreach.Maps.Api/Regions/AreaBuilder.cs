@@ -16,7 +16,7 @@ using Microsoft.Extensions.Options;
 
 namespace GSBC.ChurchApp.Features.Outreach.Maps.Api.Regions;
 
-internal sealed class AreaBuilder(OutreachMapsDbContext db, IMapSources sources, IBlobStore blobs, TimeProvider time, IOptions<MapSourcesOptions> options)
+internal sealed class AreaBuilder(OutreachMapsDbContext db, IMapSources sources, AddressIndex addressIndex, IBlobStore blobs, TimeProvider time, IOptions<MapSourcesOptions> options)
 {
     private const double StreetMarginMetres = 500;
     private const int FetchSteps = 4;
@@ -54,10 +54,10 @@ internal sealed class AreaBuilder(OutreachMapsDbContext db, IMapSources sources,
         List<RegionCell> cells = pending.Select(cell => RegionGrid.CellOf(area.Id, grid, cell.Row, cell.Column)).ToList();
         GeoBounds reach = RegionGrid.Union(cells.Select(cell => cell.Bounds));
 
-        AreaStreets streets = await PlaceLetterboxesAsync(area, reach, reach.Centre, cancellationToken);
+        HashSet<string> building = records.Keys.ToHashSet();
+        AreaStreets streets = await PlaceLetterboxesAsync(area, cells, building, reach, cancellationToken);
         IRangeReader tiles = await sources.TilesAsync(cancellationToken);
 
-        HashSet<string> building = records.Keys.ToHashSet();
         HashSet<string> taken = (await db.Regions.Where(region => region.AreaId == area.Id && !building.Contains(region.Id))
             .Select(region => region.Name).ToListAsync(cancellationToken)).ToHashSet();
         List<(RegionCell Cell, string Name)> kept = Named(cells.Where(cell => streets.HomesIn(cell.Core) > 0).Select(cell => (cell, streets.NameFor(cell.Core))).ToList(), area.Name, taken);
@@ -94,7 +94,7 @@ internal sealed class AreaBuilder(OutreachMapsDbContext db, IMapSources sources,
         });
     }
 
-    private async Task<AreaStreets> PlaceLetterboxesAsync(MapAreaRecord area, GeoBounds reach, GeoPoint origin, CancellationToken cancellationToken)
+    private async Task<AreaStreets> PlaceLetterboxesAsync(MapAreaRecord area, List<RegionCell> cells, IReadOnlyCollection<string> building, GeoBounds reach, CancellationToken cancellationToken)
     {
         await StageAsync(area, "Fetching streets from OpenStreetMap", cancellationToken);
         OsmData osm = await sources.StreetsAsync(reach.Grown(StreetMarginMetres), cancellationToken);
@@ -103,7 +103,10 @@ internal sealed class AreaBuilder(OutreachMapsDbContext db, IMapSources sources,
         await StageAsync(area, "Fetching land use and zoning", cancellationToken);
         LandUseMap landUse = await sources.LandUseAsync(reach, cancellationToken);
         await StageAsync(area, "Placing letterboxes on streets", cancellationToken);
-        return AreaStreets.Build(osm, addresses, landUse, origin);
+        AreaStreets streets = AreaStreets.Build(osm, addresses, landUse, reach.Centre);
+        List<(string RegionId, GeoBounds Core)> withHomes = [.. cells.Where(cell => streets.HomesIn(cell.Core) > 0).Select(cell => (cell.Id, cell.Core))];
+        await addressIndex.ReplaceAsync(building, AddressIndex.Rows(addresses, withHomes), cancellationToken);
+        return streets;
     }
 
     private static List<(RegionCell Cell, string Name)> Named(List<(RegionCell Cell, string Name)> cells, string areaName, IReadOnlySet<string> taken)
@@ -188,6 +191,7 @@ internal sealed class AreaBuilder(OutreachMapsDbContext db, IMapSources sources,
 
     public async Task RemoveAsync(IReadOnlySet<string> regionIds, CancellationToken cancellationToken)
     {
+        await addressIndex.RemoveAsync(regionIds, cancellationToken);
         List<RegionRecord> gone = await db.Regions.Where(region => regionIds.Contains(region.Id)).ToListAsync(cancellationToken);
         foreach (RegionRecord region in gone)
         {

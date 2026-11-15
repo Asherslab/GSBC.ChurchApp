@@ -109,6 +109,7 @@ function layers(map) {
 const pointOf = (e) => [e.lngLat.lng, e.lngLat.lat];
 
 export function attach(handle, receiver) {
+  if (handle.gone) return null;
   const map = handle.map;
   const canvas = map.getCanvasContainer();
   let tool = "none";
@@ -189,6 +190,20 @@ export function attach(handle, receiver) {
     if (nearFirst(e)) return finish("polygon", points);
     points.push(pointOf(e));
     drawPolygon();
+    placed();
+  };
+
+  const placed = () => receiver.invokeMethodAsync("OnDrawing", "polygon", JSON.stringify(points));
+
+  const undoPoint = () => {
+    if (tool !== "polygon" || points.length === 0) return;
+    points.pop();
+    drawPolygon();
+    placed();
+  };
+
+  const finishPolygon = () => {
+    if (tool === "polygon" && points.length >= 3) finish("polygon", points);
   };
 
   const onDoubleClick = (e) => {
@@ -243,10 +258,9 @@ export function attach(handle, receiver) {
       receiver.invokeMethodAsync("OnCancelled");
     } else if (e.key === "Backspace" && tool === "polygon" && points.length > 0) {
       e.preventDefault();
-      points.pop();
-      drawPolygon();
-    } else if (e.key === "Enter" && tool === "polygon" && points.length >= 3) {
-      finish("polygon", points);
+      undoPoint();
+    } else if (e.key === "Enter") {
+      finishPolygon();
     }
   };
 
@@ -271,6 +285,8 @@ export function attach(handle, receiver) {
       canvas.dataset.tool = next;
     },
     setBrushColour: (colour) => { handle.brushColour = colour; },
+    undoPoint,
+    finish: finishPolygon,
     setLabels: (json) => {
       shownLabels = JSON.parse(json);
       if (!map.getSource("tools-labels")) return;
@@ -288,6 +304,7 @@ export function attach(handle, receiver) {
         ["touchmove", onMove], ["mouseup", onUp], ["touchend", onUp], ["mouseout", onLeave], ["styledata", ensure], ["style.load", ensure],
         ["zoom", relabelSoon], ["zoomend", relabel]]) map.off(name, fn);
       cancelAnimationFrame(relabelling);
+      if (handle.gone) return;
       map.dragPan.enable();
       map.doubleClickZoom.enable();
     },

@@ -3,7 +3,7 @@
 Detail behind [DESIGN.md](../../DESIGN.md) for the admin panel's Outreach page and the walker's side on the phone. Read DESIGN.md first; its rules win.
 
 ## Outreach page (admin)
-`/outreach` and `/outreach/{tab}`, for the leaders of the ministry that runs outreach. Every tab opens on the title band "Outreach" with a lead, then a `TabStrip`: Campaigns, Days, Areas, Coverage, Numbers, Places, Follow-ups (counted), Reports (counted), Settings (`OutreachHead`). The page draws the head once, outside the tab it swaps in, so it stays put while a tab loads; each tab puts its own buttons (*New campaign* …) in the band through `SectionContent` (`OutreachHead.ActionsSection`), and its body remembers what it last showed (`Remember`), so a tab opened again draws at once and refreshes in place. With no ministry running outreach, the page is the title band over an `EmptyState` that says where to turn it on.
+`/outreach` and `/outreach/{tab}`, for the leaders of the ministry that runs outreach. Every tab opens on the title band "Outreach" with a lead (none on Map, so the map gets the room), then a `TabStrip`: Campaigns, Map (counting new reports), Days, Numbers, Follow-ups (counted), Settings (`OutreachHead`). The old tab addresses (`/outreach/coverage`, `/places`, `/areas`, `/reports`) open the Map with that job. The page draws the head once, outside the tab it swaps in, so it stays put while a tab loads; each tab puts its own buttons (*New campaign* …) in the band through `SectionContent` (`OutreachHead.ActionsSection`), and its body remembers what it last showed (`Remember`), so a tab opened again draws at once and refreshes in place. With no ministry running outreach, the page is the title band over an `EmptyState` that says where to turn it on.
 
 ## Campaigns
 A `Board` like Life Groups' (owner, 2026-11-15, #108; decision page `.impeccable/mocks/outreach-campaign-stages/`, the owner
@@ -33,17 +33,51 @@ for those who may plan.
 - **At 1024px** the four columns fit; with a record open the board scrolls sideways, as boards do.
 - **Deleting** asks in a `Sheet` that says what goes with it, or why it can't go yet; *Keep it* is the quiet way out.
 
-## Follow-ups and Reports
+## Follow-ups
 The same `Workbench` shape. Each table has the item over a caption (the place), when it came in, and a `Pill` for its state (the usual pill while it needs doing, quiet once done). Its `Empty` slot says what arrives here and when.
 - **Record pane:** a `PaneHead` (Delete in its ⋯), a `FactList` (Contact, Where, Campaign; or Where and Now), the walker's note at body size, a hint, and the actions.
 - **A follow-up** has one action: *Mark as followed up*, or a quiet *Mark as not followed up* once done.
-- **A new report** has a block *Never deliver there* over two quiet buttons of equal width, *It's been fixed* and *Dismiss it*, with a hint above saying what each changes.
 
 ## Settings
 The settings in the work area, each group a `Section Grouped` card with short fields two to a line (`ui-pair--wide`), each number's unit inside its field (`Unit`) and a hint under it saying what it's for. Six groups: Rest period and what's kept, How long a walk takes, Doorknocking (in pairs), Walking between streets, Telling walkers about the length, and What counts as a walk, whose lead says why: a walk left running in a car or on a bus marks nothing done (#104). There are no walking hours: people may walk at any time (owner, 2026-11-15, #103).
 - **Each group saves by itself:** its own `SaveBar` in its own sand foot, saving or cancelling only that group's fields, with its own warning. A group still being changed keeps what was typed when the page reloads.
 - **Read only:** fields are disabled and each foot says "Only outreach leaders can change these."
 - **Leaving with changes** asks first (`UnsavedGuard`), on Settings and on a campaign.
+
+## The Map tab: one workspace for everything on the map
+`/outreach/map` (`OutreachMap`, on the shared `MapWorkspace`), chosen on the decision page
+`.impeccable/mocks/outreach-workspace/` (*A dock of jobs down the map's left edge*; owner, 2026-11-15, after #107: "a
+single large map admin panel … a map, with a good overlay with tools/etc, collapsable panes … all in one place"). It
+replaced the Coverage, Places, Areas and Reports tabs, the Map areas pages under Settings and the planner's own page.
+
+- **The dock** (80px, white, ruled off): Coverage, Places, Saved areas, Reports (counting new ones), Map areas, then a
+  rule and Plan a day. Each shows only to those who may use it (Places: settings or review; Saved areas and Plan a day:
+  plan; Reports: review; Map areas: `outreach.maps.manage`). The open job is in Selected Fill with an orange bar at its
+  edge; pressing it again folds its drawer away, and the drawer's own chevron does too.
+- **The drawer** (320px, 280px at 1200px and under; planning a day 440px, 380px at 1360px and under, 340px at 1200px
+  and under; white, ruled off): a `PaneHead` naming the job, its list or settings, and a white foot ruled off by a
+  hairline for its actions (*Draw round streets*, *Draw an area* and *Pick a letterbox*, *Draw a new
+  area*, *Add a map area*, a change's `SaveBar`).
+- **The map** fills the rest to the window's foot, every built region as one map (below). Floating on it: *Layers* top
+  left (a `Popover` of `ToggleRow`s, each layer but Coverage with its count: Coverage, Places outreach skips, No junk mail and
+  hostile, Saved areas, Walkers' reports; only the layers the person may see; hidden while drawing), the coverage legend
+  and figures bottom left whenever coverage is shown and its drawer isn't, and the attribution bottom right.
+- **The card** (`MapCard`, top right, 22rem): whatever was clicked on the map or in a drawer's list (a street or the
+  streets drawn round, a skipped place, a mark, a report, a saved area) with its `PaneHead` and ⋯, and its Save or
+  decision in the card's white foot, ruled off by a hairline. One thing is chosen at a time across every layer; a click goes to the open job
+  first, then reports, places, saved areas and coverage.
+- **Drawing** shows the navy `MapDrawBar` top centre: what to do ("Skip area: click each corner"), *Undo last point*,
+  *Cancel* and a white *Finish* (enabled at three corners). Instructions never sit in the attribution's grey (#106).
+  On a map narrower than 700px the bar spans the map and wraps. Escape, Backspace and Enter still work.
+- **Remembered on this computer** (`OutreachMapMemory`, local storage): the job, whether its drawer is out, the layers,
+  the view and the campaign (owner, 2026-11-15: "whatever I had last"; the first time, Coverage with coverage, places,
+  marks and reports on).
+- **At 760px and under** the dock runs across the top, the map comes next and the drawer under it; on a map narrower
+  than 640px (and always at 760px and under) the card sits along the map's foot, and while drawing the card is hidden.
+- **Planning a day keeps its own map** (*Claude's default*, 2026-11-15): the planner's route labels, brush and lasso
+  previews and hover facts belong to its map, so choosing a day swaps in the planner's map inside the same dock and
+  drawer; Layers and the coverage legend aren't shown there (streets done recently show grey on the planner's map).
+  Folding the planner into the one map is open.
 
 ## Days
 The same `Workbench` as Campaigns. *New outreach day* in the title band.
@@ -56,9 +90,11 @@ The same `Workbench` as Campaigns. *New outreach day* in the title band.
   for walkers, and the `SaveBar` in the pane's foot.
 
 ## The day's routes (the planner)
-A page of its own, `/outreach/days/{id}/plan`: the title band ("Outreach Saturday 6 December", the times, the meeting
-place, the campaign and the totals; back to Outreach days) with `SaveStatus` ("Saves as you go", "Draft saved") and
-*Print the maps*, over a `MapDesk`.
+A mode of the Map tab (owner, 2026-11-15), `/outreach/map?day={id}` (the old `/outreach/days/{id}/plan` forwards there):
+the dock stays, *Plan a day* is open, and the drawer (440px, 380px at 1360px and under, 340px at 1200px and under;
+it folds away like any job's) heads with the day ("Outreach Saturday 6 December" over the
+times, meeting place, campaign and totals) and *Leave this day's routes*. `SaveStatus` ("Saves as you go", "Draft saved")
+and *Print the maps* sit in the title band's actions. *Plan a day* without a day lists the days to come, with *New day, under Days* in its foot.
 - **The map:** the brand base map; each route in its colour with a ring label (a page-coloured capsule ringed in the
   route's colour): the number when zoomed out ("8 · review" when flagged), "4 · 137 · 74 min" from zoom 15 ("· needs
   review" after it when flagged). Every route keeps its label and no two labels overlap (`MapSketch`, [maps.md](maps.md)). Choosing a route fills its label in its colour, on top, and keeps the others to
@@ -68,7 +104,7 @@ place, the campaign and the totals; back to Outreach days) with `SaveStatus` ("S
   (`RouteColours`) each hold 4.5:1 with white text and 3:1 against the dark map and pane.
 - **The rail** (top left, a white panel on the Pop shadow): select, draw the area, scissors, brush, lasso, eraser, start
   pin, meeting point, a rule, undo, redo; the tool in use is navy. Tools that need a chosen route are disabled until
-  there is one. Each tool's one-line instruction shows as a navy capsule top centre.
+  there is one. Each tool's one-line instruction shows as a navy capsule top centre; drawing the area shows the `MapDrawBar` instead, beside the rail, with *Undo last point*, *Cancel* and *Finish*.
 - **Hover** (top right): the route's number, name, letterboxes, km, time, bundles, its claims on the day, and why it
   needs review in marker ink.
 - **The chosen route** (bottom centre, above the map's credits): its dot, number, letterboxes and time; Lock, Split in
@@ -77,7 +113,7 @@ place, the campaign and the totals; back to Outreach days) with `SaveStatus` ("S
 - **A route's time** is the same number everywhere (the planner's labels, table and hover, the printed sheet, the phone's day
   list and route page): walking the route and delivering to its letterboxes, by the settings' *How long a walk takes*.
   It leaves out the walk from the meeting place and back, as its distance does (2026-11-15).
-- **The pane:** `Segmented` Plan / On the day. Plan with no routes: a `PaneHead` "Plan the routes", *Draw the area on the
+- **The drawer:** `Segmented` Plan / On the day. Plan with no routes: a `PaneHead` "Plan the routes", *Draw the area on the
   map*, *Or start from a saved area*, and how big each route is (`RouteSize`: by letterboxes, minutes or bundles, in a
   sand box). With routes: one caption line (where they came from, the size, and *5 need a look* as a link that picks the
   next flagged route), *Include streets done recently* when there are any, the routes `DataTable` (dot, number and name
@@ -90,11 +126,12 @@ place, the campaign and the totals; back to Outreach days) with `SaveStatus` ("S
   naming the open routes, and the routes table with who has each and a state `Pill` (Open in marker, Walking in accent, Claimed and
   Done quiet) with a ringed `ProgressTrack` in live aqua once walking (and when done); open routes first. The draft's save status hides.
   What's walked is drawn on the map.
-- **At 760px and under** the map sits above the pane and hover facts don't show.
+- **At 760px and under** the map sits above the drawer and hover facts don't show.
 
-## Areas
-The same `Workbench`. The record pane has a map of the area (288px tall, 224px at 1360px and under, at the field radius with a hairline) with *Draw it on the map* / *Draw it again*, Name and
-Note, and the `SaveBar`. A new area starts with the drawing tool on.
+## Saved areas (Map tab)
+The drawer lists them as `ListRow`s (name over its note); *Draw a new area* in its foot starts drawing. Saved areas
+draw dashed in deep aqua under the Saved areas layer; a click inside one, or its row, opens its card: Name and Note,
+*Draw it again* and *Delete this area…* in the ⋯, the `SaveBar` in the card's foot. The chosen area draws solid.
 
 ## Printed route maps
 One A4 page a route, black on white: the route number at 26pt and its name, the day's line, the facts in bold, the QR
@@ -117,31 +154,25 @@ scroll around the whole map we have"). Where our maps end is plain (`MapReach`):
 squares is hatched in the map's ground with ink-3 stripes, the edge is a thin ink line, and squares still to build or switched off
 show in the Map areas page's dashed looks with "Waiting to build", "Building…", "Switched off" or "No homes" (to people
 who look after maps). Panning stops a few kilometres past the edge. When the view is mostly beyond it, a card in the
-middle says "No map here yet" and that outreach maps cover the map areas in Settings, with *Open Map areas* for those
-who may change them (`OutreachMapOutside`). The phone keeps one region at a time (offline downloads).
+middle says "No map here yet" and that outreach maps cover the map areas, with a link to Map areas for those who may
+change them (`OutreachMapOutside`). The phone keeps one region at a time (offline downloads).
 
 ## Coverage
-The map (`MapView` over every built region at once, `OutreachAtlas`) fills the work area to the left; the pane is ruled off on the right,
-where every workbench keeps its record (460px, 380px at 1360px and under). It is the shared `MapDesk`. It opens on the church
-(the middle of the seeded area), or on a campaign's own area or regions, and pans anywhere we have maps; each region's
-streets load as it comes into view. The pane, top to bottom: Campaign, the
-legend (with a dashed red key when areas are skipped), two quiet `StatTile`s (streets done of those on the map in
-view, share of the letterboxes in view; "Counting…" until every region in view has its streets, never a part count), and *Show on the map* as two `ToggleRow`s, each titled by what it draws with its count ("No junk mail
-and hostile (12)", "Places outreach skips (3)"). The pane's foot holds the chosen streets (title, sides, letterboxes,
-when done), Clear and *Mark as not done in* the campaign, the undo line, or with nothing chosen a hint saying how to
-choose.
+A job on the Map tab. Each region's streets load as it comes into view. The drawer, top to bottom: Campaign, the
+legend, two quiet `StatTile`s (streets done of those on the map in view, share of the letterboxes in view; "Counting…"
+until every region in view has its streets, never a part count); its foot has a hint and *Draw round streets*. With the
+drawer away, a floating legend bottom left names the campaign and the streets done in view over the ramp.
+What's drawn is under *Layers*.
 - **The ramp** is the signature: covered sides are drawn in deep aqua (bright aqua at night) fading to the map's own
   ground (`--map-land`, the base map's land colour in each scheme) as the rest period ends (`MapLineStyle.Covered` with an
   age), and the legend is the same ramp with "This week",
   half the rest period and "open again". Each side is drawn 3.5 m off the centre line, so a half-done street shows which.
-- **Choosing:** a click picks a street, outlined in ink with its coverage still showing inside (`MapLineStyle.Chosen`); *Draw round streets* (quiet, floating top left on the map) turns
-  on the lasso (`MapSketch`) and becomes the primary *Stop drawing* with a hint beside it ("Drag a loop round the
-  streets. Escape stops."); the drawn area shows dashed in ink. The chosen streets' sides, letterboxes and when they
-  were done read under its title, then Clear (quiet, left) and *Mark as not done in* the campaign's name (right).
-  Marking applies at once and a status line in its place offers *Undo*.
+- **Choosing:** a click picks a street, outlined in ink with its coverage still showing inside (`MapLineStyle.Chosen`); *Draw round streets* turns on the lasso with the `MapDrawBar`
+  ("Drag a loop round the streets", Cancel); the drawn area shows dashed in ink. The card: the streets' title, their
+  sides, letterboxes and when they were done, then Clear (quiet, left) and *Mark as not done* (right) in its foot.
+  Marking applies at once and the card then says they're open again with *Undo*.
 - **Exclusion areas** draw in danger at 12% with a dashed edge (`MapArea Dashed`); Don't letterbox, No junk mail and hostile marks are the
   map's own markers.
-- At 760px and under, MapDesk puts the pane under the map.
 
 ## Numbers
 Two rows of `FilterChips` (when; which campaign), four `StatTile`s (letterboxes, walked, walks, conversations) with the
@@ -151,47 +182,48 @@ conversations); the narrow one (280 to 360px) holds *Walkers* (a `RankedList` of
 line for everyone else).
 
 ## Places
-A `Workbench` with a rail (`FilterChips Rail`: Everything, Areas, Addresses, No junk mail, Hostile, with counts, and a
-caption saying where these come from). The table has the place over a caption (kind and why) and when it was marked.
-*Add a place* in the title band is a `Menu` (An area, An address). The record pane leads with `PlaceMap`, a 260px map:
-an area is drawn with the polygon tool (click round, click the first point to close) and shown in danger; an address
-is clicked (the nearest letterbox on that side) and shown with a pin. Delete or Clear sits in the ⋯ and asks once.
+A job on the Map tab. The drawer: *Type an address to skip* (`SearchField`; three letters or more search the
+addresses of the built regions, "3/12 Smith St" and "12 smith street albany" both work; matches as `ListRow`s, and a
+match opens a new address card with its letterbox pinned and the map on it; #105), `FilterChips` (Everything, Areas,
+Addresses, No junk mail, Hostile, with counts), then the places as `ListRow`s (title over kind and why). Its foot:
+*Draw an area* and *Pick a letterbox*. On the map, areas draw in danger at 12% with a dashed edge, addresses and marks
+as the map's markers; a click on one, or inside an area, opens its card: an area's Name, why and Note (*Draw it again*
+and *Delete this area…* in its ⋯), an address's why, Who asked, Note and *Show walkers a Don't letterbox marker*, or a
+mark's facts with *Clear* in its ⋯; the `SaveBar` in the card's foot. A new address takes a click on its letterbox too.
 
-## A report on the map
-The report's record shows `PlaceMap` with the place, the note, and the photo (`PictureOpen`, opening the
-`PictureViewer`). *Skip an area round it…* swaps the decision for drawing on the same map, with *Skip this area* and
-Back.
+## Reports (Map tab)
+New reports are orange markers with "!" (the Marker Rule: new) under the Walkers' reports layer; the chosen one is
+ringed. The drawer: `Segmented` *To look at* / *Dealt with*, the reports as `ListRow`s (reason over place and when,
+a *To review* `Pill`). The card: reason, place and when, *Delete this report…* in its ⋯, the photo (`PictureOpen`), the
+walker's note and a hint; in its foot *Never deliver there* (block), *Skip an area round it…* (draws with the
+`MapDrawBar`, then *Skip this area* and Back), and *It's been fixed* and *Dismiss it* side by side.
+Notifications open `/outreach/reports`, the Map with Reports out; `?report={id}` opens one.
 
-## Map areas (Settings)
-Built on the decision page's *A map desk per area* (`.impeccable/mocks/outreach-areas/`, C; A and B kept), 2026-11-15:
-an area is a set of squares (regions of about 10 km), so it is worked on the map, never typed in as a latitude.
+## Map areas (Map tab)
+Moved from Settings into the Map tab on 2026-11-15 (owner: "can also be used to expand and change "Map Areas""); built
+first on the decision page's *A map desk per area* (`.impeccable/mocks/outreach-areas/`, C). An area is a set of
+squares (regions of about 10 km), so it is worked on the map, never typed in as a latitude. Only for those who manage
+maps; its squares show on the map only while its drawer is out.
 
-- **The group** (`MapAreasGroup`): a `Section Grouped` card after the settings groups, only for those who manage maps.
-  Each area is a `ListRow` opening its page: the state as the subtitle, a `ProgressTrack` while it builds and its
-  regions' counts, size and version under it; ⋯ with Rebuild, Rename and Delete (`MapAreaSheets`, shared with the area
-  page; Delete asks once). Then *Add a map area* (a quiet button) and a foot saying how to open an area and that phones
-  get new maps by themselves.
-- **An area** (`/outreach/map-areas/{id}`, `MapAreaPage`): the title band names the area with its regions as the lead and
-  the same ⋯. A `MapDesk` draws the area's squares over the region's map; a click on a square switches it off or on,
-  and a + square on the edge adds one. The hint sits top centre; hovering a square shows its facts top right, outlines
-  it in ink and fills its pane row (and the other way round). The pane: the state `Pill` with its detail, a
-  `ProgressTrack` while building (Try again if it failed); a key drawn with the squares' own looks (Built, Waiting to
-  build, Off, No homes, Can be added); a warning `Notice` *Still in use* naming each campaign or outreach day that uses a
-  region being switched off; then the regions grouped *Changes*, *On (n)* and *Off (n)*, each a `ToggleRow` with its
-  facts. The foot says what the change frees and builds over the `SaveBar` (*Switch off 2 regions*, *Add 1 region*);
-  with no change it says what switching off deletes and what stays. Switching off asks once in a `Sheet` saying what
-  phones drop, its size, what uses it, and that coverage and history stay. `UnsavedGuard` holds the change.
+- **The list** (the drawer): each area a `ListRow` with its state as the subtitle, a `ProgressTrack` while it builds and
+  its regions' counts and size; ⋯ with Rebuild, Rename and Delete (`MapAreaSheets`; Delete asks once). *Add a map area*
+  in the foot. A click on a square on the map opens its area.
+- **An area** (`?job=map-areas&area={id}`): *All map areas* back, its `PaneHead` with the regions as the lead and the
+  same ⋯, the state `Pill` with its detail, a `ProgressTrack` while building (Try again if it failed), a key drawn with
+  the squares' own looks, a warning `Notice` *Still in use* naming each campaign or day that uses a region being
+  switched off, then the regions grouped *Changes*, *On (n)* and *Off (n)*, each a `ToggleRow` with its facts (hovering
+  one outlines its square). On the map, a click on a square switches it off or on and a + square on the edge adds one;
+  square names are quiet notes in their corners. The foot says what the change frees and builds over the `SaveBar`
+  (*Switch off 2 regions*, *Add 1 region*); switching off asks once in a `Sheet` saying what phones drop, its size, what
+  uses it, and that coverage and history stay. `UnsavedGuard` holds the change.
 - **Square looks** (`MapAreaDrawing`): built in live, solid; waiting to build in live, dashed; off in ink 3, dashed with
-  the 12% wash; no homes an ink 3 outline; can be added an ink 3 dashed outline with a "+"; adding in orange ink with a
-  filled label; switching off in danger, dashed. Changed squares draw on top. A square's name is a quiet label in its
-  top-left corner (it gives way rather than overlap); changed squares and the + keep a ringed or filled label in the middle.
-- **Add a map area** (`/outreach/map-areas/new`, `NewMapAreaPage`): the title band's lead says how. A `MapDesk` with a
-  `SearchField` (*Find a town or suburb*) and the matches as `ListRow`s (kind, distance and direction from the church; the
-  chosen one `Current`), or a click on the map to set the middle (a pin). Then *How far around it* (1 to 30 km) and
-  *Name*, a status line with the regions that have homes, letterboxes and the download, and the squares drawn with
-  each one's estimated size in its corner (no homes dashed in ink 3). Where there's no street map yet, the places'
-  names show as quiet labels inside the squares, and a hint says so. The foot is the `SaveBar` `New` *Add and build it*.
-
+  the 12% wash; no homes an ink 3 outline; can be added an ink 3 dashed outline with a "+"; adding in orange ink;
+  switching off in danger, dashed.
+- **Add a map area** (`?job=map-areas&area=new`): a `SearchField` (*Find a town or suburb*) with the matches as
+  `ListRow`s (kind, distance and direction from the church), or a click on the map to set the middle (a pin); *How far
+  around it* (1 to 30 km) and *Name*; a status line with the regions that have homes, letterboxes and the download; the
+  squares with each one's estimated size. While Map areas is out the map pans freely, so a town far from our maps can
+  be reached. The foot is the `SaveBar` `New` *Add and build it*.
 ## On the phone
 
 The walker's side of Outreach (`Features.Outreach.App`), built on the decision page's *Words first*

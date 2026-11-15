@@ -9,14 +9,14 @@ public static class OutreachLinks
     public const string Reports = "/outreach/reports";
     public const string Days = "/outreach/days";
 
-    public static string DayPlan(string dayId) => $"/outreach/days/{dayId}/plan";
+    public static string DayPlan(string dayId) => $"/outreach/map?day={dayId}";
 
     public static string DayDesk(string dayId) => $"/outreach/days?day={dayId}";
 
     public const string Settings = "/outreach/settings";
-    public const string NewMapArea = "/outreach/map-areas/new";
+    public const string NewMapArea = "/outreach/map?job=map-areas&area=new";
 
-    public static string MapArea(string areaId) => $"/outreach/map-areas/{areaId}";
+    public static string MapArea(string areaId) => $"/outreach/map?job=map-areas&area={areaId}";
 
     public const string Home = "outreach";
     public const string PlanWalk = "outreach/walk";

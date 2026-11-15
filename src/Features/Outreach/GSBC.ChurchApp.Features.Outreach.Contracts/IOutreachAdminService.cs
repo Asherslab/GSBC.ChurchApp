@@ -113,6 +113,9 @@ public interface IOutreachAdminService
     ValueTask<Done> DeleteZoneAsync(ThingRef request, CallContext context = default);
 
     [Requires(OutreachPermissions.SettingsNode)]
+    ValueTask<AddressMatches> FindAddressesAsync(AddressSearch request, CallContext context = default);
+
+    [Requires(OutreachPermissions.SettingsNode)]
     ValueTask<Done> SaveAddressAsync(AddressSave request, CallContext context = default);
 
     [Requires(OutreachPermissions.SettingsNode)]

@@ -138,8 +138,15 @@
     {
         await DropMapAsync();
         _module ??= await Js.InvokeAsync<IJSObjectReference>("import", Module);
+        if (_disposed)
+            return;
         _receiver ??= DotNetObjectReference.Create(this);
-        _map = await _module.InvokeAsync<IJSObjectReference>("create", _element, MapJson.Options(Source, Centre, Zoom, Interactive, Follow), _receiver);
+        _map =await _module.InvokeAsync<IJSObjectReference>("create", _element, MapJson.Options(Source, Centre, Zoom, Interactive, Follow), _receiver);
+        if (_disposed)
+        {
+            await DropMapAsync();
+            return;
+        }
         _shownSource = Source;
         _shownLines = _shownAreas = _shownMarkers = null;
         _shownYou = null;

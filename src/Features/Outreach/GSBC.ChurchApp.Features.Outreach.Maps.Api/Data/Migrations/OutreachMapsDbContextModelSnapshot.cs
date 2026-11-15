@@ -23,6 +23,68 @@ namespace GSBC.ChurchApp.Features.Outreach.Maps.Api.Data.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("GSBC.ChurchApp.Features.Outreach.Maps.Api.Data.AddressRecord", b =>
+                {
+                    b.Property<long>("Id")
+                        .HasColumnType("bigint")
+                        .HasColumnName("id");
+
+                    b.Property<string>("RegionId")
+                        .HasColumnType("text")
+                        .HasColumnName("region_id");
+
+                    b.Property<string>("Key")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("key");
+
+                    b.Property<double>("Latitude")
+                        .HasColumnType("double precision")
+                        .HasColumnName("latitude");
+
+                    b.Property<string>("Locality")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("locality");
+
+                    b.Property<double>("Longitude")
+                        .HasColumnType("double precision")
+                        .HasColumnName("longitude");
+
+                    b.Property<string>("Number")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("number");
+
+                    b.Property<string>("Street")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("street");
+
+                    b.Property<string>("Unit")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("unit");
+
+                    b.HasKey("Id", "RegionId")
+                        .HasName("pk_addresses");
+
+                    b.HasIndex("Key")
+                        .HasDatabaseName("ix_addresses_key");
+
+                    NpgsqlIndexBuilderExtensions.HasOperators(b.HasIndex("Key"), new[] { "text_pattern_ops" });
+
+                    b.HasIndex("RegionId")
+                        .HasDatabaseName("ix_addresses_region_id");
+
+                    b.HasIndex("Number", "Key")
+                        .HasDatabaseName("ix_addresses_number_key");
+
+                    NpgsqlIndexBuilderExtensions.HasOperators(b.HasIndex("Number", "Key"), new[] { "text_ops", "text_pattern_ops" });
+
+                    b.ToTable("addresses", "outreach_maps");
+                });
+
             modelBuilder.Entity("GSBC.ChurchApp.Features.Outreach.Maps.Api.Data.MapAreaRecord", b =>
                 {
                     b.Property<string>("Id")

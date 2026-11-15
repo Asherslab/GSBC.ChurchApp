@@ -43,9 +43,10 @@ public enum MapMarkerKind
     Skip,
     Check,
     Note,
+    Report,
 }
 
-public sealed record MapMarker(MapPoint Point, MapMarkerKind Kind, string? Label = null, string? Id = null);
+public sealed record MapMarker(MapPoint Point, MapMarkerKind Kind, string? Label = null, string? Id = null, bool Chosen = false);
 
 public sealed record MapYou(MapPoint Point, double AccuracyMetres);
 

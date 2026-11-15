@@ -1,0 +1,275 @@
+@using GSBC.ChurchApp.Features.Outreach.Admin.Map
+@using GSBC.ChurchApp.Platform.Contracts.Media
+@using GSBC.ChurchApp.Platform.Icons
+@using GSBC.ChurchApp.Platform.Ui.Maps
+@using MapAreaShape = GSBC.ChurchApp.Platform.Ui.Maps.MapArea
+@inherits OutreachMapLayer
+@inject OutreachDeskClient Outreach
+@inject UnsavedChanges Unsaved
+
+<LiveData @ref="_live" TValue="Reports" Feeds="Feeds" Load="LoadAsync" Remember="@($"outreach.map.reports.{Map.Scope}")" FailedTitle="Can't load the reports right now">
+    <ChildContent>
+        @{ Reports reports = context.Value; }
+        @if (IsOpen)
+        {
+            <SectionContent SectionName="@OutreachMap.DrawerSection">
+                <PaneHead Title="Walkers' reports" Lead="Places walkers sent in. Each is on the map where it happened." />
+                <div class="outreach-map__stack">
+                    <Segmented TValue="bool" Label="Show" Options="Views" Value="_done" ValueChanged="done => _done = done" />
+                    @if (reports.Lines.Where(report => (report.State != ReportState.New) == _done).ToList() is { Count: > 0 } shown)
+                    {
+                        <div class="outreach-map__list" role="list" aria-label="Reports">
+                            @foreach (ReportLine report in shown)
+                            {
+                                <ListRow Title="@OutreachWords.Reason(report.Reason)" Subtitle="@($"{OutreachWords.Place(report.Place)} · {OutreachWords.At(report.At)}")"
+                                         Current="@(report.Id == _chosen)" OnClick="() => ChooseAsync(report)">
+                                    <TrailingContent>
+                                        @if (report.State == ReportState.New)
+                                        {
+                                            <Pill>To review</Pill>
+                                        }
+                                        else
+                                        {
+                                            <Pill Tone="PillTone.Quiet">@OutreachWords.State(report.State)</Pill>
+                                        }
+                                    </TrailingContent>
+                                </ListRow>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <EmptyState Icon="@AppIcons.WalkersReports" Title="@(_done ? "Nothing dealt with yet" : "No reports to look at")"
+                                    Body="When a walker reports a place (not a home, unsafe, a complaint, wrong on the map) it comes here, and on the map, to be looked at." />
+                    }
+                </div>
+            </SectionContent>
+        }
+        @if (HasCard && Chosen(reports) is { } chosen)
+        {
+            <SectionContent SectionName="@OutreachMap.CardSection">
+                <MapCard Label="The report">
+                    <ChildContent>
+                        <PaneHead Title="@OutreachWords.Reason(chosen.Reason)" Lead="@($"{OutreachWords.Place(chosen.Place)} · sent {OutreachWords.At(chosen.At)}{(chosen.From.Length > 0 ? $" by {chosen.From}" : "")}")"
+                                  Actions="@([this.Item("Delete this report…", () => _deleting = true, "trash-2", "Its photo goes too", danger: true, disabled: _busy)])"
+                                  OnClose="Close" />
+                        <div class="outreach-map__stack">
+                            @if (chosen.Photo is { } photo)
+                            {
+                                <PictureOpen Label="Open the walker's photo bigger" OnOpen="() => _viewing = true" Class="outreach-report__photo">
+                                    <MediaImage Media="photo" Size="MediaSizeName.ForPhones" Alt="The walker's photo of the place" />
+                                </PictureOpen>
+                                <PictureViewer @bind-Open="_viewing" Pictures="@([photo])" Noun="Photo" About="@OutreachWords.Reason(chosen.Reason)" />
+                            }
+                            @if (chosen.Note.Length > 0)
+                            {
+                                <p class="outreach-desk__note">@chosen.Note</p>
+                            }
+                            @if (chosen.State != ReportState.New)
+                            {
+                                <p class="field__hint">@OutreachWords.State(chosen.State).</p>
+                            }
+                            else if (_skippingArea)
+                            {
+                                <p class="field__hint">Draw the area on the map. Streets inside are walked through, never delivered to; walkers aren't told why.</p>
+                            }
+                            else
+                            {
+                                <p class="field__hint">Never deliver there adds the letterbox to the places outreach skips, or skip an area round it for a whole block. A fixed or dismissed report changes nothing on the map.</p>
+                            }
+                            <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+                        </div>
+                    </ChildContent>
+                    <Foot>
+                        @if (chosen.State == ReportState.New)
+                        {
+                            @if (_skippingArea)
+                            {
+                                <div class="outreach-map__card-actions">
+                                    <Button Variant="ButtonVariant.Quiet" OnClick="StopArea">Back</Button>
+                                    <Button Busy="_busy" Disabled="@(_area is not { Count: >= 3 })" OnClick="() => ResolveAsync(chosen, ReportState.Excluded, _area)">Skip this area</Button>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="outreach-desk__decide">
+                                    <Button Block="true" Busy="_busy" OnClick="() => ResolveAsync(chosen, ReportState.Excluded)">Never deliver there</Button>
+                                    <Button Variant="ButtonVariant.Quiet" Icon="@AppIcons.DrawArea" OnClick="SkipArea">Skip an area round it…</Button>
+                                    <div class="outreach-desk__actions">
+                                        <Button Variant="ButtonVariant.Quiet" Busy="_busy" OnClick="() => ResolveAsync(chosen, ReportState.Fixed)">It's been fixed</Button>
+                                        <Button Variant="ButtonVariant.Quiet" Busy="_busy" OnClick="() => ResolveAsync(chosen, ReportState.Dismissed)">Dismiss it</Button>
+                                    </div>
+                                </div>
+                            }
+                        }
+                    </Foot>
+                </MapCard>
+            </SectionContent>
+        }
+        <Sheet Open="_deleting" OpenChanged="open => _deleting = open" Title="Delete this report?" Lead="Its note and any photo go for good. This can't be undone.">
+            <Actions>
+                <Button Block="true" Variant="ButtonVariant.Danger" Busy="_busy" OnClick="() => DeleteAsync(Chosen(reports))">Delete the report</Button>
+                <Button Block="true" Variant="ButtonVariant.Quiet" OnClick="() => _deleting = false">Keep it</Button>
+            </Actions>
+        </Sheet>
+    </ChildContent>
+    <Loading>
+        @if (IsOpen)
+        {
+            <SectionContent SectionName="@OutreachMap.DrawerSection">
+                <PaneHead Title="Walkers' reports" Lead="Places walkers sent in." />
+                <Skeleton />
+            </SectionContent>
+        }
+    </Loading>
+</LiveData>
+
+@code {
+    private static readonly IReadOnlyList<string> Feeds = [OutreachFeeds.Desk];
+    private static readonly IReadOnlyList<SegmentOption<bool>> Views = [new(false, "To look at"), new(true, "Dealt with")];
+
+    [Parameter] public string? Open { get; set; }
+
+    private LiveData<Reports>? _live;
+    private Reports? _reports;
+    private string? _chosen;
+    private bool _busy, _deleting, _viewing, _skippingArea, _done, _opened;
+    private string? _problem;
+    private IReadOnlyList<MapPoint>? _area;
+
+    public override OutreachMapJob Job => OutreachMapJob.Reports;
+
+    public override IReadOnlyList<LayerCount> Shows => [new(OutreachLayer.Reports, _reports?.Lines.Count(report => report.State == ReportState.New) ?? 0)];
+
+    public override IReadOnlyList<MapMarker> Markers => _reports is { } reports
+        ? [.. reports.Lines.Where(report => (report.State == ReportState.New && Map.Shows(OutreachLayer.Reports) || report.Id == _chosen) && PointOf(report.Place) is not null)
+            .Select(report => new MapMarker(PointOf(report.Place)!.Value, MapMarkerKind.Report, OutreachWords.Reason(report.Reason), report.Id, report.Id == _chosen && HasCard))]
+        : [];
+
+    public override IReadOnlyList<MapAreaShape> Areas => _skippingArea && _area is { Count: >= 3 } area ? [new MapAreaShape(area, "--danger", "report-area")] : [];
+
+    private async Task<Reports> LoadAsync()
+    {
+        Reports reports = await Outreach.ReportsAsync(Map.Scope);
+        _reports = reports;
+        if (!_opened && Open is { Length: > 0 } open && reports.Lines.FirstOrDefault(report => report.Id == open) is { } asked)
+        {
+            _opened = true;
+            Choose(asked, fly: true);
+        }
+        Map.Redraw();
+        return reports;
+    }
+
+    private ReportLine? Chosen(Reports reports) => reports.Lines.FirstOrDefault(report => report.Id == _chosen);
+
+    public override async Task<bool> TapAsync(MapPoint point, double reachMetres)
+    {
+        if (_reports is not { } reports)
+            return false;
+        ReportLine? hit = reports.Lines
+            .Where(report => report.State == ReportState.New && Map.Shows(OutreachLayer.Reports) && PointOf(report.Place) is not null)
+            .Select(report => (Report: report, Metres: MetresBetween(PointOf(report.Place)!.Value, point)))
+            .Where(found => found.Metres <= reachMetres * 1.5)
+            .OrderBy(found => found.Metres)
+            .Select(found => found.Report)
+            .FirstOrDefault();
+        if (hit is null)
+            return false;
+        if (await Unsaved.MayLeaveAsync())
+            Choose(hit, fly: false);
+        return true;
+    }
+
+    public override void LetGo()
+    {
+        (_chosen, _viewing, _skippingArea, _area, _problem) = (null, false, false, null, null);
+        Map.Redraw();
+    }
+
+    private void Choose(ReportLine report, bool fly)
+    {
+        (_chosen, _viewing, _skippingArea, _area, _problem) = (report.Id, false, false, null, null);
+        _done = report.State != ReportState.New;
+        Map.Choose(this);
+        if (fly && PointOf(report.Place) is { } point)
+            Map.FlyBesideCard([point]);
+        Map.Redraw();
+    }
+
+    private async Task ChooseAsync(ReportLine report)
+    {
+        if (await Unsaved.MayLeaveAsync())
+            Choose(report, fly: true);
+    }
+
+    private void Close()
+    {
+        LetGo();
+        Map.LetGo(this);
+    }
+
+    private void SkipArea()
+    {
+        _skippingArea = true;
+        Map.Draw(new OutreachMapDrawing(MapSketchTool.Polygon, "Skip area: click each corner", points =>
+        {
+            if (points.Count >= 3)
+                _area = points;
+            Map.Redraw();
+            return Task.CompletedTask;
+        }));
+    }
+
+    private void StopArea()
+    {
+        (_skippingArea, _area) = (false, null);
+        Map.StopDrawing();
+        Map.Redraw();
+    }
+
+    private static MapPoint? PointOf(AddressPoint place) => place.Point is { Lat: not 0 } point ? new MapPoint(point.Lat, point.Lng) : null;
+
+    private static ExclusionReason ExcludeAs(ReportReason reason) => reason switch
+    {
+        ReportReason.NotAHome => ExclusionReason.NotHomes,
+        ReportReason.Unsafe => ExclusionReason.Unsafe,
+        ReportReason.Complaint => ExclusionReason.Complaint,
+        ReportReason.WrongOnTheMap => ExclusionReason.WrongData,
+        _ => ExclusionReason.Other,
+    };
+
+    private Task ResolveAsync(ReportLine report, ReportState outcome, IReadOnlyList<MapPoint>? area = null) => RunAsync(async () =>
+    {
+        await Outreach.ResolveReportAsync(Map.Scope, report.Id, outcome, ExcludeAs(report.Reason),
+            area is null ? null : [.. area.Select(point => new GeoPoint { Lat = point.Lat, Lng = point.Lon })]);
+        StopArea();
+    });
+
+    private Task DeleteAsync(ReportLine? report) => report is null ? Task.CompletedTask : RunAsync(async () =>
+    {
+        await Outreach.DeleteReportAsync(Map.Scope, report.Id);
+        _deleting = false;
+        Close();
+    });
+
+    private async Task RunAsync(Func<Task> work)
+    {
+        _busy = true;
+        _problem = null;
+        try
+        {
+            await work();
+            if (_live is not null)
+                await _live.ReloadAsync();
+        }
+        catch (RpcException exception)
+        {
+            _problem = exception.Status.Detail;
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+}

@@ -1,0 +1,64 @@
+@using GSBC.ChurchApp.Platform.Icons
+<div class="@Classes">
+    <nav class="map-workspace__dock" aria-label="@Label">
+        @foreach (MapWorkspaceJob job in Jobs)
+        {
+            @if (job.StartsGroup)
+            {
+                <span class="map-workspace__rule" aria-hidden="true"></span>
+            }
+            <Button Variant="ButtonVariant.Quiet" Icon="@job.Icon" Pressed="@(job.Id == Current && Open)" Class="@JobClass(job)"
+                    AriaLabel="@(job.Count > 0 ? $"{job.Label}, {job.Count}" : job.Label)" OnClick="() => ChooseAsync(job)">
+                <span class="map-workspace__job-name">@job.Label</span>
+                @if (job.Count > 0)
+                {
+                    <span class="map-workspace__count" aria-hidden="true">@job.Count</span>
+                }
+            </Button>
+        }
+    </nav>
+    @if (Open && Drawer is not null)
+    {
+        <section class="map-workspace__drawer" aria-label="@DrawerLabel">
+            <Button Variant="ButtonVariant.Quiet" Icon="@AppIcons.HideDrawer" Small="true" Class="map-workspace__fold" Tooltip="Fold this away" AriaLabel="Fold this away"
+                    OnClick="() => OpenChanged.InvokeAsync(false)" />
+            <div class="map-workspace__body">@Drawer</div>
+            @if (DrawerFoot is not null)
+            {
+                <div class="map-workspace__foot">@DrawerFoot</div>
+            }
+        </section>
+    }
+    <div class="map-workspace__map" data-look-bleed>@Map</div>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public required string Label { get; set; }
+    [Parameter, EditorRequired] public required IReadOnlyList<MapWorkspaceJob> Jobs { get; set; }
+    [Parameter] public string? Current { get; set; }
+    [Parameter] public EventCallback<string> OnChoose { get; set; }
+    [Parameter] public bool Open { get; set; } = true;
+    [Parameter] public EventCallback<bool> OpenChanged { get; set; }
+    [Parameter] public RenderFragment? Drawer { get; set; }
+    [Parameter] public RenderFragment? DrawerFoot { get; set; }
+    [Parameter] public string? DrawerLabel { get; set; }
+    [Parameter] public bool Wide { get; set; }
+    [Parameter, EditorRequired] public required RenderFragment Map { get; set; }
+    [Parameter] public string? Class { get; set; }
+
+    private string Classes => $"map-workspace{(Wide ? " map-workspace--wide" : "")}{(Class is null ? "" : $" {Class}")}";
+
+    private string JobClass(MapWorkspaceJob job) => job.Id == Current ? "map-workspace__job map-workspace__job--current" : "map-workspace__job";
+
+    private async Task ChooseAsync(MapWorkspaceJob job)
+    {
+        if (job.Id == Current)
+        {
+            await OpenChanged.InvokeAsync(!Open);
+            return;
+        }
+        await OnChoose.InvokeAsync(job.Id);
+        if (!Open)
+            await OpenChanged.InvokeAsync(true);
+    }
+}

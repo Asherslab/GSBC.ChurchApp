@@ -27,7 +27,7 @@ internal interface IMapSources
 internal sealed class MapSources(HttpClient http, IOptions<MapSourcesOptions> options) : IMapSources
 {
     private const string PrimaryAddress = "address_status='P'";
-    private const string AddressFields = "address_pid,street_full,unit_number,lotplan,locality,local_authority";
+    private const string AddressFields = "address_pid,street_full,unit_number,lotplan,locality,local_authority,street_number";
     private static readonly TimeSpan ExtractDownload = TimeSpan.FromMinutes(30);
     private MapSourcesOptions Options => options.Value;
 
@@ -71,7 +71,9 @@ internal sealed class MapSources(HttpClient http, IOptions<MapSourcesOptions> op
             feature.Attributes.GetValueOrDefault("unit_number", "").Length > 0,
             feature.Attributes.GetValueOrDefault("lotplan", ""),
             feature.Attributes.GetValueOrDefault("locality", ""),
-            feature.Attributes.GetValueOrDefault("local_authority", ""))).ToList();
+            feature.Attributes.GetValueOrDefault("local_authority", ""),
+            feature.Attributes.GetValueOrDefault("street_number", ""),
+            feature.Attributes.GetValueOrDefault("unit_number", ""))).ToList();
     }
 
     public async Task<LandUseMap> LandUseAsync(GeoBounds bounds, CancellationToken cancellationToken)

@@ -1,4 +1,5 @@
 using Amazon.S3;
+using GSBC.ChurchApp.Features.Outreach.Maps.Api.Addresses;
 using GSBC.ChurchApp.Features.Outreach.Maps.Api.Data;
 using GSBC.ChurchApp.Features.Outreach.Maps.Api.Places;
 using GSBC.ChurchApp.Features.Outreach.Maps.Api.Regions;
@@ -61,6 +62,7 @@ internal sealed class MapsHost : IAsyncDisposable
             .AddSingleton<IRegionUses>(uses)
             .AddScoped<AreaBuilder>()
             .AddScoped<PlaceIndex>()
+            .AddScoped<AddressIndex>()
             .AddScoped<RegionEstimates>()
             .AddSingleton<AreaBuildRunner>()
             .AddScoped<OutreachMapsService>()
@@ -76,6 +78,12 @@ internal sealed class MapsHost : IAsyncDisposable
     {
         await using AsyncServiceScope scope = _services.CreateAsyncScope();
         return await call(scope.ServiceProvider.GetRequiredService<OutreachMapsService>());
+    }
+
+    public async Task<T> WithAddressesAsync<T>(Func<AddressIndex, Task<T>> call)
+    {
+        await using AsyncServiceScope scope = _services.CreateAsyncScope();
+        return await call(scope.ServiceProvider.GetRequiredService<AddressIndex>());
     }
 
     public async Task<T> WithDbAsync<T>(Func<OutreachMapsDbContext, Task<T>> read)

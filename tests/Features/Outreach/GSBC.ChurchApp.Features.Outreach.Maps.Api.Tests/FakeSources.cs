@@ -16,8 +16,8 @@ internal sealed class FakeSources : IMapSources
     public FakeSources()
     {
         AddStreet("Kingfisher Street", (0, 0), (300, 0));
-        AddHome("Kingfisher Street", new Flat(60, 15));
-        AddHome("Kingfisher Street", new Flat(120, -15));
+        AddHome("Kingfisher Street", new Flat(60, 15), "12");
+        AddHome("Kingfisher Street", new Flat(120, -15), "15");
     }
 
     public List<GeoBounds> StreetsAskedFor { get; } = [];
@@ -26,8 +26,8 @@ internal sealed class FakeSources : IMapSources
 
     public void AddHome(Flat at) => AddHome("Kingfisher Street", at);
 
-    public void AddHome(string street, Flat at) =>
-        _addresses.Add(new AddressPoint(_nextId++, Streets.Projection.ToGeo(at), street, false, "", "Albany Creek", "Brisbane City"));
+    public void AddHome(string street, Flat at, string number = "") =>
+        _addresses.Add(new AddressPoint(_nextId++, Streets.Projection.ToGeo(at), street, false, "", "Albany Creek", "Brisbane City", number));
 
     public Task<OsmData> StreetsAsync(GeoBounds bounds, CancellationToken cancellationToken)
     {

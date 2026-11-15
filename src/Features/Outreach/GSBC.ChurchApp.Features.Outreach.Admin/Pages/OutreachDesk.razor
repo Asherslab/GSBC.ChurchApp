@@ -1,6 +1,7 @@
 @page "/outreach"
 @page "/outreach/{Slug}"
 @inject OutreachDeskClient Outreach
+@using GSBC.ChurchApp.Features.Outreach.Admin.Map
 @inject IAccess Access
 
 <LiveData TValue="Place" Feeds="Feeds" Load="ScopeAsync" Remember="outreach.scope" FailedTitle="Can't load Outreach right now">
@@ -18,23 +19,14 @@
             case OutreachTab.Days:
                 <DaysDesk Scope="@scope" Open="@Day" />
                 break;
-            case OutreachTab.Areas:
-                <AreasDesk Scope="@scope" />
-                break;
-            case OutreachTab.Coverage:
-                <CoverageDesk Scope="@scope" />
+            case OutreachTab.Map:
+                <OutreachMap Scope="@scope" Job="@(OutreachMapJobs.Of(Job) ?? OutreachMapJobs.Of(Slug))" Day="@Day" Report="@Report" Area="@Area" />
                 break;
             case OutreachTab.Numbers:
                 <NumbersDesk Scope="@scope" />
                 break;
-            case OutreachTab.Places:
-                <PlacesDesk Scope="@scope" />
-                break;
             case OutreachTab.FollowUps:
                 <FollowUpsDesk Scope="@scope" />
-                break;
-            case OutreachTab.Reports:
-                <ReportsDesk Scope="@scope" />
                 break;
             case OutreachTab.Settings:
                 <SettingsDesk Scope="@scope" />
@@ -52,6 +44,12 @@
     [Parameter] public string? Slug { get; set; }
 
     [SupplyParameterFromQuery(Name = "day")] public string? Day { get; set; }
+
+    [SupplyParameterFromQuery(Name = "job")] public string? Job { get; set; }
+
+    [SupplyParameterFromQuery(Name = "report")] public string? Report { get; set; }
+
+    [SupplyParameterFromQuery(Name = "area")] public string? Area { get; set; }
 
     private OutreachTab Tab => OutreachTabs.Of(Slug);
 

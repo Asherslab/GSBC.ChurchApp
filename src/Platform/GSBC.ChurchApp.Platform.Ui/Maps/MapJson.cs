@@ -80,6 +80,8 @@ public static class MapJson
             json.WriteString("kind", marker.Kind.ToString().ToLowerInvariant());
             Optional(json, "label", marker.Label);
             Optional(json, "id", marker.Id);
+            if (marker.Chosen)
+                json.WriteBoolean("chosen", true);
             json.WritePropertyName("point");
             Point(json, marker.Point);
             json.WriteEndObject();

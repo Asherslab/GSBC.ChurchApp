@@ -12,6 +12,7 @@ public sealed class OutreachMapsDbContext(DbContextOptions<OutreachMapsDbContext
     public DbSet<RegionFileRecord> Files => Set<RegionFileRecord>();
     public DbSet<MapCellRecord> Cells => Set<MapCellRecord>();
     public DbSet<PlaceRecord> Places => Set<PlaceRecord>();
+    public DbSet<AddressRecord> Addresses => Set<AddressRecord>();
 
     protected override string Schema => SchemaName;
 
@@ -47,6 +48,15 @@ public sealed class OutreachMapsDbContext(DbContextOptions<OutreachMapsDbContext
             entity.ToTable("places");
             entity.HasKey(place => place.Id);
             entity.Property(place => place.Id).ValueGeneratedNever();
+        });
+        modelBuilder.Entity<AddressRecord>(entity =>
+        {
+            entity.ToTable("addresses");
+            entity.HasKey(address => new { address.Id, address.RegionId });
+            entity.Property(address => address.Id).ValueGeneratedNever();
+            entity.HasIndex(address => address.RegionId);
+            entity.HasIndex(address => address.Key).HasOperators("text_pattern_ops");
+            entity.HasIndex(address => new { address.Number, address.Key }).HasOperators("text_ops", "text_pattern_ops");
         });
     }
 }

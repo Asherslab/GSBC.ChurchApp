@@ -1,6 +1,6 @@
 @inject OutreachDeskClient Outreach
 
-<TitleBand Title="Outreach" Lead="Campaigns, outreach days and their routes, where outreach has been, what it adds up to, and what walkers send in.">
+<TitleBand Title="Outreach" Lead="@(Tab == OutreachTab.Map ? null : Lead)">
     <Actions><SectionOutlet SectionName="@ActionsSection" /></Actions>
 </TitleBand>
 <LiveData TValue="OutreachDesk" Feeds="Feeds" Load="() => Outreach.DeskAsync(Scope)" Remember="@($"outreach.head.{Scope}")">
@@ -12,6 +12,8 @@
 @code {
     public const string ActionsSection = "outreach-actions";
 
+    private const string Lead = "Campaigns, outreach days and their routes, the map of where outreach has been, what it adds up to, and what walkers send in.";
+
     private static readonly IReadOnlyList<string> Feeds = [OutreachFeeds.Desk];
 
     [Parameter, EditorRequired] public required string Scope { get; set; }
@@ -22,8 +24,7 @@
 
     private static IReadOnlyList<TabOption<OutreachTab>> Options(OutreachDesk? desk) =>
     [
-        new(OutreachTab.Campaigns, "Campaigns"), new(OutreachTab.Days, "Days"), new(OutreachTab.Areas, "Areas"), new(OutreachTab.Coverage, "Coverage"),
-        new(OutreachTab.Numbers, "Numbers"), new(OutreachTab.Places, "Places"), new(OutreachTab.FollowUps, "Follow-ups", desk?.OpenFollowUps ?? 0),
-        new(OutreachTab.Reports, "Reports", desk?.NewReports ?? 0), new(OutreachTab.Settings, "Settings"),
+        new(OutreachTab.Campaigns, "Campaigns"), new(OutreachTab.Map, "Map", desk?.NewReports ?? 0), new(OutreachTab.Days, "Days"), new(OutreachTab.Numbers, "Numbers"),
+        new(OutreachTab.FollowUps, "Follow-ups", desk?.OpenFollowUps ?? 0), new(OutreachTab.Settings, "Settings"),
     ];
 }

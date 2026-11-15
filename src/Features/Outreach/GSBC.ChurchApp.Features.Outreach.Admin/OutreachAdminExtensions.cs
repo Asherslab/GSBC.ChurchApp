@@ -15,6 +15,7 @@ public static class OutreachAdminExtensions
                 Summary: "Outreach campaigns and their settings: rest period, pace, bundles and what's kept")],
             [OutreachFeeds.Desk], []));
         return services.AddOutreachClient().AddSingleton<OutreachDeskClient>().AddSingleton<OutreachMapsClient>()
-            .AddSingleton(_ => new StreetGraphLoader(new HttpClient()));
+            .AddSingleton(_ => new StreetGraphLoader(new HttpClient()))
+            .AddSingleton<Letterboxes>().AddScoped<Map.OutreachMapMemory>();
     }
 }

@@ -210,8 +210,8 @@ button.module-nav__link { width: 100%; border: 0; background: none; font-family:
 .admin-main > .writing-desk:not(:first-child) { margin: 0 -40px -64px; border-top: 1px solid var(--line); }
 .admin-main > .workbench:not(:first-child) > .workbench__main { padding-inline: calc(var(--space-3xl) + var(--space-sm)); }
 .admin-main > .tab-strip + .workbench { border-top: 0; }
-.admin-main:has(> .map-desk) { display: flex; flex-direction: column; height: 100vh; height: 100dvh; padding-bottom: 0; }
-.admin-main > .map-desk { flex: 1 1 auto; margin: 0 -40px; border-top: 1px solid var(--line); }
+.admin-main:has(> :is(.map-desk, .map-workspace)) { display: flex; flex-direction: column; height: 100vh; height: 100dvh; padding-bottom: 0; }
+.admin-main > :is(.map-desk, .map-workspace) { flex: 1 1 auto; margin: 0 -40px; border-top: 1px solid var(--line); }
 
 .title-band {
     display: flex;
@@ -352,13 +352,13 @@ code, .patterns { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-s
     .admin-main > :is(.workbench, .preview-window), .admin-main > :is(.workbench, .preview-window, .chat-desk):first-child, .sign-in-stage { margin: -20px calc(-1 * var(--gutter)) -48px; }
     .admin-main > .workbench:not(:first-child) { margin: 0 calc(-1 * var(--gutter)) -48px; }
     .admin-main > .writing-desk:not(:first-child) { margin: 0 calc(-1 * var(--gutter)) -48px; }
-    .admin-main:has(> .map-desk) { height: calc(100dvh - 56px); }
-    .admin-main > .map-desk { margin-inline: calc(-1 * var(--gutter)); }
+    .admin-main:has(> :is(.map-desk, .map-workspace)) { height: calc(100dvh - 56px); }
+    .admin-main > :is(.map-desk, .map-workspace) { margin-inline: calc(-1 * var(--gutter)); }
     .sign-in-stage { min-height: calc(100vh - 56px); }
 }
 
 @media (max-width: 760px) {
-    .admin-main:has(> .map-desk) { height: auto; }
+    .admin-main:has(> :is(.map-desk, .map-workspace)) { height: auto; }
     .admin-main > .workbench > :is(.workbench__aside, .workbench__main, .workbench__detail) { padding-inline: var(--gutter); }
     .admin-main > .workbench > .workbench__detail .editor-foot { margin-inline: calc(-1 * var(--gutter)); padding-inline: var(--gutter); }
     .admin-main > .workbench:not(:first-child) > :is(.workbench__aside, .workbench__main, .workbench__detail) { padding-top: var(--space-lg); }

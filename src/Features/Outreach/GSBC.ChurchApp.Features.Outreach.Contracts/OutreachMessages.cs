@@ -430,6 +430,29 @@ public sealed class AddressSave : IScopedRequest
 }
 
 [ProtoContract]
+public sealed class AddressSearch : IScopedRequest
+{
+    [ProtoMember(1)] public string MinistryId { get; set; } = "";
+    [ProtoMember(2)] public string Text { get; set; } = "";
+    public string ScopeId => MinistryId;
+}
+
+[ProtoContract]
+public sealed class AddressMatch
+{
+    [ProtoMember(1)] public uint AddressKey { get; set; }
+    [ProtoMember(2)] public string Label { get; set; } = "";
+    [ProtoMember(3)] public string Region { get; set; } = "";
+    [ProtoMember(4, IsRequired = true)] public GeoPoint Point { get; set; } = new();
+}
+
+[ProtoContract]
+public sealed class AddressMatches
+{
+    [ProtoMember(1)] public List<AddressMatch> Addresses { get; set; } = [];
+}
+
+[ProtoContract]
 public sealed class Exclusions
 {
     [ProtoMember(1)] public List<ExclusionZone> Zones { get; set; } = [];

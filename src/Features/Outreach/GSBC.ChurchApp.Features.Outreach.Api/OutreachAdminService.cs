@@ -1,12 +1,21 @@
 using Grpc.Core;
 using GSBC.ChurchApp.Features.Outreach.Contracts;
+using GSBC.ChurchApp.Features.Outreach.Maps.Contracts;
 using GSBC.ChurchApp.Platform.Api.Access;
 using ProtoBuf.Grpc;
 
 namespace GSBC.ChurchApp.Features.Outreach.Api;
 
-internal sealed class OutreachAdminService(OutreachPlanning planning, OutreachReview review) : IOutreachAdminService
+internal sealed class OutreachAdminService(OutreachPlanning planning, OutreachReview review, IAddressSearch addresses) : IOutreachAdminService
 {
+    public async ValueTask<AddressMatches> FindAddressesAsync(AddressSearch request, CallContext context = default) => new()
+    {
+        Addresses = [.. (await addresses.FindAsync(request.Text, context.CancellationToken)).Select(found => new AddressMatch
+        {
+            AddressKey = found.AddressKey, Label = found.Label, Region = found.RegionId, Point = new GeoPoint { Lat = found.Latitude, Lng = found.Longitude },
+        })],
+    };
+
     public async ValueTask<RunningMinistries> MinistriesAsync(MinistryRef request, CallContext context = default) =>
         await planning.MinistriesAsync(context.CancellationToken);
 

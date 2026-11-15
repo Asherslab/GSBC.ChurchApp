@@ -1,4 +1,3 @@
-@using GSBC.ChurchApp.Features.Outreach.Maps.Contracts
 @inject OutreachDeskClient Outreach
 @inject IAccess Access
 
@@ -74,9 +73,6 @@
             </ChildContent>
             <Foot>@Footer(SettingsGroup.Counting)</Foot>
         </Section>
-        <Can Permission="OutreachMapsPermissions.Manage">
-            <MapAreasGroup />
-        </Can>
     </div>
 </LiveData>
 

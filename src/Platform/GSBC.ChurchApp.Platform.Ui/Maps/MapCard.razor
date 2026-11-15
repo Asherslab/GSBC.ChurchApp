@@ -1,0 +1,13 @@
+<section class="map-card" aria-label="@Label">
+    <div class="map-card__body">@ChildContent</div>
+    @if (Foot is not null)
+    {
+        <div class="map-card__foot">@Foot</div>
+    }
+</section>
+
+@code {
+    [Parameter, EditorRequired] public required string Label { get; set; }
+    [Parameter, EditorRequired] public required RenderFragment ChildContent { get; set; }
+    [Parameter] public RenderFragment? Foot { get; set; }
+}

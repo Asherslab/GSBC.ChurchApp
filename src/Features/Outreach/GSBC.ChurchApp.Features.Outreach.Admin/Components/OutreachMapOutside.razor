@@ -1,11 +1,12 @@
 @using GSBC.ChurchApp.Features.Outreach.Maps.Contracts
+@using GSBC.ChurchApp.Features.Outreach.Admin.Map
 @inject IAccess Access
 
 <p class="outreach-outside__title">No map here yet</p>
 <p class="outreach-outside__body">
-    Outreach maps cover the map areas set up in Settings, under Map areas.
+    Outreach maps cover the map areas, under Map areas on the left.
     @if (Access.Can(OutreachMapsPermissions.Manage))
     {
-        <a href="@OutreachTabs.Href(OutreachTab.Settings)">Open Map areas</a>
+        <a href="@OutreachMapJobs.Href(OutreachMapJob.MapAreas)">Open Map areas</a>
     }
 </p>

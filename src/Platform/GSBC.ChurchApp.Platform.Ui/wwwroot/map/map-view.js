@@ -30,6 +30,8 @@ function colours() {
     walk: token("--accent"),
     walked: token("--ink-3"),
     you: token("--marker"),
+    marker: token("--marker"),
+    onMarker: token("--on-marker"),
     ink: token("--ink"),
     surface: token("--surface"),
     danger: token("--danger"),
@@ -93,6 +95,11 @@ function overlayLayers(c) {
     { id: "marker-labels", type: "symbol", source: "markers", filter: ["all", kindIs("nojunkmail", "dontletterbox"), ["has", "label"]], minzoom: 17,
       layout: { "text-field": ["get", "label"], "text-font": ["montserrat-semibold"], "text-size": 11, "text-offset": [0, 1.1], "text-anchor": "top" },
       paint: { "text-color": c.ink, "text-halo-color": c.surface, "text-halo-width": 2 } },
+    { id: "reports", type: "circle", source: "markers", filter: kindIs("report"),
+      paint: { "circle-radius": byZoom([[12, 7], [17, 11]]), "circle-color": c.marker, "circle-stroke-color": c.onMarker, "circle-stroke-width": ["case", ["get", "chosen"], 3, 1.5] } },
+    { id: "report-marks", type: "symbol", source: "markers", filter: kindIs("report"),
+      layout: { "text-field": "!", "text-font": ["montserrat-semibold"], "text-size": byZoom([[12, 11], [17, 15]]), "text-allow-overlap": true, "text-ignore-placement": true },
+      paint: { "text-color": c.onMarker } },
     { id: "places", type: "circle", source: "markers", filter: kindIs("start", "pin", "meeting"),
       paint: {
         "circle-radius": 8,
@@ -165,7 +172,7 @@ const colourOf = (value) => (value?.startsWith("--") ? token(value) : value);
 const line = (l) => ({ type: "Feature", properties: { style: l.style, ...(l.label ? { label: l.label } : {}), ...(l.colour ? { colour: colourOf(l.colour) } : {}), ...(l.age != null ? { age: l.age } : {}), id: l.id ?? "" },
   geometry: { type: "LineString", coordinates: l.points } });
 const area = (a) => ({ type: "Feature", properties: { ...(a.colour ? { colour: colourOf(a.colour) } : {}), dashed: !!a.dashed, outline: !!a.outline, id: a.id ?? "" }, geometry: { type: "Polygon", coordinates: [a.points] } });
-const marker = (m) => ({ type: "Feature", properties: { kind: m.kind, ...(m.label ? { label: m.label } : {}), id: m.id ?? "" }, geometry: { type: "Point", coordinates: m.point } });
+const marker = (m) => ({ type: "Feature", properties: { kind: m.kind, ...(m.label ? { label: m.label } : {}), id: m.id ?? "", chosen: !!m.chosen }, geometry: { type: "Point", coordinates: m.point } });
 
 function framePadding(b) {
   const padding = b.padding ?? 40;
@@ -282,8 +289,9 @@ export async function create(element, optionsJson, receiver) {
     if (map.isStyleLoaded()) showReach();
   };
 
-  return {
+  const handle = {
     map,
+    gone: false,
     setReach,
     setLines: (json) => set("lines", { type: "FeatureCollection", features: JSON.parse(json).map(line) }),
     setAreas: (json) => set("areas", { type: "FeatureCollection", features: JSON.parse(json).map(area) }),
@@ -307,8 +315,10 @@ export async function create(element, optionsJson, receiver) {
     resize: () => map.resize(),
     ready: () => ready,
     dispose: () => {
+      handle.gone = true;
       watcher.disconnect();
       map.remove();
     },
   };
+  return handle;
 }
