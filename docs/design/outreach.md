@@ -50,29 +50,30 @@ The settings in the work area, each group a `Section Grouped` card with short fi
 single large map admin panel … a map, with a good overlay with tools/etc, collapsable panes … all in one place"). It
 replaced the Coverage, Places, Areas and Reports tabs, the Map areas pages under Settings and the planner's own page.
 
-- **The dock** (76px, white, ruled off): Coverage, Places, Saved areas, Reports (counting new ones), Map areas, then a
+- **The dock** (80px, white, ruled off): Coverage, Places, Saved areas, Reports (counting new ones), Map areas, then a
   rule and Plan a day. Each shows only to those who may use it (Places: settings or review; Saved areas and Plan a day:
   plan; Reports: review; Map areas: `outreach.maps.manage`). The open job is in Selected Fill with an orange bar at its
   edge; pressing it again folds its drawer away, and the drawer's own chevron does too.
-- **The drawer** (320px; 440px planning a day, 380px at 1360px and under): a `PaneHead` naming the job, its list or
-  settings, and a sand foot for its actions (*Draw round streets*, *Draw an area* and *Pick a letterbox*, *Draw a new
+- **The drawer** (320px, 280px at 1200px and under; planning a day 440px, 380px at 1360px and under, 340px at 1200px
+  and under; white, ruled off): a `PaneHead` naming the job, its list or settings, and a white foot ruled off by a
+  hairline for its actions (*Draw round streets*, *Draw an area* and *Pick a letterbox*, *Draw a new
   area*, *Add a map area*, a change's `SaveBar`).
 - **The map** fills the rest to the window's foot, every built region as one map (below). Floating on it: *Layers* top
-  left (a `Popover` of `ToggleRow`s, each layer with its count: Coverage, Places outreach skips, No junk mail and
-  hostile, Saved areas, Walkers' reports; only the layers the person may see), the coverage legend
+  left (a `Popover` of `ToggleRow`s, each layer but Coverage with its count: Coverage, Places outreach skips, No junk mail and
+  hostile, Saved areas, Walkers' reports; only the layers the person may see; hidden while drawing), the coverage legend
   and figures bottom left whenever coverage is shown and its drawer isn't, and the attribution bottom right.
 - **The card** (`MapCard`, top right, 22rem): whatever was clicked on the map or in a drawer's list (a street or the
   streets drawn round, a skipped place, a mark, a report, a saved area) with its `PaneHead` and ⋯, and its Save or
-  decision in the card's sand foot. One thing is chosen at a time across every layer; a click goes to the open job
+  decision in the card's white foot, ruled off by a hairline. One thing is chosen at a time across every layer; a click goes to the open job
   first, then reports, places, saved areas and coverage.
 - **Drawing** shows the navy `MapDrawBar` top centre: what to do ("Skip area: click each corner"), *Undo last point*,
   *Cancel* and a white *Finish* (enabled at three corners). Instructions never sit in the attribution's grey (#106).
-  Escape, Backspace and Enter still work.
+  On a map narrower than 700px the bar spans the map and wraps. Escape, Backspace and Enter still work.
 - **Remembered on this computer** (`OutreachMapMemory`, local storage): the job, whether its drawer is out, the layers,
   the view and the campaign (owner, 2026-11-15: "whatever I had last"; the first time, Coverage with coverage, places,
   marks and reports on).
 - **At 760px and under** the dock runs across the top, the map comes next and the drawer under it; on a map narrower
-  than 640px the card sits at the map's foot, and while drawing the card steps aside.
+  than 640px (and always at 760px and under) the card sits along the map's foot, and while drawing the card is hidden.
 - **Planning a day keeps its own map** (*Claude's default*, 2026-11-15): the planner's route labels, brush and lasso
   previews and hover facts belong to its map, so choosing a day swaps in the planner's map inside the same dock and
   drawer; Layers and the coverage legend aren't shown there (streets done recently show grey on the planner's map).
@@ -90,9 +91,10 @@ The same `Workbench` as Campaigns. *New outreach day* in the title band.
 
 ## The day's routes (the planner)
 A mode of the Map tab (owner, 2026-11-15), `/outreach/map?day={id}` (the old `/outreach/days/{id}/plan` forwards there):
-the dock stays, *Plan a day* is open, and the drawer (440px) heads with the day ("Outreach Saturday 6 December" over the
+the dock stays, *Plan a day* is open, and the drawer (440px, 380px at 1360px and under, 340px at 1200px and under;
+it folds away like any job's) heads with the day ("Outreach Saturday 6 December" over the
 times, meeting place, campaign and totals) and *Leave this day's routes*. `SaveStatus` ("Saves as you go", "Draft saved")
-and *Print the maps* sit in the title band's actions. *Plan a day* without a day lists the days to come.
+and *Print the maps* sit in the title band's actions. *Plan a day* without a day lists the days to come, with *New day, under Days* in its foot.
 - **The map:** the brand base map; each route in its colour with a ring label (a page-coloured capsule ringed in the
   route's colour): the number when zoomed out ("8 · review" when flagged), "4 · 137 · 74 min" from zoom 15 ("· needs
   review" after it when flagged). Every route keeps its label and no two labels overlap (`MapSketch`, [maps.md](maps.md)). Choosing a route fills its label in its colour, on top, and keeps the others to
@@ -102,7 +104,7 @@ and *Print the maps* sit in the title band's actions. *Plan a day* without a day
   (`RouteColours`) each hold 4.5:1 with white text and 3:1 against the dark map and pane.
 - **The rail** (top left, a white panel on the Pop shadow): select, draw the area, scissors, brush, lasso, eraser, start
   pin, meeting point, a rule, undo, redo; the tool in use is navy. Tools that need a chosen route are disabled until
-  there is one. Each tool's one-line instruction shows as a navy capsule top centre; drawing the area shows the `MapDrawBar` instead, with *Undo last point*, *Cancel* and *Finish*.
+  there is one. Each tool's one-line instruction shows as a navy capsule top centre; drawing the area shows the `MapDrawBar` instead, beside the rail, with *Undo last point*, *Cancel* and *Finish*.
 - **Hover** (top right): the route's number, name, letterboxes, km, time, bundles, its claims on the day, and why it
   needs review in marker ink.
 - **The chosen route** (bottom centre, above the map's credits): its dot, number, letterboxes and time; Lock, Split in
@@ -124,7 +126,7 @@ and *Print the maps* sit in the title band's actions. *Plan a day* without a day
   naming the open routes, and the routes table with who has each and a state `Pill` (Open in marker, Walking in accent, Claimed and
   Done quiet) with a ringed `ProgressTrack` in live aqua once walking (and when done); open routes first. The draft's save status hides.
   What's walked is drawn on the map.
-- **At 760px and under** the map sits above the pane and hover facts don't show.
+- **At 760px and under** the map sits above the drawer and hover facts don't show.
 
 ## Saved areas (Map tab)
 The drawer lists them as `ListRow`s (name over its note); *Draw a new area* in its foot starts drawing. Saved areas
