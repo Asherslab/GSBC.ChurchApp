@@ -60,13 +60,23 @@ public static class MapAreaDrawing
 
     public static IReadOnlyList<MapAreaShape> Shapes(IReadOnlyList<AreaCell> cells, CellRef? chosen = null)
     {
-        List<MapAreaShape> shapes = cells.OrderBy(cell => Layer(cell.Look)).Select(cell => new MapAreaShape(Ring(cell.Core), Colour(cell.Look), Key(cell.Cell),
-            Dashed: cell.Look is CellLook.Off or CellLook.Waiting or CellLook.SwitchingOff or CellLook.Edge,
-            Outline: cell.Look is CellLook.Edge or CellLook.Empty)).ToList();
+        List<MapAreaShape> shapes = cells.OrderBy(cell => Layer(cell.Look)).Select(cell => Shape(cell, Ring(cell.Core))).ToList();
         if (chosen is not null && cells.FirstOrDefault(cell => cell.Cell.Equals(chosen)) is { } picked)
             shapes.Add(new MapAreaShape(Ring(picked.Core), "--ink", "chosen", Outline: true));
         return shapes;
     }
+
+    public static IReadOnlyList<MapAreaShape> ShapesOutside(IEnumerable<AreaCell> cells, MapReach built) =>
+        cells.OrderBy(cell => Layer(cell.Look))
+            .SelectMany(cell => built.Outside(Box(cell.Core)).Select(piece => Shape(cell, [.. piece[0].SkipLast(1)], piece.Skip(1).ToList())))
+            .ToList();
+
+    public static MapFrame Box(MapBounds core) => new(core.South, core.West, core.North, core.East);
+
+    private static MapAreaShape Shape(AreaCell cell, IReadOnlyList<MapPoint> ring, IReadOnlyList<IReadOnlyList<MapPoint>>? holes = null) =>
+        new(ring, Colour(cell.Look), Key(cell.Cell),
+            Dashed: cell.Look is CellLook.Off or CellLook.Waiting or CellLook.SwitchingOff or CellLook.Edge,
+            Outline: cell.Look is CellLook.Edge or CellLook.Empty, Holes: holes);
 
     public static IReadOnlyList<MapLabel> Labels(IEnumerable<AreaCell> cells) =>
         cells.Select((cell, index) => new MapLabel(Named(cell.Look) ? Corner(cell.Core) : cell.Middle, MapAreaWords.Label(cell), Colour(cell.Look), index,

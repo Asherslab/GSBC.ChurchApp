@@ -171,7 +171,7 @@ function withOverlays(base, data) {
 const colourOf = (value) => (value?.startsWith("--") ? token(value) : value);
 const line = (l) => ({ type: "Feature", properties: { style: l.style, ...(l.label ? { label: l.label } : {}), ...(l.colour ? { colour: colourOf(l.colour) } : {}), ...(l.age != null ? { age: l.age } : {}), id: l.id ?? "" },
   geometry: { type: "LineString", coordinates: l.points } });
-const area = (a) => ({ type: "Feature", properties: { ...(a.colour ? { colour: colourOf(a.colour) } : {}), dashed: !!a.dashed, outline: !!a.outline, id: a.id ?? "" }, geometry: { type: "Polygon", coordinates: [a.points] } });
+const area = (a) => ({ type: "Feature", properties: { ...(a.colour ? { colour: colourOf(a.colour) } : {}), dashed: !!a.dashed, outline: !!a.outline, id: a.id ?? "" }, geometry: { type: "Polygon", coordinates: [a.points, ...(a.holes ?? [])] } });
 const marker = (m) => ({ type: "Feature", properties: { kind: m.kind, ...(m.label ? { label: m.label } : {}), id: m.id ?? "", chosen: !!m.chosen }, geometry: { type: "Point", coordinates: m.point } });
 
 function framePadding(b) {

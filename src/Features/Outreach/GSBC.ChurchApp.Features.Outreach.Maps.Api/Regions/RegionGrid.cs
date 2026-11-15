@@ -16,6 +16,23 @@ internal static class RegionGrid
 
     public static (MapGrid Grid, List<CellRef> Cells) Plan(GeoPoint centre, double radiusMetres) => Plan(GeoArea.Around(centre, radiusMetres));
 
+    public static (MapGrid Grid, List<CellRef> Cells) Plan(GeoPoint centre, double radiusMetres, MapGrid shared, IReadOnlySet<CellRef> taken)
+    {
+        GeoBounds area = GeoArea.Around(centre, radiusMetres);
+        (double latitude, double longitude) = (Math.Min(shared.CellLatitude / 4, (area.North - area.South) / 2), Math.Min(shared.CellLongitude / 4, (area.East - area.West) / 2));
+        CellRef first = shared.CellAt(area.North - latitude, area.West + longitude);
+        CellRef last = shared.CellAt(area.South + latitude, area.East - longitude);
+        List<CellRef> cells = [.. Enumerable.Range(first.Row, last.Row - first.Row + 1)
+            .SelectMany(row => Enumerable.Range(first.Column, last.Column - first.Column + 1).Select(column => new CellRef { Row = row, Column = column }))
+            .Where(cell => !taken.Contains(cell))];
+        return (Copy(shared), cells);
+    }
+
+    public static bool SameLines(MapGrid one, MapGrid other) =>
+        one.CentreLatitude.Equals(other.CentreLatitude) && one.CentreLongitude.Equals(other.CentreLongitude)
+        && one.CellLatitude.Equals(other.CellLatitude) && one.CellLongitude.Equals(other.CellLongitude)
+        && one.OriginRow == other.OriginRow && one.OriginColumn == other.OriginColumn;
+
     public static (MapGrid Grid, List<CellRef> Cells) Plan(GeoBounds area)
     {
         int rows = OddCount(area.HeightMetres());
@@ -58,6 +75,16 @@ internal static class RegionGrid
         row is >= 0 and < 26 && column >= 0
             ? string.Create(CultureInfo.InvariantCulture, $"{areaId}-{(char)('a' + row)}{column + 1}")
             : string.Create(CultureInfo.InvariantCulture, $"{areaId}-r{Signed(row)}c{Signed(column)}");
+
+    private static MapGrid Copy(MapGrid grid) => new()
+    {
+        CentreLatitude = grid.CentreLatitude,
+        CentreLongitude = grid.CentreLongitude,
+        CellLatitude = grid.CellLatitude,
+        CellLongitude = grid.CellLongitude,
+        OriginRow = grid.OriginRow,
+        OriginColumn = grid.OriginColumn,
+    };
 
     public static MapGrid GridOf(MapAreaRecord area) => new()
     {

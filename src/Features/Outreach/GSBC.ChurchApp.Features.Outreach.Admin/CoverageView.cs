@@ -30,10 +30,11 @@ public sealed class CoverageView
     private readonly StreetGraph _graph;
     private readonly int _restDays;
     private readonly DateOnly _today;
+    private readonly Func<MapPoint, bool> _owns;
 
-    public CoverageView(StreetGraph graph, IEnumerable<StreetCoverage> streets, int restDays, DateOnly today)
+    public CoverageView(StreetGraph graph, IEnumerable<StreetCoverage> streets, int restDays, DateOnly today, Func<MapPoint, bool> owns)
     {
-        (_graph, _restDays, _today) = (graph, Math.Max(1, restDays), today);
+        (_graph, _restDays, _today, _owns) = (graph, Math.Max(1, restDays), today, owns);
         Pieces = streets.SelectMany(street => street.Stretches.Select(covered => (street.Street, covered)))
             .Select(pair => EngineInputs.SideStretch(graph, new RecordStretch { Street = pair.Street, Side = pair.covered.Side, From = pair.covered.From, To = pair.covered.To })
                 is { } stretch
@@ -41,22 +42,24 @@ public sealed class CoverageView
                 : null)
             .OfType<CoveredPiece>()
             .ToList();
+        Owned = [.. Pieces.Where(piece => _owns(StreetMiddle(piece.Stretch.Street)))];
     }
 
     private (int Street, MapPoint Middle)[]? _middles;
 
     private IReadOnlyList<CoveredPiece> Pieces { get; }
 
+    private IReadOnlyList<CoveredPiece> Owned { get; }
+
     public IReadOnlyList<MapLine> Lines() =>
-        Pieces.Select(piece => new MapLine(Shape(piece.Stretch), MapLineStyle.Covered, Age: Age(piece.Day))).ToList();
+        Owned.Select(piece => new MapLine(Shape(piece.Stretch), MapLineStyle.Covered, Age: Age(piece.Day))).ToList();
 
     private double Age(DateOnly day) => Math.Clamp((_today.DayNumber - day.DayNumber) / (double)_restDays, 0, 1);
 
     public CoverageTally TallyIn(MapFrame view)
     {
-        GeoBounds core = _graph.Region.Core;
         HashSet<int> shown = [.. Middles()
-            .Where(street => Within(street.Middle, core.South, core.West, core.North, core.East) && Within(street.Middle, view.South, view.West, view.North, view.East))
+            .Where(street => Within(street.Middle, view.South, view.West, view.North, view.East) && _owns(street.Middle))
             .Select(street => street.Street)];
         List<CoveredPiece> done = [.. Pieces.Where(piece => shown.Contains(piece.Stretch.Street))];
         return new CoverageTally(shown.Count, done.Select(piece => piece.Stretch.Street).Distinct().Count(), shown.Sum(street => _graph.Homes(street)), done.Sum(piece => piece.Homes));
@@ -78,7 +81,7 @@ public sealed class CoverageView
     public CoverageChoice InArea(IReadOnlyList<MapPoint> area)
     {
         List<GeoPoint> polygon = [.. area.Select(point => new GeoPoint { Lat = point.Lat, Lng = point.Lon })];
-        return new CoverageChoice("The area you drew", [.. Pieces.Where(piece => OutreachRules.Contains(polygon, Middle(piece.Stretch)))], area, null);
+        return new CoverageChoice("The area you drew", [.. Owned.Where(piece => OutreachRules.Contains(polygon, Middle(piece.Stretch)))], area, null);
     }
 
     public IReadOnlyList<MapPoint> StreetShape(int street) => [.. _graph.ShapePoints(street).Select(Map)];
@@ -110,7 +113,9 @@ public sealed class CoverageView
 
     private (int Street, MapPoint Middle)[] Middles() => _middles ??= [.. Enumerable.Range(0, _graph.StreetCount)
         .Where(street => _graph.Street(street).CanDeliver && _graph.Homes(street) > 0)
-        .Select(street => (street, Map(_graph.Projection.ToGeo(_graph.PointAt(street, _graph.Street(street).Length / 2)))))];
+        .Select(street => (street, StreetMiddle(street)))];
+
+    private MapPoint StreetMiddle(int street) => Map(_graph.Projection.ToGeo(_graph.PointAt(street, _graph.Street(street).Length / 2)));
 
     private static bool Within(MapPoint point, double south, double west, double north, double east) =>
         point.Lat >= south && point.Lat < north && point.Lon >= west && point.Lon < east;

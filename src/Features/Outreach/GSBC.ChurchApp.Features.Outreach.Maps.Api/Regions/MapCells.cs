@@ -4,10 +4,12 @@ namespace GSBC.ChurchApp.Features.Outreach.Maps.Api.Regions;
 
 internal static class MapCells
 {
-    public static string? Problem(IReadOnlyCollection<CellRef> on, IReadOnlyCollection<CellRef> known, RegionChange change)
+    public static string? Problem(IReadOnlyCollection<CellRef> on, IReadOnlyCollection<CellRef> known, RegionChange change, IReadOnlySet<CellRef>? elsewhere = null)
     {
         HashSet<CellRef> staying = on.Except(change.Off).ToHashSet();
         HashSet<CellRef> added = change.On.Except(on).ToHashSet();
+        if (elsewhere is not null && added.Any(elsewhere.Contains))
+            return "A region you add is already in another area. Switch it off there first.";
         if (staying.Count + added.Count == 0)
             return "An area needs at least one region. Delete the area instead.";
         if (known.Union(added).Count() > RegionGrid.MostCells)

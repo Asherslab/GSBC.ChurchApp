@@ -43,7 +43,10 @@ internal sealed class OutreachMapsService(
         CheckRadius(request.RadiusKm);
         GeoPoint centre = Centre(request.CentreLatitude, request.CentreLongitude);
         HashSet<string> taken = [.. await db.Areas.Select(area => area.Id).ToListAsync(cancellationToken), .. MapAreas.Reserved];
-        (MapAreaRecord added, List<MapCellRecord> cells) = MapAreas.New(MapAreas.Slug(name, taken), name, centre, request.RadiusKm * 1000, Now);
+        (MapGrid grid, List<CellRef> planned) = await PlanAsync(centre, request.RadiusKm * 1000, cancellationToken);
+        if (planned.Count == 0)
+            throw Invalid("Every region there is already in another area.");
+        (MapAreaRecord added, List<MapCellRecord> cells) = MapAreas.New(MapAreas.Slug(name, taken), name, grid, planned, Now);
         db.Areas.Add(added);
         db.Cells.AddRange(cells);
         db.FeedChanges.Add(RegionFeed.BuildChanged(added.Id, Now));
@@ -102,7 +105,7 @@ internal sealed class OutreachMapsService(
         CancellationToken cancellationToken = context.CancellationToken;
         CheckRadius(request.RadiusKm);
         GeoPoint centre = Centre(request.CentreLatitude, request.CentreLongitude);
-        (MapGrid grid, List<CellRef> cells) = RegionGrid.Plan(centre, request.RadiusKm * 1000);
+        (MapGrid grid, List<CellRef> cells) = await PlanAsync(centre, request.RadiusKm * 1000, cancellationToken);
         GeoBounds reach = RegionGrid.Union(cells.Select(cell => RegionGrid.Core(grid, cell.Row, cell.Column)));
         return new MapAreaPreview
         {
@@ -126,7 +129,7 @@ internal sealed class OutreachMapsService(
                 found.AddRange(await source.UsesAsync(regions.Select(region => region.Id).ToList(), cancellationToken));
         return new RegionChangeCheck
         {
-            Problem = MapCells.Problem(OnCells(cells), cells.Select(Ref).ToList(), change),
+            Problem = MapCells.Problem(OnCells(cells), cells.Select(Ref).ToList(), change, await ElsewhereAsync(area, cancellationToken)),
             Added = await estimates.EstimateAsync(RegionGrid.GridOf(area), change.On, cancellationToken),
             Uses = found,
             FreedBytes = regions.Sum(region => region.StreetsBytes + region.MapBytes),
@@ -139,7 +142,7 @@ internal sealed class OutreachMapsService(
         MapAreaRecord area = await FindAsync(request.AreaId, cancellationToken);
         List<MapCellRecord> cells = await db.Cells.Where(cell => cell.AreaId == area.Id).ToListAsync(cancellationToken);
         RegionChange change = Effective(request, cells);
-        if (MapCells.Problem(OnCells(cells), cells.Select(Ref).ToList(), change) is { } problem)
+        if (MapCells.Problem(OnCells(cells), cells.Select(Ref).ToList(), change, await ElsewhereAsync(area, cancellationToken)) is { } problem)
             throw Invalid(problem);
         if (change.Off.Count > 0 && area.State == MapAreaStates.Building)
             throw new RpcException(new Status(StatusCode.FailedPrecondition, "Its maps are being built. Switch regions off once that finishes."));
@@ -165,6 +168,28 @@ internal sealed class OutreachMapsService(
             cells.Add(cell);
             return cell;
         }
+    }
+
+    private async Task<(MapGrid Grid, List<CellRef> Cells)> PlanAsync(GeoPoint centre, double radiusMetres, CancellationToken cancellationToken)
+    {
+        List<MapAreaRecord> areas = await db.Areas.AsNoTracking().Where(area => area.DeletedAt == null).OrderBy(area => area.CreatedAt).ToListAsync(cancellationToken);
+        if (areas.Count == 0)
+            return RegionGrid.Plan(centre, radiusMetres);
+        MapGrid shared = RegionGrid.GridOf(areas[0]);
+        return RegionGrid.Plan(centre, radiusMetres, shared, await OnCellsAsync(areas.Where(area => RegionGrid.SameLines(RegionGrid.GridOf(area), shared)), cancellationToken));
+    }
+
+    private async Task<HashSet<CellRef>> ElsewhereAsync(MapAreaRecord area, CancellationToken cancellationToken)
+    {
+        MapGrid grid = RegionGrid.GridOf(area);
+        List<MapAreaRecord> others = await db.Areas.AsNoTracking().Where(other => other.DeletedAt == null && other.Id != area.Id).ToListAsync(cancellationToken);
+        return await OnCellsAsync(others.Where(other => RegionGrid.SameLines(RegionGrid.GridOf(other), grid)), cancellationToken);
+    }
+
+    private async Task<HashSet<CellRef>> OnCellsAsync(IEnumerable<MapAreaRecord> areas, CancellationToken cancellationToken)
+    {
+        List<string> ids = [.. areas.Select(area => area.Id)];
+        return [.. (await db.Cells.AsNoTracking().Where(cell => ids.Contains(cell.AreaId) && cell.On).ToListAsync(cancellationToken)).Select(Ref)];
     }
 
     private static RegionChange Effective(RegionChange request, List<MapCellRecord> cells)

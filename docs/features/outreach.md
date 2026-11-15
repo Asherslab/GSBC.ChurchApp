@@ -420,6 +420,34 @@ outreach works on come in **regions**, which the API builds itself, and which ph
   not only in Map areas; all of Australia shows, but areas can't be added outside Queensland (the address data is
   Queensland's) and the place search stays Queensland's.
 
+### Where map areas overlap (fixed 2026-11-15, feedback #109)
+
+Areas keep their own grids, so two areas can overlap (*South Brisbane* over the south of *Around the church*). The owner
+saw the admin map hatch over built maps (Bulimba, Coorparoo, Annerley and Moorooka), cut diagonally along the west of
+*Around the church* when zoomed out, and stack "No homes" boxes. The region files were whole (each covers zoom 0 to 15
+over its own square); the drawing was at fault:
+
+- **The hatching was one invalid shape.** Everywhere outside the maps is one polygon with the built squares cut out of
+  it. Its outline was traced as if every square sat on one grid, so two overlapping areas gave two holes that overlap,
+  and MapLibre's triangulation of that polygon drew stray hatched triangles: the diagonal cut, worst zoomed out where one
+  tile holds the whole polygon, and the block over Annerley and Moorooka. Now the outline is the true union of every
+  built square, whatever its grid (`MapCover`, Platform.Ui).
+- **A square that's off, waiting or empty is drawn only where no area has a built map**, with its label in the part
+  that's left or not at all. One area's switched-off inner city no longer hatches another area's built suburbs.
+- **Each street counts once on the coverage map:** where regions overlap (two areas, or neighbours' 2 km margins), a
+  street belongs to the region whose square holds its middle, for the count, the lines and *Draw round streets*; every
+  region's view now sees the campaign's coverage whichever region it was recorded in.
+- **On the phone nothing changes:** a walk or a day's route uses one region, so one map and one set of streets, and
+  coverage is keyed by OpenStreetMap street, so a street walked from either area is done in both.
+- **Areas share one grid from now on (owner, 2026-11-15:** "One shared grid", asked whether a new area that overlaps
+  another should snap to it). A new area takes the oldest area's grid (same square size and lines) and is the squares
+  of that grid that its square reaches by at least a quarter of a square, leaving out squares another area on the grid
+  has switched on; a square another area has switched off can be taken (the inner city out of *Around the church*).
+  Switching on a square another area has on is refused ("A region you add is already in another area. Switch it off
+  there first."). Adding an area where every square is taken is refused too. Areas made before this keep their own grid
+  and the drawing above copes with them; in dev, *South Brisbane* moves onto the shared grid by deleting it and adding it
+  again (its region ids change once).
+
 ### The map's look (2026-11-15)
 
 `src/Platform/GSBC.ChurchApp.Platform.Ui/wwwroot/map/`: `map-style.js` builds the MapLibre style for a region's map
@@ -714,8 +742,8 @@ panes, etc. can also be used to expand and change "Map Areas" and view coverage.
 - Checking walked lengths against the street graph on the server (today the phone's figures are trusted within the
   speed and length limits).
 - A new exclusion zone doesn't yet flag the day routes it touches.
-- The coverage map shows one region at a time (a chooser when there are several); streets in two regions' overlap show
-  in both.
+- ~~The coverage map shows one region at a time; streets in two regions' overlap show in both.~~ The map workspace shows
+  every region in view, each street once (2026-11-15, *Where map areas overlap*).
 - Taking an area as a claim (the 2026-10-27 draft's *Areas*) isn't built: areas are the planners' for now.
 
 ## Planning outreach days (built 2026-11-15)
