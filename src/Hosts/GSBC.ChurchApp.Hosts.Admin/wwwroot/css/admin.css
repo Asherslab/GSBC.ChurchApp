@@ -445,7 +445,7 @@ input[type="checkbox"]:not([class]), input[type="radio"]:not([class]) { display:
 :not(.page) > .section--grouped > .section__group { box-shadow: none; }
 .date-field { max-width: 22rem; }
 @container (min-width: 37rem) {
-  .section__group :is(.field:has(> input.field__input), .date-field):not(.ui-pair *) { max-width: calc((100% - var(--stack)) / 2); }
+  .section__group :is(.field:has(> input.field__input, > .field__with-unit), .date-field):not(.ui-pair *) { max-width: calc((100% - var(--stack)) / 2); }
 }
 .section--grouped > .section__foot { margin: 0; padding: var(--space-md) var(--space-xl); border-top: 1px solid var(--line); border-radius: 0 0 var(--radius) var(--radius); background: color-mix(in srgb, var(--sand) 55%, var(--surface)); }
 .section--grouped > .section__foot .btn--quiet { background: var(--page); }

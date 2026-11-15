@@ -390,7 +390,7 @@ button.text-link:disabled { color: var(--ink-3); cursor: default; }
 .field__input {
   width: 100%;
   min-height: var(--touch);
-  padding: 13px 14px;
+  padding: 13px var(--field-inset);
   border: 0;
   border-radius: var(--radius-field);
   background: var(--field);
@@ -413,6 +413,14 @@ button.text-link:disabled { color: var(--ink-3); cursor: default; }
 .field__select .field__input { padding-right: 40px; }
 .field__chevron { position: absolute; right: 14px; top: 50%; transform: translateY(-50%) rotate(90deg); color: var(--ink-3); pointer-events: none; }
 .field input[type="date"] { min-height: 48px; }
+.field__with-unit { display: grid; }
+.field__with-unit > * { grid-area: 1 / 1; }
+.field__with-unit .field__input { font-variant-numeric: tabular-nums; -moz-appearance: textfield; }
+.field__with-unit .field__input::-webkit-inner-spin-button, .field__with-unit .field__input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+.field__unit { align-self: center; justify-self: start; overflow: hidden; max-width: 100%; padding-inline: var(--field-inset); color: var(--ink-2); font-size: var(--text-body); font-variant-numeric: tabular-nums; white-space: pre; pointer-events: none; }
+.field__unit-beside { visibility: hidden; }
+.field__unit-word { margin-left: 0.3em; }
+.field__input:disabled + .field__unit { color: var(--ink-3); }
 
 .toggle-row { display: flex; align-items: center; gap: 14px; min-height: 64px; padding: 12px 0; border-bottom: 1px solid var(--line); cursor: pointer; }
 .toggle-row--disabled { cursor: default; }

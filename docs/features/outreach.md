@@ -33,7 +33,7 @@ Decided:
 - **Start:** from here by default, or anywhere (search an address or drop a pin, e.g. where you'll park). When the
   streets around you are already done, the app says so and suggests the nearest good start and how far it is.
 - **Rest period: configurable, default 3 months.** An admin **settings screen** holds this and the other tunables
-  (pace, seconds per letterbox, bundle size, daylight hours, connector limits …), and an admin **coverage map** shows
+  (pace, seconds per letterbox, bundle size, connector limits …), and an admin **coverage map** shows
   everything recently done and lets staff mark coverage expired by hand.
 - **Outreach days:** printable route maps (one A4 PDF per route: the route drawn, start and meeting point, letterboxes
   and bundles, a street list and the route's QR code), replacing the Illustrator work; the **QR opens the route** in
@@ -58,7 +58,7 @@ Decided:
   region before an outreach day; *Offline maps* lets anyone keep or remove regions, with sizes.
 - **Map tiles: self-hosted.** One static PMTiles file (vector map) per region, stored in R2 and read by HTTP range
   requests from the media host; the owner approved this path (AGENTS.md). Styled to the church brand; works offline.
-- **Doorknocking: planned in now.** A doorknock walk has its own pace per door, pairs required, daylight only, and a
+- **Doorknocking: planned in now.** A doorknock walk has its own pace per door, pairs required, and a
   check-in at start and finish. At a door: *Knocked, no answer* (so a later doorknock can try again, never shown as
   anything about the household); *Spoke, follow-up wanted* (a first name and contact details only with their consent,
   sent to the outreach leaders' inbox); *Hostile*: "wants absolutely nothing to do with it", not merely dismissive;
@@ -460,7 +460,7 @@ the maps station's regions (`Maps`); schema `outreach`.
 
 One record (`OutreachSettings`, feed `outreach.settings`) with the engine's `RouteSettings` names 1:1 (rest days, pace,
 house, unit, door and unit door seconds, bundle size, spare share, connector limits, the walk to the first open street,
-reach thresholds) plus the screens' own: daylight hours, doorknocking in pairs, how long No junk mail marks (730 days)
+reach thresholds) plus the screens' own: doorknocking in pairs, how long No junk mail marks (730 days)
 and done follow-ups (90 days) are kept, and what counts as a walk (fastest 9 km/h, longest 30 km). Defaults are in
 `OutreachDefaults`; the server refuses values outside sensible ranges (`SettingsRules`). The rest period is days: 91 for
 "three months".
@@ -717,8 +717,9 @@ stops for the end of a walk; B and C stay on the page for the owner). Detail: [d
 - **Planning** runs the engine on the phone from the region's street file kept on the phone: from here (location asked
   only when you plan), a street you find by name (searched in the region's own street names, offline, no geocoder), or a
   pin dropped on the map. The plan shows distance and time, letterboxes and bundles, when you'll be back, the reach note
-  with its reasons and the two ways to get more, and the streets. Past the daylight hours it warns; doorknocking can't
-  start then, nor without *I'm walking with someone* when settings ask for pairs.
+  with its reasons and the two ways to get more, and the streets. Doorknocking can't
+  start without *I'm walking with someone* when settings ask for pairs. A walk may start at any time of day (owner,
+  2026-11-15, #103: "there's no requirement to only walk during the day").
 - **The walk.** Location runs in the background for the walk's length only (When In Use permission and iOS's blue
   indicator; started and stopped by the walk). Every fix goes into a journal on the phone, so a locked phone, a suspended
   page or the app being closed loses nothing; the follower reads it whenever the app runs. The screen leads with the
@@ -904,7 +905,6 @@ engine in admin for day routes. The phone sends only what was walked.
 ## Safety
 
 - Suggest going in pairs; outreach days should pair people.
-- Daylight hours by default (the time choices stop offering long walks near dusk).
 - Main roads are excluded from deliveries.
 - The walking screen keeps the phone usable one-handed and glanceable; no typing while walking.
 

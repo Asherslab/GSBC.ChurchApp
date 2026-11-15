@@ -19,8 +19,6 @@ public static class OutreachDefaults
         MaxApproachMetres = 500,
         ShortOf = 0.9,
         LongOf = 1.25,
-        DaylightStartsMinute = 7 * 60,
-        DaylightEndsMinute = 18 * 60,
         NoJunkMailKeptDays = 730,
         FollowUpsKeptDays = 90,
         FastestKmh = 9,

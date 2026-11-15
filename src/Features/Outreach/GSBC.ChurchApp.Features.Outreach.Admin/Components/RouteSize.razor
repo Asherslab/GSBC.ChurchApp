@@ -2,7 +2,7 @@
 
 <div class="route-size">
     <Segmented TValue="PlanTarget" Label="Size each route by" ShowLabel="true" Options="Targets" Value="_target" ValueChanged="TargetChangedAsync" />
-    <TextField Label="@Label" Type="number" Min="1" Value="@_amount" ValueChanged="AmountChangedAsync" Hint="@Hint" Problem="@Problem" />
+    <TextField Label="Each route" Type="number" Unit="@Unit" Min="1" Value="@_amount" ValueChanged="AmountChangedAsync" Hint="@Hint" Problem="@Problem" />
     @if (Apply)
     {
         <Button Variant="ButtonVariant.Quiet" Disabled="@(Amount is null)" OnClick="ApplyAsync">Split the area again</Button>
@@ -30,16 +30,16 @@
         _ => OutreachWords.Plural((int)Math.Round(amount), "letterbox", "letterboxes"),
     };
 
-    private string Label => _target switch
+    private string Unit => _target switch
     {
-        PlanTarget.Minutes => "Minutes a route",
-        PlanTarget.Bundles => "Bundles a route",
-        _ => "Letterboxes a route",
+        PlanTarget.Minutes => "minutes",
+        PlanTarget.Bundles => "bundles",
+        _ => "letterboxes",
     };
 
     private string Hint => _target switch
     {
-        PlanTarget.Minutes => "Walking there and back included. 60 minutes is about 100 letterboxes.",
+        PlanTarget.Minutes => "Walking there and back included. 60 is about 100 letterboxes.",
         PlanTarget.Bundles => "Bundles of 50.",
         _ => "About 100 is an hour's walk.",
     };

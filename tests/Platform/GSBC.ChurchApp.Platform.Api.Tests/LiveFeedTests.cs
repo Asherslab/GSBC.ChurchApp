@@ -18,12 +18,13 @@ using ProtoBuf.Grpc;
 
 namespace GSBC.ChurchApp.Platform.Api.Tests;
 
-[Integration("A watch stream reads committed feed changes past each phone's cursor from Postgres and pushes them live, to its audience only, across reconnects and a move to another database")]
+[Integration("A watch stream reads committed feed changes past each phone's cursor from Postgres and pushes them live, to its audience only, across reconnects, a database dropping its connections and a move to another database")]
 public sealed class LiveFeedTests : IAsyncLifetime
 {
     private const string Library = "media.library";
     private static readonly Permission SeeLibrary = new("media.view", ScopeKind.Global, "See the media library");
     private static readonly TimeSpan Patience = TimeSpan.FromSeconds(10);
+    private const string Writer = "writer";
 
     private TestDatabase _database = null!;
 
@@ -140,6 +141,33 @@ public sealed class LiveFeedTests : IAsyncLifetime
         Assert.Equal(StatusCode.Unauthenticated, ended.StatusCode);
     }
 
+    [Fact]
+    public async Task AnOpenStreamCarriesOnWhenTheDatabaseDropsItsConnections()
+    {
+        ClaimsPrincipal person = Person(seesLibrary: true);
+        using CancellationTokenSource cancel = new(Patience);
+        await using AsyncServiceScope scope = _services.CreateAsyncScope();
+        IAsyncEnumerator<WatchEvent> stream = scope.ServiceProvider.GetRequiredService<SyncService>()
+            .WatchAsync(new WatchRequest { Cursors = [new FeedCursor { Feed = Library, Latest = true }] }, Server(person, cancel.Token))
+            .GetAsyncEnumerator(cancel.Token);
+        Assert.True(await stream.MoveNextAsync());
+        await using ServiceProvider writer = await DatabaseAsync($"{_database.ConnectionString};Application Name={Writer}");
+
+        await ChangeAsync("uploaded as the database restarted", writer, publish: false);
+        await DropEveryConnectionButTheWritersAsync(writer);
+        _broadcaster.PublishChange(Library);
+
+        Assert.True(await stream.MoveNextAsync());
+        Assert.Contains(stream.Current.Feeds, batch => batch.Changes.Any(change => change.Id == "uploaded as the database restarted"));
+    }
+
+    private static async Task DropEveryConnectionButTheWritersAsync(IServiceProvider writer)
+    {
+        await using AsyncServiceScope scope = writer.CreateAsyncScope();
+        await scope.ServiceProvider.GetRequiredService<SyncDbContext>().Database.ExecuteSqlRawAsync(
+            $"SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = current_database() AND application_name <> '{Writer}'");
+    }
+
     private ClaimsPrincipal Person(bool seesLibrary)
     {
         string id = Guid.CreateVersion7().ToString();
@@ -156,13 +184,14 @@ public sealed class LiveFeedTests : IAsyncLifetime
         return watching;
     }
 
-    private async Task ChangeAsync(string recordId, IServiceProvider? database = null)
+    private async Task ChangeAsync(string recordId, IServiceProvider? database = null, bool publish = true)
     {
         await using AsyncServiceScope scope = (database ?? _services).CreateAsyncScope();
         SyncDbContext db = scope.ServiceProvider.GetRequiredService<SyncDbContext>();
         db.FeedChanges.Add(FeedChangeRecord.Marker(Library, recordId, _clock.UtcNow));
         await db.SaveChangesAsync();
-        _broadcaster.PublishChange(Library);
+        if (publish)
+            _broadcaster.PublishChange(Library);
     }
 
     private static CallContext Server(ClaimsPrincipal person, CancellationToken cancellationToken) =>
