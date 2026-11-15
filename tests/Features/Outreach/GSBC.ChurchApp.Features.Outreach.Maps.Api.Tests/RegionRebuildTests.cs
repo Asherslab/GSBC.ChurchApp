@@ -66,6 +66,6 @@ public sealed class RegionRebuildTests : IAsyncLifetime
     private async Task<OutreachRegion> PublishedAsync(string regionId)
     {
         FeedChangeRecord row = (await _host.LatestFeedRowAsync(regionId))!;
-        return OutreachMapsContractsModel.Instance.Deserialize<OutreachRegion>(new MemoryStream(row.Payload!));
+        return OutreachMapsContractsModel.Instance.Deserialize<OutreachRegion>(new MemoryStream(row.Payload));
     }
 }
