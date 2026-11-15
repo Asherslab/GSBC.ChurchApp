@@ -389,8 +389,9 @@ outreach works on come in **regions**, which the API builds itself, and which ph
   centre on without reading every address, and nothing for towns as a whole. A search matches names starting with the
   text first, then towns before suburbs before localities, and says how far and which way each is from the church.
 - **Seeing an area before it builds** (`Maps.Preview`): the squares for a centre and reach, with each square's primary
-  addresses counted by the address layer (counts only, kept 6 hours) and an estimated download (1.1 MB of map plus
-  75 bytes an address, fitted roughly to *Around the church*'s regions), and the places inside it. A square with no
+  addresses counted by the address layer (counts only, kept 6 hours) and an estimated download (1.73 MB plus 44.5
+  bytes for each address in the region with its overlap, fitted to *Around the church*'s 25 regions: half within 15%),
+  and up to 12 places inside it, towns before suburbs before localities. A square with no
   addresses isn't made. `Maps.CheckChange` gives the same for squares being added, plus what uses the regions going and
   how much they free; `Maps.ChangeRegions` applies it.
 - **No overview map file** (*Claude's default*): the admin panel draws the squares over the nearest built region's map

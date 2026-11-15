@@ -8,12 +8,13 @@ namespace GSBC.ChurchApp.Features.Outreach.Maps.Api.Regions;
 
 internal sealed class RegionEstimates(IMapSources sources, IMemoryCache cache)
 {
-    public const long MapBytes = 1_100_000;
-    public const long BytesPerAddress = 75;
+    public const long MapBytes = 1_730_000;
+    public const double BytesPerAddress = 44.5;
     private const int AtOnce = 6;
     private static readonly TimeSpan Remembered = TimeSpan.FromHours(6);
 
-    public static long Bytes(int addresses) => addresses == 0 ? 0 : MapBytes + addresses * BytesPerAddress;
+    public static long Bytes(int addressesInCore, int addressesInBounds) =>
+        addressesInCore == 0 ? 0 : MapBytes + (long)(addressesInBounds * BytesPerAddress);
 
     public async Task<List<CellEstimate>> EstimateAsync(MapGrid grid, IEnumerable<CellRef> cells, CancellationToken cancellationToken)
     {
@@ -23,8 +24,10 @@ internal sealed class RegionEstimates(IMapSources sources, IMemoryCache cache)
             await gate.WaitAsync(cancellationToken);
             try
             {
-                int addresses = await CountAsync(RegionGrid.Core(grid, cell.Row, cell.Column), cancellationToken);
-                return new CellEstimate { Row = cell.Row, Column = cell.Column, Addresses = addresses, Bytes = Bytes(addresses) };
+                RegionCell region = RegionGrid.CellOf("", grid, cell.Row, cell.Column);
+                int inCore = await CountAsync(region.Core, cancellationToken);
+                int inBounds = inCore == 0 ? 0 : await CountAsync(region.Bounds, cancellationToken);
+                return new CellEstimate { Row = cell.Row, Column = cell.Column, Addresses = inCore, Bytes = Bytes(inCore, inBounds) };
             }
             finally
             {

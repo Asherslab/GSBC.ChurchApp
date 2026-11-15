@@ -12,6 +12,7 @@ internal sealed class PlaceIndex(OutreachMapsDbContext db, IMapSources sources, 
 {
     private static readonly TimeSpan KeptFor = TimeSpan.FromDays(30);
     private const int Found = 8;
+    private const int MostShown = 12;
     private const int ShortestSearch = 2;
 
     private static readonly IReadOnlyList<string> Kinds =
@@ -73,7 +74,9 @@ internal sealed class PlaceIndex(OutreachMapsDbContext db, IMapSources sources, 
         (await db.Places.AsNoTracking()
             .Where(place => place.Latitude >= bounds.South && place.Latitude <= bounds.North && place.Longitude >= bounds.West && place.Longitude <= bounds.East
                             && place.Kind != MapPlaceKinds.Neighbourhood && place.Kind != MapPlaceKinds.Hamlet)
-            .OrderByDescending(place => place.Population).Take(60).ToListAsync(cancellationToken))
+            .OrderBy(place => place.Kind == MapPlaceKinds.City ? 0 : place.Kind == MapPlaceKinds.Town ? 1 : place.Kind == MapPlaceKinds.Suburb ? 2 : place.Kind == MapPlaceKinds.Village ? 3 : 4)
+            .ThenByDescending(place => place.Population).ThenBy(place => place.Name)
+            .Take(MostShown).ToListAsync(cancellationToken))
         .Select(ToMessage).ToList();
 
     private MapPlace ToMessage(PlaceRecord place)
