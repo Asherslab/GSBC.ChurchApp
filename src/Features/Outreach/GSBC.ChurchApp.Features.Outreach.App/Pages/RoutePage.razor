@@ -72,8 +72,8 @@
             <div class="outreach-figures">
                 <h1 class="outreach-route-title">@DayPage.RouteTitle(route)</h1>
                 <p class="outreach-figures__line">@($"{(view.Campaign?.Name ?? "Outreach")} · {OutreachPhoneWords.DayWhen(day)}")</p>
-                <p class="outreach-figures__big">@OutreachPhoneWords.Distance(summary.Metres) · @OutreachPhoneWords.Duration(summary.Time)</p>
-                <p class="outreach-figures__line">@(doorknock ? OutreachPhoneWords.Doors(summary.Letterboxes) : $"{OutreachPhoneWords.Letterboxes(summary.Letterboxes)} · {OutreachPhoneWords.Bundles(summary.BundlesToTake, view.BundleSize)}")</p>
+                <p class="outreach-figures__big">@OutreachPhoneWords.Distance(route.Metres) · @OutreachPhoneWords.Duration(TimeSpan.FromMinutes(route.Minutes))</p>
+                <p class="outreach-figures__line">@(doorknock ? OutreachPhoneWords.Doors(route.Letterboxes) : $"{OutreachPhoneWords.Letterboxes(route.Letterboxes)} · {OutreachPhoneWords.Bundles(summary.BundlesToTake, view.BundleSize)}")</p>
                 @if (view.Walk.ShareDone > 0)
                 {
                     <p class="outreach-figures__line">@($"{Math.Round(view.Walk.ShareDone * 100)}% done already today")</p>

@@ -62,6 +62,7 @@ public static class RouteSheets
     private const double PlaceStep = 12;
     private const int MostPlacesARun = 40;
     private const double SampleEvery = 4;
+    private static readonly double[] WalkThroughDash = [3, 2.5];
     private const double ArrowEveryMetres = 140;
 
     private static readonly PdfColour Ink = PdfColour.Black;
@@ -141,14 +142,11 @@ public static class RouteSheets
                 continue;
             page.Line(graph.ShapeBetween(street).Select(At).ToList(), info.Kind.IsMainRoad() ? MainRoad : Street, info.Kind.IsMainRoad() ? 2.4 : 1);
         }
-        foreach (RouteStep step in summary.Steps)
-        {
-            List<PdfPoint> line = step.Line.Select(p => At(graph.Projection.ToFlat(p))).ToList();
-            if (step.Delivers)
-                page.Line(line, Ink, 3.4);
-            else
-                page.Line(line, Ink, 1.3, [3, 2.5]);
-        }
+        List<List<PdfPoint>> delivered = summary.Steps.Where(step => step.Delivers).Select(step => step.Line.Select(p => At(graph.Projection.ToFlat(p))).ToList()).ToList();
+        foreach (List<PdfPoint> run in WalkedThrough(summary.Steps.Where(step => !step.Delivers).Select(step => step.Line.Select(p => At(graph.Projection.ToFlat(p))).ToList()), delivered))
+            page.Line(run, Ink, 1.3, WalkThroughDash, round: false);
+        foreach (List<PdfPoint> line in delivered)
+            page.Line(line, Ink, 3.4);
         Arrows(page, routeFlats, At);
         List<PdfPoint> walked = Sampled(summary.Steps.Select(step => step.Line.Select(p => At(graph.Projection.ToFlat(p))).ToList()));
         StreetNames(page, graph, summary, At, viewLow, viewHigh, frame, taken, walked);
@@ -280,6 +278,39 @@ public static class RouteSheets
         }
     }
 
+    private static IEnumerable<List<PdfPoint>> WalkedThrough(IEnumerable<List<PdfPoint>> walkThroughs, List<List<PdfPoint>> delivered)
+    {
+        HashSet<(long, long, long, long)> drawn = [.. delivered.SelectMany(Segments)];
+        foreach (List<PdfPoint> line in walkThroughs)
+        {
+            List<PdfPoint> run = [];
+            for (int i = 1; i < line.Count; i++)
+            {
+                if (drawn.Add(Segment(line[i - 1], line[i])))
+                {
+                    if (run.Count == 0)
+                        run.Add(line[i - 1]);
+                    run.Add(line[i]);
+                    continue;
+                }
+                if (run.Count >= 2)
+                    yield return run;
+                run = [];
+            }
+            if (run.Count >= 2)
+                yield return run;
+        }
+    }
+
+    private static IEnumerable<(long, long, long, long)> Segments(List<PdfPoint> line) => line.Zip(line.Skip(1), Segment);
+
+    private static (long, long, long, long) Segment(PdfPoint a, PdfPoint b)
+    {
+        (long, long) Rounded(PdfPoint point) => ((long)Math.Round(point.X * 10), (long)Math.Round(point.Y * 10));
+        ((long, long) first, (long, long) second) = (Rounded(a), Rounded(b));
+        return first.CompareTo(second) <= 0 ? (first.Item1, first.Item2, second.Item1, second.Item2) : (second.Item1, second.Item2, first.Item1, first.Item2);
+    }
+
     private static double Shift(int place)
     {
         int step = (place + 1) / 2;
@@ -335,7 +366,7 @@ public static class RouteSheets
     {
         page.Line([new(x, y), new(x + 22, y)], Ink, 3.4);
         page.Text(x + 28, y + 2.6, "Letterbox both sides", PdfFont.Regular, 7.5, Ink2);
-        page.Line([new(x + 118, y), new(x + 140, y)], Ink, 1.3, [3, 2.5]);
+        page.Line([new(x + 118, y), new(x + 140, y)], Ink, 1.3, WalkThroughDash, round: false);
         page.Text(x + 146, y + 2.6, "Walk through, no letterboxes", PdfFont.Regular, 7.5, Ink2);
         page.Circle(x + 266, y, 2.6, PdfColour.White, Ink, 0.9);
         page.Line([new(x + 264.2, y - 1.8), new(x + 267.8, y + 1.8)], Ink, 0.8, round: false);

@@ -158,7 +158,10 @@
 .outreach-now__next .icon { flex: none; }
 
 .outreach-walk-map .map-view__map { min-height: 0; height: max(11rem, calc(100dvh - 37rem)); }
-.page-scroll--focused .outreach-walk-map .map-view__map { height: max(11rem, calc(100dvh - 33.7rem)); }
+.page-scroll--focused:has(.outreach-walk-foot) { display: flex; flex-direction: column; padding-bottom: calc(var(--sab) + var(--space-sm)); }
+.page-scroll--focused:has(.outreach-walk-foot) > .page { display: flex; flex: 1 0 auto; flex-direction: column; min-height: 0; }
+.page-scroll--focused .outreach-walk-map { flex: 1 1 auto; }
+.page-scroll--focused .outreach-walk-map .map-view__map { height: auto; min-height: 11rem; }
 .outreach-walk-map .map-view__attribution { padding: var(--space-2xs) var(--gutter) 0; }
 .outreach-walk-map__follow { position: absolute; right: var(--space-md); bottom: var(--space-md); box-shadow: var(--lift); }
 

@@ -49,6 +49,8 @@
     private string? _said;
     private DateTimeOffset _saidAt;
 
+    protected override Task OnInitializedAsync() => Walk.LoadAsync();
+
     protected override void OnInitialized()
     {
         Walk.Changed += OnWalkChanged;

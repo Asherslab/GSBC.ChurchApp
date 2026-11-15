@@ -16,7 +16,7 @@ public sealed record PlannedSection(DraftSection Section, int Number, string Nam
 
     public int Letterboxes => Summary.Letterboxes;
 
-    public int Minutes => (int)Math.Round(Summary.Time.TotalMinutes);
+    public int Minutes => (int)Math.Round(Summary.Plan.Time.TotalMinutes);
 
     public double Kilometres => Summary.Plan.Metres / 1000;
 }

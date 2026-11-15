@@ -56,6 +56,9 @@ place, the campaign and the totals; back to Outreach days) with `SaveStatus` ("S
 - **The chosen route** (bottom centre, above the map's credits): its dot, number, letterboxes and time; Lock, Split in
   two, and a ⋯ with Rename, Merge with route N and Leave its streets out (red, last). On a map narrower than 640px the
   bar and the hint sit beside the rail instead of centred.
+- **A route's time** is the same number everywhere (the planner's labels, table and hover, the printed sheet, the phone's day
+  list and route page): walking the route and delivering to its letterboxes, by the settings' *How long a walk takes*.
+  It leaves out the walk from the meeting place and back, as its distance does (2026-11-15).
 - **The pane:** `Segmented` Plan / On the day. Plan with no routes: a `PaneHead` "Plan the routes", *Draw the area on the
   map*, *Or start from a saved area*, and how big each route is (`RouteSize`: by letterboxes, minutes or bundles, in a
   sand box). With routes: one caption line (where they came from, the size, and *5 need a look* as a link that picks the
@@ -78,7 +81,8 @@ Note, and the `SaveBar`. A new area starts with the drawing tool on.
 ## Printed route maps
 One A4 page a route, black on white: the route number at 26pt and its name, the day's line, the facts in bold, the QR
 code top right with "Scan to open it in the app" and the code; the map in a ruled frame (route 3.4pt black, connectors
-dashed, streets 1pt grey, main roads 2.4pt grey, arrows, Start and Meet here, street names with a white halo (the
+dashed and drawn once where a walk-through goes out and back (two passes with offset dashes read as a solid line),
+streets 1pt grey, main roads 2.4pt grey, arrows, Start and Meet here, street names with a white halo (the
 route's own in bold beside the line, or level beside a short street; every other named street in view along its
 straightest stretch, never over the route or another name), scale,
 north, a key under it); the streets in order in two columns; a hairline over the notes; the attribution at the foot.
@@ -151,7 +155,8 @@ masthead's navy at display size and the map supports it. Maps are `MapView` ([ma
   *I'm walking with someone*, where you start (tap the map, or find a street in a `Sheet` with a `SearchField`). Empty
   states say why there's no plan (no location, no maps yet, outside the area, getting the map, no street near).
 - **Walking** (`/outreach/walking`, a full-screen task: `Page Focused`, so the tab bar steps aside while a walk is on and
-  ‹ Outreach is the way back, the walk carrying on): the masthead is the walk: a status line (Walking or Paused and the time at the
+  ‹ Outreach is the way back, the walk carrying on; the map takes the room the tab bar left and the walk's bar sits just
+  above the home indicator): the masthead is the walk: a status line (Walking or Paused and the time at the
   left, the campaigns at the right), the street at display size, *Houses on your left · 4 to go* at title size, and the
   next turn with its arrow over a hairline (*Then left into …* and its letterboxes). Then the map, centred on you at
   street level while it follows you, framing you, the street you're on and the next one (the whole route and you before the first fix); a drag stops that and puts a quiet small *Follow me* at the map's bottom right. Then
