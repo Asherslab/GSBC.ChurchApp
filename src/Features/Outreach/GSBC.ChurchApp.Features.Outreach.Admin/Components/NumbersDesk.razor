@@ -2,9 +2,8 @@
 @inject TimeProvider Time
 @using System.Globalization
 
-<LiveData @ref="_live" TValue="Numbers" Feeds="Feeds" Load="LoadAsync" FailedTitle="Can't load the numbers right now">
+<LiveData @ref="_live" TValue="Numbers" Feeds="Feeds" Load="LoadAsync" Remember="@($"outreach.numbers.{Scope}.{_campaign}.{_span}")" FailedTitle="Can't load the numbers right now">
     @{ Numbers numbers = context.Value; }
-    <OutreachHead Tab="OutreachTab.Numbers" FollowUps="numbers.Desk.OpenFollowUps" Reports="numbers.Desk.NewReports" />
     <div class="outreach-numbers">
         <div class="outreach-numbers__filters">
             <div class="outreach-numbers__filter">

@@ -9,9 +9,8 @@
 @inject TimeProvider Time
 @inject IAccess Access
 
-<LiveData @ref="_live" TValue="Shown" Feeds="Feeds" Load="LoadAsync" FailedTitle="Can't load the coverage map right now">
+<LiveData @ref="_live" TValue="Shown" Feeds="Feeds" Load="LoadAsync" Remember="@($"outreach.coverage.{Scope}.{_campaign}")" FailedTitle="Can't load the coverage map right now">
     @{ Shown shown = context.Value; }
-    <OutreachHead Tab="OutreachTab.Coverage" FollowUps="shown.Desk.OpenFollowUps" Reports="shown.Desk.NewReports" />
     @if (shown.Region is null || shown.View is null)
     {
         <div class="outreach-coverage__none">

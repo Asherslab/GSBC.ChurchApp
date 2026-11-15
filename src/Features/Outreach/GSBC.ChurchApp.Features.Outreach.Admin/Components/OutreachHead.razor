@@ -1,18 +1,29 @@
+@inject OutreachDeskClient Outreach
+
 <TitleBand Title="Outreach" Lead="Campaigns, outreach days and their routes, where outreach has been, what it adds up to, and what walkers send in.">
-    <Actions>@Actions</Actions>
+    <Actions><SectionOutlet SectionName="@ActionsSection" /></Actions>
 </TitleBand>
-<TabStrip TValue="OutreachTab" Label="Outreach" Options="Options" Value="Tab" Href="OutreachTabs.Href" />
+<LiveData TValue="OutreachDesk" Feeds="Feeds" Load="() => Outreach.DeskAsync(Scope)" Remember="@($"outreach.head.{Scope}")">
+    <ChildContent>@Tabs(context.Value)</ChildContent>
+    <Loading>@Tabs(null)</Loading>
+    <Failed>@Tabs(null)</Failed>
+</LiveData>
 
 @code {
-    [Parameter, EditorRequired] public required OutreachTab Tab { get; set; }
-    [Parameter] public int FollowUps { get; set; }
-    [Parameter] public int Reports { get; set; }
-    [Parameter] public RenderFragment? Actions { get; set; }
+    public const string ActionsSection = "outreach-actions";
 
-    private IReadOnlyList<TabOption<OutreachTab>> Options =>
+    private static readonly IReadOnlyList<string> Feeds = [OutreachFeeds.Desk];
+
+    [Parameter, EditorRequired] public required string Scope { get; set; }
+    [Parameter, EditorRequired] public required OutreachTab Tab { get; set; }
+
+    private RenderFragment Tabs(OutreachDesk? desk) =>
+        @<TabStrip TValue="OutreachTab" Label="Outreach" Options="Options(desk)" Value="Tab" Href="OutreachTabs.Href" />;
+
+    private static IReadOnlyList<TabOption<OutreachTab>> Options(OutreachDesk? desk) =>
     [
         new(OutreachTab.Campaigns, "Campaigns"), new(OutreachTab.Days, "Days"), new(OutreachTab.Areas, "Areas"), new(OutreachTab.Coverage, "Coverage"),
-        new(OutreachTab.Numbers, "Numbers"), new(OutreachTab.Places, "Places"), new(OutreachTab.FollowUps, "Follow-ups", FollowUps), new(OutreachTab.Reports, "Reports", Reports),
-        new(OutreachTab.Settings, "Settings"),
+        new(OutreachTab.Numbers, "Numbers"), new(OutreachTab.Places, "Places"), new(OutreachTab.FollowUps, "Follow-ups", desk?.OpenFollowUps ?? 0),
+        new(OutreachTab.Reports, "Reports", desk?.NewReports ?? 0), new(OutreachTab.Settings, "Settings"),
     ];
 }

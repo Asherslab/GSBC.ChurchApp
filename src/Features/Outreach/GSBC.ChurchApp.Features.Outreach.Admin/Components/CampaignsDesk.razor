@@ -3,14 +3,12 @@
 
 <UnsavedGuard Changed="() => Changed" What="this campaign" Save="SaveBeforeLeavingAsync" />
 
-<LiveData @ref="_live" TValue="OutreachDesk" Feeds="Feeds" Load="() => Outreach.DeskAsync(Scope)" FailedTitle="Can't load the campaigns right now">
-    <OutreachHead Tab="OutreachTab.Campaigns" FollowUps="context.Value.OpenFollowUps" Reports="context.Value.NewReports">
-        <Actions>
-            <Can Permission="OutreachPermissions.Plan" ObjectId="@Scope">
-                <Button Icon="plus" OnClick="() => OpenAsync(() => Edit(new Campaign()))">New campaign</Button>
-            </Can>
-        </Actions>
-    </OutreachHead>
+<LiveData @ref="_live" TValue="OutreachDesk" Feeds="Feeds" Load="() => Outreach.DeskAsync(Scope)" Remember="@($"outreach.campaigns.{Scope}")" FailedTitle="Can't load the campaigns right now">
+    <SectionContent SectionName="@OutreachHead.ActionsSection">
+        <Can Permission="OutreachPermissions.Plan" ObjectId="@Scope">
+            <Button Icon="plus" OnClick="() => OpenAsync(() => Edit(new Campaign()))">New campaign</Button>
+        </Can>
+    </SectionContent>
     <Workbench DetailLabel="The campaign" Showing="@(_editing is null ? WorkbenchPane.Main : WorkbenchPane.Detail)">
         <ChildContent>
             <DataTable TItem="Campaign" Label="Campaigns" Items="context.Value.Campaigns" Columns="Columns(context.Value)" Key="campaign => campaign.Id"

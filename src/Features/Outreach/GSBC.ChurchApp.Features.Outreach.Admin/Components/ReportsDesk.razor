@@ -2,8 +2,7 @@
 @using GSBC.ChurchApp.Platform.Contracts.Media
 @using GSBC.ChurchApp.Platform.Ui.Maps
 
-<LiveData @ref="_live" TValue="Lists" Feeds="Feeds" Load="LoadAsync" FailedTitle="Can't load the reports right now">
-    <OutreachHead Tab="OutreachTab.Reports" FollowUps="context.Value.Desk.OpenFollowUps" Reports="context.Value.Desk.NewReports" />
+<LiveData @ref="_live" TValue="Lists" Feeds="Feeds" Load="LoadAsync" Remember="@($"outreach.reports.{Scope}")" FailedTitle="Can't load the reports right now">
     <Workbench DetailLabel="The report" Showing="@(Chosen(context.Value) is null ? WorkbenchPane.Main : WorkbenchPane.Detail)">
         <ChildContent>
             <DataTable TItem="ReportLine" Label="Reports" Items="context.Value.Reports.Lines" Columns="Columns" Key="report => report.Id"

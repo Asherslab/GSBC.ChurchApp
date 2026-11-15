@@ -1,7 +1,6 @@
 @inject OutreachDeskClient Outreach
 
-<LiveData @ref="_live" TValue="Lists" Feeds="Feeds" Load="LoadAsync" FailedTitle="Can't load the follow-ups right now">
-    <OutreachHead Tab="OutreachTab.FollowUps" FollowUps="context.Value.Desk.OpenFollowUps" Reports="context.Value.Desk.NewReports" />
+<LiveData @ref="_live" TValue="Lists" Feeds="Feeds" Load="LoadAsync" Remember="@($"outreach.follow-ups.{Scope}")" FailedTitle="Can't load the follow-ups right now">
     <Workbench DetailLabel="The follow-up" Showing="@(Chosen(context.Value) is null ? WorkbenchPane.Main : WorkbenchPane.Detail)">
         <ChildContent>
             <DataTable TItem="FollowUp" Label="Follow-ups" Items="context.Value.FollowUps.Lines" Columns="Columns" Key="followUp => followUp.Id"

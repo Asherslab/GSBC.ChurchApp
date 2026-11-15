@@ -5,18 +5,16 @@
 
 <UnsavedGuard Changed="() => Changed" What="this place" Save="SaveBeforeLeavingAsync" />
 
-<LiveData @ref="_live" TValue="Lists" Feeds="Feeds" Load="LoadAsync" FailedTitle="Can't load the places right now">
+<LiveData @ref="_live" TValue="Lists" Feeds="Feeds" Load="LoadAsync" Remember="@($"outreach.places.{Scope}")" FailedTitle="Can't load the places right now">
     @{ Lists lists = context.Value; }
-    <OutreachHead Tab="OutreachTab.Places" FollowUps="lists.Desk.OpenFollowUps" Reports="lists.Desk.NewReports">
-        <Actions>
-            @if (CanChangeExclusions)
-            {
-                <Menu Label="Add a place outreach skips" Text="Add a place" Icon="plus" Variant="ButtonVariant.Primary" Chevron="true"
-                      Items="@([this.Item("An area", () => OpenAsync(NewZone()), "map", "Streets inside are walked through, never delivered to"),
-                               this.Item("An address", () => OpenAsync(NewAddress()), "map-pin", "One letterbox, for someone who asked not to get anything")])" />
-            }
-        </Actions>
-    </OutreachHead>
+    <SectionContent SectionName="@OutreachHead.ActionsSection">
+        @if (CanChangeExclusions)
+        {
+            <Menu Label="Add a place outreach skips" Text="Add a place" Icon="plus" Variant="ButtonVariant.Primary" Chevron="true"
+                  Items="@([this.Item("An area", () => OpenAsync(NewZone()), "map", "Streets inside are walked through, never delivered to"),
+                           this.Item("An address", () => OpenAsync(NewAddress()), "map-pin", "One letterbox, for someone who asked not to get anything")])" />
+        }
+    </SectionContent>
     <Workbench AsideLabel="Show" FoldAside="true" DetailLabel="The place" Showing="@(Chosen(lists) is null ? WorkbenchPane.Main : WorkbenchPane.Detail)">
         <Aside>
             <FilterChips TValue="PlaceKind?" Label="Show" Rail="true" Options="Filters(lists)" Value="_filter" ValueChanged="kind => _filter = kind" />
