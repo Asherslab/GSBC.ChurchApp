@@ -24,7 +24,7 @@ else if (Disabled || (Href is null && !OnClick.HasDelegate))
 }
 else
 {
-    <button type="button" class="row @ReadingClass @Class" style="@IndentStyle" @onclick="ActivateAsync">@Body</button>
+    <button type="button" class="row @ReadingClass @(Current ? "row--current" : "") @Class" style="@IndentStyle" aria-current="@(Current ? "true" : null)" @onclick="ActivateAsync">@Body</button>
 }
     </text>;
 

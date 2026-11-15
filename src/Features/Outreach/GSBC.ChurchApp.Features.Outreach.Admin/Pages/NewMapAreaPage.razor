@@ -213,7 +213,7 @@
             {
                 MapPoint at = new(place.Latitude, place.Longitude);
                 if (labels.All(label => Math.Abs(label.Point.Lat - at.Lat) > apart / 2 || Math.Abs(label.Point.Lon - at.Lon) > apart * 1.6))
-                    labels.Add(new MapLabel(at, place.Name, "--ink-2", labels.Count));
+                    labels.Add(new MapLabel(at, place.Name, "--ink-2", labels.Count, Quiet: true));
             }
         }
         _labels = labels;

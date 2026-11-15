@@ -1,6 +1,5 @@
 using Grpc.Core;
 using GSBC.ChurchApp.Features.Outreach.Maps.Api.Data;
-using GSBC.ChurchApp.Features.Outreach.Maps.Api.Geo;
 using GSBC.ChurchApp.Features.Outreach.Maps.Api.Places;
 using GSBC.ChurchApp.Features.Outreach.Maps.Api.Regions;
 using GSBC.ChurchApp.Features.Outreach.Maps.Contracts;
@@ -21,8 +20,6 @@ internal sealed class OutreachMapsService(
     IBlobStore blobs,
     TimeProvider time) : IOutreachMapsService
 {
-    private const double PlacesMarginMetres = 3_000;
-
     private DateTime Now => time.GetUtcNow().UtcDateTime;
 
     public async ValueTask<RegionList> RegionsAsync(RegionListRequest request, CallContext context = default) => new()
@@ -107,7 +104,7 @@ internal sealed class OutreachMapsService(
         {
             Grid = grid,
             Cells = await estimates.EstimateAsync(grid, cells, cancellationToken),
-            Places = await places.WithinAsync(reach.Grown(PlacesMarginMetres), cancellationToken),
+            Places = await places.WithinAsync(reach, cancellationToken),
         };
     }
 

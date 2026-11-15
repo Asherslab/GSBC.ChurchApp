@@ -70,7 +70,7 @@ public static class MapAreaDrawing
 
     public static IReadOnlyList<MapLabel> Labels(IEnumerable<AreaCell> cells) =>
         cells.Select((cell, index) => new MapLabel(Named(cell.Look) ? Corner(cell.Core) : cell.Middle, MapAreaWords.Label(cell), Colour(cell.Look), index,
-            cell.Look == CellLook.Adding ? MapLabelStyle.Filled : MapLabelStyle.Ring, MapAreaWords.ShortLabel(cell))).ToList();
+            cell.Look == CellLook.Adding ? MapLabelStyle.Filled : MapLabelStyle.Ring, MapAreaWords.ShortLabel(cell), Quiet: Named(cell.Look))).ToList();
 
     public static MapPoint Corner(MapBounds core) =>
         new(core.North - (core.North - core.South) * 0.14, core.West + (core.East - core.West) * 0.3);

@@ -37,7 +37,8 @@
 .area-desk__uses { display: grid; gap: var(--space-2xs); margin: var(--space-2xs) 0 var(--space-xs); padding-left: var(--space-lg); }
 .area-desk__summary { margin: 0 0 var(--space-sm); color: var(--ink-2); font-size: var(--text-caption); text-align: right; font-variant-numeric: tabular-nums; }
 .area-desk__hint { margin: var(--space-sm) 0 0; }
-.area-desk__places { display: grid; margin-top: var(--space-sm); }
+.area-desk__places { display: grid; margin: var(--space-sm) calc(-1 * var(--space-md)) 0; }
+.area-desk__places .row { padding-inline: var(--space-md); border-radius: var(--radius-field); }
 .area-desk__fields { display: grid; gap: var(--stack); margin-top: var(--space-xl); }
 .area-desk__estimate { margin: var(--space-md) 0 0; color: var(--ink-2); font-size: var(--text-caption); font-variant-numeric: tabular-nums; }
 .outreach-day__go { display: grid; justify-items: start; gap: var(--space-xs); padding-bottom: var(--space-xl); border-bottom: 1px solid var(--line); }
