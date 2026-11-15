@@ -35,7 +35,7 @@
 .area-desk__rows { display: grid; }
 .area-desk__uses-lead { margin: 0; font-weight: 600; }
 .area-desk__uses { display: grid; gap: var(--space-2xs); margin: var(--space-2xs) 0 var(--space-xs); padding-left: var(--space-lg); }
-.area-desk__summary { margin: 0 0 var(--space-sm); color: var(--ink-2); font-size: var(--text-caption); text-align: right; font-variant-numeric: tabular-nums; }
+.area-desk__summary { max-width: 42ch; margin: 0 0 var(--space-sm) auto; color: var(--ink-2); font-size: var(--text-caption); text-align: right; text-wrap: balance; font-variant-numeric: tabular-nums; }
 .area-desk__hint { margin: var(--space-sm) 0 0; }
 .area-desk__places { display: grid; margin: var(--space-sm) calc(-1 * var(--space-md)) 0; }
 .area-desk__places .row { padding-inline: var(--space-md); border-radius: var(--radius-field); }
