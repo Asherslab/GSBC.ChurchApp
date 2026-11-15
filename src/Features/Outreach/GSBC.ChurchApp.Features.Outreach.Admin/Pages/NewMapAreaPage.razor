@@ -31,6 +31,10 @@
             </Map>
             <Pane>
                 <SearchField Label="Find a town or suburb" Placeholder="A town or suburb in Queensland" Value="@_search" ValueChanged="SearchAsync" AutoFocus="true" />
+                @if (_places is null && _centre is null)
+                {
+                    <p class="field__hint area-desk__hint">Type at least two letters of a town or suburb anywhere in Queensland, or click the map where the area's middle should be. You'll see its squares and how big they are before anything is built.</p>
+                }
                 @if (_places is { } found)
                 {
                     @if (!found.Indexed)

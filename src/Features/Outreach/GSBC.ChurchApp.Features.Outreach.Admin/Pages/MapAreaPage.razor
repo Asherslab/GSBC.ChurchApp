@@ -61,6 +61,7 @@
                             <Button Small="true" Variant="ButtonVariant.Quiet" Icon="refresh" Busy="_busy" Class="area-desk__retry" OnClick="() => RunAsync(() => Maps.RetryAsync(area.Id))">Try again</Button>
                         }
                     </div>
+                    <p class="area-desk__key">Solid squares are built; dashed ones are waiting to build, off, or have no homes. Hover over one for what it is.</p>
                     @if (_check is { Uses.Count: > 0 } check)
                     {
                         <Notice Tone="NoticeTone.Warning">

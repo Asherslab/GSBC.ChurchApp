@@ -63,11 +63,11 @@ public static class MapAreaDrawing
             Dashed: cell.Look is CellLook.Off or CellLook.Waiting or CellLook.SwitchingOff or CellLook.Empty)).ToList();
 
     public static IReadOnlyList<MapLabel> Labels(IEnumerable<AreaCell> cells) =>
-        cells.Where(cell => cell.Look != CellLook.Built).Select((cell, index) => new MapLabel(cell.Middle, MapAreaWords.Label(cell), Colour(cell.Look), index,
+        cells.Where(cell => cell.Look is not (CellLook.Built or CellLook.Waiting or CellLook.Empty)).Select((cell, index) => new MapLabel(cell.Middle, MapAreaWords.Label(cell), Colour(cell.Look), index,
             cell.Look == CellLook.Adding ? MapLabelStyle.Filled : MapLabelStyle.Ring, MapAreaWords.ShortLabel(cell))).ToList();
 
     public static MapFrame Frame(IEnumerable<AreaCell> cells) =>
-        MapFrame.Around(cells.SelectMany(cell => Ring(cell.Core)), padding: 24, maxZoom: 14);
+        MapFrame.Around(cells.SelectMany(cell => Ring(cell.Core)), padding: 44, maxZoom: 14);
 
     public static IReadOnlyList<MapPoint> Ring(MapBounds core) =>
     [

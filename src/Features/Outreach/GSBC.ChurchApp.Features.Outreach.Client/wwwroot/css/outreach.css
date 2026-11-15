@@ -21,6 +21,7 @@
 .area-desk__state { display: grid; gap: var(--space-sm); margin-bottom: var(--space-lg); }
 .area-desk__state-line { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-xs); margin: 0; color: var(--ink-2); font-size: var(--text-caption); }
 .area-desk__retry { justify-self: start; }
+.area-desk__key { margin: 0 0 var(--space-md); color: var(--ink-3); font-size: var(--text-caption); }
 .area-desk__group { margin: var(--space-xl) 0 var(--space-2xs); color: var(--ink-2); font-size: var(--text-label); font-weight: 600; }
 .area-desk__rows { display: grid; }
 .area-desk__uses-lead { margin: 0; font-weight: 600; }
