@@ -15,6 +15,29 @@ internal static class MapCells
         return Reachable(staying, added) ? null : "A region you add must touch one that stays on.";
     }
 
+    public static List<List<T>> Groups<T>(IReadOnlyList<T> cells, Func<T, CellRef> at)
+    {
+        List<List<T>> groups = [];
+        HashSet<int> placed = [];
+        for (int first = 0; first < cells.Count; first++)
+        {
+            if (!placed.Add(first))
+                continue;
+            List<T> group = [cells[first]];
+            Queue<int> next = new([first]);
+            while (next.TryDequeue(out int from))
+                for (int other = 0; other < cells.Count; other++)
+                    if (!placed.Contains(other) && MapGrid.Touching(at(cells[from]), at(cells[other])))
+                    {
+                        placed.Add(other);
+                        group.Add(cells[other]);
+                        next.Enqueue(other);
+                    }
+            groups.Add(group);
+        }
+        return groups;
+    }
+
     private static bool Reachable(HashSet<CellRef> staying, HashSet<CellRef> added)
     {
         HashSet<CellRef> reached = [];

@@ -369,8 +369,9 @@ outreach works on come in **regions**, which the API builds itself, and which ph
 - **Switching a region off** deletes its region record (the `outreach.regions` feed marks it deleted, so phones drop it
   and *Offline maps* stops listing it) and its files from the media bucket, at once. Coverage, marks, follow-ups and
   history are keyed by streets and stay; switch it on and they show again. Refused while the area is building.
-- **Adding builds only what was added.** The job builds the squares waiting to build, reading the sources for the box
-  round them only (the addresses and land use, the slow part, are queried for those squares; the Queensland extract is
+- **Adding builds only what was added.** The job builds the squares waiting to build, a touching group at a time (so
+  squares added on opposite edges don't read the whole area between them), reading the sources for the box round each
+  group only (the addresses and land use, the slow part, are queried for those squares; the Queensland extract is
   still downloaded whole and read for that box). *Rebuild* marks every square of the area to build again; *Try again*
   after a failure builds what was waiting. A square added while the area builds waits for the next run, which starts
   straight after. New regions' names avoid the area's existing names. The build reports its steps (four fetches, then a

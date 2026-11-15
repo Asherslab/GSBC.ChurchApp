@@ -32,8 +32,10 @@ internal sealed class AreaBuilder(OutreachMapsDbContext db, IMapSources sources,
         MapGrid grid = RegionGrid.GridOf(area);
         List<MapCellRecord> pending = await db.Cells.Where(cell => cell.AreaId == area.Id && cell.On && cell.Pending)
             .OrderBy(cell => cell.Row).ThenBy(cell => cell.Column).ToListAsync(cancellationToken);
-        if (pending.Count > 0)
-            await BuildCellsAsync(area, grid, pending, elapsed, cancellationToken);
+        List<List<MapCellRecord>> groups = MapCells.Groups(pending, cell => new CellRef { Row = cell.Row, Column = cell.Column });
+        (area.StepsDone, area.Steps) = (0, groups.Count * FetchSteps + pending.Count);
+        foreach (List<MapCellRecord> group in groups)
+            await BuildCellsAsync(area, grid, group, elapsed, cancellationToken);
 
         bool more = await db.Cells.AnyAsync(cell => cell.AreaId == area.Id && cell.On && cell.Pending, cancellationToken);
         area.State = more ? MapAreaStates.Waiting : MapAreaStates.Built;
@@ -52,7 +54,6 @@ internal sealed class AreaBuilder(OutreachMapsDbContext db, IMapSources sources,
         List<RegionCell> cells = pending.Select(cell => RegionGrid.CellOf(area.Id, grid, cell.Row, cell.Column)).ToList();
         GeoBounds reach = RegionGrid.Union(cells.Select(cell => cell.Bounds));
 
-        (area.StepsDone, area.Steps) = (0, FetchSteps + cells.Count);
         AreaStreets streets = await PlaceLetterboxesAsync(area, reach, reach.Centre, cancellationToken);
         IRangeReader tiles = await sources.TilesAsync(cancellationToken);
 
@@ -60,7 +61,7 @@ internal sealed class AreaBuilder(OutreachMapsDbContext db, IMapSources sources,
         HashSet<string> taken = (await db.Regions.Where(region => region.AreaId == area.Id && !building.Contains(region.Id))
             .Select(region => region.Name).ToListAsync(cancellationToken)).ToHashSet();
         List<(RegionCell Cell, string Name)> kept = Named(cells.Where(cell => streets.HomesIn(cell.Core) > 0).Select(cell => (cell, streets.NameFor(cell.Core))).ToList(), area.Name, taken);
-        area.Steps = FetchSteps + kept.Count;
+        area.Steps -= cells.Count - kept.Count;
         for (int i = 0; i < kept.Count; i++)
         {
             await StageAsync(area, $"Building {kept[i].Name} ({i + 1} of {kept.Count})", cancellationToken);

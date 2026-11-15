@@ -37,6 +37,17 @@ public sealed class MapCellTests
     }
 
     [Fact]
+    public void RegionsAddedFarApartAreBuiltInGroupsSoNoBuildReadsTheWholeAreaBetweenThem()
+    {
+        List<CellRef> waiting = Cells((-1, 2), (4, 1), (4, 2), (4, 3), (-1, 3));
+
+        List<List<CellRef>> groups = MapCells.Groups(waiting, cell => cell);
+
+        Assert.Equal(2, groups.Count);
+        Assert.Contains(groups, group => group.Count == 3 && group.All(cell => cell.Row == 4));
+    }
+
+    [Fact]
     public void ACellOutsideTheFirstGridKeepsAnIdOfItsOwn()
     {
         Assert.Equal("church-c3", RegionGrid.RegionId("church", 2, 2));
