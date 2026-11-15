@@ -234,8 +234,8 @@
             <TextField Label="Name" @bind-Value="_form.Name" MaxLength="80" Disabled="readOnly" Hint="@(editing.General ? "General outreach is always there; its name can change." : null)" />
             <div class="ui-pair">
                 <TextField Label="What's handed out" @bind-Value="_form.HandedOut" MaxLength="80" Disabled="readOnly" Hint="For example tracts, or invitations to carols." />
-                <TextField Label="Bundle size" Type="number" Min="1" Max="1000" @bind-Value="_form.BundleSize" Disabled="@(readOnly || finished)" Problem="@_form.BundleSizeProblem"
-                           Hint="@($"Letterboxes in a bundle of what's handed out; walkers are told how many bundles to take. Usually {desk.Settings.BundleSize}.")" />
+                <TextField Label="Bundle size" Type="number" Unit="letterboxes" Min="1" Max="1000" @bind-Value="_form.BundleSize" Disabled="@(readOnly || finished)" Problem="@_form.BundleSizeProblem"
+                           Hint="@($"In a bundle of what's handed out; walkers are told how many bundles to take. Usually {desk.Settings.BundleSize}.")" />
             </div>
             @if (!editing.General)
             {
@@ -244,9 +244,9 @@
                     <DateField Label="Ends" @bind-Value="_form.Ends" Shortcuts="false" Min="@_form.Starts" Disabled="@(readOnly || finished)" />
                 </div>
                 <div class="ui-pair">
-                    <TextField Label="Wrap up before it ends" Type="number" Min="1" Max="60" @bind-Value="_form.WrapUpDays" Disabled="@(readOnly || finished)" Problem="@_form.WrapUpProblem"
+                    <TextField Label="Wrap up before it ends" Type="number" Unit="days" Min="1" Max="60" @bind-Value="_form.WrapUpDays" Disabled="@(readOnly || finished)" Problem="@_form.WrapUpProblem"
                                Hint="@(finished ? null : WrapUpHint())" />
-                    <TextField Label="Bundles made" Type="number" Min="0" @bind-Value="_form.BundlesMade" Disabled="readOnly" Problem="@_form.BundlesMadeProblem"
+                    <TextField Label="Bundles made" Type="number" Unit="bundles" Min="0" @bind-Value="_form.BundlesMade" Disabled="readOnly" Problem="@_form.BundlesMadeProblem"
                                Hint="@BundlesMadeHint(desk, editing)" />
                 </div>
             }
@@ -268,8 +268,8 @@
 
     private string WrapUpHint() =>
         _form.WrapsUpOn() is { } wrap
-            ? $"Days. On {wrap.ToString("ddd d MMM", System.Globalization.CultureInfo.InvariantCulture)} it moves to Wrapping up and the church is told it ends soon."
-            : "Days. With an end date, it moves to Wrapping up this long before and the church is told it ends soon.";
+            ? $"On {wrap.ToString("ddd d MMM", System.Globalization.CultureInfo.InvariantCulture)} it moves to Wrapping up and the church is told it ends soon."
+            : "With an end date, it moves to Wrapping up this long before and the church is told it ends soon.";
 
     private static string BundlesMadeHint(OutreachDesk desk, Campaign campaign) =>
         CampaignFacts.BundlesOut(campaign, TotalsOf(desk, campaign), desk.Settings) is { } gone
