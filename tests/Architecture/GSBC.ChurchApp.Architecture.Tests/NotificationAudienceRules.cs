@@ -19,6 +19,7 @@ public sealed class NotificationAudienceRules
         ["people.family.linked"] = "anyone may have a parent linked to them",
         ["prayer.prayed"] = "anyone may send a prayer request",
         ["prayer.answered"] = "anyone may send a prayer request",
+        ["outreach.ending-soon"] = "a campaign ending soon is told to everyone, as the church's announcements are",
     };
 
     [Fact]

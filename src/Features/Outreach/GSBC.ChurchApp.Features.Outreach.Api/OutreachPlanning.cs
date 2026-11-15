@@ -128,14 +128,16 @@ internal sealed class OutreachPlanning(
         }
         int wrapUpDays = asked.WrapUpDays > 0 ? asked.WrapUpDays : CampaignStages.DefaultWrapUpDays;
         bool timingChanged = !campaign.General && (isNew || starts != campaign.StartsOn || ends != campaign.EndsOn || wrapUpDays != campaign.WrapUpDays);
-        if (campaign.Stage == CampaignStage.Finished && (timingChanged || asked.BundleSize != campaign.BundleSize))
-            throw Invalid("It's finished, so its dates and bundles stay as they were. Move it back to Ongoing to change them.");
+        bool finished = campaign.Stage == CampaignStage.Finished;
+        if (finished && timingChanged)
+            throw Invalid("It's finished, so its dates stay as they were. Move it back to Ongoing to change them.");
 
         bool leaderboardWas = campaign.Leaderboard;
         campaign.Name = name;
         campaign.HandedOut = OutreachRules.Clip(asked.HandedOut, OutreachRules.LongestName);
         campaign.Leaderboard = asked.Leaderboard;
-        campaign.BundleSize = asked.BundleSize;
+        if (!finished)
+            campaign.BundleSize = asked.BundleSize;
         campaign.BundlesMade = asked.BundlesMade;
         if (!campaign.General)
         {
