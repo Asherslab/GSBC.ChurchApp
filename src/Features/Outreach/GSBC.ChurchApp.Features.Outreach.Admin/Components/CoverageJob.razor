@@ -164,14 +164,13 @@
         if (missing.Count > 0)
         {
             _tally = null;
-            ILookup<string, StreetCoverage> covered = shown.Coverage.Streets.ToLookup(street => street.Region);
             int restDays = RestDays(shown);
             DateOnly today = ChurchTime.Today(Time);
             StreetGraph[] graphs = await Task.WhenAll(missing.Select(Graphs.LoadAsync));
             if (!ReferenceEquals(shown, _shown))
                 return;
             for (int index = 0; index < missing.Count; index++)
-                _views[missing[index].Id] = new CoverageView(graphs[index], covered[missing[index].Id], restDays, today);
+                _views[missing[index].Id] = new CoverageView(graphs[index], shown.Coverage.Streets, restDays, today, Map.Atlas.Owns(missing[index]));
             _lines = [.. _views.Values.SelectMany(each => each.Lines())];
             RefreshChoice();
             Redraw();

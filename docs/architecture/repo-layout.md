@@ -411,7 +411,7 @@ flowchart LR
     NewsClientTests --> NewsClient
     WebsiteTests --> HostsWebsite
     ReleaseNotesTests --> ReleaseNotesApp & ReleaseNotesGenerator
-    OutreachClientTests --> OutreachClient
+    OutreachClientTests --> OutreachClient & OutreachAdmin
     OutreachMapsTests --> OutreachMapsApi & Testing
     OutreachRoutingTests --> OutreachRouting
 ```
@@ -561,7 +561,7 @@ flowchart LR
 | `GSBC.ChurchApp.Features.People.Api.Tests` | Unit: someone is under 18 until their birthday; which blue cards and training are flagged and when; who may unlink whom; who is left alone when a parent goes. Against Postgres: deleting a parent removes the children left with no parent and no sign-in, and forgets every link, ask and record of whoever goes | No |
 | `GSBC.ChurchApp.Features.Sermons.Api.Tests` | Against Postgres: phones hold the newest 400; listening progress merges by the rule, in any order, and reaches only its person; uploaded audio is stored once; deletes move or release what used the deleted thing; the app-only migration wipes the website's sermons | No |
 | `GSBC.ChurchApp.Features.Sermons.Import.Api.Tests` | Unit, against saved sample pages with made-up names: listing pages, a sermon's page, a series page, a guest speaker's name and honorific out of the title, the service from old and new labels. Against Postgres: a re-run skips what was brought across and retries only what failed; one recording under two addresses is one sermon | No |
-| `GSBC.ChurchApp.Features.Outreach.Client.Tests` | Unit, over the Albany Creek fixture: records and the engine agree both ways (stretches, marks), and the printed route maps | No |
+| `GSBC.ChurchApp.Features.Outreach.Client.Tests` | Unit, over the Albany Creek fixture: records and the engine agree both ways (stretches, marks), and the printed route maps; the admin map's drawing where map areas overlap | No |
 | `GSBC.ChurchApp.Features.Outreach.Maps.Api.Tests` | Unit: an address lands on its own street's side; businesses skipped and mixed use checked; footpaths beside a road left out and those through a park kept; a rebuilt region's version; a region's map file holds exactly its tiles | No |
 | `GSBC.ChurchApp.Features.Outreach.Routing.Tests` | Unit, over real Albany Creek streets from the POC (`Fixtures/albany-creek.streets`, made by `tools/outreach/poc-fixture.cs`): the file reads back exactly, loops cover both sides, the doc's rules (main roads kept in the network, no empty walking, reach), coverage per campaign, the splitter and its edits, following recorded and synthetic GPS tracks; and the benchmark | No |
 | `GSBC.ChurchApp.Features.Events.Client.Tests` | Unit tests, no I/O: Coming up leaves ordinary regular dates out; a date edited on its own starts from the regular event with only what its special changed, and never changes every date; a date not on says why on its own line; the widening sentence is one full sentence, and silent when nothing widens | No |
