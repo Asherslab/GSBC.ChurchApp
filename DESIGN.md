@@ -1005,7 +1005,8 @@ component, never a copy.
 | A small panel from a button | `Popover` | On the menu's shadow; Escape or a click outside closes it. The Account menu is one. |
 | One role of several | `RoleMenu` | A button showing the role; its menu says what each allows, Remove in red last. Applies at once. Several roles at once stay ticks (`RoleTick`). |
 | Steps something moves through | `StagePipeline` | Done steps ticked, the current one solid, the next waiting; press a step to move there. `ReadOnly` for someone who can see but not move it. |
-| Boards | `Board` + `BoardCard` | Sand columns with a count, a dashed sentence when empty, optional "Add one here", a folded column for what's put aside. |
+| Boards | `Board` + `BoardCard` | Sand columns with a count, a dashed sentence when empty, optional "Add one here", a folded column for what's put aside. A column can be `Wide` to open a card where it sits (the campaigns board). |
+| How far through a span of time | `SpanLine` | Start and end dates under it, today's dot in deep aqua, the closing stretch in the marker (a campaign's wrapping up). On campaign cards. |
 | Taking a file | `DropBox` (`FilePick Box`) | Every place that takes a file, on both sides: a dashed box saying what it takes over how ("Or click to choose one from this computer"); drop, click, or paste where the page allows. On the phone it opens the photo library or files. Never a link-like row (owner, 2026-11-12, #66). |
 | Writing a message | `Composer` | Docked at the foot of a full-height page: attach (`Attach` slot, `AppIcons.Attach`) left, the field, a round Send right; what's attached in `Above`. Send keeps the focus in the field, so the phone's keyboard stays up (owner, 2026-11-13, #82). Admin chats take `EnterSends`. Chats and Send feedback use it. |
 | Days marked on a month | `MonthDays` | Day tiles, Monday first, ‹ ›, a caption key; marks for all day, mornings, evenings, some hours, skipped. Days away use it. |

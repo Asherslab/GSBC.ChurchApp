@@ -10,23 +10,26 @@ A `Board` like Life Groups' (owner, 2026-11-15, #108; decision page `.impeccable
 picked B, *cards open in place*). *New campaign* sits in the title band's actions and as the Preparing column's add,
 for those who may plan.
 - **Always on:** General outreach in a sand strip above the board: the label ruled off on the left, its name (opens it),
-  bundles, letterboxes this month and its next outreach day.
+  bundles, letterboxes this month, its next outreach day ("No outreach day planned" when there's none) and a small
+  quiet *Open* button.
 - **Columns:** Preparing, Ongoing, Wrapping up, and *Finished in* a year (narrow; a `Segmented` year switch when there's
   more than one year). Empty columns say what lands there.
 - **A card:** the name (the whole card opens it; a stretched link) with its ⋯ (*Move to* each other stage, Delete last
   and red), what's handed out and its bundles, the dates and a countdown in ink at 600 ("starts in 11 weeks", "wraps up
   7 Dec", "ends in 5 days"), a `SpanLine` (start to end, today's dot in deep aqua, the wrap-up stretch in the marker) for
-  Ongoing and Wrapping up, "Church told 13 Nov" once told, letterboxes and this week's, "About 38 of 60 bundles out",
+  every dated card (Preparing's has no dot, since today is before it starts), an area line on Preparing cards ("No
+  area yet" in marker ink), "Church told 13 Nov" once told, letterboxes and this week's, "About 38 of 60 bundles out",
   and the next outreach day under a hairline, in marker ink when there's none ("No outreach day before it ends").
   Cards drag between columns (or Alt and an arrow) for those who may plan. A finished campaign is a line: name,
   letterboxes, dates.
-- **Opening a campaign** widens its column (`BoardColumn Wide`, 2.4 shares, at least 460px) and the card becomes the
+- **Opening a campaign** widens its column (`BoardColumn Wide`; on this board up to 480px, at least 400px) and the card becomes the
   record, ringed in the marker: `PaneHead` (Delete in its ⋯, Close), the `StagePipeline` (moves at once), the three
   quiet `StatTile`s, then Name; What's handed out and Bundle size; Starts and Ends; Wrap up before it ends (days, its hint
   naming the day it moves and that the church is told) and Bundles made; *Show a leaderboard*; Cancel and Save in the
   card's foot. General outreach opens in its strip instead (no dates, stages or wrap-up). A finished campaign's dates,
   bundle size and wrap-up are disabled with a line saying to move it back to Ongoing. A new campaign opens as a card at
-  the top of Preparing. `?campaign=<id>` opens one directly.
+  the top of Preparing. `?campaign=<id>` opens one directly. While another campaign is open, Finished folds into the board's folded strip.
+- **At 1100px and under** the columns and the closed cards tighten (less padding, the card's name at label size).
 - **At 1024px** the four columns fit; with a record open the board scrolls sideways, as boards do.
 - **Deleting** asks in a `Sheet` that says what goes with it, or why it can't go yet; *Keep it* is the quiet way out.
 
