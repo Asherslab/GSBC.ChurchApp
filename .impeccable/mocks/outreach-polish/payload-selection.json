@@ -1,0 +1,27 @@
+{
+  "title": "The chosen street on the coverage map",
+  "question": "On Outreach → Coverage, a street you pick is drawn solid navy (bright aqua at night, the same as streets done this week). How should a chosen street look? I've built A; B and C stay here if you'd rather one of them.",
+  "options": [
+    { "id": "casing", "kind": "grounded", "label": "A: An ink outline round it (built)",
+      "thesis": "The chosen street is outlined in ink, light ink at night, with its own coverage still drawn inside, so you can see what you're about to mark as not done.",
+      "palette": ["#18233a", "#00776d", "#f7f4ee", "#f2ede4"], "materials": ["the coverage ramp", "an ink outline"],
+      "viewport": "Coverage at 1440: one street outlined, its two sides still in aqua inside the outline; the pane's foot names it.",
+      "risk": "Zoomed far out, the outline is thinner than a marker colour would be.", "html": ".impeccable/mocks/outreach-polish/selection-casing.html" },
+    { "id": "marker", "kind": "grounded", "label": "B: The orange marker",
+      "thesis": "The chosen street turns orange with a page-coloured edge, as the chosen tile does on the Hub canvas.",
+      "palette": ["#e7ae74", "#00776d", "#f7f4ee", "#141d31"], "materials": ["the marker colour"],
+      "viewport": "Coverage at 1440: one street in orange over the aqua ramp.",
+      "risk": "Covers the street's own coverage, so you can't see which side was done before marking it.", "html": ".impeccable/mocks/outreach-polish/selection-marker.html" },
+    { "id": "dashed", "kind": "grounded", "label": "C: A dashed ink line",
+      "thesis": "A dashed ink line along the chosen street, matching the dashed loop of Draw round streets.",
+      "palette": ["#18233a", "#00776d", "#f7f4ee", "#f2ede4"], "materials": ["a dashed line"],
+      "viewport": "Coverage at 1440: a dashed line down the middle of the chosen street.",
+      "risk": "Thin and easy to miss when zoomed out.", "html": ".impeccable/mocks/outreach-polish/selection-dashed.html" },
+    { "id": "current", "kind": "grounded", "label": "Today: navy",
+      "thesis": "What it does now, for comparison.",
+      "palette": ["#2a3d5e", "#2ec4b6"], "materials": ["the primary colour"],
+      "viewport": "Coverage at 1440 as it is.",
+      "risk": "Hard to tell from streets done recently; identical at night.", "html": ".impeccable/mocks/outreach-polish/selection-current.html" }
+  ],
+  "steer": true
+}

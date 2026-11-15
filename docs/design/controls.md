@@ -90,7 +90,7 @@ See DESIGN.md, *Pattern map*. Admin: placeholders "Like 15 Nov", "Like 7:30pm", 
 - **Card:** optional picture, meta line, title, labels; the open card is ringed in marker.
 
 ## Data table
-The admin's working list in the workbench's list pane; search and filters live in the rail, or a toolbar row above when there's no rail. Sortable headers show their arrow on hover, in orange ink on the sorted column. Numbers and dates right-aligned in tabular figures, long text cut at 30ch. Selectable rows take Selected Fill when chosen (lighter on hover), focus is an inset deep-aqua ring, arrow keys move the selection. An empty table shows an empty state beneath.
+The admin's working list in the workbench's list pane; search and filters live in the rail, or a toolbar row above when there's no rail. Sortable headers show their arrow on hover, in orange ink on the sorted column. Numbers and dates right-aligned in tabular figures, long text cut at 30ch. Selectable rows take Selected Fill when chosen (lighter on hover), focus is an inset deep-aqua ring, arrow keys move the selection. An empty table shows an empty state beneath. A column marked `optional` steps aside only when the table doesn't fit: when it would scroll sideways, or squeeze the first column below its natural width or 200px (and always at 360px and under); a table with room keeps it (2026-11-15: Prayer hid From at 1024).
 
 ## Charts
 - **Stat tile:** value, label, optional change and explanation. A value too small to show (Fewer than 5) is the quiet tile, in ink-2.

@@ -134,6 +134,9 @@
 .outreach-figures__line { margin: 0; color: var(--ink-2); font-size: var(--text-caption); line-height: 1.4; font-variant-numeric: tabular-nums; }
 .section > .outreach-figures__line + .outreach-figures__big { margin-top: var(--stack); }
 .outreach-figures .outreach-figures__line + .outreach-figures__big { margin-top: var(--space-md); }
+.outreach-route-number { display: grid; place-items: center; flex: none; width: 34px; height: 34px; border-radius: var(--radius-full); background: var(--route); color: var(--on-route); font-size: var(--text-label); font-weight: 700; font-variant-numeric: tabular-nums; }
+.outreach-route-row .row__subtitle { font-variant-numeric: tabular-nums; }
+.outreach-route-row__who { display: block; margin-top: var(--space-3xs); color: var(--ink-2); font-size: var(--text-caption); }
 .outreach-route-title { margin: 0 0 var(--space-2xs); font-size: var(--text-title-lg); font-weight: 700; letter-spacing: -0.02em; line-height: 1.2; }
 
 .outreach-reach { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-xs); margin-bottom: var(--stack); padding: var(--space-md) var(--space-lg); border-radius: var(--radius-field); background: var(--sand); color: var(--ink-2); font-size: var(--text-caption); line-height: 1.45; }
@@ -155,6 +158,10 @@
 .outreach-now__next .icon { flex: none; }
 
 .outreach-walk-map .map-view__map { min-height: 0; height: max(11rem, calc(100dvh - 37rem)); }
+.page-scroll--focused:has(.outreach-walk-foot) { display: flex; flex-direction: column; padding-bottom: calc(var(--sab) + var(--space-sm)); }
+.page-scroll--focused:has(.outreach-walk-foot) > .page { display: flex; flex: 1 0 auto; flex-direction: column; min-height: 0; }
+.page-scroll--focused .outreach-walk-map { flex: 1 1 auto; }
+.page-scroll--focused .outreach-walk-map .map-view__map { height: auto; min-height: 11rem; }
 .outreach-walk-map .map-view__attribution { padding: var(--space-2xs) var(--gutter) 0; }
 .outreach-walk-map__follow { position: absolute; right: var(--space-md); bottom: var(--space-md); box-shadow: var(--lift); }
 

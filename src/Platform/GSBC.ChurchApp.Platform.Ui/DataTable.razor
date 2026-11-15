@@ -1,6 +1,8 @@
 @typeparam TItem
+@implements IAsyncDisposable
+@inject IJSRuntime JS
 
-<div class="data-table @Class">
+<div @ref="_root" class="data-table @Class">
     @if (Toolbar is not null)
     {
         <div class="data-table__toolbar">@Toolbar</div>
@@ -54,6 +56,8 @@
 </div>
 
 @code {
+    private ElementReference _root;
+    private IJSObjectReference? _fit;
     private List<TItem> _rows = [];
     private readonly Dictionary<string, ElementReference> _rowElements = [];
     private int _sortColumn = -1;
@@ -88,6 +92,11 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
+        if (firstRender && Columns.Any(column => column.Class?.Split(' ').Contains("optional") == true))
+        {
+            await using IJSObjectReference module = await JS.InvokeAsync<IJSObjectReference>("import", "./_content/GSBC.ChurchApp.Platform.Ui/js/data-table.js");
+            _fit = await module.InvokeAsync<IJSObjectReference>("fitColumns", _root);
+        }
         if (_focusSelected && _selectedIndex >= 0 && _selectedIndex < _rows.Count && _rowElements.TryGetValue(Key(_rows[_selectedIndex]), out ElementReference row))
         {
             _focusSelected = false;
@@ -140,6 +149,20 @@
 
         _focusSelected = true;
         await SelectAsync(Math.Clamp(_selectedIndex + step, 0, _rows.Count - 1));
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_fit is null)
+            return;
+        try
+        {
+            await _fit.InvokeVoidAsync("dispose");
+            await _fit.DisposeAsync();
+        }
+        catch (JSDisconnectedException)
+        {
+        }
     }
 
     private sealed class ValueComparer : IComparer<IComparable?>

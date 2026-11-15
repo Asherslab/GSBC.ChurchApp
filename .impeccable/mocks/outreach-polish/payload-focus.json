@@ -1,0 +1,22 @@
+{
+  "title": "A walk without the tab bar",
+  "question": "While you're walking, the tab bar stays on screen. A walk should be a focused screen with a clear way back. Which way for this and any other full-screen task on the phone? I've built A; B stays here if you'd rather it.",
+  "options": [
+    { "id": "back", "kind": "grounded", "label": "A: The tab bar steps aside; ‹ Outreach stays (built)",
+      "thesis": "The tab bar steps aside while the walk is open, as it does for the keyboard. The way out is the same ‹ Outreach and swipe back as every pushed page; the walk keeps going and Outreach shows it as Your walk.",
+      "palette": ["#2a3d5e", "#ffffff", "#e7ae74", "#00776d"], "materials": ["the pushed page's top bar", "the walk's own foot bar"],
+      "viewport": "Walking on a 390 phone: masthead with the street, the map, progress, two mark buttons and Pause · ⋯ · Finish at the foot, nothing under it.",
+      "risk": "A swipe from the edge leaves the walk screen (the walk itself carries on).", "html": ".impeccable/mocks/outreach-polish/focus-back.html" },
+    { "id": "close", "kind": "grounded", "label": "B: Full screen with Close",
+      "thesis": "The walk opens like a full-screen sheet: a round ✕ at the top right closes it, no Back and no swipe back.",
+      "palette": ["#2a3d5e", "#ffffff", "#e7ae74", "#00776d"], "materials": ["a close button on the masthead"],
+      "viewport": "The same walking screen with ✕ at the top right instead of ‹ Outreach.",
+      "risk": "A second way of leaving a page that only this screen has; ✕ can read as ending the walk.", "html": ".impeccable/mocks/outreach-polish/focus-close.html" },
+    { "id": "current", "kind": "grounded", "label": "Today: the tab bar stays",
+      "thesis": "What it does now, for comparison.",
+      "palette": ["#2a3d5e", "#ffffff"], "materials": ["the tab bar"],
+      "viewport": "The walking screen above the tab bar.",
+      "risk": "A tap on a tab leaves the walk mid-street; less room for the map.", "html": ".impeccable/mocks/outreach-polish/focus-current.html" }
+  ],
+  "steer": true
+}

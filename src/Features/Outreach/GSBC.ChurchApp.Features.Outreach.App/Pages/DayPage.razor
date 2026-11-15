@@ -1,4 +1,5 @@
 @page "/outreach/days/{DayId}"
+@using GSBC.ChurchApp.Features.Outreach.Client.Planning
 @inject OutreachDayRoutes Days
 @inject IAccess Access
 
@@ -48,20 +49,18 @@
                     <ListGroup>
                         @foreach (RouteLine line in view.Routes)
                         {
-                            <ListRow @key="line.Route.Id" Title="@RouteTitle(line.Route)" Subtitle="@RouteLine(day, line)" Chevron="true"
+                            <ListRow @key="line.Route.Id" Class="outreach-route-row" Title="@RouteName(line.Route)" Subtitle="@RouteLine(day, line)" Chevron="true"
                                      Href="@OutreachLinks.Route(line.Route.Code)">
+                                <Leading>
+                                    <span class="outreach-route-number" style="--route: @RouteColours.Of(line.Route.Colour)">@line.Route.Number</span>
+                                </Leading>
+                                <Below>
+                                    <span class="outreach-route-row__who">@Who(line)</span>
+                                </Below>
                                 <TrailingContent>
                                     @if (line.Mine)
                                     {
                                         <Pill Tone="PillTone.Accent">Yours</Pill>
-                                    }
-                                    else if (line.Claims.Count == 0)
-                                    {
-                                        <Pill Tone="PillTone.Accent">Open</Pill>
-                                    }
-                                    else
-                                    {
-                                        <Pill Tone="PillTone.Quiet">Taken</Pill>
                                     }
                                 </TrailingContent>
                             </ListRow>
@@ -80,21 +79,19 @@
 
     public static string RouteTitle(DayRoute route) => route.Name.Length > 0 ? $"Route {route.Number} · {route.Name}" : $"Route {route.Number}";
 
-    private static string RouteLine(OutreachDay day, RouteLine line)
-    {
-        List<string> parts =
-        [
-            day.Mode == WalkMode.Doorknock ? OutreachPhoneWords.Doors(line.Route.Letterboxes) : OutreachPhoneWords.Letterboxes(line.Route.Letterboxes),
-            OutreachPhoneWords.Duration(TimeSpan.FromMinutes(line.Route.Minutes)),
-        ];
-        if (line.Claims.Count > 0)
-            parts.Add(Names(line.Claims));
-        return string.Join(" · ", parts);
-    }
+    private static string RouteName(DayRoute route) => route.Name.Length > 0 ? route.Name : $"Route {route.Number}";
+
+    private static string RouteLine(OutreachDay day, RouteLine line) => string.Join(" · ",
+        OutreachPhoneWords.Distance(line.Route.Metres),
+        OutreachPhoneWords.Duration(TimeSpan.FromMinutes(line.Route.Minutes)),
+        day.Mode == WalkMode.Doorknock ? OutreachPhoneWords.Doors(line.Route.Letterboxes) : OutreachPhoneWords.Letterboxes(line.Route.Letterboxes));
+
+    private static string Who(RouteLine line) => line.Claims.Count == 0 ? "No one on it yet" : $"{Names(line.Claims)} {(line.Claims.Count == 1 ? "is" : "are")} on it";
 
     private static string Names(IReadOnlyList<Claim> claims) => claims.Count switch
     {
-        1 or 2 => string.Join(", ", claims.Select(claim => claim.FirstName)),
-        _ => $"{claims[0].FirstName}, {claims[1].FirstName} + {claims.Count - 2}",
+        1 => claims[0].FirstName,
+        2 => $"{claims[0].FirstName} and {claims[1].FirstName}",
+        _ => $"{claims[0].FirstName}, {claims[1].FirstName} and {OutreachWords.Plural(claims.Count - 2, "other", "others")}",
     };
 }

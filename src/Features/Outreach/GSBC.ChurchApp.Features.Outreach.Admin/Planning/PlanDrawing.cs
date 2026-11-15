@@ -1,6 +1,5 @@
 using GSBC.ChurchApp.Features.Outreach.Client;
 using GSBC.ChurchApp.Features.Outreach.Client.Planning;
-using GSBC.ChurchApp.Features.Outreach.Contracts;
 using GSBC.ChurchApp.Features.Outreach.Routing;
 using GSBC.ChurchApp.Platform.Ui.Maps;
 using GeoPoint = GSBC.ChurchApp.Features.Outreach.Routing.GeoPoint;
@@ -12,7 +11,8 @@ public static class PlanDrawing
     private const double ReachMetres = 30;
     private const double OpeningMetres = 900;
     private const int ChosenOnTop = 10_000;
-    private const double RailShare = 0.25;
+    private const int RailWidth = 64;
+    private const int LabelPlaces = 24;
 
     public static MapPoint Point(GeoPoint point) => new(point.Lat, point.Lon);
 
@@ -46,20 +46,21 @@ public static class PlanDrawing
     public static IReadOnlyList<MapLabel> Labels(DayPlanner planner, int? selected) =>
         planner.Sections.Select(section =>
         {
-            GeoPoint middle = Middle(planner, section);
+            IReadOnlyList<GeoPoint> places = Places(planner, section);
+            GeoPoint middle = places[0];
             bool chosen = section.Id == selected;
             string full = $"{section.Number} · {section.Letterboxes} · {OutreachWords.Minutes(section.Minutes)}{(section.Review is null ? "" : " · needs review")}";
             string brief = section.Review is null ? $"{section.Number}" : $"{section.Number} · review";
             return chosen
-                ? new MapLabel(Point(middle), full, RouteColours.Of(section.Colour), ChosenOnTop, MapLabelStyle.Filled)
-                : new MapLabel(Point(middle), selected is null ? full : brief, RouteColours.Of(section.Colour), section.Number, MapLabelStyle.Ring, brief);
+                ? new MapLabel(Point(middle), full, RouteColours.Of(section.Colour), ChosenOnTop, MapLabelStyle.Filled, Places: Points(places))
+                : new MapLabel(Point(middle), selected is null ? full : brief, RouteColours.Of(section.Colour), section.Number, MapLabelStyle.Ring, brief, Points(places));
         }).ToList();
 
     public static IReadOnlyList<MapLine> CutPreview(DayPlanner planner, IReadOnlyList<CutPreview> cuts) =>
         cuts.SelectMany(cut => cut.Pieces.SelectMany(piece => piece.Pieces.Select(p =>
             new MapLine(Points(planner.Network.Line(p)), MapLineStyle.Route, Colour: RouteColours.Of(piece.Colour))))).ToList();
 
-    public static IReadOnlyList<MapLine> StretchPreview(DayPlanner planner, IEnumerable<Routing.Stretch> stretches, string colour) =>
+    public static IReadOnlyList<MapLine> StretchPreview(DayPlanner planner, IEnumerable<Stretch> stretches, string colour) =>
         stretches.Select(stretch => new MapLine(Points(planner.Network.Graph.ShapePoints(stretch.Street, stretch.From, stretch.To)), MapLineStyle.Route, Colour: colour)).ToList();
 
     public static (int Street, double Along)? StreetAt(DayPlanner planner, MapPoint point)
@@ -82,17 +83,14 @@ public static class PlanDrawing
             all = [Point(planner.Network.Graph.Projection.ToGeo(centre + new Flat(-OpeningMetres, -OpeningMetres))),
                 Point(planner.Network.Graph.Projection.ToGeo(centre + new Flat(OpeningMetres, OpeningMetres)))];
         }
-        double west = all.Min(point => point.Lon), east = all.Max(point => point.Lon);
-        all.Add(new MapPoint(all.Average(point => point.Lat), west - (east - west) * RailShare));
-        return MapFrame.Around(all, padding: 50, maxZoom: 16);
+        return MapFrame.Around(all, padding: 32, maxZoom: 16) with { StartPadding = RailWidth };
     }
 
-    private static GeoPoint Middle(DayPlanner planner, PlannedSection section)
+    private static IReadOnlyList<GeoPoint> Places(DayPlanner planner, PlannedSection section)
     {
         WalkNetwork network = planner.Network;
         List<Flat> mids = section.Section.Pieces.Select(network.Midpoint).ToList();
         Flat centre = new(mids.Average(m => m.X), mids.Average(m => m.Y));
-        Flat nearest = mids.MinBy(m => Flat.Distance(m, centre));
-        return network.Graph.Projection.ToGeo(nearest);
+        return mids.OrderBy(m => Flat.Distance(m, centre)).Take(LabelPlaces).Select(network.Graph.Projection.ToGeo).ToList();
     }
 }

@@ -8,7 +8,7 @@
 @inject NavigationManager Nav
 @inject TimeProvider Clock
 
-<Page Title="Walking" BackHref="@OutreachLinks.Home" BackLabel="Outreach">
+<Page Title="Walking" BackHref="@OutreachLinks.Home" BackLabel="Outreach" OnBack="() => Nav.NavigateTo(OutreachLinks.Home)" Focused="@(Walk.Current is not null)">
     <LiveData @ref="_live" TValue="WalkView" Load="Screen.LoadAsync" Feeds="WalkScreen.Feeds" ReloadOn="Reload">
         @{
             WalkView view = context.Value;
@@ -48,6 +48,8 @@
     private string? _marked;
     private string? _said;
     private DateTimeOffset _saidAt;
+
+    protected override Task OnInitializedAsync() => Walk.LoadAsync();
 
     protected override void OnInitialized()
     {
@@ -130,13 +132,13 @@
             </div>
             <div class="outreach-walk-foot__bar">
                 <Button Variant="ButtonVariant.Link" Icon="@(state.Paused ? "play" : "pause")" OnClick="() => Walk.PauseAsync(!state.Paused)">@(state.Paused ? "Carry on" : "Pause")</Button>
-                <Menu Label="More for this walk" Items="More(state)" />
+                <Menu Label="More for this walk" Items="More()" />
                 <Button Variant="ButtonVariant.Link" Icon="check" OnClick="FinishAsync">Finish</Button>
             </div>
         </div>
     };
 
-    private IReadOnlyList<MenuItem> More(WalkState state) =>
+    private IReadOnlyList<MenuItem> More() =>
     [
         this.Item("Not a home, or wrong on the map", OpenReport, "flag", "Tell staff, with a note"),
         this.Item("Skipped this bit", SkipAsync, "redo", "Leaves this street open for someone else"),
