@@ -90,7 +90,7 @@ the admin panel. It follows light and dark by itself.
 - **Markers** (`MapMarker`): `Start`, `Pin`, `Meeting` (with a label), and from zoom 15 `NoJunkMail`, `DontLetterbox`, `Skip`,
   `Check` (small dots; the first two labelled from zoom 17).
 - **You** (`MapYou`): the orange dot with its accuracy ring.
-- **Where it looks:** `Frame` fits the map to a box, and again whenever the box changes, unless someone has dragged the
+- **Where it looks:** `Frame` fits the map to a box (`StartPadding` keeps room on the left for a tool rail), and again whenever the box changes, unless someone has dragged the
   map. With `Follow`, a screen gives a `Frame` around you and what's next to you (the walk: you, the street you're on and
   the next one, at street level), so the map moves with you; with no `Frame`, it centres on you at zoom 17. The first drag
   stops following (`OnStoppedFollowing`) and setting `Follow` again brings it back. `Centre` and `Zoom` place a map with
@@ -115,9 +115,13 @@ planner draws, on its own layers over the overlays:
 - **`OnDrawn`** gives the finished stroke's points (`MapSketchStroke`); what they select is the screen's business.
 - **`Labels`** (`MapLabel`): a capsule at a point, such as a route's "4 · 137 · 74 min": `Ring` (the page colour, ringed in
   the label's colour, ink text) or `Filled` (the colour with white text, for the chosen one). Below zoom 15 a label shows
-  its `Short` text, from 15 its full text; every label draws, highest `Order` on top. `Quiet` labels draw on a layer of
-  their own beneath, and one that would overlap another is hidden rather than drawn over it (a map area's square names,
-  place names), so a screen can name many things where they fit. Every colour a label uses holds 4.5:1 against white.
+  its `Short` text, from 15 its full text; every label draws and no two
+  ever overlap: highest `Order` first, each takes the first of its `Places` (spots on its own route, nearest the
+  middle first), then a spot nudged a little way off, that touches no other label, stays on the map and stays clear of
+  anything marked `data-map-cover` (the planner's rail and chosen-route bar). Labels are placed again as the map zooms.
+  `Quiet` labels aren't moved: they stay on their point on a layer of their own beneath, and one that would overlap
+  another is hidden rather than drawn over it (a map area's square names, place names), so a screen can name many
+  things where they fit (2026-11-15). Every colour a label uses holds 4.5:1 against white.
 - **`Preview`**: lines drawn over everything while a gesture is under way (a cut's pieces, a brush's stretch).
 
 ## Coverage and dashed areas (reports station, 2026-11-15)
@@ -125,5 +129,8 @@ planner draws, on its own layers over the overlays:
 - `MapLineStyle.Covered` with `MapLine.Age` (0 today, 1 the rest period over) draws a street side in the walk colour
   fading to `--map-land`, the base map's land colour in each scheme, so a side at the end of its rest period disappears
   into the map.
-- `MapArea.Dashed` draws the edge dashed: areas outreach skips (in danger) and a drawn selection (in primary).
+- `MapArea.Dashed` draws the edge dashed: areas outreach skips (in danger) and a drawn selection (in ink).
+- `MapLineStyle.Chosen` draws a chosen street as an ink outline (light ink at night) with the page colour inside, under
+  the coverage, so the street stands out and its own coverage still shows (owner's decision page, 2026-11-15,
+  `.impeccable/mocks/outreach-polish/`).
 - `Colour` on a line or area may be a theme token name (`--danger`, `--primary`); the map reads it when it draws.

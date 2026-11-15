@@ -56,6 +56,10 @@ function overlayLayers(c) {
     { id: "areas-fill", type: "fill", source: "areas", paint: { "fill-color": ["coalesce", ["get", "colour"], c.walk], "fill-opacity": ["case", ["get", "outline"], 0, 0.12] } },
     { id: "areas-edge", type: "line", source: "areas", filter: ["!", ["get", "dashed"]], paint: { "line-color": ["coalesce", ["get", "colour"], c.walk], "line-width": 1.5 } },
     { id: "areas-edge-dashed", type: "line", source: "areas", filter: ["get", "dashed"], paint: { "line-color": ["coalesce", ["get", "colour"], c.walk], "line-width": 2, "line-dasharray": [3, 2] } },
+    { id: "chosen-edge", type: "line", source: "lines", filter: styleIs("chosen"), layout: { "line-cap": "round", "line-join": "round" },
+      paint: { "line-color": c.ink, "line-width": byZoom([[12, 8], [15, 15], [18, 36]]) } },
+    { id: "chosen", type: "line", source: "lines", filter: styleIs("chosen"), layout: { "line-cap": "round", "line-join": "round" },
+      paint: { "line-color": c.surface, "line-width": byZoom([[12, 4], [15, 9], [18, 26]]) } },
     { id: "covered", type: "line", source: "lines", filter: styleIs("covered"), layout: { "line-cap": "round", "line-join": "round" },
       paint: { "line-color": ["interpolate-hcl", ["linear"], ["get", "age"], 0, c.walk, 1, c.land], "line-width": byZoom([[12, 1.5], [15, 3.5], [18, 9]]) } },
     { id: "walked", type: "line", source: "lines", filter: styleIs("walked"), layout: { "line-cap": "round", "line-join": "round" },
@@ -120,6 +124,11 @@ const line = (l) => ({ type: "Feature", properties: { style: l.style, ...(l.labe
 const area = (a) => ({ type: "Feature", properties: { ...(a.colour ? { colour: colourOf(a.colour) } : {}), dashed: !!a.dashed, outline: !!a.outline, id: a.id ?? "" }, geometry: { type: "Polygon", coordinates: [a.points] } });
 const marker = (m) => ({ type: "Feature", properties: { kind: m.kind, ...(m.label ? { label: m.label } : {}), id: m.id ?? "" }, geometry: { type: "Point", coordinates: m.point } });
 
+function framePadding(b) {
+  const padding = b.padding ?? 40;
+  return { top: padding, right: padding, bottom: padding, left: padding + (b.start ?? 0) };
+}
+
 function metresToPixels(map, metres, lat) {
   const metresPerPixel = (40075016.686 * Math.cos((lat * Math.PI) / 180)) / Math.pow(2, map.getZoom() + 9);
   return metres / metresPerPixel;
@@ -164,7 +173,7 @@ export async function create(element, optionsJson, receiver) {
 
   let framed = null;
   const fit = (b, animate = false) =>
-    map.fitBounds([[b.west, b.south], [b.east, b.north]], { padding: b.padding ?? 40, duration: animate ? 600 : 0, maxZoom: b.maxZoom ?? 17 });
+    map.fitBounds([[b.west, b.south], [b.east, b.north]], { padding: framePadding(b), duration: animate ? 600 : 0, maxZoom: b.maxZoom ?? 17 });
   const showYou = (animate = false) => {
     if (framed) fit(framed, animate);
     else map.easeTo({ center: you.point, zoom: Math.max(map.getZoom(), 17), duration: animate ? 600 : 0 });

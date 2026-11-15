@@ -6,6 +6,51 @@ const closeEnoughPixels = 12;
 const spacingPixels = 4;
 const drawingEveryMs = 80;
 const hoverEveryMs = 60;
+const labelHeight = 24;
+const labelSides = 18;
+const labelGap = 8;
+const labelShifts = [[0, 0], ...[16, 30, 46, 64, 84].flatMap((r) =>
+  Array.from({ length: 8 }, (_, a) => [Math.round(Math.cos((a * Math.PI) / 4) * r), Math.round(Math.sin((a * Math.PI) / 4) * r * 0.7)]))];
+let measurer;
+
+function labelWidth(text) {
+  measurer ??= document.createElement("canvas").getContext("2d");
+  measurer.font = "600 12px Montserrat, sans-serif";
+  return measurer.measureText(text).width + labelSides + labelGap;
+}
+
+const overlap = (a, b) =>
+  Math.max(0, Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x)) * Math.max(0, Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y));
+
+function placeLabels(map, labels) {
+  const full = map.getZoom() >= fullLabelsFrom;
+  const canvas = map.getCanvas();
+  const shown = { x: 0, y: 0, w: canvas.clientWidth, h: canvas.clientHeight };
+  const outside = (box) => box.w * box.h - overlap(box, shown);
+  const from = canvas.getBoundingClientRect();
+  const taken = [...document.querySelectorAll("[data-map-cover]")].map((cover) => {
+    const at = cover.getBoundingClientRect();
+    return { x: at.left - from.left, y: at.top - from.top, w: at.width, h: at.height };
+  });
+  const placed = new Array(labels.length);
+  const topFirst = labels.map((label, i) => ({ label, i, order: label.order ?? i })).sort((a, b) => b.order - a.order);
+  for (const { label, i } of topFirst) {
+    const w = labelWidth(full ? label.text : label.short ?? label.text), h = labelHeight + labelGap;
+    const spots = [label.point, ...(label.places ?? [])].map((point) => map.project(point));
+    let best = null, least = Infinity;
+    search: for (const [dx, dy] of labelShifts) {
+      for (const spot of spots) {
+        const box = { x: spot.x + dx - w / 2, y: spot.y + dy - h / 2, w, h };
+        const clash = taken.reduce((sum, other) => sum + overlap(box, other), outside(box));
+        if (clash < least) [best, least] = [box, clash];
+        if (clash === 0) break search;
+      }
+    }
+    taken.push(best);
+    placed[i] = map.unproject([best.x + w / 2, best.y + h / 2]).toArray();
+  }
+  return placed;
+}
 
 function capsule(map, colour, filled) {
   const id = `tools-capsule-${colour}-${filled ? "filled" : "ring"}`;
@@ -73,10 +118,25 @@ export function attach(handle, receiver) {
   let lastHover = 0;
   let labels = empty;
   let shownLabels = [];
-  const labelFeatures = () => ({ type: "FeatureCollection", features: shownLabels.map((l, i) => ({
-    type: "Feature",
-    properties: { text: l.text, short: l.short ?? l.text, quiet: !!l.quiet, image: capsule(map, colourOf(l.colour), l.filled), ink: l.filled ? "#ffffff" : token("--ink"), order: l.order ?? i },
-    geometry: { type: "Point", coordinates: l.point } })) });
+  const labelFeatures = () => {
+    const loud = shownLabels.filter((l) => !l.quiet);
+    const moved = placeLabels(map, loud);
+    const placed = shownLabels.map((l) => (l.quiet ? l.point : moved[loud.indexOf(l)]));
+    return { type: "FeatureCollection", features: shownLabels.map((l, i) => ({
+      type: "Feature",
+      properties: { text: l.text, short: l.short ?? l.text, quiet: !!l.quiet, image: capsule(map, colourOf(l.colour), l.filled), ink: l.filled ? "#ffffff" : token("--ink"), order: l.order ?? i },
+      geometry: { type: "Point", coordinates: placed[i] } })) };
+  };
+  let relabelling = 0;
+  const relabel = () => {
+    relabelling = 0;
+    if (!map.getSource("tools-labels") || shownLabels.length === 0) return;
+    labels = labelFeatures();
+    map.getSource("tools-labels").setData(labels);
+  };
+  const relabelSoon = () => { if (!relabelling) relabelling = requestAnimationFrame(relabel); };
+  map.on("zoom", relabelSoon);
+  map.on("zoomend", relabel);
 
   const sketch = (features) => map.getSource("tools-sketch")?.setData({ type: "FeatureCollection", features });
   const ensure = () => {
@@ -225,7 +285,9 @@ export function attach(handle, receiver) {
     dispose: () => {
       document.removeEventListener("keydown", onKey, true);
       for (const [name, fn] of [["click", onClick], ["dblclick", onDoubleClick], ["mousedown", onDown], ["touchstart", onDown], ["mousemove", onMove],
-        ["touchmove", onMove], ["mouseup", onUp], ["touchend", onUp], ["mouseout", onLeave], ["styledata", ensure], ["style.load", ensure]]) map.off(name, fn);
+        ["touchmove", onMove], ["mouseup", onUp], ["touchend", onUp], ["mouseout", onLeave], ["styledata", ensure], ["style.load", ensure],
+        ["zoom", relabelSoon], ["zoomend", relabel]]) map.off(name, fn);
+      cancelAnimationFrame(relabelling);
       map.dragPan.enable();
       map.doubleClickZoom.enable();
     },

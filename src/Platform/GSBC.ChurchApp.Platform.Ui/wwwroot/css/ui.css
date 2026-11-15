@@ -581,8 +581,8 @@ button.text-link:disabled { color: var(--ink-3); cursor: default; }
 .section .workbench--stack > .workbench__main { padding-inline: 0; }
 .workbench--narrow .workbench__aside, .workbench--narrow .workbench__main, .workbench--narrow .workbench__detail { position: static; min-height: 0; max-height: none; padding: 0; border: 0; background: none; overflow: visible; }
 .workbench--narrow:not([data-showing="aside"]) .workbench__aside, .workbench--narrow:not([data-showing="main"]) .workbench__main, .workbench--narrow:not([data-showing="detail"]) .workbench__detail { display: none; }
-@container list (max-width: 760px) { .data-table__table .optional { display: none; } }
-@container data-table (max-width: 760px) { .data-table__table .optional { display: none; } }
+@container data-table (max-width: 360px) { .data-table__table .optional { display: none; } }
+.data-table[data-tight] .data-table__table .optional { display: none; }
 .writing-desk { --side: 360px; --foot-h: 108px; display: grid; grid-template-columns: minmax(0, 1fr) var(--side); grid-template-rows: 1fr auto; grid-template-areas: "main side" "main foot"; min-height: 100dvh; background: linear-gradient(to left, var(--page) var(--side), var(--line) var(--side), var(--line) calc(var(--side) + 1px), var(--sand) calc(var(--side) + 1px)); }
 .writing-desk--folded { --side: 64px; grid-template-areas: "main side" "foot foot"; }
 .writing-desk--single { --side: 0px; grid-template-columns: minmax(0, 1fr); grid-template-areas: "main" "foot"; background: var(--sand); }
@@ -1672,6 +1672,8 @@ span.stage-pipeline__stage { pointer-events: none; }
 .gallery__cover { display: grid; place-items: center; width: 100%; height: 100%; background: var(--masthead); color: var(--on-masthead); }
 .gallery__cover .brand-mark { width: 30%; opacity: 0.1; }
 :root.keyboard-open { --tab-h: 0px; --sab: 0px; }
+:root:has(.page-scroll--focused) { --tab-h: 0px; }
+:root:has(.page-scroll--focused) .tabbar { display: none; }
 .keyboard-open body { background: var(--page); }
 .keyboard-open .shell { bottom: var(--kb, 0px); }
 .keyboard-open .tabbar, .keyboard-open .preview-banner { display: none; }

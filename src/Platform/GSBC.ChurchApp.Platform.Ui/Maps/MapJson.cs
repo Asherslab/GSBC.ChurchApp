@@ -97,6 +97,7 @@ public static class MapJson
         json.WriteNumber("east", frame.East);
         json.WriteNumber("padding", frame.Padding);
         json.WriteNumber("maxZoom", frame.MaxZoom);
+        json.WriteNumber("start", frame.StartPadding);
         json.WriteEndObject();
     });
 
