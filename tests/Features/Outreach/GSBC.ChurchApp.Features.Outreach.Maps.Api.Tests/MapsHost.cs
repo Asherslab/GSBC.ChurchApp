@@ -64,6 +64,7 @@ internal sealed class MapsHost : IAsyncDisposable
             .AddScoped<PlaceIndex>()
             .AddScoped<AddressIndex>()
             .AddScoped<RegionEstimates>()
+            .AddScoped<OverviewMap>()
             .AddSingleton<AreaBuildRunner>()
             .AddScoped<OutreachMapsService>()
             .BuildServiceProvider();
@@ -84,6 +85,12 @@ internal sealed class MapsHost : IAsyncDisposable
     {
         await using AsyncServiceScope scope = _services.CreateAsyncScope();
         return await call(scope.ServiceProvider.GetRequiredService<AddressIndex>());
+    }
+
+    public async Task<T> WithOverviewAsync<T>(Func<OverviewMap, Task<T>> call)
+    {
+        await using AsyncServiceScope scope = _services.CreateAsyncScope();
+        return await call(scope.ServiceProvider.GetRequiredService<OverviewMap>());
     }
 
     public async Task<T> WithDbAsync<T>(Func<OutreachMapsDbContext, Task<T>> read)

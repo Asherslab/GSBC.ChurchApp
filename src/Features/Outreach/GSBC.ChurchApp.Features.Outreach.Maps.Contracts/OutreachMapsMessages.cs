@@ -112,6 +112,19 @@ public sealed class RegionList
 public sealed class RegionListRequest;
 
 [ProtoContract]
+public sealed class MapOverview
+{
+    [ProtoMember(1, IsRequired = true)] public MapFile Map { get; set; } = new();
+    [ProtoMember(2, IsRequired = true)] public MapBounds Bounds { get; set; } = new();
+    [ProtoMember(3)] public int MaxZoom { get; set; }
+    [ProtoMember(4)] public DateTime BuiltAt { get; set; }
+    [ProtoMember(5)] public string Attribution { get; set; } = "";
+}
+
+[ProtoContract]
+public sealed class MapOverviewRequest;
+
+[ProtoContract]
 public sealed class AddMapArea
 {
     [ProtoMember(1)] public string Name { get; set; } = "";

@@ -11,6 +11,7 @@ public sealed class MapSourcesOptions
     public Uri TileBuilds { get; set; } = new("https://build-metadata.protomaps.dev/builds.json");
     public Uri TileBuildFiles { get; set; } = new("https://build.protomaps.com/");
     public int MaxZoom { get; set; } = 15;
+    public int OverviewMaxZoom { get; set; } = 10;
     public bool SeedChurchArea { get; set; } = true;
     public double ChurchLatitude { get; set; } = -27.34335;
     public double ChurchLongitude { get; set; } = 152.96467;

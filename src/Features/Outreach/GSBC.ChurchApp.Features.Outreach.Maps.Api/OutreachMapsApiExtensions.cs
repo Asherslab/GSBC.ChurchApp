@@ -32,6 +32,7 @@ public static class OutreachMapsApiExtensions
         services.AddScoped<AddressIndex>();
         services.AddScoped<IAddressSearch>(provider => provider.GetRequiredService<AddressIndex>());
         services.AddScoped<RegionEstimates>();
+        services.AddScoped<OverviewMap>();
         services.AddSingleton<AreaBuildRunner>();
         services.AddHostedService(provider => provider.GetRequiredService<AreaBuildRunner>());
         services.AddPermissions(OutreachMapsPermissions.All);

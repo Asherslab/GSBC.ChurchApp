@@ -12,6 +12,8 @@ namespace GSBC.ChurchApp.Features.Outreach.Maps.Contracts;
 [ProtoSerializable(typeof(MapAreaListRequest))]
 [ProtoSerializable(typeof(RegionList))]
 [ProtoSerializable(typeof(RegionListRequest))]
+[ProtoSerializable(typeof(MapOverview))]
+[ProtoSerializable(typeof(MapOverviewRequest))]
 [ProtoSerializable(typeof(AddMapArea))]
 [ProtoSerializable(typeof(MapAreaRef))]
 [ProtoSerializable(typeof(RenameMapArea))]

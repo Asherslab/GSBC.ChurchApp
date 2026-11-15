@@ -16,6 +16,7 @@ internal sealed class OutreachMapsService(
     AreaBuilder builder,
     PlaceIndex places,
     RegionEstimates estimates,
+    OverviewMap overview,
     IEnumerable<IRegionUses> uses,
     IBlobStore blobs,
     TimeProvider time) : IOutreachMapsService
@@ -27,6 +28,9 @@ internal sealed class OutreachMapsService(
         Regions = (await db.Regions.AsNoTracking().OrderBy(region => region.Id).ToListAsync(context.CancellationToken))
             .Select(region => RegionFeed.ToMessage(region, blobs)).ToList(),
     };
+
+    public async ValueTask<MapOverview> OverviewAsync(MapOverviewRequest request, CallContext context = default) =>
+        await overview.MessageAsync(context.CancellationToken);
 
     public async ValueTask<MapAreaList> AreasAsync(MapAreaListRequest request, CallContext context = default) => await ListAsync(context.CancellationToken);
 

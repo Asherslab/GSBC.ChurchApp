@@ -12,6 +12,8 @@ public sealed class OutreachMapsClient(ChannelBase channel)
 
     public async Task<RegionList> RegionsAsync() => await _maps.RegionsAsync(new RegionListRequest());
 
+    public async Task<MapOverview> OverviewAsync() => await _maps.OverviewAsync(new MapOverviewRequest());
+
     public async Task<MapAreaList> AreasAsync() => await _maps.AreasAsync(new MapAreaListRequest());
 
     public async Task<MapArea> AddAsync(string name, double latitude, double longitude, double radiusKm) =>
