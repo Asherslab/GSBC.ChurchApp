@@ -80,7 +80,7 @@
 
     [Parameter, EditorRequired] public required string Scope { get; set; }
 
-    private sealed record Lists(OutreachDesk Desk, Reports Reports);
+    private sealed record Lists(Reports Reports);
 
     private LiveData<Lists>? _live;
     private string? _chosen;
@@ -97,10 +97,7 @@
 
     private async Task<Lists> LoadAsync()
     {
-        Task<OutreachDesk> desk = Outreach.DeskAsync(Scope);
-        Task<Reports> reports = Outreach.ReportsAsync(Scope);
-        await Task.WhenAll(desk, reports);
-        return new Lists(await desk, await reports);
+        return new Lists(await Outreach.ReportsAsync(Scope));
     }
 
     private ReportLine? Chosen(Lists lists) => lists.Reports.Lines.FirstOrDefault(report => report.Id == _chosen);

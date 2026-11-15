@@ -5,13 +5,16 @@
 @using RoutingPoint = GSBC.ChurchApp.Features.Outreach.Routing.GeoPoint
 @inject OutreachMapsClient Maps
 @inject StreetGraphLoader Graphs
+@inject IAccess Access
 
-<LiveData TValue="RegionList" Feeds="Feeds" Load="Maps.RegionsAsync" FailedTitle="Can't load the map right now">
+<LiveData TValue="OutreachAtlas" Feeds="Feeds" Load="() => OutreachAtlas.LoadAsync(Maps, Access)" FailedTitle="Can't load the map right now">
 <div class="place-map">
-    @if (RegionFor(context.Value) is { } region)
+    @if (context.Value.Source is { } source)
     {
-        <MapView @ref="_map" Class="place-map__map" Source="@MapSource.Url(region.Map.Url, region.Attribution)" Label="@Label"
-                 Areas="@Shapes" Markers="@Pins" Frame="@Framed" Centre="@_centre" Zoom="15" OnTap="TapAsync" />
+        <MapView @ref="_map" Class="place-map__map" Source="@source" Reach="@context.Value.Limits" Label="@Label"
+                 Areas="@Shapes" Markers="@Pins" Frame="@(Framed ?? (Middle is null ? context.Value.Opening : null))" Centre="@Middle" Zoom="15" OnTap="point => TapAsync(context.Value, point)">
+            <Outside><OutreachMapOutside /></Outside>
+        </MapView>
         <MapSketch Map="_map" Tool="@(Mode == PlaceMapMode.DrawArea ? MapSketchTool.Polygon : MapSketchTool.None)" OnDrawn="DrawnAsync" />
         @if (Mode != PlaceMapMode.Show)
         {
@@ -36,8 +39,6 @@
     [Parameter] public EventCallback<AddressPoint> OnAddress { get; set; }
 
     private MapView? _map;
-    private OutreachRegion? _region;
-    private StreetGraph? _graph;
     private MapPoint? _placed;
 
     private MapPoint? Middle => Point ?? (Area is { Count: > 0 } area ? new MapPoint(area.Average(point => point.Lat), area.Average(point => point.Lon)) : null);
@@ -50,50 +51,28 @@
 
     private static readonly IReadOnlyList<string> Feeds = [OutreachMapsFeeds.Regions];
 
-    private OutreachRegion? RegionFor(RegionList list)
+    private async Task TapAsync(OutreachAtlas atlas, MapPoint point)
     {
-        List<OutreachRegion> regions = list.Regions;
-        MapPoint? middle = Middle ?? MiddleOf(regions);
-        _region = middle is { } point
-            ? regions.FirstOrDefault(region => Inside(region.Core, point)) ?? regions.FirstOrDefault(region => Inside(region.Bounds, point)) ?? regions.FirstOrDefault()
-            : null;
-        _centre = middle;
-        return _region;
-    }
-
-    private MapPoint? _centre;
-
-    private static MapPoint? MiddleOf(IReadOnlyList<OutreachRegion> regions) =>
-        regions.Count == 0
-            ? null
-            : new MapPoint((regions.Min(region => region.Core.South) + regions.Max(region => region.Core.North)) / 2,
-                (regions.Min(region => region.Core.West) + regions.Max(region => region.Core.East)) / 2);
-
-    private static bool Inside(MapBounds bounds, MapPoint point) =>
-        point.Lat >= bounds.South && point.Lat <= bounds.North && point.Lon >= bounds.West && point.Lon <= bounds.East;
-
-    private async Task TapAsync(MapPoint point)
-    {
-        if (Mode != PlaceMapMode.PickAddress || _region is null)
+        if (Mode != PlaceMapMode.PickAddress || atlas.RegionAt(point) is not { } region)
             return;
-        _graph ??= await Graphs.LoadAsync(_region);
-        Flat flat = _graph.Projection.ToFlat(new RoutingPoint(point.Lat, point.Lon));
-        if (_graph.Index.Nearest(flat, 60, street => _graph.Street(street).CanDeliver) is not { } near)
+        StreetGraph graph = await Graphs.LoadAsync(region);
+        Flat flat = graph.Projection.ToFlat(new RoutingPoint(point.Lat, point.Lon));
+        if (graph.Index.Nearest(flat, 60, street => graph.Street(street).CanDeliver) is not { } near)
             return;
-        LetterboxRange boxes = _graph.Letterboxes(near.Street, near.Side);
+        LetterboxRange boxes = graph.Letterboxes(near.Street, near.Side);
         int? nearest = null;
         double best = double.MaxValue;
         for (int box = boxes.Start; box < boxes.End; box++)
         {
-            double distance = Math.Abs(_graph.LetterboxAlong(box) - near.Along);
+            double distance = Math.Abs(graph.LetterboxAlong(box) - near.Along);
             if (distance < best)
                 (best, nearest) = (distance, box);
         }
         if (nearest is not { } letterbox)
             return;
-        AddressPoint address = EngineInputs.Address(_graph, _region.Id, letterbox);
+        AddressPoint address = EngineInputs.Address(graph, region.Id, letterbox);
         if (address.Label.Length == 0)
-            address.Label = $"{_graph.Street(near.Street).Name}, {(near.Side == Side.Left ? "left" : "right")} side";
+            address.Label = $"{graph.Street(near.Street).Name}, {(near.Side == Side.Left ? "left" : "right")} side";
         _placed = new MapPoint(address.Point.Lat, address.Point.Lng);
         await OnAddress.InvokeAsync(address);
     }

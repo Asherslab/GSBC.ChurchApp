@@ -218,3 +218,5 @@
 .outreach-ask .row__icon { background: var(--surface); }
 .outreach-waiting { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-sm) var(--space-md); }
 .outreach-waiting p { flex: 1 1 14rem; margin: 0; color: var(--ink-2); font-size: var(--text-caption); line-height: 1.45; }
+.outreach-outside__title { margin: 0; color: var(--ink); font-weight: 600; }
+.outreach-outside__body { margin: 0; }

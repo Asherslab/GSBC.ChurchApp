@@ -108,7 +108,7 @@
 
     [Parameter, EditorRequired] public required string Scope { get; set; }
 
-    private sealed record Lists(OutreachDesk Desk, List<PlaceLine> Places);
+    private sealed record Lists(List<PlaceLine> Places);
 
     private LiveData<Lists>? _live;
     private PlaceKind? _filter;
@@ -158,14 +158,13 @@
 
     private async Task<Lists> LoadAsync()
     {
-        Task<OutreachDesk> desk = Outreach.DeskAsync(Scope);
         Task<Exclusions> exclusions = CanChangeExclusions ? Outreach.ExclusionsAsync(Scope) : Task.FromResult(new Exclusions());
         Task<SkipLines> skips = CanClearMarks ? Outreach.SkipsAsync(Scope) : Task.FromResult(new SkipLines());
-        await Task.WhenAll(desk, exclusions, skips);
+        await Task.WhenAll(exclusions, skips);
         List<PlaceLine> places = PlaceLine.Of(await exclusions, await skips).ToList();
         if (_open is { } open && (!Changed || _saved) && places.FirstOrDefault(line => line.Key == open.Key) is { } fresh)
             Take(fresh);
-        return new Lists(await desk, places);
+        return new Lists(places);
     }
 
     private IReadOnlyList<FilterOption<PlaceKind?>> Filters(Lists lists) =>

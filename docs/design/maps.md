@@ -80,7 +80,8 @@ those fonts change; never edit the files by hand.
 `MapView` (Platform.Ui `Maps/`) is the one map on both sides: MapLibre in the web view over a region's PMTiles file, with
 `mapStyle` and the overlays below. Pass the map file as `MapSource.KeptFile(id, attribution)` on the phone (the file kept
 on the phone, read by byte ranges through the native layer, so it works offline) or `MapSource.Url(url, attribution)` in
-the admin panel. It follows light and dark by itself.
+the admin panel; `MapSource.Urls(urls, attribution)` draws several map files as one map (each base layer once per file,
+in order, so the 2 km overlaps meet without a seam). It follows light and dark by itself.
 
 - **Lines** (`MapLine`, by `MapLineStyle`): `Walk` (deep aqua, white edge, arrows along it from zoom 15), `WalkDone` (a walk's
   part already covered, ink-3), `Walked` (streets walked recently, ink-3 at 45%), `Connector` (dashed), `LongWalk` (dotted, with
@@ -96,6 +97,10 @@ the admin panel. It follows light and dark by itself.
   stops following (`OnStoppedFollowing`) and setting `Follow` again brings it back. `Centre` and `Zoom` place a map with
   neither. `Interactive="false"`
   makes a still map (*Around you*).
+- **Reach** (`MapReach`): where the maps end. Outside its `Covered` squares the map is hatched (the land colour with
+  ink-3 stripes at 40%) under a thin ink edge; `Others` and `Notes` (`MapMarkerKind.Note`, text only) mark squares
+  not built yet; `Limit` stops panning. `Outside` is shown in a card in the middle while the view is mostly (three
+  quarters) beyond the squares, and `OnMoved` gives the view after each move.
 - `OnTap` gives the point tapped (dropping a pin); `Overlay` holds a control over the map (*Follow me*). Its
   attribution sits under it.
 
