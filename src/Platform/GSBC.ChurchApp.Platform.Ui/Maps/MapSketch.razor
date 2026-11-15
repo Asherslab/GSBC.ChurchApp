@@ -14,6 +14,8 @@
     private object? _shownLabels;
     private object? _shownPreview;
     private string? _shownBrush;
+    private int _attaching;
+    private bool _disposed;
 
     [Parameter, EditorRequired] public required MapView? Map { get; set; }
     [Parameter] public MapSketchTool Tool { get; set; }
@@ -57,6 +59,8 @@
 
     public async ValueTask DisposeAsync()
     {
+        _disposed = true;
+        _attaching++;
         if (_attachedTo is not null)
             _attachedTo.Created -= AttachAsync;
         await DetachAsync();
@@ -75,17 +79,37 @@
 
     private async Task AttachAsync()
     {
+        int attempt = ++_attaching;
         await DetachAsync();
-        if (Map?.Handle is not { } handle)
+        if (_disposed || Map?.Handle is not { } handle)
             return;
-        _module ??= await Js.InvokeAsync<IJSObjectReference>("import", Module);
-        _receiver ??= DotNetObjectReference.Create(this);
-        _tools = await _module.InvokeAsync<IJSObjectReference>("attach", handle, _receiver);
+        IJSObjectReference tools;
+        try
+        {
+            _module ??= await Js.InvokeAsync<IJSObjectReference>("import", Module);
+            if (IsStale(attempt, handle))
+                return;
+            _receiver ??= DotNetObjectReference.Create(this);
+            tools = await _module.InvokeAsync<IJSObjectReference>("attach", handle, _receiver);
+        }
+        catch (Exception e) when (e is JSException or ObjectDisposedException && IsStale(attempt, handle))
+        {
+            return;
+        }
+        if (IsStale(attempt, handle))
+        {
+            await DropAsync(tools);
+            return;
+        }
+        _tools = tools;
         _shownTool = null;
         _shownLabels = _shownPreview = null;
         _shownBrush = null;
         await PushAsync();
     }
+
+    private bool IsStale(int attempt, IJSObjectReference handle) =>
+        _disposed || attempt != _attaching || !ReferenceEquals(Map?.Handle, handle);
 
     private async Task PushAsync()
     {
@@ -115,16 +139,21 @@
 
     private async Task DetachAsync()
     {
-        if (_tools is null)
+        if (_tools is not { } tools)
             return;
+        _tools = null;
+        await DropAsync(tools);
+    }
+
+    private static async Task DropAsync(IJSObjectReference tools)
+    {
         try
         {
-            await _tools.InvokeVoidAsync("dispose");
-            await _tools.DisposeAsync();
+            await tools.InvokeVoidAsync("dispose");
+            await tools.DisposeAsync();
         }
         catch (JSDisconnectedException)
         {
         }
-        _tools = null;
     }
 }
