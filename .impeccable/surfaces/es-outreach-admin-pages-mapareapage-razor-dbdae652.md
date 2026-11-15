@@ -7,8 +7,8 @@ related_targets: ["src/Features/Outreach/GSBC.ChurchApp.Features.Outreach.Admin/
 
 # Admin panel: Outreach map areas
 
-Scope: the admin panel's map areas (Outreach → Settings → Map areas, then `/outreach/maps/{area}` and
-`/outreach/maps/new`): finding a place to add an area by name or by pointing at the map, seeing its squares
+Scope: the admin panel's map areas (Outreach → Settings → Map areas, then `/outreach/map-areas/{area}` and
+`/outreach/map-areas/new`): finding a place to add an area by name or by pointing at the map, seeing its squares
 (regions) and the download before it builds, switching an area's regions off and on, growing it on its edge, and the
 build's progress. Mode: operate. Audience: staff holding `outreach.maps.manage` (the Outreach Manager, the Owner) at a
 desk, a few times a year. Interview substituted by the owner's brief (owner away, 2026-11-15: "is there way(s) to quickly

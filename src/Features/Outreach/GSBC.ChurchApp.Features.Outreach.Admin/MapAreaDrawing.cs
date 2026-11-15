@@ -58,7 +58,7 @@ public static class MapAreaDrawing
         return cells.FirstOrDefault(cell => cell.Cell.Equals(at));
     }
 
-    public static IReadOnlyList<MapAreaShape> Shapes(IEnumerable<AreaCell> cells, CellRef? chosen = null)
+    public static IReadOnlyList<MapAreaShape> Shapes(IReadOnlyList<AreaCell> cells, CellRef? chosen = null)
     {
         List<MapAreaShape> shapes = cells.OrderBy(cell => Layer(cell.Look)).Select(cell => new MapAreaShape(Ring(cell.Core), Colour(cell.Look), Key(cell.Cell),
             Dashed: cell.Look is CellLook.Off or CellLook.Waiting or CellLook.SwitchingOff or CellLook.Edge,

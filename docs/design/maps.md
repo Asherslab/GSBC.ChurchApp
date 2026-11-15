@@ -85,7 +85,8 @@ the admin panel. It follows light and dark by itself.
 - **Lines** (`MapLine`, by `MapLineStyle`): `Walk` (deep aqua, white edge, arrows along it from zoom 15), `WalkDone` (a walk's
   part already covered, ink-3), `Walked` (streets walked recently, ink-3 at 45%), `Connector` (dashed), `LongWalk` (dotted, with
   its label, such as "290 m, no letterboxes"), `Route` (a planned route in its own `Colour`, with a label).
-- **Areas** (`MapArea`): a polygon in its colour at 12% with an edge.
+- **Areas** (`MapArea`): a polygon in its colour at 12% with an edge. `Outline` drops the fill and keeps the edge (a map
+  area's squares with no homes or still to add, and the hovered square in ink).
 - **Markers** (`MapMarker`): `Start`, `Pin`, `Meeting` (with a label), and from zoom 15 `NoJunkMail`, `DontLetterbox`, `Skip`,
   `Check` (small dots; the first two labelled from zoom 17).
 - **You** (`MapYou`): the orange dot with its accuracy ring.
@@ -114,7 +115,9 @@ planner draws, on its own layers over the overlays:
 - **`OnDrawn`** gives the finished stroke's points (`MapSketchStroke`); what they select is the screen's business.
 - **`Labels`** (`MapLabel`): a capsule at a point, such as a route's "4 · 137 · 74 min": `Ring` (the page colour, ringed in
   the label's colour, ink text) or `Filled` (the colour with white text, for the chosen one). Below zoom 15 a label shows
-  its `Short` text, from 15 its full text; every label draws, highest `Order` on top. Every colour a label uses holds 4.5:1 against white.
+  its `Short` text, from 15 its full text; every label draws, highest `Order` on top. `Quiet` labels draw on a layer of
+  their own beneath, and one that would overlap another is hidden rather than drawn over it (a map area's square names,
+  place names), so a screen can name many things where they fit. Every colour a label uses holds 4.5:1 against white.
 - **`Preview`**: lines drawn over everything while a gesture is under way (a cut's pieces, a brush's stretch).
 
 ## Coverage and dashed areas (reports station, 2026-11-15)

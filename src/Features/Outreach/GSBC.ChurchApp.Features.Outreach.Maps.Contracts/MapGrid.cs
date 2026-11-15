@@ -38,8 +38,8 @@ public sealed class MapGrid
 [ProtoContract]
 public sealed class CellRef : IEquatable<CellRef>
 {
-    [ProtoMember(1)] public int Row { get; set; }
-    [ProtoMember(2)] public int Column { get; set; }
+    [ProtoMember(1)] public int Row { get; init; }
+    [ProtoMember(2)] public int Column { get; init; }
 
     public bool Equals(CellRef? other) => other is not null && other.Row == Row && other.Column == Column;
 

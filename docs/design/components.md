@@ -19,7 +19,7 @@ The system ships in `src/Platform/GSBC.ChurchApp.Platform.Ui`; the app links all
 | Masthead | `Masthead` | Title, note, live-element slot; `Beside` for a control on the title's row |
 | Section and section head | `Section` | Title, lead, "see all" link; `Grouped` is a settings group (a card on the admin panel, an inset group on the phone), `Foot` |
 | Callout, picture card, navy card | `Card` | `CardTone.Callout`, `Raised` (only where a picture leads), `Masthead` |
-| Rows and boxed lists | `ListGroup`, `ListRow` | Tile tones, chevron or external-link icon; `Reading`, `TitleExtra`, `Below`; `Unread` sets the dot and weight; `Current` marks the open one (`aria-current`) |
+| Rows and boxed lists | `ListGroup`, `ListRow` | Tile tones, chevron or external-link icon; `Reading`, `TitleExtra`, `Below`; `Unread` sets the dot and weight; `Current` marks the open or chosen one with the selected fill (`aria-current`), on a link row or a clickable (`OnClick`) row |
 | Pull to refresh | `PullToRefresh` | Wraps the whole page body, masthead included. Touch only, so offer a button too |
 | Sheet | `Sheet` | Escape and the scrim close it; centred on wide screens; `Cover` adds the navy band (name it with `Label`); `Wide`; `LayerClass`. A native `<dialog>` via `showModal()` so no ancestor clips it; opening moves focus in without scrolling the page, to an `autofocus` child if there is one, and closing returns it |
 | Sheet heading | `SheetHeading` | `Icon`, `Title`, `Note`; goes in a sheet's `Cover` |
