@@ -66,6 +66,22 @@ namespace GSBC.ChurchApp.Features.Outreach.Maps.Api.Data.Migrations
                 nullable: false,
                 defaultValue: 0);
 
+            migrationBuilder.AddColumn<int>(
+                name: "steps",
+                schema: "outreach_maps",
+                table: "areas",
+                type: "integer",
+                nullable: false,
+                defaultValue: 0);
+
+            migrationBuilder.AddColumn<int>(
+                name: "steps_done",
+                schema: "outreach_maps",
+                table: "areas",
+                type: "integer",
+                nullable: false,
+                defaultValue: 0);
+
             migrationBuilder.CreateTable(
                 name: "cells",
                 schema: "outreach_maps",
@@ -78,7 +94,8 @@ namespace GSBC.ChurchApp.Features.Outreach.Maps.Api.Data.Migrations
                     on = table.Column<bool>(type: "boolean", nullable: false),
                     pending = table.Column<bool>(type: "boolean", nullable: false),
                     empty = table.Column<bool>(type: "boolean", nullable: false),
-                    version = table.Column<long>(type: "bigint", nullable: false)
+                    version = table.Column<long>(type: "bigint", nullable: false),
+                    name = table.Column<string>(type: "text", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -154,6 +171,16 @@ namespace GSBC.ChurchApp.Features.Outreach.Maps.Api.Data.Migrations
 
             migrationBuilder.DropColumn(
                 name: "origin_row",
+                schema: "outreach_maps",
+                table: "areas");
+
+            migrationBuilder.DropColumn(
+                name: "steps",
+                schema: "outreach_maps",
+                table: "areas");
+
+            migrationBuilder.DropColumn(
+                name: "steps_done",
                 schema: "outreach_maps",
                 table: "areas");
         }

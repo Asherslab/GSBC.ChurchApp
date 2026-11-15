@@ -2,10 +2,8 @@
 @using Area = GSBC.ChurchApp.Features.Outreach.Maps.Contracts.MapArea
 @inject OutreachMapsClient Maps
 
-<UnsavedGuard Changed="() => Changed" What="the new map area" Save="SaveBeforeLeavingAsync" />
-
 <LiveData @ref="_live" TValue="MapAreaList" Feeds="Feeds" Load="Maps.AreasAsync" FailedTitle="Can't load the map areas right now">
-    <Section Grouped="true" Title="Map areas" Lead="Where the app has maps and streets. Each area is cut into regions; phones download the region they walk in.">
+    <Section Grouped="true" Title="Map areas" Lead="Where the app has maps and streets. Each area is cut into regions of about 10 km; phones download the region they walk in.">
         <ChildContent>
             @if (context.Value.Areas.Count == 0)
             {
@@ -16,8 +14,12 @@
                 <ListGroup>
                     @foreach (Area area in context.Value.Areas)
                     {
-                        <ListRow Title="@area.Name" Subtitle="@MapAreaWords.State(area)" Icon="map" Actions="@ActionsFor(area)">
+                        <ListRow Title="@area.Name" Subtitle="@MapAreaWords.State(area)" Icon="map" Href="@OutreachLinks.MapArea(area.Id)" Actions="@ActionsFor(area)">
                             <Below>
+                                @if (area.State == MapAreaStates.Building && area.Steps > 0)
+                                {
+                                    <ProgressTrack Fraction="MapAreaWords.Progress(area)" Label="How far the build has got" Class="outreach-areas__progress" />
+                                }
                                 @if (area.Regions.Count > 0)
                                 {
                                     <p class="outreach-areas__regions">@MapAreaWords.Regions(area)</p>
@@ -29,127 +31,46 @@
             }
             <Notice Tone="NoticeTone.Warning" Text="@_problem" />
             <div>
-                <Button Variant="ButtonVariant.Quiet" Icon="plus" OnClick="StartAdding">Add a map area</Button>
+                <Button Variant="ButtonVariant.Quiet" Icon="plus" Href="@OutreachLinks.NewMapArea">Add a map area</Button>
             </div>
         </ChildContent>
-        <Foot><p class="field__hint">These change straight away. Building an area takes a few minutes; phones get the new maps by themselves.</p></Foot>
+        <Foot><p class="field__hint">Open an area to switch its regions off or on, or to add regions on its edge. Building takes a few minutes; phones get the new maps by themselves.</p></Foot>
     </Section>
-
-    <Sheet Open="_adding" OpenChanged="open => _adding = open" Title="Add a map area"
-           Lead="A circle around a place, cut into regions of about 10 km. Building it takes a few minutes.">
-        <ChildContent>
-            <div class="outreach-areas__form">
-                <TextField Label="Name" @bind-Value="_name" MaxLength="80" Hint="What staff call the place, so it's easy to find again." />
-                <TextField Label="Centre" @bind-Value="_centre" Placeholder="-27.3466, 152.9667"
-                           Hint="Latitude and longitude. In Google Maps, right-click the place and click the numbers to copy them." Problem="@CentreProblem" />
-                <TextField Label="How far around it" Type="number" @bind-Value="_radius" Hint="Kilometres, from 1 to 30. The area around church is usually 20." Problem="@RadiusProblem" />
-            </div>
-        </ChildContent>
-        <Actions>
-            <Button Block="true" Busy="_busy" Disabled="@(!CanAdd)" OnClick="AddAsync">Add and build it</Button>
-            <Button Block="true" Variant="ButtonVariant.Quiet" OnClick="() => _adding = false">Cancel</Button>
-        </Actions>
-    </Sheet>
-
-    <Sheet Open="_renaming is not null" OpenChanged="open => { if (!open) _renaming = null; }" Title="Rename this map area">
-        <ChildContent>
-            <TextField Label="Name" @bind-Value="_name" MaxLength="80" />
-        </ChildContent>
-        <Actions>
-            <Button Block="true" Busy="_busy" Disabled="@(_name.Trim().Length == 0)" OnClick="RenameAsync">Rename it</Button>
-            <Button Block="true" Variant="ButtonVariant.Quiet" OnClick="() => _renaming = null">Cancel</Button>
-        </Actions>
-    </Sheet>
-
-    <Sheet Open="_deleting is not null" OpenChanged="open => { if (!open) _deleting = null; }" Title="@($"Delete {_deleting?.Name}?")"
-           Lead="Its maps and streets go, and phones stop offering them. What walkers did there stays in the record. You can add it again later.">
-        <Actions>
-            <Button Block="true" Variant="ButtonVariant.Danger" Busy="_busy" OnClick="DeleteAsync">Delete the map area</Button>
-            <Button Block="true" Variant="ButtonVariant.Quiet" OnClick="() => _deleting = null">Keep it</Button>
-        </Actions>
-    </Sheet>
+    <MapAreaSheets @ref="_sheets" OnChanged="ReloadAsync" OnDeleted="ReloadAsync" />
 </LiveData>
 
 @code {
     private static readonly IReadOnlyList<string> Feeds = [OutreachMapsFeeds.Builds, OutreachMapsFeeds.Regions];
 
     private LiveData<MapAreaList>? _live;
-    private bool _adding, _busy;
-    private Area? _renaming, _deleting;
-    private string _name = "", _centre = "", _radius = "20";
+    private MapAreaSheets? _sheets;
+    private bool _busy;
     private string? _problem;
 
-    private string? CentreProblem => _centre.Trim().Length > 0 && MapAreaWords.Centre(_centre) is null ? "Type it as two numbers, like -27.3466, 152.9667." : null;
+    private IReadOnlyList<MenuItem> ActionsFor(Area area) => MapAreaSheets.Actions(this, area, _sheets, _busy, () => RebuildAsync(area));
 
-    private string? RadiusProblem => _radius.Trim().Length > 0 && MapAreaWords.Radius(_radius) is null ? "Between 1 and 30 kilometres." : null;
-
-    private bool Changed => (_adding && (_name.Trim().Length > 0 || _centre.Trim().Length > 0)) || (_renaming is { } area && _name.Trim() != area.Name);
-
-    private async Task<bool> SaveBeforeLeavingAsync()
-    {
-        if (_renaming is not null && _name.Trim().Length > 0)
-            await RenameAsync();
-        else if (_adding && CanAdd)
-            await AddAsync();
-        else
-            return false;
-        return _problem is null;
-    }
-
-    private bool CanAdd => _name.Trim().Length > 0 && MapAreaWords.Centre(_centre) is not null && MapAreaWords.Radius(_radius) is not null;
-
-    private IReadOnlyList<MenuItem> ActionsFor(Area area) =>
-    [
-        this.Item("Rebuild it now", () => RunAsync(() => Maps.RebuildAsync(area.Id)), "refresh", "Fetches the streets, addresses and map again",
-            disabled: _busy || area.State is MapAreaStates.Building or MapAreaStates.Waiting),
-        this.Item("Rename…", () => { _renaming = area; _name = area.Name; }, "pencil"),
-        this.Item("Delete…", () => _deleting = area, "trash-2", "Its maps and streets go", danger: true, startsGroup: true,
-            disabled: _busy || area.State == MapAreaStates.Building),
-    ];
-
-    private void StartAdding()
-    {
-        (_name, _centre, _radius, _problem) = ("", "", "20", null);
-        _adding = true;
-    }
-
-    private Task AddAsync() => RunAsync(async () =>
-    {
-        (double latitude, double longitude) = MapAreaWords.Centre(_centre)!.Value;
-        await Maps.AddAsync(_name.Trim(), latitude, longitude, MapAreaWords.Radius(_radius)!.Value);
-        _adding = false;
-    });
-
-    private Task RenameAsync() => _renaming is not { } area ? Task.CompletedTask : RunAsync(async () =>
-    {
-        await Maps.RenameAsync(area.Id, _name.Trim());
-        _renaming = null;
-    });
-
-    private Task DeleteAsync() => _deleting is not { } area ? Task.CompletedTask : RunAsync(async () =>
-    {
-        await Maps.DeleteAsync(area.Id);
-        _deleting = null;
-    });
-
-    private async Task RunAsync(Func<Task> work)
+    private async Task RebuildAsync(Area area)
     {
         _busy = true;
         _problem = null;
         try
         {
-            await work();
-            if (_live is not null)
-                await _live.ReloadAsync();
+            await Maps.RebuildAsync(area.Id);
+            await ReloadAsync();
         }
         catch (RpcException exception)
         {
             _problem = exception.Status.Detail;
-            (_adding, _renaming, _deleting) = (false, null, null);
         }
         finally
         {
             _busy = false;
         }
+    }
+
+    private async Task ReloadAsync()
+    {
+        if (_live is not null)
+            await _live.ReloadAsync();
     }
 }

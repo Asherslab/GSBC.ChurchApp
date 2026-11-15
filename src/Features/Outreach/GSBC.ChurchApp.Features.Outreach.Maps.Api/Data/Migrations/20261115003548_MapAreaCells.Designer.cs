@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace GSBC.ChurchApp.Features.Outreach.Maps.Api.Data.Migrations
 {
     [DbContext(typeof(OutreachMapsDbContext))]
-    [Migration("20261115002556_MapAreaCells")]
+    [Migration("20261115003548_MapAreaCells")]
     partial class MapAreaCells
     {
         /// <inheritdoc />
@@ -106,6 +106,14 @@ namespace GSBC.ChurchApp.Features.Outreach.Maps.Api.Data.Migrations
                         .HasColumnType("text")
                         .HasColumnName("state");
 
+                    b.Property<int>("Steps")
+                        .HasColumnType("integer")
+                        .HasColumnName("steps");
+
+                    b.Property<int>("StepsDone")
+                        .HasColumnType("integer")
+                        .HasColumnName("steps_done");
+
                     b.Property<double>("West")
                         .HasColumnType("double precision")
                         .HasColumnName("west");
@@ -134,6 +142,11 @@ namespace GSBC.ChurchApp.Features.Outreach.Maps.Api.Data.Migrations
                     b.Property<bool>("Empty")
                         .HasColumnType("boolean")
                         .HasColumnName("empty");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("name");
 
                     b.Property<bool>("On")
                         .HasColumnType("boolean")

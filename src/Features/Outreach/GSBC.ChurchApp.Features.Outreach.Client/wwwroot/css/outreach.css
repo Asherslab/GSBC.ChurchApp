@@ -17,7 +17,19 @@
 .outreach-desk__cell { display: grid; gap: var(--space-3xs); }
 .outreach-desk__sub { color: var(--ink-3); font-size: var(--text-caption); }
 .outreach-areas__regions { margin: var(--space-2xs) 0 0; color: var(--ink-3); font-size: var(--text-caption); font-variant-numeric: tabular-nums; }
-.outreach-areas__form { display: grid; gap: var(--stack); }
+.outreach-areas__progress { max-width: 20rem; margin-top: var(--space-xs); }
+.area-desk__state { display: grid; gap: var(--space-sm); margin-bottom: var(--space-lg); }
+.area-desk__state-line { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-xs); margin: 0; color: var(--ink-2); font-size: var(--text-caption); }
+.area-desk__retry { justify-self: start; }
+.area-desk__group { margin: var(--space-xl) 0 var(--space-2xs); color: var(--ink-2); font-size: var(--text-label); font-weight: 600; }
+.area-desk__rows { display: grid; }
+.area-desk__uses-lead { margin: 0; font-weight: 600; }
+.area-desk__uses { display: grid; gap: var(--space-2xs); margin: var(--space-2xs) 0 var(--space-xs); padding-left: var(--space-lg); }
+.area-desk__summary { margin: 0 0 var(--space-sm); color: var(--ink-2); font-size: var(--text-caption); text-align: right; font-variant-numeric: tabular-nums; }
+.area-desk__hint { margin: var(--space-sm) 0 0; }
+.area-desk__places { display: grid; margin-top: var(--space-sm); }
+.area-desk__fields { display: grid; gap: var(--stack); margin-top: var(--space-xl); }
+.area-desk__estimate { margin: var(--space-md) 0 0; color: var(--ink-2); font-size: var(--text-caption); font-variant-numeric: tabular-nums; }
 .outreach-day__go { display: grid; justify-items: start; gap: var(--space-xs); padding-bottom: var(--space-xl); border-bottom: 1px solid var(--line); }
 .outreach-day__go .field__hint { margin: 0; }
 

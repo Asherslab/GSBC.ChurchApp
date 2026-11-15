@@ -45,6 +45,7 @@ internal static class MapAreaSeeding
                     Pending = !built.ContainsKey(id) && area.State != MapAreaStates.Built,
                     Empty = !built.ContainsKey(id) && area.State == MapAreaStates.Built,
                     Version = built.GetValueOrDefault(id)?.Version ?? 0,
+                    Name = built.GetValueOrDefault(id)?.Name ?? "",
                 };
             }));
         }

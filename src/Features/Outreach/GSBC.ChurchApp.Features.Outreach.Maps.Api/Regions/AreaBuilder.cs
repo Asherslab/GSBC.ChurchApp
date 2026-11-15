@@ -19,6 +19,7 @@ namespace GSBC.ChurchApp.Features.Outreach.Maps.Api.Regions;
 internal sealed class AreaBuilder(OutreachMapsDbContext db, IMapSources sources, IBlobStore blobs, TimeProvider time, IOptions<MapSourcesOptions> options)
 {
     private const double StreetMarginMetres = 500;
+    private const int FetchSteps = 4;
     private const string MapContentType = "application/vnd.pmtiles";
     private const string MapExtension = "pmtiles";
     private static readonly string StreetsExtension = StreetGraphFile.Extension.TrimStart('.');
@@ -37,6 +38,7 @@ internal sealed class AreaBuilder(OutreachMapsDbContext db, IMapSources sources,
         bool more = await db.Cells.AnyAsync(cell => cell.AreaId == area.Id && cell.On && cell.Pending, cancellationToken);
         area.State = more ? MapAreaStates.Waiting : MapAreaStates.Built;
         area.Stage = null;
+        (area.StepsDone, area.Steps) = (0, 0);
         area.Problem = null;
         if (!more)
             area.BuiltAt = Now;
@@ -50,6 +52,7 @@ internal sealed class AreaBuilder(OutreachMapsDbContext db, IMapSources sources,
         List<RegionCell> cells = pending.Select(cell => RegionGrid.CellOf(area.Id, grid, cell.Row, cell.Column)).ToList();
         GeoBounds reach = RegionGrid.Union(cells.Select(cell => cell.Bounds));
 
+        (area.StepsDone, area.Steps) = (0, FetchSteps + cells.Count);
         AreaStreets streets = await PlaceLetterboxesAsync(area, reach, reach.Centre, cancellationToken);
         IRangeReader tiles = await sources.TilesAsync(cancellationToken);
 
@@ -57,12 +60,13 @@ internal sealed class AreaBuilder(OutreachMapsDbContext db, IMapSources sources,
         HashSet<string> taken = (await db.Regions.Where(region => region.AreaId == area.Id && !building.Contains(region.Id))
             .Select(region => region.Name).ToListAsync(cancellationToken)).ToHashSet();
         List<(RegionCell Cell, string Name)> kept = Named(cells.Where(cell => streets.HomesIn(cell.Core) > 0).Select(cell => (cell, streets.NameFor(cell.Core))).ToList(), area.Name, taken);
+        area.Steps = FetchSteps + kept.Count;
         for (int i = 0; i < kept.Count; i++)
         {
             await StageAsync(area, $"Building {kept[i].Name} ({i + 1} of {kept.Count})", cancellationToken);
             MapCellRecord record = records[kept[i].Cell.Id];
             RegionRecord region = await PublishAsync(area, kept[i].Cell, kept[i].Name, record.Version, streets, tiles, cancellationToken);
-            (record.Pending, record.Empty, record.Version) = (false, false, region.Version);
+            (record.Pending, record.Empty, record.Version, record.Name) = (false, false, region.Version, region.Name);
             await db.SaveChangesAsync(cancellationToken);
         }
         HashSet<string> withHomes = kept.Select(pair => pair.Cell.Id).ToHashSet();
@@ -218,6 +222,7 @@ internal sealed class AreaBuilder(OutreachMapsDbContext db, IMapSources sources,
     private async Task StageAsync(MapAreaRecord area, string stage, CancellationToken cancellationToken)
     {
         area.Stage = stage;
+        area.StepsDone++;
         db.FeedChanges.Add(RegionFeed.BuildChanged(area.Id, Now));
         await db.SaveChangesAsync(cancellationToken);
     }

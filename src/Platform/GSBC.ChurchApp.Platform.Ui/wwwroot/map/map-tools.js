@@ -1,6 +1,7 @@
 const empty = { type: "FeatureCollection", features: [] };
 const fullLabelsFrom = 15;
 const token = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+const colourOf = (value) => (value?.startsWith("--") ? token(value) : value);
 const closeEnoughPixels = 12;
 const spacingPixels = 4;
 const drawingEveryMs = 80;
@@ -74,7 +75,7 @@ export function attach(handle, receiver) {
   let shownLabels = [];
   const labelFeatures = () => ({ type: "FeatureCollection", features: shownLabels.map((l, i) => ({
     type: "Feature",
-    properties: { text: l.text, short: l.short ?? l.text, image: capsule(map, l.colour, l.filled), ink: l.filled ? "#ffffff" : token("--ink"), order: l.order ?? i },
+    properties: { text: l.text, short: l.short ?? l.text, image: capsule(map, colourOf(l.colour), l.filled), ink: l.filled ? "#ffffff" : token("--ink"), order: l.order ?? i },
     geometry: { type: "Point", coordinates: l.point } })) });
 
   const sketch = (features) => map.getSource("tools-sketch")?.setData({ type: "FeatureCollection", features });

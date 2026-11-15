@@ -11,6 +11,7 @@ internal static class MapAreas
 {
     public const double LargestRadiusKm = 30;
     public const double SmallestRadiusKm = 1;
+    public static readonly IReadOnlyList<string> Reserved = ["new"];
 
     public static (MapAreaRecord Area, List<MapCellRecord> Cells) New(string id, string name, GeoPoint centre, double radiusMetres, DateTime now)
     {
@@ -54,9 +55,11 @@ internal static class MapAreas
         Grid = RegionGrid.GridOf(area),
         Cells = cells.OrderBy(cell => cell.Row).ThenBy(cell => cell.Column).Select(cell => new MapCell
         {
-            Row = cell.Row, Column = cell.Column, RegionId = cell.Id, On = cell.On, Pending = cell.Pending, Empty = cell.Empty,
+            Row = cell.Row, Column = cell.Column, RegionId = cell.Id, On = cell.On, Pending = cell.Pending, Empty = cell.Empty, Name = cell.Name,
         }).ToList(),
         CellLimit = RegionGrid.MostCells,
+        StepsDone = area.StepsDone,
+        Steps = area.Steps,
         Id = area.Id,
         Name = area.Name,
         Bounds = new MapBounds { South = area.South, West = area.West, North = area.North, East = area.East },

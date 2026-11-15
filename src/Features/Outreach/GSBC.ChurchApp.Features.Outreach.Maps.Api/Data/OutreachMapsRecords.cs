@@ -22,6 +22,8 @@ public sealed class MapAreaRecord
     public int OriginRow { get; set; }
     public int OriginColumn { get; set; }
     public DateTime? DeletedAt { get; set; }
+    public int StepsDone { get; set; }
+    public int Steps { get; set; }
 }
 
 public sealed class MapCellRecord
@@ -34,6 +36,7 @@ public sealed class MapCellRecord
     public bool Pending { get; set; }
     public bool Empty { get; set; }
     public long Version { get; set; }
+    public string Name { get; set; } = "";
 }
 
 public sealed class PlaceRecord

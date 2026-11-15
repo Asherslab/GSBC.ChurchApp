@@ -60,6 +60,8 @@ public sealed class MapArea
     [ProtoMember(11, IsRequired = true)] public MapGrid Grid { get; set; } = new();
     [ProtoMember(12)] public List<MapCell> Cells { get; set; } = [];
     [ProtoMember(13)] public int CellLimit { get; set; }
+    [ProtoMember(14)] public int StepsDone { get; set; }
+    [ProtoMember(15)] public int Steps { get; set; }
 }
 
 [ProtoContract]
@@ -71,6 +73,7 @@ public sealed class MapCell
     [ProtoMember(4)] public bool On { get; set; }
     [ProtoMember(5)] public bool Pending { get; set; }
     [ProtoMember(6)] public bool Empty { get; set; }
+    [ProtoMember(7)] public string Name { get; set; } = "";
 
     public CellRef Ref => new() { Row = Row, Column = Column };
 }

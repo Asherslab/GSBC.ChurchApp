@@ -349,10 +349,53 @@ outreach works on come in **regions**, which the API builds itself, and which ph
 - **Measured 2026-11-15 over *Around the church*:** 639,807 addresses, 96.6% placed on their own street (the POC's
   Albany Creek box: 94.0%; the POC counted alias addresses too and reported 95%); 533,227 homes, 29,405 delivered as
   "check", 85,051 skipped as not homes; 127,676 street segments; 10,486 footpaths beside roads left out.
-- **Open for the owner:** a 20 km square around the church also takes in the inner city and the south side (West End,
-  Coorparoo, Carindale). Those regions cost nothing until someone walks there, and a south-side mission would use
-  them, but the area could be made smaller or moved north (its centre and reach are settings, and staff can add
-  areas).
+- **The 20 km area, answered (owner, 2026-11-15):** asked whether *Around the church* should also take in the inner city
+  and the south side, the owner answered "is there way(s) to quickly and easily add additional areas and regions via
+  the admin panel? if not, build that" and "let admins add or remove it". So the seeded area stays 20 km each way, and
+  staff switch parts of it off themselves (*Map areas you can shape*).
+
+### Map areas you can shape (built 2026-11-15)
+
+- **An area is any set of squares on one grid.** Adding an area still cuts a square round its centre into regions as
+  above, but the area then keeps its grid (centre, a square's size, which square is the middle) and a row per square
+  (`outreach_maps.cells`): on or off, waiting to build, or empty (no homes). Staff switch squares off (the inner city out
+  of *Around the church*) and on again, and add squares that touch one that stays on, up to 64 an area. An area keeps at
+  least one region (delete the area instead). Existing areas were given their grid from their bounds, keeping every
+  region id.
+- **A region's id is its square, and never names another place.** Ids stay `church-c3` inside the first grid and become
+  `church-rm1c3` (a row above it) outside it; an area's id is never reused (a deleted area stays as a tombstone), so a
+  new "Gympie" after a deleted one is `gympie-2`. Switching a square back on brings the same place back under the same
+  id, and its version carries on from the last one published (phones holding the old files download again).
+- **Switching a region off** deletes its region record (the `outreach.regions` feed marks it deleted, so phones drop it
+  and *Offline maps* stops listing it) and its files from the media bucket, at once. Coverage, marks, follow-ups and
+  history are keyed by streets and stay; switch it on and they show again. Refused while the area is building.
+- **Adding builds only what was added.** The job builds the squares waiting to build, reading the sources for the box
+  round them only (the addresses and land use, the slow part, are queried for those squares; the Queensland extract is
+  still downloaded whole and read for that box). *Rebuild* marks every square of the area to build again; *Try again*
+  after a failure builds what was waiting. A square added while the area builds waits for the next run, which starts
+  straight after. New regions' names avoid the area's existing names. The build reports its steps (four fetches, then a
+  region at a time) so the admin panel shows a progress bar.
+- **What uses a region** (*Claude's default*): before a region goes, the admin panel lists the outreach days not yet
+  over that plan routes there (from the day's draft or its routes) and the campaigns not yet ended that name it, as the
+  "what goes" previews elsewhere do, and asks once. Nothing is changed or refused: the day keeps its routes and printed
+  maps, but its walkers would have no map or streets there until the region is switched on again. Outreach answers
+  through `IRegionUses` (Maps.Contracts), so Maps never reads Outreach's tables.
+- **Finding a place by name** (`Maps.FindPlaces`, gRPC, `outreach.maps.manage`). *Claude's default, and why*: the names
+  come from OpenStreetMap's place nodes in the Geofabrik Queensland extract the build already downloads (city, town,
+  suburb, village, locality, hamlet, neighbourhood: about 4,400 in Queensland; Gympie, Carindale, Coorparoo and West End
+  are all there), kept in `outreach_maps.places` and refreshed every 30 days by the build job (a failed refresh tries
+  again in 6 hours). The address layer's localities were the other choice: they name every suburb but give no point to
+  centre on without reading every address, and nothing for towns as a whole. A search matches names starting with the
+  text first, then towns before suburbs before localities, and says how far and which way each is from the church.
+- **Seeing an area before it builds** (`Maps.Preview`): the squares for a centre and reach, with each square's primary
+  addresses counted by the address layer (counts only, kept 6 hours) and an estimated download (1.1 MB of map plus
+  75 bytes an address, fitted roughly to *Around the church*'s regions), and the places inside it. A square with no
+  addresses isn't made. `Maps.CheckChange` gives the same for squares being added, plus what uses the regions going and
+  how much they free; `Maps.ChangeRegions` applies it.
+- **No overview map file** (*Claude's default*): the admin panel draws the squares over the nearest built region's map
+  (a region's map file carries its low zooms, which reach well past it near the church), with each square's count as
+  its label; far away (Gympie) the ground is mostly blank until its own regions are built. A Queensland overview map
+  would be a new static file on the media host beyond the approved "one map file per region", so it wasn't made.
 
 ### The map's look (2026-11-15)
 
@@ -549,10 +592,13 @@ The Outreach page's tabs are now Campaigns, Coverage, Numbers, Places, Follow-up
   letterbox, *Skip an area round it* draws an area instead (`ReportResolve.Area`; the zone is named after the place and
   keeps the walker's note), and the reason maps to the exclusion's.
 - **Settings:** every field says its usual value; *Spare tracts* (the engine's spare share, as a per cent) joins How
-  long a walk takes. **Map areas** (for `outreach.maps.manage`): each area's state, regions, letterboxes, download
-  size and version, with Rebuild, Rename and Delete in its ⋯, and Add a map area (a name, a centre typed as latitude
-  and longitude, and 1 to 30 km). *Claude's default*: a typed centre, because a campaign far away has no map yet to
-  click on.
+  long a walk takes. **Map areas** (for `outreach.maps.manage`): each area's state (with a progress bar while it
+  builds), regions, letterboxes and download size, with Rebuild, Rename and Delete in its ⋯. An area opens on its own
+  map page (`/outreach/map-areas/{id}`, built 2026-11-15, replacing the typed latitude and longitude): its squares on
+  the map, clicked to switch off or on or (a + on the edge) to add, the regions listed on, off and changing with
+  switches, and the change saved from the pane's foot, asking once before anything goes. *Add a map area*
+  (`/outreach/map-areas/new`) finds a town or suburb by name or takes a click on the map, with the reach (1 to 30 km,
+  10 to start) and a name, and shows the squares and the estimate before *Add and build it* (*Map areas you can shape*).
 - **Seams:** `IOutreachMapsService.RegionsAsync` (signed in; the same as the public regions feed) gives staff without
   `outreach.maps.manage` the regions; `StreetGraphLoader` (Outreach.Client) fetches and caches a region's streets for
   the admin panel, shared with the planner. The shared map gained a `Covered` line style with an age, and colours given

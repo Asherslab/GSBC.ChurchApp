@@ -21,5 +21,16 @@ public sealed class OutreachMapsClient(ChannelBase channel)
 
     public async Task<MapArea> RebuildAsync(string id) => await _maps.RebuildAsync(new MapAreaRef { Id = id });
 
+    public async Task<MapArea> RetryAsync(string id) => await _maps.RetryAsync(new MapAreaRef { Id = id });
+
     public async Task<MapAreaList> DeleteAsync(string id) => await _maps.DeleteAsync(new MapAreaRef { Id = id });
+
+    public async Task<PlaceList> FindPlacesAsync(string text) => await _maps.FindPlacesAsync(new PlaceSearch { Text = text });
+
+    public async Task<MapAreaPreview> PreviewAsync(double latitude, double longitude, double radiusKm) =>
+        await _maps.PreviewAsync(new MapAreaPlan { CentreLatitude = latitude, CentreLongitude = longitude, RadiusKm = radiusKm });
+
+    public async Task<RegionChangeCheck> CheckChangeAsync(RegionChange change) => await _maps.CheckChangeAsync(change);
+
+    public async Task<MapArea> ChangeRegionsAsync(RegionChange change) => await _maps.ChangeRegionsAsync(change);
 }

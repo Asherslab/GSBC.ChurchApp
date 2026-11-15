@@ -40,7 +40,7 @@ internal sealed class OutreachMapsService(
         if (name.Length == 0)
             throw Invalid("Give the area a name.");
         GeoPoint centre = Centre(request.CentreLatitude, request.CentreLongitude, request.RadiusKm);
-        HashSet<string> taken = (await db.Areas.Select(area => area.Id).ToListAsync(cancellationToken)).ToHashSet();
+        HashSet<string> taken = [.. await db.Areas.Select(area => area.Id).ToListAsync(cancellationToken), .. MapAreas.Reserved];
         (MapAreaRecord added, List<MapCellRecord> cells) = MapAreas.New(MapAreas.Slug(name, taken), name, centre, request.RadiusKm * 1000, Now);
         db.Areas.Add(added);
         db.Cells.AddRange(cells);
