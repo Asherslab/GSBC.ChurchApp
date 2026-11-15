@@ -8,4 +8,5 @@ public sealed record BoardColumn<TColumn>(
     bool Folds = false,
     int? Shown = null,
     Func<int, string>? More = null,
-    bool Addable = false);
+    bool Addable = false,
+    bool Wide = false);

@@ -33,7 +33,7 @@ Decided:
 - **Start:** from here by default, or anywhere (search an address or drop a pin, e.g. where you'll park). When the
   streets around you are already done, the app says so and suggests the nearest good start and how far it is.
 - **Rest period: configurable, default 3 months.** An admin **settings screen** holds this and the other tunables
-  (pace, seconds per letterbox, bundle size, daylight hours, connector limits …), and an admin **coverage map** shows
+  (pace, seconds per letterbox, bundle size, connector limits …), and an admin **coverage map** shows
   everything recently done and lets staff mark coverage expired by hand.
 - **Outreach days:** printable route maps (one A4 PDF per route: the route drawn, start and meeting point, letterboxes
   and bundles, a street list and the route's QR code), replacing the Illustrator work; the **QR opens the route** in
@@ -58,7 +58,7 @@ Decided:
   region before an outreach day; *Offline maps* lets anyone keep or remove regions, with sizes.
 - **Map tiles: self-hosted.** One static PMTiles file (vector map) per region, stored in R2 and read by HTTP range
   requests from the media host; the owner approved this path (AGENTS.md). Styled to the church brand; works offline.
-- **Doorknocking: planned in now.** A doorknock walk has its own pace per door, pairs required, daylight only, and a
+- **Doorknocking: planned in now.** A doorknock walk has its own pace per door, pairs required, and a
   check-in at start and finish. At a door: *Knocked, no answer* (so a later doorknock can try again, never shown as
   anything about the household); *Spoke, follow-up wanted* (a first name and contact details only with their consent,
   sent to the outreach leaders' inbox); *Hostile*: "wants absolutely nothing to do with it", not merely dismissive;
@@ -449,18 +449,68 @@ the maps station's regions (`Maps`); schema `outreach`.
 
 ### Campaigns
 
-- A campaign: name, what's handed out, optional start and end dates, an optional area (a polygon) or regions, a
-  leaderboard switch. **General outreach** is always there (seeded with a fixed id), can be renamed, has no dates, and
-  can't be deleted. A walk carries one or more campaigns (none chosen means General) and records coverage for each.
+- A campaign: name, what's handed out, its bundle size, bundles made, optional start and end dates, how many days
+  before its end it wraps up, an optional area (a polygon) or regions, a leaderboard switch. **General outreach** is
+  always there (seeded with a fixed id), can be renamed, has no dates or stages, and can't be deleted. A walk carries one
+  or more campaigns (none chosen means General) and records coverage for each.
 - **Deleting a campaign** (*Claude's default*): refused while it has an outreach day still to come ("Delete or move them
   first"); otherwise its coverage, no-answer doors and past days (with their routes and claims) go with it, and its walks
   stay in the totals without it.
+
+### Campaign stages (owner, 2026-11-15, #108)
+
+The owner: "switch the campaigns to be more similar flow to the life groups page. "Preparing" -> "Ongoing" -> "Wrapping
+Up" -> "Finished". Preparing can be used to mark out areas or whatever, getting ready for it. ongoing when they're
+actually on. Switching to "wrapping up" (either automatically say a week before, or otherwise) sends out a notification
+to the church that that outreach campaign will be ending soon so that they can make sure to get any tracts left done."
+
+| Stage | Staff | Walkers |
+|---|---|---|
+| **Preparing** | Mark its area, plan its days and routes | Don't see it (owner: hidden until it's on) |
+| **Ongoing** | Everything | Carry it |
+| **Wrapping up** | Everything; the church has been told it ends soon | Carry it |
+| **Finished** | Read only, except its name, what's handed out, bundles made and the leaderboard; no new outreach days; moving it back to Ongoing opens it again | Don't carry it; its coverage is kept for looking back |
+
+- **Moves by its dates** (`CampaignStages`, tested): Ongoing on its start date, Wrapping up its *wrap-up days* (1 to 60,
+  7 to start, per campaign) before its end date, Finished the day after its end date. The keeping job (every 15 minutes)
+  moves it; phones work the stage out from the same rule, so a campaign starts and stops on time offline.
+- **Moves by hand** (a card's ⋯, dragging it on the board, or the stage line in its record; `MoveCampaign`). A move by
+  hand holds until the next of its dates comes: a campaign moved back to Preparing after its start stays there until its
+  wrap-up date. Changing its dates or wrap-up days puts it where its dates say (*Claude's default*).
+- **No start date** keeps a new campaign in Preparing until it's moved; **no end date** means it never wraps up or
+  finishes by itself. Campaigns from before stages took their stage from their dates (a migration).
+- **Telling the church:** entering Wrapping up, by hand or by its dates, sends one notification, once per campaign (moving
+  back and forward again doesn't repeat it): "Carols ends on Mon 14 Dec / Help get the last invitations to carols out
+  before it ends.", opening Outreach in the app. **Who:** everyone the app's announcements reach
+  (`NotificationAudience.Everyone`: every phone with the app, signed in or not), through the Notifications feature's
+  sending, quiet hours and pacing. It is its own kind, **Outreach announcements** (`outreach.ending-soon`), on by
+  default, which anyone can turn off in their notification settings (owner: "make it "Outreach Announcements" category,
+  default on"). A backend run beside main with `Dev__PortOffset` sends no push.
+
+### Bundles (owner, 2026-11-15, #100)
+
+The owner: "this should be per campaign. different paper thicknesses can mean different bundle sizes", and "might be
+good for our staff to put in the total number of bundles made, so they can track how many actually went out vs how many
+were printed".
+
+- **Bundle size per campaign** (1 to 1,000 letterboxes). A new campaign starts with the church-wide setting (Settings →
+  *Bundle size for new campaigns*); a campaign from before this change, with none of its own, uses the church-wide one.
+  The day planner (sizing routes by bundles, a route's bundles), the printed route maps and the phone (bundles to take
+  for a walk or a route, the walk screen) use the campaign's own; a walk carrying several campaigns uses the first.
+- **Bundles made** (optional): how many were printed or packed. The board and the record say "About 38 of 60 bundles
+  out", from the campaign's letterboxes divided by its bundle size, rounded up.
+
+### The campaigns board (2026-11-15)
+
+Decision page `.impeccable/mocks/outreach-campaign-stages/` (A cards with time lines, the record on its own page; B cards
+open in place; C a list by stage with the record beside it). The owner picked **B**. Surface brief:
+`.impeccable/surfaces/each-admin-components-campaignsdesk-razor-e291a688.md`.
 
 ### Settings
 
 One record (`OutreachSettings`, feed `outreach.settings`) with the engine's `RouteSettings` names 1:1 (rest days, pace,
 house, unit, door and unit door seconds, bundle size, spare share, connector limits, the walk to the first open street,
-reach thresholds) plus the screens' own: daylight hours, doorknocking in pairs, how long No junk mail marks (730 days)
+reach thresholds) plus the screens' own: doorknocking in pairs, how long No junk mail marks (730 days)
 and done follow-ups (90 days) are kept, and what counts as a walk (fastest 9 km/h, longest 30 km). Defaults are in
 `OutreachDefaults`; the server refuses values outside sensible ranges (`SettingsRules`). The rest period is days: 91 for
 "three months".
@@ -749,8 +799,9 @@ stops for the end of a walk; B and C stay on the page for the owner). Detail: [d
 - **Planning** runs the engine on the phone from the region's street file kept on the phone: from here (location asked
   only when you plan), a street you find by name (searched in the region's own street names, offline, no geocoder), or a
   pin dropped on the map. The plan shows distance and time, letterboxes and bundles, when you'll be back, the reach note
-  with its reasons and the two ways to get more, and the streets. Past the daylight hours it warns; doorknocking can't
-  start then, nor without *I'm walking with someone* when settings ask for pairs.
+  with its reasons and the two ways to get more, and the streets. Doorknocking can't
+  start without *I'm walking with someone* when settings ask for pairs. A walk may start at any time of day (owner,
+  2026-11-15, #103: "there's no requirement to only walk during the day").
 - **The walk.** Location runs in the background for the walk's length only (When In Use permission and iOS's blue
   indicator; started and stopped by the walk). Every fix goes into a journal on the phone, so a locked phone, a suspended
   page or the app being closed loses nothing; the follower reads it whenever the app runs. The screen leads with the
@@ -936,7 +987,6 @@ engine in admin for day routes. The phone sends only what was walked.
 ## Safety
 
 - Suggest going in pairs; outreach days should pair people.
-- Daylight hours by default (the time choices stop offering long walks near dusk).
 - Main roads are excluded from deliveries.
 - The walking screen keeps the phone usable one-handed and glanceable; no typing while walking.
 

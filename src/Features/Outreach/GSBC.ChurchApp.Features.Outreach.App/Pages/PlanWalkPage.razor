@@ -117,10 +117,9 @@
         RouteSummary summary = walk.Summary;
         OutreachSettings settings = plan.Now.Settings;
         DateTime now = Clock.GetUtcNow().UtcDateTime;
-        bool daylight = WalkPlanning.InDaylight(settings, now, summary.Time);
         bool doorknock = _mode == WalkMode.Doorknock;
         bool needsPartner = doorknock && settings.DoorknockInPairs && !_withPartner;
-        bool mayStart = !walk.IsEmpty && !(doorknock && !daylight) && !needsPartner && Walk.Current is not { Finished: false };
+        bool mayStart = !walk.IsEmpty && !needsPartner && Walk.Current is not { Finished: false };
         <Section First="true">
             <div class="outreach-figures">
                 @if (walk.IsEmpty)
@@ -134,7 +133,7 @@
                         @(doorknock ? OutreachPhoneWords.Doors(summary.Letterboxes) : OutreachPhoneWords.Letterboxes(summary.Letterboxes))
                         @if (!doorknock)
                         {
-                            <span> · @OutreachPhoneWords.Bundles(summary.BundlesToTake, settings.BundleSize)</span>
+                            <span> · @OutreachPhoneWords.Bundles(summary.BundlesToTake, walk.Planner.Open.Settings.BundleSize)</span>
                         }
                         <span> · back by @OutreachPhoneWords.Clock(now + summary.Time)</span>
                     </p>
@@ -184,10 +183,6 @@
                     }
                 </div>
             }
-            @if (!walk.IsEmpty && !daylight)
-            {
-                <Notice Tone="NoticeTone.Warning" Text="@DaylightNote(settings, now, doorknock)" />
-            }
             @if (Walk.Current is { Finished: false })
             {
                 <Notice Text="You're on a walk already. Finish it before starting another." />
@@ -207,7 +202,7 @@
             <Segmented TValue="WalkMode" Label="What you're doing" ShowLabel="true" Options="ModeOptions" Value="_mode" ValueChanged="ChangeModeAsync" />
             @if (doorknock)
             {
-                <p class="outreach-note">Doorknocking is in pairs and in daylight. You'll check in when you start and when you finish.</p>
+                <p class="outreach-note">You'll check in when you start and when you finish.</p>
                 @if (settings.DoorknockInPairs)
                 {
                     <ToggleRow Title="I'm walking with someone" Description="Doorknocking needs two of you, together." Checked="_withPartner" CheckedChanged="on => _withPartner = on" />
@@ -316,13 +311,6 @@
         HereState.Off => "Location services are off on this phone. Find a street to start from instead.",
         _ => "The phone couldn't find where you are just now. Find a street to start from, or try again outside.",
     };
-
-    private static string DaylightNote(OutreachSettings settings, DateTime now, bool doorknock) =>
-        WalkPlanning.BeforeDaylight(settings, now)
-            ? $"It's dark until about {OutreachPhoneWords.Clock(WalkPlanning.DaylightStarts(settings, now))}. Outreach is for daylight, so plan this for later."
-        : doorknock
-            ? $"Doorknocking is for daylight, until {OutreachPhoneWords.Clock(WalkPlanning.DaylightEnds(settings, now))}. Try a shorter walk, or another day."
-            : $"This walk would finish after {OutreachPhoneWords.Clock(WalkPlanning.DaylightEnds(settings, now))}, when it's getting dark. Try a shorter walk.";
 
     private static string Megabytes(long bytes) => $"{Math.Max(1, Math.Round(bytes / 1_000_000.0))} MB";
 

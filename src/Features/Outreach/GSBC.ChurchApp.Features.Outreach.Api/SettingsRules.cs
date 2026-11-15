@@ -14,8 +14,6 @@ internal static class SettingsRules
         : Outside(settings.MaxConnectorLegMetres, 0, 2000) || Outside(settings.MaxConnectorTotalMetres, 0, 5000)
           || Outside(settings.SplitJoinMetres, 0, 2000) || Outside(settings.MaxHopMetres, 0, 5000) || Outside(settings.MaxApproachMetres, 0, 5000) ? "Walks between streets are up to 2 km (5 km in all)."
         : Outside(settings.ShortOf, 0.5, 1) || Outside(settings.LongOf, 1, 3) ? "A walk is said to fall short below half what was asked, and too long up to three times."
-        : Outside(settings.DaylightStartsMinute, 0, 1439) || Outside(settings.DaylightEndsMinute, 1, 1440)
-          || settings.DaylightStartsMinute >= settings.DaylightEndsMinute ? "Daylight starts before it ends."
         : Outside(settings.NoJunkMailKeptDays, 30, 3650) ? "No junk mail marks are kept between a month and ten years."
         : Outside(settings.FollowUpsKeptDays, 7, 730) ? "Follow-ups are kept between a week and two years."
         : Outside(settings.FastestKmh, 5, 20) ? "The fastest walk counted is between 5 and 20 km/h."

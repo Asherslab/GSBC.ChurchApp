@@ -248,8 +248,8 @@
         {
             <p class="field__hint area-desk__hint">Click the map to move the middle.</p>
             <div class="area-desk__fields">
-                <TextField Label="How far around it" Type="number" Min="1" Max="30" Value="@_radius" ValueChanged="RadiusAsync"
-                           Hint="Kilometres each way, 1 to 30. Around the church is 20." Problem="@RadiusProblem" />
+                <TextField Label="How far around it" Type="number" Unit="km" Min="1" Max="30" Value="@_radius" ValueChanged="RadiusAsync"
+                           Hint="Each way, 1 to 30. Around the church is 20." Problem="@RadiusProblem" />
                 <TextField Label="Name" @bind-Value="_name" MaxLength="80" Hint="What staff call the place." />
             </div>
             <p class="area-desk__estimate" role="status">@EstimateLine</p>

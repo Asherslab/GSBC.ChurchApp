@@ -10,7 +10,7 @@
             Nearby near = context.Value;
             DateTime utc = Clock.GetUtcNow().UtcDateTime;
             OutreachDay? on = OutreachDays.On(near.Now, utc);
-            List<OutreachDay> coming = [.. near.Now.Days.Where(day => day.StartsAt > utc).Take(3)];
+            List<OutreachDay> coming = [.. OutreachDays.Coming(near.Now, utc).Take(3)];
             bool first = true;
         }
         @if (near.Walk is { } walking)

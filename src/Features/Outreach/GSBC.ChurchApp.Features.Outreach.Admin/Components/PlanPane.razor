@@ -16,7 +16,7 @@
                 </div>
             }
         </div>
-        <RouteSize Target="Planner.Target" PerRoute="Planner.PerRoute" OnChange="OnSize" />
+        <RouteSize Target="Planner.Target" PerRoute="Planner.PerRoute" OnChange="OnSize" BundleSize="Planner.Open.Settings.BundleSize" />
     }
     else
     {
@@ -44,7 +44,7 @@ else
         </div>
         @if (_sizing)
         {
-            <RouteSize Target="Planner.Target" PerRoute="Planner.PerRoute" OnChange="SizeAsync" Apply="true" />
+            <RouteSize Target="Planner.Target" PerRoute="Planner.PerRoute" OnChange="SizeAsync" Apply="true" BundleSize="Planner.Open.Settings.BundleSize" />
         }
         @if (_naming)
         {

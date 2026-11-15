@@ -53,7 +53,7 @@ public sealed class WalkScreen(WalkSession walk, OutreachStore store, RegionMaps
         bool tracking = state.Tracking && (await location.StateAsync()).Running || state.Paused;
         List<OutboxEntry> queued = [.. (await outbox.ListAsync()).Where(entry => entry.Method.StartsWith(OutreachMethods.Under, StringComparison.Ordinal))];
         return new WalkView(state, progress, source, lines, markers, frame, you, carried.Count == 0 ? "General outreach" : string.Join(" + ", carried.Select(c => c.Name)),
-            tracking, now.Settings.BundleSize, queued.Count(entry => !entry.Failed), queued.Count(entry => entry.Failed));
+            tracking, CampaignStages.BundleSizeOf(carried.FirstOrDefault(), now.Settings), queued.Count(entry => !entry.Failed), queued.Count(entry => entry.Failed));
     }
 
     private const int StreetPadding = 56;

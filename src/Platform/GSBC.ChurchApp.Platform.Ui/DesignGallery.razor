@@ -211,11 +211,12 @@
                 <ToggleRow Title="Hide my name" Description="The pastoral team sees it as anonymous" @bind-Checked="_anonymous" />
                 <ToggleRow Title="Notify me" Description="Not available yet" Disabled="true" />
             </div>)
-        @Item("Typing: TextField", "Labels above; a hint under; a problem says how to fix it.",
+        @Item("Typing: TextField", "Labels above; a hint under; a problem says how to fix it. A number's unit sits inside the field (Unit).",
             @<div class="gallery__stack">
                 <TextField Label="Your name" @bind-Value="_name" Placeholder="First name is fine" />
                 <TextField Label="Prayer request" @bind-Value="_request" Multiline="true" MaxLength="500" Hint="Only the pastoral team sees this." />
                 <TextField Label="Link" Value="http://example" Problem="A link starts with https://." />
+                <TextField Label="Spare tracts" Type="number" Unit="%" @bind-Value="_spare" Hint="More than the walk's letterboxes, so nobody runs out. Usually 10." />
             </div>)
         @Item("One of a short fixed list: SelectField", "When the options are few and known.",
             @<SelectField Label="Service" Options="Services" @bind-Value="_service" />)
@@ -368,6 +369,8 @@
                     </BoardCard>
                 </Card>
             </Board>)
+        @Item("How far through a span of time: SpanLine", "Start to end, how far through today is, and the closing stretch in the marker (a campaign's wrapping up). Pass Wide to a board column to open a card where it sits.",
+            @<SpanLine From="7 Nov" To="14 Dec" Done="0.22" Closing="0.19" Description="22% of the way from 7 Nov to 14 Dec" />)
         @Item("Putting things in order, quietly: ReorderList Quiet", "For a short list in a narrow column (the calendars): the handle shows on hover or focus; drag it, or press Alt and an up or down arrow on it.",
             @<ReorderList TItem="string" Items="_ordered" Key="name => name" Name="name => name" Label="Calendars, in order" Quiet="true" OnReordered="order => _ordered = [.. order]">
                 <ItemTemplate><span>@context</span></ItemTemplate>
@@ -589,6 +592,7 @@
     private string _view = "grid";
     private string _name = "";
     private string _request = "";
+    private string _spare = "10";
     private string _service = "am";
     private SamplePerson? _speaker;
     private IReadOnlyList<SamplePerson> _leaders = [];

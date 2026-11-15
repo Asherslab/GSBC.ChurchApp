@@ -90,7 +90,7 @@
 @code {
     private static readonly IReadOnlyList<string> Feeds = [OutreachFeeds.Desk, OutreachFeeds.Campaigns, OutreachFeeds.Claims];
     private static readonly IReadOnlyList<SegmentOption<WalkMode>> Modes =
-        [new(WalkMode.Letterbox, "Letterboxing"), new(WalkMode.Doorknock, "Doorknocking", Detail: "In pairs, in daylight")];
+        [new(WalkMode.Letterbox, "Letterboxing"), new(WalkMode.Doorknock, "Doorknocking", Detail: "In pairs")];
 
     [Parameter, EditorRequired] public required string Scope { get; set; }
     [Parameter] public string? Open { get; set; }

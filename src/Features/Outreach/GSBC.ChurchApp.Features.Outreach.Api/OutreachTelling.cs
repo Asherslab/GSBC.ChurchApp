@@ -28,6 +28,10 @@ internal sealed class OutreachTelling(INotifications notifications, OutreachMini
                 Link: OutreachLinks.Reports, Subject: ReportSubject(report.Id), ScopeId: scope) { Actor = report.UserId }, cancellationToken);
     }
 
+    public async Task EndingSoonAsync(CampaignRecord campaign, CancellationToken cancellationToken) =>
+        await notifications.RaiseAsync(new Notification(OutreachNotifications.EndingSoon, NotificationAudience.Everyone,
+            CampaignTelling.Title(campaign), CampaignTelling.Body(campaign), Link: "/" + OutreachLinks.Home, Subject: $"outreach.ending-soon/{campaign.Id:N}") { Actor = null }, cancellationToken);
+
     public Task SettleFollowUpAsync(Guid id, CancellationToken cancellationToken) => notifications.SettleAsync(FollowUpSubject(id), cancellationToken);
 
     public Task SettleReportAsync(Guid id, CancellationToken cancellationToken) => notifications.SettleAsync(ReportSubject(id), cancellationToken);

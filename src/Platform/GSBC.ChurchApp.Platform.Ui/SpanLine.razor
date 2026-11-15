@@ -1,0 +1,16 @@
+@using System.Globalization
+
+<div class="span-line" role="img" aria-label="@Description" style="--done: @Percent(Done)%; --closing: @Percent(Closing)%">
+    <span class="span-line__track"><span class="span-line__closing"></span><span class="span-line__done"></span>@if (Done is > 0 and < 1) {<span class="span-line__now"></span>}</span>
+    <span class="span-line__ends"><span>@From</span><span>@To</span></span>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public required string From { get; set; }
+    [Parameter, EditorRequired] public required string To { get; set; }
+    [Parameter, EditorRequired] public required string Description { get; set; }
+    [Parameter] public double Done { get; set; }
+    [Parameter] public double Closing { get; set; }
+
+    private static string Percent(double share) => (Math.Clamp(share, 0, 1) * 100).ToString("0.#", CultureInfo.InvariantCulture);
+}
