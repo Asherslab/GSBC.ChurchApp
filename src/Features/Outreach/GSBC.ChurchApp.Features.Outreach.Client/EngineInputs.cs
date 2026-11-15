@@ -10,6 +10,8 @@ namespace GSBC.ChurchApp.Features.Outreach.Client;
 
 public static class EngineInputs
 {
+    public static RouteSettings Settings(OutreachSettings settings, Campaign? campaign) => Settings(settings) with { BundleSize = CampaignStages.BundleSizeOf(campaign, settings) };
+
     public static RouteSettings Settings(OutreachSettings settings) => new()
     {
         WalkingKmh = settings.WalkingKmh,

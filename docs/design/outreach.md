@@ -6,14 +6,32 @@ Detail behind [DESIGN.md](../../DESIGN.md) for the admin panel's Outreach page a
 `/outreach` and `/outreach/{tab}`, for the leaders of the ministry that runs outreach. Every tab opens on the title band "Outreach" with a lead, then a `TabStrip`: Campaigns, Days, Areas, Coverage, Numbers, Places, Follow-ups (counted), Reports (counted), Settings (`OutreachHead`). The page draws the head once, outside the tab it swaps in, so it stays put while a tab loads; each tab puts its own buttons (*New campaign* …) in the band through `SectionContent` (`OutreachHead.ActionsSection`), and its body remembers what it last showed (`Remember`), so a tab opened again draws at once and refreshes in place. With no ministry running outreach, the page is the title band over an `EmptyState` that says where to turn it on.
 
 ## Campaigns
-A `Workbench`: the campaigns `DataTable` in the main pane, the chosen campaign in the record pane. *New campaign* sits in the title band's actions for those who may plan.
-- **The table** has two columns. *Campaign* is the name over a caption: what's handed out and its dates ("Always there" for general outreach). *Letterboxes this month* is a bare, tabular count. A separate When column pushed the count out of the list with the record pane open at 1024px, so the dates live in the caption.
-- **Head:** a `PaneHead` titled by the campaign ("A new campaign" when new), its lead saying it keeps its own record of streets done; Delete in its ⋯ (not for general outreach).
-- **Numbers band:** for a saved campaign, three quiet `StatTile`s in one row under the head: letterboxes, km walked and outreach days, tabular figures over caption labels, closed off by a hairline. This is the campaign's own coverage, shown rather than explained.
-- **Fields:** Name, What's handed out, Starts and Ends two to a line with a hint under them, then *Show a leaderboard* as a `ToggleRow`.
-- **Foot:** the `SaveBar` (and any warning) docks at the pane's foot in `editor-foot`, as the event editor's does. At 760px and under, the foot runs edge to edge of the record pane, past its gutter.
+A `Board` like Life Groups' (owner, 2026-11-15, #108; decision page `.impeccable/mocks/outreach-campaign-stages/`, the owner
+picked B, *cards open in place*). *New campaign* sits in the title band's actions and as the Preparing column's add,
+for those who may plan.
+- **Always on:** General outreach in a sand strip above the board: the label ruled off on the left, its name (opens it),
+  bundles, letterboxes this month, its next outreach day ("No outreach day planned" when there's none) and a small
+  quiet *Open* button.
+- **Columns:** Preparing, Ongoing, Wrapping up, and *Finished in* a year (narrow; a `Segmented` year switch when there's
+  more than one year). Empty columns say what lands there.
+- **A card:** the name (the whole card opens it; a stretched link) with its ⋯ (*Move to* each other stage, Delete last
+  and red), what's handed out and its bundles, the dates and a countdown in ink at 600 ("starts in 11 weeks", "wraps up
+  7 Dec", "ends in 5 days"), a `SpanLine` (start to end, today's dot in deep aqua, the wrap-up stretch in the marker) for
+  every dated card (Preparing's has no dot, since today is before it starts), an area line on Preparing cards ("No
+  area yet" in marker ink), "Church told 13 Nov" once told, letterboxes and this week's, "About 38 of 60 bundles out",
+  and the next outreach day under a hairline, in marker ink when there's none ("No outreach day before it ends").
+  Cards drag between columns (or Alt and an arrow) for those who may plan. A finished campaign is a line: name,
+  letterboxes, dates.
+- **Opening a campaign** widens its column (`BoardColumn Wide`; on this board up to 480px, at least 400px) and the card becomes the
+  record, ringed in the marker: `PaneHead` (Delete in its ⋯, Close), the `StagePipeline` (moves at once), the three
+  quiet `StatTile`s, then Name; What's handed out and Bundle size; Starts and Ends; Wrap up before it ends (days, its hint
+  naming the day it moves and that the church is told) and Bundles made; *Show a leaderboard*; Cancel and Save in the
+  card's foot. General outreach opens in its strip instead (no dates, stages or wrap-up). A finished campaign's dates,
+  bundle size and wrap-up are disabled with a line saying to move it back to Ongoing. A new campaign opens as a card at
+  the top of Preparing. `?campaign=<id>` opens one directly. While another campaign is open, Finished folds into the board's folded strip.
+- **At 1100px and under** the columns and the closed cards tighten (less padding, the card's name at label size).
+- **At 1024px** the four columns fit; with a record open the board scrolls sideways, as boards do.
 - **Deleting** asks in a `Sheet` that says what goes with it, or why it can't go yet; *Keep it* is the quiet way out.
-- **Nothing chosen:** an `EmptyState` in the record pane.
 
 ## Follow-ups and Reports
 The same `Workbench` shape. Each table has the item over a caption (the place), when it came in, and a `Pill` for its state (the usual pill while it needs doing, quiet once done). Its `Empty` slot says what arrives here and when.

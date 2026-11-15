@@ -76,6 +76,14 @@ namespace GSBC.ChurchApp.Features.Outreach.Api.Data.Migrations
                         .HasColumnType("double precision[]")
                         .HasColumnName("area_lngs");
 
+                    b.Property<int>("BundleSize")
+                        .HasColumnType("integer")
+                        .HasColumnName("bundle_size");
+
+                    b.Property<int>("BundlesMade")
+                        .HasColumnType("integer")
+                        .HasColumnName("bundles_made");
+
                     b.Property<DateTime>("ChangedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("changed_at");
@@ -111,9 +119,25 @@ namespace GSBC.ChurchApp.Features.Outreach.Api.Data.Migrations
                         .HasColumnType("text[]")
                         .HasColumnName("regions");
 
+                    b.Property<int>("Stage")
+                        .HasColumnType("integer")
+                        .HasColumnName("stage");
+
+                    b.Property<DateOnly>("StageSetOn")
+                        .HasColumnType("date")
+                        .HasColumnName("stage_set_on");
+
                     b.Property<DateOnly?>("StartsOn")
                         .HasColumnType("date")
                         .HasColumnName("starts_on");
+
+                    b.Property<DateTime?>("ToldEndingAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("told_ending_at");
+
+                    b.Property<int>("WrapUpDays")
+                        .HasColumnType("integer")
+                        .HasColumnName("wrap_up_days");
 
                     b.HasKey("Id")
                         .HasName("pk_campaigns");

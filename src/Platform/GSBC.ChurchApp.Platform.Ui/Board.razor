@@ -16,7 +16,7 @@
             </button>
             continue;
         }
-        <section class="board__col @(column.Narrow ? "board__col--narrow" : "") @(dropping ? "is-dropping" : "")" role="listitem" aria-labelledby="@id"
+        <section class="board__col @(column.Narrow ? "board__col--narrow" : "") @(column.Wide ? "board__col--wide" : "") @(dropping ? "is-dropping" : "")" role="listitem" aria-labelledby="@id"
                  @ondragover:preventDefault="Moves" @ondragenter="() => Enter(column.Value)" @ondrop="() => DropAsync(column.Value)">
             <h2 class="board__head" id="@id">
                 @if (column.Folds)

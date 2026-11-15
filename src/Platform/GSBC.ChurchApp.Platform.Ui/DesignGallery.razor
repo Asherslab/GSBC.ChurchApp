@@ -352,6 +352,8 @@
                     </BoardCard>
                 </Card>
             </Board>)
+        @Item("How far through a span of time: SpanLine", "Start to end, how far through today is, and the closing stretch in the marker (a campaign's wrapping up). Pass Wide to a board column to open a card where it sits.",
+            @<SpanLine From="7 Nov" To="14 Dec" Done="0.22" Closing="0.19" Description="22% of the way from 7 Nov to 14 Dec" />)
         @Item("Putting things in order, quietly: ReorderList Quiet", "For a short list in a narrow column (the calendars): the handle shows on hover or focus; drag it, or press Alt and an up or down arrow on it.",
             @<ReorderList TItem="string" Items="_ordered" Key="name => name" Name="name => name" Label="Calendars, in order" Quiet="true" OnReordered="order => _ordered = [.. order]">
                 <ItemTemplate><span>@context</span></ItemTemplate>

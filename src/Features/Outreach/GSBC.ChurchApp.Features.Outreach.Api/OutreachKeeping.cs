@@ -1,5 +1,6 @@
 using GSBC.ChurchApp.Features.Outreach.Api.Data;
 using GSBC.ChurchApp.Features.Outreach.Contracts;
+using GSBC.ChurchApp.Platform.Common;
 using Microsoft.EntityFrameworkCore;
 
 namespace GSBC.ChurchApp.Features.Outreach.Api;
@@ -10,6 +11,7 @@ internal sealed class OutreachKeeping(
     OutreachSettingsStore settingsStore,
     OutreachMinistries ministries,
     OutreachLeaderboards leaderboards,
+    OutreachTelling telling,
     TimeProvider time)
 {
     private static readonly TimeSpan OpenFollowUpsKeptFor = TimeSpan.FromDays(365);
@@ -20,12 +22,37 @@ internal sealed class OutreachKeeping(
         DateTime now = time.GetUtcNow().UtcDateTime;
         OutreachSettings settings = await settingsStore.GetAsync(cancellationToken);
         await SettingsAsync(now, cancellationToken);
+        List<CampaignRecord> endingSoon = await StagesAsync(now, cancellationToken);
         await CampaignsAsync(now, cancellationToken);
         await CoverageAsync(settings, now, cancellationToken);
         await DaysAsync(now, cancellationToken);
         await ForgetAsync(settings, now, cancellationToken);
         await leaderboards.PublishAllAsync(now, cancellationToken);
         await db.SaveChangesAsync(cancellationToken);
+        foreach (CampaignRecord campaign in endingSoon)
+            await telling.EndingSoonAsync(campaign, cancellationToken);
+    }
+
+    private async Task<List<CampaignRecord>> StagesAsync(DateTime now, CancellationToken cancellationToken)
+    {
+        DateOnly today = ChurchTime.DayOf(now);
+        List<CampaignRecord> endingSoon = [];
+        foreach (CampaignRecord campaign in await db.Campaigns.Where(campaign => !campaign.General && campaign.Stage != CampaignStage.Finished).ToListAsync(cancellationToken))
+        {
+            CampaignStage next = CampaignStages.Advance(campaign.Stage, campaign.StageSetOn, campaign.StartsOn, campaign.EndsOn, campaign.WrapUpDays, today);
+            if (next == campaign.Stage)
+                continue;
+            campaign.Stage = next;
+            campaign.ChangedAt = now;
+            if (CampaignTelling.ShouldTell(campaign))
+            {
+                campaign.ToldEndingAt = now;
+                endingSoon.Add(campaign);
+            }
+            publisher.Campaign(campaign, now);
+            await publisher.DeskAsync("campaign", campaign.Id, now, cancellationToken);
+        }
+        return endingSoon;
     }
 
     private async Task SettingsAsync(DateTime now, CancellationToken cancellationToken)
@@ -40,9 +67,14 @@ internal sealed class OutreachKeeping(
     {
         List<string> published = await db.FeedChanges.AsNoTracking().Where(change => change.Feed == OutreachFeeds.Campaigns)
             .Select(change => change.RecordId).Distinct().ToListAsync(cancellationToken);
-        foreach (CampaignRecord campaign in (await db.Campaigns.ToListAsync(cancellationToken)).Where(campaign => !published.Contains(campaign.Id.ToString())))
-            publisher.Campaign(campaign, now);
+        foreach (CampaignRecord campaign in await db.Campaigns.ToListAsync(cancellationToken))
+            if (!published.Contains(campaign.Id.ToString()) || (db.Entry(campaign).State == EntityState.Unchanged && await OutOfDateAsync(campaign, cancellationToken)))
+                publisher.Campaign(campaign, now);
     }
+
+    private async Task<bool> OutOfDateAsync(CampaignRecord campaign, CancellationToken cancellationToken) =>
+        await LatestAsync(OutreachFeeds.Campaigns, campaign.Id.ToString(), cancellationToken) is { } latest
+        && !latest.AsSpan().SequenceEqual(OutreachPayloads.Encode(OutreachViews.Campaign(campaign)));
 
     private async Task CoverageAsync(OutreachSettings settings, DateTime now, CancellationToken cancellationToken)
     {

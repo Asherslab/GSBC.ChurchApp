@@ -20,6 +20,9 @@ public sealed class OutreachDeskClient(ChannelBase channel)
     public async Task SaveCampaignAsync(string ministryId, Campaign campaign) =>
         await _admin.SaveCampaignAsync(new CampaignSave { MinistryId = ministryId, Campaign = campaign });
 
+    public async Task MoveCampaignAsync(string ministryId, string id, CampaignStage stage) =>
+        await _admin.MoveCampaignAsync(new CampaignMove { MinistryId = ministryId, Id = id, Stage = stage });
+
     public async Task<CampaignDeletion> CampaignDeletionAsync(string ministryId, string id) =>
         await _admin.CampaignDeletionAsync(new ThingRef { MinistryId = ministryId, Id = id });
 

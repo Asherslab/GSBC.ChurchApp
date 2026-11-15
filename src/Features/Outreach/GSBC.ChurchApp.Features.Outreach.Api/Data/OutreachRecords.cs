@@ -22,6 +22,12 @@ public sealed class CampaignRecord
     public List<string> Regions { get; set; } = [];
     public bool Leaderboard { get; set; }
     public bool General { get; set; }
+    public CampaignStage Stage { get; set; }
+    public DateOnly StageSetOn { get; set; }
+    public int WrapUpDays { get; set; } = CampaignStages.DefaultWrapUpDays;
+    public int BundleSize { get; set; }
+    public int BundlesMade { get; set; }
+    public DateTime? ToldEndingAt { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime ChangedAt { get; set; }
 }

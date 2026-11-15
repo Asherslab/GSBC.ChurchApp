@@ -1551,6 +1551,7 @@ span.stage-pipeline__stage { pointer-events: none; }
 .board { display: flex; align-items: stretch; gap: var(--space-md); overflow-x: auto; padding-bottom: var(--space-xs); scrollbar-width: thin; }
 .board__col { flex: 1 1 0; min-width: 180px; min-height: min(62vh, 640px); display: flex; flex-direction: column; gap: var(--space-sm); padding: var(--space-md); border: 0; border-radius: var(--radius); background: var(--sand); transition: box-shadow 160ms ease-out; }
 .board__col--narrow { flex: 0.75 1 0; min-width: 160px; }
+.board__col--wide { flex: 2.4 1 0; min-width: min(460px, 100%); }
 .board--compact .board__col { min-width: 200px; }
 .board--compact .board__col--narrow { min-width: 180px; }
 .board__col.is-dropping { box-shadow: inset 0 0 0 2px var(--accent); }
@@ -1562,6 +1563,12 @@ span.stage-pipeline__stage { pointer-events: none; }
 .board__col--folded span { writing-mode: vertical-rl; font-size: var(--text-label); font-weight: 700; }
 .board__col--folded:hover { color: var(--ink); }
 .board__col--folded:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.span-line { display: grid; gap: var(--space-3xs); min-width: 0; }
+.span-line__track { position: relative; height: 3px; margin: var(--space-xs) 0 var(--space-2xs); border-radius: 2px; background: var(--fill-on-surface); }
+.span-line__closing { position: absolute; inset: 0 0 0 auto; width: var(--closing); border-radius: 2px; background: color-mix(in srgb, var(--marker) 60%, transparent); }
+.span-line__done { position: absolute; inset: 0 auto 0 0; width: var(--done); border-radius: 2px; background: var(--accent); }
+.span-line__now { position: absolute; top: 50%; left: var(--done); width: 11px; height: 11px; border: 2.5px solid var(--accent); border-radius: 50%; background: var(--surface); transform: translate(-50%, -50%); }
+.span-line__ends { display: flex; justify-content: space-between; gap: var(--space-sm); color: var(--ink-3); font-size: var(--text-micro); font-variant-numeric: tabular-nums; }
 .drop-box { display: grid; justify-items: center; align-content: center; gap: var(--space-3xs); min-height: 84px; padding: var(--space-xl) var(--space-lg); border: 1.5px dashed color-mix(in srgb, var(--ink-3) 45%, transparent); border-radius: var(--radius); background: var(--fill-on-surface); color: var(--ink-2); font-size: var(--text-caption); line-height: 1.4; text-align: center; cursor: pointer; transition: border-color 160ms var(--ease-out), background-color 160ms var(--ease-out); }
 .drop-box > .icon { margin-bottom: var(--space-2xs); color: var(--accent); }
 .drop-box :is(strong, .drop-box__prompt) { color: var(--ink); font-size: var(--text-label); font-weight: 700; }

@@ -12,5 +12,8 @@ public static class OutreachNotifications
         "outreach.report", "A walker reports a place for review", "Outreach", DefaultPush: false, Waits: true,
         For: [OutreachPermissions.Review], InAdminPanel: true, Opens: new("/outreach/reports"));
 
-    public static readonly IReadOnlyList<NotificationKind> All = [FollowUpWanted, Reported];
+    public static readonly NotificationKind EndingSoon = new(
+        "outreach.ending-soon", "An outreach campaign is ending soon", "Outreach announcements", Opens: new("/" + OutreachLinks.Home));
+
+    public static readonly IReadOnlyList<NotificationKind> All = [FollowUpWanted, Reported, EndingSoon];
 }

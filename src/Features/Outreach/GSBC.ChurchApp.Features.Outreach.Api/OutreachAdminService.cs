@@ -25,6 +25,12 @@ internal sealed class OutreachAdminService(OutreachPlanning planning, OutreachRe
         return new Done();
     }
 
+    public async ValueTask<Done> MoveCampaignAsync(CampaignMove request, CallContext context = default)
+    {
+        await planning.MoveCampaignAsync(request, context.CancellationToken);
+        return new Done();
+    }
+
     public async ValueTask<CampaignDeletion> CampaignDeletionAsync(ThingRef request, CallContext context = default) =>
         await planning.CampaignDeletionAsync(request, context.CancellationToken);
 

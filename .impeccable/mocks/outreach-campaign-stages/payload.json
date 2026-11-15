@@ -1,0 +1,43 @@
+{
+  "title": "Outreach campaigns as a board",
+  "question": "Campaigns move Preparing → Ongoing → Wrapping up → Finished, like the Life Groups page, with General outreach always on in a strip above. Each card shows its dates and countdown, how far it's got, its next outreach day and what's handed out with its bundle size. Which shape should the Campaigns tab and the campaign's record take? (Sample campaigns besides Carols sample and General outreach are made up for the sketch.)",
+  "options": [
+    {
+      "id": "time-lines",
+      "kind": "assigned",
+      "kicker": "THE ROLL",
+      "label": "A board of time lines",
+      "thesis": "Four stage columns like Life Groups. Every card carries a thin time line from start to end with today's dot and the wrap-up stretch in marker orange, so 'how long is left' reads before any words. Opening a card goes to the campaign's own page: its stage line (press a step to move it), its numbers, its fields and its outreach days.",
+      "palette": ["#2a3d5e", "#f4efe7", "#00776d", "#e7ae74"],
+      "materials": ["Board", "BoardCard", "time line", "StagePipeline on its own page", "General outreach strip"],
+      "viewport": "Outreach, Campaigns: the General outreach strip; Preparing (Gympie mission, Easter 2027), Ongoing (Carols sample, 22% through, wraps up 7 Dec), Wrapping up (Remembrance flyers, ends in 5 days, church told 13 Nov, no day planned in marker), Finished in 2026 as lines with their letterboxes.",
+      "risk": "The record is a page away from the board, so checking one field means leaving the board and coming back.",
+      "html": ".impeccable/mocks/outreach-campaign-stages/a-time-lines.html"
+    },
+    {
+      "id": "open-in-place",
+      "kind": "dealt",
+      "label": "Cards open in place",
+      "thesis": "The same board, but choosing a card opens it where it sits: its column widens and the card becomes the record (stage line, letterboxes, km and days, the fields, Cancel and Save) while the other columns narrow and stay in view.",
+      "palette": ["#2a3d5e", "#f4efe7", "#00776d", "#e7ae74"],
+      "materials": ["Board", "card that becomes the record", "StagePipeline", "SaveBar"],
+      "viewport": "Outreach, Campaigns: Carols sample open in the Ongoing column with its stage line at Ongoing, 60 letterboxes, its name, what's handed out, bundle size 40, starts and ends, 'Wrap up 7 days before it ends: on Mon 7 Dec it moves and the church is told'.",
+      "risk": "The other columns get narrow at 1280 and below, and the form is long inside a card.",
+      "html": ".impeccable/mocks/outreach-campaign-stages/b-open-in-place.html"
+    },
+    {
+      "id": "list-by-stage",
+      "kind": "dealt",
+      "label": "A list by stage, record beside it",
+      "thesis": "Keep the workbench every admin list uses, but group the list by stage, the ones needing attention first (Wrapping up, Ongoing, Preparing), General outreach pinned on top and Finished folded by year. The chosen campaign opens in the record pane with its stage line.",
+      "palette": ["#2a3d5e", "#ffffff", "#00776d", "#e7ae74"],
+      "materials": ["Workbench", "grouped list", "StagePipeline", "record pane", "SaveBar"],
+      "viewport": "Outreach, Campaigns: the list under Always on, Wrapping up, Ongoing, Preparing and Finished in 2026; Carols sample chosen, its record on the right with the stage line, numbers and fields.",
+      "risk": "Less like Life Groups' board, which is what was asked for; the stages are headings rather than columns.",
+      "html": ".impeccable/mocks/outreach-campaign-stages/c-list-by-stage.html"
+    }
+  ],
+  "reroll": true,
+  "steer": true,
+  "buildPath": {"value": "code", "toggle": true}
+}

@@ -449,12 +449,62 @@ the maps station's regions (`Maps`); schema `outreach`.
 
 ### Campaigns
 
-- A campaign: name, what's handed out, optional start and end dates, an optional area (a polygon) or regions, a
-  leaderboard switch. **General outreach** is always there (seeded with a fixed id), can be renamed, has no dates, and
-  can't be deleted. A walk carries one or more campaigns (none chosen means General) and records coverage for each.
+- A campaign: name, what's handed out, its bundle size, bundles made, optional start and end dates, how many days
+  before its end it wraps up, an optional area (a polygon) or regions, a leaderboard switch. **General outreach** is
+  always there (seeded with a fixed id), can be renamed, has no dates or stages, and can't be deleted. A walk carries one
+  or more campaigns (none chosen means General) and records coverage for each.
 - **Deleting a campaign** (*Claude's default*): refused while it has an outreach day still to come ("Delete or move them
   first"); otherwise its coverage, no-answer doors and past days (with their routes and claims) go with it, and its walks
   stay in the totals without it.
+
+### Campaign stages (owner, 2026-11-15, #108)
+
+The owner: "switch the campaigns to be more similar flow to the life groups page. "Preparing" -> "Ongoing" -> "Wrapping
+Up" -> "Finished". Preparing can be used to mark out areas or whatever, getting ready for it. ongoing when they're
+actually on. Switching to "wrapping up" (either automatically say a week before, or otherwise) sends out a notification
+to the church that that outreach campaign will be ending soon so that they can make sure to get any tracts left done."
+
+| Stage | Staff | Walkers |
+|---|---|---|
+| **Preparing** | Mark its area, plan its days and routes | Don't see it (owner: hidden until it's on) |
+| **Ongoing** | Everything | Carry it |
+| **Wrapping up** | Everything; the church has been told it ends soon | Carry it |
+| **Finished** | Read only, except its name, what's handed out, bundles made and the leaderboard; no new outreach days; moving it back to Ongoing opens it again | Don't carry it; its coverage is kept for looking back |
+
+- **Moves by its dates** (`CampaignStages`, tested): Ongoing on its start date, Wrapping up its *wrap-up days* (1 to 60,
+  7 to start, per campaign) before its end date, Finished the day after its end date. The keeping job (every 15 minutes)
+  moves it; phones work the stage out from the same rule, so a campaign starts and stops on time offline.
+- **Moves by hand** (a card's ⋯, dragging it on the board, or the stage line in its record; `MoveCampaign`). A move by
+  hand holds until the next of its dates comes: a campaign moved back to Preparing after its start stays there until its
+  wrap-up date. Changing its dates or wrap-up days puts it where its dates say (*Claude's default*).
+- **No start date** keeps a new campaign in Preparing until it's moved; **no end date** means it never wraps up or
+  finishes by itself. Campaigns from before stages took their stage from their dates (a migration).
+- **Telling the church:** entering Wrapping up, by hand or by its dates, sends one notification, once per campaign (moving
+  back and forward again doesn't repeat it): "Carols ends on Mon 14 Dec / Help get the last invitations to carols out
+  before it ends.", opening Outreach in the app. **Who:** everyone the app's announcements reach
+  (`NotificationAudience.Everyone`: every phone with the app, signed in or not), through the Notifications feature's
+  sending, quiet hours and pacing. It is its own kind, **Outreach announcements** (`outreach.ending-soon`), on by
+  default, which anyone can turn off in their notification settings (owner: "make it "Outreach Announcements" category,
+  default on"). A backend run beside main with `Dev__PortOffset` sends no push.
+
+### Bundles (owner, 2026-11-15, #100)
+
+The owner: "this should be per campaign. different paper thicknesses can mean different bundle sizes", and "might be
+good for our staff to put in the total number of bundles made, so they can track how many actually went out vs how many
+were printed".
+
+- **Bundle size per campaign** (1 to 1,000 letterboxes). A new campaign starts with the church-wide setting (Settings →
+  *Bundle size for new campaigns*); a campaign from before this change, with none of its own, uses the church-wide one.
+  The day planner (sizing routes by bundles, a route's bundles), the printed route maps and the phone (bundles to take
+  for a walk or a route, the walk screen) use the campaign's own; a walk carrying several campaigns uses the first.
+- **Bundles made** (optional): how many were printed or packed. The board and the record say "About 38 of 60 bundles
+  out", from the campaign's letterboxes divided by its bundle size, rounded up.
+
+### The campaigns board (2026-11-15)
+
+Decision page `.impeccable/mocks/outreach-campaign-stages/` (A cards with time lines, the record on its own page; B cards
+open in place; C a list by stage with the record beside it). The owner picked **B**. Surface brief:
+`.impeccable/surfaces/each-admin-components-campaignsdesk-razor-e291a688.md`.
 
 ### Settings
 

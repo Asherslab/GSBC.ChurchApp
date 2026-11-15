@@ -16,6 +16,7 @@ namespace GSBC.ChurchApp.Features.Outreach.Contracts;
 [ProtoSerializable(typeof(MinistryRef))]
 [ProtoSerializable(typeof(Campaign))]
 [ProtoSerializable(typeof(CampaignSave))]
+[ProtoSerializable(typeof(CampaignMove))]
 [ProtoSerializable(typeof(ThingRef))]
 [ProtoSerializable(typeof(CampaignDeletion))]
 [ProtoSerializable(typeof(CoveredStretch))]

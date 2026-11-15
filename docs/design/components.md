@@ -50,7 +50,7 @@ The system ships in `src/Platform/GSBC.ChurchApp.Platform.Ui`; the app links all
 | More actions | `Menu`, `MenuItem`, `MenuItems`, `MenuButton` | `this.Item(label, action, icon:, detail:, danger:, startsGroup:, @checked:, disabled:)`; `Text`; `MenuButton` is a row in a hand-built panel |
 | A small panel | `Popover` | Focus moves in; Escape and a click outside close it |
 | Roles | `RoleMenu`, `RoleChoice`, `RoleTick`, `RoleGives` | One role, with what it allows and an optional Remove; or several as ticks |
-| Boards | `Board`, `BoardColumn`, `BoardCard`, `BoardMove` | Columns `Narrow`, `Folds`, `Addable`; `OnMove`, `OnAdd`, `Compact` |
+| Boards | `Board`, `BoardColumn`, `BoardCard`, `BoardMove` | Columns `Narrow`, `Folds`, `Addable`, `Wide`; `OnMove`, `OnAdd`, `Compact` |
 | Dates and times | `DateField`, `TimeField`, `DateTimeField` (`TypedDates`) | A popover on the desk (`UiHost.Desktop`), the native field on the phone |
 | A picture, bigger | `PictureOpen`, `PictureViewer` | Download of the original |
 | Light or dark | `SchemeChoice` | Automatic, Light, Dark |
@@ -67,6 +67,7 @@ The system ships in `src/Platform/GSBC.ChurchApp.Platform.Ui`; the app links all
 | Edits in children | `EditScope` | Re-renders around any edit inside, so a header or save button stays current |
 | Unsaved changes | `UnsavedGuard`, `UnsavedChanges` | Leaving with changes opens a sheet: *Save and go on* (when it can save), *Discard the changes*, *Stay here*; closing the browser tab gets the browser's warning |
 | Stages | `StagePipeline` | `Stages` (`SegmentOption`s in order), `ReadOnly` |
+| How far through a span | `SpanLine` | `From`, `To`, `Done` and `Closing` (shares of the span), `Description` for screen readers; today's dot only while under way |
 | Sidebar counts | `INavCounts` (Platform.Client) | A count per page href, added to the office week's |
 | Sidebar actions | `SidebarAction` (Platform.Client) | Title, icon, permission, the sheet it opens; in the foot above You |
 | Tabs with counts | `TabStrip` | Counts; orange underline on the selected tab; `Href` for link tabs; `Sticky` on the phone |

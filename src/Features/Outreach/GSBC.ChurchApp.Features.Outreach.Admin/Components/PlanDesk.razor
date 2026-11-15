@@ -282,7 +282,7 @@ else
         if (setup.Graph is not { } graph || setup.Region is not { } region)
             return null;
         StreetGraph streets = graph;
-        DayPlanner planner = new(streets, region.Id, region.Version, EngineInputs.Settings(setup.Settings),
+        DayPlanner planner = new(streets, region.Id, region.Version, EngineInputs.Settings(setup.Settings) with { BundleSize = setup.BundleSize },
             [EngineInputs.Coverage(streets, setup.Day.Campaign, setup.Coverage.Streets)], EngineInputs.Marks(setup.Marks.Skips, setup.Marks.Exclusions),
             ChurchTime.DayOf(setup.Day.StartsAt), setup.Day.Mode == WalkMode.Doorknock ? WalkKind.Doorknock : WalkKind.Letterbox, Meeting(setup, region));
         DayDraft? draft = setup.Plan.Draft ?? (setup.Plan.Routes.Count > 0 ? DayPlanner.DraftOf(setup.Plan.Routes) : null);

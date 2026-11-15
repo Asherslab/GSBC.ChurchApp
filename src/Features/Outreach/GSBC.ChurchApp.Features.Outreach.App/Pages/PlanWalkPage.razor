@@ -133,7 +133,7 @@
                         @(doorknock ? OutreachPhoneWords.Doors(summary.Letterboxes) : OutreachPhoneWords.Letterboxes(summary.Letterboxes))
                         @if (!doorknock)
                         {
-                            <span> · @OutreachPhoneWords.Bundles(summary.BundlesToTake, settings.BundleSize)</span>
+                            <span> · @OutreachPhoneWords.Bundles(summary.BundlesToTake, walk.Planner.Open.Settings.BundleSize)</span>
                         }
                         <span> · back by @OutreachPhoneWords.Clock(now + summary.Time)</span>
                     </p>
