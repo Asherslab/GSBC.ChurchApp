@@ -25,7 +25,7 @@ public static class PrayerApiExtensions
         services.AddNotificationKinds(PrayerNotifications.All);
 
         services.AddSystemRole(new SystemRole(PrayerPermissions.PastoralTeamRole, "Pastoral team",
-            "Reads every prayer request, keeps notes on them, follows them up, and chooses what the prayer wall shows", ScopeKind.Global,
+            "Reads every prayer request, keeps notes on them, marks them answered, and chooses what the prayer wall shows", ScopeKind.Global,
             ["prayer.*"], Feature: RoleFeatures.Prayer));
         services.AddSystemRole(new SystemRole(PrayerPermissions.WallRole, "Prayer wall",
             "Reads only the prayer requests that ask for the prayer wall, and chooses what the wall shows", ScopeKind.Global,
