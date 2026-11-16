@@ -4,6 +4,7 @@
 .prayer-wall { display: grid; }
 .prayer-post { padding: var(--space-lg) 0; border-bottom: 1px solid var(--line); }
 .prayer-post:first-child { padding-top: var(--space-2xs); }
+.prayer-wall--one .prayer-post { padding: 0; border-bottom: 0; }
 .prayer-post__text { margin: 0; color: var(--ink); font-size: var(--text-body); line-height: 1.55; white-space: pre-line; overflow-wrap: anywhere; }
 .prayer-post__answered { display: flex; gap: var(--space-xs); align-items: flex-start; margin: var(--space-sm) 0 0; color: var(--accent); font-size: var(--text-caption); font-weight: 600; line-height: 1.45; }
 .prayer-post__answered .icon { flex: none; margin-top: 1px; }
@@ -87,3 +88,6 @@
 .prayed-times .chip-picker__search { max-width: 360px; }
 .prayed-times .field__select { max-width: 240px; }
 .prayed-times__actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-md) var(--space-lg); }
+.prayer-settings { display: grid; gap: var(--section); max-width: 680px; }
+.prayer-write .field__input--multiline { min-height: 18em; font-size: var(--text-lead); line-height: 1.55; }
+.prayer-pray[aria-hidden="true"] { cursor: default; }

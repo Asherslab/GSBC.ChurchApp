@@ -10,10 +10,14 @@
 <PageTitle>Prayer · Good Shepherd admin</PageTitle>
 <AddressWatch Changed="AddressChanged" />
 
-<TitleBand Title="Prayer" Lead="Requests from the app. Only the pastoral team reads them, and the prayer wall shows only what you share." />
+<TitleBand Title="Prayer" Lead="Requests from the app. Only the pastoral team reads them, and the prayer wall shows only what you share.">
+    <Actions>
+        <Button Icon="plus" Href="prayer/write">Write a request</Button>
+    </Actions>
+</TitleBand>
 
 <LiveData @ref="_live" TValue="Inbox" Feeds="DeskFeeds" Load="LoadAsync" FailedTitle="Can't load prayer requests right now">
-    <Workbench AsideLabel="Find and show" FoldAside="true" Detail="@Detail(context.Value)" DetailLabel="The prayer request">
+    <Workbench AsideLabel="Find and show" FoldAside="true" Detail="@Detail" DetailLabel="The prayer request">
         <Aside>
             @if (!InSettings)
             {
@@ -24,7 +28,10 @@
         <ChildContent>
             @if (InSettings)
             {
-                <PrayedForTimes />
+                <div class="prayer-settings">
+                    <PrayedForTimes />
+                    <ChurchNameSetting />
+                </div>
             }
             else
             {
@@ -45,7 +52,6 @@
         New,
         ForTheWall,
         OnTheWall,
-        FollowedUp,
         Answered,
         Everything,
         Settings,
@@ -63,7 +69,7 @@
 
     private DateTime Now => Clock.GetUtcNow().UtcDateTime;
 
-    private RenderFragment? Detail(Inbox inbox) => InSettings || _selectedId is not { } id
+    private RenderFragment? Detail => InSettings || _selectedId is not { } id
         ? null
         : @<PastoralRequest @key="id" Id="@id" OnGone="() => _selectedId = null" OnClose="CloseAsync" />;
 
@@ -86,14 +92,10 @@
                 {
                     <Pill Tone="PillTone.Marker">Under 18</Pill>
                 }
-                @if (line.WantsContact)
-                {
-                    <Pill Tone="PillTone.Quiet">Get in touch</Pill>
-                }
             </span>
         </div>),
-        new("From", line => @<span>@line.From</span>, line => line.From, "quiet nowrap"),
-        new("Sent", line => @<span>@ChurchDates.Ago(line.SentAt, Now)</span>, line => line.SentAt, "num"),
+        new("From", line => @<span>@line.From</span>, line => line.From, "quiet"),
+        new("Sent", line => @<span>@ChurchDates.Ago(line.SentAt, Now)</span>, line => line.SentAt, "quiet"),
     ];
 
     private bool InSettings => _tab == Tab.Settings;
@@ -125,10 +127,7 @@
         tabs.Add(new(Tab.ForTheWall, "For the wall", Count(inbox, Tab.ForTheWall)));
         tabs.Add(new(Tab.OnTheWall, "On the wall"));
         if (inbox.MayRead)
-        {
-            tabs.Add(new(Tab.FollowedUp, "Followed up"));
             tabs.Add(new(Tab.Answered, "Answered"));
-        }
         tabs.Add(new(Tab.Everything, "Everything"));
         if (inbox.MayRead || Access.Can(PrayerPermissions.Settings))
             tabs.Add(new(Tab.Settings, "Settings"));
@@ -142,7 +141,6 @@
         Tab.New => line.Care == CareState.New,
         Tab.ForTheWall => line.Wall == WallState.Waiting,
         Tab.OnTheWall => line.Wall == WallState.Shown,
-        Tab.FollowedUp => line.Care == CareState.FollowedUp,
         Tab.Answered => line.Care == CareState.Answered,
         _ => true,
     };
@@ -159,7 +157,7 @@
 
     private string EmptyBody(Inbox inbox) => _query.Length > 0
         ? "Try other words, or look under Everything."
-        : TabFor(inbox) == Tab.New ? "Every request has been read and followed up. New ones appear here as they arrive." : "Requests appear here as they arrive.";
+        : TabFor(inbox) == Tab.New ? "Every request has been answered. New ones appear here as they arrive." : "Requests appear here as they arrive.";
 
     private async Task ChooseTabAsync(Tab tab)
     {
