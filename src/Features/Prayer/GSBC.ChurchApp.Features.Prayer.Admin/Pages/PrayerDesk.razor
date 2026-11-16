@@ -10,10 +10,14 @@
 <PageTitle>Prayer · Good Shepherd admin</PageTitle>
 <AddressWatch Changed="AddressChanged" />
 
-<TitleBand Title="Prayer" Lead="Requests from the app. Only the pastoral team reads them, and the prayer wall shows only what you share." />
+<TitleBand Title="Prayer" Lead="Requests from the app. Only the pastoral team reads them, and the prayer wall shows only what you share.">
+    <Actions>
+        <Button Icon="plus" Href="prayer/write">Write a request</Button>
+    </Actions>
+</TitleBand>
 
 <LiveData @ref="_live" TValue="Inbox" Feeds="DeskFeeds" Load="LoadAsync" FailedTitle="Can't load prayer requests right now">
-    <Workbench AsideLabel="Find and show" FoldAside="true" Detail="@Detail(context.Value)" DetailLabel="The prayer request">
+    <Workbench AsideLabel="Find and show" FoldAside="true" Detail="@Detail" DetailLabel="The prayer request">
         <Aside>
             @if (!InSettings)
             {
@@ -24,7 +28,10 @@
         <ChildContent>
             @if (InSettings)
             {
-                <PrayedForTimes />
+                <div class="prayer-settings">
+                    <PrayedForTimes />
+                    <ChurchNameSetting />
+                </div>
             }
             else
             {
@@ -62,7 +69,7 @@
 
     private DateTime Now => Clock.GetUtcNow().UtcDateTime;
 
-    private RenderFragment? Detail(Inbox inbox) => InSettings || _selectedId is not { } id
+    private RenderFragment? Detail => InSettings || _selectedId is not { } id
         ? null
         : @<PastoralRequest @key="id" Id="@id" OnGone="() => _selectedId = null" OnClose="CloseAsync" />;
 
@@ -87,8 +94,8 @@
                 }
             </span>
         </div>),
-        new("From", line => @<span>@line.From</span>, line => line.From, "quiet nowrap"),
-        new("Sent", line => @<span>@ChurchDates.Ago(line.SentAt, Now)</span>, line => line.SentAt, "num"),
+        new("From", line => @<span>@line.From</span>, line => line.From, "quiet"),
+        new("Sent", line => @<span>@ChurchDates.Ago(line.SentAt, Now)</span>, line => line.SentAt, "quiet"),
     ];
 
     private bool InSettings => _tab == Tab.Settings;

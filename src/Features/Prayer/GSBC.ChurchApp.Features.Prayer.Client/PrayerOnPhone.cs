@@ -52,6 +52,7 @@ public sealed class PrayerOnPhone(ILocalFeeds feeds, IOutbox outbox, ILocalPrefe
             ForWall = ask.ForWall,
             ShowName = ask.ForWall && ask.ShowName,
             Name = access.SignedIn ? "" : ask.Name.Trim(),
+            FromChurch = ask.FromChurch,
         };
         string outboxId = await outbox.EnqueueAsync(Service + "Send", send, PrayerContractsModel.Instance);
         await KeepAsync(kept => kept.Sent.Add(new SentOnPhone
@@ -60,6 +61,11 @@ public sealed class PrayerOnPhone(ILocalFeeds feeds, IOutbox outbox, ILocalPrefe
         }));
         return send.Id;
     }
+
+    public async Task<string> ChurchNameAsync() =>
+        feeds.IsAvailable && access.SignedIn && access.Can(PrayerPermissions.Wall)
+            ? (await ReadAllAsync<PrayerChurch>(PrayerFeeds.Church)).FirstOrDefault()?.Name ?? ""
+            : "";
 
     public async Task PrayAsync(string id, bool prayed)
     {
@@ -80,7 +86,7 @@ public sealed class PrayerOnPhone(ILocalFeeds feeds, IOutbox outbox, ILocalPrefe
 
     public async Task DeleteAsync(string id)
     {
-        if ((await KeptAsync()).Sent.FirstOrDefault(sent => sent.Id == id) is { } sent
+        if ((await KeptAsync()).Sent.FirstOrDefault(kept => kept.Id == id) is { } sent
             && (await outbox.ListAsync()).Any(entry => entry.Id == sent.OutboxId))
             await outbox.DiscardAsync(sent.OutboxId);
         await outbox.EnqueueAsync(Service + "Delete", new RequestRef { Id = id }, PrayerContractsModel.Instance);
@@ -89,7 +95,7 @@ public sealed class PrayerOnPhone(ILocalFeeds feeds, IOutbox outbox, ILocalPrefe
 
     public async Task RetryAsync(string id)
     {
-        if ((await KeptAsync()).Sent.FirstOrDefault(sent => sent.Id == id) is { } sent)
+        if ((await KeptAsync()).Sent.FirstOrDefault(kept => kept.Id == id) is { } sent)
             await outbox.RetryAsync(sent.OutboxId);
     }
 

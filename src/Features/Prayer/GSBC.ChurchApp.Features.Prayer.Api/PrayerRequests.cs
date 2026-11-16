@@ -1,7 +1,6 @@
 using Grpc.Core;
 using GSBC.ChurchApp.Features.Prayer.Api.Data;
 using GSBC.ChurchApp.Features.Prayer.Contracts;
-using GSBC.ChurchApp.Platform.Api.Notifications;
 using GSBC.ChurchApp.Platform.Api.People;
 using GSBC.ChurchApp.Platform.Common;
 using Microsoft.EntityFrameworkCore;
@@ -14,10 +13,13 @@ internal sealed class PrayerRequests(
     PrayerTelling telling,
     IPeopleIndex people,
     IFamilies families,
+    ChurchName church,
     TimeProvider time)
 {
-    public async Task SendAsync(Guid install, Guid? user, PrayerRequestSend send, CancellationToken cancellationToken)
+    public async Task SendAsync(Guid install, Guid? user, PrayerRequestSend send, bool mayPostAsTheChurch, CancellationToken cancellationToken)
     {
+        if (send.FromChurch && !mayPostAsTheChurch)
+            throw new RpcException(new Status(StatusCode.PermissionDenied, "Only prayer wall staff can send a request from the church."));
         Guid id = IdOf(send.Id);
         string text = send.Text.Trim();
         if (text.Length == 0 || text.Length > PrayerRules.LongestText)
@@ -43,13 +45,14 @@ internal sealed class PrayerRequests(
             SentAt = now,
             ChangedAt = now,
             InstallId = install,
-            UserId = user,
-            Name = await NameAsync(user, send.Name, cancellationToken),
-            Minor = user is { } person && (await families.FactsAsync([person], cancellationToken)).TryGetValue(person, out FamilyFacts? facts) && facts.Minor,
-            ShowName = send.ShowName,
+            UserId = send.FromChurch ? null : user,
+            Name = send.FromChurch ? await church.CurrentAsync(cancellationToken) : await NameAsync(user, send.Name, cancellationToken),
+            Minor = !send.FromChurch && user is { } person && (await families.FactsAsync([person], cancellationToken)).TryGetValue(person, out FamilyFacts? facts) && facts.Minor,
+            ShowName = send.ShowName || send.FromChurch,
+            FromChurch = send.FromChurch,
             Wall = send.ForWall ? WallState.Waiting : WallState.NotAsked,
             WallText = text,
-            WallShowsName = send.ShowName,
+            WallShowsName = send.ShowName || send.FromChurch,
         };
         record.Steps.Add(new StepRecord { At = now, What = send.ForWall ? "Sent, asking for the prayer wall" : "Sent" });
         db.Requests.Add(record);

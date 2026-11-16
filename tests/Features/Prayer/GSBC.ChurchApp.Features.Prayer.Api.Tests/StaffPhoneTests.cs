@@ -33,7 +33,7 @@ public sealed class StaffPhoneTests : PrayerHost
         await AppAsync(app => app.SendAsync(Phone, person, new PrayerRequestSend
         {
             Id = Guid.NewGuid().ToString(), Text = "For my job interview", ForWall = true, ShowName = true,
-        }, Cancel));
+        }, false, Cancel));
 
         WallCase approving = PrayerPayloads.Decode<WallCase>(Assert.Single(await LiveRowsAsync(PrayerFeeds.Approving)).Payload);
         CareCase care = PrayerPayloads.Decode<CareCase>(Assert.Single(await LiveRowsAsync(PrayerFeeds.Care)).Payload);

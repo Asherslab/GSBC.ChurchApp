@@ -17,7 +17,7 @@ public static class PrayerApiExtensions
     {
         services.AddPrayerData();
         services.AddScoped<PrayerPublisher>().AddScoped<PrayerTelling>().AddScoped<PrayerRequests>().AddScoped<PastoralCare>().AddScoped<PrayerKeeping>()
-            .AddScoped<HandledRequests>();
+            .AddScoped<HandledRequests>().AddScoped<ChurchName>();
         services.AddScoped<IPersonData, PrayerPersonData>();
         services.AddHostedService<PrayerSchedule>();
         services.AddHostedService<SamplePrayer>();
@@ -36,6 +36,7 @@ public static class PrayerApiExtensions
         services.AddFeed(new FeedDefinition(PrayerFeeds.Inbox, FeedAudience.Holding(PrayerPermissions.Wall)));
         services.AddFeed(new FeedDefinition(PrayerFeeds.Approving, FeedAudience.Holding(PrayerPermissions.Wall)));
         services.AddFeed(new FeedDefinition(PrayerFeeds.Care, FeedAudience.Holding(PrayerPermissions.Read)));
+        services.AddFeed(new FeedDefinition(PrayerFeeds.Church, FeedAudience.Holding(PrayerPermissions.Wall)));
         services.AddDestinations(PrayerDestinations.All);
         services.AddSurfaces(PrayerTiles.Surfaces);
         return services;

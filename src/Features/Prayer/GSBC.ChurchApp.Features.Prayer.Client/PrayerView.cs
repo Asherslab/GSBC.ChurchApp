@@ -39,7 +39,7 @@ public sealed record PrayerView(IReadOnlyList<YourLine> Yours, IReadOnlyList<Wal
     public YourLine? Find(string id) => Yours.FirstOrDefault(line => line.Id == id);
 }
 
-public sealed record PrayerAsk(string Text, bool ForWall, bool ShowName, string Name);
+public sealed record PrayerAsk(string Text, bool ForWall, bool ShowName, string Name, bool FromChurch = false);
 
 public sealed record StaffPending(string What, bool Failed, string? Problem);
 

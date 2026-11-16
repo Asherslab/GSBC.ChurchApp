@@ -1,0 +1,155 @@
+@page "/prayer/write"
+@using GSBC.ChurchApp.Platform.Ui.Surfaces
+@inject PastoralClient Pastoral
+@inject NavigationManager Navigation
+@inject IAccess Access
+@inject TimeProvider Clock
+
+<UnsavedGuard Changed="() => !_sent && (_text.Trim().Length > 0 || _name.Trim().Length > 0)" What="this prayer request" />
+
+<TitleBand Title="Write a prayer request" BrowserTitle="Write a prayer request" BackHref="prayer" BackText="Prayer"
+           Lead="It goes straight onto the prayer wall, or only to the pastoral team.">
+    <LeadContent>
+        <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+    </LeadContent>
+</TitleBand>
+
+@if (!Access.Can(PrayerPermissions.Wall))
+{
+    <EmptyState Icon="prayer" Title="Only prayer wall staff write requests here" Body="Ask for prayer from the app on your phone." />
+}
+else
+{
+    <LiveData TValue="WritingStart" Load="Pastoral.StartWritingAsync" Feeds="ChurchFeeds" FailedTitle="Can't write a request right now">
+        <WritingDesk SettingsTitle="Who it's from and where it goes" SettingsSummary="@Summary(context.Value)">
+            <ChildContent>
+                <div class="prayer-write">
+                    <TextField Label="What can we pray for?" Multiline="true" MaxLength="2000" AutoCapitalize="sentences" @bind-Value="_text"
+                               Hint="Up to 2,000 characters. The wall shows these words as they are." />
+                </div>
+            </ChildContent>
+            <Settings>
+                <Section Grouped="true" Title="On the prayer wall, from">
+                    <Segmented TValue="WrittenFrom" Label="On the prayer wall, from" Rows="true" Options="Froms(context.Value)" @bind-Value="_from" />
+                    @if (_from == WrittenFrom.SomeoneElse)
+                    {
+                        <TextField Label="Their name" AutoComplete="off" AutoCapitalize="words" MaxLength="60" @bind-Value="_name"
+                                   Hint="The pastoral team sees it in full; the wall shows their first name and the first letter of their last." />
+                    }
+                </Section>
+                <Section Grouped="true" Title="Who reads it">
+                    <Segmented TValue="bool" Label="Who reads it" Options="Readers" @bind-Value="_forWall" />
+                    @if (_forWall)
+                    {
+                        <DateField Label="Shows until" Min="@Day(Today.AddDays(1))" Max="@Day(Today.AddDays(365))" Shortcuts="false" @bind-Value="_until" />
+                    }
+                </Section>
+                @if (_forWall)
+                {
+                    <Section Grouped="true" Title="How the wall shows it">
+                        <div class="prayer-wall prayer-wall--one">
+                            <WallPostRow Line="Line(context.Value)" Preview="true" />
+                        </div>
+                    </Section>
+                }
+            </Settings>
+            <Preview>
+                <PhoneFrame Label="The prayer wall, as people will see it" OnRoute="prayer" Back="Home" Title="Prayer">
+                    <Section First="true" Title="The prayer wall">
+                        <div class="prayer-wall">
+                            <WallPostRow Line="Line(context.Value)" Preview="true" />
+                        </div>
+                    </Section>
+                </PhoneFrame>
+            </Preview>
+            <Foot>
+                <SaveBar Label="@(_forWall ? "Put it on the wall" : "Send to the pastoral team")" New="true" Busy="_busy" Blocked="@Blocked"
+                         OnSave="SendAsync" OnCancel="() => Navigation.NavigateTo(Back)" />
+            </Foot>
+        </WritingDesk>
+    </LiveData>
+}
+
+@code {
+    private const string Back = "prayer";
+    private const int WallDays = 30;
+    private static readonly IReadOnlyList<string> ChurchFeeds = [PrayerFeeds.Church];
+
+    private static readonly IReadOnlyList<SegmentOption<bool>> Readers = [new(true, "The prayer wall"), new(false, "Pastoral team")];
+
+    private readonly string _id = Guid.NewGuid().ToString();
+    private string _text = "";
+    private string _name = "";
+    private WrittenFrom _from = WrittenFrom.Church;
+    private bool _forWall = true;
+    private string _until = "";
+    private bool _busy;
+    private bool _sent;
+    private string? _problem;
+
+    private DateOnly Today => ChurchTime.Today(Clock);
+
+    protected override void OnInitialized() => _until = Day(Today.AddDays(WallDays));
+
+    private static IReadOnlyList<SegmentOption<WrittenFrom>> Froms(WritingStart start) =>
+    [
+        new(WrittenFrom.Me, "My name", Detail: start.YourName.Length > 0 ? $"Shown as {start.YourName}" : null),
+        new(WrittenFrom.NoName, PrayerWords.NoName),
+        new(WrittenFrom.Church, start.ChurchName, Detail: PrayerWords.FromTheChurch),
+        new(WrittenFrom.SomeoneElse, "Someone else", Detail: "Type the name of who asked"),
+    ];
+
+    private string Summary(WritingStart start) => $"From {WallName(start) switch { "" => "no name", var name => name }} · {(_forWall ? "on the wall" : "only the pastoral team")}";
+
+    private string WallName(WritingStart start) => _from switch
+    {
+        WrittenFrom.Me => start.YourName,
+        WrittenFrom.SomeoneElse => PrayerNames.Short(_name),
+        WrittenFrom.Church => start.ChurchName,
+        _ => "",
+    };
+
+    private WallLine Line(WritingStart start) => new(new WallPost
+    {
+        Text = _text.Trim().Length > 0 ? _text.Trim() : "The words you write show here.",
+        Name = WallName(start),
+        ShownAt = Clock.GetUtcNow().UtcDateTime,
+    }, false, false);
+
+    private string? Blocked => _text.Trim().Length == 0
+        ? "Write the request to send it."
+        : _from == WrittenFrom.SomeoneElse && _name.Trim().Length == 0
+            ? "Type the name of who asked for prayer."
+            : _forWall && (!DateOnly.TryParse(_until, out DateOnly until) || until <= Today)
+                ? "Choose a day after today for it to leave the wall."
+                : null;
+
+    private async Task SendAsync()
+    {
+        (_busy, _problem) = (true, null);
+        try
+        {
+            await Pastoral.WriteAsync(new PastoralWrite
+            {
+                Id = _id,
+                Text = _text.Trim(),
+                From = _from,
+                Name = _from == WrittenFrom.SomeoneElse ? _name.Trim() : "",
+                ForWall = _forWall,
+                Until = _forWall ? ChurchTime.ToUtc(DateOnly.Parse(_until).ToDateTime(new TimeOnly(23, 59))) : default,
+            });
+            _sent = true;
+            Navigation.NavigateTo($"{Back}?request={_id}");
+        }
+        catch (RpcException exception)
+        {
+            _problem = exception.Status.Detail;
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private static string Day(DateOnly day) => day.ToString("yyyy-MM-dd");
+}

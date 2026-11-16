@@ -23,6 +23,23 @@ namespace GSBC.ChurchApp.Features.Prayer.Api.Data.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("GSBC.ChurchApp.Features.Prayer.Api.Data.ChurchRecord", b =>
+                {
+                    b.Property<int>("Id")
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("name");
+
+                    b.HasKey("Id")
+                        .HasName("pk_church");
+
+                    b.ToTable("church", "prayer");
+                });
+
             modelBuilder.Entity("GSBC.ChurchApp.Features.Prayer.Api.Data.HandledRequestRecord", b =>
                 {
                     b.Property<string>("Id")
@@ -123,6 +140,14 @@ namespace GSBC.ChurchApp.Features.Prayer.Api.Data.Migrations
                     b.Property<DateTime>("ChangedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("changed_at");
+
+                    b.Property<bool>("ForSomeoneElse")
+                        .HasColumnType("boolean")
+                        .HasColumnName("for_someone_else");
+
+                    b.Property<bool>("FromChurch")
+                        .HasColumnType("boolean")
+                        .HasColumnName("from_church");
 
                     b.Property<Guid?>("InstallId")
                         .HasColumnType("uuid")

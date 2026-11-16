@@ -9,12 +9,20 @@ Detail behind [DESIGN.md](../../DESIGN.md) for the Prayer desk, its settings and
 - **Groups** (`Section Grouped`): The prayer wall, Notes for the pastoral team (each note its words over author and age, deleted from its own ⋯; the note field and *Add the note* in the foot), and What's happened.
 - **Marking it answered** first asks in a sheet for optional words for the wall (up to 500 characters), shown under the request on the wall.
 
+## Writing a request (admin)
+`/prayer/write`, from *Write a request* (a primary button with a plus) in the desk's title band. A `WritingDesk` (owner's pick, 2026-11-16, `.impeccable/mocks/prayer-write/`) under the title band "Write a prayer request" with a way back to Prayer and the lead "It goes straight onto the prayer wall, or only to the pastoral team."; a failed send shows as a warning notice under it. Someone without prayer wall access gets an empty state instead ("Only prayer wall staff write requests here").
+- **The page:** *What can we pray for?*, a tall multiline field (18 lines) at lead size, hint "Up to 2,000 characters. The wall shows these words as they are."; the Preview tab shows it on a phone's prayer wall.
+- **The column** ("Who it's from and where it goes", folds to a summary like "From GSBC · on the wall"), as `Section Grouped` blocks: *On the prayer wall, from* as `Segmented Rows` (My name with "Shown as Sam S.", No name, the church's name with "From the church. Any prayer wall staff can change it or take it down." (the same words as the phone, `PrayerWords.FromTheChurch`), Someone else last so *Their name* follows it); *Who reads it* (`Segmented`, side by side: The prayer wall or Pastoral team) with *Shows until* (`DateField`, tomorrow to a year ahead) under it while it's for the wall; and, also only for the wall, *How the wall shows it*, the wall's own `WallPostRow` card in its `Preview` mode, drawing the Pray pill without acting on it.
+- **It starts** from the church's name, for the wall, showing for 30 days.
+- **Foot:** Cancel, and *Put it on the wall* or *Send to the pastoral team*; the reason it can't send above. Once sent, the desk opens on the new request.
+
 ## Prayer desk settings (admin)
 *Settings*, the desk's last chip, for the pastoral team and whoever may change prayer settings, sets when people hear that someone prayed for their request (owner's pick on the decision page, 2026-11-12). It replaces the search and list with the settings in the work area (up to 680px).
 - **Head:** "When people hear someone prayed", then a lead.
 - **Timeline:** one wrapping row of stops (never scrolling), each a dot over a tabular label: "On the wall" (an accent ring), each chosen time as an accent dot ("15m", "1h", "2d"), spaced by the square root of its gap so longer waits sit further apart, ending at "Then every day at 12pm" (an ink ring) when the daily time is on.
 - **Changing it:** "A few times after it goes on the wall" over a hint and the chip picker of times, written out ("2 hours"); then *Then once a day* and, when on, *Each day at* (7am to 8:30pm by half hours, "Church time."). The `SaveBar` won't save with no time chosen; a quiet *Back to the usual times* shows when they differ. The page asks before losing changes.
 - **Read only:** someone who may see but not change it gets the timeline and the notice "Only the pastoral team can change these."; everyone gets the closing line "People can turn these off in Notification settings."
+- **The church's name on the prayer wall:** a `Section Grouped` under the times (lead: requests written from the church show this name, and changing it changes them on the wall too), one field and a Save in its foot; read only, the name and the notice "Only the pastoral team can change it."
 
 ## A prayer request's page (phone)
 A solid top bar and no masthead. Under it, a full-width strong-sand band:

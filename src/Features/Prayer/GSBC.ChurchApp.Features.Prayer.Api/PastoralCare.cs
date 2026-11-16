@@ -8,8 +8,60 @@ using Microsoft.EntityFrameworkCore;
 namespace GSBC.ChurchApp.Features.Prayer.Api;
 
 internal sealed class PastoralCare(
-    PrayerDbContext db, PrayerPublisher publisher, PrayerTelling telling, HandledRequests handled, IPeopleIndex people, TimeProvider time)
+    PrayerDbContext db, PrayerPublisher publisher, PrayerTelling telling, HandledRequests handled, IPeopleIndex people, IFamilies families,
+    ChurchName church, TimeProvider time)
 {
+    public async Task WriteAsync(Guid staff, PastoralWrite write, CancellationToken cancellationToken)
+    {
+        if (!Guid.TryParse(write.Id, out Guid id) || id == Guid.Empty)
+            throw Invalid("A prayer request needs its id.");
+        if (await db.Requests.AnyAsync(request => request.Id == id, cancellationToken))
+            return;
+        string text = write.Text.Trim();
+        if (text.Length == 0 || text.Length > PrayerRules.LongestText)
+            throw Invalid($"Write a request of up to {PrayerRules.LongestText} characters.");
+        DateTime now = time.GetUtcNow().UtcDateTime;
+        DateTime? until = write.ForWall
+            ? PrayerRules.ClampedUntil(DateTime.SpecifyKind(write.Until, DateTimeKind.Utc), now) ?? throw Invalid("Choose a day within the next year for it to leave the wall.")
+            : null;
+
+        bool theirOwn = write.From is WrittenFrom.Me or WrittenFrom.NoName;
+        RequestRecord record = new()
+        {
+            Id = id,
+            Text = text,
+            SentAt = now,
+            ChangedAt = now,
+            UserId = theirOwn ? staff : null,
+            Name = await NameAsync(staff, write, cancellationToken),
+            Minor = write.From == WrittenFrom.Me && (await families.FactsAsync([staff], cancellationToken)).TryGetValue(staff, out FamilyFacts? facts) && facts.Minor,
+            ShowName = write.From != WrittenFrom.NoName,
+            FromChurch = write.From == WrittenFrom.Church,
+            ForSomeoneElse = write.From == WrittenFrom.SomeoneElse,
+            Wall = write.ForWall ? WallState.Shown : WallState.NotAsked,
+            WallText = text,
+            WallShowsName = write.From != WrittenFrom.NoName,
+            WallShownAt = write.ForWall ? now : null,
+            WallUntil = until,
+        };
+        record.Steps.Add(new StepRecord { WhoId = staff, At = now, What = "Wrote it in the admin panel" });
+        if (until is { } leaves)
+            record.Steps.Add(new StepRecord { WhoId = staff, At = now, What = $"Put it on the prayer wall, until {ChurchTime.ToChurch(leaves):d MMMM}" });
+        db.Requests.Add(record);
+        await publisher.ChangedAsync(record, now, cancellationToken);
+        await db.SaveChangesAsync(cancellationToken);
+        if (!record.FromChurch)
+            await telling.NewRequestAsync(record, cancellationToken);
+    }
+
+    private async Task<string> NameAsync(Guid staff, PastoralWrite write, CancellationToken cancellationToken) => write.From switch
+    {
+        WrittenFrom.Me => (await people.NamesAsync([staff], cancellationToken)).GetValueOrDefault(staff, ""),
+        WrittenFrom.SomeoneElse => PrayerRules.Clip(write.Name, PrayerRules.LongestName) is { Length: > 0 } name ? name : throw Invalid("Type the name of who asked for prayer."),
+        WrittenFrom.Church => await church.CurrentAsync(cancellationToken),
+        _ => "",
+    };
+
     public async Task<Inbox> InboxAsync(bool mayRead, string search, CancellationToken cancellationToken)
     {
         IQueryable<RequestRecord> requests = db.Requests.AsNoTracking();
@@ -35,13 +87,16 @@ internal sealed class PastoralCare(
             Line = PrayerRules.Line(record),
             SignedIn = record.UserId is not null,
             ShowName = record.ShowName,
-            ShortName = PrayerRules.ShortName(record.Name),
+            ShortName = PrayerRules.WallName(record),
             WallText = record.WallText,
-            WallName = record.WallShowsName ? PrayerRules.ShortName(record.Name) : "",
+            WallName = record.WallShowsName ? PrayerRules.WallName(record) : "",
             WallUntil = record.WallUntil,
             Prayed = record.Prayed,
             AnsweredNote = record.AnsweredNote,
             MayRead = mayRead,
+            MayDelete = PrayerRules.MayDelete(record, mayRead),
+            FromChurch = record.FromChurch,
+            ForSomeoneElse = record.ForSomeoneElse,
         };
         if (!mayRead)
             return details;
@@ -156,10 +211,12 @@ internal sealed class PastoralCare(
         await telling.WallDecidedAsync(record, cancellationToken);
     }
 
-    public async Task DeleteAsync(RequestRef request, CancellationToken cancellationToken)
+    public async Task DeleteAsync(bool mayRead, RequestRef request, CancellationToken cancellationToken)
     {
         if (!Guid.TryParse(request.Id, out Guid id) || await db.Requests.FirstOrDefaultAsync(row => row.Id == id, cancellationToken) is not { } record)
             return;
+        if (!PrayerRules.MayDelete(record, mayRead))
+            throw new RpcException(new Status(StatusCode.PermissionDenied, "Only the pastoral team can delete a request someone sent."));
         db.Requests.Remove(record);
         publisher.Deleted(record, time.GetUtcNow().UtcDateTime);
         await db.SaveChangesAsync(cancellationToken);
@@ -179,6 +236,8 @@ internal sealed class PastoralCare(
     }
 
     private static Guid IdOf(string id) => Guid.TryParse(id, out Guid parsed) ? parsed : throw NotFound();
+
+    private static RpcException Invalid(string message) => new(new Status(StatusCode.InvalidArgument, message));
 
     private static RpcException NotFound() => new(new Status(StatusCode.NotFound, "That prayer request isn't here any more."));
 }

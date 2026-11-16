@@ -95,7 +95,9 @@
     private DateTime Now => Clock.GetUtcNow().UtcDateTime;
 
     private static string From(StaffCase item) => item.Care is { } care
-        ? care.SignedIn || care.From == PrayerWords.NoName ? care.From : $"{care.From}, not signed in"
+        ? care.SignedIn || care.FromChurch || care.ForSomeoneElse || care.From == PrayerWords.NoName
+            ? PrayerWords.FromTheDesk(care.From, care.FromChurch, care.ForSomeoneElse)
+            : $"{care.From}, not signed in"
         : item.Wall is { ShortName.Length: > 0 } wall ? $"{wall.ShortName}, who'd like their name shown" : "They asked for no name";
 
     private async Task<bool> ShowAsync(WallSave save, WallCase wall)

@@ -4,12 +4,14 @@ using Microsoft.EntityFrameworkCore;
 
 namespace GSBC.ChurchApp.Features.Prayer.Api;
 
-internal sealed class PrayerKeeping(PrayerDbContext db, PrayerPublisher publisher, PrayerTelling telling, HandledRequests handled, TimeProvider time)
+internal sealed class PrayerKeeping(
+    PrayerDbContext db, PrayerPublisher publisher, PrayerTelling telling, HandledRequests handled, ChurchName church, TimeProvider time)
 {
     public async Task RunAsync(CancellationToken cancellationToken)
     {
         DateTime now = time.GetUtcNow().UtcDateTime;
         await FillStaffFeedsAsync(now, cancellationToken);
+        await church.FillFeedAsync(cancellationToken);
         List<RequestRecord> leaving = await db.Requests.Where(request => request.Wall == WallState.Shown && request.WallUntil <= now).ToListAsync(cancellationToken);
         foreach (RequestRecord request in leaving.Where(request => PrayerRules.HasLeftTheWall(request, now)))
         {

@@ -6,7 +6,7 @@
 <LiveData @ref="_live" TValue="RequestDetails" Load="LoadAsync" Feeds="Feeds" FailedTitle="Can't open this request right now">
     @{ RequestDetails request = context.Value; InboxLine line = request.Line; }
     <PaneHead Title="@From(request)" Lead="@($"Sent {ChurchDates.Describe(line.SentAt, DateLineStyle.Short, withTime: true, Now)}")"
-              Actions="@(request.MayRead ? Actions : null)" OnClose="OnClose" />
+              Actions="@(request.MayDelete ? Actions : null)" OnClose="OnClose" />
     <div class="prayer-request">
         <div class="prayer-request__main">
             @if (line.Minor)
@@ -103,8 +103,8 @@
     private IReadOnlyList<MenuItem> NoteActions(string noteId) =>
         [this.Item("Delete this note…", () => { _deletingNote = noteId; }, "trash-2", danger: true)];
 
-    private static string From(RequestDetails request) => request.SignedIn
-        ? request.Line.From
+    private static string From(RequestDetails request) => request.SignedIn || request.FromChurch || request.ForSomeoneElse
+        ? PrayerWords.FromTheDesk(request.Line.From, request.FromChurch, request.ForSomeoneElse)
         : request.Line.From == PrayerWords.NoName ? "Not signed in, no name given" : $"{request.Line.From}, not signed in";
 
     private static WallCase WallCaseOf(RequestDetails request) => new()

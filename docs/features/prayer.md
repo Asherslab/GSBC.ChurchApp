@@ -91,6 +91,30 @@ is the owner's is marked so.
 - **What's logged** (*Claude's default*): every change, with who and when (sent, answered, notes added or
   deleted, put on or taken off the wall, changed). **Reading isn't logged.**
 
+## Writing a request at the desk (admin panel)
+
+UAT feedback #9 (2026-11-16): "Add ability to create Prayer wall request in admin center. Add 3rd option under name for
+'GSBC' available only to prayer wall staff." The owner's answers the same day: it goes **straight onto the wall** (or
+only to the pastoral team), the name can also be **someone else's** (typed, for someone who rang or emailed the office),
+and **any prayer wall staff can change, take down or delete a request from the church** or one written for someone
+else. The page is the owner's pick on the decision page, "A page to write on" (`.impeccable/mocks/prayer-write/`).
+
+- **`/prayer/write`**, from *Write a request* at the top right of Prayer, for holders of `prayer.wall.moderate`
+  (`IPastoralService.WriteAsync`): the words on a writing page; beside them *On the prayer wall, from* (*My name*,
+  shown as "Sam S."; *Someone else* with their name; *No name*; the church's name), *Who reads it* (the prayer wall or
+  only the pastoral team), *Shows until* (30 days to start) and the wall's card as people will see it. Saving opens the
+  request on the desk.
+- **The church's name** is a Prayer setting, "GSBC" to start (the orchestrator, 2026-11-16), changed under Prayer →
+  Settings by whoever may change prayer settings. Renaming it renames every request from the church, on the wall too.
+  It reaches staff phones in the `prayer.church` feed (audience `prayer.wall.moderate`).
+- **Whose it is:** *My name* and *No name* are the writer's own (theirs in the app, deleted with their account). A
+  request from the church or for someone else belongs to nobody: any prayer wall staff may delete it on the desk; any
+  other request only the pastoral team may.
+- **On the phone**, prayer wall staff get the church's name as a third choice on *Ask for prayer*; it goes through the
+  usual approval like any request, and the server refuses it from anyone without `prayer.wall.moderate`.
+- **Notifications** (*Claude's default*): a request from the church tells nobody; one written for someone else or under
+  the writer's own name tells the pastoral team, as any new request does.
+
 ## On the phone for staff
 
 **Owner, 2026-11-11:** "Prayer wall approvals and such should be able to be done on the phone" (AGENTS.md's
