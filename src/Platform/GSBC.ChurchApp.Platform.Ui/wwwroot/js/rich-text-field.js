@@ -371,7 +371,7 @@ class MediaWidget extends WidgetType {
       dom.append(caption);
     }
 
-    const where = range.items.map(item => info.media[item.id]?.path).filter(Boolean);
+    const where = range.items.map(item => info.media[item.id]?.note).filter(Boolean);
     if (where.length === 1 || range.kind === 'link') {
       const path = document.createElement('span');
       path.className = 'cm-media__where';

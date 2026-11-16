@@ -166,7 +166,10 @@ internal sealed class MediaFolders(MediaDbContext db, IAccessEvaluator access, I
         MediaFolder folder = scopeId is null ? root : await SystemFolderAsync(area.Key, scopeId, scopeName, root.Id, cancellationToken);
 
         List<Guid> ids = media.Select(item => ParseId(item.Id)).ToList();
-        List<MediaItem> items = await db.Items.Where(item => ids.Contains(item.Id) && item.FolderId != folder.Id).ToListAsync(cancellationToken);
+        List<MediaItem> items = await db.Items
+            .Where(item => ids.Contains(item.Id) && item.FolderId != folder.Id)
+            .Where(item => item.Area == area.Key || db.Folders.Any(kept => kept.Id == item.FolderId && kept.SystemArea == area.Key))
+            .ToListAsync(cancellationToken);
         foreach (MediaItem item in items)
         {
             item.FolderId = folder.Id;

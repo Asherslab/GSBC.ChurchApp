@@ -1,8 +1,11 @@
 using System.Security.Claims;
 using Grpc.Core;
+using GSBC.ChurchApp.Features.Media.Api.Data;
 using GSBC.ChurchApp.Features.Media.Contracts;
 using GSBC.ChurchApp.Platform.Contracts.Media;
 using GSBC.ChurchApp.Testing;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace GSBC.ChurchApp.Features.Media.Api.Tests;
 
@@ -51,5 +54,38 @@ public sealed class FolderMoveTests : MediaLibraryHost
         Assert.Null(kept.ParentId);
         Assert.Equal(1, kept.Files);
         Assert.DoesNotContain(tree.Folders, folder => folder.Id == events.Id);
+    }
+
+    [Fact]
+    public async Task ALibraryFileAPostUsesStaysInTheLibraryAndOnlyTheAreasOwnUploadsAreFiled()
+    {
+        ClaimsPrincipal staff = Person(), member = Person();
+        FolderInfo mainImages = await FoldersCallAsync(folders => folders.CreateAsync(staff, new CreateFolderRequest { Name = "Main Images" }, Cancellation));
+        MediaRef letterboxing = await UploadAsync(staff, Jpeg(seed: 41), "image/jpeg", fileName: "letterboxing.jpeg");
+        await FoldersCallAsync(folders => Done(folders.MoveAsync(new MoveRequest { ItemIds = [letterboxing.Id], Into = mainImages.Id }, Cancellation)));
+        Members.Add(member, "chat-9");
+        MediaRef shared = (await SendAsync(member, Jpeg(seed: 42), new BeginUploadRequest
+        {
+            FileName = "camp.jpg", ContentType = "image/jpeg", Bytes = Jpeg(seed: 42).Length, Area = Chats.Key, AreaScopeId = "chat-9",
+        })).Item!.Media!;
+        await ReferencesCallAsync(references => Done(references.UseAsync("chats.message/1", [letterboxing, shared], Cancellation)));
+
+        await FoldersCallAsync(folders => Done(folders.FileAsync(Chats, "chat-9", "Youth group", [letterboxing, shared], Cancellation)));
+
+        Assert.Equal((Guid.Parse(mainImages.Id), null), await FolderOfAsync(letterboxing.Id));
+        Assert.Equal(Chats.Key, (await FolderOfAsync(shared.Id)).Area);
+        RpcException used = await Assert.ThrowsAsync<RpcException>(() => LibraryCallAsync(library => Done(library.DeleteAsync(letterboxing.Id, Cancellation))));
+        Assert.Equal(StatusCode.FailedPrecondition, used.StatusCode);
+        Assert.Equal(Guid.Parse(mainImages.Id), (await FolderOfAsync(letterboxing.Id)).Folder);
+    }
+
+    private async Task<(Guid? Folder, string? Area)> FolderOfAsync(string mediaId)
+    {
+        await using AsyncServiceScope scope = Services.CreateAsyncScope();
+        MediaDbContext db = scope.ServiceProvider.GetRequiredService<MediaDbContext>();
+        Guid id = Guid.Parse(mediaId);
+        Guid? folder = await db.Items.Where(item => item.Id == id).Select(item => item.FolderId).SingleAsync(Cancellation);
+        string? area = await db.Folders.Where(candidate => candidate.Id == folder).Select(candidate => candidate.SystemArea).SingleOrDefaultAsync(Cancellation);
+        return (folder, area);
     }
 }

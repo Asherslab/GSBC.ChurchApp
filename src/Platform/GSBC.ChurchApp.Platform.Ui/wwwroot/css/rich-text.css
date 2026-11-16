@@ -1053,7 +1053,6 @@
 
 .cm-media__where {
     color: var(--ink-3);
-    font-family: var(--font-code);
     font-size: var(--text-micro);
     overflow-wrap: anywhere;
 }

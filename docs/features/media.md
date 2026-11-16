@@ -69,6 +69,17 @@ a lock and the area's caption ("Made by the app: files people share in group cha
   record that holds uploads it calls `IMediaSystemFolders.FileAsync(area, scopeId, scopeName, refs)`.
   The area's folder and the scope's subfolder (`Chats / Youth group`) are made on demand, and the
   subfolder is renamed when the scope's name changes.
+- **A Library file stays in the Library** (owner, 2026-11-16: "If a media item is user managed, then it stays user
+  managed"). `FileAsync` files only the area's own files, those uploaded into it or already in its folders; a
+  Library picture or PDF that a post uses keeps its folder (`ALibraryFileAPostUsesStaysInTheLibraryAndOnlyTheAreasOwnUploadsAreFiled`).
+  Before this, it moved every file the record used, so a Library file put in a news post went to *Church news*; the
+  migration `LibraryFilesBackFromPosts` puts those back at the top of the Library. It moves files with no area from the
+  *Church news* and *Ministry posts* folders: both areas' uploads have recorded their area since those folders began
+  (2026-11-13, after the area column), so a file there without one was moved in from the Library. Chats is left out,
+  since its early uploads have no area either and must never surface in the Library
+  (`FilesAPostMovedOutOfTheLibraryGoBackAndThePostsOwnUploadsAndChatFilesStay`). The
+  only move the owner would accept is deleting a Library file something still uses, which would hand it to the app;
+  that isn't built, and deleting it is refused while it's used.
 - **Staff can't rename, move or delete them, move files in or out, or delete the files in them** (`FailedPrecondition`): the app keeps them where it put them, and the feature that filed a file removes it.
 - **Who sees inside goes through Access** (owner, 2026-11-04): people holding the area's audience
   permission at that scope (the same audience as the files, e.g. members of that chat), plus anyone

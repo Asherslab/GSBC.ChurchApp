@@ -535,7 +535,7 @@
                 });
                 writer.WriteString("url", url);
                 writer.WriteString("name", media.AltText.Length > 0 ? media.AltText : media.FileName);
-                writer.WriteString("path", PathOf(media));
+                writer.WriteString("note", NoteOf(media));
                 writer.WriteString("size", FileLine(media));
                 writer.WriteEndObject();
             }
@@ -572,12 +572,11 @@
         }
     }
 
-    private string PathOf(MediaRef media)
+    private string NoteOf(MediaRef media)
     {
         if (_waiting.ContainsKey(media.Id))
             return $"On this phone: {media.FileName}. It's sent with your save.";
-        string name = media.FileName.Length > 0 ? media.FileName : media.AltText;
-        return media.Folder.Length > 0 ? $"~/{media.Folder}/{name}" : $"~/{name}";
+        return RichTextRules.KindOf(media) == RichTextMedia.Files ? "" : media.FileName;
     }
 
     private static string FileLine(MediaRef media)
