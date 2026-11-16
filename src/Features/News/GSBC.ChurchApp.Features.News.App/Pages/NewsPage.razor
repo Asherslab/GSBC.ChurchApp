@@ -24,7 +24,7 @@
                     @if (context.Value.Waiting > 0)
                     {
                         <ListGroup>
-                            <ListRow Title="@Waiting(context.Value.Waiting)" Subtitle="Drafts, posts waiting to be published and ministries' asks" Icon="clock"
+                            <ListRow Title="@Waiting(context.Value.Waiting)" Subtitle="Drafts, posts waiting to be published and ministries' requests" Icon="clock"
                                      IconTone="RowTone.Warm" Chevron="true" Href="news/desk" />
                         </ListGroup>
                     }
@@ -88,5 +88,5 @@
         _ => "News for the whole church shows here when it's posted.",
     };
 
-    private static string Waiting(int count) => count == 1 ? "1 post to look at" : $"{count} posts to look at";
+    private static string Waiting(int count) => count == 1 ? "1 post to review" : $"{count} posts to review";
 }

@@ -12,7 +12,7 @@
 @inject TimeProvider Clock
 @inject NavigationManager Navigation
 
-<TitleBand Title="Church news" Lead="News for the whole church, in the app's News tab. A post can send a notification that opens it, and a ministry's post can be put in here too.">
+<TitleBand Title="Church news" Lead="News for the whole church, shown in the app's News tab. A post can send a notification, and a ministry's post can be put in church news too.">
     <Actions>
         @if (Access.Can(EarlierAnnouncements))
         {
@@ -65,31 +65,31 @@
     </Workbench>
 </LiveData>
 
-<Sheet Open="_deleting" OpenChanged="open => _deleting = open" Title="@(_deletingShared ? "Take it off church news?" : "Delete this post for good?")"
-       Lead="@(_deletingShared ? "It stays in the ministry's news. Its notification is taken back from phones that haven't opened it." : "It goes from Archived, and nobody can put it back. This can't be undone.")">
+<Sheet Open="_deleting" OpenChanged="open => _deleting = open" Title="@(_deletingShared ? "Take the post off church news?" : "Delete this post for good?")"
+       Lead="@(_deletingShared ? $"The post stays in {_deletingFrom}'s news. Its notification is taken back from phones that haven't opened it." : "The post is deleted from Archived, and nobody can put it back. This can't be undone.")">
     <Actions>
-        <Button Variant="ButtonVariant.Danger" Busy="_busy" OnClick="DeleteAsync">@(_deletingShared ? "Take it off" : "Delete it for good")</Button>
-        <Button Variant="ButtonVariant.Quiet" OnClick="() => _deleting = false">Keep it</Button>
+        <Button Variant="ButtonVariant.Danger" Busy="_busy" OnClick="DeleteAsync">@(_deletingShared ? "Take the post off church news" : "Delete the post for good")</Button>
+        <Button Variant="ButtonVariant.Quiet" OnClick="() => _deleting = false">Keep the post</Button>
     </Actions>
 </Sheet>
 
-<Sheet Open="_sharing" OpenChanged="open => _sharing = open" Title="Put it in church news?"
-       Lead="Everyone sees it in the app's News, as it is in the ministry, and it follows the ministry's changes.">
+<Sheet Open="_sharing" OpenChanged="open => _sharing = open" Title="Put the post in church news?"
+       Lead="Everyone sees the post in the app's News, as it is in the ministry, and changes made in the ministry show there too.">
     <ChildContent>
-        <ToggleRow Title="Send a notification" Description="Tells everyone with the app, opening the post" @bind-Checked="_tell" />
+        <ToggleRow Title="Send a notification" Description="Sends everyone with the app a notification that opens the post." @bind-Checked="_tell" />
         <Notice Tone="NoticeTone.Warning" Text="@_problem" />
     </ChildContent>
     <Actions>
-        <Button Icon="@AppIcons.News" Busy="_busy" OnClick="ShareChosenAsync">Put it in church news</Button>
-        <Button Variant="ButtonVariant.Quiet" OnClick="() => _sharing = false">Not now</Button>
+        <Button Icon="@AppIcons.News" Busy="_busy" OnClick="ShareChosenAsync">Put the post in church news</Button>
+        <Button Variant="ButtonVariant.Quiet" OnClick="() => _sharing = false">Cancel</Button>
     </Actions>
 </Sheet>
 
 <Sheet Open="_archiving" OpenChanged="open => _archiving = open" Title="Archive this post?"
-       Lead="It leaves everyone's News, and its notification is taken back from phones that haven't opened it. You can put it back from Archived.">
+       Lead="The post comes out of everyone's News, and its notification is taken back from phones that haven't opened it. You can put the post back from Archived.">
     <Actions>
-        <Button Busy="_busy" OnClick="ArchiveChosenAsync">Archive it</Button>
-        <Button Variant="ButtonVariant.Quiet" OnClick="() => _archiving = false">Keep it</Button>
+        <Button Busy="_busy" OnClick="ArchiveChosenAsync">Archive the post</Button>
+        <Button Variant="ButtonVariant.Quiet" OnClick="() => _archiving = false">Keep the post</Button>
     </Actions>
 </Sheet>
 
@@ -148,14 +148,14 @@
                 @if (post.State is NewsState.Asked or NewsState.Declined && Access.Can(NewsPermissions.Publish))
                 {
                     <Section Grouped="true" Title="@($"{post.From} asks for this to go in church news")"
-                             Lead="It shows in church news as it is in the ministry, and follows the ministry's changes.">
+                             Lead="The post shows in church news as it is in the ministry, and changes made in the ministry show there too.">
                         <ChildContent>
-                            <ToggleRow Title="Send a notification" Description="Tells everyone with the app, opening the post" @bind-Checked="_tell" />
+                            <ToggleRow Title="Send a notification" Description="Sends everyone with the app a notification that opens the post." @bind-Checked="_tell" />
                         </ChildContent>
                         <Foot>
                             <div class="news-desk__answer">
-                                <Button Variant="ButtonVariant.Quiet" Disabled="_busy" OnClick="() => AnswerAsync(post, yes: false)">Keep it in @post.From</Button>
-                                <Button Busy="_busy" OnClick="() => AnswerAsync(post, yes: true)">Put it in church news</Button>
+                                <Button Variant="ButtonVariant.Quiet" Disabled="_busy" OnClick="() => AnswerAsync(post, yes: false)">Keep the post in @post.From</Button>
+                                <Button Busy="_busy" OnClick="() => AnswerAsync(post, yes: true)">Put the post in church news</Button>
                             </div>
                         </Foot>
                     </Section>
@@ -182,6 +182,7 @@
     private DeskView? _view;
     private string? _filter;
     private string? _chosen, _chosenMinistryPost;
+    private string _deletingFrom = "";
     private bool _deleting, _deletingShared, _archiving, _sharing, _busy, _tell = true;
     private string? _problem;
 
@@ -231,9 +232,9 @@
     {
         List<MenuItem> items = [];
         if (Access.Can(NewsPermissions.Publish) && post.Standing != ChurchNewsStanding.InChurchNews)
-            items.Add(this.Item("Put it in church news…", () => (_sharing, _problem, _tell) = (true, null, true), AppIcons.News,
-                "Everyone sees it in News; you choose whether to send a notification"));
-        items.Add(this.Item($"Open it in {post.Item.From}", () => Navigation.NavigateTo(post.Item.Href), AppIcons.Ministries));
+            items.Add(this.Item("Put the post in church news…", () => (_sharing, _problem, _tell) = (true, null, true), AppIcons.News,
+                "Everyone sees the post in News. You choose whether to send a notification."));
+        items.Add(this.Item($"Open the post in {post.Item.From}", () => Navigation.NavigateTo(post.Item.Href), AppIcons.Ministries));
         return items;
     }
 
@@ -320,19 +321,19 @@
             items.Add(this.Item("Change the post", () => Navigation.NavigateTo($"news/{post.Id}/change"), "pencil"));
         if (post.State is NewsState.Scheduled && publishes || post.State == NewsState.WaitingToPublish)
             items.Add(this.Item("Back to writing", () => RunAsync(() => Writes.BackToWritingAsync(post.Id)), "pencil",
-                post.State == NewsState.Scheduled ? "It won't publish until it's posted again" : "Nobody is asked to publish it any more"));
+                post.State == NewsState.Scheduled ? "The post won't publish until it's posted again." : "Nobody is asked to publish the post any more."));
         bool mayPutAway = !post.Shared && (publishes || post.State is NewsState.Draft or NewsState.WaitingToPublish || post is { State: NewsState.Archived, PublishedAt: null });
         if (post is { Shared: true, State: NewsState.Published } && publishes)
-            items.Add(this.Item("Take it off church news…", () => (_deleting, _deletingShared) = (true, true), "trash-2", danger: true, startsGroup: true));
+            items.Add(this.Item("Take the post off church news…", () => (_deleting, _deletingShared, _deletingFrom) = (true, true, post.From), "trash-2", danger: true, startsGroup: true));
         else if (mayPutAway && post.State == NewsState.Archived)
         {
-            items.Add(this.Item("Put it back", () => RunAsync(() => Writes.PutBackAsync(post.Id)), "rotate-ccw", "It comes back as a draft, to change or publish again"));
-            items.Add(this.Item("Delete it for good…", () => (_deleting, _deletingShared) = (true, false), "trash-2", danger: true, startsGroup: true));
+            items.Add(this.Item("Put the post back", () => RunAsync(() => Writes.PutBackAsync(post.Id)), "rotate-ccw", "The post comes back as a draft, to change or publish again."));
+            items.Add(this.Item("Delete the post for good…", () => (_deleting, _deletingShared) = (true, false), "trash-2", danger: true, startsGroup: true));
         }
         else if (mayPutAway)
             items.Add(post.State == NewsState.Published
-                ? this.Item("Archive…", () => (_archiving, _problem) = (true, null), "archive", "Takes it out of everyone's News. You can put it back.", startsGroup: true)
-                : this.Item("Archive", () => RunAsync(() => Writes.ArchiveAsync(post.Id)), "archive", "Keeps it under Archived. You can put it back.", startsGroup: true));
+                ? this.Item("Archive…", () => (_archiving, _problem) = (true, null), "archive", "Takes the post out of everyone's News. You can put it back.", startsGroup: true)
+                : this.Item("Archive", () => RunAsync(() => Writes.ArchiveAsync(post.Id)), "archive", "Keeps the post under Archived. You can put it back.", startsGroup: true));
         return items;
     }
 

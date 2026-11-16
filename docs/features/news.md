@@ -292,20 +292,21 @@ ability to renotify people when a news post is edited or updated."
 - **All ministries** (the owner's pick on the decision page, *Rows like the rest of the desk*,
   `.impeccable/mocks/news-all/b-rows.html`): on the Church news desk, a second rail heading *Every ministry* with *All
   ministries* and its count; rows like the desk's (title, the ministry in accent, by and when, *In church news* or
-  *Asking*, the picture); the post opens in the pane with ⋯ *Put it in church news…* (publishers, confirmed with *Send a
-  notification*) and *Open it in …*. The newest 200 posts.
+  *Asking*, the picture); the post opens in the pane with ⋯ *Put the post in church news…* (publishers, confirmed with *Send a
+  notification*) and *Open the post in …*. The newest 200 posts.
 - **The app's third tab, All ministries** (`/news/every`), for the same permission. The phone already syncs every
   ministry's posts for everyone (`ministries.posts`), so the tab reads its store; no new feed, no direct call. Its rows
   open the ministry's post page, where publishers already have *Put it in church news…*. The tabs show when there are
   two or more (The church, Your ministries if you're in one, All ministries).
 - **Telling people again** (the owner re-rolled a switch in the settings with "it should be a popup like changing a
   calendar event does", then picked *Tell people again, saying what changed*, `.impeccable/mocks/news-all/t-a-what-changed.html`):
-  saving a change to a published post opens "Tell people again?" (or "Tell people?" if it went without one): it went to
-  whom (and, at the desk, about how many phones) and when; *Notification* starts as "Updated: …", *More* says what
-  changed (empty uses the post's opening); *Urgent*; *Tell people again* or *Not now*. The new notification replaces the
+  saving a change to a published post opens "Send the notification again?" (or "Send a notification about this post?" if
+  it went without one): it went to whom (and, at the desk, about how many phones) and when; *Notification title* starts
+  as "Updated: …", *Notification text* says what changed (empty uses the post's opening); *Urgent*; *Send it again* or
+  *Don't send a notification*. The new notification replaces the
   earlier one in everyone's notifications (the earlier one is recalled first). Built as the shared `TellSheet`
   (Platform.Ui), which the calendar's *Tell people?* now uses too.
-- **Each send is counted** (`times_told`): the settings say "Its notification was sent again …", and the desk's state
+- **Each send is counted** (`times_told`): the settings say "The notification was sent again …", and the desk's state
   line "Published …, with a notification, sent again today at 3:58pm". Only publishers can tell again
   (`News.TellAgain`), only on a published church news post, never on a ministry's post shown in church news.
 - **The admin desk needs `news.write` as before:** someone given only *See every ministry's news* sees the app's tab but

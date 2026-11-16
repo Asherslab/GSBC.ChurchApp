@@ -16,13 +16,13 @@ internal static class NewsRules
     public static string? WhyNot(NewsPost post)
     {
         if (post.Title.Trim().Length == 0)
-            return "Give it a title.";
+            return "Enter a title for the post.";
         if (post.Title.Trim().Length > LongestTitle)
             return $"Keep the title under {LongestTitle} characters.";
         if (RichTextRules.ProblemsWith(post.Body, allowed: RichTextMedia.Posts) is [var first, ..])
             return first;
         if (!Audience.TryParse(post.Audience, out _))
-            return "Choose who it's for.";
+            return "Choose who the post is for.";
         if (post.LinkPath.Trim().Length > 0 && !LinkTargets.IsSafe(post.LinkPath.Trim()))
             return "The link has to be a page in the app or an https:// address.";
         if (post.LinkLabel.Trim().Length > LongestLinkLabel)

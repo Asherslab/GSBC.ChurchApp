@@ -4,11 +4,7 @@ namespace GSBC.ChurchApp.Architecture.Tests;
 
 public sealed partial class WordingRules
 {
-    private static readonly Dictionary<string, string> WaitingForTheirStation = new()
-    {
-        ["src/Features/News/GSBC.ChurchApp.Features.News.Api/NewsRules.cs"] = "News",
-        ["src/Features/News/GSBC.ChurchApp.Features.News.Client/Components/NewsPostForm.razor"] = "News",
-    };
+    private static readonly Dictionary<string, string> WaitingForTheirStation = new();
 
     [Fact]
     public void WordsOnScreenFollowTheWordingRules()

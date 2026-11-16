@@ -430,8 +430,8 @@
     </Actions>
 </Sheet>
 
-<TellSheet Open="_telling" Title="Tell people again?" Lead="Saved. It went to everyone on Monday at 9:02am. Send it again, saying what changed?"
-           NotificationTitle="Updated: Working bee this Saturday" BodyHint="Say what changed." OffersUrgent="true" SendLabel="Tell people again"
+<TellSheet Open="_telling" Title="Send the notification again?" Lead="Saved. The notification went to everyone on Monday at 9:02am. Send it again, saying what changed?"
+           NotificationTitle="Updated: Working bee this Saturday" BodyHint="Say what changed." OffersUrgent="true" SendLabel="Send it again"
            OnTell="_ => { _telling = false; return Task.FromResult<string?>(null); }" OnNotNow="() => _telling = false" />
 
 <PagedSheet @bind-Open="_paged" Count="3" Label="A short tour" ItemName="page">

@@ -8,7 +8,7 @@
     <Section First="true">
         @if (!Access.Can(NewsPermissions.Write))
         {
-            <EmptyState Icon="@AppIcons.News" Title="Writing church news needs church staff's go-ahead" Body="Ask the church office if you'd like to post church news." />
+            <EmptyState Icon="@AppIcons.News" Title="Writing church news needs permission from church staff" Body="Ask the church office if you'd like to post church news." />
         }
         else
         {
