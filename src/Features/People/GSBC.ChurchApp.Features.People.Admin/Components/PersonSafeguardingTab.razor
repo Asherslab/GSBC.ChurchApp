@@ -44,7 +44,7 @@
             }
             else
             {
-                <div class="people-record">
+                <div class="ui-pair ui-pair--wide people-record">
                     <TextField Label="Blue card number" Value="@_draft.CardNumber" ValueChanged="value => Edit(() => _draft.CardNumber = value)" MaxLength="30" Disabled="!mayEdit"
                                Hint="As printed on the card, including the number after the slash." />
                     <SelectField Label="Blue card status" Options="Statuses" Value="@_draft.CardStatus" ValueChanged="value => Edit(() => _draft.CardStatus = value)" Disabled="!mayEdit" />
@@ -65,7 +65,7 @@
             }
             else
             {
-                <div class="people-record">
+                <div class="ui-pair ui-pair--wide people-record">
                     <DateField Label="Date completed" Value="@PeopleWords.FieldDay(_draft.TrainingDone)" ValueChanged="value => Edit(() => _draft.TrainingDone = Day(value))" Disabled="!mayEdit" Max="@($"{today:yyyy-MM-dd}")" />
                     <DateField Label="Due date" Value="@PeopleWords.FieldDay(_draft.TrainingDue)" ValueChanged="value => Edit(() => _draft.TrainingDue = Day(value))" Disabled="!mayEdit"
                                Hint="When they need to do the training again. Leave this empty to set it a year after the date completed." />
