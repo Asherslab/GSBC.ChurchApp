@@ -535,6 +535,10 @@ button.text-link:disabled { color: var(--ink-3); cursor: default; }
 .save-bar__more { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-sm); }
 @container save-bar (max-width: 520px) {
   .save-bar:not(.save-bar--block) .save-bar__more { order: -1; flex: 1 0 100%; justify-content: flex-end; }
+  .save-bar > .save-status { justify-content: flex-end; }
+  .save-bar--block > .save-status { justify-content: center; }
+  .save-bar .save-status__detail { flex-basis: 100%; }
+  .save-bar .save-status__detail > [aria-hidden] { display: none; }
 }
 .save-bar--block .save-bar__row { flex-wrap: nowrap; }
 .save-bar--block .save-bar__gap { display: none; }

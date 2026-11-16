@@ -6,10 +6,12 @@ using GSBC.ChurchApp.Platform.Api.Calendars;
 using GSBC.ChurchApp.Platform.Contracts.Configuration;
 using GSBC.ChurchApp.Platform.Permissions;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace GSBC.ChurchApp.Features.Events.Api;
 
-internal sealed class MinistryCalendars(EventsDbContext db, EventsPublisher publisher, CalendarRemover remover, IRoleAssignments roles, TimeProvider time)
+internal sealed class MinistryCalendars(
+    EventsDbContext db, EventsPublisher publisher, CalendarRemover remover, CalendarFollowing following, IRoleAssignments roles, IServiceProvider services, TimeProvider time)
     : IMinistryCalendars
 {
     public async ValueTask<IReadOnlyList<MinistryCalendar>> OfAsync(Guid ministryId, CancellationToken cancellationToken) =>
@@ -93,6 +95,75 @@ internal sealed class MinistryCalendars(EventsDbContext db, EventsPublisher publ
         await OwnedAsync(ministryId, calendarId, cancellationToken);
         await remover.RemoveAsync(calendarId.ToString(), cancellationToken);
         await roles.ScopesChangedAsync(cancellationToken);
+    }
+
+    public async ValueTask MergeAsync(Guid ministryId, Guid fromCalendarId, Guid intoCalendarId, CancellationToken cancellationToken)
+    {
+        CalendarRecord from = await OwnedAsync(ministryId, fromCalendarId, cancellationToken);
+        CalendarRecord into = await OwnedAsync(ministryId, intoCalendarId, cancellationToken);
+        if (from.Id == into.Id)
+            return;
+        DateTime now = time.GetUtcNow().UtcDateTime;
+        await using (var transaction = await db.Database.BeginTransactionAsync(cancellationToken))
+        {
+            List<EventRecord> events = await db.Events.Where(record => record.CalendarId == from.Id).ToListAsync(cancellationToken);
+            List<RegularEventRecord> regulars = await db.RegularEvents.Where(record => record.CalendarId == from.Id).ToListAsync(cancellationToken);
+            foreach (EventRecord record in events)
+                (record.CalendarId, record.UpdatedAt) = (into.Id, now);
+            foreach (RegularEventRecord record in regulars)
+                (record.CalendarId, record.UpdatedAt) = (into.Id, now);
+            List<Guid> moved = [.. events.Select(record => record.Id), .. regulars.Select(record => record.Id)];
+            List<Guid> native = [
+                .. await db.Events.Where(record => record.CalendarId == into.Id).Select(record => record.Id).ToListAsync(cancellationToken),
+                .. await db.RegularEvents.Where(record => record.CalendarId == into.Id).Select(record => record.Id).ToListAsync(cancellationToken)];
+            List<ShowingRecord> showings = await db.Showings.Where(showing => showing.CalendarId == from.Id || showing.CalendarId == into.Id).ToListAsync(cancellationToken);
+            foreach (ShowingRecord showing in showings)
+            {
+                Guid item = showing.EventId ?? showing.RegularEventId ?? Guid.Empty;
+                bool alreadyThere = showing.CalendarId == from.Id
+                    && showings.Any(other => other.CalendarId == into.Id && other.EventId == showing.EventId && other.RegularEventId == showing.RegularEventId);
+                if (moved.Contains(item) || native.Contains(item) || alreadyThere)
+                    db.Showings.Remove(showing);
+                else
+                    showing.CalendarId = into.Id;
+            }
+            foreach (DigestRecord digest in await db.Digests.ToListAsync(cancellationToken))
+                if (MergedDigest(digest, from.Id, into.Id))
+                {
+                    db.Entry(digest).Property(record => record.CalendarIds).IsModified = true;
+                    db.Entry(digest).Property(record => record.Sent).IsModified = true;
+                }
+            db.Calendars.Remove(from);
+            into.UpdatedAt = now;
+            publisher.MarkAdmin(from.Id, from.Id);
+            publisher.MarkAdmin(into.Id, into.Id);
+            await db.SaveChangesAsync(cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
+        }
+        await publisher.PublishAsync(cancellationToken);
+        await roles.MoveScopeAsync(ScopeKind.Calendar, from.Id.ToString(), into.Id.ToString(), cancellationToken);
+        await roles.ScopesChangedAsync(cancellationToken);
+        await following.PublishAsync(null, cancellationToken);
+        foreach (ICalendarMerges merge in services.GetServices<ICalendarMerges>())
+            await merge.MergedAsync(from.Id, into.Id, cancellationToken);
+    }
+
+    internal static bool MergedDigest(DigestRecord digest, Guid from, Guid into)
+    {
+        bool changed = false;
+        if (digest.CalendarIds is { } chosen && chosen.Contains(from))
+        {
+            digest.CalendarIds = chosen.Select(id => id == from ? into : id).Distinct().ToList();
+            changed = true;
+        }
+        foreach (SentDigestItem item in digest.Sent.Items.Where(item => item.CalendarIds.Contains(from)))
+        {
+            List<Guid> ids = item.CalendarIds.Select(id => id == from ? into : id).Distinct().ToList();
+            item.CalendarIds.Clear();
+            item.CalendarIds.AddRange(ids);
+            changed = true;
+        }
+        return changed;
     }
 
     private static string Named(string name)

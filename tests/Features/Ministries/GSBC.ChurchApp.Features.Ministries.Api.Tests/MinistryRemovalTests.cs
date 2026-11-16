@@ -174,6 +174,8 @@ public sealed class MinistryRemovalTests : IAsyncLifetime
 
         public ValueTask ShowAsync(Guid ministryId, bool shown, Audience whileHidden, CancellationToken cancellationToken) => throw new NotSupportedException();
 
+        public ValueTask MergeAsync(Guid ministryId, Guid fromCalendarId, Guid intoCalendarId, CancellationToken cancellationToken) => throw new NotSupportedException();
+
         public ValueTask RemoveAsync(Guid ministryId, Guid calendarId, CancellationToken cancellationToken)
         {
             Owned[ministryId].Remove(calendarId);

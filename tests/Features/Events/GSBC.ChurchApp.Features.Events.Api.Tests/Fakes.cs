@@ -1,3 +1,4 @@
+using GSBC.ChurchApp.Platform.Api.Calendars;
 using System.Security.Claims;
 using GSBC.ChurchApp.Platform.Api.Access;
 using GSBC.ChurchApp.Platform.Api.Media;
@@ -81,7 +82,15 @@ internal sealed class RecordedRoles : IRoleAssignments, IPhoneRoles
 
     public ValueTask ScopesChangedAsync(CancellationToken cancellationToken) => ValueTask.CompletedTask;
 
-    public ValueTask MoveScopeAsync(ScopeKind kind, string fromObjectId, string toObjectId, CancellationToken cancellationToken) => ValueTask.CompletedTask;
+    public ValueTask MoveScopeAsync(ScopeKind kind, string fromObjectId, string toObjectId, CancellationToken cancellationToken)
+    {
+        foreach ((Guid Holder, string Role, string? ObjectId, bool Phone) held in Held.Where(held => held.ObjectId == fromObjectId).ToList())
+        {
+            Held.Remove(held);
+            Held.Add(held with { ObjectId = toObjectId });
+        }
+        return ValueTask.CompletedTask;
+    }
 
     public ValueTask<int> HoldingCountAsync(string roleKey, string objectId, CancellationToken cancellationToken) =>
         ValueTask.FromResult(Held.Count(held => held.Role == roleKey && held.ObjectId == objectId));
@@ -111,4 +120,15 @@ internal sealed class AnyMedia : IMediaReferences
         Task.FromResult<IReadOnlyList<MediaRef>>(claimed.ToList());
 
     public Task UseAsync(string owner, IReadOnlyCollection<MediaRef> verified, CancellationToken cancellationToken) => Task.CompletedTask;
+}
+
+internal sealed class RecordedMerges : ICalendarMerges
+{
+    public List<(Guid From, Guid Into)> Merged { get; } = [];
+
+    public ValueTask MergedAsync(Guid fromCalendarId, Guid intoCalendarId, CancellationToken cancellationToken)
+    {
+        Merged.Add((fromCalendarId, intoCalendarId));
+        return ValueTask.CompletedTask;
+    }
 }

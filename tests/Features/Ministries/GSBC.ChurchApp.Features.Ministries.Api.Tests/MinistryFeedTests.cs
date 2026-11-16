@@ -89,7 +89,8 @@ public sealed class MinistryFeedTests : IAsyncLifetime
             .AddScoped<MinistryChurchNews>()
             .AddScoped(provider => new AppCardChecks([new MinistryCardSource(provider.GetRequiredService<MinistryViews>())], new PlaceAccess(provider.GetRequiredService<IAccessEvaluator>())))
             .AddScoped(provider => new MinistryLeadingService(provider.GetRequiredService<MinistriesDbContext>(), provider.GetRequiredService<AppCardChecks>(), provider.GetRequiredService<MinistryViews>(),
-                provider.GetRequiredService<MinistryChanges>(), null!, null!, _roles, _people, _people, _calendars, new KeptInSundays(), _told, null!,
+                provider.GetRequiredService<MinistryChanges>(), null!, null!, _roles, _people, _people, _calendars,
+                new MinistryCalendarShaper(provider.GetRequiredService<MinistriesDbContext>(), provider.GetRequiredService<MinistryViews>(), _calendars), new KeptInSundays(), _told, null!,
                 provider.GetRequiredService<MinistryPostMedia>(), provider.GetRequiredService<MinistryChurchNews>(), provider.GetRequiredService<IAccessEvaluator>(), _clock))
             .AddMinistriesData()
             .AddSyncData()
@@ -687,6 +688,8 @@ public sealed class MinistryFeedTests : IAsyncLifetime
         }
 
         public ValueTask<MinistryCalendarRemoval> WhatGoesAsync(Guid ministryId, Guid calendarId, CancellationToken cancellationToken) => throw new NotSupportedException();
+
+        public ValueTask MergeAsync(Guid ministryId, Guid fromCalendarId, Guid intoCalendarId, CancellationToken cancellationToken) => throw new NotSupportedException();
 
         public ValueTask RemoveAsync(Guid ministryId, Guid calendarId, CancellationToken cancellationToken) => throw new NotSupportedException();
     }
