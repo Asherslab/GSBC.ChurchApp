@@ -44,7 +44,10 @@ week has *Number of events shown*).
       page with room for it (2 × 2 and bigger), otherwise the post itself in Highlight.
     - With no news it shows its title and "Nothing new yet". Its picture setting isn't used: the posts bring their own.
     - `HubTile` gained a `Banner` slot for the urgent band. Option D on the decision page, no tile at all, was declined.
-  - **Waiting for their feature** (`WaitingTiles`, in Configuration until the feature exists): Sunday bulletin (date, the year's theme and verse), This week (the next
+  - **What's next** (Events, `hub.whats-next`): the latest weekly digest, headline first
+    ([events.md](events.md), *What's next on Home*). It took over every Sunday bulletin tile in place on 2026-11-16 (UAT
+    feedback #17; `TileReplacing`), and the bulletin kind is no longer offered.
+  - **Waiting for their feature** (`WaitingTiles`, in Configuration until the feature exists): Sunday bulletin (retired, see What's next), This week (the next
     gatherings from the church's weekly rhythm) and Outreach day (its live "outreach is on" state comes
     with Outreach) show sample content. When Sermons (and so on) is built, it takes its kind and view into
     its own feature and replaces the sample.

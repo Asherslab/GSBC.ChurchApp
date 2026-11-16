@@ -29,10 +29,9 @@ A kind none of whose layouts show a picture hides the Picture field (`HubTileKin
 | Latest sermon | Cover first (any) | 1 × 1: cover and play; one row: title beside the cover; taller: cover above the title, 2 × 2 adds the length; the tile's picture replaces the cover | always |
 | | Where you're up to (any) | play, title and how long (progress once Sermons plays), no cover | never |
 | | Picture behind (more than one cell) | title, date and play over the shade | never |
-| Sunday bulletin | Poster (any) | 1 × 1: "Sunday 8 Nov" and the open words; one row: theme with date · verse; taller: the bulletin cover | always |
-| | Theme first (any) | the year's theme as the title at every size | never |
-| | Verse (more than one cell) | the week's verse large, the reference small | never |
-| | *Picture layouts draw* | the theme, the date and verse, "Read the bulletin" | |
+| What's next (the weekly digest; took over the Sunday bulletin's tiles, 2026-11-16; starts 2 rows tall in Top of Home) | Headline (any) | 1 × 1: title and "3 things coming up"; one row: "Baptisms and 2 more" (just one: its title and when line); taller: no icon, the first thing as the headline with its when line, the next ones under hairlines (`hub-list--after`: title, then its short day, "Tomorrow" or "Not on", at two columns), the tile's words (*What's next*) at the foot on one line; two columns or more with a picture: the tile's picture, else the lead's, on top and fewer rows under it; nothing to tell: "Nothing new to tell yet" | always |
+| | Link only (any) | icon, title and how many things are coming up | never |
+| | *Picture layouts draw* | the lead's title and when line, "What's next" | |
 | This week (one-off events, specials and dates not on) | Agenda (any) | 1 × 1: the next thing over when ("Tomorrow 7pm", "Not on Saturday"); one row: up to three; taller: as many as fit, up to *Number of events shown*; nothing coming: "Nothing special coming up" | always |
 | | Link only (any) | icon, title and "3 things coming up" | never |
 | | *Picture layouts draw* | the title, the next thing and when, "Calendar" | |
@@ -71,7 +70,7 @@ The compact masthead: the title "Good Shepherd" on one line (the display size or
 - **Agenda inside a tile:** hairline-ruled entries with a tabular time column; a date that isn't on reads "Not on" there, its title at 400. On the phone each entry is its own button opening that date's page; the rest of the tile opens the calendar.
 - **Ministries and Life Groups tiles:** Ministries, when you're in any: "Your ministries" with up to two lines (a newest post title, or the name and your place). Life Groups, in a group: "Your Life Group" and "Name · Room, 9am"; with new groups coming, the staff's title over "New groups from 1 February". Otherwise the staff's title and words.
 - **Banner:** `HubTile`'s `Banner` slot is a marker strip across the top, above the picture, opening its own target (a `HubListEntry` with `hub-tile__banner`): icon, one line of words, chevron. The corner mark moves under it. Only News's urgent band uses it.
-- **Date after the title:** `hub-list--after` is for a single "what came before" row under a tile's lead: the title ellipsized, the date after it, quiet. Lists keep a when-first column with ages: "Just now", "46 min ago", "3 hours ago", "Yesterday", the weekday within the week, then "9 Nov".
+- **Date after the title:** `hub-list--after` is for quiet rows under a tile's lead (News's "what came before", What's next's following things): the title ellipsized, the date after it, quiet. Lists keep a when-first column with ages: "Just now", "46 min ago", "3 hours ago", "Yesterday", the weekday within the week, then "9 Nov".
 
 ## Hub canvas (signature)
 Home arranged on App styling's phone inside a draft: the phone is the canvas; the panel holds the Home screen controls or the chosen tile's settings.

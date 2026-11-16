@@ -25,6 +25,7 @@ public static class ConfigurationApiExtensions
         services.AddHostedService<ScheduledPublishing>();
         services.AddHostedService<DraftsFeedRepair>();
         services.AddHostedService<ThemeSeeding>();
+        services.AddHostedService<TileReplacing>();
         services.AddScoped<IMediaHolder, PlacementMediaHolder>();
         services.AddDestinations(ConfigurationDestinations.All).AddDestinations(ComingSoonDestinations.All);
         services.AddPermissions(HubSurfaces.Edit, HubSurfaces.Publish, AppearanceSurfaces.Edit, AppearanceSurfaces.Publish, TabBarSurfaces.Edit, TabBarSurfaces.Publish, ConfigurationPermissions.PreviewDraft);

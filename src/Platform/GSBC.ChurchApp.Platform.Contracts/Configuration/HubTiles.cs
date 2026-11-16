@@ -215,7 +215,7 @@ public static class HubTileKeys
 public sealed class HubTileKind
 {
     public HubTileKind(string key, string title, string description, string from, TileDefaults defaults, bool sample = false,
-        IReadOnlyList<Setting>? more = null, IReadOnlyList<TileVariant>? variants = null, bool offered = true)
+        IReadOnlyList<Setting>? more = null, IReadOnlyList<TileVariant>? variants = null, bool offered = true, HubTileReplacement? replaces = null)
     {
         Offered = offered;
         Variants = variants ?? TileVariants.Words;
@@ -223,7 +223,8 @@ public sealed class HubTileKind
         Defaults = defaults;
         From = from;
         Sample = sample;
-        Surface = new Surface(key, HubSurfaces.Area, title, description, [.. Tile.All, .. more ?? []], defaultOrder: 1000, repeatable: true);
+        Surface = new Surface(key, HubSurfaces.Area, title, description, [.. Tile.All, .. more ?? []], defaultOrder: 1000, repeatable: true,
+            replaces: replaces?.Key);
     }
 
     public Surface Surface { get; }
@@ -250,6 +251,8 @@ public sealed class HubTileKind
 
     public bool IsPlain => From.Length == 0;
 }
+
+public sealed record HubTileReplacement(string Key);
 
 public sealed record TileLook(int Columns, int Rows, TileTone Tone, string Icon, string IconTone, string Title, string Text,
     Media.MediaRef? Image, FocalPoint Focus, string Link, string Layout = TileVariant.Automatic, TileTone? Fade = null)

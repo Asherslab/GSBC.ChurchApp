@@ -15,6 +15,9 @@ internal static class TestSurfaces
     public static readonly Surface News = new("ministry.news", Modules, "News", "", []);
     public static readonly Surface Welcome = new("ministry.welcome", Modules, "Welcome", "", [About]);
 
+    public static readonly HubTileKind WhatsNext = new("hub.whats-next", "What's next", "", "the weekly digest", new TileDefaults("What's next"),
+        replaces: new HubTileReplacement(WaitingTiles.Bulletin.Surface.Key));
+
     public static readonly PermissionCatalog Permissions = new([new PermissionSet(
         [HubSurfaces.Edit, HubSurfaces.Publish, AppearanceSurfaces.Edit, AppearanceSurfaces.Publish, TabBarSurfaces.Edit, TabBarSurfaces.Publish, EditModules, PublishModules, ConfigurationPermissions.PreviewDraft])]);
 
@@ -24,5 +27,5 @@ internal static class TestSurfaces
     public static DestinationCatalog Places => new([ShellDestinations.All,
         new DestinationSet([new DestinationPage("/sermons", "Sermons", "sermons", DestinationAreas.Pages, "A tab", Audience.Everyone)], [Files, Series])]);
 
-    public static SurfaceCatalog Catalog => new([HubSurfaces.All, AppearanceSurfaces.All, TabBarSurfaces.All, new SurfaceSet([News, Welcome]), WaitingTiles.Surfaces]);
+    public static SurfaceCatalog Catalog => new([HubSurfaces.All, AppearanceSurfaces.All, TabBarSurfaces.All, new SurfaceSet([News, Welcome]), WaitingTiles.Surfaces, new SurfaceSet([WhatsNext.Surface])]);
 }

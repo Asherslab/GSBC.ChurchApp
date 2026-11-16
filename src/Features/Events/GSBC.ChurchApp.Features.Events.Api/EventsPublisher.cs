@@ -16,6 +16,8 @@ internal sealed class EventsPublisher(EventsDbContext db, TimeProvider time)
     public static readonly IReadOnlyList<string> EachRowFeeds = [EventsFeeds.PrivateCalendars, EventsFeeds.Private, EventsFeeds.Contacts, EventsFeeds.PrivateDigest];
     private static readonly IReadOnlyList<string> Published = [EventsFeeds.Calendars, .. EachRowFeeds, EventsFeeds.Public, EventsFeeds.Digest, EventsFeeds.Editing];
     private const string DigestHeader = "digest";
+    private const int EarlierDigests = 3;
+    private const int DigestsLooked = 12;
 
     internal sealed record Row(string Feed, string RecordId, byte[] Payload, string? Audience, DateTime? StartsAt = null, DateTime? EndsAt = null, string? SortKey = null, string? GroupKey = null);
 
@@ -26,8 +28,9 @@ internal sealed class EventsPublisher(EventsDbContext db, TimeProvider time)
 
         DateTime now = time.GetUtcNow().UtcDateTime;
         EventsBook book = await EventsBook.LoadAsync(db, cancellationToken);
-        DigestRecord? digest = await db.Digests.AsNoTracking().Where(sent => sent.SentAt != null).OrderByDescending(sent => sent.SentAt).FirstOrDefaultAsync(cancellationToken);
-        Dictionary<(string, string), Row> wanted = Rows(book, now).Concat(DigestRows(book, digest)).Concat(EditingRows(book, now)).ToDictionary(row => (row.Feed, row.RecordId));
+        List<DigestRecord> digests = await db.Digests.AsNoTracking().Where(sent => sent.SentAt != null).OrderByDescending(sent => sent.SentAt)
+            .Take(DigestsLooked).ToListAsync(cancellationToken);
+        Dictionary<(string, string), Row> wanted = Rows(book, now).Concat(DigestRows(book, digests)).Concat(EditingRows(book, now)).ToDictionary(row => (row.Feed, row.RecordId));
         Dictionary<(string, string), PublishedRow> published = await db.PublishedRows
             .Where(row => Published.Contains(row.Feed)).ToDictionaryAsync(row => (row.Feed, row.RecordId), cancellationToken);
 
@@ -154,13 +157,19 @@ internal sealed class EventsPublisher(EventsDbContext db, TimeProvider time)
             .ToList();
     }
 
-    public static IEnumerable<Row> DigestRows(EventsBook book, DigestRecord? digest)
+    public static IEnumerable<Row> DigestRows(EventsBook book, IReadOnlyList<DigestRecord> newestFirst)
     {
-        if (digest is not { SentAt: { } sentAt })
-            yield break;
+        List<DigestRecord> shown = newestFirst.Where(digest => digest.SentAt is not null).DistinctBy(digest => digest.Start).Take(EarlierDigests + 1).ToList();
+        return shown.SelectMany((digest, index) => DigestRows(book, digest, index == 0 ? DigestHeader : EarlierHeader(digest.Start)));
+    }
+
+    public static string EarlierHeader(DateOnly start) => $"{DigestHeader}:{EventDates.Format(start)}";
+
+    private static IEnumerable<Row> DigestRows(EventsBook book, DigestRecord digest, string headerId)
+    {
         string start = EventDates.Format(digest.Start);
-        yield return new Row(EventsFeeds.Digest, DigestHeader,
-            EventsPayloads.Encode(new DigestShown { Start = start, End = EventDates.Format(digest.Sent.End), SentAt = sentAt }), null);
+        yield return new Row(EventsFeeds.Digest, headerId,
+            EventsPayloads.Encode(new DigestShown { Start = start, End = EventDates.Format(digest.Sent.End), SentAt = digest.SentAt!.Value }), null);
         foreach (SentDigestItem sent in Digests.Standing(book, digest.Sent))
         {
             Audience audience = Digests.AudienceOf(book, sent);
