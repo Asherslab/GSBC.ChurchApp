@@ -9,7 +9,7 @@ public sealed class UnsavedChanges
     public async Task<bool> MayLeaveAsync()
     {
         foreach (UnsavedGuard guard in _guards.ToList())
-            if (guard.HasChanges && !await guard.AskAsync())
+            if (guard.AsksBeforeLeavingAPage && !await guard.AskAsync())
                 return false;
         return true;
     }
