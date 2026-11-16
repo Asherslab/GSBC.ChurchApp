@@ -92,13 +92,13 @@
                         <div class="ui-after">
                             <PersonFinder Label="Find their child" Placeholder="Find their child by name" Find="FindAsync" ActionText="Link as their child" AutoFocus="true"
                                           Leave="Leave(family)" Busy="@_busyFor" OnChosen="person => LinkAsync(family.Id, person.Id)" />
-                            <div class="people-inline">
+                            <div class="ui-pair ui-after">
                                 <TextField Label="Name of a child who isn't in the app" Value="@_childName" ValueChanged="value => _childName = value" />
                                 <DateField Label="Birth date" Shortcuts="false" Value="@_childBorn" ValueChanged="value => _childBorn = value" Max="@($"{today:yyyy-MM-dd}")" />
-                                <Button Variant="ButtonVariant.Quiet" Busy="_busy" Disabled="@(_childName.Trim().Length == 0 || PeopleWords.ParseDay(_childBorn) is null)" OnClick="() => AddChildAsync(family.Id)">Add the child</Button>
                             </div>
                             <div class="ui-actions ui-after">
-                                <Button Small="true" Variant="ButtonVariant.Quiet" OnClick="() => _linking = Linking.None">Done</Button>
+                                <Button Variant="ButtonVariant.Quiet" Busy="_busy" Disabled="@(_childName.Trim().Length == 0 || PeopleWords.ParseDay(_childBorn) is null)" OnClick="() => AddChildAsync(family.Id)">Add the child</Button>
+                                <Button Variant="ButtonVariant.Quiet" OnClick="() => _linking = Linking.None">Done</Button>
                             </div>
                         </div>
                     }

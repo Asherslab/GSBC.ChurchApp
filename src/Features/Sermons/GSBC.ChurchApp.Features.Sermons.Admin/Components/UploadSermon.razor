@@ -14,7 +14,7 @@
         <input @ref="_input" type="file" accept=".mp3,.m4a,audio/mpeg,audio/mp4,audio/x-m4a" class="visually-hidden" disabled="@_busy" @onchange="ChosenAsync" />
     </DropBox>
 
-    <div class="sermon-check__fields">
+    <div class="ui-pair sermon-check__fields">
         <div class="sermon-check__field sermon-check__field--wide"><TextField Label="Title" @bind-Value="_title" MaxLength="160" Required="true" /></div>
         <div class="sermon-check__field">
             <SearchPicker TItem="SpeakerDetail" Label="Speaker" Items="Popular" Text="SpeakerName" Detail="SpeakerCount" Value="SpeakerOf(_speakerId)"

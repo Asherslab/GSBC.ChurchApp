@@ -300,6 +300,25 @@
     }
   }
 
+  const fieldBox = field => field.querySelector(':scope > :is(.field__input, .field__select, .date-field__box, .chip-picker__search)');
+  const fieldsInRows = all.filter(element => element.matches('.field') && fieldBox(element) && shown(fieldBox(element)));
+  const near = (field, row) => field.parentElement === row || field.parentElement?.parentElement === row;
+  const rowOf = (a, b) => [a.parentElement, a.parentElement?.parentElement].find(row => row && near(b, row));
+  const reportedRows = new Set();
+  for (const [index, a] of fieldsInRows.entries()) {
+    for (const b of fieldsInRows.slice(index + 1)) {
+      const row = rowOf(a, b);
+      if (!row || reportedRows.has(row)) continue;
+      const labels = [a, b].map(field => field.querySelector(':scope > .field__label')?.getBoundingClientRect());
+      const boxes = [a, b].map(field => fieldBox(field).getBoundingClientRect());
+      if (!labels[0] || !labels[1] || Math.abs(labels[0].top - labels[1].top) > 1 || overlapsHorizontally(boxes[0], boxes[1]) > 0) continue;
+      const off = Math.abs(boxes[0].top - boxes[1].top);
+      if (off <= 1) continue;
+      reportedRows.add(row);
+      add({ check: 'misaligned', what: describe(b), text: `"${textOf(a.querySelector('.field__label'))}" and "${textOf(b.querySelector('.field__label'))}" share a row but their boxes are ${Math.round(off)}px apart`, against: describe(a), rect: box(boxes[1]) });
+    }
+  }
+
   const root = document.scrollingElement;
   if (root.scrollWidth > root.clientWidth + 1) {
     const culprits = all.filter(element => {

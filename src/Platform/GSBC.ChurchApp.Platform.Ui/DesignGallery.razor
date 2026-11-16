@@ -193,6 +193,18 @@
                 <TextField Label="Prayer request" @bind-Value="_request" Multiline="true" MaxLength="500" Hint="Only the pastoral team sees this." />
                 <TextField Label="Link" Value="http://example" Problem="A link starts with https://." />
             </div>)
+        @Item("Fields side by side: ui-pair", "The boxes line up whichever fields have a description and however long it runs.",
+            @<div class="gallery__stack">
+                <div class="ui-pair">
+                    <TextField Label="Name" @bind-Value="_name" />
+                    <TextField Label="Short description" @bind-Value="_request" Hint="One sentence shown under the name in the list and at the top of its page." />
+                </div>
+                <div class="ui-pair">
+                    <DateField Label="First date" @bind-Value="_date" />
+                    <DateField Label="Last date" Value="" Hint="Leave this empty to keep it going with no end." />
+                    <SelectField Label="Service" Options="Services" @bind-Value="_service" />
+                </div>
+            </div>)
         @Item("One of a short fixed list: SelectField", "When the options are few and known.",
             @<SelectField Label="Service" Options="Services" @bind-Value="_service" />)
         @Item("Finding in a list: SearchField", "Above or in the rail of the list it narrows.",
