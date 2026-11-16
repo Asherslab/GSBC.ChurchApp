@@ -264,6 +264,7 @@ const checks = {
   overlap: 'Overlapping',
   overflow: 'Wider than its space',
   bar: 'Bar not flush',
+  misaligned: 'Fields in a row out of line',
   broken: 'Page broken',
 };
 

@@ -9,6 +9,13 @@ public sealed partial class DesignDriftRules
     private const string AdminStylesheet = "src/Hosts/GSBC.ChurchApp.Hosts.Admin/wwwroot/css/admin.css";
     private const string RatchetFile = "tests/Architecture/GSBC.ChurchApp.Architecture.Tests/design-ratchets.json";
 
+    private const string Pair = "ui-pair";
+
+    private static readonly HashSet<string> FieldComponents =
+        ["TextField", "DateField", "TimeField", "DateTimeField", "SelectField", "SearchPicker", "CodeField", "ServicePicker"];
+
+    private static readonly HashSet<string> VoidElements = ["input", "img", "br", "hr", "meta", "link", "source", "col", "area", "wbr"];
+
     private static readonly Dictionary<string, string> ClassesOnlyScriptsRead = new()
     {
         ["module-nav__area"] = "the sidebar's script finds an area to keep it open",
@@ -63,6 +70,121 @@ public sealed partial class DesignDriftRules
     public void DeleteIsAnActionOnTheItem() =>
         AssertRatchet("deleteOutsideMenu", Razor().Where(file => !file.Path.StartsWith(SharedComponents, StringComparison.Ordinal)).Select(file => Full(file.Path)),
             text => DeleteInFoot().Count(text) + DangerButton().Count(ActionsBlock().Replace(text, "")));
+
+    [Fact]
+    public void FieldsSideBySideUseThePair()
+    {
+        HashSet<string> sideBySide = ClassesLaidOutSideBySide();
+
+        AssertRatchet("fieldRows", Razor().Select(file => Full(file.Path)), text =>
+        {
+            string markup = text.Split("@code", 2)[0];
+            List<Tag> tags = Tags(markup).ToList();
+            return tags.Select((tag, index) => (tag, index)).Count(open => open.tag is { Closing: false, SelfClosing: false } && char.IsLower(open.tag.Name[0])
+                && ClassesOf(open.tag.Text) is var classes && !classes.Contains(Pair) && classes.Any(sideBySide.Contains)
+                && FieldsIn(markup, tags, open.index) >= 2);
+        });
+    }
+
+    [Fact]
+    public void FocusNeverReshapesWhatItRings()
+    {
+        List<string> reshaping = Stylesheets()
+            .SelectMany(path => CssRule().Matches(Comment().Replace(File.ReadAllText(path), ""))
+                .Where(rule => rule.Groups[2].Value.Contains("border-radius", StringComparison.Ordinal))
+                .SelectMany(rule => rule.Groups[1].Value.Split(',', StringSplitOptions.TrimEntries))
+                .Where(selector => selector.StartsWith(":focus", StringComparison.Ordinal))
+                .Select(selector => $"{Relative(path)}: {selector} changes the shape of whatever has focus; wrap it in :where() so a component's own radius wins"))
+            .ToList();
+
+        Assert.True(reshaping.Count == 0, string.Join(Environment.NewLine, reshaping));
+    }
+
+    private static HashSet<string> ClassesLaidOutSideBySide() =>
+        Stylesheets()
+            .SelectMany(path => CssRule().Matches(Comment().Replace(File.ReadAllText(path), "")))
+            .Where(rule => SideBySide(rule.Groups[2].Value))
+            .SelectMany(rule => rule.Groups[1].Value.Split(',', StringSplitOptions.TrimEntries))
+            .Select(selector => DefinedClass().Matches(LastCompound().Match(selector).Value).Select(match => match.Groups[1].Value))
+            .SelectMany(classes => classes)
+            .Where(name => !name.StartsWith(Pair, StringComparison.Ordinal))
+            .ToHashSet(StringComparer.Ordinal);
+
+    private static bool SideBySide(string declarations) =>
+        (ColumnTracks().Match(declarations) is { Success: true } columns && Tracks(columns.Groups[1].Value) > 1)
+        || (FlexDisplay().IsMatch(declarations) && !ColumnDirection().IsMatch(declarations));
+
+    private static int Tracks(string template)
+    {
+        if (RepeatCount().Match(template) is { Success: true } repeat)
+            return int.TryParse(repeat.Groups[1].Value, out int count) ? count : 2;
+        int depth = 0, tracks = 0;
+        bool inTrack = false;
+        foreach (char at in template.Trim())
+        {
+            depth += at switch { '(' => 1, ')' => -1, _ => 0 };
+            bool gap = depth == 0 && char.IsWhiteSpace(at);
+            if (!gap && !inTrack)
+                tracks++;
+            inTrack = !gap;
+        }
+        return tracks;
+    }
+
+    private static HashSet<string> ClassesOf(string tag) =>
+        ClassAttribute().Match(tag) is { Success: true } attribute
+            ? AttributeValue(tag, attribute.Index + attribute.Length).Split(' ', StringSplitOptions.RemoveEmptyEntries).ToHashSet(StringComparer.Ordinal)
+            : [];
+
+    private static int FieldsIn(string razor, List<Tag> tags, int index)
+    {
+        int depth = 0, fields = 0, previousEnd = tags[index].At + tags[index].Text.Length;
+        (Tag Tag, bool Repeated)? wrapper = null;
+        foreach (Tag tag in tags.Skip(index + 1))
+        {
+            bool repeated = Repeated().IsMatch(razor[previousEnd..tag.At]);
+            previousEnd = tag.At + tag.Text.Length;
+            if (depth == 0 && tag.Closing)
+                break;
+            if (depth == 1 && wrapper is { } holder && !tag.Closing)
+            {
+                fields += FieldComponents.Contains(tag.Name) ? holder.Repeated ? 2 : 1 : 0;
+                wrapper = null;
+            }
+            if (depth == 0 && !tag.Closing && FieldComponents.Contains(tag.Name))
+                fields += repeated ? 2 : 1;
+            else if (depth == 0 && tag is { Closing: false, SelfClosing: false } && char.IsLower(tag.Name[0]) && !ClassesOf(tag.Text).Contains(Pair))
+                wrapper = (tag, repeated);
+            depth += tag.Closing ? -1 : tag.SelfClosing ? 0 : 1;
+        }
+        return fields;
+    }
+
+    private static IEnumerable<Tag> Tags(string razor)
+    {
+        for (int at = razor.IndexOf('<'); at >= 0 && at < razor.Length - 1; at = razor.IndexOf('<', at + 1))
+        {
+            bool closing = razor[at + 1] == '/';
+            int nameStart = closing ? at + 2 : at + 1;
+            if (nameStart >= razor.Length || !char.IsLetter(razor[nameStart]))
+                continue;
+            int nameEnd = nameStart;
+            while (nameEnd < razor.Length && (char.IsLetterOrDigit(razor[nameEnd]) || razor[nameEnd] is '.' or '-'))
+                nameEnd++;
+            string name = razor[nameStart..nameEnd];
+            int end = nameEnd;
+            for (bool quoted = false; end < razor.Length && (quoted || razor[end] != '>'); end++)
+            {
+                if (razor[end] == '"')
+                    quoted = !quoted;
+            }
+            string text = razor[at..Math.Min(end + 1, razor.Length)];
+            yield return new Tag(at, name, text, closing, !closing && (text.EndsWith("/>", StringComparison.Ordinal) || VoidElements.Contains(name)));
+            at = end;
+        }
+    }
+
+    private sealed record Tag(int At, string Name, string Text, bool Closing, bool SelfClosing);
 
     [Fact]
     public void TheSidebarKeepsItsWidthWhenAScrollbarAppears()
@@ -200,6 +322,24 @@ public sealed partial class DesignDriftRules
 
     [GeneratedRegex(@"(?:^|[;\s])bottom\s*:")]
     private static partial Regex BottomOffset();
+
+    [GeneratedRegex(@"(?:^|[\s>+~])([^\s>+~]+)\s*$")]
+    private static partial Regex LastCompound();
+
+    [GeneratedRegex(@"grid-template-columns\s*:\s*([^;]+)")]
+    private static partial Regex ColumnTracks();
+
+    [GeneratedRegex(@"^\s*repeat\(\s*([\w-]+)\s*,")]
+    private static partial Regex RepeatCount();
+
+    [GeneratedRegex(@"(?:^|[;\s])display\s*:\s*(?:inline-)?flex\b")]
+    private static partial Regex FlexDisplay();
+
+    [GeneratedRegex(@"flex-direction\s*:\s*column")]
+    private static partial Regex ColumnDirection();
+
+    [GeneratedRegex(@"@(?:foreach|for)\s*\(")]
+    private static partial Regex Repeated();
 
     [GeneratedRegex(@"<Sheet\b.*?</Sheet>", RegexOptions.Singleline)]
     private static partial Regex SheetBlock();
