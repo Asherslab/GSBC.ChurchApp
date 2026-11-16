@@ -15,7 +15,7 @@ public sealed record PostDay(string Word, string Number, string Month, string Ph
         (string word, string phrase) = (today - day).Days switch
         {
             0 => ("Today", "today"),
-            1 => ("Yesterday", "yesterday"),
+            1 => (day.ToString("ddd", English), "yesterday"),
             _ when day.Year != today.Year => (day.ToString("yyyy", English), $"on {longDate}"),
             _ => (day.ToString("ddd", English), $"on {longDate}"),
         };

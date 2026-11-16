@@ -209,7 +209,8 @@ looked like every other one; and a post opening with several pictures showed the
   opening pictures and the text with its first paragraph a little larger, and a sand foot that ends it: "Posted today by
   … for everyone." On the phone's post pages the foot fills the rest of the screen, so a short notice ends rather than
   trailing into white. The band is gone; every post looks the same at the top.
-- **Decided while building:** the date block says Today, Yesterday, the weekday, or the year for an older year, and the
+- **Decided while building:** the date block says Today, the weekday, or the year for an older year (Yesterday is too wide
+  for it; the foot says "Posted yesterday"), and the
   long date is read out to screen readers from it, so it isn't repeated under the title ("Edited" is). Who it's for in
   the foot is the post's audience (church news: everyone, everyone signed in, people in a role; a ministry's post:
   everyone, the team, parents …).
