@@ -25,10 +25,10 @@
             <Notice Tone="NoticeTone.Warning" Text="@_problem" />
 
             <section class="person-roles__one" aria-labelledby="one-thing">
-                <h3 class="person-roles__head" id="one-thing">For one thing</h3>
+                <h3 class="person-roles__head" id="one-thing">Roles for a single item</h3>
                 @if (context.Value.Things.Count == 0)
                 {
-                    <p class="panel-hint">Nothing for a single calendar, event or draft. Those are given on the thing itself, with its People button.</p>
+                    <p class="panel-hint">@($"{Person.FirstName} has no roles for a single calendar, event or draft. Those roles are given on the item itself, with its People button.")</p>
                 }
                 else
                 {

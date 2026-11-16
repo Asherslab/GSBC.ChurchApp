@@ -44,7 +44,7 @@ internal sealed class RosterReminders(RostersDbContext db, RosterMessenger messe
                 assignment.NudgedAt = now;
                 await db.SaveChangesAsync(cancellationToken);
                 await messenger.TellAsync(person, RostersNotifications.Nudge, $"Can you do {RosterText.Day(date.StartsAt)}?",
-                    $"{RosterText.Line(date, assignment.PositionName)}, for {ministry.Name}. Say whether you can do it.", ministry.Id, $"rosters/on/{assignment.Id:N}",
+                    $"{RosterText.Line(date, assignment.PositionName)}, for {ministry.Name}. Say whether you can serve.", ministry.Id, $"rosters/on/{assignment.Id:N}",
                     null, cancellationToken, "Answer");
             }
         }

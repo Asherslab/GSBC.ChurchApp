@@ -28,7 +28,7 @@
         string title = $"{who} on {RosterLines.Weekday(next.Date, now)}";
         List<string> lines = [$"{next.Assignment.PositionName} · {next.Date.Title}, {RosterLines.When(next.Date)}"];
         if (next == waiting)
-            lines.Add(next.Yourself ? "Say whether you can do it" : $"Answer for {RosterLines.First(next.For.Name)}");
+            lines.Add(next.Yourself ? "Say whether you can serve" : $"Answer for {RosterLines.First(next.For.Name)}");
         else if (yours.Count > 1)
             lines.Add(yours.Count == 2 ? "And 1 more date" : $"And {yours.Count - 1} more dates");
         return @<HubTile Look="@(variant.Key == TileVariants.WordsKey ? look with { Image = null } : look)" Layout="WordsTileView.ShapeOf(variant)" Title="@title" Lines="lines"

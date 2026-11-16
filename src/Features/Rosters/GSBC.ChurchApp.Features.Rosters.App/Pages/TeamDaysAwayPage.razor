@@ -4,7 +4,7 @@
 <Page Title="The team's days away" BackHref="@AwayPlaces.Roster(MinistryId)" BackLabel="Roster">
     <LiveData @key="MinistryId" TValue="RosterView" Load="() => Reads.RosterAsync(MinistryId)" Feeds="Reads.Feeds" Remember="@($"rosters.{MinistryId}")" FailedTitle="Can't show the team's days away right now">
         <ChildContent>
-            <Masthead Title="The team's days away" Note="@($"{context.Value.MinistryName}'s leaders can change anyone's days away, and anyone away is flagged when they're put on.")" />
+            <Masthead Title="The team's days away" Note="@($"{context.Value.MinistryName}'s leaders can change anyone's days away. Anyone who's away is shown as away when they're put on the roster.")" />
             @if (TeamAway.Shown(context.Value))
             {
                 <DaysAway @key="MinistryId" Paged="true" First="true" Load="() => TeamAway.LoadAsync(Reads, context.Value)" Feeds="Reads.Feeds" People="TeamAway.People(context.Value)"

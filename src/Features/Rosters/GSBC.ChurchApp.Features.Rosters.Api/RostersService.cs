@@ -291,7 +291,7 @@ internal sealed class RostersService(
         bool training = Training.IsTrainee(position.NeedsTrained, await db.Trained.AnyAsync(each => each.PositionId == positionId && each.PersonId == person, cancellationToken));
         string with = training && !aloneAfter.Contains(id) ? " Someone trained is on with you." : "";
         await messenger.TellAsync(person, RostersNotifications.PutOn, $"You're on {RosterText.Day(date.StartsAt)}: {position.Name}{(training ? " (training)" : "")}",
-            settings.Replies ? $"{RosterText.Line(date, position.Name)}, for {ministry.Name}.{with} Say whether you can do it." : $"{RosterText.Line(date, position.Name)}, for {ministry.Name}.{with}",
+            settings.Replies ? $"{RosterText.Line(date, position.Name)}, for {ministry.Name}.{with} Say whether you can serve." : $"{RosterText.Line(date, position.Name)}, for {ministry.Name}.{with}",
             ministry.Id, $"rosters/on/{id:N}", me, cancellationToken, settings.Replies ? "Answer" : "See the roster");
         return new Done();
     }

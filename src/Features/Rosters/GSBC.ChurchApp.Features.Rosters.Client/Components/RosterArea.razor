@@ -48,11 +48,11 @@
                                 <TrailingContent>
                                     @foreach (PersonLine person in Takers(view, assignment))
                                     {
-                                        <Button Small="true" Disabled="_busy" OnClick="() => TakeAsync(view, assignment, person, true)">@(person.Id == view.YourId ? "Take it" : $"{RosterLines.First(person.Name)} takes it")</Button>
+                                        <Button Small="true" Disabled="_busy" OnClick="() => TakeAsync(view, assignment, person, true)">@(person.Id == view.YourId ? "Take the place" : $"{RosterLines.First(person.Name)} takes the place")</Button>
                                     }
                                     @if (assignment.Swap.Way == SwapWays.Direct)
                                     {
-                                        <Button Small="true" Variant="ButtonVariant.Quiet" Disabled="_busy" OnClick="() => TakeAsync(view, assignment, Takers(view, assignment)[0], false)">Can't</Button>
+                                        <Button Small="true" Variant="ButtonVariant.Quiet" Disabled="_busy" OnClick="() => TakeAsync(view, assignment, Takers(view, assignment)[0], false)">I can't take it</Button>
                                     }
                                 </TrailingContent>
                             </ListRow>
@@ -87,7 +87,7 @@
                 }
                 @if (view.MayEdit && view.Positions.Count == 0)
                 {
-                    <EmptyState Icon="list" Title="Add its positions first" Body="The jobs people do on a date, like running sound or welcoming. Each can need a blue card or training.">
+                    <EmptyState Icon="list" Title="Add the roster's positions first" Body="Positions are the jobs people do on each date. A position can require a blue card or training.">
                         <Button OnClick="() => _positions = true">Add a position</Button>
                     </EmptyState>
                 }
@@ -109,7 +109,7 @@
                             @foreach (RosterDate date in coming)
                             {
                                 int gaps = RosterLines.Gaps(view, date);
-                                <ListRow @key="date.Id" Title="@($"{RosterLines.When(date)} · {date.Title}")" Subtitle="@(date.NotOn ? "Not on: it's off the calendar" : RosterLines.Summary(view, date))"
+                                <ListRow @key="date.Id" Title="@($"{RosterLines.When(date)} · {date.Title}")" Subtitle="@(date.NotOn ? "Not on: the event is no longer on the calendar" : RosterLines.Summary(view, date))"
                                          IconTone="@(date.NotOn ? RowTone.Quiet : gaps > 0 && view.MayEdit ? RowTone.Warm : RowTone.Primary)" Chevron="true" OnClick="() => _date = date.Id">
                                     <Leading><span class="roster-day" aria-hidden="true">@RosterLines.DayNumber(date)</span></Leading>
                                     <TrailingContent>
@@ -183,6 +183,6 @@
     private IReadOnlyList<MenuItem> RosterTools =>
     [
         this.Item("Positions", () => { _positions = true; return Task.CompletedTask; }, "list"),
-        this.Item("How it works", () => { _settings = true; return Task.CompletedTask; }, AppIcons.Settings),
+        this.Item("Roster settings", () => { _settings = true; return Task.CompletedTask; }, AppIcons.Settings),
     ];
 }
