@@ -1,3 +1,4 @@
+@using Grpc.Core
 @inject IChats Store
 
 <UnsavedGuard Changed="() => Open" Editing="_draft" State="() => Shape" What="this chat" />
@@ -12,7 +13,7 @@
         }
         else
         {
-            <p class="hint">A group chat for the team. Leaders start channels and chats with attendees or parents.</p>
+            <p class="hint">A group chat for @TeamNames.InSentence(MinistryName). Leaders start channels and chats with attendees or parents.</p>
         }
         @if (_draft.Audience != ChatAudiences.Team)
         {
@@ -21,6 +22,7 @@
         <TextField Label="First message: why you're starting this chat" Multiline="true" Value="@_draft.FirstMessage" ValueChanged="value => _draft.FirstMessage = value"
                    MaxLength="ChatLimits.TextLength" Placeholder="Parents of any young people in it read this before they say yes." />
         <p class="hint">@ChatCopy.StaffCanCheck A chat with young people needs two adults in it with a current blue card; the chat flags it if not.</p>
+        <Notice Tone="NoticeTone.Warning" Text="@_problem" />
     </ChildContent>
     <Actions>
         <SaveBar Block="true" Label="Start the chat" Busy="_busy" OnSave="StartAsync" Blocked="@Blocked" />
@@ -30,6 +32,7 @@
 @code {
     private StartChat _draft = Fresh();
     private bool _busy;
+    private string? _problem;
 
     [Parameter] public bool Open { get; set; }
     [Parameter] public EventCallback<bool> OpenChanged { get; set; }
@@ -49,11 +52,11 @@
     private IReadOnlyList<SegmentOption<string>> Audiences => HasAttendees
         ?
         [
-            new(ChatAudiences.Team, "The team", Detail: "Leaders and helpers."),
+            new(ChatAudiences.Team, TeamNames.Of(MinistryName), Detail: "Leaders and helpers."),
             new(ChatAudiences.Attendees, "Attendees and their parents", Detail: "Young people who come along, and their parents."),
             new(ChatAudiences.Parents, "Parents only", Detail: "The parents of those who come along."),
         ]
-        : [new(ChatAudiences.Team, "The team", Detail: "Leaders and helpers.")];
+        : [new(ChatAudiences.Team, TeamNames.Of(MinistryName), Detail: "Leaders and helpers.")];
 
     private string? Blocked => _draft.Name.Trim().Length == 0 ? "Give it a name to start it."
         : _draft.FirstMessage.Trim().Length == 0 ? "Write the first message to start it."
@@ -63,7 +66,7 @@
 
     private async Task StartAsync()
     {
-        _busy = true;
+        (_busy, _problem) = (true, null);
         try
         {
             _draft.ChatId = Guid.NewGuid().ToString();
@@ -71,6 +74,10 @@
             await Store.StartAsync(_draft);
             _draft = Fresh();
             await OpenChanged.InvokeAsync(false);
+        }
+        catch (RpcException exception)
+        {
+            _problem = exception.Status.Detail;
         }
         finally
         {

@@ -1,0 +1,190 @@
+@inject IMinistryWrites Ministries
+@inject MinistryLookups Lookups
+
+<UnsavedGuard Changed="() => Changed" What="@($"{MinistryWords.Possessive(Page.Ministry.Name)} calendars")" Save="SaveBeforeLeavingAsync" />
+
+<Section Title="Calendars" Lead="Leaders add its events in Calendar." Grouped="true">
+    <ChildContent>
+        <ToggleRow Title="Public calendar" Description="@Describe(Audiences.Everyone)" Checked="@Wanted(Audiences.Everyone)" CheckedChanged="on => TurnAsync(Audiences.Everyone, on)" Disabled="_busy" />
+        <ToggleRow Title="Team calendar" Description="@Describe(Audiences.Team)" Checked="@Wanted(Audiences.Team)" CheckedChanged="on => TurnAsync(Audiences.Team, on)" Disabled="_busy" />
+        <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+    </ChildContent>
+    <Foot>
+        <SaveBar Label="Save the calendars" Busy="_busy" OnSave="SaveAsync" OnCancel="Undo" State="SaveBar.For(Changed, _saved)" Detail="@Deleting" />
+    </Foot>
+</Section>
+
+<Sheet Open="_confirming" OpenChanged="open => _confirming = open" Title="@($"Delete {Names(Going)}?")" Lead="@($"{WhatGoes} This can't be undone.".TrimStart())">
+    <ChildContent>
+        <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+    </ChildContent>
+    <Actions>
+        <Button Block="true" Variant="ButtonVariant.Danger" Busy="_busy" OnClick="ApplyAsync">@DeleteLabel</Button>
+        <Button Block="true" Variant="ButtonVariant.Quiet" Disabled="_busy" OnClick="() => _confirming = false">@(Going.Count == 1 ? "Keep it" : "Keep them")</Button>
+    </Actions>
+</Sheet>
+
+@code {
+    private readonly Dictionary<string, bool> _wanted = [];
+    private readonly Dictionary<string, int> _events = [];
+    private readonly HashSet<string> _counting = [];
+    private MinistryPage? _seen;
+    private MinistryPage? _sentFor;
+    private bool _busy;
+    private bool _saved;
+    private bool _confirming;
+    private string? _problem;
+
+    [Parameter, EditorRequired] public required MinistryPage Page { get; set; }
+    [Parameter] public EventCallback OnChanged { get; set; }
+
+    private IReadOnlyDictionary<string, CalendarLine> Own =>
+        Page.Calendars.Where(calendar => calendar.From.Length == 0 && !calendar.Linked)
+            .GroupBy(calendar => KindOf(calendar.Audience))
+            .ToDictionary(kind => kind.Key, kind => kind.First());
+
+    private bool Differs => MinistryCalendarKinds.All.Any(kind => Wanted(kind) != Own.ContainsKey(kind));
+
+    private bool Changed => _sentFor is null && Differs;
+
+    private List<string> Going => MinistryCalendarKinds.All.Where(kind => !Wanted(kind) && Own.ContainsKey(kind)).ToList();
+
+    private List<string> Coming => MinistryCalendarKinds.All.Where(kind => Wanted(kind) && !Own.ContainsKey(kind)).ToList();
+
+    private string? Deleting => Going.Count == 0 ? null : $"Saving deletes {Names(Going)}. {WhatGoes}".TrimEnd();
+
+    private int? Events => Going.All(_events.ContainsKey) ? Going.Sum(kind => _events[kind]) : null;
+
+    private string WhatGoes
+    {
+        get
+        {
+            bool one = Going.Count == 1;
+            if (Going.Any(_counting.Contains))
+                return "";
+            return Events switch
+            {
+                null => one ? "Its events go with it." : "Their events go with them.",
+                0 => one ? "It has no events." : "They have no events.",
+                1 => $"{(one ? "Its" : "Their")} event goes with {(one ? "it" : "them")}.",
+                { } count => $"{(one ? "Its" : "Their")} {count} events go with {(one ? "it" : "them")}.",
+            };
+        }
+    }
+
+    private string DeleteLabel
+    {
+        get
+        {
+            bool one = Going.Count == 1;
+            return Events switch
+            {
+                0 => one ? "Delete it" : "Delete them",
+                1 => one ? "Delete it and its event" : "Delete them and their event",
+                _ => one ? "Delete it and its events" : "Delete them and their events",
+            };
+        }
+    }
+
+    protected override void OnParametersSet()
+    {
+        if (ReferenceEquals(_seen, Page))
+            return;
+        bool another = _seen?.Ministry.Id != Page.Ministry.Id;
+        _seen = Page;
+        if (another)
+            (_saved, _sentFor, _problem) = (false, null, null);
+        if (!another && Differs)
+            return;
+        _wanted.Clear();
+        _sentFor = null;
+    }
+
+    private static string KindOf(string audience) => audience == Audiences.Team ? Audiences.Team : Audiences.Everyone;
+
+    private bool Wanted(string kind) => _wanted.TryGetValue(kind, out bool on) ? on : Own.ContainsKey(kind);
+
+    private string Describe(string kind)
+    {
+        string name = Own.TryGetValue(kind, out CalendarLine? calendar) ? calendar.Name : MinistryCalendarKinds.NameOf(kind, Page.Ministry.Name);
+        string who = kind == Audiences.Team ? $"Only {TeamNames.InSentence(Page.Ministry.Name)} sees its events."
+            : MinistryLogic.IsHidden(Page.Ministry) ? $"Everyone who sees {Page.Ministry.Name} sees its events."
+            : "Everyone with the app sees its events.";
+        return $"{who} Called “{name}”.";
+    }
+
+    private static string Names(IReadOnlyList<string> kinds) =>
+        kinds.Count == 1 ? kinds[0] == Audiences.Team ? "the Team calendar" : "the Public calendar" : "the Public and Team calendars";
+
+    private async Task TurnAsync(string kind, bool on)
+    {
+        (_wanted[kind], _saved, _problem) = (on, false, null);
+        if (on || !Own.TryGetValue(kind, out CalendarLine? calendar) || _events.ContainsKey(kind))
+            return;
+        _counting.Add(kind);
+        try
+        {
+            CalendarRemoval removal = await Lookups.CalendarRemovalAsync(Page.Ministry.Id, calendar.Id);
+            _events[kind] = removal.Events;
+        }
+        catch (RpcException)
+        {
+            _events.Remove(kind);
+        }
+        finally
+        {
+            _counting.Remove(kind);
+        }
+    }
+
+    private void Undo()
+    {
+        _wanted.Clear();
+        (_problem, _confirming) = (null, false);
+    }
+
+    private Task SaveAsync()
+    {
+        if (Going.Count == 0)
+            return ApplyAsync();
+        (_confirming, _problem) = (true, null);
+        return Task.CompletedTask;
+    }
+
+    private async Task<bool> SaveBeforeLeavingAsync()
+    {
+        await ApplyAsync();
+        return _problem is null;
+    }
+
+    private async Task ApplyAsync()
+    {
+        (_busy, _problem) = (true, null);
+        bool sent = false;
+        try
+        {
+            foreach (string kind in Going)
+            {
+                await Ministries.RemoveCalendarAsync(Page.Ministry.Id, Own[kind].Id);
+                sent = true;
+            }
+            foreach (string kind in Coming)
+            {
+                await Ministries.SaveCalendarAsync(Page.Ministry.Id, new CalendarLine { Audience = kind });
+                sent = true;
+            }
+            (_saved, _confirming, _sentFor) = (true, false, Page);
+            _events.Clear();
+        }
+        catch (RpcException exception)
+        {
+            _problem = MinistryLookups.Problem(exception);
+        }
+        finally
+        {
+            _busy = false;
+            if (sent)
+                await OnChanged.InvokeAsync();
+        }
+    }
+}

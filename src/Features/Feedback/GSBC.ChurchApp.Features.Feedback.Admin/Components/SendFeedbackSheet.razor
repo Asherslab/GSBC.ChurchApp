@@ -2,7 +2,7 @@
 @inject FeedbackFromAdmin Feedback
 @inject IJSRuntime JS
 
-<UnsavedGuard Changed="() => HasDraft" What="your feedback" />
+<UnsavedGuard Changed="() => HasDraft" What="your feedback" KeptAcrossPages="true" />
 <Sheet Open="Open" OpenChanged="OpenChanged" Title="Send feedback" Lead="About the admin panel: something broken, looking wrong, or an idea?" LayerClass="feedback-send-layer">
     <ChildContent>
         <div class="feedback-send" @ref="_zone">

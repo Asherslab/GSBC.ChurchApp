@@ -1,6 +1,6 @@
 # Ministries
 
-Status: hidden ministries built 2026-11-13 (*Hidden ministries*, below); wave 2, the screens, built 2026-11-12 (*Wave 2*, below); the owner's answers of 2026-11-11/12 built 2026-11-12 (*Wave 1: the owner's answers*, below); Stage 3 (rosters) built 2026-11-11, below; Stage 2 (ministries, team and attendees, joining, audiences, posts, files, calendars, Life Groups) built 2026-11-10, below; Stage 1 (People) built 2026-11-10, in [people.md](people.md); interviewed 2026-11-10 (below, supersedes the draft); draft 2026-10-30; not built yet (Home has sample *Ministries* and *Life Groups* tiles that open *coming soon*); areas separated into tabs 2026-10-31; who sees each module chosen per
+Status: Public and Team calendars built 2026-11-16 (*Calendars*, below); hidden ministries built 2026-11-13 (*Hidden ministries*, below); wave 2, the screens, built 2026-11-12 (*Wave 2*, below); the owner's answers of 2026-11-11/12 built 2026-11-12 (*Wave 1: the owner's answers*, below); Stage 3 (rosters) built 2026-11-11, below; Stage 2 (ministries, team and attendees, joining, audiences, posts, files, calendars, Life Groups) built 2026-11-10, below; Stage 1 (People) built 2026-11-10, in [people.md](people.md); interviewed 2026-11-10 (below, supersedes the draft); draft 2026-10-30; not built yet (Home has sample *Ministries* and *Life Groups* tiles that open *coming soon*); areas separated into tabs 2026-10-31; who sees each module chosen per
 ministry 2026-10-31. Extends [SPEC.md](../../SPEC.md), where v1's "Groups" line ("ministries,
 each with a contact or 'I'm interested' button") was the placeholder. A POC is in the PWA spike
 (`spikes/app-poc`, More → Ministries and a Hub tile). Everything in it is sample data.
@@ -445,10 +445,26 @@ ministry with no attendees offers only everyone and the team. An **important** p
 (for everyone: the ministry's own people). Asking to send one to the **whole church** marks it for staff (*default*: the
 mark shows on the post; routing it to the Announcements desk is still to do).
 
-**Calendars** are Events calendars the ministry owns (`IMinistryCalendars`): Settings → Calendar adds one for everyone or
-for the team, attendees or parents. A private one's audience is `ministries.team.view` (or attendees, parents) at that
-ministry (`Audience.HoldingAt`), so Events keeps it private everywhere, and leaders edit its events with no assignment of
-their own. Removing one says how many events go with it.
+**Calendars** are Events calendars the ministry owns (`IMinistryCalendars`). **A ministry has at most two: a Public
+calendar and a Team calendar** (owner, UAT #14, 2026-11-16: "Switch Calendar under ministries to be just two calendars,
+Public Calendar and Team Calendar. Ministry can enable either or both or none. Restricts them to not spam new calendars").
+Settings → *Calendars* turns each on or off, saved with Save; turning one off deletes it and its events after saying how
+many go (create means delete). They are named for the ministry and follow it when it's renamed ("Impact Kids" and "The
+Impact Kids Team", owner's answer 2026-11-16); leaders can't rename them. The Team calendar's audience is
+`ministries.team.view` at that ministry (`Audience.HoldingAt`), so Events keeps it private everywhere, and leaders edit its
+events with no assignment of their own; the Public one is for everyone, or for those who see the ministry while it's
+hidden. *Link a calendar* (a calendar for everyone from elsewhere) stays (owner's answer 2026-11-16).
+
+**Existing calendars merged** (owner, 2026-11-16): at startup, and whenever a ministry's details are saved,
+`MinistryCalendarShaping` brings each ministry to that shape. Its calendars for everyone, attendees or parents merge into
+the Public calendar (owner: attendee and parent calendars become Public), its team calendars into the Team calendar; the
+calendar kept is one already for the right audience, else the first. A merge (`IMinistryCalendars.MergeAsync`, in Events)
+moves the events and regular events with their ids (rosters, notes and cards keep working), the "also shows on" links,
+the digest's chosen calendars, who added the calendar to their week (`MoveScopeAsync`), a roster's *Calendars it rosters
+from* and other ministries' linked calendars (`ICalendarMerges`), then deletes the merged calendar. Not carried over: an
+iCal subscription to a merged calendar's own address (its slug) stops working, so subscribers need the kept calendar's
+link; a Home tile or post linking straight to a merged calendar shows it as gone; a signed-out phone's own choice to
+add that calendar to its week.
 
 **Files** are **links** (a document, form, recording or web page) or **documents and pictures added from the phone**
 (built 2026-11-11 with offline uploads, at the orchestrator's request), each with an audience. On the phone, Files →

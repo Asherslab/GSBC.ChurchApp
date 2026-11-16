@@ -15,7 +15,6 @@ public static class EventsFeeds
 
     public const int DaysBack = 30;
     public const int MonthsAhead = 12;
-    public const int NotOnShownForDays = 14;
 
     public static readonly TimeSpan ChangedFor = TimeSpan.FromDays(7);
 }

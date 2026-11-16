@@ -324,7 +324,7 @@ ${result.findings.length ? `<ol>${result.findings.map(finding => `<li><span clas
 };
 
 const started = Date.now();
-const browser = await chromium.launch();
+const browser = await chromium.launch({ args: [`--explicitly-allowed-ports=${new URL(base).port}`] });
 try {
   const { context, page } = await signIn(browser);
   const shots = await discover(page);

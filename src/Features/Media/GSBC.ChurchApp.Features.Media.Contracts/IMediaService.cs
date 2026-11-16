@@ -22,6 +22,9 @@ public interface IMediaService
     [Requires(MediaPermissions.ViewNode)]
     ValueTask<MediaList> ListAsync(MediaQuery request, CallContext context = default);
 
+    [Requires(MediaPermissions.ViewNode)]
+    ValueTask<MediaPlaces> PlacesAsync(MediaPlacesRequest request, CallContext context = default);
+
     [Requires(MediaPermissions.DeleteNode)]
     ValueTask<MediaItemInfo> RemoveOriginalAsync(RemoveOriginalRequest request, CallContext context = default);
 

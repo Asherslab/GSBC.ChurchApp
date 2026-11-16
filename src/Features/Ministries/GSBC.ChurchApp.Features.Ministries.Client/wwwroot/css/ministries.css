@@ -4,6 +4,8 @@
   margin-top: 10px;
 }
 
+.ministry-box .list > .row:last-child, .ministry-box .list > .row-with-menu:last-child > .row { border-bottom: 0; }
+
 .ministry-box__head {
   margin: 0;
   display: flex;

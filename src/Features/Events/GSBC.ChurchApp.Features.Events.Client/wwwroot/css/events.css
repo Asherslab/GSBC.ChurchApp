@@ -75,8 +75,6 @@
 .event-waiting:not(:empty) { padding: 10px var(--gutter) 0; }
 .event-section { margin: 12px 0 -4px; font-size: var(--text-title); font-weight: 700; letter-spacing: -0.015em; }
 .event-body .prose { margin: 0; }
-.event-date .row__trail { color: var(--ink-3); }
-.event-date--off .row__title { color: var(--ink-3); font-weight: 400; }
 
 .event-body--editing { gap: 6px; padding-bottom: 24px; }
 .event-body--editing > .field, .event-body--editing > .add-row, .event-body--editing > .event-off { margin-top: 10px; }
