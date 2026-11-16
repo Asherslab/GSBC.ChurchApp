@@ -247,6 +247,8 @@ public sealed class StoredEditingTests
         public bool Can(Permission permission, string? objectId = null) => permission.Node == EventsPermissions.EditNode;
 
         public bool CanSomewhere(Permission permission) => Can(permission);
+
+        public bool CanHere(Permission permission, string objectId) => Can(permission, objectId);
     }
 
     private sealed class Clock : TimeProvider

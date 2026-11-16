@@ -5,7 +5,6 @@ using GSBC.ChurchApp.Platform.Api.Access;
 using GSBC.ChurchApp.Platform.Api.Chats;
 using GSBC.ChurchApp.Platform.Api.People;
 using GSBC.ChurchApp.Platform.Contracts.Chats;
-using GSBC.ChurchApp.Platform.Permissions;
 using Microsoft.EntityFrameworkCore;
 
 namespace GSBC.ChurchApp.Features.Chats.Api;
@@ -24,9 +23,9 @@ internal sealed class ChatActions(
         ChatPlace place = await facts.PlaceAsync(ministryId, cancellationToken) ?? throw ChatErrors.Gone("That ministry was deleted.");
         if (!place.ChatsOn)
             throw ChatErrors.Refused(ChatErrors.ChatsOff);
-        bool leads = await facts.IsAllowedAsync(me, ChatsPermissions.Manage, ministryId.ToString(), cancellationToken);
+        bool leads = await facts.IsHeldThereAsync(me, ChatsPermissions.Manage, ministryId.ToString(), cancellationToken);
         if (!leads && !(place.TeamMayStart && await facts.InAudienceAsync(me, place, ChatAudiences.Team, cancellationToken)))
-            throw ChatErrors.Refused(place.TeamMayStart ? "Only the ministry's team can start a chat." : "Only the ministry's leaders can start a chat.");
+            throw ChatErrors.Refused(ChatErrors.NoRoleToStart(place.Name, place.TeamMayStart));
         if (!leads && (request.Kind != ChatKinds.Group || request.Audience != ChatAudiences.Team))
             throw ChatErrors.Refused("On the team you can start a group chat for the team. Ask a leader for a channel or a chat with attendees or parents.");
         string name = NameOf(request.Name);
