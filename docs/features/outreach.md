@@ -747,6 +747,28 @@ panes, etc. can also be used to expand and change "Map Areas" and view coverage.
   while the owner used Places: the drawing tools attached to a map that had just been replaced, or after the page that
   owned them had gone. Each attach now checks it's still the latest for the map that's there and drops tools made too
   late, and the map's handle says when it's gone.
+- **No hitch when the coverage figures update (2026-11-16):** the owner: "map view hitches every time this is
+  recalculated. make it offthread or otherwise not something we're hitching on", then "can we not just chuck the calc
+  onto the server instead? … or at least, just make it non-blocking". Measured in the admin panel (dev build, a pan
+  across the church area onto South Brisbane, with coverage on about a third of the streets): every settle counted
+  in 60–1,000 ms (Chromium) or 9–290 ms (Safari's engine); a new region's streets took 20–550 ms to read; building its
+  coverage took 1–3 s; and every redraw sent all the coverage lines as JSON again (2–5 s). WebKit stalled 0.6–1.4 s
+  after most pans, Chromium up to 7 s. Now:
+  - the count stays in the browser and is a sum over a grid of street cells (about 500 m), built once per region with
+    each cell's totals: 0–2 ms for any view, the same figures as before. *Claude's default*, over the server: the server
+    holds no street index (it would read whole `.streets` files, up to 1.5 MB a region, per call or need a new one),
+    each call adds a round trip, and the browser already has those streets to draw coverage and find the street you
+    click.
+  - reading a region's streets (unzipping it too), building its coverage and making its lines run in slices of about 8 ms that give the
+    browser a turn between (`FrameBudget`, Platform.Ui), never on a WASM thread. "Counting…" shows until every region in
+    view is built.
+  - each region's coverage lines go to the map once, as numbers rather than JSON, and only the regions that changed
+    are added or taken away (`MapView.LineSets`, maplibre's `updateData`).
+  - which region owns a street (each street counted once where areas overlap) checks only the regions near it.
+  After (with the Australia overview underneath): in Safari's engine most pans show no frame gap over 60 ms; a pan
+  that loads several new regions at once can still show one of 110–210 ms, varying run to run. In Chromium the long
+  frames left are maplibre's own drawing in headless software GL. The other map jobs don't recompute anything when the
+  map moves.
 
 ### Open (for stage 2 and the owner)
 

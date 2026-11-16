@@ -10,6 +10,8 @@ public abstract class OutreachMapLayer : OutreachMapPart, IOutreachMapLayer
 
     public virtual IReadOnlyList<MapLine> Lines => [];
 
+    public virtual IReadOnlyList<MapLineSet> LineSets => [];
+
     public virtual IReadOnlyList<MapArea> Areas => [];
 
     public virtual IReadOnlyList<MapMarker> Markers => [];

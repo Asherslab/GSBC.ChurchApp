@@ -48,6 +48,26 @@ public sealed class OutreachAtlasTests
     }
 
     [Fact]
+    public void EachPlaceOnTheMapBelongsToOneRegionEvenWhereAreasOverlap()
+    {
+        List<OutreachRegion> regions = [.. Church.Regions.Concat(SouthBrisbane.Regions).Select(region => new OutreachRegion
+        {
+            Id = region.Id, AreaId = region.AreaId, Name = region.Name, Core = region.Core, Map = region.Map,
+            Bounds = new MapBounds { South = region.Core.South - 0.01, West = region.Core.West - 0.01, North = region.Core.North + 0.01, East = region.Core.East + 0.01 },
+        })];
+        OutreachAtlas atlas = new(regions, [Church, SouthBrisbane]);
+        Dictionary<string, Func<MapPoint, bool>> owners = atlas.Regions.ToDictionary(region => region.Id, atlas.Owns);
+        Random random = new(20261116);
+
+        for (int index = 0; index < 5000; index++)
+        {
+            MapPoint point = new(-27.75 + random.NextDouble() * 0.7, 152.7 + random.NextDouble() * 0.7);
+            string[] owning = [.. owners.Where(owner => owner.Value(point)).Select(owner => owner.Key)];
+            Assert.Equal(atlas.RegionAt(point) is { } found ? [found.Id] : [], owning);
+        }
+    }
+
+    [Fact]
     public void WithTheOverviewEveryJobPansAllOfAustraliaAndOutsideQueenslandIsClosed()
     {
         OutreachAtlas held = Atlas();

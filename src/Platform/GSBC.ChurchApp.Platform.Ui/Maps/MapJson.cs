@@ -1,4 +1,5 @@
 using System.Buffers;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Json;
 
@@ -6,6 +7,8 @@ namespace GSBC.ChurchApp.Platform.Ui.Maps;
 
 public static class MapJson
 {
+    private const int LineHead = 3;
+
     public static string Options(MapSource source, MapPoint? centre, double zoom, bool interactive, bool follow, MapBackdrop? backdrop = null) => Write(json =>
     {
         json.WriteStartObject();
@@ -60,6 +63,46 @@ public static class MapJson
         }
         json.WriteEndArray();
     });
+
+    public static (string Kinds, byte[] Points) LineSet(IReadOnlyList<MapLine> lines)
+    {
+        List<MapLine> drawn = [.. lines.Where(line => line.Points.Count >= 2)];
+        List<MapLine> kinds = [];
+        Dictionary<(MapLineStyle, string?, string?, string?), int> kindOf = [];
+        double[] values = new double[drawn.Sum(line => LineHead + line.Points.Count * 2)];
+        int at = 0;
+        foreach (MapLine line in drawn)
+        {
+            if (!kindOf.TryGetValue((line.Style, line.Label, line.Colour, line.Id), out int kind))
+            {
+                kindOf[(line.Style, line.Label, line.Colour, line.Id)] = kind = kinds.Count;
+                kinds.Add(line);
+            }
+            values[at++] = kind;
+            values[at++] = line.Age is { } age ? Math.Round(Math.Clamp(age, 0, 1), 3) : double.NaN;
+            values[at++] = line.Points.Count;
+            foreach (MapPoint point in line.Points)
+            {
+                values[at++] = Math.Round(point.Lon, 6);
+                values[at++] = Math.Round(point.Lat, 6);
+            }
+        }
+        string kindsJson = Write(json =>
+        {
+            json.WriteStartArray();
+            foreach (MapLine kind in kinds)
+            {
+                json.WriteStartObject();
+                json.WriteString("style", StyleName(kind.Style));
+                Optional(json, "label", kind.Label);
+                Optional(json, "colour", kind.Colour);
+                Optional(json, "id", kind.Id);
+                json.WriteEndObject();
+            }
+            json.WriteEndArray();
+        });
+        return (kindsJson, MemoryMarshal.AsBytes(values.AsSpan()).ToArray());
+    }
 
     public static string Areas(IEnumerable<MapArea> areas) => Write(json =>
     {

@@ -86,6 +86,9 @@ in order, so the 2 km overlaps meet without a seam). It follows light and dark b
 - **Lines** (`MapLine`, by `MapLineStyle`): `Walk` (deep aqua, white edge, arrows along it from zoom 15), `WalkDone` (a walk's
   part already covered, ink-3), `Walked` (streets walked recently, ink-3 at 45%), `Connector` (dashed), `LongWalk` (dotted, with
   its label, such as "290 m, no letterboxes"), `Route` (a planned route in its own `Colour`, with a label).
+  Thousands of lines that change a block at a time (the admin coverage map, one block per region) go in `LineSets`
+  (`MapLineSet`, by key): the map sends a set only when its list changes and adds or removes just that set, so a
+  redraw never sends every line again.
 - **Areas** (`MapArea`): a polygon in its colour at 12% with an edge. `Outline` drops the fill and keeps the edge (a map
   area's squares with no homes or still to add, and the hovered square in ink).
 - **Markers** (`MapMarker`): `Start`, `Pin`, `Meeting` (with a label), and from zoom 15 `NoJunkMail`, `DontLetterbox`, `Skip`,
