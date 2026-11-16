@@ -68,6 +68,7 @@
 @code {
     private const string NewArea = "new";
     private const int PreviewZoom = 12;
+    private const int KeyRoom = 220;
     private const string Lead = "Where the app has maps and streets. Each area is cut into regions of about 10 km; phones download the map and streets of the region they walk in.";
 
     private static readonly IReadOnlyList<string> Feeds = [OutreachMapsFeeds.Builds, OutreachMapsFeeds.Regions];
@@ -103,7 +104,7 @@
         : [];
 
     public override IReadOnlyList<MapMarker> Markers => !IsOpen ? []
-        : _adding ? [.. _centre is { } centre ? [new MapMarker(centre, MapMarkerKind.Pin, _place?.Name)] : Array.Empty<MapMarker>(), .. _previewNotes]
+        : _adding ? [.. _centre is { } centre ? [new MapMarker(centre, MapMarkerKind.Pin, Map.Atlas.Overview is null ? _place?.Name : null)] : Array.Empty<MapMarker>(), .. _previewNotes]
         : _area is not null ? [.. _cells.Select(cell => new MapMarker(cell.Look == CellLook.Edge ? cell.Middle : MapAreaDrawing.Corner(cell.Core), MapMarkerKind.Note, MapAreaWords.Label(cell)))]
         : [];
 
@@ -220,7 +221,7 @@
     private RenderFragment Adding => @<div>
         @Back
         <PaneHead Title="Add a map area" Lead="Find the town or suburb, or click the map. The area is cut into regions of about 10 km; once it's built you can switch regions off or add more on its edge." />
-        <SearchField Label="Find a town or suburb" Placeholder="A town or suburb in Queensland" Value="@_search" ValueChanged="SearchAsync" AutoFocus="true" />
+        <SearchField Label="Find a town or suburb" Placeholder="Town or suburb" Value="@_search" ValueChanged="SearchAsync" AutoFocus="true" />
         @if (_places is null && _centre is null)
         {
             <p class="field__hint area-desk__hint">Type at least two letters of a town or suburb anywhere in Queensland, or click the map where the area's middle should be. You'll see its squares and how big they are before anything is built.</p>
@@ -265,7 +266,7 @@
     private string? RadiusProblem => _radius.Trim().Length > 0 && MapAreaWords.Radius(_radius) is null ? "Between 1 and 30 kilometres." : null;
 
     private string? AddBlocked => _centre is null ? "Find a place or click the map first."
-        : _preview is { } outside && outside.Cells.Count > 0 && outside.Cells.All(cell => cell.OutsideQueensland) ? "That's outside Queensland. Areas can only be added in Queensland, where the address data is."
+        : _preview is { Cells: { Count: > 0 } cells } && cells.All(cell => cell.OutsideQueensland) ? "Areas can only be added in Queensland."
         : MapAreaWords.Radius(_radius) is null ? "Say how far around it, 1 to 30 km."
         : _name.Trim().Length == 0 ? "Give the area a name."
         : _preview is { } preview && preview.Cells.All(cell => !cell.HasHomes) ? "There are no homes here, so there's nothing to build."
@@ -378,6 +379,7 @@
         _cells = [];
         (_search, _radius, _name, _places, _place, _centre, _preview) = ("", "10", "", null, null, null, null);
         (_previewShapes, _previewNotes) = ([], []);
+        Map.Clear([]);
     }
 
     private IEnumerable<(string Title, List<AreaCell> Cells)> Groups()
@@ -528,7 +530,7 @@
             _preview = preview;
             Draw(preview);
             if (frame)
-                Map.FlyTo(MapFrame.Around(_previewShapes.SelectMany(shape => shape.Points), padding: 48, maxZoom: PreviewZoom));
+                Map.FlyTo(MapFrame.Around(_previewShapes.SelectMany(shape => shape.Points), padding: 48, maxZoom: PreviewZoom) with { StartPadding = KeyRoom });
         }
         catch (RpcException exception)
         {
@@ -563,6 +565,7 @@
             }
         }
         _previewNotes = notes;
+        Map.Clear([.. preview.Cells.Select(cell => MapAreaDrawing.Box(preview.Grid.Core(cell.Row, cell.Column)))]);
     }
 
     private static bool Same(MapPlace place, MapPlace? other) =>

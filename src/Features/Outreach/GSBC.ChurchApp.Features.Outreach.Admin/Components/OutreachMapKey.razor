@@ -1,5 +1,4 @@
 @using GSBC.ChurchApp.Features.Outreach.Admin.Map
-@using GSBC.ChurchApp.Platform.Ui.Maps
 @inherits OutreachMapPart
 
 @if (Shown)
@@ -7,16 +6,16 @@
     <div class="outreach-map__key" role="group" aria-label="Where walkers have maps">
         <p class="outreach-map__key-title">Where walkers have maps</p>
         <ul class="outreach-map__key-rows">
-            <li><span class="outreach-map__key-swatch outreach-map__key-swatch--maps"></span><span><b>Walkers have maps</b> @Regions</span></li>
+            <li><span class="outreach-map__key-swatch outreach-map__key-swatch--maps"></span><span><b>Walkers have maps</b></span></li>
             @if (Map.Atlas.Reach.Others.Count > 0)
             {
-                <li><span class="outreach-map__key-swatch area-desk__swatch area-desk__swatch--waiting"></span><span><b>Waiting to build</b> maps in a few minutes</span></li>
-                <li><span class="outreach-map__key-swatch area-desk__swatch area-desk__swatch--off"></span><span><b>Switched off</b> no maps; history kept</span></li>
+                <li><span class="outreach-map__key-swatch outreach-map__key-swatch--waiting"></span><span><b>Waiting to build</b></span></li>
+                <li><span class="outreach-map__key-swatch outreach-map__key-swatch--off"></span><span><b>Switched off</b></span></li>
             }
-            <li><span class="outreach-map__key-swatch outreach-map__key-swatch--overview"></span><span><b>Overview only</b> no walker maps yet</span></li>
+            <li><span class="outreach-map__key-swatch outreach-map__key-swatch--overview"></span><span><b>Overview only</b></span></li>
             @if (Map.Atlas.Reach.Addable is { Count: > 0 })
             {
-                <li><span class="outreach-map__key-swatch outreach-map__key-swatch--closed"></span><span><b>Outside Queensland</b> can't be added: no addresses</span></li>
+                <li><span class="outreach-map__key-swatch outreach-map__key-swatch--closed"></span><span><b>Outside Queensland</b></span></li>
             }
         </ul>
     </div>
@@ -27,7 +26,6 @@
 
     private bool Shown => Map.Atlas.Overview is not null && Map.View is { } view && Map.Atlas.Reach.ShareOf(view) < AllInside;
 
-    private string Regions => Map.Atlas.Regions.Count == 0 ? "none yet" : OutreachWords.Plural(Map.Atlas.Regions.Count, "region", "regions");
 
     protected override void OnInitialized()
     {

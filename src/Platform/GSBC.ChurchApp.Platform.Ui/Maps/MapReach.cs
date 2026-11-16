@@ -1,6 +1,6 @@
 namespace GSBC.ChurchApp.Platform.Ui.Maps;
 
-public sealed record MapReach(IReadOnlyList<MapFrame> Covered, IReadOnlyList<MapArea> Others, IReadOnlyList<MapMarker> Notes, MapFrame? Limit = null, IReadOnlyList<MapPoint>? Addable = null)
+public sealed record MapReach(IReadOnlyList<MapFrame> Covered, IReadOnlyList<MapArea> Others, IReadOnlyList<MapMarker> Notes, MapFrame? Limit = null, IReadOnlyList<MapPoint>? Addable = null, IReadOnlyList<MapFrame>? Clear = null)
 {
     private const int Samples = 8;
     private static readonly MapFrame World = new(-85, -180, 85, 180);
@@ -9,7 +9,7 @@ public sealed record MapReach(IReadOnlyList<MapFrame> Covered, IReadOnlyList<Map
 
     public IReadOnlyList<IReadOnlyList<MapPoint>> Edge() => _edge ??= new MapCover(Covered, []).Loops();
 
-    public IReadOnlyList<IReadOnlyList<IReadOnlyList<MapPoint>>> Beyond() => new MapCover([World], Covered).Polygons();
+    public IReadOnlyList<IReadOnlyList<IReadOnlyList<MapPoint>>> Beyond() => new MapCover([World], [.. Covered, .. Clear ?? []]).Polygons();
 
     public IReadOnlyList<IReadOnlyList<MapPoint>> Closed()
     {

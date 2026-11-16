@@ -101,6 +101,9 @@ function overlayLayers(c) {
     { id: "report-marks", type: "symbol", source: "markers", filter: kindIs("report"),
       layout: { "text-field": "!", "text-font": ["montserrat-semibold"], "text-size": byZoom([[12, 11], [17, 15]]), "text-allow-overlap": true, "text-ignore-placement": true },
       paint: { "text-color": c.onMarker } },
+    { id: "marker-notes", type: "symbol", source: "markers", filter: kindIs("note"),
+      layout: { "text-field": ["get", "label"], "text-font": ["montserrat-semibold"], "text-size": 12, "text-max-width": 9 },
+      paint: { "text-color": c.ink, "text-halo-color": c.surface, "text-halo-width": 2 } },
     { id: "places", type: "circle", source: "markers", filter: kindIs("start", "pin", "meeting"),
       paint: {
         "circle-radius": 8,
@@ -125,7 +128,7 @@ const regionsMinZoom = 9;
 const overviewOverzoom = 2;
 const overviewLayersLeftOut = ["street-names"];
 
-function hatchImage(ground, stripe) {
+function hatchImage(ground, stripe, alpha = 0.4) {
   const size = 16;
   const ratio = 2;
   const canvas = document.createElement("canvas");
@@ -137,7 +140,7 @@ function hatchImage(ground, stripe) {
     draw.fillRect(0, 0, size, size);
   }
   draw.strokeStyle = stripe;
-  draw.globalAlpha = 0.4;
+  draw.globalAlpha = alpha;
   draw.lineWidth = 1.5;
   draw.beginPath();
   for (const offset of [-size, 0, size]) {
@@ -251,7 +254,7 @@ export async function create(element, optionsJson, receiver) {
     if (map.hasImage(hatch)) return;
     const { image, ratio } = hatchImage(hatchColours.ground, hatchColours.stripe);
     map.addImage(hatch, image, { pixelRatio: ratio });
-    const closed = hatchImage(null, hatchColours.stripe);
+    const closed = hatchImage(null, hatchColours.stripe, shownScheme === "dark" ? 0.22 : 0.4);
     map.addImage(closedHatch, closed.image, { pixelRatio: closed.ratio });
   };
   map.on("style.load", addHatch);

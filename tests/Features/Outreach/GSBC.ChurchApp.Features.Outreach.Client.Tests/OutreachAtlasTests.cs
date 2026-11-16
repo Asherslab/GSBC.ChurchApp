@@ -72,7 +72,7 @@ public sealed class OutreachAtlasTests
 
         Assert.NotNull(atlas.Source);
         Assert.Empty(atlas.Source.Locations);
-        Assert.True(atlas.Opening.North >= -9.5 && atlas.Opening.South <= -28.5);
+        Assert.True(atlas.Opening is { North: >= -9.5, South: <= -28.5 });
         Assert.Null(new OutreachAtlas([], [], new MapOverview()).Source);
     }
 

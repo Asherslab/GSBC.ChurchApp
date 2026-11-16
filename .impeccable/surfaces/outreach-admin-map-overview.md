@@ -38,9 +38,9 @@ veil, click it, see the squares and their letterboxes, add it. In Coverage they 
 level, and a status line says coverage is drawn where walkers have maps.
 
 FIRST VIEWPORT: unchanged workspace; the key bottom left of the map while any veil is in view (the coverage legend takes
-that corner when it shows, and the key sits above it); the outside status top centre.
+that corner when it shows, and the key sits above it); the outside status top centre, below Layers when the map is narrow.
 
-FORM: structure 4 of 7 on my ordered list (status as ground colour with a key), the roll's assigned lead. seed:f1e805722930ee5df898c0cac9761e61
+FORM: structure 4 of 7 on my ordered list (status as ground colour with a key), the roll's assigned lead. seed:7baacb882dd94571
 Signature move: one map from the whole of Australia down to a letterbox, with the veil's edge as the edge of our maps.
 
 FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, DESIGN.md, and every shipping raster carrying its provenance

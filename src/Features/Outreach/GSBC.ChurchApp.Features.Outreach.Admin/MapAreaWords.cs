@@ -97,7 +97,7 @@ public static class MapAreaWords
     public static string Unmade(IReadOnlyCollection<CellEstimate> estimates)
     {
         int outside = estimates.Count(estimate => estimate.OutsideQueensland);
-        int empty = estimates.Count(estimate => !estimate.HasHomes && !estimate.OutsideQueensland);
+        int empty = estimates.Count(estimate => estimate is { HasHomes: false, OutsideQueensland: false });
         List<string> parts = [];
         if (empty > 0)
             parts.Add($"{OutreachWords.Plural(empty, "square has", "squares have")} no homes and isn't made");

@@ -215,8 +215,11 @@
 .outreach-map__key-rows { display: grid; gap: var(--space-2xs); margin: 0; padding: 0; list-style: none; color: var(--ink-2); font-size: var(--text-caption); }
 .outreach-map__key-rows li { display: flex; align-items: center; gap: var(--space-xs); }
 .outreach-map__key-rows b { color: var(--ink); font-weight: 600; }
-.outreach-map__key-swatch { flex: none; width: 22px; height: 14px; border: 1px solid var(--line); border-radius: 0; }
+.outreach-map__key-swatch { flex: none; width: 22px; height: 14px; border: 1px solid color-mix(in srgb, var(--ink-3) 55%, transparent); border-radius: 0; }
 .outreach-map__key-swatch--maps { background: var(--map-land); }
+.outreach-map__key-swatch--waiting { border: 1.5px dashed var(--live); background: color-mix(in srgb, var(--live) 12%, var(--map-land)); }
+.outreach-map__key-swatch--off { border: 1.5px dashed var(--ink-3); background: repeating-linear-gradient(45deg, transparent 0 3px, color-mix(in srgb, var(--ink-3) 45%, transparent) 3px 4.5px), var(--map-land); }
+@media (max-width: 1279px) { .outreach-map .map-view__outside { top: calc(2 * var(--space-md) + 2.5rem); } }
 .outreach-map__key-swatch--overview { background: linear-gradient(var(--map-veil), var(--map-veil)), var(--map-land); }
 .outreach-map__key-swatch--closed { background: repeating-linear-gradient(45deg, transparent 0 3px, color-mix(in srgb, var(--ink-3) 40%, transparent) 3px 4.5px), linear-gradient(var(--map-veil), var(--map-veil)), linear-gradient(var(--map-veil), var(--map-veil)), var(--map-land); }
 .outreach-map__legend { display: grid; gap: var(--space-2xs); width: 100%; padding: var(--space-sm) var(--space-md); border-radius: var(--radius-field); background: var(--page); box-shadow: var(--map-float); }
