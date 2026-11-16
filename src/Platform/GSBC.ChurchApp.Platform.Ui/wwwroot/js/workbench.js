@@ -1,4 +1,5 @@
 export function fitRecord(workbench) {
+  if (!workbench?.isConnected) return { dispose() {} };
   let frame = 0;
   const fit = () => {
     frame = 0;
