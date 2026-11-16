@@ -8,7 +8,7 @@
 <UnsavedGuard Changed="() => !_sent && (_text.Trim().Length > 0 || _name.Trim().Length > 0)" What="this prayer request" />
 
 <TitleBand Title="Write a prayer request" BrowserTitle="Write a prayer request" BackHref="prayer" BackText="Prayer"
-           Lead="It goes straight onto the prayer wall, or only to the pastoral team.">
+           Lead="The request goes straight onto the prayer wall, or only to the pastoral team.">
     <LeadContent>
         <Notice Tone="NoticeTone.Warning" Text="@_problem" />
     </LeadContent>
@@ -21,32 +21,32 @@
 else
 {
     <LiveData TValue="WritingStart" Load="Pastoral.StartWritingAsync" Feeds="ChurchFeeds" FailedTitle="Can't write a request right now">
-        <WritingDesk SettingsTitle="Who it's from and where it goes" SettingsSummary="@Summary(context.Value)">
+        <WritingDesk SettingsTitle="Who it's from and who reads it" SettingsSummary="@Summary(context.Value)">
             <ChildContent>
                 <div class="prayer-write">
-                    <TextField Label="What can we pray for?" Multiline="true" MaxLength="2000" AutoCapitalize="sentences" @bind-Value="_text"
-                               Hint="Up to 2,000 characters. The wall shows these words as they are." />
+                    <TextField Label="Prayer request" Multiline="true" MaxLength="2000" AutoCapitalize="sentences" @bind-Value="_text"
+                               Hint="Up to 2,000 characters. The prayer wall shows these words exactly as written." />
                 </div>
             </ChildContent>
             <Settings>
-                <Section Grouped="true" Title="On the prayer wall, from">
-                    <Segmented TValue="WrittenFrom" Label="On the prayer wall, from" Rows="true" Options="Froms(context.Value)" @bind-Value="_from" />
+                <Section Grouped="true" Title="Name on the prayer wall">
+                    <Segmented TValue="WrittenFrom" Label="Name on the prayer wall" Rows="true" Options="Froms(context.Value)" @bind-Value="_from" />
                     @if (_from == WrittenFrom.SomeoneElse)
                     {
                         <TextField Label="Their name" AutoComplete="off" AutoCapitalize="words" MaxLength="60" @bind-Value="_name"
-                                   Hint="The pastoral team sees it in full; the wall shows their first name and the first letter of their last." />
+                                   Hint="The pastoral team sees their full name. The wall shows their first name and the first letter of their last name." />
                     }
                 </Section>
-                <Section Grouped="true" Title="Who reads it">
-                    <Segmented TValue="bool" Label="Who reads it" Options="Readers" @bind-Value="_forWall" />
+                <Section Grouped="true" Title="Who reads the request">
+                    <Segmented TValue="bool" Label="Who reads the request" Options="Readers" @bind-Value="_forWall" />
                     @if (_forWall)
                     {
-                        <DateField Label="Shows until" Min="@Day(Today.AddDays(1))" Max="@Day(Today.AddDays(365))" Shortcuts="false" @bind-Value="_until" />
+                        <DateField Label="On the wall until" Min="@Day(Today.AddDays(1))" Max="@Day(Today.AddDays(365))" Shortcuts="false" @bind-Value="_until" />
                     }
                 </Section>
                 @if (_forWall)
                 {
-                    <Section Grouped="true" Title="How the wall shows it">
+                    <Section Grouped="true" Title="How the prayer wall shows the request">
                         <div class="prayer-wall prayer-wall--one">
                             <WallPostRow Line="Line(context.Value)" Preview="true" />
                         </div>
@@ -63,7 +63,7 @@ else
                 </PhoneFrame>
             </Preview>
             <Foot>
-                <SaveBar Label="@(_forWall ? "Put it on the wall" : "Send to the pastoral team")" New="true" Busy="_busy" Blocked="@Blocked"
+                <SaveBar Label="@(_forWall ? "Put the request on the wall" : "Send to the pastoral team")" New="true" Busy="_busy" Blocked="@Blocked"
                          OnSave="SendAsync" OnCancel="() => Navigation.NavigateTo(Back)" />
             </Foot>
         </WritingDesk>
@@ -96,7 +96,7 @@ else
         new(WrittenFrom.Me, "My name", Detail: start.YourName.Length > 0 ? $"Shown as {start.YourName}" : null),
         new(WrittenFrom.NoName, PrayerWords.NoName),
         new(WrittenFrom.Church, start.ChurchName, Detail: PrayerWords.FromTheChurch),
-        new(WrittenFrom.SomeoneElse, "Someone else", Detail: "Type the name of who asked"),
+        new(WrittenFrom.SomeoneElse, "Someone else", Detail: "Type the name of the person who asked."),
     ];
 
     private string Summary(WritingStart start) => $"From {WallName(start) switch { "" => "no name", var name => name }} · {(_forWall ? "on the wall" : "only the pastoral team")}";
@@ -117,11 +117,11 @@ else
     }, false, false);
 
     private string? Blocked => _text.Trim().Length == 0
-        ? "Write the request to send it."
+        ? "Write the prayer request first."
         : _from == WrittenFrom.SomeoneElse && _name.Trim().Length == 0
-            ? "Type the name of who asked for prayer."
+            ? "Enter the name of the person who asked for prayer."
             : _forWall && (!DateOnly.TryParse(_until, out DateOnly until) || until <= Today)
-                ? "Choose a day after today for it to leave the wall."
+                ? "Choose a day after today for the request to leave the wall."
                 : null;
 
     private async Task SendAsync()

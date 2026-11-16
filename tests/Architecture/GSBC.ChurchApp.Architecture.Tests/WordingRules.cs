@@ -8,7 +8,6 @@ public sealed partial class WordingRules
     {
         ["src/Features/News/GSBC.ChurchApp.Features.News.Api/NewsRules.cs"] = "News",
         ["src/Features/News/GSBC.ChurchApp.Features.News.Client/Components/NewsPostForm.razor"] = "News",
-        ["src/Features/Prayer/GSBC.ChurchApp.Features.Prayer.App/Pages/AskPage.razor"] = "Prayer",
     };
 
     [Fact]

@@ -9,7 +9,7 @@
         @if (context.Value.Find(Id) is not { } line)
         {
             <Section First="true">
-                <EmptyState Icon="prayer" Title="This request isn't here any more" Body="It may have been deleted, or kept a year and then removed.">
+                <EmptyState Icon="prayer" Title="This request isn't here any more" Body="It may have been deleted. Requests are removed a year after they're sent.">
                     <Button Variant="ButtonVariant.Quiet" Href="prayer">Back to Prayer</Button>
                 </EmptyState>
             </Section>
@@ -51,11 +51,11 @@
                     @if (line.Wall == WallState.Shown)
                     {
                         <Button Block="true" Icon="eye-off" OnClick="() => Open(Ask.Remove)">Remove from prayer wall</Button>
-                        <p class="prayer-request__fact prayer-yours__hint">Was it answered? You can add a few words of thanks first, and the wall shows them for 3 days before it comes down.</p>
+                        <p class="prayer-request__fact prayer-yours__hint">Was it answered? You can add a few words of thanks first, and the wall shows them for 3 days before your request comes down.</p>
                     }
                     else
                     {
-                        <Button Block="true" Icon="check" OnClick="() => Open(Ask.Answered)">It was answered</Button>
+                        <Button Block="true" Icon="check" OnClick="() => Open(Ask.Answered)">Mark as answered</Button>
                         <p class="prayer-request__fact prayer-yours__hint">Let the pastoral team know.</p>
                     }
                 </Section>
@@ -64,36 +64,36 @@
     </LiveData>
 </Page>
 
-<Sheet Open="_asking == Ask.Answered" OpenChanged="Closed" Title="It was answered" Lead="Praise God. Anything you'd like to say? The pastoral team will see it.">
+<Sheet Open="_asking == Ask.Answered" OpenChanged="Closed" Title="Mark as answered" Lead="Praise God! If you'd like to add a few words of thanks, the pastoral team will see them.">
     <ChildContent>
         <TextField Label="Words of thanks" Hint="Optional" Multiline="true" MaxLength="500" @bind-Value="_note" />
     </ChildContent>
     <Actions>
-        <SaveBar Block="true" Label="Mark it answered" Busy="_busy" OnSave="AnsweredAsync" />
+        <SaveBar Block="true" Label="Mark as answered" Busy="_busy" OnSave="AnsweredAsync" />
     </Actions>
 </Sheet>
 
-<Sheet Open="_asking == Ask.Remove" OpenChanged="Closed" Title="Remove from prayer wall"
-       Lead="Was it answered? Add a few words of thanks and the wall shows them under your request for 3 days, then it comes down. Without them, it comes down now.">
+<Sheet Open="_asking == Ask.Remove" OpenChanged="Closed" Title="Remove from the prayer wall"
+       Lead="Was your request answered? Add a few words of thanks and the wall shows them under your request for 3 days before it comes down. Without them, your request comes down now.">
     <ChildContent>
         <TextField Label="Words of thanks" Hint="Optional" Multiline="true" MaxLength="500" @bind-Value="_note" />
     </ChildContent>
     <Actions>
-        <SaveBar Block="true" Label="@(_note.Trim().Length > 0 ? "Remove it in 3 days" : "Remove it now")" Busy="_busy" OnSave="RemoveAsync" />
+        <SaveBar Block="true" Label="@(_note.Trim().Length > 0 ? "Remove in 3 days" : "Remove now")" Busy="_busy" OnSave="RemoveAsync" />
     </Actions>
 </Sheet>
 
-<Sheet Open="_asking == Ask.TakeDown" OpenChanged="Closed" Title="Take it off the prayer wall?" Lead="It stays with the pastoral team. It can't go back on the wall.">
+<Sheet Open="_asking == Ask.TakeDown" OpenChanged="Closed" Title="Take your request off the prayer wall?" Lead="The pastoral team keeps your request. Once it's off the wall, it can't go back on.">
     <Actions>
-        <Button Block="true" Busy="_busy" OnClick="TakeDownAsync">Take it off the wall</Button>
-        <Button Block="true" Variant="ButtonVariant.Quiet" OnClick="() => Closed(false)">Keep it up</Button>
+        <Button Block="true" Busy="_busy" OnClick="TakeDownAsync">Take the request off the wall</Button>
+        <Button Block="true" Variant="ButtonVariant.Quiet" OnClick="() => Closed(false)">Keep it on the wall</Button>
     </Actions>
 </Sheet>
 
-<Sheet Open="_asking == Ask.Delete" OpenChanged="Closed" Title="Delete this request?" Lead="The pastoral team won't have it any more, and it comes off the prayer wall. This can't be undone.">
+<Sheet Open="_asking == Ask.Delete" OpenChanged="Closed" Title="Delete this request?" Lead="Your request is deleted for the pastoral team and taken off the prayer wall. This can't be undone.">
     <Actions>
-        <Button Block="true" Variant="ButtonVariant.Danger" Busy="_busy" OnClick="DeleteAsync">Delete it</Button>
-        <Button Block="true" Variant="ButtonVariant.Quiet" OnClick="() => Closed(false)">Keep it</Button>
+        <Button Block="true" Variant="ButtonVariant.Danger" Busy="_busy" OnClick="DeleteAsync">Delete the request</Button>
+        <Button Block="true" Variant="ButtonVariant.Quiet" OnClick="() => Closed(false)">Keep the request</Button>
     </Actions>
 </Sheet>
 
@@ -134,8 +134,8 @@
     {
         List<MenuItem> items = [];
         if (line.Wall == WallState.Waiting && line.Sending != Sending.CouldNotSend)
-            items.Add(this.Item("Take it off the prayer wall…", () => Open(Ask.TakeDown), "eye-off", "The pastoral team still has it"));
-        items.Add(this.Item("Delete it…", () => Open(Ask.Delete), "trash-2", "From the pastoral team and the prayer wall", danger: true, startsGroup: items.Count > 0));
+            items.Add(this.Item("Take your request off the prayer wall…", () => Open(Ask.TakeDown), "eye-off", "The pastoral team keeps your request."));
+        items.Add(this.Item("Delete the request…", () => Open(Ask.Delete), "trash-2", "Deletes it for the pastoral team and takes it off the prayer wall.", danger: true, startsGroup: items.Count > 0));
         return items;
     }
 
