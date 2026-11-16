@@ -23,7 +23,7 @@ is the owner's is marked so.
 ## Asking for prayer (the app)
 
 - **`/prayer/ask`**, from the Prayer page's *Ask for prayer* (and the Hub tile through `/prayer`). The request, then
-  *Who reads it* as two choices that say what each means: *The pastoral team and the prayer wall* (the default, **owner,
+  *Who reads your request* as two choices that say what each means: *The pastoral team and the prayer wall* (the default, **owner,
   2026-11-11**, feedback #39: "Default to prayer wall, not pastoral team only") or *Only the pastoral team* ("Nobody else
   sees it"). With the wall: *My name* (the default) or *No name*. **The wall shows a name as the first name and the
   first letter of the last, "Sam S."** (owner, 2026-11-11: "Default to show name (also, show name and First initial of
@@ -60,7 +60,7 @@ is the owner's is marked so.
   action is one wide button. On the wall it is *Remove from prayer wall* (UAT feedback #7, 2026-11-16; the owner: a
   change of words, not of what it does): it marks the request answered with optional words of thanks. **With thanks the
   wall shows them under the request for 3 days, then it comes down; with none it comes down at once** (owner,
-  2026-11-16). Off the wall it stays *It was answered*. The band's ⋯ menu holds *Take it off the prayer wall* while it
+  2026-11-16). Off the wall it stays *Mark as answered*. The band's ⋯ menu holds *Take your request off the prayer wall* while it
   still waits for the wall (it can't go back) and *Delete it* (from the pastoral team and the wall; can't be undone),
   each asking once.
 
@@ -85,7 +85,7 @@ is the owner's is marked so.
   when); and the chosen request in the record pane: its head says who sent it and when, with Delete in its ⋯ menu; their
   words; for the pastoral team the care steps (`CareSteps`: the shared stage pipeline, New and Answered,
   pressed to move, back too, *Answered* asking for words for the wall first); then grouped cards: *The prayer wall*,
-  *Notes for the pastoral team* (each note's ⋯ menu deletes it, asking once) and *What's happened*.
+  *Notes for the pastoral team* (each note's ⋯ menu deletes it, asking once) and *History*.
 - **Live:** every change writes a marker to `prayer.inbox` (audience: `prayer.wall.moderate`, markers carry no words),
   so a new request appears without reloading.
 - **What's logged** (*Claude's default*): every change, with who and when (sent, answered, notes added or
@@ -100,9 +100,9 @@ and **any prayer wall staff can change, take down or delete a request from the c
 else. The page is the owner's pick on the decision page, "A page to write on" (`.impeccable/mocks/prayer-write/`).
 
 - **`/prayer/write`**, from *Write a request* at the top right of Prayer, for holders of `prayer.wall.moderate`
-  (`IPastoralService.WriteAsync`): the words on a writing page; beside them *On the prayer wall, from* (*My name*,
-  shown as "Sam S."; *Someone else* with their name; *No name*; the church's name), *Who reads it* (the prayer wall or
-  only the pastoral team), *Shows until* (30 days to start) and the wall's card as people will see it. Saving opens the
+  (`IPastoralService.WriteAsync`): the words on a writing page; beside them *Name on the prayer wall* (*My name*,
+  shown as "Sam S."; *Someone else* with their name; *No name*; the church's name), *Who reads the request* (the prayer wall or
+  only the pastoral team), *On the wall until* (30 days to start) and the wall's card as people will see it. Saving opens the
   request on the desk.
 - **The church's name** is a Prayer setting, "GSBC" to start (the orchestrator, 2026-11-16), changed under Prayer →
   Settings by whoever may change prayer settings. Renaming it renames every request from the church, on the wall too.

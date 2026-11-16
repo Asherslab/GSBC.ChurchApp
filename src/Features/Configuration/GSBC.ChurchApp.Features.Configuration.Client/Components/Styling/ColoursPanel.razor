@@ -1,7 +1,7 @@
 <div class="colours-panel">
     <div class="styling-panel__head">
         <h2>The app's colours</h2>
-        <p>The theme the app uses all year, for everyone. Choose one, and the phone shows it straight away.</p>
+        <p>The theme everyone sees all year. Choose one to see it on the phone straight away.</p>
     </div>
     <div class="theme-cards" role="radiogroup" aria-label="The app's theme">
         @foreach (Card card in Cards)
@@ -13,7 +13,7 @@
                     <b>@card.Name</b>
                     @if (card.Value == EveryoneValue && !chosen)
                     {
-                        <span class="theme-card__state">Everyone sees it now</span>
+                        <span class="theme-card__state">Everyone sees this theme now</span>
                     }
                     else if (chosen && Drafting && card.Value != EveryoneValue)
                     {
@@ -23,7 +23,7 @@
                 @if (MayChange)
                 {
                     <span class="theme-card__actions">
-                        <button type="button" class="link" @onclick="() => OnEdit.InvokeAsync(card.Entry)">Change it</button>
+                        <button type="button" class="link" @onclick="() => OnEdit.InvokeAsync(card.Entry)">Edit the theme</button>
                         <button type="button" class="link" @onclick="() => OnCopy.InvokeAsync(card.Entry)">Copy</button>
                         <button type="button" class="link" @onclick="() => DeleteAsync(card)">Delete</button>
                     </span>
@@ -49,7 +49,7 @@
             }
         </Notice>
     }
-    <p class="styling-panel__note">For a few days, like the conference, change the colours in a draft and turn it on for those dates. Afterwards everyone is back to the theme chosen here.</p>
+    <p class="styling-panel__note">To change the colours for a few days, such as for a conference, change them in a draft and turn the draft on for those dates. Afterwards everyone sees the theme chosen here again.</p>
 </div>
 
 @code {
@@ -80,9 +80,9 @@
     private Task DeleteAsync(Card card)
     {
         _refused = card.Value == EveryoneValue
-            ? $"“{card.Name}” is the theme everyone sees. Choose another theme for everyone, publish that, then delete it."
+            ? $"“{card.Name}” is the theme everyone sees. To delete it, choose another theme for everyone and publish that first."
             : card.Value == ChosenValue
-                ? $"“{card.Name}” is chosen in this draft. Choose another theme first, then delete it."
+                ? $"“{card.Name}” is chosen in this draft. To delete it, choose another theme first."
                 : null;
         return _refused is null ? OnDelete.InvokeAsync(card.Entry) : Task.CompletedTask;
     }

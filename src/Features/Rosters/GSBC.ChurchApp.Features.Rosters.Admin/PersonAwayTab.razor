@@ -4,7 +4,7 @@
 @inject OnlineRosters Rosters
 
 <DaysAway @key="Person.Id" First="true" Load="() => Rosters.AwayOfAsync(Person.Id)" Feeds="[RostersFeeds.Away]" People="[new PersonLine { Id = Person.Id, Name = Person.Name }]"
-          Lead="@($"Leaders of every team {Person.FirstName} is on see these, and can change them. They can still put {Person.FirstName} on; it's flagged.")" />
+          Lead="@($"The leaders of every team {Person.FirstName} is on can see and change these days away. They can still put {Person.FirstName} on the roster, but they'll see that {Person.FirstName} is away.")" />
 
 @code {
     [Parameter, EditorRequired] public required PersonOnPage Person { get; set; }

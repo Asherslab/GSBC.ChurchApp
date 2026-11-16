@@ -396,7 +396,7 @@ by construction, public content: Follower only covers public notices. Neither fe
 
 - **More → Notification settings** on the phone (also from the inbox's top bar): each area's kinds with a switch (inbox and push), per ministry where
   the kind is per ministry ("Music: notices" beside Follow), mandatory ones shown on and locked with
-  "Always on: it's about your account's safety". If iOS's permission has been refused the screen
+  "Always on, because these are about your account's security.". If iOS's permission has been refused the screen
   says so and opens Settings.
 - **Asked on the first open** (owner, 2026-11-03: "notifications [are] a core functionality of the
   app"). See *The first-open sheet* below. Signing in also registers a phone that already allowed them.

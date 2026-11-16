@@ -11,7 +11,7 @@ internal sealed class MinistryChurchNews(MinistriesDbContext db, MinistryViews v
     public string Source => ChurchNews.FromMinistries;
 
     public static string? WhyNotChurchWide(PostRecord post, MinistryRecord? ministry, MinistryTree tree) =>
-        ministry is null || tree.Find(ministry.Id) is null ? "This ministry is archived, so its posts stay in it."
+        ministry is null || tree.Find(ministry.Id) is null ? "This ministry is archived, so its posts stay in the ministry."
         : post.Audience != Audiences.Everyone ? "Only a post for everyone can go in church news."
         : tree.IsHidden(ministry.Id) ? "A hidden ministry's posts stay in the ministry."
         : !MinistryParts.IsOn(ministry.PartsOff, MinistryParts.News) ? "This ministry has News turned off."

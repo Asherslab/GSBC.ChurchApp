@@ -31,7 +31,7 @@
 <LiveData @ref="_live" TValue="OpenedChat" Load="LoadAsync" Feeds="ChatsStore.Feeds" ReloadOn="ChangeKind.Reconnected | ChangeKind.Session | ChangeKind.Access | ChangeKind.Outbox">
     @if (context.Value.Chat is not { } chat)
     {
-        <EmptyState Icon="message-square" Title="This chat isn't here" Body="It may have been deleted, or you may not be in it any more." />
+        <EmptyState Icon="message-square" Title="This chat isn't here" Body="The chat may have been deleted, or you may no longer be in it." />
     }
     else
     {
@@ -60,7 +60,7 @@
                             <strong>@asker.Name asked to @(card.AskedAs == "team" ? "join the team" : card.AskedAs == "attend" ? "come along" : $"join {card.MinistryName}").</strong>
                             @if (_added.Contains(card.Id))
                             {
-                                <span> Added. They'll see the ministry's chats once the change reaches them.</span>
+                                <span> Added to the team. They'll see the ministry's chats once their phone has the change.</span>
                             }
                             else if (card.AskedAs.Length > 0 && Services.GetService(typeof(IMinistryPeopleWrites)) is IMinistryPeopleWrites people)
                             {
@@ -95,7 +95,7 @@
                                     <span class="chat-quote"><strong>@quote.SenderName</strong><span>@QuoteText(chat, quote)</span>
                                         @if (_notHere.Contains(quote.MessageId))
                                         {
-                                            <span class="chat-quote__note">@(InPanel ? "It's no longer in this chat, so it can't be shown." : "It isn't on your phone, so it can't be shown.")</span>
+                                            <span class="chat-quote__note">@(InPanel ? "The original message is no longer in this chat." : "The original message isn't on your phone yet.")</span>
                                         }
                                     </span>
                                 }
@@ -165,10 +165,10 @@
             <ChatPeopleSheet Card="card" Open="_people" OpenChanged="open => _people = open" OnDelete="AskToDelete" />
         }
         <Sheet Open="_deleting" OpenChanged="open => _deleting = open" Title="@($"Delete {ChatText.Title(card)}?")"
-               Lead="Everyone in it loses the chat. The church keeps its messages and the log, so staff can still check it.">
+               Lead="The chat is deleted for everyone in it. The church keeps its messages and the log, so staff can still check it.">
             <Actions>
                 <Button Block="true" Variant="ButtonVariant.Danger" OnClick="() => DeleteAsync(card)">Delete the chat</Button>
-                <Button Block="true" Variant="ButtonVariant.Quiet" OnClick="() => _deleting = false">Keep it</Button>
+                <Button Block="true" Variant="ButtonVariant.Quiet" OnClick="() => _deleting = false">Keep the chat</Button>
             </Actions>
         </Sheet>
         <Sheet Open="_seen is not null" OpenChanged="open => { if (!open) _seen = null; }" Title="Seen by">

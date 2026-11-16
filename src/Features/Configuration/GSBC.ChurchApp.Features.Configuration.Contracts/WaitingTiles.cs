@@ -13,16 +13,16 @@ public static class WaitingTiles
         public const string Invitation = "invitation";
     }
 
-    private static readonly TileVariant Link = new(Layouts.JustALink, "Just a link", "The icon and the title, with a count where there is one",
+    private static readonly TileVariant Link = new(Layouts.JustALink, "Link only", "Shows the icon and title, with a count when there is one.",
         TileVariant.AnySize, (_, _) => false);
 
     public static readonly HubTileKind Bulletin = new("hub.bulletin", "Sunday bulletin",
         "This Sunday's date, theme and verse, opening the bulletin", "the bulletin",
         new TileDefaults("Read the bulletin", Rows: 2, Tone: TileTones.Masthead, Icon: "bulletin", Link: ComingSoonDestinations.Sunday.Path,
-            TitleLabel: "Words to open it", ShowsText: false),
+            TitleLabel: "Link text", ShowsText: false),
         sample: true, offered: false, variants:
         [
-            new(Layouts.Poster, "Poster", "The date when small; the theme, the date and the verse with a link to read it when bigger",
+            new(Layouts.Poster, "Poster", "Small tiles show the date. Larger tiles show the theme, the date and the verse, with a link to read it.",
                 TileVariant.AnySize, (_, _) => true),
             new(Layouts.Theme, "Theme first", "The year's theme is the title at every size",
                 TileVariant.AnySize, (_, _) => false),
@@ -32,12 +32,12 @@ public static class WaitingTiles
         ]);
 
     public static readonly HubTileKind Outreach = new("hub.outreach", "Outreach day",
-        "Invites people to letterbox drops, and goes live while outreach is on", "Outreach",
+        "Invites people to outreach days, and shows as live while one is on.", "Outreach",
         new TileDefaults("Got an hour?", "Walk from your door: a loop of letterbox drops", Columns: 2, Tone: TileTones.MarkerSoft, Icon: "footprints",
-            Link: ComingSoonDestinations.Outreach.Path, TitleLabel: "Title when outreach isn't on"),
+            Link: ComingSoonDestinations.Outreach.Path, TitleLabel: "Title shown between outreach days"),
         sample: true, variants:
         [
-            new(Layouts.Invitation, "Invitation", "The invitation and how to join; a row one row tall, a poster with a go line when taller",
+            new(Layouts.Invitation, "Invitation", "The invitation and how to join. One row tall, it shows as a row; taller, as a poster with a link line.",
                 TileVariant.AnySize, (_, _) => true),
             Link,
             .. TileVariants.Pictures,

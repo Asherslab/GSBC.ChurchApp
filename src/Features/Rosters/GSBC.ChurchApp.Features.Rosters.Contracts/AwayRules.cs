@@ -50,23 +50,23 @@ public static class AwayRules
     public static string? WhyNot(AwaySave save, DateOnly today)
     {
         if (Day(save.From) is not { } from)
-            return "Choose the first day.";
+            return "Choose the first day away.";
         if (save.To.Length == 0 && !save.Weekly)
-            return "Choose the last day.";
+            return "Choose the last day away.";
         if (save.To.Length > 0 && Day(save.To) is not { } to)
-            return "Choose the last day.";
+            return "Choose the last day away.";
         if (save.To.Length > 0 && Day(save.To) < from)
-            return "The last day can't be before the first.";
+            return "The last day away can't be before the first.";
         if (save.To.Length > 0 && Day(save.To) < today)
-            return "Those days have passed.";
+            return "Those days have already passed.";
         if (save.Weekly && (save.Weekdays.Count == 0 || save.Weekdays.Any(day => day is < 0 or > 6)))
             return "Choose the days of the week.";
         if (save.StartTime.Length > 0 && Time(save.StartTime) is null || save.EndTime.Length > 0 && Time(save.EndTime) is null)
-            return "Choose the times.";
+            return "Choose a From or Until time.";
         if (Time(save.StartTime) is { } start && Time(save.EndTime) is { } end && end <= start)
-            return "The time they're back has to be after the time they're away from.";
+            return "The Until time must be after the From time.";
         if (save.Except.Any(each => Day(each) is null))
-            return "Choose the days they're not away.";
+            return "Choose the days that aren't away.";
         return null;
     }
 

@@ -24,7 +24,7 @@
             <Button Variant="ButtonVariant.Quiet" Small="true" OnClick="() => _confirming = true">Remove the original to save space…</Button>
         </div>
         <Sheet Open="_confirming" OpenChanged="open => _confirming = open" Title="Remove the original?"
-               Lead="@($"The smaller sizes stay, so everywhere it's used keeps showing it. That saves {MediaSizes.Weight(Original.Bytes)}. Upload the same file again later and you can put it back.")">
+               Lead="@($"The smaller sizes stay, so the picture keeps showing everywhere it's used. This saves {MediaSizes.Weight(Original.Bytes)}. To put the original back, upload the same file again.")">
             <ChildContent><Notice Tone="NoticeTone.Warning" Text="@Problem" /></ChildContent>
             <Actions>
                 <Button Variant="ButtonVariant.Danger" Busy="Busy" OnClick="RemoveAsync">Remove the original</Button>
@@ -68,10 +68,10 @@
 
     private string Note => Item.Sizing switch
     {
-        PictureSizing.Waiting => "Its smaller sizes are still being made.",
+        PictureSizing.Waiting => "The picture's smaller sizes are still being made.",
         PictureSizing.KeptAsIs when Original.ContentType == "image/gif" => "GIFs, which may move, and SVGs are kept as they are, so phones get the original.",
         PictureSizing.KeptAsIs => "This picture couldn't be made smaller, so phones get the original.",
-        _ when Item.Media!.Sizes.Count == 0 && Item.Media.Version == MediaSizeName.Original => "It's already small enough for phones, so the original is the only size.",
+        _ when Item.Media!.Sizes.Count == 0 && Item.Media.Version == MediaSizeName.Original => "This picture is already small enough for phones, so the original is the only size.",
         _ => "Made automatically. Each screen in the app uses the smallest size that looks sharp.",
     };
 

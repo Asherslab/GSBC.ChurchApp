@@ -1,14 +1,14 @@
 @if (Ministry.HiddenBy.Length > 0)
 {
-    <ToggleRow Title="Hidden from everyone else" Description="@MinistryWords.HiddenBecause(Ministry.HiddenBy)" Checked="true" Disabled="true" />
+    <ToggleRow Title="Hide this ministry" Description="@MinistryWords.HiddenBecause(Ministry.HiddenBy)" Checked="true" Disabled="true" />
 }
 else if (Ministry.ShowsInLifeGroups)
 {
-    <ToggleRow Title="Hidden from everyone else" Description="A Life Group is listed for everyone, so it can't be hidden" Checked="false" Disabled="true" Muted="true" />
+    <ToggleRow Title="Hide this ministry" Description="Life Groups are listed for everyone, so a Life Group can't be hidden." Checked="false" Disabled="true" Muted="true" />
 }
 else
 {
-    <ToggleRow Title="Hidden from everyone else" Description="@(Ministry.Hidden ? MinistryWords.WhoSeesHidden : MinistryWords.HidesFromEveryoneElse)" Checked="Ministry.Hidden" CheckedChanged="HiddenChanged" />
+    <ToggleRow Title="Hide this ministry" Description="@(Ministry.Hidden ? MinistryWords.WhoSeesHidden : MinistryWords.HidesFromEveryoneElse)" Checked="Ministry.Hidden" CheckedChanged="HiddenChanged" />
 }
 
 @code {

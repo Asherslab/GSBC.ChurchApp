@@ -116,8 +116,8 @@ internal static class Flagged
             int carded = int.Parse(flag[TooFewCardedPrefix.Length..], System.Globalization.CultureInfo.InvariantCulture);
             return carded switch
             {
-                0 => "This chat has young people in it and no adult with a current blue card. Add two adults who have one.",
-                _ => "This chat has young people in it and only one adult with a current blue card. Add another.",
+                0 => "There are young people in this chat but no adult with a current blue card. Add two adults who have one.",
+                _ => "There are young people in this chat but only one adult with a current blue card. Add another adult who has one.",
             };
         }
         if (flag.StartsWith(NoParentPrefix, StringComparison.Ordinal) && Guid.TryParse(flag[NoParentPrefix.Length..], out Guid child))

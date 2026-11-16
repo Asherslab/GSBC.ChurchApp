@@ -72,9 +72,9 @@ internal sealed class MinistryLeadingService(
         MinistryRecord ministry = Existing(tree, request.MinistryId);
         Guid id = Guid.TryParse(request.AskId, out Guid parsed) ? parsed : Guid.Empty;
         AskRecord ask = await db.Asks.SingleOrDefaultAsync(found => found.Id == id && found.MinistryId == ministry.Id, cancellationToken)
-                        ?? throw new RpcException(new Status(StatusCode.NotFound, "That ask was already answered or taken back."));
+                        ?? throw new RpcException(new Status(StatusCode.NotFound, "That request was already answered or withdrawn."));
         if (request.Yes && ask.WaitingForParent)
-            throw Refused("They're under 18, so a parent says yes first. You'll hear when they do.");
+            throw Refused("They're under 18, so a parent approves first. You'll hear when they do.");
         db.Asks.Remove(ask);
         changes.Touch(ministry.Id);
         await db.SaveChangesAsync(cancellationToken);
@@ -233,7 +233,7 @@ internal sealed class MinistryLeadingService(
     {
         List<SitOutRecord> sitOuts = await db.SitOuts.AsNoTracking().Where(sitOut => sitOut.GroupId == group.Id).ToListAsync(cancellationToken);
         List<string> sundays = group.ShowsInLifeGroups ? MinistryViews.SundaysOf(group, await db.Rounds.AsNoTracking().ToListAsync(cancellationToken), sitOuts) : [];
-        return sundays.Contains(wanted) ? DateOf(wanted) : throw Invalid("Choose one of its Sundays.");
+        return sundays.Contains(wanted) ? DateOf(wanted) : throw Invalid("Choose one of the group's Sundays.");
     }
 
     public async ValueTask<Done> DeletePostAsync(ItemRef request, CallContext context = default)
@@ -299,7 +299,7 @@ internal sealed class MinistryLeadingService(
         TurnedOn(ministry, MinistryParts.Files);
         FileItem wanted = request.File;
         if (wanted.Title.Trim().Length is 0 or > MinistryRules.LongestTitle)
-            throw Invalid($"Give it a name of up to {MinistryRules.LongestTitle} characters.");
+            throw Invalid($"Enter a name of up to {MinistryRules.LongestTitle} characters.");
         if (!MinistryLogic.PostableAudiences(ministry.AttendJoin).Contains(wanted.Audience))
             throw Invalid("Choose who it's for.");
         Guid? media = await fileMedia.VerifyAsync(Guid.TryParse(wanted.MediaId, out Guid mediaId) ? mediaId : null, cancellationToken);
@@ -561,10 +561,10 @@ internal sealed class MinistryLeadingService(
         CancellationToken cancellationToken = context.CancellationToken;
         Round wanted = request.Round;
         if (wanted.Name.Trim().Length is 0 or > MinistryRules.LongestName)
-            throw Invalid($"Name them in up to {MinistryRules.LongestName} characters.");
+            throw Invalid($"Enter a name of up to {MinistryRules.LongestName} characters.");
         List<DateOnly> sundays = wanted.Sundays.Select(DateOf).Distinct().Order().ToList();
         if (sundays.Count == 0)
-            throw Invalid("Choose their Sundays.");
+            throw Invalid("Choose the Sundays the groups meet.");
         TimeOnly starts = TimeOf(wanted.Starts, new TimeOnly(9, 0));
         TimeOnly ends = TimeOf(wanted.Ends, new TimeOnly(9, 45));
         if (ends <= starts)
@@ -782,5 +782,5 @@ internal sealed class MinistryLeadingService(
         : TimeOnly.TryParseExact(text, ["HH:mm", "HH:mm:ss"], CultureInfo.InvariantCulture, DateTimeStyles.None, out TimeOnly value) ? value
         : throw Invalid("That isn't a time.");
 
-    private static Guid ParseId(string id) => Guid.TryParse(id, out Guid parsed) ? parsed : throw Invalid("That isn't here any more.");
+    private static Guid ParseId(string id) => Guid.TryParse(id, out Guid parsed) ? parsed : throw Invalid("This has been deleted or moved.");
 }

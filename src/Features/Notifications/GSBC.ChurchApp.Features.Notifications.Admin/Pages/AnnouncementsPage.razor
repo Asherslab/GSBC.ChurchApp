@@ -6,7 +6,7 @@
 @inject IAccess Access
 @inject TimeProvider Clock
 
-<TitleBand Title="Earlier announcements" Lead="What the office sent before church news. Notices for the church are church news posts now, each able to send a notification.">
+<TitleBand Title="Earlier announcements" Lead="Announcements sent before Church news was added. Notices for the church are now Church news posts, and each can send a notification.">
     <Actions>
         <Button Icon="megaphone" Href="news">Church news</Button>
     </Actions>
@@ -41,7 +41,7 @@
 </LiveData>
 
 <Sheet Open="_recalling" OpenChanged="open => _recalling = open" Title="Recall this announcement?"
-       Lead="It leaves the app's notifications on every phone. A notification already shown on a lock screen can't be taken back. It stays here as a record.">
+       Lead="The announcement is removed from the app's notifications on every phone. A notification already shown on a lock screen can't be taken back. It stays listed here as a record.">
     <Actions>
         <Button Variant="ButtonVariant.Danger" Busy="_busy" OnClick="() => RunAsync(id => Announcements.RecallAsync(id))">Recall it</Button>
         <Button Variant="ButtonVariant.Quiet" OnClick="() => _recalling = false">Keep it</Button>
@@ -83,7 +83,7 @@
             ? [this.Item("Don't send it", () => RunAsync(id => Announcements.CancelAsync(id)), "circle-off", "It was scheduled before church news")]
             : Array.Empty<MenuItem>(),
         .. announcement.State == Sent && Access.Can(NotificationsPermissions.Send)
-            ? [this.Item("Recall…", () => (_recalling, _problem) = (true, null), "circle-off", "It leaves the app's notifications on every phone", danger: true, startsGroup: true)]
+            ? [this.Item("Recall…", () => (_recalling, _problem) = (true, null), "circle-off", "Removes it from the app's notifications on every phone.", danger: true, startsGroup: true)]
             : Array.Empty<MenuItem>(),
     ];
 

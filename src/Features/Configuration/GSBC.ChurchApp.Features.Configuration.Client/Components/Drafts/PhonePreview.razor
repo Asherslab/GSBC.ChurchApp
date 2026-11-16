@@ -2,7 +2,7 @@
 
 @if (!Compact)
 {
-    <SelectField Label="Preview on" Options="Devices" Value="@_device.Name" ValueChanged="name => _device = PhoneDevice.All.Single(device => device.Name == name)" />
+    <SelectField Label="Phone model" Options="Devices" Value="@_device.Name" ValueChanged="name => _device = PhoneDevice.All.Single(device => device.Name == name)" />
 }
 <PhoneFrame Title="@HubSurfaces.Top.In(Shown).Title" Bell="true" Tabs="ShownTabs" Palette="@Chosen.Palette" Theme="@(Theme ?? Chosen.Custom)" Scheme="Scheme" Device="_device" Label="@($"A preview of Home with this draft on an {_device.Name}, as a visitor would see it")">
     <HomeScreen Shown="Shown" At="Now" />

@@ -7,10 +7,10 @@
 <UnsavedGuard Changed="() => Started" What="this upload" />
 
 <div class="sermon-upload">
-    <PaneHead Title="Upload a sermon" Lead="The audio, then its details. It's on phones and the website once added." OnClose="Cancelled" />
+    <PaneHead Title="Upload a sermon" Lead="Choose the sermon's audio, then fill in its details. Once it's added, the sermon is on phones and the website." OnClose="Cancelled" />
     <DropBox Icon="music" Chosen="_file is not null" Busy="_busy"
              Prompt="@(_file is { } file ? file.Name : "Drop the sermon's audio here")"
-             Hint="@(_file is { } chosen ? SermonText.Join($"{chosen.Size / 1024d / 1024d:0.#} MB", chosen.Duration > 0 ? SermonText.Length(chosen.Duration) : null, "drop or click to choose another") : "An mp3 or m4a, up to 300 MB. Or click to choose it.")">
+             Hint="@(_file is { } chosen ? SermonText.Join($"{chosen.Size / 1024d / 1024d:0.#} MB", chosen.Duration > 0 ? SermonText.Length(chosen.Duration) : null, "drop another file here or click to choose one") : "An mp3 or m4a file, up to 300 MB. Or click to choose one from this computer.")">
         <input @ref="_input" type="file" accept=".mp3,.m4a,audio/mpeg,audio/mp4,audio/x-m4a" class="visually-hidden" disabled="@_busy" @onchange="ChosenAsync" />
     </DropBox>
 
@@ -18,19 +18,19 @@
         <div class="sermon-check__field sermon-check__field--wide"><TextField Label="Title" @bind-Value="_title" MaxLength="160" Required="true" /></div>
         <div class="sermon-check__field">
             <SearchPicker TItem="SpeakerDetail" Label="Speaker" Items="Popular" Text="SpeakerName" Detail="SpeakerCount" Value="SpeakerOf(_speakerId)"
-                          ValueChanged="ChooseSpeaker" Pending="@(_speakerId == NewOne ? $"{_newSpeaker} (new)" : null)" Placeholder="Who preached?"
+                          ValueChanged="ChooseSpeaker" Pending="@(_speakerId == NewOne ? $"{_newSpeaker} (new)" : null)" Placeholder="Find a speaker"
                           CreateText="@(name => $"Add “{name}” as a new speaker")" OnCreate="NewSpeaker" />
         </div>
-        <div class="sermon-check__field"><DateField Label="Day" @bind-Value="_day" /></div>
+        <div class="sermon-check__field"><DateField Label="Date preached" @bind-Value="_day" /></div>
         <div class="sermon-check__field">
             <SearchPicker TItem="SeriesDetail" Label="Series" Items="Series" Text="SeriesName" Value="SeriesOf(_seriesId)" NoneText="Not in a series"
                           ValueChanged="ChooseSeries" Pending="@(_seriesId == NewOne ? $"{_newSeries} (new)" : null)" Placeholder="Find a series"
                           CreateText="@(name => $"Start a new series called “{name}”")" OnCreate="NewSeries" />
         </div>
         <div class="sermon-check__field"><ServicePicker Services="Services" @bind-Value="_service" /></div>
-        <div class="sermon-check__field"><TextField Label="Bible passage" Placeholder="John 3:16-21" @bind-Value="_passage" MaxLength="120" /></div>
-        <div class="sermon-check__field"><TextField Label="Video" Placeholder="A YouTube link, if there is one" @bind-Value="_youTube" /></div>
-        <div class="sermon-check__field sermon-check__field--wide"><TextField Label="About this sermon" Multiline="true" Hint="Optional: a line or two shown under the sermon in the app." @bind-Value="_summary" MaxLength="600" /></div>
+        <div class="sermon-check__field"><TextField Label="Bible passage" Hint="The book, chapter and verses, such as John 3:16–21." @bind-Value="_passage" MaxLength="120" /></div>
+        <div class="sermon-check__field"><TextField Label="Video" Hint="The address of the sermon's YouTube video. Leave this empty if there's no video." @bind-Value="_youTube" /></div>
+        <div class="sermon-check__field sermon-check__field--wide"><TextField Label="About this sermon" Multiline="true" Hint="A short description, shown under the sermon in the app and on the website. Optional." @bind-Value="_summary" MaxLength="600" /></div>
         <div class="sermon-check__field sermon-check__field--wide">
             <span class="field__label">Picture</span>
             @if (_artwork is { } artwork)
@@ -46,20 +46,20 @@
             else
             {
                 <Button Variant="ButtonVariant.Quiet" Icon="image" OnClick="() => _choosing = true">Choose a picture</Button>
-                <span class="hint">Leave it to use the series' picture.</span>
+                <span class="hint">If you don't choose one, the sermon uses the series' picture.</span>
             }
         </div>
     </div>
 
     @if (_progress is { } progress)
     {
-        <div class="sermon-upload__progress"><ProgressTrack Fraction="progress" Label="Uploading" /><span>@(progress >= 1 ? "Adding it to the app…" : $"Uploading… {progress:P0}")</span></div>
+        <div class="sermon-upload__progress"><ProgressTrack Fraction="progress" Label="Uploading" /><span>@(progress >= 1 ? "Adding the sermon…" : $"Uploading… {progress:P0}")</span></div>
     }
     <Notice Tone="NoticeTone.Warning" Text="@_problem" />
     <div class="panel-actions">
         <SaveBar Label="Add to the app" Busy="_busy" OnSave="UploadAsync" OnCancel="Cancelled" Blocked="@Blocked" />
     </div>
-    <p class="hint">It's on everyone's phone as soon as it's added. Staff can tidy the details afterwards.</p>
+    <p class="hint">The sermon is on everyone's phone as soon as it's added. Staff can correct the details afterwards.</p>
     @if (_choosing)
     {
         <MediaChooser ImagesOnly="true" Size="MediaSizeName.ForPhones" OnChosen="Chose" OnCancel="() => _choosing = false" />
@@ -95,10 +95,10 @@
     }
 
     private string? Blocked =>
-        _file is null ? "Choose the sermon's audio to add it."
-        : _title.Trim().Length == 0 ? "Give it a title to add it."
-        : !(_speakerId.Length > 0 && _speakerId != NewOne || _newSpeaker.Trim().Length > 0) ? "Choose who preached to add it."
-        : _day.Length == 0 ? "Choose the day it was preached to add it."
+        _file is null ? "Choose the sermon's audio file."
+        : _title.Trim().Length == 0 ? "Enter the sermon's title."
+        : !(_speakerId.Length > 0 && _speakerId != NewOne || _newSpeaker.Trim().Length > 0) ? "Choose who preached the sermon."
+        : _day.Length == 0 ? "Choose the date the sermon was preached."
         : null;
 
     private bool Started => _busy || _file is not null || _artwork is not null

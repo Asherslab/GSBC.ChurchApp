@@ -8,38 +8,38 @@
 <div class="tile-settings">
     <header class="tile-settings__head">
         <h3>@Heading</h3>
-        <span>@(Draft.Surface.Repeatable ? "A place in the app, as a tab" : "One of the tabs the app starts with")</span>
+        <span>@(Draft.Surface.Repeatable ? "A tab that opens a page in the app" : "One of the tabs the app starts with")</span>
     </header>
     @Notices
     @if (Unfinished)
     {
-        <Notice Text="Choose the place it opens. It joins the bar once it has a place, a word and an icon." />
+        <Notice Text="Choose the page this tab opens. The tab appears on the tab bar once it has a page, a label and an icon." />
     }
 
     <fieldset class="tile-settings__group">
         <legend>Opens</legend>
         <PlaceField Value="@NullIfEmpty(Opens)" ValueChanged="value => SetAsync(TabSettings.Opens.Key, value ?? string.Empty)" OnChosen="TakeNameAsync" Offers="CanBeATab"
-                    OpenableBy="@Draft.Audience" ChooseLabel="Choose the place this tab opens" SheetTitle="Choose the place this tab opens"
-                    SheetLead="Any page in the app, or one thing in it. Its name and icon fill in the tab; change them after." />
+                    OpenableBy="@Draft.Audience" ChooseLabel="Choose the page this tab opens" SheetTitle="Choose the page this tab opens"
+                    SheetLead="Any page in the app, or one item in it. The tab takes its name and icon, which you can change afterwards." />
     </fieldset>
 
     <fieldset class="tile-settings__group">
-        <legend>On the tab</legend>
+        <legend>Label and icon</legend>
         <TextField Label="@TabSettings.Word.Label" Value="@Draft.Values[TabSettings.Word.Key]" ValueChanged="value => SetAsync(TabSettings.Word.Key, value)"
-                   MaxLength="TabBarSurfaces.MostCharactersInAWord" Hint="@($"Up to {TabBarSurfaces.MostCharactersInAWord.ToString(CultureInfo.InvariantCulture)} letters, so it fits under the icon")"
+                   MaxLength="TabBarSurfaces.MostCharactersInAWord" Hint="@($"The word shown under the tab's icon, up to {TabBarSurfaces.MostCharactersInAWord.ToString(CultureInfo.InvariantCulture)} letters so it fits.")"
                    Problem="@(Opens.Length == 0 ? null : TabSettings.Word.ProblemWith(Draft.Values[TabSettings.Word.Key]))" />
         <span class="field__label">Icon</span>
-        <IconPicker Value="@Draft.Values[TabSettings.Icon.Key]" ValueChanged="value => SetAsync(TabSettings.Icon.Key, value)" AllowsNone="false" Unchosen="Comes with the place you choose" />
+        <IconPicker Value="@Draft.Values[TabSettings.Icon.Key]" ValueChanged="value => SetAsync(TabSettings.Icon.Key, value)" AllowsNone="false" Unchosen="Taken from the page you choose" />
     </fieldset>
 
     <fieldset class="tile-settings__group">
-        <legend>Who sees it, and when</legend>
+        <legend>Who sees this tab, and when</legend>
         <AudiencePicker Value="@Draft.Audience" ValueChanged="value => ChangeAsync(() => Draft.Audience = value)" />
         <div class="ui-pair">
-            <DateField Label="First day on the bar" Hint="Empty: from now" Value="@Iso(Draft.ShowFrom)" ValueChanged="value => ChangeAsync(() => Draft.ShowFrom = FromIso(value))" />
-            <DateField Label="Last day on the bar" Hint="Empty: no end" Value="@Iso(Draft.ShowUntil)" ValueChanged="value => ChangeAsync(() => Draft.ShowUntil = FromIso(value))" />
+            <DateField Label="First day shown" Hint="Leave this empty to show the tab from today." Value="@Iso(Draft.ShowFrom)" ValueChanged="value => ChangeAsync(() => Draft.ShowFrom = FromIso(value))" />
+            <DateField Label="Last day shown" Hint="Leave this empty to keep showing the tab." Value="@Iso(Draft.ShowUntil)" ValueChanged="value => ChangeAsync(() => Draft.ShowUntil = FromIso(value))" />
         </div>
-        <ToggleRow Title="On the bar" Description="Turn off to take it off the bar without losing its settings" Checked="!Draft.Hidden" CheckedChanged="shown => ChangeAsync(() => Draft.Hidden = !shown)" />
+        <ToggleRow Title="Show on the tab bar" Description="Turn this off to hide the tab without losing its settings." Checked="!Draft.Hidden" CheckedChanged="shown => ChangeAsync(() => Draft.Hidden = !shown)" />
     </fieldset>
 
     @foreach (string problem in Opens.Length == 0 ? [] : Draft.Problems.Where(problem => problem != TabSettings.Word.ProblemWith(Draft.Values[TabSettings.Word.Key])))

@@ -2,8 +2,8 @@
 @inject WideningWords Words
 
 <div class="show-elsewhere">
-    <p class="hint">Find an event or a regular event on a calendar you can see. If you edit its calendar too, it shows here at once; otherwise its calendar's editors are asked. It shows here only while it's shown on its own calendar.</p>
-    <SearchField Label="Find an event" Placeholder="An event or a calendar" Value="@_search" ValueChanged="SearchAsync" />
+    <p class="hint">Find an event on another calendar you can see. If you're an editor of that calendar too, the event shows here straight away; if not, that calendar's editors are asked first. It shows here only while it's shown on its own calendar.</p>
+    <SearchField Label="Find an event" Placeholder="Search by event or calendar name" Value="@_search" ValueChanged="SearchAsync" />
     <Notice Tone="NoticeTone.Warning" Text="@_problem" />
     @if (_note is not null)
     {
@@ -24,7 +24,7 @@
                             <TrailingContent>
                                 @if (item.Asked)
                                 {
-                                    <Button Variant="ButtonVariant.Quiet" Small="true" Busy="_busy == KeyOf(item)" OnClick="() => AskAsync(item, false)">Withdraw</Button>
+                                    <Button Variant="ButtonVariant.Quiet" Small="true" Busy="_busy == KeyOf(item)" OnClick="() => AskAsync(item, false)">Stop asking</Button>
                                     @if (item.AgreesAtOnce)
                                     {
                                         <Button Small="true" Busy="_busy == KeyOf(item)" OnClick="() => ChooseAsync(item)">Show here</Button>
@@ -32,7 +32,7 @@
                                 }
                                 else
                                 {
-                                    <Button Small="true" Busy="_busy == KeyOf(item)" OnClick="() => ChooseAsync(item)">@(item.AgreesAtOnce ? "Show here" : "Ask")</Button>
+                                    <Button Small="true" Busy="_busy == KeyOf(item)" OnClick="() => ChooseAsync(item)">@(item.AgreesAtOnce ? "Show here" : "Ask to show it here")</Button>
                                 }
                             </TrailingContent>
                             <Below>

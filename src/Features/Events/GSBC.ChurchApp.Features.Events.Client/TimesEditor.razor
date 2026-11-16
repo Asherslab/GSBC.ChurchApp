@@ -4,8 +4,8 @@
 @if (Timed.StartMinute is { } start)
 {
     <div class="ui-pair">
-        <TimeField Label="Starts" Value="@Clock24(start)" ValueChanged="value => Timed.StartMinute = Minutes(value) ?? start" />
-        <TimeField Label="Ends" Value="@(Timed.EndMinute is { } end ? Clock24(end) : "")" Min="@(SameDay ? Clock24(start) : null)" ValueChanged="value => Timed.EndMinute = Minutes(value)" />
+        <TimeField Label="Start time" Value="@Clock24(start)" ValueChanged="value => Timed.StartMinute = Minutes(value) ?? start" />
+        <TimeField Label="End time" Value="@(Timed.EndMinute is { } end ? Clock24(end) : "")" Min="@(SameDay ? Clock24(start) : null)" ValueChanged="value => Timed.EndMinute = Minutes(value)" />
     </div>
 }
 

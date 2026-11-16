@@ -5,10 +5,10 @@
     <PaneHead Title="Chat settings" Actions="@(Card.YouMayManage ? ChatActions : null)" />
 }
 <Section Grouped="true" First="true">
-    <ToggleRow Title="Mute this chat" Description="No notifications from this chat, unless someone mentions you. It still shows in your chats." Checked="Card.Muted"
+    <ToggleRow Title="Mute this chat" Description="You won't get notifications from this chat unless someone mentions you. The chat stays in your list." Checked="Card.Muted"
                CheckedChanged="muted => Store.MuteAsync(Card, muted)" />
 </Section>
-<Section Title="Who's in it" Grouped="true">
+<Section Title="People in this chat" Grouped="true">
     <ListGroup>
         @foreach (ChatPerson person in Card.People.OrderBy(Order).ThenBy(person => person.Name))
         {
@@ -30,7 +30,7 @@
 
     private IReadOnlyList<MenuItem> ChatActions =>
     [
-        this.Item("Delete the chat…", () => OnDelete.InvokeAsync(), "trash-2", "For everyone in it. The church keeps its messages.", danger: true),
+        this.Item("Delete the chat…", () => OnDelete.InvokeAsync(), "trash-2", "The chat is deleted for everyone in it. The church keeps its messages.", danger: true),
     ];
 
     private static int Order(ChatPerson person) => person.Role switch

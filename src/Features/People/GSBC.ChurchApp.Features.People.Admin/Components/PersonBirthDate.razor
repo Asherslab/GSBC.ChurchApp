@@ -15,20 +15,20 @@
             @BornLine(family, today)
             @if (Access.Can(PeoplePermissions.FamilyEdit, family.Id))
             {
-                <Button Variant="ButtonVariant.Link" OnClick="() => Start(family)">@(family.BirthDate is null ? "Add it" : "Change")</Button>
+                <Button Variant="ButtonVariant.Link" OnClick="() => Start(family)">@(family.BirthDate is null ? "Add a birth date" : "Change")</Button>
             }
         </span>
-        <Sheet Open="_changing" OpenChanged="open => _changing = open" Title="@($"{Person.FirstName}'s birth date")" Lead="It says whether they're under 18, which decides who their parents are in the app and who safeguarding follows up.">
+        <Sheet Open="_changing" OpenChanged="open => _changing = open" Title="@($"{Person.FirstName}'s birth date")" Lead="Their birth date tells the app whether they're under 18. That decides whether parents look after them in the app, and whether safeguarding follows them up.">
             <ChildContent>
-                <DateField Label="Birth date" Shortcuts="false" Placeholder="Like 4 Mar 2011" Value="@_born" ValueChanged="value => _born = value" Max="@($"{today:yyyy-MM-dd}")" />
+                <DateField Label="Birth date" Shortcuts="false" Value="@_born" ValueChanged="value => _born = value" Max="@($"{today:yyyy-MM-dd}")" />
                 <Notice Tone="NoticeTone.Warning" Text="@_problem" />
             </ChildContent>
             <Actions>
                 <SaveBar Label="Save" Busy="_busy" OnSave="() => SaveAsync(PeopleWords.ParseDay(_born))" OnCancel="() => _changing = false"
-                         Blocked="@(PeopleWords.ParseDay(_born) is null ? "Give a birth date to save it." : null)">
+                         Blocked="@(PeopleWords.ParseDay(_born) is null ? "Enter their birth date." : null)">
                     @if (family.BirthDate is not null)
                     {
-                        <Button Variant="ButtonVariant.Quiet" Disabled="_busy" OnClick="() => SaveAsync(null)">Clear it</Button>
+                        <Button Variant="ButtonVariant.Quiet" Disabled="_busy" OnClick="() => SaveAsync(null)">Clear the birth date</Button>
                     }
                 </SaveBar>
             </Actions>

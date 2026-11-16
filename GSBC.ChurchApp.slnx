@@ -47,6 +47,7 @@
     <File Path="docs/design/posts.md" />
     <File Path="docs/design/prayer.md" />
     <File Path="docs/design/saving.md" />
+    <File Path="docs/design/words.md" />
   </Folder>
   <Folder Name="/docs/features/">
     <File Path="docs/features/access.md" />

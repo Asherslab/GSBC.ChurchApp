@@ -31,8 +31,8 @@ else if (_query.Trim().Length >= ShortestSearch && !_searching)
     [Parameter, EditorRequired] public required string ActionText { get; set; }
     [Parameter] public EventCallback<PersonChoice> OnChosen { get; set; }
     [Parameter] public IReadOnlyCollection<string> Leave { get; set; } = [];
-    [Parameter] public string Label { get; set; } = "Find someone";
-    [Parameter] public string Placeholder { get; set; } = "Find them by name";
+    [Parameter] public string Label { get; set; } = "Find a person by name";
+    [Parameter] public string? Placeholder { get; set; }
     [Parameter] public string? Busy { get; set; }
     [Parameter] public bool AutoFocus { get; set; }
 

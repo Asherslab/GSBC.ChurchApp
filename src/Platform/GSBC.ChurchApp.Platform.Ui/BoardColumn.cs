@@ -3,7 +3,7 @@ namespace GSBC.ChurchApp.Platform.Ui;
 public sealed record BoardColumn<TColumn>(
     TColumn Value,
     string Title,
-    string Empty = "Nothing here.",
+    string Empty = "Nothing in this column yet.",
     bool Narrow = false,
     bool Folds = false,
     int? Shown = null,

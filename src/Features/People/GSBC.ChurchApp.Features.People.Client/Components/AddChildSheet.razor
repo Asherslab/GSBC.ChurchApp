@@ -3,11 +3,11 @@
 
 <UnsavedGuard Changed="() => Open && (_name.Trim().Length > 0 || _born.Length > 0)" What="the child you were adding" />
 
-<Sheet Open="Open" OpenChanged="OpenChanged" Title="Add a child" Lead="A child in your care, under 18. They don't need an email or a phone; you can make them a sign-in code later.">
+<Sheet Open="Open" OpenChanged="OpenChanged" Title="Add a child" Lead="For a child under 18 in your care. They don't need an email address or a phone; you can make them a sign-in code later.">
     <ChildContent>
-        <TextField Label="Their name" Value="@_name" ValueChanged="value => _name = value" AutoComplete="off" />
+        <TextField Label="Child's name" Value="@_name" ValueChanged="value => _name = value" AutoComplete="off" />
         <div class="ui-after">
-            <DateField Label="Birth date" Shortcuts="false" Placeholder="Like 4 Mar 2011" Value="@_born" ValueChanged="value => _born = value" Max="@($"{ChurchTime.Today(Clock):yyyy-MM-dd}")" Hint="@PeopleWords.WhoSees" />
+            <DateField Label="Birth date" Shortcuts="false" Value="@_born" ValueChanged="value => _born = value" Max="@($"{ChurchTime.Today(Clock):yyyy-MM-dd}")" Hint="Only you, their other parents and the church's safeguarding team see their birth date." />
         </div>
         <Notice Tone="NoticeTone.Warning" Text="@_message" />
     </ChildContent>

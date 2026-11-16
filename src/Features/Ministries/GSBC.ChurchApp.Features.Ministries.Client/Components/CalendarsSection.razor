@@ -3,7 +3,7 @@
 
 <UnsavedGuard Changed="() => Changed" What="@($"{MinistryWords.Possessive(Page.Ministry.Name)} calendars")" Save="SaveBeforeLeavingAsync" />
 
-<Section Title="Calendars" Lead="Leaders add its events in Calendar." Grouped="true">
+<Section Title="Calendars" Lead="Leaders add this ministry's events in Calendar." Grouped="true">
     <ChildContent>
         <ToggleRow Title="Public calendar" Description="@Describe(Audiences.Everyone)" Checked="@Wanted(Audiences.Everyone)" CheckedChanged="on => TurnAsync(Audiences.Everyone, on)" Disabled="_busy" />
         <ToggleRow Title="Team calendar" Description="@Describe(Audiences.Team)" Checked="@Wanted(Audiences.Team)" CheckedChanged="on => TurnAsync(Audiences.Team, on)" Disabled="_busy" />
@@ -20,7 +20,7 @@
     </ChildContent>
     <Actions>
         <Button Block="true" Variant="ButtonVariant.Danger" Busy="_busy" OnClick="ApplyAsync">@DeleteLabel</Button>
-        <Button Block="true" Variant="ButtonVariant.Quiet" Disabled="_busy" OnClick="() => _confirming = false">@(Going.Count == 1 ? "Keep it" : "Keep them")</Button>
+        <Button Block="true" Variant="ButtonVariant.Quiet" Disabled="_busy" OnClick="() => _confirming = false">@(Going.Count == 1 ? "Keep the calendar" : "Keep the calendars")</Button>
     </Actions>
 </Sheet>
 
@@ -64,10 +64,10 @@
                 return "";
             return Events switch
             {
-                null => one ? "Its events go with it." : "Their events go with them.",
-                0 => one ? "It has no events." : "They have no events.",
-                1 => $"{(one ? "Its" : "Their")} event goes with {(one ? "it" : "them")}.",
-                { } count => $"{(one ? "Its" : "Their")} {count} events go with {(one ? "it" : "them")}.",
+                null => one ? "The calendar's events are deleted with it." : "The calendars' events are deleted with them.",
+                0 => one ? "The calendar has no events." : "The calendars have no events.",
+                1 => one ? "The calendar's one event is deleted with it." : "The calendars' one event is deleted with them.",
+                { } count => one ? $"The calendar's {count} events are deleted with it." : $"The calendars' {count} events are deleted with them.",
             };
         }
     }
@@ -79,9 +79,9 @@
             bool one = Going.Count == 1;
             return Events switch
             {
-                0 => one ? "Delete it" : "Delete them",
-                1 => one ? "Delete it and its event" : "Delete them and their event",
-                _ => one ? "Delete it and its events" : "Delete them and their events",
+                0 => one ? "Delete the calendar" : "Delete the calendars",
+                1 => one ? "Delete the calendar and its event" : "Delete the calendars and their event",
+                _ => one ? "Delete the calendar and its events" : "Delete the calendars and their events",
             };
         }
     }
@@ -107,10 +107,10 @@
     private string Describe(string kind)
     {
         string name = Own.TryGetValue(kind, out CalendarLine? calendar) ? calendar.Name : MinistryCalendarKinds.NameOf(kind, Page.Ministry.Name);
-        string who = kind == Audiences.Team ? $"Only {TeamNames.InSentence(Page.Ministry.Name)} sees its events."
-            : MinistryLogic.IsHidden(Page.Ministry) ? $"Everyone who sees {Page.Ministry.Name} sees its events."
-            : "Everyone with the app sees its events.";
-        return $"{who} Called “{name}”.";
+        string who = kind == Audiences.Team ? $"Only {TeamNames.InSentence(Page.Ministry.Name)} sees this calendar's events."
+            : MinistryLogic.IsHidden(Page.Ministry) ? $"Everyone who can see {Page.Ministry.Name} sees this calendar's events."
+            : "Everyone with the app sees this calendar's events.";
+        return $"{who} It's called “{name}”.";
     }
 
     private static string Names(IReadOnlyList<string> kinds) =>

@@ -35,11 +35,11 @@ internal sealed class NewsDesk(
         if (post is not null && wanted.New)
             return NewsRules.View(post);
         if (post is not null && NewsRules.IsShared(post))
-            throw Refused($"Change it in {post.FromName}'s news: church news shows the ministry's post as it is.");
+            throw Refused($"Change the post in {post.FromName}'s news. Church news shows the ministry's post as it is.");
         if (post is not null && !writer.MayPublish && !NewsRules.WritersMayChange(post))
-            throw Refused("It's already scheduled or published, so only someone who publishes church news can change it.");
+            throw Refused("This post is already scheduled or published, so only someone who publishes church news can change it.");
         if (post is { State: NewsState.Archived })
-            throw Refused("It's archived. Put it back first, then change it.");
+            throw Refused("This post is archived. Put it back first, then change it.");
 
         DateTime now = Now;
         if (post is null)
@@ -73,9 +73,9 @@ internal sealed class NewsDesk(
         if (post.State == NewsState.Published)
             return NewsRules.View(post);
         if (post.State is NewsState.Asked or NewsState.Declined)
-            throw Refused("Answer the ministry's ask instead: put it in church news, or say no.");
+            throw Refused("Answer the ministry's request instead: put the post in church news, or decline.");
         if (post.State == NewsState.Archived)
-            throw Refused("It's archived. Put it back first, then publish it.");
+            throw Refused("This post is archived. Put it back first, then publish it.");
         DateTime now = Now;
         if (at is { } when && when > now.AddMinutes(1))
         {
@@ -137,9 +137,9 @@ internal sealed class NewsDesk(
         if (post.State == NewsState.Archived)
             return NewsRules.View(post);
         if (NewsRules.IsShared(post))
-            throw Refused($"Take it off church news instead: it's {post.FromName}'s post.");
+            throw Refused($"This is {post.FromName}'s post, so take it off church news instead.");
         if (!writer.MayPublish && !NewsRules.WritersMayChange(post))
-            throw Refused("Only someone who publishes church news can archive it once it's scheduled or published.");
+            throw Refused("Only someone who publishes church news can archive a post once it's scheduled or published.");
         DateTime now = Now;
         (post.State, post.PublishAt, post.ChangedAt) = (NewsState.Archived, null, now);
         publisher.Changed(post, now);
@@ -169,9 +169,9 @@ internal sealed class NewsDesk(
             return;
         bool shared = NewsRules.IsShared(post);
         if (!shared && post.State != NewsState.Archived)
-            throw Refused("Archive it first: only an archived post can be deleted for good.");
+            throw Refused("Archive the post first. Only an archived post can be deleted for good.");
         if (shared ? !writer.MayPublish : !writer.MayPublish && !NewsRules.WritersMayChange(post))
-            throw Refused("Only someone who publishes church news can delete it once it's been published.");
+            throw Refused("Only someone who publishes church news can delete a post once it's been published.");
         await RemoveAsync(post, cancellationToken);
         await TellSourceAsync(post, SharedState.None, cancellationToken);
     }
@@ -349,7 +349,7 @@ internal sealed class NewsDesk(
     private static void MustPublish(Writer writer)
     {
         if (!writer.MayPublish)
-            throw Refused("Only someone who publishes church news can do that. Ask for it to be published instead.");
+            throw Refused("Only someone who publishes church news can do that. Ask for the post to be published instead.");
     }
 
     public static Guid ParseId(string id) =>

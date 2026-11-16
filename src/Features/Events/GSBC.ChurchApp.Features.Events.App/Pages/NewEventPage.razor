@@ -21,7 +21,7 @@
 
         string? name = diary.Calendar(calendarId)?.Name;
         return @<Page Title="New event" OnBack="BackAsync" BackLabel="Cancel">
-            <Masthead Title="New event" Note="@(name is null ? "Is it on once, or regularly?" : $"In {name}. Is it on once, or regularly?")" />
+            <Masthead Title="New event" Note="@(name is null ? "Is it on once, or regularly?" : $"On the {name} calendar. Is it on once, or regularly?")" />
             <Section First="true">
                 <OnceOrRegularly Once="() => Go(EventsPlaces.OnceIn(calendarId))" Regularly="() => Go(EventsPlaces.NewRegularIn(calendarId))" />
             </Section>

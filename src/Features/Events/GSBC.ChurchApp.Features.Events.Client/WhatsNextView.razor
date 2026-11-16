@@ -9,7 +9,7 @@
 
 @if (Weeks.Count == 0)
 {
-    <EmptyState Icon="megaphone" Title="Nothing new to tell yet" Body="The church office sends What's next before each Sunday. Everything that's on is in the calendar.">
+    <EmptyState Icon="megaphone" Title="Nothing in What's next yet" Body="The church office sends What's next before each Sunday. Everything that's on is in the calendar.">
         <Button Variant="ButtonVariant.Quiet" Href="@(Preview ? null : EventsPlaces.Week)">Open the calendar</Button>
     </EmptyState>
 }
@@ -74,7 +74,7 @@
 
 @if (!Preview && Digest.Before.Count > 0)
 {
-    <Section Title="Earlier">
+    <Section Title="Earlier editions">
         <ListGroup>
             @foreach (EarlierDigest earlier in Digest.Before)
             {

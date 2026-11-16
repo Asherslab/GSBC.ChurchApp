@@ -29,7 +29,7 @@
     }
     @if (page.Groups.Count == 0 && page.Rounds.Count == 0)
     {
-        <EmptyState Icon="book-open" Title="No Life Groups yet" Body="A Life Group is a ministry shown here, under any ministry. Add one, or switch on Show in Life Groups in a ministry's settings.">
+        <EmptyState Icon="book-open" Title="No Life Groups yet" Body="A Life Group is a ministry that's listed here, wherever it sits. Add one, or turn on Show in Life Groups in a ministry's settings.">
             @if (_mayAdd)
             {
                 <Button OnClick="() => OpenGroup(null)">Add a Life Group</Button>
@@ -40,11 +40,11 @@
     {
         @if (!page.MayPlan)
         {
-            <Notice Text="Staff who plan Life Groups set their Sundays. You can see them here." />
+            <Notice Text="Only staff who plan Life Groups can change the Sundays. You can see them here." />
         }
         <ListGroup>
             <ListRow Title="@(page.CalendarName.Length > 0 ? $"Shown in {page.CalendarName}" : "Not shown in a calendar")" Icon="calendar" IconTone="RowTone.Quiet"
-                     Subtitle="@(page.CalendarName.Length > 0 ? "One Life Groups entry on each Sunday they meet, kept in step with the Sundays here. Sundays between show as not on." : "Show one Life Groups entry in a calendar, such as the one for Sunday services, kept in step with the Sundays here.")"
+                     Subtitle="@(page.CalendarName.Length > 0 ? "One Life Groups event on each Sunday the groups meet, kept in step with the Sundays here. Sundays between sets show as not on." : "Show one Life Groups event in a calendar, such as the one for Sunday services, kept in step with the Sundays here.")"
                      Chevron="page.MayPlan" OnClick="() => page.MayPlan ? OpenCalendarAsync() : Task.CompletedTask" />
         </ListGroup>
         <div class="lg-all-year">
@@ -79,40 +79,40 @@
 <ArchivedSheet Open="_archivedOpen" OpenChanged="open => _archivedOpen = open" LifeGroupsOnly="true" OnRestored="ReloadAsync" />
 
 <Sheet Open="_deletingSet is not null" OpenChanged="open => { if (!open) _deletingSet = null; }" Title="@(_deletingSet is { } doomed ? $"Delete the Sundays {MinistryWords.Span(doomed)}?" : "")"
-       Lead="They come off Life Groups, the app and the calendar. This can't be undone; you can plan them again.">
+       Lead="These Sundays are removed from Life Groups, the app and the calendar. This can't be undone, but you can plan them again.">
     <ChildContent>
         <Notice Tone="NoticeTone.Warning" Text="@_problem" />
     </ChildContent>
     <Actions>
         <Button Block="true" Variant="ButtonVariant.Danger" Busy="_busy" OnClick="DeleteSetAsync">Delete these Sundays</Button>
-        <Button Block="true" Variant="ButtonVariant.Quiet" Disabled="_busy" OnClick="() => _deletingSet = null">Keep them</Button>
+        <Button Block="true" Variant="ButtonVariant.Quiet" Disabled="_busy" OnClick="() => _deletingSet = null">Keep these Sundays</Button>
     </Actions>
 </Sheet>
 
 <Sheet Open="_archivingSet is not null" OpenChanged="open => { if (!open) _archivingSet = null; }" Title="@(_archivingSet is { } set ? $"Archive the groups from {MinistryWords.Span(set)}?" : "")"
-       Lead="They leave Life Groups, the app and every list, and nothing more can be posted in them. Their people, news, files and calendars are kept, and you can restore any of them from Archived groups.">
+       Lead="The groups leave Life Groups, the app and every list, and nothing more can be posted in them. Their people, news, files and calendars are kept, and you can restore any of them from Archived groups.">
     <ChildContent>
         <Notice Tone="NoticeTone.Warning" Text="@_problem" />
     </ChildContent>
     <Actions>
-        <Button Block="true" Busy="_busy" OnClick="ArchiveSetAsync">Archive them</Button>
-        <Button Block="true" Variant="ButtonVariant.Quiet" Disabled="_busy" OnClick="() => _archivingSet = null">Keep them</Button>
+        <Button Block="true" Busy="_busy" OnClick="ArchiveSetAsync">Archive the groups</Button>
+        <Button Block="true" Variant="ButtonVariant.Quiet" Disabled="_busy" OnClick="() => _archivingSet = null">Keep the groups</Button>
     </Actions>
 </Sheet>
 
 <UnsavedGuard Changed="() => _setOpen && SetShape != _setWas" What="these groups' Sundays and time" />
 
-<Sheet Open="_setOpen" OpenChanged="open => _setOpen = open" Title="@(_set is null ? "Plan the next groups" : "Sundays and time")" Lead="People see these groups by their dates. Add the Sundays from a date range, then take off any they don't meet." Wide="true">
+<Sheet Open="_setOpen" OpenChanged="open => _setOpen = open" Title="@(_set is null ? "Plan the next groups" : "Sundays and times")" Lead="Add the Sundays in a date range, then remove any Sundays the groups don't meet." Wide="true">
     <ChildContent>
         <div class="ui-actions">
             @foreach (string sunday in _sundays.Order())
             {
-                <Button @key="sunday" Small="true" Variant="ButtonVariant.Quiet" Icon="x" AriaLabel="@($"Take off {MinistryWords.Day(sunday)}")" OnClick="() => _sundays.Remove(sunday)">@MinistryWords.Day(sunday)</Button>
+                <Button @key="sunday" Small="true" Variant="ButtonVariant.Quiet" Icon="x" AriaLabel="@($"Remove {MinistryWords.Day(sunday)}")" OnClick="() => _sundays.Remove(sunday)">@MinistryWords.Day(sunday)</Button>
             }
         </div>
         <div class="ui-pair">
             <DateField Label="From" @bind-Value="_from" />
-            <DateField Label="To" @bind-Value="_to" />
+            <DateField Label="To" @bind-Value="_to" Hint="Every Sunday between these dates is added." />
         </div>
         <div class="ui-actions">
             <Button Small="true" Variant="ButtonVariant.Quiet" Icon="plus" Disabled="@(Day(_from) == DateOnly.MinValue || Day(_to) < Day(_from))" OnClick="AddSundays">Add the Sundays in these dates</Button>
@@ -121,35 +121,35 @@
             <TimeField Label="Starts" @bind-Value="_starts" />
             <TimeField Label="Ends" @bind-Value="_ends" />
         </div>
-        <DateField Label="Shows in the app from" @bind-Value="_showsFrom" Hint="Usually during the break before they start. Leave empty to show them straight away." />
+        <DateField Label="Show in the app from" @bind-Value="_showsFrom" Hint="The date people can start choosing these groups, usually during the break before they begin. Leave this empty to show the groups straight away." />
         <Notice Tone="NoticeTone.Warning" Text="@_problem" />
     </ChildContent>
     <Actions>
-        <SaveBar Block="true" Label="Save" Busy="_busy" OnSave="SaveSetAsync" Blocked="@(_sundays.Count == 0 ? "Add the Sundays they meet to save them." : null)" />
+        <SaveBar Block="true" Label="Save the Sundays" Busy="_busy" OnSave="SaveSetAsync" Blocked="@(_sundays.Count == 0 ? "Add the Sundays the groups meet." : null)" />
     </Actions>
 </Sheet>
 
 <UnsavedGuard Changed="() => _calendarOpen && !_confirmingRemoval && _calendarChoice != _calendarWas" What="where Life Groups show" />
 
 <Sheet Open="_calendarOpen" OpenChanged="open => _calendarOpen = open" Title="@(_confirmingRemoval ? $"Take Life Groups off {_calendar.CalendarName}?" : "Show Life Groups in a calendar")"
-       Lead="@(_confirmingRemoval ? "Its entry comes off every phone and calendar app that has it. You can show it in a calendar again at any time." : "One Life Groups entry on each Sunday they meet, at that set's time. Sundays between sets show as not on, and it changes by itself when the Sundays here change. Tapping it in the app opens Life Groups.")">
+       Lead="@(_confirmingRemoval ? "The Life Groups events are removed from every phone and calendar app that has them. You can show Life Groups in a calendar again at any time." : "Adds one Life Groups event to the chosen calendar on each Sunday the groups meet, at that set's time. Sundays between sets show as not on, and the events update by themselves when the Sundays here change. Tapping one in the app opens Life Groups.")">
     <ChildContent>
         @if (!_confirmingRemoval)
         {
             <SelectField Label="Show Life Groups in" Options="CalendarOptions" @bind-Value="_calendarChoice"
-                         Hint="@(_calendar.Choices.Count == 0 ? "You can choose a calendar you add events to. Ask whoever looks after the calendar to give you that." : "Calendars you add events to.")" />
+                         Hint="@(_calendar.Choices.Count == 0 ? "You can only choose a calendar you can add events to. Ask the calendar's manager to give you access." : "Only calendars you can add events to are listed.")" />
         }
         <Notice Tone="NoticeTone.Warning" Text="@_problem" />
     </ChildContent>
     <Actions>
         @if (_confirmingRemoval)
         {
-            <Button Block="true" Variant="ButtonVariant.Danger" Busy="_busy" OnClick="SaveCalendarAsync">Take it off</Button>
-            <Button Block="true" Variant="ButtonVariant.Quiet" OnClick="() => _confirmingRemoval = false">Keep it</Button>
+            <Button Block="true" Variant="ButtonVariant.Danger" Busy="_busy" OnClick="SaveCalendarAsync">Remove from the calendar</Button>
+            <Button Block="true" Variant="ButtonVariant.Quiet" OnClick="() => _confirmingRemoval = false">Keep it in the calendar</Button>
         }
         else
         {
-            <SaveBar Block="true" Label="Save" Busy="_busy" State="SaveBar.For(_calendarChoice != _calendarWas, false)" OnSave="SaveCalendarAsync" />
+            <SaveBar Block="true" Label="Save the calendar" Busy="_busy" State="SaveBar.For(_calendarChoice != _calendarWas, false)" OnSave="SaveCalendarAsync" />
         }
     </Actions>
 </Sheet>
@@ -157,7 +157,7 @@
 <UnsavedGuard Changed="() => _sitOutRound is not null && (_sitOutGroup, _sitOutNote, _sitOutInstead) != _sitOutWas" What="this group's Sundays" />
 
 <Sheet Open="_sitOutRound is not null" OpenChanged="open => { if (!open) _sitOutRound = null; }" Title="@(_sitOutRound is { } off ? $"Not on {MinistryWords.Span(off)}" : "")"
-       Lead="Its people keep their place in it and are told once, with what you write here. It's back on the next Sundays by itself.">
+       Lead="The group's people keep their place and are told once, with the message you write here. The group is back on by itself for the next set of Sundays.">
     <ChildContent>
         @if (_sitOutRound is { } round)
         {
@@ -169,14 +169,14 @@
             {
                 <SelectField Label="Group" Options="SitOutOptions(round)" @bind-Value="_sitOutGroup" />
             }
-            <TextField Label="What to tell its people" @bind-Value="_sitOutNote" MaxLength="200" Hint="Where to go instead, or what's happening." />
-            <SelectField Label="Point them to" Options="InsteadOptions(round)" @bind-Value="_sitOutInstead" Hint="The group shows a link to it." />
+            <TextField Label="Message to the group" @bind-Value="_sitOutNote" MaxLength="200" Hint="Tell them where to go instead, or what's happening." />
+            <SelectField Label="Group to go to instead" Options="InsteadOptions(round)" @bind-Value="_sitOutInstead" Hint="The group's page shows a link to the group you choose." />
         }
         <Notice Tone="NoticeTone.Warning" Text="@_problem" />
     </ChildContent>
     <Actions>
-        <SaveBar Block="true" Label="@(_sitOutEditing ? "Save" : "Mark it not on")" Busy="_busy" OnSave="() => SaveSitOutAsync(off: true)"
-                 Blocked="@(_sitOutGroup.Length == 0 ? "Choose the group." : null)" />
+        <SaveBar Block="true" Label="@(_sitOutEditing ? "Save" : "Mark as not on")" Busy="_busy" OnSave="() => SaveSitOutAsync(off: true)"
+                 Blocked="@(_sitOutGroup.Length == 0 ? "Choose the group that isn't on." : null)" />
         @if (_sitOutEditing)
         {
             <Button Block="true" Variant="ButtonVariant.Quiet" Busy="_busy" OnClick="() => SaveSitOutAsync(off: false)">It's on these Sundays after all</Button>
@@ -254,7 +254,7 @@
         RoundStage.BeingPlanned => "Nothing being planned. Plan the next groups to start a set.",
         RoundStage.ShownInTheApp when stages[RoundStage.BeingPlanned].FirstOrDefault() is { ShowsFrom.Length: > 0 } next =>
             $"{MinistryWords.Span(next)} shows here from {MinistryWords.Day(next.ShowsFrom)}, when people can choose a group.",
-        RoundStage.ShownInTheApp => "Nothing showing ahead of time.",
+        RoundStage.ShownInTheApp => "No groups are showing ahead of their start.",
         _ => "No Life Groups this Sunday.",
     };
 
@@ -288,7 +288,7 @@
             <ul class="lg-groups">
                 @foreach (MinistrySummary group in groups)
                 {
-                    <li @key="group.Id"><a href="@($"ministries/{group.Id}")">@group.Name</a>@if (group.Meets.Length == 0) {<span class="lg-missing">needs where it meets</span>}</li>
+                    <li @key="group.Id"><a href="@($"ministries/{group.Id}")">@group.Name</a>@if (group.Meets.Length == 0) {<span class="lg-missing">Where it meets is missing</span>}</li>
                 }
                 @foreach ((MinistrySummary group, SittingOut sitting) in off)
                 {
@@ -321,9 +321,9 @@
         if (page.MayPlan && stage != RoundStage.Finished)
             items.Add(this.Item("Sundays and time", () => OpenSet(round), "pencil", "Which Sundays, when, and when people see them"));
         if (page.MayPlan && stage != RoundStage.Finished && AllYear(page).Any(group => LifeGroupRounds.Runs(group.Id, "", round, page.SittingOut)))
-            items.Add(this.Item("An all-year group isn't on these Sundays", () => OpenSitOut(round, null), "circle-off"));
+            items.Add(this.Item("Mark an all-year group as not on", () => OpenSitOut(round, null), "circle-off"));
         if (stage == RoundStage.Finished && groups.Count > 0)
-            items.Add(this.Item("Archive their groups…", () => { _archivingSet = round; }, "archive", "They're kept, and can be restored"));
+            items.Add(this.Item("Archive their groups…", () => { _archivingSet = round; }, "archive", "The groups are kept and can be restored."));
         if (page.MayPlan && groups.Count == 0 && stage != RoundStage.NowOn)
             items.Add(this.Item("Delete these Sundays…", () => { _deletingSet = round; }, "trash", danger: true, startsGroup: items.Count > 0));
         return items;
@@ -354,7 +354,7 @@
 
     private IReadOnlyList<FieldOption> InsteadOptions(Round round) =>
         [
-            new("", "Nowhere"),
+            new("", "None"),
             .. _page is null ? [] : _page.Groups.Where(group => group.Id != _sitOutGroup && LifeGroupRounds.Runs(group.Id, group.RoundId, round, _page.SittingOut))
                 .Select(group => new FieldOption(group.Id, group.Name)),
         ];

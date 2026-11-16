@@ -41,13 +41,13 @@
             <ServicePicker Services="Services" @bind-Value="_service" />
         </div>
         <div class="sermon-check__field">
-            <TextField Label="Bible passage" Placeholder="John 3:16-21" @bind-Value="_passage" MaxLength="120" />
+            <TextField Label="Bible passage" Hint="The book, chapter and verses, such as John 3:16–21." @bind-Value="_passage" MaxLength="120" />
         </div>
         <div class="sermon-check__field">
-            <TextField Label="Video" Placeholder="A YouTube link" Hint="Paste the video's address; leave empty when there's no video." @bind-Value="_youTube" />
+            <TextField Label="Video" Hint="The address of the sermon's YouTube video. Leave this empty if there's no video." @bind-Value="_youTube" />
         </div>
         <div class="sermon-check__field sermon-check__field--wide">
-            <TextField Label="About this sermon" Multiline="true" Hint="Optional: shown under the sermon in the app and on the website." @bind-Value="_summary" MaxLength="4000" />
+            <TextField Label="About this sermon" Multiline="true" Hint="A short description, shown under the sermon in the app and on the website. Optional." @bind-Value="_summary" MaxLength="4000" />
         </div>
     </div>
 
@@ -55,7 +55,7 @@
 
     @if (NeedsCheck || Dirty)
     {
-        <SaveBar Label="@(NeedsCheck ? (Dirty ? "Save · looks right · next" : "Looks right · next") : "Save")" Busy="_busy" OnSave="() => SaveAsync(check: NeedsCheck)"
+        <SaveBar Label="@(NeedsCheck ? (Dirty ? "Save, mark as checked and open the next" : "Mark as checked and open the next") : "Save")" Busy="_busy" OnSave="() => SaveAsync(check: NeedsCheck)"
                  OnCancel="@(Dirty ? EventCallback.Factory.Create(this, Reset) : default)" CancelLabel="Undo changes" State="SaveBar.For(Dirty, _saved)" />
     }
     else if (_saved)

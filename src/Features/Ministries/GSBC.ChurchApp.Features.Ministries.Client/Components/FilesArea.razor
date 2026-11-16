@@ -18,7 +18,7 @@
     }
     @if (Page.Files.Count == 0)
     {
-        <EmptyState Icon="folder" Title="No files yet" Body="@(Page.You.MayPostFor.Count > 0 ? "Add documents, and links to forms and recordings, each for the people who need it." : "Documents and links from this ministry show here.")" />
+        <EmptyState Icon="folder" Title="No files yet" Body="@(Page.You.MayPostFor.Count > 0 ? "Add documents, and links to forms and recordings, each shared with the people who need them." : "Documents and links from this ministry show here.")" />
     }
     @foreach (string audience in MinistryWords.BoxOrder.Where(audience => Page.Files.Any(file => file.Audience == audience)))
     {
@@ -38,13 +38,13 @@
 <Notice Tone="NoticeTone.Warning" Text="@_problem" />
 
 <Sheet Open="_deleting is not null" OpenChanged="open => { if (!open) _deleting = null; }" Title="@($"Delete {_deleting?.Title}?")"
-       Lead="@(_deleting?.Kind == FileKinds.Document ? "It goes for everyone it was for. This can't be undone." : "The link goes for everyone it was for. The page it opens isn't changed.")">
+       Lead="@(_deleting?.Kind == FileKinds.Document ? "The file is removed for everyone it was shared with. This can't be undone." : "The link is removed for everyone it was shared with. The web page itself isn't changed.")">
     <ChildContent>
         <Notice Tone="NoticeTone.Warning" Text="@_problem" />
     </ChildContent>
     <Actions>
-        <Button Block="true" Variant="ButtonVariant.Danger" Busy="_busy" OnClick="DeleteAsync">Delete it</Button>
-        <Button Block="true" Variant="ButtonVariant.Quiet" Disabled="_busy" OnClick="() => _deleting = null">Keep it</Button>
+        <Button Block="true" Variant="ButtonVariant.Danger" Busy="_busy" OnClick="DeleteAsync">@(_deleting?.Kind == FileKinds.Document ? "Delete the file" : "Delete the link")</Button>
+        <Button Block="true" Variant="ButtonVariant.Quiet" Disabled="_busy" OnClick="() => _deleting = null">@(_deleting?.Kind == FileKinds.Document ? "Keep the file" : "Keep the link")</Button>
     </Actions>
 </Sheet>
 
@@ -86,7 +86,7 @@
 
     private IReadOnlyList<MenuItem> Actions(FileItem file) =>
     [
-        this.Item($"Change {file.Title}", () => Open(file), "pencil", "Its name, its line and who it's for"),
+        this.Item($"Change {file.Title}", () => Open(file), "pencil", "Change the name, description and who it's for."),
         this.Item($"Delete {file.Title}…", () => { (_deleting, _problem) = (file, null); }, "trash", danger: true, startsGroup: true),
     ];
 

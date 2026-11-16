@@ -9,7 +9,7 @@ namespace GSBC.ChurchApp.Features.Configuration.Client;
 [AdminOnly]
 public sealed class DatedChanges(ConfigurationClient configuration, SurfaceCatalog surfaces, IAccess access)
 {
-    private const string EventLayer = "Event layer";
+    private const string EventLayer = "Draft turned on for everyone";
 
     public async Task<IReadOnlyList<DatedLane>> LanesAsync(DraftList list, DateTime from, DateTime until)
     {
@@ -40,9 +40,9 @@ public sealed class DatedChanges(ConfigurationClient configuration, SurfaceCatal
         foreach (Draft layer in list.Drafts.Where(draft => draft.LayerOn && (draft.LayerStartsAt ?? from) < until && (draft.LayerEndsAt ?? until) > from))
         {
             if (layer.LayerStartsAt is { } starts && starts > from)
-                coming.Add(new ComingUp(starts, $"“{layer.Name}” goes on for everyone{Until(layer.LayerEndsAt)}", layer.Id));
+                coming.Add(new ComingUp(starts, $"“{layer.Name}” is turned on for everyone{Until(layer.LayerEndsAt)}", layer.Id));
             else if (layer.LayerEndsAt is { } ends)
-                coming.Add(new ComingUp(ends, $"“{layer.Name}” goes off, and everyone is back to what's published", layer.Id));
+                coming.Add(new ComingUp(ends, $"“{layer.Name}” turns off, and everyone sees the published app again", layer.Id));
         }
 
         foreach (Draft scheduled in list.Drafts.Where(draft => draft is { PublishAt: { } at, NotPublished: null } && at > from && at < until))

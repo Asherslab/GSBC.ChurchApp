@@ -13,7 +13,7 @@
     @if (Report.HandledAt is null)
     {
         <TextField Label="What was done" Hint="Kept with the report and in the log." Multiline="true" Value="@_outcome" ValueChanged="value => _outcome = value" MaxLength="ChatLimits.NoteLength" />
-        <SaveBar Label="Mark as handled" Busy="_busy" Blocked="@(_outcome.Trim().Length == 0 ? "Say what was done to close it." : _problem)" OnSave="HandleAsync"
+        <SaveBar Label="Mark as handled" Busy="_busy" Blocked="@(_outcome.Trim().Length == 0 ? "Say what was done before marking the report handled." : _problem)" OnSave="HandleAsync"
                  OnCancel="() => _outcome = string.Empty" />
     }
     else

@@ -26,7 +26,7 @@
         <ul class="chip-picker__options" id="@_listId" role="listbox" aria-label="@Label">
             @if (Matches.Count == 0)
             {
-                <li class="chip-picker__none" role="presentation">@(_query.Length > 0 ? $"Nothing called “{_query}”" : Empty)</li>
+                <li class="chip-picker__none" role="presentation">@(_query.Length > 0 ? $"Nothing matches “{_query}”." : Empty)</li>
             }
             @for (int index = 0; index < Matches.Count; index++)
             {
@@ -58,7 +58,7 @@
     [Parameter] public IReadOnlyList<TItem> Chosen { get; set; } = [];
     [Parameter] public EventCallback<IReadOnlyList<TItem>> ChosenChanged { get; set; }
     [Parameter] public string? Placeholder { get; set; }
-    [Parameter] public string Empty { get; set; } = "Everything is chosen";
+    [Parameter] public string Empty { get; set; } = "Everything is already chosen.";
     [Parameter] public int MostShown { get; set; } = 8;
 
     private bool Open => _focused;

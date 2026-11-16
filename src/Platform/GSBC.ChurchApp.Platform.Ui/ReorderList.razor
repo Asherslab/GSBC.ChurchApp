@@ -19,7 +19,7 @@
             else if (!Disabled)
             {
                 <button type="button" class="reorder__grip" data-reorder-grip aria-label="@($"Move {Name(item)}")" aria-keyshortcuts="Alt+ArrowUp Alt+ArrowDown"
-                        title="Drag to move, or press Alt and an arrow key" @onkeydown="key => KeyAsync(key, at)">
+                        title="Drag to reorder, or press Alt and an arrow key." @onkeydown="key => KeyAsync(key, at)">
                     <Icon Name="grip" Size="IconSize.Small" />
                 </button>
             }

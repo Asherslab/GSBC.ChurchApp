@@ -1,6 +1,6 @@
 <SearchPicker TItem="ServiceChoice" Label="Service" Items="Choices" Text="NameOf" Detail="CountOf" Value="Chosen" ValueChanged="ChooseAsync"
-              NoneText="No service given" Placeholder="Find or add a service" CreateText="@(name => $"Add “{name}” as a service")" OnCreate="AddAsync"
-              Hint="A service you add is offered next time too." />
+              NoneText="No service" Placeholder="Find or add a service" CreateText="@(name => $"Add “{name}” as a service")" OnCreate="AddAsync"
+              Hint="The service the sermon was preached at. A service you add here is offered for later sermons too." />
 
 @code {
     private readonly List<ServiceChoice> _added = [];

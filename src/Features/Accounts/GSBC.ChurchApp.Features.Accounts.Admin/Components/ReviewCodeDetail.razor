@@ -23,16 +23,16 @@
 
 @if (Working)
 {
-    <p class="panel-hint">Turn it off, under More, once Apple has approved the build.</p>
+    <p class="panel-hint">Once Apple approves the build, turn this code off from the ⋯ menu.</p>
 }
 
 <Notice Tone="NoticeTone.Warning" Text="@_problem" />
 
 <Sheet Open="_asking" OpenChanged="open => _asking = open" Title="@($"Turn off {Code.Label}?")"
-       Lead="It stops working at once, and anyone signed in with it is signed out. It can't be turned back on; make a new code if you need one.">
+       Lead="The code stops working at once, and anyone signed in with it is signed out. A code can't be turned back on, so make a new one if you need it.">
     <Actions>
-        <Button Variant="ButtonVariant.Danger" Busy="_busy" OnClick="TurnOffAsync">Turn it off</Button>
-        <Button Variant="ButtonVariant.Quiet" OnClick="() => _asking = false">Keep it</Button>
+        <Button Variant="ButtonVariant.Danger" Busy="_busy" OnClick="TurnOffAsync">Turn the code off</Button>
+        <Button Variant="ButtonVariant.Quiet" OnClick="() => _asking = false">Keep the code</Button>
     </Actions>
 </Sheet>
 
@@ -46,7 +46,7 @@
     private bool Working => ReviewCodeState.Order(Code) == 0;
 
     private IReadOnlyList<MenuItem> Actions => Working
-        ? [this.Item("Turn the code off…", () => { _asking = true; return Task.CompletedTask; }, "circle-off", "Stops it working and signs reviewers out", danger: true)]
+        ? [this.Item("Turn the code off…", () => { _asking = true; return Task.CompletedTask; }, "circle-off", "The code stops working and reviewers are signed out.", danger: true)]
         : [];
 
     [Parameter, EditorRequired] public required ReviewCodeInfo Code { get; set; }

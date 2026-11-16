@@ -24,13 +24,13 @@ else
 
     <LiveData TValue="OfficeWeek" Load="LoadAsync" Feeds="Feeds" FailedTitle="Can't load this week right now">
         <DayRail First="Today" Today="Today" Days="Days" Spans="context.Value.Spans" Heading="The next seven days"
-                 Quiet="Nothing dated this week. Event layers and tiles with dates appear here." Legend="Legend" />
+                 Quiet="Nothing is scheduled this week. Drafts turned on for set dates, and tiles with dates, appear here." Legend="Legend" />
 
         <div class="office-columns">
             <Section Title="Needs you">
                 @if (context.Value.Tasks.Count == 0)
                 {
-                    <p class="office-done"><Icon Name="check" Size="IconSize.Small" /> Nothing is waiting on you.</p>
+                    <p class="office-done"><Icon Name="check" Size="IconSize.Small" /> Nothing is waiting for you.</p>
                 }
                 else
                 {
@@ -75,7 +75,7 @@ else
     private const int Days = 7;
 
     private static readonly IReadOnlyList<(OfficeSpanKind Kind, string Label)> Legend =
-        [(OfficeSpanKind.Everyone, "What everyone sees"), (OfficeSpanKind.Layer, "Event layer"), (OfficeSpanKind.Draft, "Not out yet: a draft or a scheduled announcement")];
+        [(OfficeSpanKind.Everyone, "What everyone sees"), (OfficeSpanKind.Layer, "Draft turned on for everyone"), (OfficeSpanKind.Draft, "Not out yet: a draft or a scheduled announcement")];
 
     private DateTime Today => ChurchTime.ToChurch(Clock.GetUtcNow().UtcDateTime).Date;
 

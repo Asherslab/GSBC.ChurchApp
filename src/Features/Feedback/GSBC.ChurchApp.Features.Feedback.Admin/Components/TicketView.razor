@@ -34,8 +34,8 @@
                     <Pill Tone="PillTone.Quiet">Not doing</Pill>
                 }
                 <span class="ticket__hint">@(FeedbackWords.IsClosed(line.Status)
-                    ? $"Closed {ChurchDates.Ago(ticket.ClosedAt ?? line.ChangedAt, Now)}. {(line.FilesGoAt is { } goes ? FeedbackWords.FilesGo(goes) + " " : "")}Deleted entirely 180 days after it closed."
-                    : $"Its pictures, videos and phone data are deleted {FeedbackLimits.FilesKeptDaysAfterClosing} days after it's Resolved or Not doing.")</span>
+                    ? $"Closed {ChurchDates.Ago(ticket.ClosedAt ?? line.ChangedAt, Now)}. {(line.FilesGoAt is { } goes ? FeedbackWords.FilesGo(goes) + " " : "")}The feedback is deleted entirely 180 days after it closed."
+                    : $"The pictures, videos and phone data sent with this feedback are deleted {FeedbackLimits.FilesKeptDaysAfterClosing} days after it moves to Resolved or Not doing.")</span>
             </div>
         </div>
 
@@ -74,7 +74,7 @@
                 }
 
                 <section class="ticket__timeline" aria-labelledby="ticket-history-@line.Number">
-                    <h3 id="ticket-history-@line.Number">What's happened</h3>
+                    <h3 id="ticket-history-@line.Number">History</h3>
                     <ol class="timeline">
                         @foreach (TimelineItem item in Timeline(ticket))
                         {
@@ -99,7 +99,7 @@
             </div>
 
             <aside class="ticket__side" aria-label="What came with it">
-                <h3>Sent with it</h3>
+                <h3>Sent with this feedback</h3>
                 <dl class="ticket__facts">
                     <dt>From</dt><dd>@line.From</dd>
                     <dt>Sent</dt><dd>@ChurchDates.Describe(line.SentAt, DateLineStyle.Long, true, Now)</dd>
@@ -142,7 +142,7 @@
                     <h3>This phone</h3>
                     @if (ticket.InstallId.Length == 0)
                     {
-                        <p class="ticket__note">Sent by someone with the Feedback role from a phone that hasn't proved itself, so there's no phone to block.</p>
+                        <p class="ticket__note">Sent by someone with the Feedback role from a phone the app couldn't verify, so there's no phone to block.</p>
                     }
                     else if (ticket.Blocked)
                     {
@@ -154,8 +154,8 @@
                         <p class="ticket__note">@(ticket.FromThisPhone == 1 ? "This is the only feedback from this phone." : $"{ticket.FromThisPhone} pieces of feedback from this phone.")</p>
                         @if (_blocking)
                         {
-                            <TextField Label="Why block it?" Hint="Only people who look after feedback see this." MaxLength="300" @bind-Value="_blockReason" />
-                            <SaveBar Label="Block this phone" Busy="@(_busy == "block")" Blocked="@(_blockReason.Trim().Length == 0 ? "Say why to block it." : null)" OnSave="() => BlockAsync(ticket)"
+                            <TextField Label="Reason for blocking" Hint="Only people who look after feedback see this." MaxLength="300" @bind-Value="_blockReason" />
+                            <SaveBar Label="Block this phone" Busy="@(_busy == "block")" Blocked="@(_blockReason.Trim().Length == 0 ? "Enter a reason for blocking this phone." : null)" OnSave="() => BlockAsync(ticket)"
                                      OnCancel="() => (_blocking, _blockReason) = (false, string.Empty)" />
                         }
                     }
@@ -163,7 +163,7 @@
 
                 @if (ticket.PhoneData is { } data)
                 {
-                    <h3>Its stored data</h3>
+                    <h3>The phone's stored data</h3>
                     <Button Variant="ButtonVariant.Quiet" Small="true" Icon="database" Busy="@(_busy == "data")" OnClick="() => DownloadAsync(data)">Download a copy (@FeedbackWords.Size(data.Bytes))</Button>
                     <p class="ticket__hint">Everything the phone had synced, for finding a bug. It can hold the person's private things.</p>
                 }
@@ -187,8 +187,8 @@
     <Sheet Open="_deleting" OpenChanged="open => _deleting = open" Title="@($"Delete #{line.Number}?")"
            Lead="Its words, pictures, videos and notes go. This can't be undone.">
         <Actions>
-            <Button Variant="ButtonVariant.Danger" Block="true" Busy="@(_busy == "delete")" OnClick="() => DeleteAsync(ticket)">Delete it</Button>
-            <Button Variant="ButtonVariant.Quiet" Block="true" OnClick="() => _deleting = false">Keep it</Button>
+            <Button Variant="ButtonVariant.Danger" Block="true" Busy="@(_busy == "delete")" OnClick="() => DeleteAsync(ticket)">Delete the feedback</Button>
+            <Button Variant="ButtonVariant.Quiet" Block="true" OnClick="() => _deleting = false">Keep the feedback</Button>
         </Actions>
     </Sheet>
 </LiveData>

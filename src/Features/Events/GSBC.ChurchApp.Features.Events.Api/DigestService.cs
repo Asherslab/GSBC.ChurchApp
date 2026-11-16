@@ -62,7 +62,7 @@ internal sealed class DigestService(EventsDbContext db, EventsPublisher publishe
         EventsBook book = await EventsBook.LoadAsync(db, cancellationToken);
         SentDigest sent = Digests.ForApp(ItemsOf(book, record), record.End);
         if (sent.Items.Count == 0)
-            throw new RpcException(new Status(StatusCode.FailedPrecondition, "Tick at least one thing to send."));
+            throw new RpcException(new Status(StatusCode.FailedPrecondition, "Tick at least one item to send."));
 
         DateTime now = time.GetUtcNow().UtcDateTime;
         record.Sent = sent;
@@ -86,9 +86,9 @@ internal sealed class DigestService(EventsDbContext db, EventsPublisher publishe
         CancellationToken cancellationToken = context.CancellationToken;
         DigestRecord? latest = await LatestSentAsync(cancellationToken);
         if (latest is null || latest.Id != IdOf(request.Id))
-            throw new RpcException(new Status(StatusCode.FailedPrecondition, "Send it to the app first: the notification opens what the app has."));
+            throw new RpcException(new Status(StatusCode.FailedPrecondition, "Send the digest to the app first, so the notification has something to open."));
         if (Caller.UserId(UserOf(context)) is not { } me)
-            throw new RpcException(new Status(StatusCode.Unauthenticated, "Sign in to send it to your phone."));
+            throw new RpcException(new Status(StatusCode.Unauthenticated, "Sign in to send the digest to your phone."));
 
         EventsBook book = await EventsBook.LoadAsync(db, cancellationToken);
         await notifications.RaiseAsync(Digests.Notification(book, latest.Sent, NotificationAudience.Person(me)) with { Test = true, Actor = me }, cancellationToken);
@@ -146,25 +146,25 @@ internal sealed class DigestService(EventsDbContext db, EventsPublisher publishe
     }
 
     private static Guid IdOf(string text) =>
-        Guid.TryParse(text, out Guid id) && id != Guid.Empty ? id : throw Invalid("Open the digest again: it has no id.");
+        Guid.TryParse(text, out Guid id) && id != Guid.Empty ? id : throw Invalid("Something went wrong with the digest. Open it again and try once more.");
 
     private static List<DigestEntry> Checked(IReadOnlyList<DigestEntry> entries)
     {
         if (entries.Count > MostEntries)
-            throw Invalid($"A digest holds at most {MostEntries} things.");
+            throw Invalid($"A digest can hold up to {MostEntries} items.");
         if (entries.Select(entry => entry.Key).Distinct().Count() != entries.Count || entries.Any(entry => entry.Key.Length is 0 or > LongestWords))
-            throw Invalid("Each thing in the digest needs its own key.");
+            throw Invalid("Something went wrong saving the digest. Open it again and try once more.");
         foreach (DigestEntry entry in entries)
         {
             if (entry.Own != entry.Key.StartsWith(Digests.OwnPrefix, StringComparison.Ordinal))
-                throw Invalid("Something you added needs a key of its own.");
+                throw Invalid("Something went wrong saving the digest. Open it again and try once more.");
             DigestWords words = entry.Words;
             if (new[] { words.Label, words.Title, words.When, words.Time, words.RegisterLink }.Any(text => text.Length > LongestWords) || words.Description.Length > LongestDescription)
-                throw Invalid("That's too long for the digest.");
+                throw Invalid("Some of the wording is too long for the digest.");
             if (words.RegisterLink.Length > 0 && !(Uri.TryCreate(words.RegisterLink, UriKind.Absolute, out Uri? link) && link.Scheme is "https" or "http"))
-                throw Invalid("A register link is a web address, starting https://");
+                throw Invalid("The registration link needs to be a web address starting with https://.");
             if (entry.Own && words.Title.Trim().Length == 0)
-                throw Invalid("Give what you added a title.");
+                throw Invalid("Enter a title for the item you added.");
         }
         return entries.Select(entry => new DigestEntry
         {

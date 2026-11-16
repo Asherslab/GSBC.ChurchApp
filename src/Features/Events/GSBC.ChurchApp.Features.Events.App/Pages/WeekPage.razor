@@ -100,7 +100,7 @@
             @if (diary.Calendars.Count == 0)
             {
                 <Section First="true">
-                    <EmptyState Icon="calendar" Title="The calendar is on its way" Body="It comes down with everything else the next time this phone is online." />
+                    <EmptyState Icon="calendar" Title="The calendar hasn't arrived yet" Body="It will download the next time this phone is online." />
                 </Section>
             }
             else if (showing.Count == 0)
@@ -114,7 +114,7 @@
             else if (days.Count == 0)
             {
                 <Section First="true">
-                    <EmptyState Icon="calendar" Title="Nothing on in the next few weeks" Body="Nothing in the calendars you have. Browse for others that might be on.">
+                    <EmptyState Icon="calendar" Title="Nothing on in the next few weeks" Body="There's nothing on in your calendars. Browse for other calendars to add.">
                         @if (more)
                         {
                             <Button Variant="ButtonVariant.Quiet" OnClick="MoreAsync">Look further ahead</Button>
@@ -135,7 +135,7 @@
                 @if (more)
                 {
                     <div class="week-more">
-                        <Button Variant="ButtonVariant.Quiet" OnClick="MoreAsync">Carry on past @EventWords.Date(last)</Button>
+                        <Button Variant="ButtonVariant.Quiet" OnClick="MoreAsync">Show events after @EventWords.Date(last)</Button>
                     </div>
                 }
                 else

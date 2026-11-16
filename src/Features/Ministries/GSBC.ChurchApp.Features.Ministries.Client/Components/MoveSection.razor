@@ -4,12 +4,12 @@
 
 <UnsavedGuard Changed="() => _chosen is not null" What="@($"moving {Page.Ministry.Name}")" Save="MoveBeforeLeavingAsync" />
 
-<Section Title="Where it sits" Lead="@Lead" Grouped="true">
+<Section Title="Where this ministry sits" Lead="@Lead" Grouped="true">
     <LiveData TValue="MinistryDirectory" Load="Reads.DirectoryAsync" Feeds="Reads.Feeds" Remember="ministries.directory" FailedTitle="Can't load the ministries right now">
         <div class="ministry-form">
             <SitsUnderPicker Directory="context.Value" UnderId="@(_chosen ?? Page.Ministry.ParentId)" UnderIdChanged="ChooseAsync" LeaveOut="@Page.Ministry.Id"
                              Disabled="_busy"
-                             Hint="To move it, choose where it goes. You'll see what changes before anything moves." />
+                             Hint="To move this ministry, choose the one it should sit under. You'll see what changes before anything moves." />
             @if (_preview is { } preview)
             {
                 <Notice Tone="NoticeTone.Info" Text="@MoveWords.Of(preview)" />

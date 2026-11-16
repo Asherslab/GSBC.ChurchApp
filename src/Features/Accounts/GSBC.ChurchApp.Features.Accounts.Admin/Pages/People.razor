@@ -40,7 +40,7 @@
                 }
                 else
                 {
-                    <EmptyState Icon="users" Title="@(_query.Length > 0 ? $"No one matches “{_query}”" : "No one here")" Body="Try part of their name or email, or show everyone." />
+                    <EmptyState Icon="users" Title="@(_query.Length > 0 ? $"No one matches “{_query}”" : "No one to show")" Body="Search for part of a name or email address, or show everyone." />
                 }
             </Empty>
         </DataTable>
@@ -55,7 +55,7 @@
     </ChildContent>
     <Actions>
         <Button Icon="send" Busy="_busy" OnClick="SendAllAsync">Send @Invitations(_waiting)</Button>
-        <Button Variant="ButtonVariant.Quiet" OnClick="() => _sendingAll = false">Not yet</Button>
+        <Button Variant="ButtonVariant.Quiet" OnClick="() => _sendingAll = false">Don't send them yet</Button>
     </Actions>
 </Sheet>
 

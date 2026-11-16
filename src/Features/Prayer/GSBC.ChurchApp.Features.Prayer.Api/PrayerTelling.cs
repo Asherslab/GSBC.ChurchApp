@@ -14,8 +14,8 @@ internal sealed class PrayerTelling(INotifications notifications)
     public async Task NewRequestAsync(RequestRecord request, CancellationToken cancellationToken)
     {
         Notification arrived = new(PrayerNotifications.NewRequest, NotificationAudience.Holding(PrayerPermissions.Read),
-            "A new prayer request", "Read it under Prayer, in the app or the admin panel.", PrayerDestinations.Request(request.Id.ToString()), NewSubject(request.Id),
-            Action: "Read it") { Actor = request.UserId };
+            "A new prayer request", "Read the request under Prayer, in the app or the admin panel.", PrayerDestinations.Request(request.Id.ToString()), NewSubject(request.Id),
+            Action: "Read the request") { Actor = request.UserId };
         if (request.Wall != WallState.Waiting)
         {
             await notifications.RaiseAsync(arrived, cancellationToken);
@@ -23,8 +23,8 @@ internal sealed class PrayerTelling(INotifications notifications)
         }
 
         Notification forTheWall = new(PrayerNotifications.WaitingForWall, NotificationAudience.Holding(PrayerPermissions.Wall),
-            "A prayer request asks for the prayer wall", "Read it under Prayer → To approve, and choose what the wall shows.",
-            PrayerDestinations.Approve, WallSubject(request.Id), Action: "Read it") { Actor = request.UserId };
+            "A prayer request asks for the prayer wall", "Read the request under Prayer → To approve, and choose what the wall shows.",
+            PrayerDestinations.Approve, WallSubject(request.Id), Action: "Read the request") { Actor = request.UserId };
         await notifications.RaiseOneOfAsync([arrived, forTheWall], cancellationToken);
     }
 
@@ -37,7 +37,7 @@ internal sealed class PrayerTelling(INotifications notifications)
     public Task AnsweredAsync(RequestRecord request, CancellationToken cancellationToken) =>
         request.UserId is { } owner
             ? notifications.RaiseAsync(new Notification(PrayerNotifications.Answered, NotificationAudience.Person(owner),
-                "Your prayer request is marked answered", "The pastoral team marked it answered. Praise God with us.",
+                "Your prayer request is marked answered", "The pastoral team marked your request answered. Praise God with us.",
                 PrayerDestinations.Yours(request.Id), $"prayer/{request.Id:N}/answered") { Actor = null }, cancellationToken)
             : Task.CompletedTask;
 

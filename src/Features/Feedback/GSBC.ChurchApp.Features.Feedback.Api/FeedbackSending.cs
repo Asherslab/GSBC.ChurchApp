@@ -18,7 +18,7 @@ internal sealed class FeedbackSending(
         if (text.Length == 0 && send.AttachmentIds.Count == 0)
             throw Invalid("Write something, or add a screenshot or video.");
         if (text.Length > FeedbackRules.LongestText)
-            throw Invalid($"Keep it to {FeedbackRules.LongestText} characters.");
+            throw Invalid($"Feedback can be up to {FeedbackRules.LongestText} characters.");
         if (send.AttachmentIds.Count > FeedbackRules.MostAttachments)
             throw Invalid($"Add up to {FeedbackRules.MostAttachments} screenshots or videos.");
 

@@ -119,7 +119,7 @@
                 <Menu Label="More for Jordan Example" Items="RecordActions" AlignStart="true" />
                 <Menu Label="New" Text="New" Icon="plus" Variant="ButtonVariant.Primary" Items="NewItems" AlignStart="true" Chevron="true" />
             </div>)
-        @Item("A small panel anchored to a control: Popover with MenuButton", "Like the Account menu: a few choices and a line about who you are.",
+        @Item("A small panel anchored to a control: Popover with MenuButton", "The Account menu is one: a few choices and a line saying who you are.",
             @<div class="gallery__anchor">
                 <Button Variant="ButtonVariant.Quiet" Icon="user" OnClick="() => _popover = !_popover">Alex Sample</Button>
                 <Popover Label="Alex's menu" @bind-Open="_popover" Class="gallery__popover">
@@ -430,8 +430,8 @@
     </Actions>
 </Sheet>
 
-<TellSheet Open="_telling" Title="Tell people again?" Lead="Saved. It went to everyone on Monday at 9:02am. Send it again, saying what changed?"
-           NotificationTitle="Updated: Working bee this Saturday" BodyHint="Say what changed." OffersUrgent="true" SendLabel="Tell people again"
+<TellSheet Open="_telling" Title="Send the notification again?" Lead="Saved. The notification went to everyone on Monday at 9:02am. Send it again, saying what changed?"
+           NotificationTitle="Updated: Working bee this Saturday" BodyHint="Say what changed." OffersUrgent="true" SendLabel="Send it again"
            OnTell="_ => { _telling = false; return Task.FromResult<string?>(null); }" OnNotNow="() => _telling = false" />
 
 <PagedSheet @bind-Open="_paged" Count="3" Label="A short tour" ItemName="page">

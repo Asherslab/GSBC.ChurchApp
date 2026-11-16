@@ -1,6 +1,6 @@
 @inject IEventEditing Editing
 
-<TellSheet Open="Open" Title="Tell people?" Lead="@($"A notification to everyone who has {CalendarName}, opening the event.")"
+<TellSheet Open="Open" Title="Tell people about this change?" Lead="@($"Sends a notification to everyone who has the {CalendarName} calendar. Tapping it opens the event.")"
            NotificationTitle="@Title" NotificationBody="@Body" OnTell="TellAsync" OnNotNow="() => Done.InvokeAsync(SavedWords)" />
 
 @code {
@@ -19,7 +19,7 @@
         EditSent sent = await Editing.TellPeopleAsync(new TellPeople { CalendarId = CalendarId, OccurrenceId = OccurrenceId, Title = words.Title, Body = words.Body });
         if (!sent.Succeeded)
             return sent.Problem;
-        await Done.InvokeAsync(sent.Queued ? "Saved. People are told as soon as it's sent." : "Saved, and people have been told.");
+        await Done.InvokeAsync(sent.Queued ? "Saved. People will be notified once this phone is back online." : "Saved, and people have been told.");
         return null;
     }
 }

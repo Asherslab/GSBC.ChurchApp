@@ -21,7 +21,7 @@
             IReadOnlyList<Assignment> samePosition = Date.Date.Assignments.Where(each => each.PositionId == assignment.PositionId).ToList();
             <p class="roster-note">@(samePosition.Any(each => each.Id != assignment.Id && each.Fills && !each.Training)
                                        ? $"{RosterLines.TrainingWith(assignment, samePosition)}."
-                                       : $"Training: a leader puts someone trained for {assignment.PositionName} on with {(Date.Yourself ? "you" : RosterLines.First(Date.For.Name))}.")</p>
+                                       : Date.Yourself ? $"You're a trainee. A leader will put someone trained for {assignment.PositionName} on with you." : $"{RosterLines.First(Date.For.Name)} is a trainee. A leader will put someone trained for {assignment.PositionName} on with them.")</p>
         }
         @if (assignment.RepliedBy.Length > 0)
         {
@@ -36,10 +36,10 @@
             @if (_why)
             {
                 <div class="roster-why">
-                    <TextField Label="Want to say why? It goes to the leaders" @bind-Value="_reason" MaxLength="200" />
+                    <TextField Label="Reason" @bind-Value="_reason" MaxLength="200" Hint="Optional. Only the leaders see this." />
                     <div class="roster-actions">
                         <Button Small="true" Disabled="Busy" OnClick="SendCantAsync">@(Date.Yourself ? "I can't do it" : $"{RosterLines.First(Date.For.Name)} can't do it")</Button>
-                        <Button Small="true" Variant="ButtonVariant.Quiet" OnClick="() => _why = false">Keep it</Button>
+                        <Button Small="true" Variant="ButtonVariant.Quiet" OnClick="() => _why = false">Cancel</Button>
                     </div>
                 </div>
             }
@@ -52,7 +52,7 @@
                     }
                     @if (view.Settings.Replies)
                     {
-                        <Button Small="true" Variant="ButtonVariant.Quiet" Disabled="Busy" OnClick="() => _why = true">@(assignment.State == Replies.Accepted ? "I can't now" : "Can't do it")</Button>
+                        <Button Small="true" Variant="ButtonVariant.Quiet" Disabled="Busy" OnClick="() => _why = true">@(assignment.State == Replies.Accepted ? "I can't do it now" : "I can't do it")</Button>
                     }
                     @if (swap is null && view.Settings.SwapsOn)
                     {
@@ -60,7 +60,7 @@
                     }
                     else if (swap is not null)
                     {
-                        <Button Small="true" Variant="ButtonVariant.Quiet" Disabled="Busy" OnClick="OnWithdraw">Call off the swap</Button>
+                        <Button Small="true" Variant="ButtonVariant.Quiet" Disabled="Busy" OnClick="OnWithdraw">Cancel the swap request</Button>
                     }
                 </div>
             }
@@ -86,8 +86,8 @@
 
     private static string SwapWords(SwapLine swap) => swap switch
     {
-        { State: SwapStates.Offered } => $"{RosterLines.First(swap.OfferedByName)} offered to take it. A leader says yes.",
-        { Way: SwapWays.Direct } => $"Asked {RosterLines.First(swap.AskedToName)} to take it. Waiting for them.",
-        _ => "Swap asked. Waiting for someone on the team to take it.",
+        { State: SwapStates.Offered } => $"{RosterLines.First(swap.OfferedByName)} offered to take this place. Waiting for a leader to approve.",
+        { Way: SwapWays.Direct } => $"Asked {RosterLines.First(swap.AskedToName)} to take this place. Waiting for their answer.",
+        _ => "Swap requested. Waiting for someone on the team to take this place.",
     };
 }

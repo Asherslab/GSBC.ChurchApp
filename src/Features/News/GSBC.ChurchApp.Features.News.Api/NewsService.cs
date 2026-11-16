@@ -69,7 +69,7 @@ internal sealed class NewsService(NewsDesk desk, NewsTelling telling, IAccessEva
         Guid id = Caller.UserId(user) ?? throw new RpcException(new Status(StatusCode.Unauthenticated, "Sign in first."));
         bool publishes = await access.IsAllowedAsync(user, NewsPermissions.Publish.Node, null, context.CancellationToken);
         if (!publishes && !await access.IsAllowedAsync(user, NewsPermissions.Write.Node, null, context.CancellationToken))
-            throw new RpcException(new Status(StatusCode.PermissionDenied, "Not permitted."));
+            throw new RpcException(new Status(StatusCode.PermissionDenied, "You don't have permission to do that."));
         return new Writer(id, publishes);
     }
 }

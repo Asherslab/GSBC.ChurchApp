@@ -36,7 +36,7 @@ public static class ConfigurationApiExtensions
             [HubSurfaces.Edit.Node, AppearanceSurfaces.Edit.Node, TabBarSurfaces.Edit.Node, ConfigurationPermissions.PreviewDraft.Node],
             Feature: RoleFeatures.App, Kits: [RoleKits.Pictures]));
         services.AddSystemRole(new SystemRole("app-publisher", "App Publisher",
-            "Everything an App Editor can, and put drafts out to everyone", ScopeKind.Global, ["config.*"],
+            "Everything an App Editor can do, and publish drafts for everyone", ScopeKind.Global, ["config.*"],
             Feature: RoleFeatures.App, Kits: [RoleKits.Pictures], Replaces: ["app-editor"]));
         services.AddScoped<IRoleUses, ConfigurationRoleUses>();
         services.AddNotificationKinds(DraftNotifications.All);

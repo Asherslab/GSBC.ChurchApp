@@ -16,14 +16,14 @@
                         @if (sending > 0)
                         {
                             <ListRow Title="@(sending == 1 ? "1 change waiting to send" : $"{sending} changes waiting to send")"
-                                     Subtitle="It goes as soon as there's a signal, and shows here once the church has it." Icon="send" IconTone="RowTone.Quiet" />
+                                     Subtitle="Changes are sent as soon as the phone is online. They show here once the church has received them." Icon="send" IconTone="RowTone.Quiet" />
                         }
                         @foreach (OutboxEntry entry in waiting.Where(entry => entry.Failed))
                         {
                             <ListRow @key="entry.Id" Title="@($"Couldn't send {What(entry.Method)}")" Subtitle="@entry.LastError" Icon="alert" IconTone="RowTone.Warm">
                                 <TrailingContent>
                                     <Button Variant="ButtonVariant.Quiet" Small="true" OnClick="() => outbox.RetryAsync(entry.Id).AsTask()">Try again</Button>
-                                    <Button Variant="ButtonVariant.Danger" Small="true" OnClick="() => outbox.DiscardAsync(entry.Id).AsTask()">Discard</Button>
+                                    <Button Variant="ButtonVariant.Danger" Small="true" OnClick="() => outbox.DiscardAsync(entry.Id).AsTask()">Discard the change</Button>
                                 </TrailingContent>
                             </ListRow>
                         }

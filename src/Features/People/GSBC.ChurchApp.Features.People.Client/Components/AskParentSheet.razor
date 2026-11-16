@@ -2,13 +2,13 @@
 
 <UnsavedGuard Changed="() => Open && _email.Trim().Length > 0" What="the email you typed" />
 
-<Sheet Open="Open" OpenChanged="OpenChanged" Title="Ask a parent" Lead="Use the email your parent or guardian has for the app. They say yes on their Account page; if they're not in the app yet, your ask waits until they sign up with that email.">
+<Sheet Open="Open" OpenChanged="OpenChanged" Title="Ask a parent" Lead="Use the email your parent or guardian has for the app. They say yes on their Account page; if they're not in the app yet, your request waits until they sign up with that email.">
     <ChildContent>
         <TextField Label="Their email" Type="email" Value="@_email" ValueChanged="value => _email = value" AutoComplete="email" />
         <Notice Tone="NoticeTone.Warning" Text="@_message" />
     </ChildContent>
     <Actions>
-        <Button Block="true" Busy="_busy" Disabled="@(_email.Trim().Length == 0)" OnClick="AskAsync">Ask them</Button>
+        <Button Block="true" Busy="_busy" Disabled="@(_email.Trim().Length == 0)" OnClick="AskAsync">Send the request</Button>
         <Button Block="true" Variant="ButtonVariant.Quiet" OnClick="() => OpenChanged.InvokeAsync(false)">Not now</Button>
     </Actions>
 </Sheet>

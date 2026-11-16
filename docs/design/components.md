@@ -65,7 +65,7 @@ The system ships in `src/Platform/GSBC.ChurchApp.Platform.Ui`; the app links all
 | Save state | `SaveStatus` | Saved, waiting, saving, failed with a retry, not saved yet |
 | Save action | `SaveBar` | Cancel left, the one save button right, `Blocked` or `SaveStatus` above; other actions after Cancel, moving above when narrow |
 | Edits in children | `EditScope` | Re-renders around any edit inside, so a header or save button stays current |
-| Unsaved changes | `UnsavedGuard`, `UnsavedChanges` | Leaving with changes opens a sheet: *Save and go on* (when it can save), *Discard the changes*, *Stay here*; closing the browser tab gets the browser's warning |
+| Unsaved changes | `UnsavedGuard`, `UnsavedChanges` | Leaving with changes opens a sheet: *Save and leave* (when it can save), *Discard the changes*, *Stay here*; closing the browser tab gets the browser's warning |
 | Stages | `StagePipeline` | `Stages` (`SegmentOption`s in order), `ReadOnly` |
 | Sidebar counts | `INavCounts` (Platform.Client) | A count per page href, added to the office week's |
 | Sidebar actions | `SidebarAction` (Platform.Client) | Title, icon, permission, the sheet it opens; in the foot above You |
@@ -78,7 +78,7 @@ The system ships in `src/Platform/GSBC.ChurchApp.Platform.Ui`; the app links all
 | Hub canvas | `StylingPhone`, `HomePanel`, `TileSettings`, `AddTileSheet`, `HubLibrary` (Configuration Client) | Arranging and recolouring tiles in a draft, with the contrast warning; `hub-canvas.js` ports `HubGrid`'s packing |
 | App styling | `StylingWorkspace`, `StylingPhone`, `PreviewChips`, `StylingOverview`, `ColoursPanel`, `HomePanel`, `TabsPanel`, `DraftsMenu`, `DraftListing` (Configuration Client), `ThemeSwatches` (Platform.Ui) | The styling page; styled in `drafts.css` |
 | Choose several | `ChipPicker` | Matches starting with the search come first |
-| Who sees it | `AudiencePicker` (Content) | Everyone, Signed in, or roles; anything else shows as "Set up specially" |
+| Who can see this | `AudiencePicker` (Content) | Everyone, Signed-in people, or Certain roles; anything else shows as "Custom" |
 | Choose a picture or file | `MediaChooser` (Content) | A wide `Sheet` around `MediaPicker`; `ImagesOnly`; opens on the last folder used |
 | Pick files | `FilePick` (Content) | `Kinds`, `Multiple`, `Limit`, `TooLarge`, `OnPicked` or `OnChosen`; `TakesPaste`, `DropOn` |
 | Show a picture, video or file | `MediaPreview`, `MediaVideo` | A video plays inline, muted without `Controls` |

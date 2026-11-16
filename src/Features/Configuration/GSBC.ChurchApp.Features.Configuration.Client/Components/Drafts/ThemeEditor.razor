@@ -1,6 +1,6 @@
 @using CustomTheme = GSBC.ChurchApp.Platform.Contracts.Configuration.AppearanceSurfaces.CustomTheme
 
-<TextField Label="Name" Placeholder="Advent 2026" MaxLength="CustomTheme.Name.MaxLength" Value="@Draft.Values[CustomTheme.Name.Key]"
+<TextField Label="Name" MaxLength="CustomTheme.Name.MaxLength" Value="@Draft.Values[CustomTheme.Name.Key]"
            ValueChanged="value => SetAsync(CustomTheme.Name, value)" Problem="@CustomTheme.Name.ProblemWith(Draft.Values[CustomTheme.Name.Key])" />
 
 <FontPicker Label="@CustomTheme.Font.Label" Bundled="AppearanceSurfaces.Fonts" Value="Values.Get(CustomTheme.Font)"
@@ -9,9 +9,9 @@
             ValueChanged="font => SetAsync(CustomTheme.BodyFont, CustomTheme.BodyFont.Format(font))" />
 
 <div class="theme-editor__scheme">
-    <span class="field__label">Colours for</span>
-    <Segmented TValue="ThemeScheme" Label="Colours for" Options="Schemes" Value="Scheme" ValueChanged="SchemeChanged" />
-    <span>@(Scheme == ThemeScheme.Light ? "Phones set to light mode." : "Phones set to dark mode, which many switch to at night. Worked out from the light colours until you set them here.")</span>
+    <span class="field__label">Colours for light or dark mode</span>
+    <Segmented TValue="ThemeScheme" Label="Colours for light or dark mode" Options="Schemes" Value="Scheme" ValueChanged="SchemeChanged" />
+    <span>@(Scheme == ThemeScheme.Light ? "Used on phones set to light mode." : "Used on phones set to dark mode, which many people use at night. Until you set them here, they're worked out from the light colours.")</span>
 </div>
 
 <fieldset class="theme-editor__group">
@@ -37,12 +37,12 @@
 <div class="theme-editor__advanced">
     <button type="button" class="theme-editor__disclose" aria-expanded="@(_advanced ? "true" : "false")" @onclick="() => _advanced = !_advanced">
         <Icon Name="@(_advanced ? "chevron-down" : "chevron-right")" Size="IconSize.Small" />
-        <span>Advanced: every colour</span>
-        <span class="theme-editor__count">@(OverrideCount == 0 ? "all worked out" : OverrideCount == 1 ? "1 set by hand" : $"{OverrideCount} set by hand")</span>
+        <span>Advanced: set any colour by hand</span>
+        <span class="theme-editor__count">@(OverrideCount == 0 ? "all worked out" : OverrideCount == 1 ? "1 colour set by hand" : $"{OverrideCount} colours set by hand")</span>
     </button>
     @if (_advanced)
     {
-    <p class="theme-editor__lead">Each colour is worked out from the key colours. Set one here to override it; the arrow puts it back.</p>
+    <p class="theme-editor__lead">Each colour is worked out from the key colours. Set one here to override it, or use its reset arrow to go back to the worked-out colour.</p>
     @foreach (ThemeRole role in ThemeDerivation.Editable)
     {
         string key = ColourOverridesSetting.RoleKey(Scheme, role.Key);
@@ -80,7 +80,7 @@
 
     private string? ProblemFor(string role) =>
         Problems.FirstOrDefault(candidate => candidate.TextRole == role || (candidate.BackgroundRole == role && Overrides.ContainsKey(ColourOverridesSetting.RoleKey(Scheme, role)))) is { } problem
-            ? string.Create(System.Globalization.CultureInfo.InvariantCulture, $"Hard to read on {Label(problem.BackgroundRole == role ? problem.TextRole : problem.BackgroundRole)}: {problem.Contrast:0.0}:1, it needs {ThemeDerivation.ReadableText}:1.")
+            ? string.Create(System.Globalization.CultureInfo.InvariantCulture, $"Text is hard to read on {Label(problem.BackgroundRole == role ? problem.TextRole : problem.BackgroundRole)}: the contrast is {problem.Contrast:0.0}:1 and needs to be at least {ThemeDerivation.ReadableText}:1.")
             : null;
 
     private static string Label(string role) => ThemeDerivation.Editable.FirstOrDefault(known => known.Key == role)?.Label.ToLowerInvariant() ?? role;

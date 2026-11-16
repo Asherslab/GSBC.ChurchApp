@@ -5,7 +5,7 @@
 <UnsavedGuard Changed="() => Open && Changed" What="the days away" Save="SaveAsync" />
 
 <Sheet Open="Open" OpenChanged="OpenChanged" Title="@(Span is null ? "Days away" : RosterLines.Span(Span))"
-       Lead="@(Who is { } who && who.Id != YourId ? $"For {who.Name}. Leaders of their teams see these." : "Leaders of every team you're on see these.")">
+       Lead="@(Who is { } who && who.Id != YourId ? $"Days away for {who.Name}. The leaders of their teams can see them." : "The leaders of every team you're on can see your days away.")">
     <Tools>
         @if (Span is not null)
         {
@@ -26,44 +26,44 @@
                 <span class="field__label">On</span>
                 <ToggleChips TValue="int" Label="Days of the week" Chips="WeekdayChips" Toggled="chip => ToggleWeekday(chip.Value)" Class="away-weekdays" />
             </div>
-            <DateField Label="Starting" @bind-Value="_draft.From" Min="@Today" />
-            <DateField Label="Until (leave empty for until further notice)" @bind-Value="_draft.To" Min="@(_draft.From.Length > 0 ? _draft.From : Today)" Placeholder="Until further notice" />
+            <DateField Label="First day away" @bind-Value="_draft.From" Min="@Today" />
+            <DateField Label="Last day away" @bind-Value="_draft.To" Min="@(_draft.From.Length > 0 ? _draft.From : Today)" Hint="Leave this empty if you're away until further notice." />
         }
         else
         {
-            <DateField Label="First day" @bind-Value="_draft.From" Min="@Today" />
-            <DateField Label="Last day" Value="@(_draft.To.Length > 0 ? _draft.To : _draft.From)" ValueChanged="value => _draft.To = value" Min="@(_draft.From.Length > 0 ? _draft.From : Today)" />
+            <DateField Label="First day away" @bind-Value="_draft.From" Min="@Today" />
+            <DateField Label="Last day away" Value="@(_draft.To.Length > 0 ? _draft.To : _draft.From)" ValueChanged="value => _draft.To = value" Min="@(_draft.From.Length > 0 ? _draft.From : Today)" />
         }
         <Segmented TValue="string" Label="Away for" ShowLabel="true" Value="@Part" ValueChanged="SetPart" Options="Parts" />
         @if (Part == Times)
         {
             <div class="away-times">
-                <TimeField Label="From" @bind-Value="_draft.StartTime" Placeholder="The start of the day" />
-                <TimeField Label="Until" @bind-Value="_draft.EndTime" Placeholder="The end of the day" />
+                <TimeField Label="From" @bind-Value="_draft.StartTime" Hint="Leave this empty to start at the beginning of the day." />
+                <TimeField Label="Until" @bind-Value="_draft.EndTime" Hint="Leave this empty to run to the end of the day." />
             </div>
         }
         @if (_draft.Weekly && _draft.Except.Count > 0)
         {
             <div class="field">
-                <span class="field__label">Not away on</span>
+                <span class="field__label">Days not away</span>
                 <ToggleChips TValue="string" Label="Days not away" Quiet="true" Chips="@(_draft.Except.Order().Select(day => new ToggleChip<string>(day, Short(day), true)).ToList())"
                              Toggled="chip => _draft.Except.Remove(chip.Value)" />
-                <span class="field__hint">Choose one to be away that day after all. Choose a day on the month to add one.</span>
+                <span class="field__hint">Choose a day here to be away on it after all. To add another day, choose it on the month.</span>
             </div>
         }
-        <TextField Label="A note for the leaders (if you like)" @bind-Value="_draft.Note" MaxLength="200" />
+        <TextField Label="Note for the leaders" @bind-Value="_draft.Note" MaxLength="200" Hint="Optional. The leaders see this with the days away." />
         <Notice Tone="NoticeTone.Warning" Text="@_problem" />
     </ChildContent>
     <Actions>
-        <SaveBar Label="@(Span is null ? "Add the days" : "Save")" New="Span is null" Busy="_busy" OnSave="SaveAsync" OnCancel="() => OpenChanged.InvokeAsync(false)"
+        <SaveBar Label="@(Span is null ? "Add the days away" : "Save the days away")" New="Span is null" Busy="_busy" OnSave="SaveAsync" OnCancel="() => OpenChanged.InvokeAsync(false)"
                  State="@(Span is not null && Changed ? SaveState.Unsaved : null)" Blocked="@AwayRules.WhyNot(Draft, ChurchTime.Today(Clock))" />
     </Actions>
 </Sheet>
 
-<Sheet Open="_deleting" OpenChanged="open => _deleting = open" Title="Delete these days away?" Lead="Leaders stop seeing them. You can add them again any time.">
+<Sheet Open="_deleting" OpenChanged="open => _deleting = open" Title="Delete these days away?" Lead="Leaders won't see these days any more. You can add them again at any time.">
     <Actions>
-        <Button Block="true" Variant="ButtonVariant.Danger" Disabled="_busy" OnClick="DeleteAsync">Delete</Button>
-        <Button Block="true" Variant="ButtonVariant.Quiet" OnClick="() => _deleting = false">Keep them</Button>
+        <Button Block="true" Variant="ButtonVariant.Danger" Disabled="_busy" OnClick="DeleteAsync">Delete the days away</Button>
+        <Button Block="true" Variant="ButtonVariant.Quiet" OnClick="() => _deleting = false">Keep the days away</Button>
     </Actions>
 </Sheet>
 
@@ -71,7 +71,7 @@
     private const string AllDay = "all", Mornings = "mornings", Evenings = "evenings", Times = "times";
 
     private static readonly IReadOnlyList<SegmentOption<string>> Parts =
-        [new(AllDay, "All day"), new(Mornings, "Mornings"), new(Evenings, "Evenings"), new(Times, "Times")];
+        [new(AllDay, "All day"), new(Mornings, "Mornings"), new(Evenings, "Evenings"), new(Times, "Set times")];
 
     private static readonly DayOfWeek[] Week =
         [DayOfWeek.Monday, DayOfWeek.Tuesday, DayOfWeek.Wednesday, DayOfWeek.Thursday, DayOfWeek.Friday, DayOfWeek.Saturday, DayOfWeek.Sunday];

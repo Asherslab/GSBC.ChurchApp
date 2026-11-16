@@ -78,7 +78,7 @@ internal sealed class SermonDeletion(
     {
         SermonRecord sermon = await db.Sermons.FindAsync([id], cancellationToken) ?? throw NotFound("That sermon");
         if (!sermon.Hidden)
-            throw new RpcException(new Status(StatusCode.FailedPrecondition, "Hide it from the app first, then delete it."));
+            throw new RpcException(new Status(StatusCode.FailedPrecondition, "Hide the sermon from the app first, then delete it."));
 
         DateTime now = time.GetUtcNow().UtcDateTime;
         await using (IDbContextTransaction transaction = await db.Database.BeginTransactionAsync(cancellationToken))

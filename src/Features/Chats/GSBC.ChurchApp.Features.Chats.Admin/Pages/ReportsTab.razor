@@ -17,7 +17,7 @@
 </LiveData>
 
 <Sheet Open="_pausing is not null" OpenChanged="open => { if (!open) _pausing = null; }" Title="@($"Pause {_pausing?.MessageSender} from chats?")"
-       Lead="They lose every chat until someone lets them back in under Paused people. They aren't told who reported them. It's logged.">
+       Lead="They lose every chat until someone lets them back in under Paused people. They aren't told who reported them. The pause is logged.">
     <ChildContent>
         <TextField Label="Why" Hint="Kept in the log." Value="@_pauseReason" ValueChanged="value => _pauseReason = value" MaxLength="ChatLimits.NoteLength" />
         <Notice Tone="NoticeTone.Warning" Text="@_problem" />
@@ -60,7 +60,7 @@
     private IReadOnlyList<MenuItem> Actions(ReportLine report) =>
         Desk.Auditor && report.MessageSenderId.Length > 0
             ? [this.Item($"Pause {ChatText.First(report.MessageSender)} from chats…", () => (_pausing, _pauseReason, _problem) = (report, "", null), "pause",
-                "They lose their chats until you let them back in.", danger: true)]
+                "They can't read or write in any chat until someone lets them back in.", danger: true)]
             : [];
 
     private RenderFragment Detail(ReportLine report) =>

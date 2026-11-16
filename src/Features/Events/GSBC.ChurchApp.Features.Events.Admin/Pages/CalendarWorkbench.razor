@@ -269,7 +269,7 @@
 
     private RenderFragment NewCalendarPage =>
         @<div>
-            @MainHead("New calendar", "Name it and choose who it's for. Its events, regular events and people come after it's added.")
+            @MainHead("New calendar", "Name the calendar and choose who it's for. You can add events and people once it's added.")
             <CalendarSettingsForm Saved="AddedAsync" Closed="() => Go(Middle.All)" />
         </div>;
 
@@ -277,7 +277,7 @@
     {
         CalendarInfo info = selected.Settings.Calendar;
         IReadOnlyList<MenuItem> actions = view.Desk.CanManage
-            ? [this.Item("Remove this calendar", () => _removing?.AskAsync() ?? Task.CompletedTask, "trash-2", "Says first what goes with it", danger: true)]
+            ? [this.Item("Remove this calendar", () => _removing?.AskAsync() ?? Task.CompletedTask, "trash-2", "You'll see what's removed with it first.", danger: true)]
             : [];
         return @<div>
             <PaneHead Title="@info.Name" Lead="@CalendarLead(selected)" Actions="actions" Class="calendar-page__head" />
@@ -288,7 +288,7 @@
                     <CalendarSettingsForm @key="info.Id" Calendar="selected" Saved="_ => ReloadAsync()" />
                     break;
                 case CalendarTab.People:
-                    <Section Grouped="true" First="true" Title="People on it" Lead="Editors add and change its events; Publishers also publish them. Calendar Managers and Owners can change every calendar without being on it.">
+                    <Section Grouped="true" First="true" Title="People on this calendar" Lead="Editors add and change its events; Publishers also publish them. Calendar Managers and Owners can change every calendar without being on it.">
                         <CalendarPeople Calendar="selected" />
                     </Section>
                     break;
@@ -317,7 +317,7 @@
     private static string CalendarLead(DeskCalendar calendar) => EventWords.Join(
         WhoFor(calendar.Settings.Calendar.Audience),
         calendar.Settings.Calendar.ReadOnly ? "Copied from its iCal address" : calendar.Settings.NeedsPublisher ? "Needs a publisher" : null,
-        calendar.Settings.Calendar.ShownOnNewPhones ? "Shown on new phones" : "Added from Browse calendars");
+        calendar.Settings.Calendar.ShownOnNewPhones ? "In everyone's week to start with" : "People add it themselves");
 
     private static string WhoFor(string audience) => audience == Audience.Everyone.Text ? "For everyone"
         : audience == Audience.SignedIn.Text ? "For anyone signed in"
@@ -351,7 +351,7 @@
         };
         string title = selected?.Settings.Calendar.Name ?? "All your calendars";
         string? lead = selected is { Settings.Calendar.ReadOnly: true } ? "Copied from its iCal address, so its events are changed there."
-            : _view == View.Regular && selected is not null ? "Things on every week or month, such as services and groups. Choose one to change every date, or a date in it to change only that date."
+            : _view == View.Regular && selected is not null ? "Events that happen every week or month, such as services and groups. Choose one to change every date, or choose a single date to change only that one."
             : null;
         RenderFragment actions = @<div class="calendar-main__actions">
             @if (selected is null || _tab == CalendarTab.Events)
@@ -365,14 +365,14 @@
                     <Button Variant="ButtonVariant.Quiet" Icon="calendar-plus" OnClick="() => Choose(new ShowingHere(into.Settings.Calendar))">From another calendar</Button>
                 }
                 <Menu Label="New event" Text="New event" Icon="plus" Variant="ButtonVariant.Primary"
-                      Items="@([this.Item("Once", () => NewOnce(into), "calendar", "One date, or a few days in a row like a camp"),
+                      Items="@([this.Item("Once", () => NewOnce(into), "calendar", "One date, or a few days in a row, such as a camp."),
                                this.Item("Regularly", () => NewRegular(into), "repeat", "Every week, every second week, monthly, or on dates you choose")])" />
             }
         </div>;
         if (view.Desk.Calendars.Count == 0)
             return @<div>
                 @MainHead(title, null, actions)
-                <EmptyState Icon="calendar" Title="No calendars you can change" Body="Someone who looks after the calendars can make you a Calendar editor of one." />
+                <EmptyState Icon="calendar" Title="No calendars you can change" Body="Ask a Calendar Manager to make you an editor of a calendar." />
             </div>;
         return @<div>
             @if (selected is null)
@@ -467,7 +467,7 @@
 
     private RenderFragment NeedsList(WorkbenchView view) =>
         @<div>
-            @MainHead("Needs details", "Dates of regular events still missing what they need. Their organisers are reminded until it's set.")
+            @MainHead("Needs details", "Dates of regular events that still need something filled in. Their organisers are reminded until it's done.")
             @if (view.Needs.Items.Count == 0)
             {
                 <EmptyState Icon="check" Title="Nothing needs details" Body="Every date coming up has what it needs." />
@@ -494,7 +494,7 @@
             <Notice Tone="NoticeTone.Warning" Text="@_problem" />
             @if (view.Asked.Items.Count == 0 && view.Desk.AskedToShow.Count == 0)
             {
-                <EmptyState Icon="check" Title="Nothing is waiting" Body="When an editor asks to publish, it shows here and you're told." />
+                <EmptyState Icon="check" Title="Nothing is waiting" Body="When an editor asks for an event to be published, it appears here and you're notified." />
             }
             @if (view.Asked.Items.Count > 0)
             {
@@ -530,8 +530,8 @@
                                 }
                             </Below>
                             <TrailingContent>
-                                <Button Variant="ButtonVariant.Quiet" Small="true" OnClick="() => AnswerAsync(request, false)">@(request.AskedByOther ? "Not there" : "Not on ours")</Button>
-                                <Button Small="true" Busy="@(_busy == request.Title)" OnClick="() => AnswerAsync(request, true)">@(request.AskedByOther ? "Show it there" : "Show it")</Button>
+                                <Button Variant="ButtonVariant.Quiet" Small="true" OnClick="() => AnswerAsync(request, false)">Decline</Button>
+                                <Button Small="true" Busy="@(_busy == request.Title)" OnClick="() => AnswerAsync(request, true)">@(request.AskedByOther ? "Agree to show it there" : "Agree to show it here")</Button>
                             </TrailingContent>
                         </ListRow>
                     }
@@ -541,10 +541,10 @@
 
     private RenderFragment BreaksList(WorkbenchView view) =>
         @<div>
-            @MainHead("Breaks", "Named breaks any regular event can use. Fixing a break's dates fixes every regular event using it.", view.Desk.CanManage ? NewBreak : null)
+            @MainHead("Breaks", "Breaks, such as school holidays, that any regular event can pause for. Changing a break's dates changes every regular event that uses it.", view.Desk.CanManage ? NewBreak : null)
             @if (view.Breaks.Breaks.Count == 0)
             {
-                <EmptyState Icon="calendar" Title="No breaks yet" Body="Add the school holidays or the Christmas break once, then choose them on each regular event." />
+                <EmptyState Icon="calendar" Title="No breaks yet" Body="Add a break once, then choose it on each regular event that pauses for it." />
             }
             else
             {
@@ -567,7 +567,7 @@
 
     private static string Used(BreakInfo entry) => entry.UsedBy.Count switch
     {
-        0 => "Not used yet",
+        0 => "Not used by any regular event",
         1 => "Used by 1 regular event",
         _ => $"Used by {entry.UsedBy.Count} regular events",
     };
@@ -586,7 +586,7 @@
         </div>,
         ChosenBreak chosen => @<BreakPanel @key="@(chosen.Break?.Id ?? "new")" Break="chosen.Break" RegularEvents="RegularTitles(view)" Saved="ReloadAsync" Closed="CloseDetail" />,
         _ => @<div class="calendar-detail-empty">
-            <EmptyState Icon="calendar" Title="Choose an event" Body="It shows here as people see it. Change opens it on its own page." />
+            <EmptyState Icon="calendar" Title="Choose an event" Body="Choose an event to see it as people see it in the app. Change opens it on its own page." />
         </div>,
     };
 
@@ -603,7 +603,7 @@
         [
             this.Item(oneOff ? "Change the event" : "Change this date", () => Navigation.NavigateTo(change), "pencil"),
             .. oneOff ? Array.Empty<MenuItem>() :
-                [this.Item("Change the regular event", () => Navigation.NavigateTo(CalendarWorkbenchLinks.Regular(occurrence.CalendarId, occurrence.ItemId, HereWith(occurrence))), "repeat", "Every date of it")],
+                [this.Item("Change the regular event", () => Navigation.NavigateTo(CalendarWorkbenchLinks.Regular(occurrence.CalendarId, occurrence.ItemId, HereWith(occurrence))), "repeat", "Changes every date.")],
         ];
         return @<div class="event-panel" @key="occurrence.Id">
             <EventHead Day="EventWords.DayOf(occurrence)" Label="@EventWords.LabelOf(occurrence, calendar)" Title="@occurrence.Fields.Title"

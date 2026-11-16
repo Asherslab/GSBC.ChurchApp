@@ -2,10 +2,14 @@
     <input id="@_id-swatch" class="colour-field__swatch" type="color" value="@Shown" aria-label="@($"{Label}: pick a colour")" @oninput="PickAsync" />
     <label class="colour-field__label" for="@_id">@Label</label>
     <input id="@_id" class="colour-field__hex" type="text" inputmode="text" spellcheck="false" maxlength="7" value="@_typed" placeholder="@WorkedOut"
-           aria-invalid="@(TypedIsWrong || Problem is not null ? "true" : null)" aria-describedby="@(Problem is null ? null : $"{_id}-problem")" @oninput="TypeAsync" @onblur="SettleTyped" />
+           aria-invalid="@(TypedIsWrong || Problem is not null ? "true" : null)" aria-describedby="@DescribedBy" @oninput="TypeAsync" @onblur="SettleTyped" />
     @if (OnReset.HasDelegate && Set)
     {
         <button type="button" class="colour-field__reset" aria-label="@($"Work out {Label.ToLowerInvariant()} again")" @onclick="() => OnReset.InvokeAsync()"><Icon Name="undo" Size="IconSize.Small" /></button>
+    }
+    @if (Hint is not null)
+    {
+        <span class="field__hint colour-field__hint" id="@(_id)-hint">@Hint</span>
     }
     @if (Problem is not null)
     {
@@ -24,7 +28,11 @@
     [Parameter] public string WorkedOut { get; set; } = "#000000";
     [Parameter] public EventCallback<string> ValueChanged { get; set; }
     [Parameter] public EventCallback OnReset { get; set; }
+    [Parameter] public string? Hint { get; set; }
     [Parameter] public string? Problem { get; set; }
+
+    private string? DescribedBy =>
+        string.Join(' ', new[] { Hint is null ? null : $"{_id}-hint", Problem is null ? null : $"{_id}-problem" }.OfType<string>()) is { Length: > 0 } ids ? ids : null;
 
     private bool Set => Value is { Length: > 0 };
 

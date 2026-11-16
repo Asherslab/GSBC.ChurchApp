@@ -4,7 +4,7 @@
 @if (Date is { } date)
 {
     <Sheet Open="true" OpenChanged="open => Close(open)" Title="@(_picking is { } picking ? $"{picking.Name} · {RosterLines.When(date)}" : $"{RosterLines.When(date)} · {date.Title}")"
-           Lead="@(_picking is null ? Lead(date) : $"{date.Title}. Flags never stop you putting someone on.")">
+           Lead="@(_picking is null ? Lead(date) : $"{date.Title}. Warnings shown here never stop you putting someone on.")">
         <Tools>
             @if (_picking is null && View.MayEdit && !View.Archived)
             {
@@ -31,7 +31,7 @@
                         </ListRow>
                     }
                 </ListGroup>
-                <p class="roster-hint">Everyone put on hears straight away@(View.Settings.Replies ? ", and is asked whether they can do it" : "").</p>
+                <p class="roster-hint">Everyone you put on is told straight away@(View.Settings.Replies ? " and asked whether they can serve" : "").</p>
             }
             else
             {
@@ -66,7 +66,7 @@
                                     @if (Changeable(date))
                                     {
                                         <Menu Label="@($"More for {assignment.Name}")" Small="true"
-                                              Items="@([this.Item($"Take {RosterLines.First(assignment.Name)} off {position.Name}", () => RunAsync(() => Writes.UnassignAsync(View.MinistryId, assignment.Id)), "user-x", "They hear straight away")])" />
+                                              Items="@([this.Item($"Take {RosterLines.First(assignment.Name)} off {position.Name}", () => RunAsync(() => Writes.UnassignAsync(View.MinistryId, assignment.Id)), "user-x", "They're told straight away.")])" />
                                     }
                                 </TrailingContent>
                             </ListRow>
@@ -92,10 +92,10 @@
         </Actions>
     </Sheet>
     <Sheet Open="_removing" OpenChanged="open => _removing = open" Title="Take this date off the roster?"
-           Lead="Everyone on it comes off and hears straight away. The event stays on its calendar.">
+           Lead="Everyone rostered on this date is taken off and told straight away. The event stays on its calendar.">
         <Actions>
-            <Button Block="true" Variant="ButtonVariant.Danger" Disabled="_busy" OnClick="RemoveAsync">Take it off the roster</Button>
-            <Button Block="true" Variant="ButtonVariant.Quiet" OnClick="() => _removing = false">Keep it</Button>
+            <Button Block="true" Variant="ButtonVariant.Danger" Disabled="_busy" OnClick="RemoveAsync">Take the date off the roster</Button>
+            <Button Block="true" Variant="ButtonVariant.Quiet" OnClick="() => _removing = false">Keep the date</Button>
         </Actions>
     </Sheet>
 }
@@ -115,7 +115,7 @@
     private bool Changeable(RosterDate date) => View.MayEdit && !View.Archived && date.StartsAt > Clock.GetUtcNow().UtcDateTime;
 
     private string Lead(RosterDate date) =>
-        $"{RosterLines.LongWhen(date)}{(date.CalendarName.Length > 0 ? $", on {date.CalendarName}" : "")}.{(date.NotOn ? " It's off the calendar now." : "")}";
+        $"{RosterLines.LongWhen(date)}{(date.CalendarName.Length > 0 ? $", on {date.CalendarName}" : "")}.{(date.NotOn ? " This event is no longer on the calendar." : "")}";
 
     private static string Detail(Assignment assignment, IReadOnlyList<Assignment> on) =>
         string.Join(" · ", ((string[])
@@ -123,7 +123,7 @@
             assignment.Training && Replies.Fills(assignment.State) && !assignment.Flags.Contains(Training.AloneFlag) ? RosterLines.TrainingWith(assignment, on) : "",
             assignment.RepliedBy.Length > 0 ? $"Answered by {assignment.RepliedBy}" : "",
             assignment.Reason.Length > 0 ? $"“{assignment.Reason}”" : "",
-            assignment.Swap is { } swap && SwapStates.Live(swap.State) ? swap.State == SwapStates.Offered ? $"{RosterLines.First(swap.OfferedByName)} offers to take it" : "Asked for a swap" : "",
+            assignment.Swap is { } swap && SwapStates.Live(swap.State) ? swap.State == SwapStates.Offered ? $"{RosterLines.First(swap.OfferedByName)} offers to take this place" : "Asked for a swap" : "",
             .. assignment.Flags,
         ]).Where(line => line.Length > 0));
 
@@ -135,7 +135,7 @@
         ]).Where(line => line.Length > 0));
 
     private IReadOnlyList<MenuItem> DateMenu(RosterDate date) =>
-        [this.Item("Take the date off the roster…", () => _removing = true, "trash-2", "Everyone on it comes off and hears", danger: true)];
+        [this.Item("Take the date off the roster…", () => _removing = true, "trash-2", "Everyone rostered on this date is taken off and told.", danger: true)];
 
     private IEnumerable<TeamMember> Choices(RosterDate date, Position position) =>
         View.Team

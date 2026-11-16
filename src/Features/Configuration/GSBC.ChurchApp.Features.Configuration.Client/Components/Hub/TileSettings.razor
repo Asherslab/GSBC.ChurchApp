@@ -49,7 +49,7 @@
     <fieldset class="tile-settings__group">
         <legend>Layout at this size</legend>
         <div class="layout-picker" role="radiogroup" aria-label="Layout at this size">
-            @LayoutChoice(TileVariant.Automatic, $"Best for this size (now {Kind.DefaultFor(Span, Look.Image is not null).Label})", "Changes by itself when you resize the tile", true)
+            @LayoutChoice(TileVariant.Automatic, $"Automatic (currently {Kind.DefaultFor(Span, Look.Image is not null).Label})", "Picks the best layout for the tile's size and changes when you resize it.", true)
             @foreach (TileVariant variant in Kind.Variants)
             {
                 @LayoutChoice(variant.Key, variant.Label, WhyNot(variant) ?? variant.Description, WhyNot(variant) is null)
@@ -58,7 +58,7 @@
     </fieldset>
 
     <fieldset class="tile-settings__group">
-        <legend>Colour, from the theme</legend>
+        <legend>Colour</legend>
         @Swatches("Colour", Look.Tone, tone => SetAsync(Kind.Tile.Tone, tone.Value))
         <span class="tile-settings__note">The words change colour by themselves to stay easy to read.</span>
     </fieldset>
@@ -73,7 +73,7 @@
     </fieldset>
 
     <fieldset class="tile-settings__group">
-        <legend>Words</legend>
+        <legend>Text</legend>
         <TextField Label="@Kind.Tile.Title.Label" Value="@Draft.Values[Kind.Tile.Title.Key]" ValueChanged="value => SetAsync(Kind.Tile.Title.Key, value)"
                    MaxLength="Kind.Tile.Title.MaxLength" Hint="@NullIfEmpty(Kind.Tile.Title.Help)" Problem="@Kind.Tile.Title.ProblemWith(Draft.Values[Kind.Tile.Title.Key])" />
         @if (Kind.Defaults.ShowsText)
@@ -94,7 +94,7 @@
             <SettingInput Setting="Kind.Tile.Image" Value="@Draft.Values[Kind.Tile.Image.Key]" ValueChanged="value => SetAsync(Kind.Tile.Image.Key, value)" />
             @if (Look.Image is not null)
             {
-                <span class="tile-settings__note">Keep this part in view when the picture is cropped:</span>
+                <span class="tile-settings__note">Part of the picture to keep in view when it's cropped</span>
                 <div class="focus-picker" role="radiogroup" aria-label="Part of the picture to keep in view">
                     @foreach (FocalPoint point in FocalPoints)
                     {
@@ -104,7 +104,7 @@
                 </div>
                 @if (Kind.VariantFor(Look, Columns).Key == TileVariants.PictureBehind)
                 {
-                    <span class="tile-settings__note">@Kind.Tile.Fade.Label: the colour behind the words, so they stay easy to read.</span>
+                    <span class="tile-settings__note">The colour shaded over the picture behind the words, so they stay easy to read.</span>
                     @Swatches(Kind.Tile.Fade.Label, Look.FadeTone, tone => SetAsync(Kind.Tile.Fade, tone.Value))
                 }
             }
@@ -113,25 +113,25 @@
 
     <fieldset class="tile-settings__group">
         <legend>Opens</legend>
-        <Segmented TValue="bool" Label="Opens" Options="LinkKinds" Value="OpensWeb" ValueChanged="UseWebAsync" />
+        <Segmented TValue="bool" Label="When tapped, opens" Options="LinkKinds" Value="OpensWeb" ValueChanged="UseWebAsync" />
         @if (OpensWeb)
         {
-            <TextField Label="Web page" Type="url" Placeholder="https://" Value="@Look.Link" ValueChanged="value => SetAsync(Kind.Tile.Link.Key, value)" Problem="@Kind.Tile.Link.ProblemWith(Look.Link)" />
+            <TextField Label="Web page" Type="url" Hint="The web address, starting with https://." Value="@Look.Link" ValueChanged="value => SetAsync(Kind.Tile.Link.Key, value)" Problem="@Kind.Tile.Link.ProblemWith(Look.Link)" />
         }
         else
         {
-            <PlaceField Value="@NullIfEmpty(Look.Link)" ValueChanged="value => SetAsync(Kind.Tile.Link.Key, value ?? string.Empty)" OpenableBy="@Draft.Audience" ChooseLabel="Choose where it opens" SheetTitle="Choose where this tile opens" />
+            <PlaceField Value="@NullIfEmpty(Look.Link)" ValueChanged="value => SetAsync(Kind.Tile.Link.Key, value ?? string.Empty)" OpenableBy="@Draft.Audience" ChooseLabel="Choose a page" SheetTitle="Choose the page this tile opens" />
         }
     </fieldset>
 
     <fieldset class="tile-settings__group">
-        <legend>Who sees it, and when</legend>
+        <legend>Who sees this tile, and when</legend>
         <AudiencePicker Value="@Draft.Audience" ValueChanged="value => ChangeAsync(() => Draft.Audience = value)" />
         <div class="ui-pair">
-            <DateField Label="First day shown" Hint="Empty: from now" Value="@Iso(Draft.ShowFrom)" ValueChanged="value => ChangeAsync(() => Draft.ShowFrom = FromIso(value))" />
-            <DateField Label="Last day shown" Hint="Empty: no end" Value="@Iso(Draft.ShowUntil)" ValueChanged="value => ChangeAsync(() => Draft.ShowUntil = FromIso(value))" />
+            <DateField Label="First day shown" Hint="Leave this empty to show the tile from today." Value="@Iso(Draft.ShowFrom)" ValueChanged="value => ChangeAsync(() => Draft.ShowFrom = FromIso(value))" />
+            <DateField Label="Last day shown" Hint="Leave this empty to keep showing the tile." Value="@Iso(Draft.ShowUntil)" ValueChanged="value => ChangeAsync(() => Draft.ShowUntil = FromIso(value))" />
         </div>
-        <ToggleRow Title="Shown" Description="Turn off to hide it without losing its settings" Checked="!Draft.Hidden" CheckedChanged="shown => ChangeAsync(() => Draft.Hidden = !shown)" />
+        <ToggleRow Title="Show on Home" Description="Turn this off to hide the tile without losing its settings." Checked="!Draft.Hidden" CheckedChanged="shown => ChangeAsync(() => Draft.Hidden = !shown)" />
     </fieldset>
 
     @foreach (string problem in Draft.Problems)
@@ -159,7 +159,7 @@
     private static readonly IReadOnlyList<FocalPoint> FocalPoints =
         [new(0, 0), new(50, 0), new(100, 0), new(0, 50), new(50, 50), new(100, 50), new(0, 100), new(50, 100), new(100, 100)];
 
-    private static readonly IReadOnlyList<SegmentOption<bool>> LinkKinds = [new(false, "In the app", "smartphone"), new(true, "A web page", "globe")];
+    private static readonly IReadOnlyList<SegmentOption<bool>> LinkKinds = [new(false, "A page in the app", "smartphone"), new(true, "A web page", "globe")];
 
     private TileLook Look => TileLook.Of(Kind, new SettingValues(Draft.Values));
 
@@ -177,10 +177,10 @@
 
     private string? WhyNot(TileVariant variant) => variant switch
     {
-        _ when variant.Suits(Span) => variant.NeedsPicture && Look.Image is null ? "Needs a picture: choose one under Picture" : null,
-        _ when variant.Suits(Span with { Columns = 2 }) && !variant.Suits(Span with { Rows = 2 }) => "Needs a wider tile",
-        _ when variant.Suits(Span with { Rows = 2 }) && !variant.Suits(Span with { Columns = 2 }) => "Needs a taller tile",
-        _ => "Needs a bigger tile",
+        _ when variant.Suits(Span) => variant.NeedsPicture && Look.Image is null ? "Add a picture under Picture to use this layout." : null,
+        _ when variant.Suits(Span with { Columns = 2 }) && !variant.Suits(Span with { Rows = 2 }) => "Make the tile wider to use this layout.",
+        _ when variant.Suits(Span with { Rows = 2 }) && !variant.Suits(Span with { Columns = 2 }) => "Make the tile taller to use this layout.",
+        _ => "Make the tile bigger to use this layout.",
     };
 
     private string? HardToRead
@@ -191,8 +191,8 @@
             return hard.Count switch
             {
                 0 => null,
-                1 => $"Words on this colour are hard to read in {hard[0]} mode. Try another colour.",
-                _ => "Words on this colour are hard to read. Try another colour.",
+                1 => $"Text on this colour is hard to read in {hard[0]} mode. Try another colour.",
+                _ => "Text on this colour is hard to read. Try another colour.",
             };
         }
     }
@@ -213,8 +213,8 @@
 
 
     private string FromWords => Kind.IsPlain
-        ? "Your own tile: everything on it is yours to write"
-        : Kind.Sample ? $"Filled in by {Kind.From}. Shows example content for now; the real thing appears once {Kind.From} is in the app" : $"Filled in by {Kind.From}";
+        ? "You write everything on this tile."
+        : Kind.Sample ? $"Filled in by {Kind.From}. Until {Kind.From} is in the app, the tile shows example content." : $"Filled in by {Kind.From}";
 
     private bool OpensWeb => _web ?? LinkTargets.KindOf(Look.Link) == LinkKind.Web;
 

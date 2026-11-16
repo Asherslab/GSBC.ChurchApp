@@ -62,11 +62,11 @@ public static class MinistriesApiExtensions
             [MinistriesPermissions.TeamViewNode, MinistriesPermissions.AttendeesViewNode, MinistriesPermissions.ParentsViewNode, MinistriesPermissions.SeeHiddenNode],
             AssignableBy: givers, Feature: RoleFeatures.Ministries));
         services.AddSystemRole(new SystemRole(MinistriesPermissions.AttendeeRole, "Attendee",
-            "Comes along to this ministry: sees what it shares with its attendees. Their parents see it too", ScopeKind.Ministry,
+            "Attends this ministry and sees what it shares with attendees. Their parents see it too", ScopeKind.Ministry,
             [MinistriesPermissions.AttendeesViewNode, MinistriesPermissions.SeeHiddenNode], AssignableBy: givers, Feature: RoleFeatures.Ministries,
             Through: [new RoleThrough(PeopleParentRole, MinistriesPermissions.AttendeesParentRole)]));
         services.AddSystemRole(new SystemRole(MinistriesPermissions.AttendeesParentRole, "Attendee's parent",
-            "A parent of someone who comes along: sees what the ministry shares with attendees and parents", ScopeKind.Ministry,
+            "A parent of an attendee: sees what the ministry shares with attendees and parents", ScopeKind.Ministry,
             [MinistriesPermissions.AttendeesViewNode, MinistriesPermissions.ParentsViewNode, MinistriesPermissions.SeeHiddenNode], AssignableBy: [], Hidden: true));
         services.AddSystemRole(new SystemRole(MinistriesPermissions.ManagerRole, "Ministries Manager",
             "Creates and deletes the church's ministries and does everything a leader can in every one of them", ScopeKind.Global,

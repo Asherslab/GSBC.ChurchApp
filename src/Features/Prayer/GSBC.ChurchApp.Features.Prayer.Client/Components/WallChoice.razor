@@ -7,7 +7,7 @@
         @if (Case.Wall != WallState.TakenDown)
         {
             <div class="prayer-wall-form">
-                <TextField Label="As the wall shows it" Multiline="true" MaxLength="2000" @bind-Value="_text"
+                <TextField Label="Words on the prayer wall" Multiline="true" MaxLength="2000" @bind-Value="_text"
                            Hint="Change the words if they say more than the church should read, such as someone else's name. What they wrote stays as it is." />
                 @if (Case.ShortName.Length > 0)
                 {
@@ -18,20 +18,20 @@
                 {
                     <p class="prayer-wall-form__note">They asked for no name, so the wall shows none.</p>
                 }
-                <DateField Label="Shows until" Min="@Day(Today.AddDays(1))" Max="@Day(Today.AddDays(365))" @bind-Value="_until" />
+                <DateField Label="On the wall until" Min="@Day(Today.AddDays(1))" Max="@Day(Today.AddDays(365))" @bind-Value="_until" />
             </div>
         }
     </ChildContent>
     <Foot>
         @if (Case.Wall != WallState.TakenDown)
         {
-            <SaveBar Label="@(Case.Wall == WallState.Shown ? "Save the changes" : "Put it on the wall")" State="@(HasChanges ? SaveState.Unsaved : Status)"
-                     WaitingText="Waiting to send. It goes by itself when you're back online" FailedText="Couldn't send" Detail="@Problem" Retry="Retry"
+            <SaveBar Label="@(Case.Wall == WallState.Shown ? "Save the changes" : "Put the request on the wall")" State="@(HasChanges ? SaveState.Unsaved : Status)"
+                     WaitingText="Waiting to send. It goes by itself when you're back online." FailedText="Couldn't send" Detail="@Problem" Retry="Retry"
                      Busy="@(Busy == WallAction.Show)" Blocked="@Blocked" OnSave="ShowAsync" OnCancel="@(HasChanges ? Undo : default(EventCallback))">
                 @if (Case.Wall is WallState.Waiting or WallState.Shown)
                 {
                     <Button Variant="ButtonVariant.Quiet" Busy="@(Busy == WallAction.KeepPrivate)" OnClick="OnKeepPrivate">
-                        @(Case.Wall == WallState.Shown ? "Take it off the wall" : "Not for the wall")
+                        @(Case.Wall == WallState.Shown ? "Take the request off the wall" : "Keep it off the wall")
                     </Button>
                 }
             </SaveBar>
@@ -71,16 +71,16 @@
     private static string Day(DateOnly day) => day.ToString("yyyy-MM-dd");
 
     private string? Blocked => _text.Trim().Length == 0
-        ? "Give the wall some words to show."
-        : !DateOnly.TryParse(_until, out DateOnly until) || until <= Today ? "Choose a day after today for it to leave the wall." : null;
+        ? "Enter the words for the prayer wall."
+        : !DateOnly.TryParse(_until, out DateOnly until) || until <= Today ? "Choose a day after today for the request to leave the wall." : null;
 
     private string Lead => Case.Wall switch
     {
-        WallState.Waiting => "They asked for it to be shown. Nothing is shown until you put it on the wall.",
+        WallState.Waiting => "They asked for the request to be shown. Nothing is shown until you put it on the wall.",
         WallState.Shown => $"On the wall until {PrayerWords.Day(Case.WallUntil ?? Case.SentAt)}. {PrayerWords.Prayed(Case.Prayed)}.",
-        WallState.KeptPrivate => "They asked for the wall, and it was kept private. You can still put it on.",
-        WallState.Ended => "It was on the wall and its time is up. Choose a new day to show it again.",
-        WallState.TakenDown => "They took it off the wall themselves, so it stays off.",
+        WallState.KeptPrivate => "They asked for the prayer wall, and the request was kept off it. You can still put it on the wall.",
+        WallState.Ended => "The request's time on the wall is over. Choose a new day to show it again.",
+        WallState.TakenDown => "They took the request off the wall themselves, so it stays off.",
         _ => "",
     };
 

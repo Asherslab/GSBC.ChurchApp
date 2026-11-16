@@ -6,11 +6,11 @@
 <LiveData TValue="WritingStart" Load="Pastoral.StartWritingAsync" Feeds="ChurchFeeds" FailedTitle="Can't load the church's name right now">
     @{ Shape(context.Value.ChurchName); }
     <Section Grouped="true" Title="The church's name on the prayer wall"
-             Lead="Prayer requests written from the church show this name. Changing it changes them on the wall too.">
+             Lead="Prayer requests written from the church show this name. Changing the name also changes the requests already on the wall.">
         <ChildContent>
             @if (MayChange)
             {
-                <TextField Label="The church's name" MaxLength="40" AutoCapitalize="words" Value="@(_name ?? "")" ValueChanged="name => _name = name" Problem="@_problem" />
+                <TextField Label="Church name" MaxLength="40" AutoCapitalize="words" Value="@(_name ?? "")" ValueChanged="name => _name = name" Problem="@_problem" />
             }
             else
             {
@@ -20,11 +20,11 @@
         <Foot>
             @if (MayChange)
             {
-                <SaveBar Label="Save" Busy="_busy" Blocked="@Blocked" State="SaveBar.For(_name?.Trim() != _saved, _justSaved)" OnSave="SaveAsync" />
+                <SaveBar Label="Save the name" Busy="_busy" Blocked="@Blocked" State="SaveBar.For(_name?.Trim() != _saved, _justSaved)" OnSave="SaveAsync" />
             }
             else
             {
-                <Notice Text="Only the pastoral team can change it." />
+                <Notice Text="Only the pastoral team can change the church's name." />
             }
         </Foot>
     </Section>
@@ -41,7 +41,7 @@
 
     private bool MayChange => Access.Can(PrayerPermissions.Settings);
 
-    private string? Blocked => (_name ?? "").Trim().Length == 0 ? "Give the church a name." : null;
+    private string? Blocked => (_name ?? "").Trim().Length == 0 ? "Enter the church's name." : null;
 
     private void Shape(string stored)
     {

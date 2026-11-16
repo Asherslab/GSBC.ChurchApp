@@ -17,7 +17,7 @@
 
     private RenderFragment<string> Organisers => regularEventId =>
         @<PeopleRow @key="regularEventId" Source="People.For(ScopeKind.RegularEvent, regularEventId)" Label="Organisers"
-                    SheetTitle="Organisers" SheetLead="Organisers are reminded when a date is missing what it needs." Empty="No one is reminded yet." />;
+                    SheetTitle="Organisers" SheetLead="Organisers are reminded when a date is missing what it needs." Empty="No organisers yet, so no one is reminded." />;
 
     private void Back() => Navigation.NavigateTo(CalendarWorkbenchLinks.Back(From));
 

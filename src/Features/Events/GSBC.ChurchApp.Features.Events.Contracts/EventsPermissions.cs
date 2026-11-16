@@ -32,7 +32,7 @@ public static class EventsPermissions
         new(ManageNode, ScopeKind.Global, "Create calendars, choose who each is for and which are defaults, and keep the named breaks", area: "Calendar");
 
     public static readonly Permission Organise =
-        new(OrganiseNode, ScopeKind.RegularEvent, "Organise a regular event: reminded when a date is missing what it needs", area: "Calendar");
+        new(OrganiseNode, ScopeKind.RegularEvent, "Organise a regular event, and be reminded when a date is missing details.", area: "Calendar");
 
     public static readonly Permission Have =
         new(HaveNode, ScopeKind.Calendar, "Has added a calendar to their week", area: "Calendar");

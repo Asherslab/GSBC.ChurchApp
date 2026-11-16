@@ -4,7 +4,7 @@
     <LiveData TValue="List<AuditInfo>" Feeds="[AccountsFeeds.People]" Load="LoadAuditAsync" FailedTitle="Can't load their activity">
         @if (context.Value.Count == 0)
         {
-            <p class="panel-hint">Nothing yet.</p>
+            <p class="panel-hint">Nothing has happened on this account yet.</p>
         }
         else
         {

@@ -237,7 +237,7 @@ internal sealed class EventEditingService(
             ?? throw new RpcException(new Status(StatusCode.NotFound, "Nobody asks to show that here any more."));
 
         if (request.Agree && showing.AskedByOther)
-            throw new RpcException(new Status(StatusCode.PermissionDenied, "Your calendar asked for this, so its own calendar's editors decide."));
+            throw new RpcException(new Status(StatusCode.PermissionDenied, "Your calendar made this request, so the other calendar's editors decide."));
         if (request.Agree)
         {
             showing.AgreedAt = time.GetUtcNow().UtcDateTime;
@@ -391,7 +391,7 @@ internal sealed class EventEditingService(
         }, cancellationToken);
         DateTime now = time.GetUtcNow().UtcDateTime;
         if (!EventsBook.IsShown(item, now))
-            throw new RpcException(new Status(StatusCode.FailedPrecondition, "Show it before telling people about it."));
+            throw new RpcException(new Status(StatusCode.FailedPrecondition, "Show the event in the app before telling people about it."));
 
         EventsBook book = await EventsBook.LoadAsync(db, cancellationToken);
         DateOnly day = date ?? ((EventRecord)item).StartDate;

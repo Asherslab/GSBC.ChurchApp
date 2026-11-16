@@ -17,7 +17,7 @@
     <div class="list event-facts">
         @if (Occurrence.OpensAt.Length > 0)
         {
-            <ListRow Icon="book-open" Title="@($"Open {Occurrence.KeptBy}")" Subtitle="Everything about it is there" Href="@Occurrence.OpensAt" Chevron="true" />
+            <ListRow Icon="book-open" Title="@($"Open {Occurrence.KeptBy}")" Subtitle="All its details are there" Href="@Occurrence.OpensAt" Chevron="true" />
         }
         @if (Occurrence.Fields.Place is { } place && (place.Name.Length > 0 || place.Address.Length > 0))
         {
@@ -64,7 +64,7 @@
     private static string? PlaceDetail(EventPlace place) =>
         place.Name.Length > 0 && place.Address.Length > 0 ? $"{place.Address} · opens Maps"
         : place.Address.Length > 0 ? "Opens Maps"
-        : place.PlaceId is not null ? "On the church site" : null;
+        : place.PlaceId is not null ? "At the church" : null;
 
     private static string? MapsLink(EventPlace place) =>
         place.Address.Length > 0 ? $"https://maps.apple.com/?q={Uri.EscapeDataString(EventWords.Join(place.Name, place.Address))}" : null;

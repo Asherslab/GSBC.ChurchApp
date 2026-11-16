@@ -65,7 +65,7 @@
 
     private bool ShownNow(ArrangedSurface entry) => Preview.Shows(entry, Clock.GetUtcNow().UtcDateTime);
 
-    private string Label => $"{Showing} on an {Preview.Device.Name}, drawn by the app's own Home screen";
+    private string Label => $"{Showing} on an {Preview.Device.Name}, drawn by the app's own Home screen.";
 
     private int Columns => HubSurfaces.Grid.ColumnsIn(Hub);
 

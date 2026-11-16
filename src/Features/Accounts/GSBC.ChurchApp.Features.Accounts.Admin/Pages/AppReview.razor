@@ -18,7 +18,7 @@
                    Selected="_selected" SelectedChanged="Select" SortColumn="4" SortDescending="true">
             <Empty>
                 <EmptyState Icon="key" Title="@(context.Value.DemoAccounts.Count == 0 ? "No demo account yet" : "No sign-in codes yet")"
-                            Body="@(context.Value.DemoAccounts.Count == 0 ? "Make a demo account first: a name and an email of its own, such as review@ your church's domain." : "Make a code before you send a build to Apple for review.")">
+                            Body="@(context.Value.DemoAccounts.Count == 0 ? "Make a demo account first. It needs a name and an email address that no one else uses." : "Make a code before you send a build to Apple for review.")">
                     @if (context.Value.DemoAccounts.Count == 0)
                     {
                         <Button Icon="user" OnClick="() => Open(Panel.MakeDemoAccount)">Make a demo account</Button>

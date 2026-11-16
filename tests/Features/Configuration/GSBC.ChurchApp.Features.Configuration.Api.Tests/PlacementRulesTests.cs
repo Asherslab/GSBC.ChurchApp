@@ -44,7 +44,7 @@ public sealed class PlacementRulesTests
         Assert.Contains("https://", refused.Status.Detail);
         Assert.Contains("'font'", refused.Status.Detail);
         Assert.Contains("nobody.declared.this", refused.Status.Detail);
-        Assert.Contains("end after it starts", refused.Status.Detail);
+        Assert.Contains("stop showing later than it starts", refused.Status.Detail);
     }
 
     [Fact]

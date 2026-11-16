@@ -18,7 +18,7 @@ internal sealed class ChurchName(PrayerDbContext db, PrayerPublisher publisher, 
     {
         string trimmed = name.Trim();
         if (trimmed.Length == 0 || trimmed.Length > PrayerRules.LongestChurchName)
-            throw new RpcException(new Status(StatusCode.InvalidArgument, $"Give the church a name of up to {PrayerRules.LongestChurchName} characters."));
+            throw new RpcException(new Status(StatusCode.InvalidArgument, $"Enter a church name of up to {PrayerRules.LongestChurchName} characters."));
         ChurchRecord? church = await db.Church.FirstOrDefaultAsync(row => row.Id == Row, cancellationToken);
         if (church?.Name == trimmed)
             return;

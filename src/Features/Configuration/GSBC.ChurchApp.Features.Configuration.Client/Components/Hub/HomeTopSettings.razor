@@ -16,7 +16,7 @@
         @if (Under == Top.Words)
         {
             <TextField Label="@Top.Line.Label" Value="@Draft.Values[Top.Line.Key]" ValueChanged="value => SetAsync(Top.Line.Key, value)"
-                       MaxLength="Top.Line.MaxLength" Placeholder="Welcome home" Hint="Left empty, nothing shows under the title." />
+                       MaxLength="Top.Line.MaxLength" Hint="Leave this empty to show nothing under the title." />
         }
     </fieldset>
 

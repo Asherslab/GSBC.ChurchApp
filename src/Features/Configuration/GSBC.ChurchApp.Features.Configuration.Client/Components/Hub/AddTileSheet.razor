@@ -6,14 +6,14 @@
         {
             @Library
         }
-        <h4 class="add-tile__group">Your own</h4>
+        <h4 class="add-tile__group">Tiles you write</h4>
         <div class="add-tile__kinds">
             @foreach (HubTileKind kind in Kinds.Where(kind => kind.IsPlain && kind.Offered))
             {
                 @Choice(kind)
             }
         </div>
-        <h4 class="add-tile__group">From the app</h4>
+        <h4 class="add-tile__group">Tiles the app fills in</h4>
         <div class="add-tile__kinds">
             @foreach (HubTileKind kind in Kinds.Where(kind => !kind.IsPlain && kind.Offered).OrderBy(kind => kind.Sample).ThenBy(kind => kind.Surface.Title, StringComparer.Ordinal))
             {
@@ -42,7 +42,7 @@
                 <span>@kind.Surface.Description</span>
                 @if (kind.Sample)
                 {
-                    <Pill>Example content for now</Pill>
+                    <Pill>Shows example content</Pill>
                 }
             </span>
             <span class="add-tile__size">@(new TileSpan(kind.Defaults.Columns, kind.Defaults.Rows).Words)</span>

@@ -85,7 +85,7 @@ class Rule extends WidgetType {
     const rule = document.createElement('span');
     rule.className = this.split ? 'cm-md-split' : 'cm-md-rule';
     if (this.split) rule.textContent = 'Next card';
-    rule.setAttribute('aria-label', this.split ? 'Split into the next card' : 'Line across');
+    rule.setAttribute('aria-label', this.split ? 'Split into the next card' : 'Dividing line');
     return rule;
   }
   ignoreEvent() { return false; }

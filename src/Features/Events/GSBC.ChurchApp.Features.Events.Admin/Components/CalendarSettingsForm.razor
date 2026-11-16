@@ -5,32 +5,32 @@
 <UnsavedGuard Changed="() => Changed" What="@(Calendar is null ? "the new calendar" : "this calendar's settings")" Save="SaveBeforeLeavingAsync" />
 
 <div class="calendar-settings">
-    <Section Grouped="true" First="true" Title="@(Calendar is null ? "The new calendar" : "About this calendar")" Lead="Its name, who sees it, and how its events are published.">
+    <Section Grouped="true" First="true" Title="@(Calendar is null ? "The new calendar" : "About this calendar")" Lead="The calendar's name, who sees it, and how its events are published.">
         <ChildContent>
             <div class="calendar-settings__fields">
                 <div class="ui-pair ui-pair--wide">
                     <TextField Label="Name" Value="@_name" ValueChanged="value => _name = value" MaxLength="60" Required="true" />
-                    <TextField Label="Description" Value="@_description" ValueChanged="value => _description = value" MaxLength="160" Hint="One line under its name in Browse calendars." />
+                    <TextField Label="Description" Value="@_description" ValueChanged="value => _description = value" MaxLength="160" Hint="A line shown under the calendar's name when people browse calendars in the app." />
                 </div>
                 <AudiencePicker Label="Who it's for" Value="@_audience" ValueChanged="value => _audience = value" />
-                <ToggleRow Title="Shown on new phones" Description="@(_defaults ? "On: everyone it's for sees it without adding it" : "Off: people add it from Browse calendars")" Checked="_defaults" CheckedChanged="value => _defaults = value" />
-                <ToggleRow Title="Needs a publisher" Description="Editors without the publisher role save events and ask to publish" Checked="_needsPublisher" CheckedChanged="value => _needsPublisher = value" />
-                <TextField Label="Copy from an iCal address (optional)" Type="url" Value="@_icalSource" ValueChanged="value => _icalSource = value.Trim()" Placeholder="https://"
+                <ToggleRow Title="In everyone's week to start with" Description="When on, everyone it's for sees this calendar without adding it. When off, people add it themselves from Browse calendars." Checked="_defaults" CheckedChanged="value => _defaults = value" />
+                <ToggleRow Title="Needs a publisher" Description="Editors who aren't publishers can save events, but a publisher must publish them." Checked="_needsPublisher" CheckedChanged="value => _needsPublisher = value" />
+                <TextField Label="iCal address to copy from" Type="url" Value="@_icalSource" ValueChanged="value => _icalSource = value.Trim()"
                            Hint="@IcalHint" Problem="@(Calendar?.Settings.ICalProblem is { Length: > 0 } problem ? problem : null)" />
                 <Notice Tone="NoticeTone.Warning" Text="@_problem" />
             </div>
         </ChildContent>
         <Foot>
             <SaveBar New="@(Calendar is null)" OnCancel="CancelAsync" Label="@(Calendar is null ? "Add the calendar" : "Save")" Busy="_saving" OnSave="SaveAsync" State="SaveBar.For(Changed, _saved)"
-                     Blocked="@(_name.Trim().Length == 0 ? $"Give it a name to {(Calendar is null ? "add" : "save")} it." : null)" />
+                     Blocked="@(_name.Trim().Length == 0 ? "Enter a name for the calendar." : null)" />
         </Foot>
     </Section>
 
     @if (Calendar is { } existing)
     {
-        <Section Grouped="true" Title="Calendar apps" Lead="iPhone, Google and Outlook calendars can subscribe to it.">
+        <Section Grouped="true" Title="Calendar apps" Lead="People can subscribe to this calendar in iPhone, Google or Outlook calendars.">
             <CopyField Label="Link for calendar apps" Value="@LinkFor(existing.Settings.Calendar)"
-                       Hint="@(CalendarSubscriptions.IsForEveryone(existing.Settings.Calendar) ? "Anyone can subscribe with this." : "A private calendar: people subscribe through their own link in the app.")" />
+                       Hint="@(CalendarSubscriptions.IsForEveryone(existing.Settings.Calendar) ? "Anyone can subscribe with this." : "This calendar is private, so people subscribe through their own link in the app.")" />
         </Section>
     }
 </div>
@@ -54,8 +54,8 @@
     [Parameter] public EventCallback Closed { get; set; }
 
     private string IcalHint => Calendar?.Settings.ICalReadAt is { } read
-        ? $"Read-only here while it's set. Last read {EventWords.Date(EventWords.Today(read))}."
-        : "A calendar copied from elsewhere (school terms, a ministry's Google Calendar) stays read-only here and refreshes by itself.";
+        ? $"This calendar can't be changed here while it's copied. It was last copied {EventWords.Date(EventWords.Today(read))}."
+        : "Optional. Leave this empty unless this calendar comes from another calendar app. A copied calendar can't be changed here; it updates by itself.";
 
     private object Shape => (_name, _description, _audience, _defaults, _needsPublisher, _icalSource);
 

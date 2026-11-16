@@ -1,24 +1,28 @@
 @using GSBC.ChurchApp.Platform.Common
 
 <div class="field">
-    <span class="field__label">Shown in the app</span>
+    <span class="field__label">Visible in the app</span>
     @if (MustAsk)
     {
-        <span class="field__hint">@CalendarName needs a publisher. Save it, then ask to publish.</span>
+        <span class="field__hint">The @CalendarName calendar needs a publisher. Save the event, then choose Ask to publish.</span>
     }
     else
     {
-        <Segmented TValue="Showing" Label="Shown in the app" Options="Showings" Rows="Rows" Value="Draft.Showing" ValueChanged="showing => Draft.Showing = showing" />
+        <Segmented TValue="Showing" Label="Visible in the app" Options="Showings" Rows="Rows" Value="Draft.Showing" ValueChanged="showing => Draft.Showing = showing" />
         @if (Draft.Showing == Showing.ShownFrom)
         {
-            <DateField Label="Show from" Value="@(Draft.ShowFrom is { } from ? EventDates.Format(ChurchTime.DayOf(from)) : "")" ValueChanged="ShowFromChanged" />
+            <DateField Label="Show from this date" Value="@(Draft.ShowFrom is { } from ? EventDates.Format(ChurchTime.DayOf(from)) : "")" ValueChanged="ShowFromChanged" />
         }
     }
 </div>
 
 @code {
     private static readonly IReadOnlyList<SegmentOption<Showing>> Showings =
-        [new(Showing.Shown, "Show now"), new(Showing.SavedForLater, "Save for later"), new(Showing.ShownFrom, "Show from a date")];
+        [
+            new(Showing.Shown, "Show now") { Detail = "Everyone the event is for sees it straight away." },
+            new(Showing.SavedForLater, "Keep hidden for now") { Detail = "Only the calendar's editors see it until you show it." },
+            new(Showing.ShownFrom, "Show from a chosen date") { Detail = "It appears in the app on the date you choose." },
+        ];
 
     [Parameter, EditorRequired] public required EventDraft Draft { get; set; }
     [Parameter] public bool MustAsk { get; set; }

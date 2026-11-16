@@ -1,7 +1,7 @@
 <div class="title-fields">
     <TextField Label="@TitleLabel" Value="@Fields.Title" ValueChanged="value => Fields.Title = value" MaxLength="120" Required="true" Placeholder="@Placeholder" />
-    <TextField Label="Label" Value="@Fields.Label" ValueChanged="value => Fields.Label = value" MaxLength="40"
-               Hint="@($"Shown above the title. Leave it empty to show the calendar's name ({CalendarName}).")" />
+    <TextField Label="Line above the title" Value="@Fields.Label" ValueChanged="value => Fields.Label = value" MaxLength="40"
+               Hint="@($"A word or two shown in small type above the event's title, in the calendar and on the event's page. Leave this empty to show the calendar's name, {CalendarName}.")" />
 </div>
 
 @code {

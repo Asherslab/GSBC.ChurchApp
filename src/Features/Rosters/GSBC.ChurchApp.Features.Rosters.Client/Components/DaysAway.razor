@@ -13,7 +13,7 @@
         }
         @if (who is not null)
         {
-            <Section First="First" Title="@(Paged ? null : Title)" Lead="@(people.Count > 1 && People is null ? "Leaders of every team you or your children are on see these, and can change them. They can still put you on; it's flagged." : Paged ? null : Lead)">
+            <Section First="First" Title="@(Paged ? null : Title)" Lead="@(people.Count > 1 && People is null ? "The leaders of every team you or your children are on can see and change these days away. They can still put you on the roster, but they'll see that you're away." : Paged ? null : Lead)">
                 @if (people.Count > 1 && people.Count <= MostSegments)
                 {
                     <Segmented TValue="string" Label="Whose days away" Value="@who.Id" ValueChanged="id => _who = id" Class="away-who"
@@ -54,12 +54,12 @@
             </Section>
             <AwaySheet @key="_editing" Open="_editing is not null" OpenChanged="ClosedAsync" People="people" YourId="@yourId" Who="_editingWho" Span="_span" Day="_day" />
             <Sheet Open="_picked is not null" OpenChanged="open => _picked = open ? _picked : null" Title="@(_picked?.ToString("dddd d MMMM", System.Globalization.CultureInfo.InvariantCulture))"
-                   Lead="@(_picked is { } day && _rule is { } rule ? AwayRules.Skips(rule, day) ? $"Not away this time, from “{RosterLines.Span(rule)}”." : $"Away, from “{RosterLines.Span(rule)}”." : null)">
+                   Lead="@(_picked is { } day && _rule is { } rule ? AwayRules.Skips(rule, day) ? $"Not away this day, as an exception to “{RosterLines.Span(rule)}”." : $"Away this day, because of “{RosterLines.Span(rule)}”." : null)">
                 <Actions>
                     @if (_picked is { } day && _rule is { } rule)
                     {
                         <Button Block="true" Disabled="_busy" OnClick="() => SkipAsync(who, rule, day)">@(AwayRules.Skips(rule, day) ? "Away this day after all" : who.Id == yourId ? "I'm not away this day" : $"{RosterLines.First(who.Name)} isn't away this day")</Button>
-                        <Button Block="true" Variant="ButtonVariant.Quiet" OnClick="() => { _picked = null; Edit(who, rule); }">Change the rule</Button>
+                        <Button Block="true" Variant="ButtonVariant.Quiet" OnClick="() => { _picked = null; Edit(who, rule); }">Change the repeating days away</Button>
                     }
                 </Actions>
             </Sheet>
@@ -88,7 +88,7 @@
     [Parameter] public IReadOnlyList<PersonLine>? People { get; set; }
     [Parameter] public string? YourId { get; set; }
     [Parameter] public string Title { get; set; } = "Days away";
-    [Parameter] public string Lead { get; set; } = "Leaders of every team you're on see these, and can change them. They can still put you on; it's flagged.";
+    [Parameter] public string Lead { get; set; } = "The leaders of every team you're on can see and change your days away. They can still put you on the roster, but they'll see that you're away.";
     [Parameter] public string? Remember { get; set; }
     [Parameter] public bool First { get; set; }
 

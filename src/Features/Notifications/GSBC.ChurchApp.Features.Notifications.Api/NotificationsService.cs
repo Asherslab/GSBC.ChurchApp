@@ -102,7 +102,7 @@ internal sealed class NotificationsService(NotificationsDbContext db, Notificati
         if (!kinds.ByKey.TryGetValue(request.Kind, out var kind))
             throw new RpcException(new Status(StatusCode.InvalidArgument, "No such kind of notification."));
         if (kind.Mandatory)
-            throw new RpcException(new Status(StatusCode.FailedPrecondition, "This one is always on: it's about your account's safety."));
+            throw new RpcException(new Status(StatusCode.FailedPrecondition, "This notification is always on, because it's about your account's security."));
         string? scopeId = string.IsNullOrEmpty(request.ScopeId) ? null : request.ScopeId;
 
         Preference? preference = await db.Preferences.SingleOrDefaultAsync(candidate =>

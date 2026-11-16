@@ -64,16 +64,16 @@ internal sealed class MediaLibrary(
         {
             return await access.IsAllowedAsync(user, MediaPermissions.UploadNode, null, cancellationToken)
                 ? null
-                : throw new RpcException(new Status(StatusCode.PermissionDenied, "Not permitted."));
+                : throw new RpcException(new Status(StatusCode.PermissionDenied, "You don't have permission to do that."));
         }
 
         MediaSystemArea area = folders.Area(areaKey) ?? throw Invalid($"'{areaKey}' isn't somewhere files can be added.");
-        string scope = NullIfEmpty(scopeId) ?? throw Invalid("Say where the file is going.");
+        string scope = NullIfEmpty(scopeId) ?? throw Invalid("Choose a folder for the file.");
         IMediaAreaAccess? own = areaAccess.FirstOrDefault(candidate => candidate.Area == area.Key);
         bool allowed = own is not null
             ? await own.MayUploadAsync(user, scope, cancellationToken) || install is { } phone && await own.MayUploadFromInstallAsync(phone, scope, cancellationToken)
             : area.Uploaders is { } uploaders && await access.IsAllowedAsync(user, uploaders.Node, scope, cancellationToken);
-        return allowed ? new AreaUpload(area, scope, own) : throw new RpcException(new Status(StatusCode.PermissionDenied, "Not permitted."));
+        return allowed ? new AreaUpload(area, scope, own) : throw new RpcException(new Status(StatusCode.PermissionDenied, "You don't have permission to do that."));
     }
 
     private sealed record AreaUpload(MediaSystemArea Area, string ScopeId, IMediaAreaAccess? Access);
@@ -110,7 +110,7 @@ internal sealed class MediaLibrary(
         if (request.PrivateTo is not null && !amongAudience)
             throw new RpcException(new Status(StatusCode.PermissionDenied, "You can only make a file private to people you're one of."));
         if (MediaTypes.IsFont(request.ContentType) && !mayUploadFonts)
-            throw new RpcException(new Status(StatusCode.PermissionDenied, "Uploading font files needs permission to, since the church must be licensed to use the font in an app. Choose one from Google Fonts instead."));
+            throw new RpcException(new Status(StatusCode.PermissionDenied, "Uploading font files needs its own permission, because the church must be licensed to use a font in an app. Choose a font from Google Fonts instead."));
         if (MediaTypes.IsFont(request.ContentType) && request.PrivateTo is not null)
             throw Invalid("Fonts are public: anyone using the app downloads them.");
     }
@@ -222,7 +222,7 @@ internal sealed class MediaLibrary(
     {
         Guid mediaId = ParseId(id);
         MediaItem item = await db.Items.SingleOrDefaultAsync(item => item.Id == mediaId, cancellationToken)
-            ?? throw new RpcException(new Status(StatusCode.NotFound, "No such media."));
+            ?? throw new RpcException(new Status(StatusCode.NotFound, "That file isn't in the library any more."));
         if (!item.KeepsOriginal)
             return await InfoOfAsync(item, cancellationToken);
         CheckOriginalCanGo(await db.Renditions.AsNoTracking().Where(rendition => rendition.MediaId == mediaId).ToListAsync(cancellationToken),
@@ -239,12 +239,12 @@ internal sealed class MediaLibrary(
     internal static void CheckOriginalCanGo(IReadOnlyCollection<MediaRendition> sizes, bool everyUseCanSwitch)
     {
         if (sizes.Count == 0)
-            throw new RpcException(new Status(StatusCode.FailedPrecondition, "It's already small, so the original is the only copy. There's nothing smaller to keep in its place."));
+            throw new RpcException(new Status(StatusCode.FailedPrecondition, "This picture is already small, so the original is its only copy."));
         if (!sizes.Any(size => size.Width >= MediaSizes.ForPhonesWidth))
             throw new RpcException(new Status(StatusCode.FailedPrecondition, "The app shows this original on full-width screens, so it stays."));
         if (!everyUseCanSwitch)
             throw new RpcException(new Status(StatusCode.FailedPrecondition,
-                "Somewhere that uses it, such as a draft that isn't published yet, can't switch to a smaller size by itself. Publish or close the draft first."));
+                "Something that uses this picture, such as an unpublished draft, can't switch to a smaller size by itself. Publish or close the draft first."));
     }
 
     private Task DeleteUnlistedAsync(bool isPrivate, IEnumerable<string> keys, CancellationToken cancellationToken) =>
@@ -309,11 +309,11 @@ internal sealed class MediaLibrary(
     {
         Guid mediaId = await MediaAliases.ResolveAsync(db, ParseId(request.Id), cancellationToken);
         MediaItem item = await db.Items.AsNoTracking().SingleOrDefaultAsync(item => item.Id == mediaId, cancellationToken)
-            ?? throw new RpcException(new Status(StatusCode.NotFound, "No such media."));
+            ?? throw new RpcException(new Status(StatusCode.NotFound, "That file isn't in the library any more."));
         MediaRef media = await MediaRefs.OfAsync(db, item, blobs, cancellationToken);
         string key = request.Key.Length == 0 || request.Key == media.Key || media.Sizes.Any(size => size.Key == request.Key)
             ? request.Key.Length == 0 ? media.Key : request.Key
-            : throw new RpcException(new Status(StatusCode.NotFound, "That size of it isn't kept any more."));
+            : throw new RpcException(new Status(StatusCode.NotFound, "That size of the picture isn't kept any more."));
 
         if (item.AudiencePermission is not { } permission)
             return new MediaLink { Url = blobs.PublicUrlOf(key).ToString(), ExpiresAt = DateTime.MaxValue.ToUniversalTime() };
@@ -323,7 +323,7 @@ internal sealed class MediaLibrary(
             ? item.AudienceScopeId is { } scope && await own.MayReadAsync(user, scope, cancellationToken)
             : await access.IsAllowedAsync(user, permission, item.AudienceScopeId, cancellationToken);
         if (!allowed)
-            throw new RpcException(new Status(StatusCode.PermissionDenied, "Not permitted."));
+            throw new RpcException(new Status(StatusCode.PermissionDenied, "You don't have permission to do that."));
 
         DateTime expiresAt = Now + PrivateLinkLifetime;
         Uri url = await blobs.PresignDownloadAsync(BlobBucket.Private, key, PrivateLinkLifetime);
@@ -381,7 +381,7 @@ internal sealed class MediaLibrary(
             ? parsed
             : throw new RpcException(new Status(StatusCode.NotFound, "That folder has been deleted."));
         if (hidden.Contains(folderId))
-            throw new RpcException(new Status(StatusCode.PermissionDenied, "Only people it was shared with can see what's in this folder."));
+            throw new RpcException(new Status(StatusCode.PermissionDenied, "Only the people this folder is shared with can see what's in it."));
         return items.Where(item => item.FolderId == folderId);
     }
 
@@ -404,7 +404,7 @@ internal sealed class MediaLibrary(
     {
         Guid mediaId = ParseId(id);
         MediaItem item = await db.Items.SingleOrDefaultAsync(item => item.Id == mediaId, cancellationToken)
-            ?? throw new RpcException(new Status(StatusCode.NotFound, "No such media."));
+            ?? throw new RpcException(new Status(StatusCode.NotFound, "That file isn't in the library any more."));
 
         List<MediaFolder> systemFolders = await db.Folders.AsNoTracking().Where(folder => folder.SystemArea != null).ToListAsync(cancellationToken);
         CheckDeletable(item, KeptFolders(systemFolders, folders.StaffDeleteUnusedAreas()), await db.Uses.CountAsync(use => use.MediaId == mediaId, cancellationToken));
@@ -436,7 +436,7 @@ internal sealed class MediaLibrary(
     }
 
     private static RpcException InUse(int uses) =>
-        new(new Status(StatusCode.FailedPrecondition, uses == 1 ? "It's still used in 1 place. Remove it there first." : $"It's still used in {uses} places. Remove it there first."));
+        new(new Status(StatusCode.FailedPrecondition, uses == 1 ? "This file is still used in 1 place. Remove it from there first." : $"This file is still used in {uses} places. Remove it from them first."));
 
     private async Task DiscardAsync(PendingUpload pending, CancellationToken cancellationToken)
     {
@@ -456,7 +456,7 @@ internal sealed class MediaLibrary(
         Caller.UserId(user) ?? throw new RpcException(new Status(StatusCode.Unauthenticated, "Sign in first."));
 
     private static Guid ParseId(string id) =>
-        Guid.TryParse(id, out Guid parsed) ? parsed : throw new RpcException(new Status(StatusCode.NotFound, "No such media."));
+        Guid.TryParse(id, out Guid parsed) ? parsed : throw new RpcException(new Status(StatusCode.NotFound, "That file isn't in the library any more."));
 
     private static string? NullIfEmpty(string? value) => string.IsNullOrWhiteSpace(value) ? null : value;
 

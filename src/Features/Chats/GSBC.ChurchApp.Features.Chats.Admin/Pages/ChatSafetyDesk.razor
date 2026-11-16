@@ -41,6 +41,6 @@
         new(Reports, "Reports", desk.OpenReports > 0 ? desk.OpenReports : null),
         new(ChatsTab, "Chats"),
         .. desk.Auditor ? new[] { new TabOption<string>(Paused, "Paused people") } : [],
-        new(Log, "Checks log"),
+        new(Log, "Log of checks"),
     ];
 }

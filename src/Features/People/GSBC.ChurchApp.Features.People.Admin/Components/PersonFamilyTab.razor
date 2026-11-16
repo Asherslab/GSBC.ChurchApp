@@ -41,8 +41,8 @@
                                     @if (office)
                                     {
                                         <div class="ui-actions">
-                                            <Button Small="true" Variant="ButtonVariant.Quiet" Disabled="_busy" OnClick="() => RunAsync(() => People.WithdrawAsync(ask.Id).AsTask())">Take it back</Button>
-                                            <Button Small="true" Busy="_busy" OnClick="() => RunAsync(() => Office.LinkAsync(family.Id, ask.ChildId).AsTask())">Link them</Button>
+                                            <Button Small="true" Variant="ButtonVariant.Quiet" Disabled="_busy" OnClick="() => RunAsync(() => People.WithdrawAsync(ask.Id).AsTask())">Withdraw the request</Button>
+                                            <Button Small="true" Busy="_busy" OnClick="() => RunAsync(() => Office.LinkAsync(family.Id, ask.ChildId).AsTask())">Link as their parent</Button>
                                         </div>
                                     }
                                 </TrailingContent>
@@ -54,7 +54,7 @@
                                 <TrailingContent>
                                     @if (office)
                                     {
-                                        <Button Small="true" Variant="ButtonVariant.Quiet" Disabled="_busy" OnClick="() => RunAsync(() => People.WithdrawAsync(ask.Id).AsTask())">Take it back</Button>
+                                        <Button Small="true" Variant="ButtonVariant.Quiet" Disabled="_busy" OnClick="() => RunAsync(() => People.WithdrawAsync(ask.Id).AsTask())">Withdraw the request</Button>
                                     }
                                 </TrailingContent>
                             </ListRow>
@@ -93,9 +93,9 @@
                             <PersonFinder Label="Find their child" Placeholder="Find their child by name" Find="FindAsync" ActionText="Link as their child" AutoFocus="true"
                                           Leave="Leave(family)" Busy="@_busyFor" OnChosen="person => LinkAsync(family.Id, person.Id)" />
                             <div class="people-inline">
-                                <TextField Label="Or add a child who isn't in the app" Placeholder="Their name" Value="@_childName" ValueChanged="value => _childName = value" />
-                                <DateField Label="Birth date" Shortcuts="false" Placeholder="Like 4 Mar 2011" Value="@_childBorn" ValueChanged="value => _childBorn = value" Max="@($"{today:yyyy-MM-dd}")" />
-                                <Button Variant="ButtonVariant.Quiet" Busy="_busy" Disabled="@(_childName.Trim().Length == 0 || PeopleWords.ParseDay(_childBorn) is null)" OnClick="() => AddChildAsync(family.Id)">Add</Button>
+                                <TextField Label="Name of a child who isn't in the app" Value="@_childName" ValueChanged="value => _childName = value" />
+                                <DateField Label="Birth date" Shortcuts="false" Value="@_childBorn" ValueChanged="value => _childBorn = value" Max="@($"{today:yyyy-MM-dd}")" />
+                                <Button Variant="ButtonVariant.Quiet" Busy="_busy" Disabled="@(_childName.Trim().Length == 0 || PeopleWords.ParseDay(_childBorn) is null)" OnClick="() => AddChildAsync(family.Id)">Add the child</Button>
                             </div>
                             <div class="ui-actions ui-after">
                                 <Button Small="true" Variant="ButtonVariant.Quiet" OnClick="() => _linking = Linking.None">Done</Button>
@@ -126,11 +126,11 @@
                         }
                         @if (minor && family.Parents.Count == 0)
                         {
-                            <ListRow Title="No parent linked yet" Subtitle="Shown on Safeguarding until someone is" Icon="alert" IconTone="RowTone.Warm" />
+                            <ListRow Title="No parent linked yet" Subtitle="They're listed on Safeguarding until a parent is linked." Icon="alert" IconTone="RowTone.Warm" />
                         }
                         @if (office && _linking != Linking.Parent)
                         {
-                            <ListRow Title="Link a parent" Subtitle="It matters while they're under 18" Icon="plus" IconTone="RowTone.Accent" OnClick="() => _linking = Linking.Parent" />
+                            <ListRow Title="Link a parent" Subtitle="Parents look after young people in the app while they're under 18." Icon="plus" IconTone="RowTone.Accent" OnClick="() => _linking = Linking.Parent" />
                         }
                     </ListGroup>
                     @if (_linking == Linking.Parent)
@@ -158,10 +158,10 @@
             <ul>
                 <li>sees and changes the child's details in the app</li>
                 <li>makes them a sign-in code for their own phone</li>
-                <li>is who ministries tell about the child, and can answer for them when they're reached through their parents, shown as the parent</li>
+                <li>hears from ministries about the child, and can answer roster requests and messages for them</li>
             </ul>
-            <p>Parents link from their Account page too: a parent adds a child, and a young person asks a parent, who says yes.</p>
-            <p>A young person no one has linked shows on Safeguarding until someone is.</p>
+            <p>Families can link themselves on their Account page too: a parent adds a child, or a young person asks a parent, who approves the request.</p>
+            <p>A young person without a linked parent shows on Safeguarding until a parent is linked.</p>
         </aside>
     </div>
 </LiveData>

@@ -22,7 +22,7 @@ internal sealed class PastoralCare(
             throw Invalid($"Write a request of up to {PrayerRules.LongestText} characters.");
         DateTime now = time.GetUtcNow().UtcDateTime;
         DateTime? until = write.ForWall
-            ? PrayerRules.ClampedUntil(DateTime.SpecifyKind(write.Until, DateTimeKind.Utc), now) ?? throw Invalid("Choose a day within the next year for it to leave the wall.")
+            ? PrayerRules.ClampedUntil(DateTime.SpecifyKind(write.Until, DateTimeKind.Utc), now) ?? throw Invalid("Choose a day within the next year for the request to leave the wall.")
             : null;
 
         bool theirOwn = write.From is WrittenFrom.Me or WrittenFrom.NoName;
@@ -174,15 +174,15 @@ internal sealed class PastoralCare(
             return;
         RequestRecord record = await FindAsync(save.Id, cancellationToken);
         if (!PrayerRules.MayModerate(record))
-            throw new RpcException(new Status(StatusCode.FailedPrecondition, "They didn't ask for the prayer wall, so it stays with the pastoral team."));
+            throw new RpcException(new Status(StatusCode.FailedPrecondition, "They didn't ask for the prayer wall, so the request stays with the pastoral team."));
         if (!PrayerRules.MayGoOnTheWall(record))
             return;
         string text = save.Text.Trim();
         if (text.Length == 0 || text.Length > PrayerRules.LongestText)
-            throw new RpcException(new Status(StatusCode.InvalidArgument, $"Give the wall up to {PrayerRules.LongestText} characters to show."));
+            throw new RpcException(new Status(StatusCode.InvalidArgument, $"Keep the words on the wall to {PrayerRules.LongestText} characters or fewer."));
         DateTime now = time.GetUtcNow().UtcDateTime;
         DateTime until = PrayerRules.ClampedUntil(DateTime.SpecifyKind(save.Until, DateTimeKind.Utc), now)
-            ?? throw new RpcException(new Status(StatusCode.InvalidArgument, "Choose a day within the next year for it to leave the wall."));
+            ?? throw new RpcException(new Status(StatusCode.InvalidArgument, "Choose a day within the next year for the request to leave the wall."));
 
         bool wasShown = PrayerRules.IsOnTheWall(record, now);
         record.Wall = WallState.Shown;

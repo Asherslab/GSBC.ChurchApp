@@ -407,7 +407,7 @@ button.text-link:disabled { color: var(--ink-3); cursor: default; }
 .field__input:focus { outline: none; box-shadow: inset 0 0 0 2px var(--accent); }
 .field__input:disabled { color: var(--ink-3); }
 .field--problem .field__input { box-shadow: inset 0 0 0 2px var(--danger); }
-.field__hint { font-size: var(--text-caption); line-height: 1.4; color: var(--ink-3); }
+.field__hint { font-size: var(--text-caption); line-height: 1.45; color: var(--ink-2); max-width: 65ch; }
 .field__problem { font-size: var(--text-caption); font-weight: 600; line-height: 1.4; color: var(--danger); }
 .field__select { position: relative; display: block; }
 .field__select .field__input { padding-right: 40px; }
@@ -737,6 +737,7 @@ button.text-link:disabled { color: var(--ink-3); cursor: default; }
   cursor: pointer;
 }
 .colour-field__reset:hover { background: var(--sand); color: var(--ink); }
+.colour-field__hint { grid-column: 2 / -1; margin-top: -6px; }
 .colour-field__problem { grid-column: 2 / -1; margin-top: -6px; font-size: var(--text-caption); line-height: 1.4; color: var(--danger); }
 .colour-field--problem .colour-field__hex { box-shadow: inset 0 0 0 2px var(--danger); }
 

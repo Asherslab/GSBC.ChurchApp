@@ -10,17 +10,17 @@ public static class EventsTiles
     private const string Headline = "headline";
     private const string RetiredBulletin = "hub.bulletin";
 
-    public static readonly NumberSetting Entries = new("entries", "How many to show", 2, 1, 4);
+    public static readonly NumberSetting Entries = new("entries", "Number of events shown", 2, 1, 4);
 
     public static readonly HubTileKind Week = new("hub.week", "This week",
-        "Coming up at church: one-off events, specials and dates that aren't on", "the calendar",
+        "Coming up at church: one-off events, special dates and dates that aren't on.", "the calendar",
         new TileDefaults("This week", Columns: 2, Tone: TileTones.Raised, Link: EventsDestinations.Week.Path, Text: "Calendar",
-            TextLabel: "Words to open the calendar"),
+            TextLabel: "Link text"),
         more: [Entries], variants:
         [
-            new(Agenda, "Agenda", "The next thing when small, two or three one row tall, more when taller",
+            new(Agenda, "Agenda", "Shows the next event when small, two or three when one row tall, and more when taller.",
                 TileVariant.AnySize, (_, _) => true),
-            new(JustALink, "Just a link", "The icon and the title, with a count where there is one",
+            new(JustALink, "Link only", "Shows the icon and title, with a count when there is one.",
                 TileVariant.AnySize, (_, _) => false),
             .. TileVariants.Pictures,
         ]);
@@ -31,9 +31,9 @@ public static class EventsTiles
             Text: "What's next", TitleLabel: "Title when small", TextLabel: "Words to open it"),
         variants:
         [
-            new(Headline, "Headline", "The first thing as the headline and what follows under it; how many when small",
+            new(Headline, "Headline", "Shows the first item as the headline, with what follows under it. A small tile shows how many items there are.",
                 TileVariant.AnySize, (_, _) => true),
-            new(JustALink, "Just a link", "The icon and the title, with how many things are coming up",
+            new(JustALink, "Link only", "Shows the icon and title, with how many things are coming up.",
                 TileVariant.AnySize, (_, _) => false),
             .. TileVariants.Pictures,
         ],

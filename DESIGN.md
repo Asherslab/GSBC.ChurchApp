@@ -1203,6 +1203,7 @@ file for what you touch:
 | [feedback.md](docs/design/feedback.md) | Send feedback on both sides, the Feedback board |
 | [media.md](docs/design/media.md) | The media library |
 | [places-and-styling.md](docs/design/places-and-styling.md) | Places in the app, App styling |
+| [words.md](docs/design/words.md) | Labels, descriptions, placeholders, sentences, buttons and problem lines |
 | [components.md](docs/design/components.md) | Which component draws each part, with its main parameters, and where the styles live |
 
 ### Saving
@@ -1210,17 +1211,35 @@ A form with unsaved changes always asks before they're lost (owner, 2026-11-10).
 always tell which they're on:
 
 - **Saves by itself** (long work with its own publish or send step: App styling drafts, an announcement, the digest):
-  `SaveStatus` near its title ("Saving…", "Saved", "Couldn't save. Trying again by itself." with *Try now*, or why it
+  `SaveStatus` near its title ("Saving…", "Saved", "Couldn't save. The app will try again by itself." with *Try now*, or why it
   can't save yet). No Save button.
 - **Saves with a button** (everything else): one `SaveBar`, as the pattern map places it, its button named for what it
   does ("Save", "Add the ministry"). Can't save yet: the button is disabled and the reason is written above it, never
   only in a tooltip.
 - **Instant changes** (a switch, a role tick, linking a person) need no Save; they sit in their own group, whose foot
   says "These change straight away", never beside a Save button.
-- **Leaving:** `UnsavedGuard` asks (*Save and go on*, *Discard the changes*, *Stay here*); a screen that swaps what's open
+- **Leaving:** `UnsavedGuard` asks (*Save and leave*, *Discard the changes*, *Stay here*); a screen that swaps what's open
   without navigating asks `UnsavedChanges.MayLeaveAsync()` first. `SaveRules` enforces it.
 
 Where the save goes on each surface: [saving.md](docs/design/saving.md).
+
+### Words on screen
+Proper, plain sentences on every label, description, button and message (owner, 2026-11-16, UAT #18: "proper
+grammar, proper sentences … 'in it': in what?"). Detail and examples: [words.md](docs/design/words.md).
+
+- **A label names the thing** ("Last day", "Short description"): never a fragment, a question or a bracket.
+- **A field whose purpose isn't obvious has a description** saying what it does and where people will see it,
+  between the label and the field in ink 2 (the problem line stays under the field).
+- **No bare "it" or "in it":** name the thing ("this ministry"), headings included.
+- **No example placeholders.** A format, or what an empty field means, goes in the description ("Leave this empty
+  to …").
+- **Whole sentences** for descriptions, details, empty states and problem lines; a blocked line names the field and
+  the fix ("Enter a name for the ministry.").
+- **Buttons name what they act on,** in a confirm too ("Delete the chat", "Keep the chat").
+- **One word for each thing everywhere; nothing internal on screen** (ids, permission keys, code names). Messages from
+  the server follow the same rules.
+
+`WordingRules` fails on the worst patterns.
 
 ### Examples in copy
 **Copy never names a real ministry, group, room or person as an example** (owner, 2026-11-10). Placeholders, hints,

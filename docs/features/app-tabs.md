@@ -82,7 +82,7 @@ App styling → **Tab bar** (in a draft; it was Drafts → a draft → Tab bar u
 - **The phone** draws the draft's Home with the draft's tab bar. Click a tab to choose it (the orange marker ring);
   Home and More are drawn faded, as they can't be chosen.
 - **Beside it,** a rail (`TabsCanvas`): *Add a tab*, *Preview the draft as* (a visitor, someone signed in, someone in a
-  role a tab is for), *Preview the draft on* (a date, to see dated tabs before they start), then **On the bar, in order**: Home
+  role a tab is for), *Preview the draft on* (a date, to see dated tabs before they start), then **On the tab bar, in order**: Home
   first with a lock and "Always first", each chosen tab numbered, with an orange dot when this draft changed it
   and *Move left* and *Move right*, and More last with a lock and "Always last". On the phone, Home and More are drawn
   faded, as they can't be chosen. Under it, the tabs that aren't on the
@@ -90,7 +90,7 @@ App styling → **Tab bar** (in a draft; it was Drafts → a draft → Tab bar u
   that place (or it opens Home), or past the third; and tabs taken off in this draft, with *Put back*.
 - **The settings panel** for the chosen tab (`TabSettingsPanel`): Opens (the place field, offering only places a tab
   can open that no other tab already opens), its word and its icon (filled in from the place when one is chosen, then the staff's to change), who
-  sees it and when, *On the bar*, and *Take it off the bar*. A tab added in this draft says what it still needs and
+  sees it and when, *Show on the tab bar*, and *Take off the tab bar*. A tab added in this draft says what it still needs and
   joins the bar once it has a place, a word and an icon.
 - **Every phone preview** in the admin panel (the Hub canvas, the draft's phone preview) draws the draft's tabs now,
   not a fixed Home and More.
@@ -114,7 +114,7 @@ App styling → **Tab bar** (in a draft; it was Drafts → a draft → Tab bar u
 - **Moving tabs is by buttons, not dragging.** Five cells on a true-size phone are small targets for a drag, and the
   rail's numbered list with *Move left* and *Move right* works the same with the mouse and the keyboard. Moving a tab
   changes only the tabs that moved, so the rest aren't marked as changed.
-- **Taking off a starting tab** turns *On the bar* off (it has no placement to remove); taking off an added one
+- **Taking off a starting tab** turns *Show on the tab bar* off (it has no placement to remove); taking off an added one
   removes it, with *Put back*.
 - **Every phone preview in the admin panel draws the draft's tabs** (the Hub canvas, the phone preview, the pop-out),
   for the person it's showing.

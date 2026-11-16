@@ -1,7 +1,7 @@
-<Sheet Open="Open" OpenChanged="OpenChanged" Title="Save to the library" Lead="Kept under Add a tile, ready to add again as a new copy.">
+<Sheet Open="Open" OpenChanged="OpenChanged" Title="Save to the library" Lead="Saved tiles are listed under Add a tile, where you can add a new copy at any time.">
     <ChildContent>
         <TextField Label="Name in the library" Value="@_name" ValueChanged="name => _name = name" MaxLength="HubSurfaces.Saved.Name.MaxLength"
-                   Hint="Only staff see it. The tile keeps its own title on the phone." Problem="@(_name.Trim().Length == 0 ? "Give it a name." : null)" />
+                   Hint="Only staff see this name. On the phone, the tile keeps its own title." Problem="@(_name.Trim().Length == 0 ? "Enter a name for the saved tile." : null)" />
         @if (Clash is { } taken)
         {
             <Notice Tone="NoticeTone.Warning" Text="@($"Your library already has “{Name(taken)}”. Replace it with this tile, or save this one under a new name.")" />
