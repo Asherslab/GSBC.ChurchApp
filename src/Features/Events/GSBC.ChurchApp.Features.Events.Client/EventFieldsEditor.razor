@@ -4,7 +4,7 @@
 <PlaceEditor Place="Fields.Place" PlaceChanged="place => Fields.Place = place" Used="PlacesUsed" Missing="@(Needs.Contains(EventFieldKeys.Place))" />
 <ContactsEditor Contacts="Fields.Contacts" />
 <EventAbout @ref="_about" Label="About" Text="Fields.Description" TextChanged="text => Fields.Description = text"
-            Hint="Say what the event is, who it's for and what to bring. Use the bar for formatting, and Insert for pictures, video and files." />
+            Hint="Say what the event is, who it's for and what to bring." />
 <AddableField Label="Registration link" Adding="Registration link" Shown="Fields.RegisterLink.Length > 0">
     <TextField Label="Registration link" Type="url" Value="@Fields.RegisterLink" ValueChanged="value => Fields.RegisterLink = value.Trim()"
                Hint="A web address where people sign up. It opens in the app's browser; the app doesn't count registrations." />

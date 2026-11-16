@@ -4,12 +4,12 @@
 
 <div class="field">
     <span class="field__label" aria-hidden="true">@Label</span>
-    <RichTextField @ref="_field" Content="@(Text ?? new RichText())" ContentChanged="text => TextChanged.InvokeAsync(text.IsEmpty ? null : text)" Label="@Label"
-                   Headings="true" Allowed="Allowed" Placeholder="@Placeholder" />
     @if (Hint is not null)
     {
         <span class="field__hint">@Hint</span>
     }
+    <RichTextField @ref="_field" Content="@(Text ?? new RichText())" ContentChanged="text => TextChanged.InvokeAsync(text.IsEmpty ? null : text)" Label="@Label"
+                   Headings="true" Allowed="Allowed" Placeholder="@Placeholder" />
     @foreach (string problem in Text is null ? [] : RichTextRules.ProblemsWith(Text, allowed: Allowed))
     {
         <small class="message">@problem</small>
