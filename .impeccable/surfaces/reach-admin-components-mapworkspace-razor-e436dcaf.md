@@ -35,7 +35,8 @@ OWN-WORLD: The admin bulletin: navy sidebar, white work area under the title ban
 dock is a white 76px strip of icon-over-name buttons, the open job in Selected Fill with an orange marker bar at its
 edge and orange counts; drawers are white panes ruled off by hairlines; floating things on the map are white cards on
 the Pop shadow; the drawing bar is navy with white buttons. The brand base map, the coverage ramp in deep aqua, skip
-areas in danger at 12% dashed, reports as orange flags, the edge of our maps hatched.
+areas in danger at 12% dashed, reports as orange flags, the edge of our maps under a grey veil over the Australia overview (2026-11-16; see
+`outreach-admin-map-overview.md`).
 
 STORY: The leader opens Map, sees coverage as they left it, pulls out Places, types an address or draws an area with
 an instruction bar they can't miss, clicks a report flag and resolves it in its card, folds everything away to look at
