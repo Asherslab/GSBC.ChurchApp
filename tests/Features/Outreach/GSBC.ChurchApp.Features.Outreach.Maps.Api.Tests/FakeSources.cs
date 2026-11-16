@@ -48,7 +48,9 @@ internal sealed class FakeSources : IMapSources
         return Task.FromResult(new LandUseMap([], [residential]));
     }
 
-    public Task<IRangeReader> TilesAsync(CancellationToken cancellationToken) => Task.FromResult<IRangeReader>(new BytesReader(TileArchives.World(6)));
+    public byte[] Tiles { get; set; } = TileArchives.World(6);
+
+    public Task<IRangeReader> TilesAsync(CancellationToken cancellationToken) => Task.FromResult<IRangeReader>(new BytesReader(Tiles));
 
     public Task<IReadOnlyList<OsmPlace>> PlacesAsync(CancellationToken cancellationToken) => Task.FromResult<IReadOnlyList<OsmPlace>>([]);
 

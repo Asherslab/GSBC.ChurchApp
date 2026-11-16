@@ -10,6 +10,9 @@ public interface IOutreachMapsService
     [SignedIn]
     ValueTask<RegionList> RegionsAsync(RegionListRequest request, CallContext context = default);
 
+    [SignedIn]
+    ValueTask<MapOverview> OverviewAsync(MapOverviewRequest request, CallContext context = default);
+
     [Requires(OutreachMapsPermissions.ManageNode)]
     ValueTask<MapAreaList> AreasAsync(MapAreaListRequest request, CallContext context = default);
 

@@ -233,6 +233,35 @@ namespace GSBC.ChurchApp.Features.Outreach.Maps.Api.Data.Migrations
                     b.ToTable("cells", "outreach_maps");
                 });
 
+            modelBuilder.Entity("GSBC.ChurchApp.Features.Outreach.Maps.Api.Data.OverviewRecord", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("text")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime>("BuiltAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("built_at");
+
+                    b.Property<long>("MapBytes")
+                        .HasColumnType("bigint")
+                        .HasColumnName("map_bytes");
+
+                    b.Property<string>("MapKey")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("map_key");
+
+                    b.Property<int>("MaxZoom")
+                        .HasColumnType("integer")
+                        .HasColumnName("max_zoom");
+
+                    b.HasKey("Id")
+                        .HasName("pk_overviews");
+
+                    b.ToTable("overviews", "outreach_maps");
+                });
+
             modelBuilder.Entity("GSBC.ChurchApp.Features.Outreach.Maps.Api.Data.PlaceRecord", b =>
                 {
                     b.Property<long>("Id")

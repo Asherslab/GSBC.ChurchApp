@@ -37,6 +37,7 @@ function colours() {
     danger: token("--danger"),
     primary: token("--primary"),
     land: token("--map-land"),
+    veil: token("--map-veil"),
   };
 }
 
@@ -100,6 +101,7 @@ function overlayLayers(c) {
     { id: "report-marks", type: "symbol", source: "markers", filter: kindIs("report"),
       layout: { "text-field": "!", "text-font": ["montserrat-semibold"], "text-size": byZoom([[12, 11], [17, 15]]), "text-allow-overlap": true, "text-ignore-placement": true },
       paint: { "text-color": c.onMarker } },
+    { id: "marker-notes", type: "symbol", source: "markers", filter: ["all", kindIs("note"), shownNow], layout: noteLayout, paint: notePaint(c) },
     { id: "places", type: "circle", source: "markers", filter: kindIs("start", "pin", "meeting"),
       paint: {
         "circle-radius": 8,
@@ -116,19 +118,35 @@ function overlayLayers(c) {
   ];
 }
 
-const hatch = "reach-hatch";
+const shownNow = ["all", [">=", ["zoom"], ["coalesce", ["get", "from"], 0]], ["<", ["zoom"], ["coalesce", ["get", "until"], 99]]];
+const inCorner = ["coalesce", ["get", "corner"], false];
+const noteLayout = {
+  "text-field": ["get", "label"], "text-font": ["montserrat-semibold"], "text-size": 11, "text-max-width": 7, "text-line-height": 1.15,
+  "text-anchor": ["case", inCorner, "top-left", "center"], "text-justify": ["case", inCorner, "left", "center"], "text-padding": 6,
+};
+const notePaint = (c) => ({ "text-color": c.ink, "text-halo-color": c.surface, "text-halo-width": 1.5 });
 
-function hatchImage(ground, stripe) {
+const hatch = "reach-hatch";
+const closedHatch = "reach-closed-hatch";
+const deepestZoom = 19;
+const overviewMinZoom = 3;
+const regionsMinZoom = 9;
+const overviewOverzoom = 2;
+const overviewLayersLeftOut = ["street-names"];
+
+function hatchImage(ground, stripe, alpha = 0.4) {
   const size = 16;
   const ratio = 2;
   const canvas = document.createElement("canvas");
   canvas.width = canvas.height = size * ratio;
   const draw = canvas.getContext("2d");
   draw.scale(ratio, ratio);
-  draw.fillStyle = ground;
-  draw.fillRect(0, 0, size, size);
+  if (ground) {
+    draw.fillStyle = ground;
+    draw.fillRect(0, 0, size, size);
+  }
   draw.strokeStyle = stripe;
-  draw.globalAlpha = 0.4;
+  draw.globalAlpha = alpha;
   draw.lineWidth = 1.5;
   draw.beginPath();
   for (const offset of [-size, 0, size]) {
@@ -139,27 +157,42 @@ function hatchImage(ground, stripe) {
   return { image: draw.getImageData(0, 0, size * ratio, size * ratio), ratio };
 }
 
-function reachLayers(c) {
+function reachLayers(c, overview) {
+  const beyond = overview
+    ? [
+        { id: "reach-beyond", type: "fill", source: "reach-beyond", paint: { "fill-color": c.veil } },
+        { id: "reach-closed", type: "fill", source: "reach-closed", paint: { "fill-color": c.veil, "fill-opacity": 0.8 } },
+        { id: "reach-closed-hatch", type: "fill", source: "reach-closed", paint: { "fill-pattern": closedHatch } },
+      ]
+    : [{ id: "reach-beyond", type: "fill", source: "reach-beyond", paint: { "fill-pattern": hatch } }];
   return [
-    { id: "reach-beyond", type: "fill", source: "reach-beyond", paint: { "fill-pattern": hatch } },
+    ...beyond,
     { id: "reach-others", type: "fill", source: "reach-others", paint: { "fill-color": ["coalesce", ["get", "colour"], c.walked], "fill-opacity": ["case", ["get", "outline"], 0, 0.1] } },
     { id: "reach-others-edge", type: "line", source: "reach-others", paint: { "line-color": ["coalesce", ["get", "colour"], c.walked], "line-width": 1.5, "line-dasharray": [3, 2] } },
     { id: "reach-edge", type: "line", source: "reach-edge", layout: { "line-cap": "round" }, paint: { "line-color": c.ink, "line-opacity": 0.55, "line-width": 1.5 } },
-    { id: "reach-notes", type: "symbol", source: "reach-notes",
-      layout: { "text-field": ["get", "label"], "text-font": ["montserrat-semibold"], "text-size": 12, "text-max-width": 9 },
-      paint: { "text-color": c.ink, "text-halo-color": c.surface, "text-halo-width": 2 } },
+    { id: "reach-notes", type: "symbol", source: "reach-notes", filter: shownNow, layout: noteLayout, paint: notePaint(c) },
   ];
 }
 
-function withOverlays(base, data) {
+function withOverview(regions, overview) {
+  regions.sources.overview = overview.sources.streets;
+  const underneath = overview.layers
+    .filter((layer) => !overviewLayersLeftOut.includes(layer.id))
+    .map((layer) => (layer.source ? { ...layer, id: "overview-" + layer.id, source: "overview" } : layer));
+  regions.layers = [...underneath, ...regions.layers.filter((layer) => layer.type !== "background")];
+  return regions;
+}
+
+function withOverlays(base, data, overview) {
   const c = colours();
-  const land = base.layers.find((layer) => layer.id === "land")?.paint["fill-color"] ?? c.surface;
+  const land = base.layers.find((layer) => layer.id.endsWith("land"))?.paint["fill-color"] ?? c.surface;
   base.hatch = { ground: land, stripe: c.walked };
   base.sources["reach-beyond"] = { type: "geojson", data: data.reach?.beyond ?? empty };
+  base.sources["reach-closed"] = { type: "geojson", data: data.reach?.closed ?? empty };
   base.sources["reach-others"] = { type: "geojson", data: data.reach?.others ?? empty };
   base.sources["reach-edge"] = { type: "geojson", data: data.reach?.edge ?? empty };
   base.sources["reach-notes"] = { type: "geojson", data: data.reach?.notes ?? empty };
-  base.layers.push(...reachLayers(c));
+  base.layers.push(...reachLayers(c, overview));
   base.sources.lines = { type: "geojson", data: data.lines };
   base.sources.areas = { type: "geojson", data: data.areas };
   base.sources.markers = { type: "geojson", data: data.markers };
@@ -187,11 +220,11 @@ const lineSet = (kindsJson, bytes) => {
   return lines;
 };
 const area = (a) => ({ type: "Feature", properties: { ...(a.colour ? { colour: colourOf(a.colour) } : {}), dashed: !!a.dashed, outline: !!a.outline, id: a.id ?? "" }, geometry: { type: "Polygon", coordinates: [a.points, ...(a.holes ?? [])] } });
-const marker = (m) => ({ type: "Feature", properties: { kind: m.kind, ...(m.label ? { label: m.label } : {}), id: m.id ?? "", chosen: !!m.chosen }, geometry: { type: "Point", coordinates: m.point } });
+const marker = (m) => ({ type: "Feature", properties: { kind: m.kind, ...(m.label ? { label: m.label } : {}), id: m.id ?? "", chosen: !!m.chosen, corner: !!m.corner, from: m.from ?? 0, until: m.until ?? 99 }, geometry: { type: "Point", coordinates: m.point } });
 
 function framePadding(b) {
   const padding = b.padding ?? 40;
-  return { top: padding, right: padding, bottom: padding, left: padding + (b.start ?? 0) };
+  return { top: padding, right: padding, bottom: padding + (b.below ?? 0), left: padding + (b.start ?? 0) };
 }
 
 function metresToPixels(map, metres, lat) {
@@ -203,6 +236,8 @@ export async function create(element, optionsJson, receiver) {
   loadStylesheet();
   const options = JSON.parse(optionsJson);
   const tiles = await tilesFor(options.source);
+  const backdrop = options.backdrop ?? null;
+  const backdropLimit = backdrop && [[backdrop.bounds.west, backdrop.bounds.south], [backdrop.bounds.east, backdrop.bounds.north]];
   const data = { lines: empty, areas: empty, markers: empty, you: empty, reach: null };
   let you = null;
   let following = !!options.follow;
@@ -211,7 +246,10 @@ export async function create(element, optionsJson, receiver) {
 
   let hatchColours = null;
   const styleNow = () => {
-    const style = withOverlays(mapStyle({ tiles, glyphs, scheme: shownScheme, attribution: options.source.attribution ?? "" }), data);
+    const attribution = options.source.attribution ?? "";
+    const regions = mapStyle({ tiles, glyphs, scheme: shownScheme, attribution });
+    const base = backdrop ? withOverview(regions, mapStyle({ tiles: "pmtiles://" + backdrop.url, glyphs, scheme: shownScheme, attribution })) : regions;
+    const style = withOverlays(base, data, !!backdrop);
     hatchColours = style.hatch;
     delete style.hatch;
     return style;
@@ -221,8 +259,8 @@ export async function create(element, optionsJson, receiver) {
     style: styleNow(),
     center: options.centre ?? [153.0, -27.35],
     zoom: options.zoom ?? 15,
-    maxZoom: 19,
-    minZoom: 9,
+    maxZoom: deepestZoom,
+    minZoom: backdrop ? overviewMinZoom : regionsMinZoom,
     attributionControl: false,
     interactive: options.interactive !== false,
     dragRotate: false,
@@ -235,9 +273,23 @@ export async function create(element, optionsJson, receiver) {
     if (map.hasImage(hatch)) return;
     const { image, ratio } = hatchImage(hatchColours.ground, hatchColours.stripe);
     map.addImage(hatch, image, { pixelRatio: ratio });
+    const closed = hatchImage(null, hatchColours.stripe, shownScheme === "dark" ? 0.22 : 0.4);
+    map.addImage(closedHatch, closed.image, { pixelRatio: closed.ratio });
   };
   map.on("style.load", addHatch);
-  map.on("styleimagemissing", (e) => e.id === hatch && addHatch());
+  map.on("styleimagemissing", (e) => (e.id === hatch || e.id === closedHatch) && addHatch());
+
+  let covered = [];
+  const insideCovered = ({ lng, lat }) => covered.some((box) => lat >= box.south && lat <= box.north && lng >= box.west && lng <= box.east);
+  const freeZoom = () => {
+    if (backdrop) map.setMaxZoom(deepestZoom);
+  };
+  const holdZoom = () => {
+    if (!backdrop) return;
+    const cap = insideCovered(map.getCenter()) ? deepestZoom : backdrop.maxZoom + overviewOverzoom;
+    if (map.getZoom() > cap + 0.01) map.easeTo({ zoom: cap, duration: 500 });
+    else map.setMaxZoom(cap);
+  };
 
   const set = (name, value) => {
     data[name] = value;
@@ -258,9 +310,12 @@ export async function create(element, optionsJson, receiver) {
   };
 
   let framed = null;
-  const fit = (b, animate = false) =>
+  const fit = (b, animate = false) => {
+    freeZoom();
     map.fitBounds([[b.west, b.south], [b.east, b.north]], { padding: framePadding(b), duration: animate ? 600 : 0, maxZoom: b.maxZoom ?? 17 });
+  };
   const showYou = (animate = false) => {
+    freeZoom();
     if (framed) fit(framed, animate);
     else map.easeTo({ center: you.point, zoom: Math.max(map.getZoom(), 17), duration: animate ? 600 : 0 });
   };
@@ -269,6 +324,7 @@ export async function create(element, optionsJson, receiver) {
     receiver?.invokeMethodAsync("OnMoved", b.getSouth(), b.getWest(), b.getNorth(), b.getEast());
   };
   map.on("moveend", moved);
+  map.on("moveend", holdZoom);
   map.on("load", () => {
     Object.entries(data).filter(([name]) => name !== "reach").forEach(([name, value]) => map.getSource(name)?.setData(value));
     showReach();
@@ -289,6 +345,7 @@ export async function create(element, optionsJson, receiver) {
     if (scheme() === shownScheme) return;
     shownScheme = scheme();
     if (map.hasImage(hatch)) map.removeImage(hatch);
+    if (map.hasImage(closedHatch)) map.removeImage(closedHatch);
     map.setStyle(styleNow());
   });
   watcher.observe(document.documentElement, { attributes: true, attributeFilter: ["data-scheme", "data-theme"] });
@@ -297,17 +354,20 @@ export async function create(element, optionsJson, receiver) {
 
   let limit = null;
   const showReach = () => {
-    ["beyond", "others", "edge", "notes"].forEach((name) => map.getSource("reach-" + name)?.setData(data.reach?.[name] ?? empty));
-    map.setMaxBounds(limit);
+    ["beyond", "closed", "others", "edge", "notes"].forEach((name) => map.getSource("reach-" + name)?.setData(data.reach?.[name] ?? empty));
+    map.setMaxBounds(limit ?? backdropLimit);
+    holdZoom();
   };
   const setReach = (json) => {
     const reach = json ? JSON.parse(json) : null;
     data.reach = reach && {
       beyond: { type: "FeatureCollection", features: [{ type: "Feature", properties: {}, geometry: { type: "MultiPolygon", coordinates: reach.beyond } }] },
+      closed: reach.closed.length ? { type: "FeatureCollection", features: [{ type: "Feature", properties: {}, geometry: { type: "Polygon", coordinates: reach.closed } }] } : empty,
       edge: { type: "FeatureCollection", features: reach.edge.map((points) => ({ type: "Feature", properties: {}, geometry: { type: "LineString", coordinates: points } })) },
       others: { type: "FeatureCollection", features: reach.others.map(area) },
       notes: { type: "FeatureCollection", features: reach.notes.map(marker) },
     };
+    covered = reach?.covered ?? [];
     limit = reach?.limit ? [[reach.limit.west, reach.limit.south], [reach.limit.east, reach.limit.north]] : null;
     if (map.isStyleLoaded()) showReach();
   };
@@ -335,7 +395,10 @@ export async function create(element, optionsJson, receiver) {
       map.resize();
       if (following || !dragged) fit(framed, map.loaded());
     },
-    centre: (lat, lon, zoom) => map.jumpTo({ center: [lon, lat], zoom: zoom ?? map.getZoom() }),
+    centre: (lat, lon, zoom) => {
+      freeZoom();
+      map.jumpTo({ center: [lon, lat], zoom: zoom ?? map.getZoom() });
+    },
     resize: () => map.resize(),
     ready: () => ready,
     dispose: () => {

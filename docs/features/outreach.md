@@ -400,10 +400,36 @@ outreach works on come in **regions**, which the API builds itself, and which ph
   and up to 12 places inside it, towns before suburbs before localities. A square with no
   addresses isn't made. `Maps.CheckChange` gives the same for squares being added, plus what uses the regions going and
   how much they free; `Maps.ChangeRegions` applies it.
-- **No overview map file** (*Claude's default*): the admin panel draws the squares over the nearest built region's map
-  (a region's map file carries its low zooms, which reach well past it near the church), with each square's count as
-  its label; far away (Gympie) the ground is mostly blank until its own regions are built. A Queensland overview map
-  would be a new static file on the media host beyond the approved "one map file per region", so it wasn't made.
+- **The Australia overview (owner, 2026-11-15; replaces "no overview map file").** The owner: "how big would the whole
+  of aus at max zoom be? just curious if we could have that in to preview? could be for admin only too … i meant at max
+  zoomed out", so that "the "add an area" and such things are easier to look at and plan". It is **not** the fix for
+  the map breaking when zoomed out and where regions meet (#109, fixed on its own). One static PMTiles file of all of
+  Australia (112.5°E to 154°E, 9°S to 44.5°S), cut by the build job from the same Protomaps build as the regions with
+  the same tile schema, so it is the same map. **Zoom 0 to 10**, measured on the 2026-11-15 build: zoom 0–8 is 10.7 MB,
+  0–9 is 26.7 MB, 0–10 is 57.2 MB (about two minutes to cut). Zoom 8 shows towns and highways only; zoom 10 shows
+  suburb names and the main road grid, which is what the owner asked to see when placing an area ("towns and suburb
+  names, roads and built-up land"), and the browser only fetches the tiles in view, so the size is the server's.
+  Stored in the public bucket under its content address (`<sha256>.pmtiles`, `immutable`), its one row in
+  `outreach_maps.overviews`; the job refreshes it every 30 days (a failure tries again in 6 hours), and a refresh that
+  changed it deletes the file it replaced. `Maps.Overview` (gRPC, signed in) gives its URL to the admin panel only (the
+  [AdminOnly] `OutreachMapsClient`); it is in no feed, so phones never see or download it. Approved as its own row in
+  AGENTS.md's non-gRPC paths (2026-11-15). Setting: `Outreach:Maps:OverviewMaxZoom`. **Production and UAT** need the
+  R2 bucket's CORS to keep allowing range reads from the admin panel (as for regions), and Cloudflare caches a 57 MB
+  file well under its limit; nothing else.
+- **Answered in the interview (owner, 2026-11-15):** everyone on the Map tab can look past the edge of the built areas,
+  not only in Map areas; all of Australia shows, but areas can't be added outside Queensland (the address data is
+  Queensland's) and the place search stays Queensland's.
+- **How the admin map uses it (owner's pick on the decision page, 2026-11-16: "the ground says where walkers have
+  maps").** The overview draws under the region maps on every job of the Map tab, so the map pans over all of Australia
+  (zoomed out to about zoom 3). Land with walker maps is drawn clear; everywhere else sits under a grey veil; over the
+  Queensland border the veil deepens and hatches; waiting and switched-off regions keep their dashed outlines. A key,
+  *Where walkers have maps*, sits bottom left whenever the view reaches past the built regions. Outside the built
+  regions the zoom stops two levels past the overview's own (zoom 12, about suburbs): stopping a pan out there eases the
+  map back out, and framing anything inside lifts the stop again. Coverage, Places, Reports, Saved areas and Plan a day
+  say at the top that they work where walkers have maps (Map areas doesn't: it's the place to add one). Map areas →
+  Add a map area marks squares outside Queensland ("Outside Queensland") and won't add an area that is all outside it.
+  Before the overview is first built, the map behaves as before: held to the built regions and hatched beyond them.
+  Planning a day keeps its own map of the day's region.
 
 ### Where map areas overlap (fixed 2026-11-15, feedback #109)
 

@@ -2,11 +2,39 @@
 @using GSBC.ChurchApp.Features.Outreach.Admin.Map
 @inject IAccess Access
 
-<p class="outreach-outside__title">No map here yet</p>
-<p class="outreach-outside__body">
-    Outreach maps cover the map areas, under Map areas on the left.
-    @if (Access.Can(OutreachMapsPermissions.Manage))
+@if (!Overview || Map is null)
+{
+    <p class="outreach-outside__title">No map here yet</p>
+    <p class="outreach-outside__body">
+        Outreach maps cover the map areas, under Map areas on the left.
+        @if (Access.Can(OutreachMapsPermissions.Manage))
+        {
+            <a href="@OutreachMapJobs.Href(OutreachMapJob.MapAreas)">Open Map areas</a>
+        }
+    </p>
+}
+else
+{
+    <p class="outreach-outside__title">Past the edge of our maps</p>
+    <p class="outreach-outside__body">
+        @WorksWhere(Map.Job) Out here the map zooms in only as far as suburbs.
+        @if (Access.Can(OutreachMapsPermissions.Manage))
+        {
+            <a href="@OutreachMapJobs.Href(OutreachMapJob.MapAreas)">Add a map area</a>
+        }
+    </p>
+}
+
+@code {
+    [CascadingParameter] public OutreachMapContext? Map { get; set; }
+
+    [Parameter] public bool Overview { get; set; }
+
+    private static string WorksWhere(OutreachMapJob job) => job switch
     {
-        <a href="@OutreachMapJobs.Href(OutreachMapJob.MapAreas)">Open Map areas</a>
-    }
-</p>
+        OutreachMapJob.Places => "Places are kept where walkers have maps.",
+        OutreachMapJob.Reports => "Walkers report from where they have maps.",
+        OutreachMapJob.SavedAreas or OutreachMapJob.Plan => "Outreach is planned where walkers have maps.",
+        _ => "Coverage is drawn where walkers have maps.",
+    };
+}

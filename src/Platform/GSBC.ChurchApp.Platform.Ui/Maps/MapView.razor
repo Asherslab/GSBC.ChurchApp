@@ -30,6 +30,7 @@
     private IJSObjectReference? _map;
     private DotNetObjectReference<MapView>? _receiver;
     private MapSource? _shownSource;
+    private MapBackdrop? _shownBackdrop;
     private object? _shownLines;
     private readonly Dictionary<string, IReadOnlyList<MapLine>> _shownLineSets = [];
     private object? _shownAreas;
@@ -58,6 +59,7 @@
     [Parameter] public EventCallback OnStoppedFollowing { get; set; }
     [Parameter] public RenderFragment? Overlay { get; set; }
     [Parameter] public MapReach? Reach { get; set; }
+    [Parameter] public MapBackdrop? Backdrop { get; set; }
     [Parameter] public RenderFragment? Outside { get; set; }
     [Parameter] public EventCallback<MapFrame> OnMoved { get; set; }
     [Parameter] public string? Class { get; set; }
@@ -68,7 +70,7 @@
             return;
         if (_creating is not null)
             await _creating;
-        if (_map is null || !Equals(_shownSource, Source))
+        if (_map is null || !Equals(_shownSource, Source) || !Equals(_shownBackdrop, Backdrop))
         {
             _creating = CreateAsync();
             try
@@ -144,13 +146,14 @@
         if (_disposed)
             return;
         _receiver ??= DotNetObjectReference.Create(this);
-        _map =await _module.InvokeAsync<IJSObjectReference>("create", _element, MapJson.Options(Source, Centre, Zoom, Interactive, Follow), _receiver);
+        _map = await _module.InvokeAsync<IJSObjectReference>("create", _element, MapJson.Options(Source, Centre, Zoom, Interactive, Follow, Backdrop), _receiver);
         if (_disposed)
         {
             await DropMapAsync();
             return;
         }
         _shownSource = Source;
+        _shownBackdrop = Backdrop;
         _shownLines = _shownAreas = _shownMarkers = null;
         _shownLineSets.Clear();
         _shownYou = null;

@@ -17,6 +17,7 @@ internal sealed class AreaBuildRunner(IServiceScopeFactory scopes, TimeProvider 
     private readonly SemaphoreSlim _wake = new(0, 1);
     private DateTimeOffset _placesTriedAt = DateTimeOffset.MinValue;
     private DateTimeOffset _addressesTriedAt = DateTimeOffset.MinValue;
+    private DateTimeOffset _overviewTriedAt = DateTimeOffset.MinValue;
 
     public void Wake()
     {
@@ -36,6 +37,7 @@ internal sealed class AreaBuildRunner(IServiceScopeFactory scopes, TimeProvider 
                 }
                 await IndexPlacesAsync(stoppingToken);
                 await IndexAddressesAsync(stoppingToken);
+                await RefreshOverviewAsync(stoppingToken);
             }
             catch (Exception exception) when (exception is not OperationCanceledException)
             {
@@ -64,6 +66,32 @@ internal sealed class AreaBuildRunner(IServiceScopeFactory scopes, TimeProvider 
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
             logger.LogWarning(exception, "Indexing places for outreach map areas failed; trying again in {Hours} hours", PlacesRetry.TotalHours);
+        }
+        finally
+        {
+            await db.Database.ExecuteSqlAsync($"SELECT pg_advisory_unlock({AdvisoryLockKey})", CancellationToken.None);
+        }
+    }
+
+    private async Task RefreshOverviewAsync(CancellationToken cancellationToken)
+    {
+        await using AsyncServiceScope scope = scopes.CreateAsyncScope();
+        OutreachMapsDbContext db = scope.ServiceProvider.GetRequiredService<OutreachMapsDbContext>();
+        OverviewMap overview = scope.ServiceProvider.GetRequiredService<OverviewMap>();
+        if (time.GetUtcNow() - _overviewTriedAt < PlacesRetry || !await overview.DueAsync(cancellationToken))
+            return;
+        await db.Database.OpenConnectionAsync(cancellationToken);
+        if (!await db.Database.SqlQuery<bool>($"SELECT pg_try_advisory_lock({AdvisoryLockKey}) AS \"Value\"").SingleAsync(cancellationToken))
+            return;
+        try
+        {
+            _overviewTriedAt = time.GetUtcNow();
+            await overview.RefreshAsync(cancellationToken);
+            logger.LogInformation("Built the Australia overview map for the admin panel");
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            logger.LogWarning(exception, "Building the Australia overview map failed; trying again in {Hours} hours", PlacesRetry.TotalHours);
         }
         finally
         {

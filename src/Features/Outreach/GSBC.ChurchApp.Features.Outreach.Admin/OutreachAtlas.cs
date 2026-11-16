@@ -14,8 +14,9 @@ public sealed class OutreachAtlas
     private static readonly IReadOnlySet<CellRef> NothingChanged = new HashSet<CellRef>();
     private readonly Placed[] _placed;
 
-    public OutreachAtlas(IReadOnlyList<OutreachRegion> regions, IReadOnlyList<Maps.Contracts.MapArea> areas)
+    public OutreachAtlas(IReadOnlyList<OutreachRegion> regions, IReadOnlyList<Maps.Contracts.MapArea> areas, MapOverview? overview = null)
     {
+        Overview = overview is { Map.Url.Length: > 0 } ? overview : null;
         Regions = [.. regions.Where(region => region.Map.Url.Length > 0).OrderBy(region => region.Id, StringComparer.Ordinal)];
         _placed = [.. Regions.Select(Placed.Of)];
         List<AreaCell> unbuilt = [.. areas.SelectMany(area => MapAreaDrawing.Cells(area, NothingChanged)
@@ -23,11 +24,17 @@ public sealed class OutreachAtlas
             .Select(cell => cell with { Name = Note(area, cell) }))];
         List<MapFrame> covered = [.. Regions.Select(region => Box(region.Core))];
         MapReach built = new(covered, [], []);
-        List<MapMarker> notes = [.. unbuilt.Select(cell => built.FreeSpot(Box(cell.Core)) is { } spot ? new MapMarker(spot, MapMarkerKind.Note, cell.Name) : null).OfType<MapMarker>()];
+        List<MapMarker> notes = [.. unbuilt.Select(cell => built.FreeSpot(Box(cell.Core)) is { } spot ? MapAreaDrawing.Mark(cell.Core, spot, cell.Name) : null).OfType<MapMarker>()];
         IReadOnlyList<MapAreaShape> others = MapAreaDrawing.ShapesOutside(unbuilt, built);
-        Reach = new MapReach(covered, others, notes);
-        Limits = new MapReach(covered, others, notes, Padded(MapFrame.Around(covered.Concat(unbuilt.Select(cell => Box(cell.Core))).SelectMany(MapReach.Ring))));
+        IReadOnlyList<MapPoint>? addable = Overview is { } shown ? [.. shown.Addable.Select(corner => new MapPoint(corner.Latitude, corner.Longitude))] : null;
+        Reach = new MapReach(covered, others, notes, Addable: addable);
+        MapFrame limit = Overview is { } whole ? Box(whole.Bounds) : Padded(MapFrame.Around(covered.Concat(unbuilt.Select(cell => Box(cell.Core))).SelectMany(MapReach.Ring)));
+        Limits = new MapReach(covered, others, notes, limit, addable);
     }
+
+    public MapOverview? Overview { get; }
+
+    public MapBackdrop? Backdrop => Overview is { } overview ? new MapBackdrop(overview.Map.Url, Box(overview.Bounds), overview.MaxZoom) : null;
 
     public IReadOnlyList<OutreachRegion> Regions { get; }
 
@@ -35,13 +42,17 @@ public sealed class OutreachAtlas
 
     public MapReach Limits { get; }
 
-    public MapSource? Source => Regions.Count == 0 ? null : MapSource.Urls(Regions.Select(region => region.Map.Url), Regions[0].Attribution);
+    public MapSource? Source => Regions.Count > 0 ? MapSource.Urls(Regions.Select(region => region.Map.Url), Regions[0].Attribution)
+        : Overview is { } overview ? MapSource.Urls([], overview.Attribution)
+        : null;
 
     public MapFrame Opening
     {
         get
         {
             List<OutreachRegion> church = [.. Regions.Where(region => region.AreaId == ChurchArea)];
+            if (Regions.Count == 0 && Reach.Addable is { Count: > 0 } addable)
+                return MapFrame.Around(addable, padding: 24);
             MapFrame all = Around(church.Count > 0 ? church : Regions);
             (double lat, double lon) = ((all.South + all.North) / 2, (all.West + all.East) / 2);
             return all.IsEmpty ? all : new MapFrame(lat - AroundChurch, lon - AroundChurch, lat + AroundChurch, lon + AroundChurch, 24, 15);
@@ -69,8 +80,9 @@ public sealed class OutreachAtlas
     {
         Task<RegionList> regions = maps.RegionsAsync();
         Task<MapAreaList> areas = access.Can(OutreachMapsPermissions.Manage) ? maps.AreasAsync() : Task.FromResult(new MapAreaList());
-        await Task.WhenAll(regions, areas);
-        return new OutreachAtlas((await regions).Regions, (await areas).Areas);
+        Task<MapOverview> overview = maps.OverviewAsync();
+        await Task.WhenAll(regions, areas, overview);
+        return new OutreachAtlas((await regions).Regions, (await areas).Areas, await overview);
     }
 
     private static MapFrame Box(MapBounds bounds) => MapAreaDrawing.Box(bounds);

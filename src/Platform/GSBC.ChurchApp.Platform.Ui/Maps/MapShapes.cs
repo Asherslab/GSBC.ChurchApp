@@ -12,10 +12,12 @@ public sealed record MapSource(string Kind, string Location, string Attribution)
 
     public static MapSource Urls(IEnumerable<string> urls, string attribution) => new(FromUrls, string.Join('\n', urls), attribution);
 
-    public IReadOnlyList<string> Locations => Location.Split('\n');
+    public IReadOnlyList<string> Locations => Location.Split('\n', StringSplitOptions.RemoveEmptyEntries);
 
     public static MapSource KeptFile(string id, string attribution) => new(FromKeptFile, id, attribution);
 }
+
+public sealed record MapBackdrop(string Url, MapFrame Bounds, int MaxZoom);
 
 public enum MapLineStyle
 {
@@ -48,11 +50,11 @@ public enum MapMarkerKind
     Report,
 }
 
-public sealed record MapMarker(MapPoint Point, MapMarkerKind Kind, string? Label = null, string? Id = null, bool Chosen = false);
+public sealed record MapMarker(MapPoint Point, MapMarkerKind Kind, string? Label = null, string? Id = null, bool Chosen = false, bool Corner = false, double ShownFrom = 0, double ShownUntil = 0);
 
 public sealed record MapYou(MapPoint Point, double AccuracyMetres);
 
-public sealed record MapFrame(double South, double West, double North, double East, int Padding = 40, int MaxZoom = 17, int StartPadding = 0)
+public sealed record MapFrame(double South, double West, double North, double East, int Padding = 40, int MaxZoom = 17, int StartPadding = 0, int BottomPadding = 0)
 {
     public static MapFrame Around(IEnumerable<MapPoint> points, int padding = 40, int maxZoom = 17)
     {
@@ -67,5 +69,18 @@ public sealed record MapFrame(double South, double West, double North, double Ea
         return south > north ? new MapFrame(0, 0, 0, 0, padding, maxZoom) : new MapFrame(south, west, north, east, padding, maxZoom);
     }
 
+    private const double EarthMetres = 40_075_016.686;
+    private const double TilePixels = 512;
+    private const double MetresPerDegree = 111_320;
+
     public bool IsEmpty => South == 0 && North == 0 && West == 0 && East == 0;
+
+    public MapPoint InsideCorner(double inset) => new(North - (North - South) * inset, West + (East - West) * inset);
+
+    public double ZoomWhereItSpans(double pixels)
+    {
+        double latitude = (South + North) / 2 * Math.PI / 180;
+        double side = Math.Min((East - West) * MetresPerDegree * Math.Cos(latitude), (North - South) * MetresPerDegree);
+        return side <= 0 ? 0 : Math.Log2(pixels * EarthMetres * Math.Cos(latitude) / (TilePixels * side));
+    }
 }
