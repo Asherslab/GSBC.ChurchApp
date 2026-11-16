@@ -13,17 +13,17 @@ internal static class MapAreas
     public const double SmallestRadiusKm = 1;
     public static readonly IReadOnlyList<string> Reserved = ["new"];
 
-    public static (MapAreaRecord Area, List<MapCellRecord> Cells) New(string id, string name, MapGrid grid, List<CellRef> cells, DateTime now)
+    public static (MapAreaRecord Area, List<MapCellRecord> Cells) New(string id, string name, string gridId, MapGrid grid, List<CellRef> cells, DateTime now)
     {
-        MapAreaRecord area = new() { Id = id, Name = name, State = MapAreaStates.Waiting, CreatedAt = now };
+        MapAreaRecord area = new() { Id = id, Name = name, State = MapAreaStates.Waiting, CreatedAt = now, GridId = gridId };
         RegionGrid.SetGrid(area, grid);
-        List<MapCellRecord> records = cells.Select(cell => new MapCellRecord
-        {
-            Id = RegionGrid.RegionId(id, cell.Row, cell.Column), AreaId = id, Row = cell.Row, Column = cell.Column, On = true, Pending = true,
-        }).ToList();
+        List<MapCellRecord> records = [.. cells.Select(cell => Cell(area, cell))];
         Fit(area, records);
         return (area, records);
     }
+
+    public static MapCellRecord Cell(MapAreaRecord area, CellRef at) =>
+        new() { AreaId = area.Id, SquareId = RegionGrid.RegionId(area.GridId, at.Row, at.Column), Row = at.Row, Column = at.Column, On = true };
 
     public static void Fit(MapAreaRecord area, IEnumerable<MapCellRecord> cells)
     {
@@ -49,12 +49,19 @@ internal static class MapAreas
         return id;
     }
 
-    public static MapArea ToMessage(MapAreaRecord area, IEnumerable<MapCellRecord> cells, IEnumerable<RegionRecord> regions, IBlobStore blobs) => new()
+    public static MapArea ToMessage(MapAreaRecord area, IReadOnlyCollection<MapCellRecord> cells, IReadOnlyDictionary<string, MapSquareRecord> squares,
+        IReadOnlyDictionary<string, RegionRecord> regions, Func<string, IEnumerable<string>> alsoIn, IBlobStore blobs) => new()
     {
         Grid = RegionGrid.GridOf(area),
-        Cells = cells.OrderBy(cell => cell.Row).ThenBy(cell => cell.Column).Select(cell => new MapCell
+        Cells = cells.OrderBy(cell => cell.Row).ThenBy(cell => cell.Column).Select(cell =>
         {
-            Row = cell.Row, Column = cell.Column, RegionId = cell.Id, On = cell.On, Pending = cell.Pending, Empty = cell.Empty, Name = cell.Name,
+            MapSquareRecord? square = squares.GetValueOrDefault(cell.SquareId);
+            return new MapCell
+            {
+                Row = cell.Row, Column = cell.Column, RegionId = cell.SquareId, On = cell.On,
+                Pending = cell.On && square?.Pending == true, Empty = cell.On && square?.Empty == true, Name = square?.Name ?? "",
+                AlsoIn = [.. alsoIn(cell.SquareId)],
+            };
         }).ToList(),
         CellLimit = RegionGrid.MostCells,
         StepsDone = area.StepsDone,
@@ -67,7 +74,8 @@ internal static class MapAreas
         Problem = area.Problem,
         StartedAt = area.StartedAt,
         BuiltAt = area.BuiltAt,
-        Regions = regions.OrderBy(region => region.Id, StringComparer.Ordinal).Select(region => RegionFeed.ToMessage(region, blobs)).ToList(),
+        Regions = cells.Where(cell => cell.On).Select(cell => regions.GetValueOrDefault(cell.SquareId)).OfType<RegionRecord>()
+            .OrderBy(region => region.Id, StringComparer.Ordinal).Select(region => RegionFeed.ToMessage(region, blobs)).ToList(),
         Report = area.Report is null ? null : JsonSerializer.Deserialize<MapAreaReport>(area.Report),
     };
 }

@@ -24,15 +24,23 @@ public sealed class MapAreaRecord
     public DateTime? DeletedAt { get; set; }
     public int StepsDone { get; set; }
     public int Steps { get; set; }
+    public string GridId { get; set; } = "";
 }
 
 public sealed class MapCellRecord
 {
-    public required string Id { get; set; }
     public required string AreaId { get; set; }
+    public required string SquareId { get; set; }
     public int Row { get; set; }
     public int Column { get; set; }
     public bool On { get; set; }
+}
+
+public sealed class MapSquareRecord
+{
+    public required string Id { get; set; }
+    public int Row { get; set; }
+    public int Column { get; set; }
     public bool Pending { get; set; }
     public bool Empty { get; set; }
     public long Version { get; set; }
@@ -66,7 +74,7 @@ public sealed class AddressRecord
 public sealed class RegionRecord
 {
     public required string Id { get; set; }
-    public required string AreaId { get; set; }
+    public required string GridId { get; set; }
     public required string Name { get; set; }
     public double CoreSouth { get; set; }
     public double CoreWest { get; set; }

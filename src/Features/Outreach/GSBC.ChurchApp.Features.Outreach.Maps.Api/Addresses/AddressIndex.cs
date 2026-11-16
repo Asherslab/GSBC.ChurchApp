@@ -66,11 +66,11 @@ internal sealed class AddressIndex(OutreachMapsDbContext db, IMapSources sources
     {
         List<RegionRecord> missing = await db.Regions.AsNoTracking()
             .Where(region => !db.Addresses.Any(address => address.RegionId == region.Id))
-            .Where(region => db.Areas.Any(area => area.Id == region.AreaId && area.State == MapAreaStates.Built))
+            .Where(region => db.Squares.Any(square => square.Id == region.Id && !square.Pending))
             .OrderBy(region => region.Id).ToListAsync(cancellationToken);
         if (missing.Count == 0)
             return false;
-        foreach (IGrouping<string, RegionRecord> area in missing.GroupBy(region => region.AreaId))
+        foreach (IGrouping<string, RegionRecord> area in missing.GroupBy(region => region.GridId))
         {
             List<(string RegionId, GeoBounds Core)> cores = [.. area.Select(region => (region.Id, new GeoBounds(region.CoreSouth, region.CoreWest, region.CoreNorth, region.CoreEast)))];
             IReadOnlyList<AddressPoint> addresses = await sources.AddressesAsync(RegionGrid.Union(cores.Select(core => core.Core)), cancellationToken);

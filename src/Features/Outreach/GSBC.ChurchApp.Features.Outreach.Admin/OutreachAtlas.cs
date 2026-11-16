@@ -8,14 +8,16 @@ namespace GSBC.ChurchApp.Features.Outreach.Admin;
 
 public sealed class OutreachAtlas
 {
-    private const string ChurchArea = "church";
     private const double RoomToPan = 0.05;
     private const double AroundChurch = 0.025;
     private static readonly IReadOnlySet<CellRef> NothingChanged = new HashSet<CellRef>();
     private readonly Placed[] _placed;
 
-    public OutreachAtlas(IReadOnlyList<OutreachRegion> regions, IReadOnlyList<Maps.Contracts.MapArea> areas, MapOverview? overview = null)
+    private readonly MapPoint? _church;
+
+    public OutreachAtlas(IReadOnlyList<OutreachRegion> regions, IReadOnlyList<Maps.Contracts.MapArea> areas, MapOverview? overview = null, MapPoint? church = null)
     {
+        _church = church;
         Overview = overview is { Map.Url.Length: > 0 } ? overview : null;
         Regions = [.. regions.Where(region => region.Map.Url.Length > 0).OrderBy(region => region.Id, StringComparer.Ordinal)];
         _placed = [.. Regions.Select(Placed.Of)];
@@ -50,11 +52,10 @@ public sealed class OutreachAtlas
     {
         get
         {
-            List<OutreachRegion> church = [.. Regions.Where(region => region.AreaId == ChurchArea)];
             if (Regions.Count == 0 && Reach.Addable is { Count: > 0 } addable)
                 return MapFrame.Around(addable, padding: 24);
-            MapFrame all = Around(church.Count > 0 ? church : Regions);
-            (double lat, double lon) = ((all.South + all.North) / 2, (all.West + all.East) / 2);
+            MapFrame all = Around(Regions);
+            (double lat, double lon) = _church is { } church ? (church.Lat, church.Lon) : ((all.South + all.North) / 2, (all.West + all.East) / 2);
             return all.IsEmpty ? all : new MapFrame(lat - AroundChurch, lon - AroundChurch, lat + AroundChurch, lon + AroundChurch, 24, 15);
         }
     }
@@ -82,7 +83,9 @@ public sealed class OutreachAtlas
         Task<MapAreaList> areas = access.Can(OutreachMapsPermissions.Manage) ? maps.AreasAsync() : Task.FromResult(new MapAreaList());
         Task<MapOverview> overview = maps.OverviewAsync();
         await Task.WhenAll(regions, areas, overview);
-        return new OutreachAtlas((await regions).Regions, (await areas).Areas, await overview);
+        RegionList list = await regions;
+        MapPoint? church = list is { ChurchLatitude: 0, ChurchLongitude: 0 } ? null : new MapPoint(list.ChurchLatitude, list.ChurchLongitude);
+        return new OutreachAtlas(list.Regions, (await areas).Areas, await overview, church);
     }
 
     private static MapFrame Box(MapBounds bounds) => MapAreaDrawing.Box(bounds);

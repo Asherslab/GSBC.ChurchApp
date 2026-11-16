@@ -52,7 +52,7 @@ public sealed class OutreachAtlasTests
     {
         List<OutreachRegion> regions = [.. Church.Regions.Concat(SouthBrisbane.Regions).Select(region => new OutreachRegion
         {
-            Id = region.Id, AreaId = region.AreaId, Name = region.Name, Core = region.Core, Map = region.Map,
+            Id = region.Id, GridId = region.GridId, Name = region.Name, Core = region.Core, Map = region.Map,
             Bounds = new MapBounds { South = region.Core.South - 0.01, West = region.Core.West - 0.01, North = region.Core.North + 0.01, East = region.Core.East + 0.01 },
         })];
         OutreachAtlas atlas = new(regions, [Church, SouthBrisbane]);
@@ -118,7 +118,7 @@ public sealed class OutreachAtlasTests
             cell.RegionId = $"{id}-{cell.Row}-{cell.Column}";
             area.Regions.Add(new OutreachRegion
             {
-                Id = cell.RegionId, AreaId = id, Name = cell.Name, Core = grid.Core(cell.Row, cell.Column), Bounds = grid.Core(cell.Row, cell.Column),
+                Id = cell.RegionId, GridId = id, Name = cell.Name, Core = grid.Core(cell.Row, cell.Column), Bounds = grid.Core(cell.Row, cell.Column),
                 Map = new MapFile { Url = $"https://media.test/{cell.RegionId}.pmtiles" },
             });
         }

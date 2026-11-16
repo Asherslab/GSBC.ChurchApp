@@ -123,6 +123,11 @@ namespace GSBC.ChurchApp.Features.Outreach.Maps.Api.Data.Migrations
                         .HasColumnType("double precision")
                         .HasColumnName("east");
 
+                    b.Property<string>("GridId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("grid_id");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("text")
@@ -185,14 +190,44 @@ namespace GSBC.ChurchApp.Features.Outreach.Maps.Api.Data.Migrations
 
             modelBuilder.Entity("GSBC.ChurchApp.Features.Outreach.Maps.Api.Data.MapCellRecord", b =>
                 {
+                    b.Property<string>("AreaId")
+                        .HasColumnType("text")
+                        .HasColumnName("area_id");
+
+                    b.Property<string>("SquareId")
+                        .HasColumnType("text")
+                        .HasColumnName("square_id");
+
+                    b.Property<int>("Column")
+                        .HasColumnType("integer")
+                        .HasColumnName("column");
+
+                    b.Property<bool>("On")
+                        .HasColumnType("boolean")
+                        .HasColumnName("on");
+
+                    b.Property<int>("Row")
+                        .HasColumnType("integer")
+                        .HasColumnName("row");
+
+                    b.HasKey("AreaId", "SquareId")
+                        .HasName("pk_cells");
+
+                    b.HasIndex("SquareId")
+                        .HasDatabaseName("ix_cells_square_id");
+
+                    b.HasIndex("AreaId", "Row", "Column")
+                        .IsUnique()
+                        .HasDatabaseName("ix_cells_area_id_row_column");
+
+                    b.ToTable("cells", "outreach_maps");
+                });
+
+            modelBuilder.Entity("GSBC.ChurchApp.Features.Outreach.Maps.Api.Data.MapSquareRecord", b =>
+                {
                     b.Property<string>("Id")
                         .HasColumnType("text")
                         .HasColumnName("id");
-
-                    b.Property<string>("AreaId")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("area_id");
 
                     b.Property<int>("Column")
                         .HasColumnType("integer")
@@ -207,10 +242,6 @@ namespace GSBC.ChurchApp.Features.Outreach.Maps.Api.Data.Migrations
                         .HasColumnType("text")
                         .HasColumnName("name");
 
-                    b.Property<bool>("On")
-                        .HasColumnType("boolean")
-                        .HasColumnName("on");
-
                     b.Property<bool>("Pending")
                         .HasColumnType("boolean")
                         .HasColumnName("pending");
@@ -224,13 +255,9 @@ namespace GSBC.ChurchApp.Features.Outreach.Maps.Api.Data.Migrations
                         .HasColumnName("version");
 
                     b.HasKey("Id")
-                        .HasName("pk_cells");
+                        .HasName("pk_squares");
 
-                    b.HasIndex("AreaId", "Row", "Column")
-                        .IsUnique()
-                        .HasDatabaseName("ix_cells_area_id_row_column");
-
-                    b.ToTable("cells", "outreach_maps");
+                    b.ToTable("squares", "outreach_maps");
                 });
 
             modelBuilder.Entity("GSBC.ChurchApp.Features.Outreach.Maps.Api.Data.OverviewRecord", b =>
@@ -329,11 +356,6 @@ namespace GSBC.ChurchApp.Features.Outreach.Maps.Api.Data.Migrations
                         .HasColumnType("text")
                         .HasColumnName("id");
 
-                    b.Property<string>("AreaId")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("area_id");
-
                     b.Property<DateTime>("BuiltAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("built_at");
@@ -357,6 +379,11 @@ namespace GSBC.ChurchApp.Features.Outreach.Maps.Api.Data.Migrations
                     b.Property<double>("East")
                         .HasColumnType("double precision")
                         .HasColumnName("east");
+
+                    b.Property<string>("GridId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("grid_id");
 
                     b.Property<int>("Letterboxes")
                         .HasColumnType("integer")
@@ -413,8 +440,8 @@ namespace GSBC.ChurchApp.Features.Outreach.Maps.Api.Data.Migrations
                     b.HasKey("Id")
                         .HasName("pk_regions");
 
-                    b.HasIndex("AreaId")
-                        .HasDatabaseName("ix_regions_area_id");
+                    b.HasIndex("GridId")
+                        .HasDatabaseName("ix_regions_grid_id");
 
                     b.ToTable("regions", "outreach_maps");
                 });

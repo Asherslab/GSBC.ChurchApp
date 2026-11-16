@@ -16,15 +16,15 @@ internal static class RegionGrid
 
     public static (MapGrid Grid, List<CellRef> Cells) Plan(GeoPoint centre, double radiusMetres) => Plan(GeoArea.Around(centre, radiusMetres));
 
-    public static (MapGrid Grid, List<CellRef> Cells) Plan(GeoPoint centre, double radiusMetres, MapGrid shared, IReadOnlySet<CellRef> taken)
+    public static (MapGrid Grid, List<CellRef> Cells) Plan(GeoPoint centre, double radiusMetres, MapGrid shared) => Plan(GeoArea.Around(centre, radiusMetres), shared);
+
+    public static (MapGrid Grid, List<CellRef> Cells) Plan(GeoBounds area, MapGrid shared)
     {
-        GeoBounds area = GeoArea.Around(centre, radiusMetres);
         (double latitude, double longitude) = (Math.Min(shared.CellLatitude / 4, (area.North - area.South) / 2), Math.Min(shared.CellLongitude / 4, (area.East - area.West) / 2));
         CellRef first = shared.CellAt(area.North - latitude, area.West + longitude);
         CellRef last = shared.CellAt(area.South + latitude, area.East - longitude);
         List<CellRef> cells = [.. Enumerable.Range(first.Row, last.Row - first.Row + 1)
-            .SelectMany(row => Enumerable.Range(first.Column, last.Column - first.Column + 1).Select(column => new CellRef { Row = row, Column = column }))
-            .Where(cell => !taken.Contains(cell))];
+            .SelectMany(row => Enumerable.Range(first.Column, last.Column - first.Column + 1).Select(column => new CellRef { Row = row, Column = column }))];
         return (Copy(shared), cells);
     }
 

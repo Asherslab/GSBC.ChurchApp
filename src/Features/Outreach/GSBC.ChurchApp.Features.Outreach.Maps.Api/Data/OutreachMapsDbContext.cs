@@ -11,6 +11,7 @@ public sealed class OutreachMapsDbContext(DbContextOptions<OutreachMapsDbContext
     public DbSet<RegionRecord> Regions => Set<RegionRecord>();
     public DbSet<RegionFileRecord> Files => Set<RegionFileRecord>();
     public DbSet<MapCellRecord> Cells => Set<MapCellRecord>();
+    public DbSet<MapSquareRecord> Squares => Set<MapSquareRecord>();
     public DbSet<PlaceRecord> Places => Set<PlaceRecord>();
     public DbSet<AddressRecord> Addresses => Set<AddressRecord>();
     public DbSet<OverviewRecord> Overviews => Set<OverviewRecord>();
@@ -30,7 +31,7 @@ public sealed class OutreachMapsDbContext(DbContextOptions<OutreachMapsDbContext
         {
             entity.ToTable("regions");
             entity.HasKey(region => region.Id);
-            entity.HasIndex(region => region.AreaId);
+            entity.HasIndex(region => region.GridId);
         });
         modelBuilder.Entity<RegionFileRecord>(entity =>
         {
@@ -41,8 +42,14 @@ public sealed class OutreachMapsDbContext(DbContextOptions<OutreachMapsDbContext
         modelBuilder.Entity<MapCellRecord>(entity =>
         {
             entity.ToTable("cells");
-            entity.HasKey(cell => cell.Id);
+            entity.HasKey(cell => new { cell.AreaId, cell.SquareId });
             entity.HasIndex(cell => new { cell.AreaId, cell.Row, cell.Column }).IsUnique();
+            entity.HasIndex(cell => cell.SquareId);
+        });
+        modelBuilder.Entity<MapSquareRecord>(entity =>
+        {
+            entity.ToTable("squares");
+            entity.HasKey(square => square.Id);
         });
         modelBuilder.Entity<PlaceRecord>(entity =>
         {
