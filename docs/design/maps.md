@@ -98,14 +98,40 @@ in order, so the 2 km overlaps meet without a seam). It follows light and dark b
   neither. `Interactive="false"`
   makes a still map (*Around you*).
 - **Reach** (`MapReach`): where the maps end. Outside its `Covered` squares the map is hatched (the land colour with
-  ink-3 stripes at 40%) under a thin ink edge; `Others` and `Notes` (`MapMarkerKind.Note`, text only) mark squares
-  not built yet; `Limit` stops panning. `Outside` is shown in a card in the middle while the view is mostly (three
-  quarters) beyond the squares, and `OnMoved` gives the view after each move.
+  ink-3 stripes at 40%) under a thin ink edge, or veiled when there's a `Backdrop` (below); `Others` and `Notes` mark
+  squares not built yet; `Clear` lifts the veil off squares being looked at (a map area being added); `Limit` stops
+  panning. `Outside` is shown in a card top centre while the view is mostly (three quarters) beyond the squares, and
+  `OnMoved` gives the view after each move.
+- **Notes** (`MapMarkerKind.Note`): text only, ink with a halo in the surface colour, 12px, wrapping at 9 ems (a
+  square's letterbox estimate, "No homes", "Outside Queensland").
+- **Backdrop** (`MapBackdrop`, admin panel only): a low-zoom map file under the regions, drawn in the same `mapStyle`
+  without street names. See *Past the edge of our maps*.
 - `OnTap` gives the point tapped (dropping a pin); `Overlay` holds a control over the map (*Follow me*). Its
   attribution sits under it.
 
 The libraries are vendored in `wwwroot/map/vendor` by `tools/outreach/map/vendor.mjs` (`npm install`, then
 `node vendor.mjs`), so the app never fetches them.
+
+## Past the edge of our maps (admin, 2026-11-16)
+
+The admin panel's outreach maps draw all of Australia under the built regions, so staff can see where to add a map area
+(owner's pick on the decision page, `.impeccable/mocks/outreach-overview/`). The ground says where walkers have maps:
+
+- **Where walkers have maps:** the regions as they are, clear.
+- **Overview only:** everywhere else in Queensland sits under a flat veil (`--map-veil`), the overview's roads and town
+  and suburb names showing through. Out here the map zooms in only a little past the overview's own detail (suburbs);
+  inside the built squares it goes to the deepest zoom.
+- **Outside Queensland:** the veil at 80% again on top, with the reach hatch's stripes (no ground; fainter at night).
+  Areas can't be added there, and a square's note says "Outside Queensland".
+- **Waiting to build** and **Switched off** keep their dashed looks over the veil.
+- **The key** (`OutreachMapKey`): a card on the page colour with the map's float shadow, "Where walkers have maps", one
+  swatch per state (22 × 14, square corners, a faint ink-3 edge), only the states in play. It shows while the view
+  reaches past the built squares, bottom left in the map's corner, above the coverage legend when that shows.
+- **The note** (`OutreachMapOutside`): top centre, below *Layers* when the window is under 1280px. With the overview it
+  says "Past the edge of our maps", what the open job does where walkers have maps, and that out here the map zooms in
+  only as far as suburbs, with *Add a map area* for those who look after maps. Map areas shows no note: the veil and
+  the key say it. Without the overview the map is held to our regions, hatched beyond, and the note says "No map here
+  yet".
 
 ## Drawing on the map
 
