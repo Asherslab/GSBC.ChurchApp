@@ -10,6 +10,7 @@ public static class StreetGraphFile
     public const string Extension = ".streets";
 
     private const int AlongSteps = 10_000;
+    private const int ItemsPerStep = 2_000;
     private const double DecimetresPerMetre = 10;
     private const byte Plain = 0;
     private const byte Deflated = 1;
@@ -41,7 +42,21 @@ public static class StreetGraphFile
         return stream.ToArray();
     }
 
-    public static StreetGraph Read(Stream input)
+    public static StreetGraph Read(Stream input) => ReadPayload(Payload(input));
+
+    public static StreetGraph Read(byte[] bytes)
+    {
+        using MemoryStream stream = new(bytes, writable: false);
+        return Read(stream);
+    }
+
+    public static IEnumerable<StreetGraph?> ReadInSteps(byte[] bytes)
+    {
+        using MemoryStream stream = new(bytes, writable: false);
+        return PayloadSteps(Payload(stream));
+    }
+
+    private static byte[] Payload(Stream input)
     {
         Span<byte> header = stackalloc byte[Magic.Length + 3];
         input.ReadExactly(header);
@@ -50,27 +65,17 @@ public static class StreetGraphFile
         ushort version = BitConverter.ToUInt16(header.Slice(Magic.Length, 2));
         if (version != FormatVersion)
             throw new InvalidDataException($"Street graph format {version} isn't supported; this app reads format {FormatVersion}.");
-        byte[] payload;
-        using (MemoryStream buffer = new())
+        using MemoryStream buffer = new();
+        if (header[^1] == Deflated)
         {
-            if (header[^1] == Deflated)
-            {
-                using ZLibStream zlib = new(input, CompressionMode.Decompress, leaveOpen: true);
-                zlib.CopyTo(buffer);
-            }
-            else
-            {
-                input.CopyTo(buffer);
-            }
-            payload = buffer.ToArray();
+            using ZLibStream zlib = new(input, CompressionMode.Decompress, leaveOpen: true);
+            zlib.CopyTo(buffer);
         }
-        return ReadPayload(payload);
-    }
-
-    public static StreetGraph Read(byte[] bytes)
-    {
-        using MemoryStream stream = new(bytes, writable: false);
-        return Read(stream);
+        else
+        {
+            input.CopyTo(buffer);
+        }
+        return buffer.ToArray();
     }
 
     private static void WritePayload(StreetGraph graph, Stream output)
@@ -165,7 +170,9 @@ public static class StreetGraphFile
         w.CopyTo(output);
     }
 
-    private static StreetGraph ReadPayload(byte[] payload)
+    private static StreetGraph ReadPayload(byte[] payload) => PayloadSteps(payload).Last()!;
+
+    private static IEnumerable<StreetGraph?> PayloadSteps(byte[] payload)
     {
         PayloadReader r = new(payload);
         string id = r.String(), name = r.String(), attribution = r.String();
@@ -185,6 +192,8 @@ public static class StreetGraphFile
         long x = 0, y = 0, osm = 0;
         for (int n = 0; n < nodes; n++)
         {
+            if (n % ItemsPerStep == ItemsPerStep - 1)
+                yield return null;
             x += r.Signed();
             y += r.Signed();
             osm += r.Signed();
@@ -200,6 +209,8 @@ public static class StreetGraphFile
         long way = 0;
         for (int s = 0; s < streetCount; s++)
         {
+            if (s % ItemsPerStep == ItemsPerStep - 1)
+                yield return null;
             int u = r.Index(nodes), v = r.Index(nodes);
             string streetName = table[r.Index(table.Length)], fullName = table[r.Index(table.Length)];
             RoadKind kind = (RoadKind)r.Byte();
@@ -232,6 +243,8 @@ public static class StreetGraphFile
         List<uint> keys = [];
         for (int side = 0; side < streetCount * 2; side++)
         {
+            if (side % ItemsPerStep == ItemsPerStep - 1)
+                yield return null;
             boxStart[side] = along.Count;
             int count = r.Count();
             long steps = 0;
@@ -246,8 +259,9 @@ public static class StreetGraphFile
             }
         }
         boxStart[streetCount * 2] = along.Count;
+        yield return null;
 
-        return new StreetGraph(region, nodeX, nodeY, nodeOsm, streets, shapeStart, [.. shape], boxStart, [.. along], [.. kinds], [.. labels], [.. keys]);
+        yield return new StreetGraph(region, nodeX, nodeY, nodeOsm, streets, shapeStart, [.. shape], boxStart, [.. along], [.. kinds], [.. labels], [.. keys]);
     }
 
     private static (long X, long Y) Decimetres(Flat flat) =>

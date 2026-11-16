@@ -110,8 +110,16 @@ public sealed class StreetGraph
 
     public int? StreetOf(StreetKey key)
     {
-        _byKey ??= Enumerable.Range(0, _streets.Length).GroupBy(KeyOf).ToDictionary(g => g.Key, g => g.First());
+        _byKey ??= ByKey();
         return _byKey.TryGetValue(key, out int street) ? street : null;
+    }
+
+    private Dictionary<StreetKey, int> ByKey()
+    {
+        Dictionary<StreetKey, int> byKey = new(_streets.Length);
+        for (int street = 0; street < _streets.Length; street++)
+            byKey.TryAdd(KeyOf(street), street);
+        return byKey;
     }
 
     public ReadOnlySpan<int> StreetsAt(int node) => _adjacent.AsSpan(_adjacentStart[node], _adjacentStart[node + 1] - _adjacentStart[node]);
