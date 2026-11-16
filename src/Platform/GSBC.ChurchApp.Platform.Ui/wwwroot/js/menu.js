@@ -16,21 +16,21 @@ const windowBox = (panel) => {
   return { top: safeTop, bottom: Math.min(window.innerHeight, visible, barTop) };
 };
 
-const inWindow = (panel, trigger, height, room) => {
+const inWindow = (panel, trigger, height, room, fromStart, again) => {
   const width = panel.getBoundingClientRect().width;
   const below = room.bottom - trigger.bottom - gap * 2;
   const above = trigger.top - room.top - gap * 2;
   const down = height <= below || (height > above && below >= above);
   const top = down ? trigger.bottom + gap : Math.max(room.top + gap, trigger.top - gap - Math.min(height, above));
-  const left = panel.classList.contains('menu__panel--start') || panel.closest('.menu--block')
-    ? trigger.left
-    : trigger.right - width;
+  const left = fromStart ? trigger.left : trigger.right - width;
   const x = Math.min(Math.max(gap, left), window.innerWidth - width - gap);
   Object.assign(panel.style, { position: 'fixed', top: `${top}px`, left: `${x}px`, bottom: 'auto', right: 'auto', width: `${width}px` });
   if (height > Math.max(below, above)) panel.style.maxHeight = `${Math.max(below, above)}px`;
-  const shown = panel.getBoundingClientRect();
-  panel.style.top = `${top + (top - shown.top)}px`;
-  panel.style.left = `${x + (x - shown.left)}px`;
+  if (!panel.matches(':popover-open')) {
+    const shown = panel.getBoundingClientRect();
+    panel.style.top = `${top + (top - shown.top)}px`;
+    panel.style.left = `${x + (x - shown.left)}px`;
+  }
   const follow = (event) => {
     if (event.target instanceof Node && panel.contains(event.target)) return;
     if (!panel.isConnected) {
@@ -38,7 +38,7 @@ const inWindow = (panel, trigger, height, room) => {
       removeEventListener('resize', follow);
       return;
     }
-    place(panel);
+    again(panel);
   };
   if (!panel.dataset.follows) {
     panel.dataset.follows = 'true';
@@ -63,5 +63,14 @@ export function place(panel) {
     panel.classList.add('menu__panel--up');
     return;
   }
-  inWindow(panel, trigger, height, room);
+  inWindow(panel, trigger, height, room, panel.classList.contains('menu__panel--start') || !!panel.closest('.menu--block'), place);
+}
+
+export function float(panel) {
+  if (!panel) return;
+  if (panel.popover && !panel.matches(':popover-open')) panel.showPopover();
+  placed.forEach((property) => { panel.style[property] = ''; });
+  const trigger = panel.parentElement.getBoundingClientRect();
+  if (panel.hasAttribute('data-field-width')) panel.style.width = `${Math.max(trigger.width, panel.getBoundingClientRect().width)}px`;
+  inWindow(panel, trigger, panel.getBoundingClientRect().height, windowBox(panel), true, float);
 }

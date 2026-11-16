@@ -70,7 +70,7 @@
                 {
                     <div class="event-picture"><MediaCover Media="picture" Alt="" /></div>
                 }
-                <EventDetails Occurrence="occurrence" Calendar="calendar" Contacts="diary.ContactsOf(occurrence)" SignedIn="Access.SignedIn" OtherDates="diary.OtherDates(occurrence, Now)">
+                <EventDetails Occurrence="occurrence" Calendar="calendar" Contacts="diary.ContactsOf(occurrence)" SignedIn="Access.SignedIn">
                     <Actions>
                         @if (!occurrence.NotOn)
                         {

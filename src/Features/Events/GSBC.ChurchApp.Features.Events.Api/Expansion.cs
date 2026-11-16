@@ -38,9 +38,6 @@ internal static class Expansion
         {
             SpecialRecord? special = specials.GetValueOrDefault(date);
             BreakRecord? inBreak = BreakOn(breaks, date);
-            if (inBreak is not null && date.DayNumber - inBreak.StartDate.DayNumber >= EventsFeeds.NotOnShownForDays)
-                continue;
-
             EventFields fields = special is null ? regular.Fields : FieldValues.Overlay(regular.Fields, special.Fields, special.Changed);
             bool ownTime = special is not null && special.Changed.Contains(EventFieldKeys.Time);
             int? startMinute = ownTime ? special!.StartMinute : regular.StartMinute;
@@ -124,9 +121,7 @@ internal static class Expansion
         }
         occurrence.StartsAt = ChurchTime.ToUtc(firstDay.ToDateTime(TimeOnly.MinValue).AddMinutes(start));
         DateTime ends = lastDay.ToDateTime(TimeOnly.MinValue).AddMinutes(endMinute ?? start);
-        if (endMinute < start && lastDay == firstDay)
-            ends = ends.AddDays(1);
-        occurrence.EndsAt = ChurchTime.ToUtc(ends);
+        occurrence.EndsAt = lastDay == firstDay && endMinute <= start ? occurrence.StartsAt : ChurchTime.ToUtc(ends);
     }
 
     private static string BackOn(RegularEventRecord regular, IReadOnlyDictionary<DateOnly, SpecialRecord> specials, IReadOnlyList<BreakRecord> breaks, DateOnly date) =>
