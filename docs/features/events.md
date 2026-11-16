@@ -777,6 +777,41 @@ approved mocks (surface briefs `.impeccable/surfaces/tures-events-admin-pages-di
   the email at its real width, scaled to the column. It saves as you change it. Arrow buttons move a row too, for the
   keyboard. Finish-reviewed (verdict: ship after fixes; the fixes are in).
 
+## What's next on Home and Copy for Elvanto (UAT feedback #17, 2026-11-16)
+
+The owner: "Build this into a proper feature: A) the actual tile and place to view this in app (will most likely
+replace the 'bulletin' stub tile). B) Copy for email, we email via Elvanto, now confirmed, Elvanto allows HTML source
+before sending, let's use that." Answers in the interview (2026-11-16): swap the bulletin tile in place; the last few
+digests from the page's foot; Copy for email gives only the content block. Decision page
+(`.impeccable/mocks/digest-tile/`): option B, *The headline and what follows*; surface brief
+`.impeccable/surfaces/eatures-events-client-whatsnexttile-razor-daee563f.md`.
+
+- **The tile** (`EventsTiles.WhatsNext`, `hub.whats-next`; `WhatsNextTile`, read from the feeds by `DigestReader`
+  through `LiveData`): in the tile's tone (Masthead by default), the first thing still to come as the headline with its
+  when line, the next ones under rules (their day after them when the tile is two columns wide, or staff's when words
+  for things added by hand), and the go line (*Read What's next*) at the foot. At two columns and two rows the lead's
+  picture (or the tile's own) sits on top. One row: "Baptisms and 2 more". One cell, or *Just a link*: how many
+  things are coming up. Nothing sent or everything passed: "Nothing new to tell yet". The picture layouts show the lead.
+  The sketch's small "What's next" label above the headline was left out (craft floor: no eyebrow over a heading); the
+  go line says it.
+- **Replacing the bulletin:** a tile kind may name the retired kind it takes over (`HubTileReplacement`,
+  `Surface.Replaces`). Configuration's `TileReplacing` turns every placement of the retired kind into the new one once
+  (`config.seeds` key `replaced:<kind>`), through `PlacementEditor` so it has history and reaches phones, keeping its
+  place, who sees it and its size; the bulletin's words, link and layout go. The Sunday bulletin kind is no longer
+  offered. A phone still on the older app doesn't draw the new tile until it updates.
+- **Earlier digests:** the publisher keeps the latest sent digest exactly as before (header `digest`) and the three
+  sent before it, one per start date, under `digest:<start>`. *What's next* ends with *Earlier* (their dates and how many
+  things each); `/whats-next/<start>` shows one as it was sent: nothing dropped, weeks named by their dates, things added
+  by hand in its first week, "as the church office sent it on Monday 2 November".
+- **Copy for email** gives the content block only, 600px wide, with every style inline, tables throughout and buttons
+  drawn as table cells so Outlook shows them; Elvanto's template adds the logo, footer and unsubscribe. The clipboard holds
+  the HTML source as text (for Elvanto's HTML source view) and as HTML. The Email preview shows that same HTML, and
+  under it: "Copy for email gives this as HTML. In Elvanto, switch the email to its HTML source and paste it in." The
+  plain-text copy is gone.
+- **Checked** on a backend at `Dev__PortOffset=1000` with main's database copied: bulletin tiles at five sizes turned
+  into What's next on restart; a digest sent from the desk showed on Home and on What's next in the Simulator, light and
+  dark; an earlier digest opened from *Earlier*; Copy for email's clipboard held the HTML source.
+
 ## The owner's feedback (2026-11-09)
 
 - **Why the digest missed Anniversary Sunday** (owner: "why does this not show all the events i'd expect? no anniversary
