@@ -8,7 +8,7 @@
         <div class="ministry-form">
             <div class="ui-pair ui-pair--wide">
                 <TextField Label="Name" @bind-Value="Details.Name" MaxLength="60" Required="true" />
-                <TextField Label="In a line" @bind-Value="Details.Summary" MaxLength="140" />
+                <TextField Label="The ministry's purpose in one line" @bind-Value="Details.Summary" MaxLength="140" Hint="Shown under its name on its page and in the lists of ministries." />
             </div>
             <TextField Label="About" @bind-Value="Details.About" Multiline="true" MaxLength="4000" Hint="What it is and what happens there, for someone who's never been." />
             <div class="ui-pair ui-pair--wide">
