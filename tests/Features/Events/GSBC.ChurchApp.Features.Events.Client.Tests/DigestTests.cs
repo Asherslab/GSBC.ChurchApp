@@ -58,7 +58,7 @@ public sealed class DigestTests
     }
 
     [Fact]
-    public void AnEarlierDigestReadsAsItWasSentWithNothingDroppedAndItsWeeksNamedByDate()
+    public void AnEarlierDigestReadsAsItWasSentWithNothingDroppedItsWeeksNamedByDateAndEachDayNamedOutright()
     {
         WhatsNextDigest digest = new(Fortnight, [Item("agm", "2026-11-12"), Item("high-tea", "2026-11-21"), Item("own:bee", "")]);
 
@@ -66,6 +66,7 @@ public sealed class DigestTests
 
         Assert.Equal(["Week of 9 November", "Week of 16 November"], weeks.Select(week => week.Heading));
         Assert.Equal(["agm", "own:bee", "high-tea"], weeks.SelectMany(week => week.Items).Select(item => item.Key));
+        Assert.Equal("Thursday 12 November", WhatsNextDigest.WhenAsSent(weeks[0].Items[0]));
     }
 
     private static DigestShownItem Item(string key, string date) => new() { Key = key, FirstDate = date, LastDate = date, Words = new DigestWords { Title = key } };

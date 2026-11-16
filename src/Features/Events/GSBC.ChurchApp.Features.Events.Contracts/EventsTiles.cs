@@ -28,7 +28,7 @@ public static class EventsTiles
     public static readonly HubTileKind WhatsNext = new("hub.whats-next", "What's next",
         "The weekly digest: the first thing coming up as the headline and what follows, opening What's next", "the weekly digest",
         new TileDefaults("What's next", Rows: 2, Tone: TileTones.Masthead, Icon: AppIcons.WeeklyDigest, Link: EventsDestinations.WhatsNext.Path,
-            Text: "Read What's next", TitleLabel: "Title above the headline", TextLabel: "Words to open it"),
+            Text: "What's next", TitleLabel: "Title above the headline", TextLabel: "Words to open it"),
         variants:
         [
             new(Headline, "Headline", "The first thing as the headline and what follows under it; how many when small",

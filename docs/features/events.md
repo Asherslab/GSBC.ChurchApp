@@ -789,8 +789,8 @@ digests from the page's foot; Copy for email gives only the content block. Decis
 
 - **The tile** (`EventsTiles.WhatsNext`, `hub.whats-next`; `WhatsNextTile`, read from the feeds by `DigestReader`
   through `LiveData`): in the tile's tone (Masthead by default), the first thing still to come as the headline with its
-  when line, the next ones under rules (their day after them when the tile is two columns wide, or staff's when words
-  for things added by hand), and the go line (*Read What's next*) at the foot. At two columns and two rows the lead's
+  when line, the next ones under rules (their day after them when the tile is two columns wide; things added by hand
+  have no date, so none), and the go line (*What's next*) at the foot. At two columns and two rows the lead's
   picture (or the tile's own) sits on top. One row: "Baptisms and 2 more". One cell, or *Just a link*: how many
   things are coming up. Nothing sent or everything passed: "Nothing new to tell yet". The picture layouts show the lead.
   The sketch's small "What's next" label above the headline was left out (craft floor: no eyebrow over a heading); the
@@ -802,7 +802,7 @@ digests from the page's foot; Copy for email gives only the content block. Decis
   offered. A phone still on the older app doesn't draw the new tile until it updates.
 - **Earlier digests:** the publisher keeps the latest sent digest exactly as before (header `digest`) and the three
   sent before it, one per start date, under `digest:<start>`. *What's next* ends with *Earlier* (their dates and how many
-  things each); `/whats-next/<start>` shows one as it was sent: nothing dropped, weeks named by their dates, things added
+  things each); `/whats-next/<start>` shows one as it was sent: nothing dropped, weeks named by their dates, each dated thing's actual day in place of "This Sunday", things added
   by hand in its first week, "as the church office sent it on Monday 2 November".
 - **Copy for email** gives the content block only, 600px wide, with every style inline, tables throughout and buttons
   drawn as table cells so Outlook shows them; Elvanto's template adds the logo, footer and unsubscribe. The clipboard holds

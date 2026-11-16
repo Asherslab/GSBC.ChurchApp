@@ -26,7 +26,7 @@
                     {
                         <Card Tone="CardTone.Callout" Class="whats-next-off">
                             <span class="whats-next-off__head"><Icon Name="circle-off" Size="IconSize.Small" /><strong>@item.Words.Title</strong></span>
-                            <span class="whats-next-off__when">@WhatsNextDigest.WhenLine(item.Words)</span>
+                            <span class="whats-next-off__when">@WhenOf(item)</span>
                             @if (item.Words.Description.Length > 0)
                             {
                                 <span class="whats-next-off__about">@item.Words.Description</span>
@@ -48,7 +48,7 @@
                             {
                                 <strong class="whats-next-card__title">@item.Words.Title</strong>
                             }
-                            @if (WhatsNextDigest.WhenLine(item.Words) is { Length: > 0 } when)
+                            @if (WhenOf(item) is { Length: > 0 } when)
                             {
                                 <span class="whats-next-card__when">@when</span>
                             }
@@ -94,6 +94,8 @@
     [Parameter] public bool AsSent { get; set; }
 
     private IReadOnlyList<WhatsNextWeek> Weeks => AsSent ? Digest.WeeksAsSent() : Digest.Weeks(Today);
+
+    private string WhenOf(DigestShownItem item) => AsSent ? WhatsNextDigest.WhenAsSent(item) : WhatsNextDigest.WhenLine(item.Words);
 
     private static IEnumerable<string> Paragraphs(string text) =>
         text.Split("\n\n", StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);

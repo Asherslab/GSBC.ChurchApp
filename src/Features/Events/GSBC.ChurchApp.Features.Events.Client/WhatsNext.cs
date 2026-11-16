@@ -62,6 +62,15 @@ public sealed record WhatsNextDigest(DigestShown? Header, IReadOnlyList<DigestSh
             .ToList();
     }
 
+    public static string WhenAsSent(DigestShownItem item)
+    {
+        if (EventDates.Parse(item.FirstDate) is not { } first)
+            return WhenLine(item.Words);
+        DateOnly last = EventDates.Parse(item.LastDate) is { } end && end > first ? end : first;
+        string days = last == first ? EventWords.LongDate(first) : EventWords.Range(first, last);
+        return item.Words.Time.Length > 0 ? $"{days} · {item.Words.Time}" : days;
+    }
+
     public static string WhenLine(DigestWords words, string between = " · ") =>
         words.Time.Length > 0 && words.When.Length > 0 ? $"{words.When}{between}{words.Time}" : words.When + words.Time;
 

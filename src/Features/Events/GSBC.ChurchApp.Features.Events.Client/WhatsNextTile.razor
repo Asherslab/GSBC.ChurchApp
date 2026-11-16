@@ -47,9 +47,9 @@
                     {
                         <span class="hub-list__entry">
                             <span class="hub-list__what">@item.Words.Title</span>
-                            @if (Span.Columns > 1)
+                            @if (Span.Columns > 1 && ShortWhen(item) is { Length: > 0 } when)
                             {
-                                <span class="hub-list__when">@ShortWhen(item)</span>
+                                <span class="hub-list__when">@when</span>
                             }
                         </span>
                     }
@@ -76,7 +76,7 @@
         if (item.Kind == DigestItemKind.NotOn)
             return "Not on";
         if (EventDates.Parse(item.FirstDate) is not { } first)
-            return item.Words.When;
+            return "";
         DateOnly day = first > Today ? first : Today;
         return ChurchDates.Relative(day.ToDateTime(TimeOnly.MinValue), Today.ToDateTime(TimeOnly.MinValue));
     }

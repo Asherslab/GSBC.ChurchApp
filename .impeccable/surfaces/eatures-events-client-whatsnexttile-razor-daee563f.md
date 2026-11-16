@@ -33,12 +33,13 @@ two columns and two rows or more.
 STORY: On Sunday afternoon someone opens the app, sees "Baptisms · This Sunday · 10:30am" with Christmas Day under it,
 and taps through to read What's next.
 
-FIRST VIEWPORT: Where the bulletin was (1 × 2): "What's next" kicker, the lead's title large, its when line, two
-following titles under rules, "Read What's next" at the foot. One row: "What's next" with "Baptisms this Sunday and 3
-more". One cell: "What's next" and "4 things coming up".
+FIRST VIEWPORT: Where the bulletin was (1 × 2): the lead's title large, its when line, two following titles under
+rules, "What's next" as the go line at the foot (no kicker: craft floor; the go line names the tile). One row: "What's
+next" with "Baptisms and 3 more" (staff's when words can't sit mid-sentence). One cell: "What's next" and "4 things
+coming up".
 
 FORM: option B of three dealt (headline and what follows), code-led from `.impeccable/mocks/digest-tile/b-headline.html`.
-seed: none (unavailable).
+seed: 758a79e562e3620a.
 
 FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, DESIGN.md, and
 every shipping raster carrying its provenance

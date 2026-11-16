@@ -29,9 +29,9 @@ A kind none of whose layouts show a picture hides the Picture field (`HubTileKin
 | Latest sermon | Cover first (any) | 1 × 1: cover and play; one row: title beside the cover; taller: cover above the title, 2 × 2 adds the length; the tile's picture replaces the cover | always |
 | | Where you're up to (any) | play, title and how long (progress once Sermons plays), no cover | never |
 | | Picture behind (more than one cell) | title, date and play over the shade | never |
-| What's next (the weekly digest; took over the Sunday bulletin's tiles, 2026-11-16) | Headline (any) | 1 × 1: title and "3 things coming up"; one row: "Baptisms and 2 more"; taller: the first thing as the headline with its when line, the next ones under rules (their day after them at two columns), *Read What's next* at the foot; 2 × 2 and up: the lead's picture on top; nothing to tell: "Nothing new to tell yet" | always |
+| What's next (the weekly digest; took over the Sunday bulletin's tiles, 2026-11-16) | Headline (any) | 1 × 1: title and "3 things coming up"; one row: "Baptisms and 2 more"; taller: the first thing as the headline with its when line, the next ones under rules (their day after them at two columns), *What's next* at the foot; 2 × 2 and up: the lead's picture on top; nothing to tell: "Nothing new to tell yet" | always |
 | | Just a link (any) | icon, title and how many things are coming up | never |
-| | *Picture layouts draw* | the lead's title and when line, "Read What's next" | |
+| | *Picture layouts draw* | the lead's title and when line, "What's next" | |
 | This week (one-off events, specials and dates not on) | Agenda (any) | 1 × 1: the next thing over when ("Tomorrow 7pm", "Not on Saturday"); one row: up to three; taller: as many as fit, up to *How many to show*; nothing coming: "Nothing special coming up" | always |
 | | Just a link (any) | icon, title and "3 things coming up" | never |
 | | *Picture layouts draw* | the title, the next thing and when, "Calendar" | |
