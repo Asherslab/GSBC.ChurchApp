@@ -171,6 +171,21 @@ function withOverlays(base, data) {
 const colourOf = (value) => (value?.startsWith("--") ? token(value) : value);
 const line = (l) => ({ type: "Feature", properties: { style: l.style, ...(l.label ? { label: l.label } : {}), ...(l.colour ? { colour: colourOf(l.colour) } : {}), ...(l.age != null ? { age: l.age } : {}), id: l.id ?? "" },
   geometry: { type: "LineString", coordinates: l.points } });
+let lastLineId = 0;
+const numbered = (feature) => (value) => ({ ...feature(value), id: ++lastLineId });
+const lineSet = (kindsJson, bytes) => {
+  const kinds = JSON.parse(kindsJson);
+  const values = new Float64Array(bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength));
+  const lines = [];
+  for (let at = 0; at < values.length; ) {
+    const [kind, age, count] = [kinds[values[at]], values[at + 1], values[at + 2]];
+    at += 3;
+    const points = [];
+    for (let i = 0; i < count; i++, at += 2) points.push([values[at], values[at + 1]]);
+    lines.push({ ...kind, ...(Number.isNaN(age) ? {} : { age }), points });
+  }
+  return lines;
+};
 const area = (a) => ({ type: "Feature", properties: { ...(a.colour ? { colour: colourOf(a.colour) } : {}), dashed: !!a.dashed, outline: !!a.outline, id: a.id ?? "" }, geometry: { type: "Polygon", coordinates: [a.points, ...(a.holes ?? [])] } });
 const marker = (m) => ({ type: "Feature", properties: { kind: m.kind, ...(m.label ? { label: m.label } : {}), id: m.id ?? "", chosen: !!m.chosen }, geometry: { type: "Point", coordinates: m.point } });
 
@@ -227,6 +242,14 @@ export async function create(element, optionsJson, receiver) {
   const set = (name, value) => {
     data[name] = value;
     map.getSource(name)?.setData(value);
+  };
+  const lineSets = new Map();
+  const showLines = (key, features) => {
+    const gone = lineSets.get(key) ?? [];
+    if (features) lineSets.set(key, features);
+    else lineSets.delete(key);
+    data.lines = { type: "FeatureCollection", features: [...lineSets.values()].flat() };
+    map.getSource("lines")?.updateData({ remove: gone.map((feature) => feature.id), add: features ?? [] });
   };
   const drawYou = () => {
     if (!you) return set("you", empty);
@@ -293,7 +316,8 @@ export async function create(element, optionsJson, receiver) {
     map,
     gone: false,
     setReach,
-    setLines: (json) => set("lines", { type: "FeatureCollection", features: JSON.parse(json).map(line) }),
+    setLines: (json) => showLines(null, JSON.parse(json).map(numbered(line))),
+    setLineSet: (key, kinds, points) => showLines(key, kinds == null ? null : lineSet(kinds, points).map(numbered(line))),
     setAreas: (json) => set("areas", { type: "FeatureCollection", features: JSON.parse(json).map(area) }),
     setMarkers: (json) => set("markers", { type: "FeatureCollection", features: JSON.parse(json).map(marker) }),
     setYou: (json) => {

@@ -20,6 +20,7 @@
 @code {
     private const string Module = "./_content/GSBC.ChurchApp.Platform.Ui/map/map-view.js";
     private static readonly IReadOnlyList<MapLine> NoLines = [];
+    private static readonly IReadOnlyList<MapLineSet> NoLineSets = [];
     private static readonly IReadOnlyList<MapArea> NoAreas = [];
     private static readonly IReadOnlyList<MapMarker> NoMarkers = [];
     private const double MostlyOutside = 0.25;
@@ -30,6 +31,7 @@
     private DotNetObjectReference<MapView>? _receiver;
     private MapSource? _shownSource;
     private object? _shownLines;
+    private readonly Dictionary<string, IReadOnlyList<MapLine>> _shownLineSets = [];
     private object? _shownAreas;
     private object? _shownMarkers;
     private MapYou? _shownYou;
@@ -43,6 +45,7 @@
     [Parameter, EditorRequired] public required MapSource Source { get; set; }
     [Parameter, EditorRequired] public required string Label { get; set; }
     [Parameter] public IReadOnlyList<MapLine> Lines { get; set; } = NoLines;
+    [Parameter] public IReadOnlyList<MapLineSet> LineSets { get; set; } = NoLineSets;
     [Parameter] public IReadOnlyList<MapArea> Areas { get; set; } = NoAreas;
     [Parameter] public IReadOnlyList<MapMarker> Markers { get; set; } = NoMarkers;
     [Parameter] public MapYou? You { get; set; }
@@ -149,6 +152,7 @@
         }
         _shownSource = Source;
         _shownLines = _shownAreas = _shownMarkers = null;
+        _shownLineSets.Clear();
         _shownYou = null;
         _shownFrame = null;
         _shownReach = null;
@@ -171,6 +175,7 @@
             _shownLines = Lines;
             await _map.InvokeVoidAsync("setLines", MapJson.Lines(Lines));
         }
+        await PushLineSetsAsync(_map);
         if (!ReferenceEquals(_shownAreas, Areas))
         {
             _shownAreas = Areas;
@@ -195,6 +200,21 @@
         {
             _shownFrame = frame;
             await _map.InvokeVoidAsync("fit", MapJson.Frame(frame));
+        }
+    }
+
+    private async Task PushLineSetsAsync(IJSObjectReference map)
+    {
+        foreach (MapLineSet set in LineSets.Where(set => !ReferenceEquals(_shownLineSets.GetValueOrDefault(set.Key), set.Lines)).ToList())
+        {
+            _shownLineSets[set.Key] = set.Lines;
+            (string kinds, byte[] points) = MapJson.LineSet(set.Lines);
+            await map.InvokeVoidAsync("setLineSet", set.Key, kinds, points);
+        }
+        foreach (string gone in _shownLineSets.Keys.Except(LineSets.Select(set => set.Key)).ToList())
+        {
+            _shownLineSets.Remove(gone);
+            await map.InvokeVoidAsync("setLineSet", gone, null, null);
         }
     }
 
