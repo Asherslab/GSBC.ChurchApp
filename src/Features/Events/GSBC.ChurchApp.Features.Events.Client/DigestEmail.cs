@@ -100,7 +100,7 @@ public static class DigestEmail
     private static void AppendWords(StringBuilder html, EmailItem item)
     {
         DigestWords words = item.Words;
-        if (words.Label.Length > 0)
+        if (words.Label.Length > 0 && words.Label != words.Title)
             html.Append($"""<div style="font-size:13px;font-weight:700;color:{(item.Kind == DigestItemKind.NotOn ? Rust : Aqua)}">{Encode(words.Label)}</div>""");
         html.Append($"""<div style="font-size:21px;font-weight:700;margin-top:2px">{Encode(words.Title)}</div>""");
         if (WhatsNextDigest.WhenLine(words, " @ ") is { Length: > 0 } when)

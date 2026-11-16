@@ -1,6 +1,6 @@
 @using GSBC.ChurchApp.Platform.Contracts.Media
 
-<Sheet Open="true" OpenChanged="_ => OnClose.InvokeAsync()" Wide="true" Title="@Title" Lead="@Lead" LayerClass="digest-add-layer">
+<Sheet Open="true" OpenChanged="_ => OnClose.InvokeAsync()" Wide="true" ActionsInView="true" Title="@Title" Lead="@Lead" LayerClass="digest-add-layer">
     <ChildContent>
         <div class="digest-add">
             @Filter

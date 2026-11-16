@@ -48,7 +48,8 @@ else
     [Parameter] public EventCallback<DigestShownItem> OnPick { get; set; }
 
     private string Label =>
-        Item.Kind == DigestItemKind.News && EventDates.Parse(Item.Posted) is { } posted
+        Item.Words.Label == Item.Words.Title ? ""
+        : Item.Kind == DigestItemKind.News && EventDates.Parse(Item.Posted) is { } posted
             ? EventWords.Join(Item.Words.Label, EventWords.LongDate(posted))
             : Item.Words.Label;
 

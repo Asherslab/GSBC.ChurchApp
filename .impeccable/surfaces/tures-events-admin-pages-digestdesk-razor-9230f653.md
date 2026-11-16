@@ -2,7 +2,7 @@
 version: 1
 slug: "tures-events-admin-pages-digestdesk-razor-9230f653"
 primary_target: "src/Features/Events/GSBC.ChurchApp.Features.Events.Admin/Pages/DigestDesk.razor"
-related_targets: ["src/Features/Events/GSBC.ChurchApp.Features.Events.Admin/Components/DigestItemWords.razor"]
+related_targets: ["src/Features/Events/GSBC.ChurchApp.Features.Events.Admin/Components/DigestItemEditor.razor", "src/Features/Events/GSBC.ChurchApp.Features.Events.Admin/Components/DigestAddSheet.razor", "src/Features/Events/GSBC.ChurchApp.Features.Events.Client/DigestEmail.cs"]
 ---
 
 # The weekly digest in the admin panel
@@ -28,7 +28,7 @@ Decisions in docs/features/events.md, decision 18 and *Decided while building (t
 Owner's answers: everything is added by hand (from the calendar, a church news post, or written for the digest);
 the calendar picker lists everything in the dates by day, special things marked, filtered by calendar inside the
 picker; the item editor saves with Cancel and Save. Decision page `.impeccable/mocks/digest-2/`: desk A (running
-order beside a big preview), dialog B (fields beside how it will look), app A (a post is the same card as an event);
+order beside a big preview), dialog B (fields beside how it will look, `e-with-look.html`), app A (a post is the same card as an event);
 the email: staff choose per item (picture beside or across) and an optional photo across the top (owner in chat).
 
 ## Direction contract

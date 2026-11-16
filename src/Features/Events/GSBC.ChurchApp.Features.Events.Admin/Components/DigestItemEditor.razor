@@ -21,15 +21,18 @@
                 </div>
                 @if (Shown.Picture is not null && _working.Kind != DigestItemKind.NotOn)
                 {
-                    <Segmented TValue="DigestPictureAt" Label="In the email" ShowLabel="true" Options="PictureAtOptions" Value="_working.PictureAt" ValueChanged="SetPictureAt"
+                    <Segmented TValue="DigestPictureAt" Label="Picture in the email" ShowLabel="true" Options="PictureAtOptions" Value="_working.PictureAt" ValueChanged="SetPictureAt"
                                Hint="Where the picture sits in the email. The app always shows it across the top." />
                 }
-                @Field(DigestFields.Label, "Line above the title", null, false)
+                @Field(DigestFields.Label, "Line above the title", "Optional. A few words above the title, such as the ministry it's from.", false)
                 @Field(DigestFields.Title, "Title", null, false)
-                <div class="ui-pair digest-editor__when">
-                    @Field(DigestFields.When, "When", Own ? "The day in words, such as “This Saturday, 14 November”." : null, false)
-                    @Field(DigestFields.Time, "Time", null, false)
-                </div>
+                @if (Item.Kind != DigestItemKind.News)
+                {
+                    <div class="ui-pair digest-editor__when">
+                        @Field(DigestFields.When, "When", Own ? "The day in words, such as “This Saturday, 14 November”." : null, false)
+                        @Field(DigestFields.Time, "Time", null, false)
+                    </div>
+                }
                 @Field(DigestFields.Description, "Description", "Leave a blank line to start a new paragraph.", true)
                 @Field(DigestFields.Register, "Registration link", "A web address for signing up. Adds a Register button.", false)
                 @if (Item is { Kind: not DigestItemKind.Own, Missing.Count: > 0 })

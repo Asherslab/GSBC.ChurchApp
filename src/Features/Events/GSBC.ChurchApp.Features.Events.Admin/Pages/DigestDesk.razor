@@ -120,6 +120,7 @@
                                 {
                                     <span class="digest-row__detail">@detail</span>
                                 }
+                                <span class="digest-row__when-below">@EventWords.Join(WhenOf(context), context.Shown.Time)</span>
                             </span>
                         </button>
                     </ItemTemplate>
@@ -152,7 +153,7 @@
             }
             else
             {
-                <div class="digest-desk__canvas digest-desk__canvas--phone" data-fit-height>
+                <div class="digest-desk__canvas digest-desk__canvas--phone" data-fit-least="0.6">
                     <PhoneFrame Label="What's next in the app, as it looks once sent" Title="What's next" Bell="true" OnRoute="@EventsPlaces.Week">
                         <WhatsNextView Digest="AppDigest(draft)" Today="Today" Preview="true" OnPick="PickFromPreview" />
                     </PhoneFrame>
@@ -205,7 +206,7 @@
         }
         @if (_picking == Picking.News)
         {
-            <DigestAddSheet Title="Add a church news post" Lead="Published church news, newest first. In the app a post shows only to people who can see it."
+            <DigestAddSheet Title="Add a church news post" Lead="Church news, newest first. In the app a post shows only to people who can see it."
                             Groups="NewsGroups(draft)" Added="AddedKeys(draft)" Detail="NewsDetail" OnAdd="AddPost" OnClose="() => _picking = Picking.None"
                             EmptyIcon="@AppIcons.News" EmptyTitle="No church news published yet" EmptyBody="Posts show here once they're published in Church news." />
         }
@@ -235,10 +236,10 @@
         DigestDeskWords.ByDay(draft.Calendar.Where(item => item.CalendarIds.Any(draft.CalendarIds.Contains)));
 
     private static IReadOnlyList<DigestPickGroup> NewsGroups(DigestDraft draft) =>
-        draft.Posts.Count == 0 ? [] : [new DigestPickGroup("Newest first", draft.Posts)];
+        draft.Posts.Count == 0 ? [] : [new DigestPickGroup("Published posts", draft.Posts)];
 
     private static string CalendarDetail(DigestItem item) =>
-        EventWords.Join(item.CalendarName, item.Shown.When, item.Shown.Time, item.Place);
+        EventWords.Join(item.CalendarName == item.Shown.Title ? null : item.CalendarName, item.OccurrenceIds.Count > 1 ? item.Shown.When : null, item.Shown.Time, item.Place);
 
     private static string NewsDetail(DigestItem item) => DigestDeskWords.Posted(item);
 
