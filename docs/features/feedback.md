@@ -44,12 +44,12 @@ production app, not through TestFlight. Choices marked *Claude's default* are th
 
 - **`/feedback/send`**, chosen on the decision page (2026-11-11): *The screenshot leads*. The first chosen picture sits
   large in its own 9:16 frame at the top, with a filmstrip of the others and a + to add more; empty, it is one tall
-  dashed *Choose screenshots or videos*. Then *Tell us about it* (generic on purpose: problems and ideas alike) and a
+  dashed *Choose screenshots or videos*. Then *Your feedback* (generic on purpose: problems and ideas alike) and a
   quiet line saying what goes with it. Send is in the foot bar. Words or a picture is enough; nothing else is required.
 - **Written like a message** (owner, 2026-11-12, #55: "The send sheet and such just take up so much space, especially
   with keyboard up. Doesn't look nice"; picked *Like writing a message* on the decision page,
   `.impeccable/mocks/admin-nav-calendar/fb-composer.html`). Replaces the layout above: the usual top bar instead of a
-  masthead, a short lead and the *Sent with it* line, and a composer docked at the foot (and on the keyboard while it's
+  masthead, a short lead and the *Sent with your feedback* line, and a composer docked at the foot (and on the keyboard while it's
   up): a paperclip that picks screenshots and videos, the message field and a round Send. Chosen files show as small
   thumbnails above the field. The composer is the shared `Composer` (Platform.Ui), the same job as Chats' message bar.
 - **Recorded by itself:** app version and build, platform and OS version, the phone's model, whether it's a
@@ -68,7 +68,7 @@ production app, not through TestFlight. Choices marked *Claude's default* are th
   `UIApplication.userDidTakeScreenshotNotification`, and the phone remembers the page shown and the time of the last 6
   in memory (`ScreenshotPages`; never the server, gone when the app closes). A report sends those from the last hour;
   the ticket shows *Screenshots: /calendar at 3:47pm*, `feedback.sh` `screenshots: /calendar at 15:47`, and the page's
-  *Sent with it* line names them. **Android records none:** its data layer is still a stub, and
+  *Sent with your feedback* line names them. **Android records none:** its data layer is still a stub, and
   `Activity.ScreenCaptureCallback` needs Android 14 and the `DETECT_SCREEN_CAPTURE` permission. The web build records
   none.
 - **Through the outbox** (`IFeedbackService.Send`, `[AppInstallOrSignedIn]`): the phone makes the ticket's id, keeps
@@ -102,7 +102,7 @@ above account in bottom left."
   `SidebarAction` (Platform.Client), whose sheet the sidebar shows over the page.
 - **The sheet**, chosen on the decision page (2026-11-11, *A sheet over the page*): *Capture this page* (the browser
   asks to share the tab, then the sheet hides while it takes one frame; the owner wanted it offered), *Choose files*,
-  and ⌘V or a drop anywhere on the sheet, up to 6 pictures and videos; *Tell us about it*; a line of what goes with it;
+  and ⌘V or a drop anywhere on the sheet, up to 6 pictures and videos; *Your feedback*; a line of what goes with it;
   Cancel and Send. Closing it keeps what you wrote and chose until you send. After sending it closes and the sidebar
   says *Thanks, it's sent* for a few seconds (owner: thanks and close, no ticket number, no list of what you've sent).
 - **Recorded by itself:** the page (route and title), the last 8 pages opened, the browser and system, the window size,

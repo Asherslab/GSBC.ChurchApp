@@ -54,7 +54,7 @@ public sealed class SafeguardingFlagTests
     public void SomethingToLookAtInSafeMinistryCheckIsOneFlagWithItsReasons()
     {
         SafeguardingFlag flag = Assert.Single(SafeguardingFlags.For(new SafeguardingRecord { CheckReasons = ["their police check isn't cleared", "a referee's answer needs looking at"] }, Today));
-        Assert.Equal((FlagKinds.Check, "Check Safe Ministry Check: their police check isn't cleared; a referee's answer needs looking at"), (flag.Kind, flag.Words));
+        Assert.Equal((FlagKinds.Check, "To look at in Safe Ministry Check: their police check isn't cleared; a referee's answer needs looking at"), (flag.Kind, flag.Words));
     }
 
     [Fact]

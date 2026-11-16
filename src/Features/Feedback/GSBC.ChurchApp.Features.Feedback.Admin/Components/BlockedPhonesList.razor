@@ -4,7 +4,7 @@
 <LiveData @ref="_live" TValue="BlockedPhones" Feeds="DeskFeeds" Load="Desk.BlockedAsync" FailedTitle="Can't load blocked phones right now">
     @if (context.Value.Phones.Count == 0)
     {
-        <EmptyState Icon="shield-check" Title="No phones are blocked" Body="Block a phone from one of its pieces of feedback if it's misused. It can be unblocked here." />
+        <EmptyState Icon="shield-check" Title="No phones are blocked" Body="To stop a phone sending misuse, block it from any feedback it sent. Blocked phones are listed here, where you can unblock them." />
     }
     else
     {

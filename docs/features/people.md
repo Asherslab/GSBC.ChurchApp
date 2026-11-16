@@ -96,7 +96,7 @@ person on their Account page (the card drawn as a card), and **flagged, never bl
 - *Not recorded*: a card but no training, or training but no card; training Safe Ministry Check says isn't finished.
   Someone with neither isn't flagged: Stage 2 adds "serves on a team that needs one".
 - *No parent*: under 18 with no parent linked (with when they asked, if they have).
-- *Check Safe Ministry Check*: something there needs looking at (below).
+- *To look at in Safe Ministry Check*: something there needs looking at (below).
 
 **Safeguarding** (People → Safeguarding, Safeguarding Viewer) lists everyone flagged, run out first, then by date;
 chips filter by kind and count each. Anything run out and every young person without a parent also shows in Home's
@@ -117,7 +117,7 @@ second (429 above that), no webhooks. The owner's decisions:
 3. **Only the blue card and training come across:** `wwcc_id`, `wwcc_expiry`, `wwcc_status` (mapped to our statuses),
    `wwcc_checked`, `course_progress`, `next_action_date` (training due), `other_training_name` and
    `other_training_completed_date`, and the overall `status` and `status_description`. Every other field is read only to
-   decide whether to raise **one plain flag, "Check Safe Ministry Check"**, with short generic reasons ("their police
+   decide whether to raise **one plain flag, "To look at in Safe Ministry Check"**, with short generic reasons ("their police
    check isn't cleared"); their values and the admin notes are never stored.
 4. **Their due date wins** over the yearly rule: `next_action_date` is the training's due date.
 5. **Synced values replace hand-entered ones** for linked people, and the screens say where they came from ("From Safe
@@ -150,7 +150,7 @@ sync changes nothing and the page says why. Everyone's name, email and birth dat
   *positive_admin*; a disclosure on someone not yet cleared; working with children with no blue card there. **Overdue
   training is flagged, but less severely** (owner, 2026-11-10: "overdue training should technically still be flagged
   regardless. but it is less severe"): *Pending* while their training is overdue or unfinished is left to the training
-  flag, and "Check Safe Ministry Check" sorts above run-out, due-soon and not-recorded flags on Safeguarding. **Not
+  flag, and "To look at in Safe Ministry Check" sorts above run-out, due-soon and not-recorded flags on Safeguarding. **Not
   problems:** `wwcc_status_description` ("WWCC Status should be verified again" is on most cleared people), a *Pending*
   blue card photo (also common among cleared people), `paperwork_process_status` (*4* is "Linked to portal").
 - **The person doesn't see the flag or the status** on their Account page, only their card and training and that they

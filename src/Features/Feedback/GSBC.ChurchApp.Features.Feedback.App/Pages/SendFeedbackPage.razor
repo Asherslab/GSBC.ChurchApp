@@ -53,8 +53,8 @@
                     <FilePick Label="Choose screenshots or videos" Kinds="PickableFiles.PicturesAndVideos" Multiple="true" Limit="FeedbackLimits.MostAttachments"
                               TooLarge="FeedbackLimits.TooLarge" Class="feedback-empty" OnPicked="Picked">
                         <span class="feedback-empty__tile"><Icon Name="@(context ? "clock" : "image")" /></span>
-                        <span class="feedback-empty__title">@(context ? "Keeping it on this phone…" : "Choose screenshots or videos")</span>
-                        <span class="feedback-empty__hint">From your photo library. Up to @FeedbackLimits.MostAttachments.</span>
+                        <span class="feedback-empty__title">@(context ? "Saving on this phone…" : "Choose screenshots or videos")</span>
+                        <span class="feedback-empty__hint">Choose up to @FeedbackLimits.MostAttachments from your photo library.</span>
                     </FilePick>
                 }
                 else
@@ -83,10 +83,10 @@
                     </div>
                     <p class="feedback-count">@_picked.Count of @FeedbackLimits.MostAttachments chosen</p>
                 }
-                <p class="feedback-compose__lead">Something broken, looking wrong, or an idea? Say what happened below.</p>
-                <p class="feedback-sentwith"><Icon Name="info" Size="IconSize.Small" /><span>Sent with it: @SentWith</span></p>
+                <p class="feedback-compose__lead">Tell us about something that's broken or looks wrong, or share an idea. Describe what happened and what you expected.</p>
+                <p class="feedback-sentwith"><Icon Name="info" Size="IconSize.Small" /><span>Sent with your feedback: @SentWith</span></p>
             </div>
-            <Composer Label="Tell us about it" Placeholder="What happened, or your idea?" MaxLength="FeedbackLimits.LongestText" Rows="3"
+            <Composer Label="Your feedback" Placeholder="Write your feedback" MaxLength="FeedbackLimits.LongestText" Rows="3"
                       @bind-Text="_text" CanSend="@(Blocked is null)" Busy="_sending" OnSend="SendAsync" />
         </div>
     }
@@ -108,10 +108,10 @@
     private bool Waiting => _here?.Last is { State: not Sending.Sent };
 
     private string SentBody => Waiting
-        ? "No signal right now, so it waits on this phone with what you chose and goes by itself when you're back online."
-        : "Thank you. It's gone to the people who look after the app.";
+        ? "There's no signal right now. Your feedback and its files wait on this phone and send by themselves when you're back online."
+        : "Thank you. Your feedback has gone to the people who look after the app.";
 
-    private string? Blocked => _text.Trim().Length == 0 && _picked.Count == 0 ? "Write something or add a picture." : null;
+    private string? Blocked => _text.Trim().Length == 0 && _picked.Count == 0 ? "Write your feedback or add a screenshot." : null;
 
     private string SentWith
     {
