@@ -1,6 +1,7 @@
 using GSBC.ChurchApp.Features.Ministries.Api.Data;
 using GSBC.ChurchApp.Features.Ministries.Contracts;
 using GSBC.ChurchApp.Platform.Api.Access;
+using GSBC.ChurchApp.Platform.Api.Calendars;
 using GSBC.ChurchApp.Platform.Api.Chats;
 using GSBC.ChurchApp.Platform.Api.Hosting;
 using GSBC.ChurchApp.Platform.Api.Ministries;
@@ -43,6 +44,9 @@ public static class MinistriesApiExtensions
         services.AddScoped<IChatPlaces, MinistryChatPlaces>();
         services.AddHostedService<SampleMinistries>();
         services.AddHostedService<MinistriesFeedUpkeep>();
+        services.AddScoped<MinistryCalendarShaper>();
+        services.AddScoped<ICalendarMerges, LinkedCalendarMerges>();
+        services.AddHostedService<MinistryCalendarShaping>();
         services.AddPermissions(MinistriesPermissions.All);
         services.AddNotificationKinds(MinistriesNotifications.All);
 
