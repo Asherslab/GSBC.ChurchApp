@@ -35,9 +35,9 @@ internal sealed partial class SermonUploads(
             throw Invalid("That audio is already a sermon.");
         BlobInfo audio = Arrived(await blobs.FindAsync(BlobBucket.Public, request.AudioKey, cancellationToken));
         if (request.Title.Trim() is not { Length: > 0 and <= SermonLibraryService.TitleLimit } title)
-            throw Invalid($"Give it a title of up to {SermonLibraryService.TitleLimit} characters.");
+            throw Invalid($"Enter the sermon's title, up to {SermonLibraryService.TitleLimit} characters.");
         if (request.PreachedOn == default)
-            throw Invalid("Choose the day it was preached.");
+            throw Invalid("Choose the date the sermon was preached.");
         string? youTube = string.IsNullOrWhiteSpace(request.YouTube) ? null
             : YouTubeIds.Find(request.YouTube) ?? throw Invalid("That isn't a YouTube link. Paste the video's address.");
 
@@ -90,7 +90,7 @@ internal sealed partial class SermonUploads(
             return await db.Speakers.FindAsync([id], cancellationToken) ?? throw Invalid("Choose a speaker from the list.");
         if (request.NewSpeaker?.Trim() is { Length: > 0 and <= SermonLibraryService.NameLimit } name)
             return await speakers.ResolveAsync(name, cancellationToken);
-        throw Invalid("Choose who preached it.");
+        throw Invalid("Choose who preached the sermon.");
     }
 
     private async Task<Guid?> SeriesAsync(SermonUpload request, DateTime now, CancellationToken cancellationToken)

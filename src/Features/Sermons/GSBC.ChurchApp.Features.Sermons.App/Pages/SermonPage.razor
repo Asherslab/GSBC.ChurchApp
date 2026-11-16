@@ -150,7 +150,7 @@
             }
             else if (bySpeaker.Count > 0)
             {
-                <Section Title="@($"More from {sermon.SpeakerName}")" LinkText="All of them" LinkHref="@SermonsDestinations.Speaker.PathOf(sermon.SpeakerId).TrimStart('/')">
+                <Section Title="@($"More from {sermon.SpeakerName}")" LinkText="All their sermons" LinkHref="@SermonsDestinations.Speaker.PathOf(sermon.SpeakerId).TrimStart('/')">
                     <ListGroup>
                         @foreach (Sermon other in bySpeaker)
                         {

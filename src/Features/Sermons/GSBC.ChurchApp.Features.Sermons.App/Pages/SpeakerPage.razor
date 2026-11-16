@@ -28,7 +28,7 @@
     {
         if (view.Shelf.FindSpeaker(Id) is not { } speaker)
             return @<Page Title="Speaker" BackHref="sermons" BackLabel="Sermons" TopBar="TopBarStyle.Solid">
-                <EmptyState Icon="user" Title="No sermons from this speaker here" Body="Their sermons may be older than the ones this phone keeps.">
+                <EmptyState Icon="user" Title="No sermons from this speaker on this phone" Body="Their sermons may be older than the ones this phone keeps.">
                     <Button Href="sermons" Variant="ButtonVariant.Quiet">All sermons</Button>
                 </EmptyState>
             </Page>;

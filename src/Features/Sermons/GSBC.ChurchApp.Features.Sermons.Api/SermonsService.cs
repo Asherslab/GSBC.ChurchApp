@@ -47,7 +47,7 @@ internal sealed class SermonsService(SermonsDbContext db, SermonFollowing follow
     public async Task SaveAsync(Guid userId, IReadOnlyList<ListeningEntry> entries, CancellationToken cancellationToken)
     {
         if (entries.Count > BatchLimit)
-            throw new RpcException(new Status(StatusCode.InvalidArgument, $"Send at most {BatchLimit} at a time."));
+            throw new RpcException(new Status(StatusCode.InvalidArgument, $"Send at most {BatchLimit} sermons at a time."));
 
         DateTime now = time.GetUtcNow().UtcDateTime;
         Dictionary<Guid, ListeningEntry> incoming = [];

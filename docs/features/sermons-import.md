@@ -71,7 +71,7 @@ series follows and Hub links made while the website was read find their sermon a
 The import's own table (`sermons_import.sermons`) keeps each website address it has seen, the sermon it became, and
 what went wrong. Sermons knows nothing of the website.
 
-- **Start import** reads the listing pages, then brings across each sermon not yet brought across, newest first.
+- **Start the import** reads the listing pages, then brings across each sermon not yet brought across, newest first.
 - **Run it again** reads the listing again (new sermons on the website are picked up), skips everything it brought
   across before, and tries the failed ones again. A sermon brought across and since deleted by staff is not brought
   back.
