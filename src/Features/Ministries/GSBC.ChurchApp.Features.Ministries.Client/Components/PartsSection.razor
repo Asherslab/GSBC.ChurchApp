@@ -1,7 +1,7 @@
 @implements IDisposable
 @inject IMinistryWrites Ministries
 
-<Section Title="Its tabs" Lead="Drag a tab by its handle, or use its More menu, to change the order people see. About is always first." Grouped="true">
+<Section Title="Tabs" Lead="Drag a tab by its handle, or use its More menu, to change the order people see. About is always first." Grouped="true">
     <ChildContent>
         <ReorderList TItem="MinistryPart" Items="Parts" Key="part => part.Key" Name="part => part.Name" Label="@($"{MinistryWords.Possessive(Page.Ministry.Name)} tabs, in order")"
                      OnReordered="ReorderAsync">
@@ -13,7 +13,7 @@
                 }
             </Preview>
             <ItemTemplate>
-                <ToggleRow Title="@context.Name" Description="@(Off.Contains(context.Key) ? "Hidden from everyone, leaders too, until you turn it back on. Nothing in it is deleted." : null)" Muted="@Off.Contains(context.Key)" Checked="@(!Off.Contains(context.Key))"
+                <ToggleRow Title="@context.Name" Description="@(Off.Contains(context.Key) ? "This tab is hidden from everyone, including leaders, until you turn it back on. Nothing in the tab is deleted." : null)" Muted="@Off.Contains(context.Key)" Checked="@(!Off.Contains(context.Key))"
                            CheckedChanged="on => TurnAsync(context.Key, on)" />
             </ItemTemplate>
         </ReorderList>
@@ -28,7 +28,7 @@
         <ChildContent>
             <Segmented TValue="string" Label="Who can start a chat" ShowLabel="true" Value="@StartsChats" ValueChanged="StartersAsync"
                        Options="@([new SegmentOption<string>(ChatStarters.Leaders, "Leaders"), new SegmentOption<string>(ChatStarters.Team, "The team too")])"
-                       Hint="The team can start group chats for the team or people they choose. Channels and chats with attendees or parents stay with leaders." />
+                       Hint="With The team too, team members can start group chats for the team or for people they choose. Only leaders can start channels and chats with attendees or parents." />
         </ChildContent>
         <Foot>This changes straight away.</Foot>
     </Section>
@@ -36,7 +36,7 @@
 
 @if (Gathering.Any())
 {
-    <Section Title="From the ministries under it" Grouped="true">
+    <Section Title="From the ministries under this one" Grouped="true">
         <ChildContent>
             @foreach ((MinistryPart part, PartFromBelow below) in Gathering)
             {

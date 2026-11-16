@@ -6,13 +6,6 @@ public sealed partial class WordingRules
 {
     private static readonly Dictionary<string, string> WaitingForTheirStation = new()
     {
-        ["src/Features/Ministries/GSBC.ChurchApp.Features.Ministries.Api/MinistryLeadingService.cs"] = "Ministries",
-        ["src/Features/Ministries/GSBC.ChurchApp.Features.Ministries.Api/MinistryRules.cs"] = "Ministries",
-        ["src/Features/Ministries/GSBC.ChurchApp.Features.Ministries.Client/Components/FileSheet.razor"] = "Ministries",
-        ["src/Features/Ministries/GSBC.ChurchApp.Features.Ministries.Client/Components/JoinSheet.razor"] = "Ministries",
-        ["src/Features/Ministries/GSBC.ChurchApp.Features.Ministries.Client/Components/MinistrySheet.razor"] = "Ministries",
-        ["src/Features/Ministries/GSBC.ChurchApp.Features.Ministries.Client/Components/PostSheet.razor"] = "Ministries",
-        ["src/Features/Ministries/GSBC.ChurchApp.Features.Ministries.Client/Components/SettingsArea.razor"] = "Ministries",
         ["src/Features/News/GSBC.ChurchApp.Features.News.Api/NewsRules.cs"] = "News",
         ["src/Features/News/GSBC.ChurchApp.Features.News.Client/Components/NewsPostForm.razor"] = "News",
         ["src/Features/Prayer/GSBC.ChurchApp.Features.Prayer.App/Pages/AskPage.razor"] = "Prayer",

@@ -166,7 +166,7 @@ files or calendars anywhere: not the list of ministries, search (destinations), 
 - **Posting for everyone** in a hidden ministry reaches everyone who can see it; the post sheet says so ("Accounts is
   hidden, so only its own people, the leaders above it and staff see this"). Asking to send a post to the whole church
   still goes to staff, who decide.
-- **Default (owner to review): where the switch is.** *Hidden from everyone else* is a switch in The details, beside
+- **Default (owner to review): where the switch is.** *Hide this ministry* is a switch in Details, beside
   *Show in Life Groups*, saved with Save. While it's on, the switch's own line says exactly who still sees it and that
   only they can join or ask (owner, #80, 2026-11-13: "lot of jumping around when you click the hidden switch"; nothing is
   inserted above or below it any more) (picked by the station over
@@ -199,9 +199,9 @@ Pattern map.
   Leader, with what each allows, and *Take … off* last (`Leading.SetRole`). The person stays chosen after a change.
   *Add to the team* stays open after each add and says who was added (#29 B).
 - **Settings** (#12): groups (cards in the admin panel, inset groups on the phone): The details (saved with Cancel and
-  Save), Its tabs, Chats (who can start a chat), From the ministries under it, Where it sits, Ministries under it.
+  Save), Tabs, Chats (who can start a chat), From the ministries under this one, Where this ministry sits, Ministries under this one.
   Archive and Delete moved to the ministry's ⋯ menu (top bar on the phone, pane head in the admin panel).
-- **Tab order** (#21; owner's pick on the decision page: drag with a live preview): Its tabs lists the parts in order,
+- **Tab order** (#21; owner's pick on the decision page: drag with a live preview): Tabs lists the parts in order,
   each with its switch; drag a row by its handle, or use its ⋯ menu to move it up or down; the tab strip above follows.
   About is always first. Changes apply at once (`ReorderList`, Platform.Ui).
 - **No blinking while ordering tabs** (#58, owner: "Moving the tabs around does some weird blinking and such"; fixed
@@ -215,7 +215,7 @@ Pattern map.
   under Save.
 - **Invite only** (#22; owner: "Let's just not offer an ask to join or join button and call it a day"): no line in the
   directory and no join button; Open and Ask to join stay.
-- **A parent's yes**: a parent's *Waiting for your yes* comes first on About; a young person's own ask says it waits for a
+- **A parent's yes**: a parent's *Waiting for your answer* comes first on About; a young person's own ask says it waits for a
   parent; a leader sees "no parent is linked yet" on the ask (`AskLine.NoParent`).
 - **Life Groups in the admin panel** sit on the shared Board (Being planned, Shown in the app, Now on, Finished in a
   year), each set's actions in its ⋯ menu, with typed dates and times.
@@ -424,20 +424,20 @@ knows from the People tab (finding them by name, with a masked email to tell two
 from the child's sheet (through `IFamilies.LinkAsync`, only for people in that ministry). Leave is on the About.
 
 **The join settings explain themselves** (owner, 2026-11-10: "there's nothing telling the person creating the ministry
-what they are"). Settings and *A new ministry* share `JoiningFields`: *Joining the team* and *Coming along*, each labelled
+what they are"). Settings and *New ministry* share `JoiningFields`: *Joining the team* and *Attending*, each labelled
 with a hint saying what it controls, and every option saying what happens to the person joining. Every Ministries and Life Groups form asks
 before you leave it with unsaved changes (owner, 2026-11-10: "can accidentally lose my progress"): Platform.Ui's
 `UnsavedGuard`, with *Save and leave* where the form saves with a button.
 
 **Ministries, not teams** (owner, 2026-11-10: "i think we stick with "ministries" language, not "teams". our church
-treats them as ministries"). A ministry under another is a ministry: *Ministries under it*, *Add a ministry*, *A
+treats them as ministries"). A ministry under another is a ministry: *Ministries under this one*, *Add a ministry*, *A
 ministry under Kids Ministries*. "Team" means only the people who serve in a ministry, as against its attendees (*the
 team*, *Joining the team*, *Team only*); the owner hasn't asked to change that, so it stays unless they say otherwise.
 
 **Where a new ministry sits** (owner, 2026-11-10: "should also let you select what ministry it sits under"). *A new
 ministry* asks *Sits under* with the shared search picker, preselecting the ministry it was opened from. The directory
 marks each ministry `MayAddUnder` (Settings there, through Access), and only staff with
-`ministries.create` get "Nothing: it's a top-level ministry". A leader sees *New ministry* when they may add under
+`ministries.create` get "None (a top-level ministry)". A leader sees *New ministry* when they may add under
 anything they lead.
 
 **Audiences.** Posts and links are for **everyone**, **attendees and their parents**, **parents only** or **the team**; a
@@ -507,7 +507,7 @@ The owner's notes after trying Stage 2 on their phone, and what was built for th
 the child ministries under the main one like in the admin panel"). The app's *All ministries* is the tree: each ministry
 with the ones under it indented beneath, three levels deep; a third-level ministry with more under it says "2 ministries
 under it" and shows the rest on its page (*default*). A ministry shown in Life Groups is in the tree like any other, its
-line starting "Life Group". The admin desk's tree and the app's list walk the tree the same way (`MinistryTrees`). *Ministries under it* stays
+line starting "Life Group". The admin desk's tree and the app's list walk the tree the same way (`MinistryTrees`). *Ministries under this one* stays
 on each ministry's About.
 
 **Turning parts of a ministry on and off** (owner: "tabs at the top of a ministry, should be features that are hidden/shown
@@ -526,10 +526,10 @@ list when they're built). About and People always stay. Decided (Claude's readin
 - **New ministries start with everything on** (superseded 2026-11-12: News, Calendar and Chats only, above).
 
 **A ministry's calendar can include the ministries under it** (owner: "the kids ministries calendar should be able to show
-an amalgamation of the calendars of the ministries under it"). Settings → *Show the calendars of the ministries under it*
+an amalgamation of the calendars of the ministries under it"). Settings → *Show the calendars of the ministries under this one*
 (off by default). The Calendar tab then opens on **Coming up**: the next dozen events of its own calendars and those of
 every ministry under it (at any depth, skipping any with Calendar off and anything under them), each labelled with its
-ministry, followed by its calendars and *From the ministries under it*. **Audience is Events' own:** the server only lists
+ministry, followed by its calendars and *From the ministries under this one*. **Audience is Events' own:** the server only lists
 calendars the person may see (`Audience.Includes`), and on the phone the events come from that person's own feed, so
 nobody sees an event they wouldn't see in that ministry. Events draws the list (`CalendarSetView`, a Platform.Client slot
 Events fills, since features don't reference each other); in the admin panel it shows the calendars the person edits.
@@ -573,7 +573,7 @@ where they show and how they might be pushed/discovered". So:
   Access or the app.
 - **What the tag does:** the ministry is listed on Life Groups (the admin desk, the app's page, Home's rows and the Hub
   tile) and in the directory's Life Groups section, and its line in the directory starts "Life Group". With the tag on,
-  *When it shows* puts it with a set of Sundays or *All year*; a ministry in a set has the *Sundays* tab for marking
+  *Listed in Life Groups* puts it with a set of Sundays or *All year*; a ministry in a set has the *Sundays* tab for marking
   changes.
 - **The room is the ministry's *When and where it meets*,** and *Join as a parent* is gone: joining for your child is how
   every ministry works (*Coming along*). The migration moved each group's room into *When and where it meets* and turned

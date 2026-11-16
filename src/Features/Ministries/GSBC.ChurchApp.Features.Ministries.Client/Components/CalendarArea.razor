@@ -19,7 +19,7 @@
         }
         @if (Page.Calendars.Count == 0)
         {
-            <EmptyState Icon="calendar" Title="No calendars yet" Body="@(!Page.You.MayEditSettings ? "Its events will show here." : Page.Ministry.ShowsInLifeGroups ? "Link the calendar its Sundays are in, and its events show here while it runs. Or turn on its own Public or Team calendar in Settings." : "Turn on its Public calendar, its Team calendar or both in Settings. Their events show in people's week and their calendar links.")" />
+            <EmptyState Icon="calendar" Title="No calendars yet" Body="@(!Page.You.MayEditSettings ? "This ministry's events will show here." : Page.Ministry.ShowsInLifeGroups ? "Link the calendar that has this group's Sundays, and its events will show here while the group runs. Or turn on the group's own Public or Team calendar in Settings." : "Turn on this ministry's Public calendar, its Team calendar or both in Settings. Their events appear in people's week and in their calendar links.")" />
         }
     </Section>
 }
@@ -28,7 +28,7 @@
 {
     <Section First="@(!Tools)">
         <ListGroup>
-            <ListRow Title="Tell the group about a Sunday" Subtitle="A post in News for one of its Sundays. It shows here under that Sunday too." Icon="megaphone" IconTone="RowTone.Accent" Chevron="true"
+            <ListRow Title="Tell the group about a Sunday" Subtitle="Write a post about one of the group's Sundays. It appears in News, and here under that Sunday." Icon="megaphone" IconTone="RowTone.Accent" Chevron="true"
                      OnClick="TellAboutASunday" />
         </ListGroup>
     </Section>
@@ -36,13 +36,13 @@
 
 @if (Page.Calendars.Count > 0 && Services.GetService(typeof(CalendarSetView)) is CalendarSetView view)
 {
-    <Section First="@(!Tools && !MayTellAboutASunday)" Title="Coming up" Lead="@(FromBelow.Count > 0 ? $"From {Page.Ministry.Name} and the ministries under it." : null)">
+    <Section First="@(!Tools && !MayTellAboutASunday)" Title="Coming up" Lead="@(FromBelow.Count > 0 ? $"From {Page.Ministry.Name} and the ministries under this one." : null)">
         @view.ComingUp(Page.Calendars.Select(calendar => new CalendarInSet(calendar.Id, calendar.From.Length > 0 ? calendar.From : Page.Ministry.Name,
             calendar.OnlyWithin ? MinistryWords.Ranges(calendar.Within) : null, TakesNotes(calendar) ? Notes : null)).ToList())
     </Section>
 }
 
-<Section Title="@(FromBelow.Count > 0 && Own.Any() ? "Its calendars" : null)">
+<Section Title="@(FromBelow.Count > 0 && Own.Any() ? "This ministry's calendars" : null)">
     @foreach (string audience in MinistryWords.BoxOrder.Where(audience => Own.Any(calendar => calendar.Audience == audience)))
     {
         <MinistryBox Audience="@audience">
@@ -71,7 +71,7 @@
 
 @if (FromBelow.Count > 0)
 {
-    <Section Title="From the ministries under it">
+    <Section Title="From the ministries under this one">
         <ListGroup>
             @foreach (CalendarLine calendar in FromBelow)
             {
@@ -98,13 +98,13 @@
 </Sheet>
 
 <Sheet Open="_unlinking is not null" OpenChanged="open => { if (!open) _unlinking = null; }" Title="@($"Unlink {_unlinking?.Name}?")"
-       Lead="@($"Its events stop showing in {Page.Ministry.Name}. The calendar and its events aren't changed, and you can link it again.")">
+       Lead="@($"{_unlinking?.Name}'s events stop showing in {Page.Ministry.Name}. The calendar and its events aren't changed, and you can link it again.")">
     <ChildContent>
         <Notice Tone="NoticeTone.Warning" Text="@_problem" />
     </ChildContent>
     <Actions>
-        <Button Block="true" Variant="ButtonVariant.Danger" Busy="_busy" OnClick="UnlinkAsync">Unlink it</Button>
-        <Button Block="true" Variant="ButtonVariant.Quiet" Disabled="_busy" OnClick="() => _unlinking = null">Keep it</Button>
+        <Button Block="true" Variant="ButtonVariant.Danger" Busy="_busy" OnClick="UnlinkAsync">Unlink the calendar</Button>
+        <Button Block="true" Variant="ButtonVariant.Quiet" Disabled="_busy" OnClick="() => _unlinking = null">Keep the calendar</Button>
     </Actions>
 </Sheet>
 
@@ -140,16 +140,16 @@
     private string? LinkedLead => !Page.Ministry.ShowsInLifeGroups
         ? null
         : Linked.FirstOrDefault()?.Within is { Count: > 0 } within
-            ? $"Only their events while {Page.Ministry.Name} runs show here: {MinistryWords.Span(within)}."
-            : $"Their events show here once {Page.Ministry.Name}'s Sundays are planned.";
+            ? $"Only a linked calendar's events from while {Page.Ministry.Name} runs show here: {MinistryWords.Span(within)}."
+            : $"A linked calendar's events show here once {Page.Ministry.Name}'s Sundays are planned.";
 
     private string LinkLead => Page.Ministry.ShowsInLifeGroups
-        ? "Its events show here while the group runs. Only calendars for everyone can be linked."
-        : "Its events show here. Only calendars for everyone can be linked.";
+        ? "Events from linked calendars show here while the group runs. Only calendars for everyone can be linked."
+        : "Events from linked calendars show here. Only calendars for everyone can be linked.";
 
     private IReadOnlyList<MenuItem> LinkedActions(CalendarLine calendar) =>
     [
-        this.Item($"Unlink {calendar.Name}…", () => { (_unlinking, _problem) = (calendar, null); }, "x", "The calendar itself isn't changed", danger: true),
+        this.Item($"Unlink {calendar.Name}…", () => { (_unlinking, _problem) = (calendar, null); }, "x", "The calendar itself isn't changed.", danger: true),
     ];
 
     private void TellAboutASunday()

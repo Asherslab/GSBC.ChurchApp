@@ -13,10 +13,10 @@ public static class JoinChoices
         List<JoinChoice> choices = [];
         bool leads = you.Roles.Contains(Roles.Leader) || you.Roles.Contains(Roles.Admin) || you.LeadsFromAbove;
         if (Offered(ministry.AttendJoin, Waiting(you, "", Places.Attending)) && !you.Roles.Contains(Roles.Attendee) && !leads)
-            choices.Add(Choice("", Places.Attending, "Me, to come along", ministry.AttendJoin, "", Waiting(you, "", Places.Attending)));
+            choices.Add(Choice("", Places.Attending, "Me, to attend", ministry.AttendJoin, "", Waiting(you, "", Places.Attending)));
         foreach (ChildPlace child in you.Children)
             if (Offered(ministry.AttendJoin, child.Asked) && !child.Attends)
-                choices.Add(Choice(child.Id, Places.Attending, $"{child.Name}, to come along", ministry.AttendJoin, child.Name,
+                choices.Add(Choice(child.Id, Places.Attending, $"{child.Name}, to attend", ministry.AttendJoin, child.Name,
                     child.Asked, child.Age is { } age ? $"{age}" : ""));
         bool askedForTeam = you.Asked.Any(ask => ask.As == Places.Team && ask.AskedBy.Length == 0);
         if (Offered(ministry.TeamJoin, askedForTeam) && !you.Roles.Contains(Roles.Team) && !you.Roles.Contains(Roles.Leader) && !you.Roles.Contains(Roles.Admin))
@@ -34,23 +34,23 @@ public static class JoinChoices
     private static JoinChoice ParentFirst(string joining, YourPlace you)
     {
         AskLine? asked = you.Asked.FirstOrDefault(ask => ask.As == Places.Team && ask.AskedBy.Length == 0);
-        string? refusal = asked is { WaitingForParent: true } ? "Already asked. Waiting for a parent of yours."
-            : asked is not null ? "Already asked. Waiting for a leader."
+        string? refusal = asked is { WaitingForParent: true } ? "You've already asked. Waiting for your parent to answer."
+            : asked is not null ? "You've already asked. Waiting for a leader to answer."
             : null;
         return new JoinChoice("", Places.Team, "Me, on the team",
-            joining == Joining.Open ? "A parent of yours says yes, then you're on the team" : "A parent of yours says yes, then a leader does",
+            joining == Joining.Open ? "Your parent approves, then you're on the team." : "Your parent approves first, then a leader.",
             "Ask a parent", joining == Joining.Ask, refusal);
     }
 
     private static JoinChoice Choice(string personId, string place, string title, string joining, string childName, bool waiting, string age = "")
     {
         string detail = joining == Joining.Open
-            ? place == Places.Team ? "You're on the team straight away" : $"{(childName.Length > 0 ? childName + " is" : "You're")} in straight away"
-            : "A leader says yes, then you'll hear in the app";
+            ? place == Places.Team ? "You join the team straight away." : $"{(childName.Length > 0 ? childName + " joins" : "You join")} straight away."
+            : "A leader approves the request, and you'll hear in the app.";
         if (age.Length > 0)
             detail = $"{age} · {detail}";
         string action = joining == Joining.Open ? "Join" : childName.Length > 0 ? $"Ask for {childName}" : "Ask to join";
-        string? refusal = waiting ? "Already asked. Waiting for a leader." : null;
+        string? refusal = waiting ? "You've already asked. Waiting for a leader to answer." : null;
         return new JoinChoice(personId, place, title, detail, action, joining == Joining.Ask, refusal);
     }
 }

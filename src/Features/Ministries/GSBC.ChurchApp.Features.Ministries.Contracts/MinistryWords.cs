@@ -21,15 +21,15 @@ public static class MinistryParts
 
     public static readonly IReadOnlyList<MinistryPart> All =
     [
-        new(News, "News", "Posts from its leaders, for everyone or for its people",
-            new PartFromBelow("Show news from the ministries under it",
+        new(News, "News", "Posts from the ministry's leaders, for everyone or only for its people.",
+            new PartFromBelow("Show news from the ministries under this one",
                 "Their posts show here too, each saying which ministry it's from. People see only the posts they'd see in that ministry.")),
-        new(Calendar, "Calendar", "Its calendars, with their events in people's week and calendar links",
-            new PartFromBelow("Show the calendars of the ministries under it",
+        new(Calendar, "Calendar", "The ministry's calendars. Their events appear in people's week and in their calendar links.",
+            new PartFromBelow("Show the calendars of the ministries under this one",
                 "Their events show on this calendar too, each saying which ministry it's from. People see only what they'd see in that ministry.")),
-        new(Files, "Files", "Documents and links for its people"),
-        new(Rosters, "Roster", "Who's on for each date, with replies, swaps and the dates people are away"),
-        new(Chats, "Chats", "Group chats and channels for its people, with the church's safeguarding rules"),
+        new(Files, "Files", "Documents and links for the ministry's people."),
+        new(Rosters, "Roster", "Who is serving on each date, with their answers, swaps and days away."),
+        new(Chats, "Chats", "Group chats and channels for the ministry's people, under the church's safeguarding rules."),
     ];
 
     public static readonly IReadOnlyList<string> OnWhenNew = [News, Calendar, Chats];

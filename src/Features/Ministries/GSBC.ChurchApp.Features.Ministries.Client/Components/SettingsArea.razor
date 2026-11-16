@@ -3,28 +3,28 @@
 
 <UnsavedGuard Changed="() => Changed" What="@($"{MinistryWords.Possessive(Page.Ministry.Name)} settings")" Save="SaveBeforeLeavingAsync" />
 
-<Section First="true" Title="The details" Lead="What people see about it, how they join, and where it shows." Grouped="true">
+<Section First="true" Title="Details" Lead="What people see about this ministry, how they join it, and where it's listed." Grouped="true">
     <ChildContent>
         <div class="ministry-form">
             <div class="ui-pair ui-pair--wide">
                 <TextField Label="Name" @bind-Value="Details.Name" MaxLength="60" Required="true" />
-                <TextField Label="The ministry's purpose in one line" @bind-Value="Details.Summary" MaxLength="140" Hint="Shown under its name on its page and in the lists of ministries." />
+                <TextField Label="Short description" @bind-Value="Details.Summary" MaxLength="140" Hint="One sentence shown under the ministry's name in the Ministries list and at the top of its page." />
             </div>
-            <TextField Label="About" @bind-Value="Details.About" Multiline="true" MaxLength="4000" Hint="What it is and what happens there, for someone who's never been." />
+            <TextField Label="About" @bind-Value="Details.About" Multiline="true" MaxLength="4000" Hint="Shown on the ministry's About tab. Describe what the ministry is and what happens there, for someone who has never been." />
             <div class="ui-pair ui-pair--wide">
-                <TextField Label="When and where it meets" @bind-Value="Details.Meets" MaxLength="140" />
-                <TextField Label="Who it's for" @bind-Value="Details.WhoFor" MaxLength="140" />
+                <TextField Label="When and where it meets" @bind-Value="Details.Meets" MaxLength="140" Hint="Shown on the ministry's About tab." />
+                <TextField Label="Who it's for" @bind-Value="Details.WhoFor" MaxLength="140" Hint="Shown on the ministry's About tab. Say who the ministry is for, such as an age group." />
             </div>
             <JoiningFields TeamJoin="@Details.TeamJoin" TeamJoinChanged="value => Details.TeamJoin = value"
                            AttendJoin="@Details.AttendJoin" AttendJoinChanged="value => Details.AttendJoin = value" />
             <LifeGroupsFields Shows="Details.ShowsInLifeGroups" ShowsChanged="value => Details.ShowsInLifeGroups = value" RoundId="@Details.RoundId" RoundIdChanged="value => Details.RoundId = value"
-                              Blocked="@(MinistryLogic.IsHidden(Details) ? "A hidden ministry isn't listed in Life Groups, which everyone sees" : null)" />
+                              Blocked="@(MinistryLogic.IsHidden(Details) ? "A hidden ministry can't be shown in Life Groups, because everyone can see Life Groups." : null)" />
             <HiddenFields Ministry="Details" HiddenChanged="value => Details.Hidden = value" />
             <Notice Tone="NoticeTone.Warning" Text="@_problem" />
         </div>
     </ChildContent>
     <Foot>
-        <SaveBar Label="Save the details" Busy="_busy" OnSave="SaveAsync" OnCancel="Undo" Blocked="@(Details.Name.Trim().Length == 0 ? "Give it a name to save it." : null)" State="SaveBar.For(Changed, _saved)" />
+        <SaveBar Label="Save the details" Busy="_busy" OnSave="SaveAsync" OnCancel="Undo" Blocked="@(Details.Name.Trim().Length == 0 ? "Enter a name for the ministry." : null)" State="SaveBar.For(Changed, _saved)" />
     </Foot>
 </Section>
 
@@ -37,7 +37,7 @@
 
 <MoveSection Page="Page" OnChanged="OnChanged" />
 
-<Section Title="Ministries under it" Lead="@($"{MinistryWords.Possessive(Page.Ministry.Name)} leaders lead these too.")" Grouped="true">
+<Section Title="Ministries under this one" Lead="@($"{MinistryWords.Possessive(Page.Ministry.Name)} leaders lead these too.")" Grouped="true">
     <ListGroup>
         @foreach (MinistrySummary under in Page.SubMinistries)
         {

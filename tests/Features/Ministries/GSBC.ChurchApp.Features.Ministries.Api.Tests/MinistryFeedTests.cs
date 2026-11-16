@@ -279,7 +279,7 @@ public sealed class MinistryFeedTests : IAsyncLifetime
         }
         Assert.False(_roles.Holds(Roles.Team, teen, _youth.Id));
         Assert.Contains(_told.Raised, told => told.Kind == MinistriesNotifications.ForYourYes && told.Audience == NotificationAudience.Person(_visitor));
-        Assert.Contains(_told.Raised, told => told.Kind == MinistriesNotifications.Asked && told.Body.Contains("a parent says yes first", StringComparison.Ordinal));
+        Assert.Contains(_told.Raised, told => told.Kind == MinistriesNotifications.Asked && told.Body.Contains("a parent approves first", StringComparison.Ordinal));
 
         MinistryPage parents = await ServerPageAsync(_visitor, _youth.Id);
         AskLine waiting = Assert.Single(parents.You.ForYourYes);

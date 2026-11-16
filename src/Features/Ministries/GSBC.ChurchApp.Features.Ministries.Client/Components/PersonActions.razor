@@ -20,7 +20,7 @@
             <div class="field">
                 <span class="field__label">@($"Role in {Page.Ministry.Name}")</span>
                 <RoleMenu TValue="string" Label="@($"{member.Name}'s role in {Page.Ministry.Name}")" Roles="Choices(member)" Value="@Shown(member)" ValueChanged="SetRoleAsync"
-                          RemoveLabel="@(MayRemove(member) ? $"Take {First(member)} off {Page.Ministry.Name}" : null)" RemoveDetail="They stay in the church's app."
+                          RemoveLabel="@(MayRemove(member) ? $"Remove {First(member)} from {Page.Ministry.Name}" : null)" RemoveDetail="They keep their account in the app."
                           OnRemove="@(MayRemove(member) ? EventCallback.Factory.Create(this, () => SetRoleAsync("")) : default)" Block="true" Disabled="_busy" />
             </div>
         }
@@ -28,7 +28,7 @@
         {
             <ListGroup>
                 <ListRow Title="@(member.NoParent ? "No parent linked" : $"Parents: {MinistryWords.Names(member.Parents.Select(parent => parent.Name).ToList())}")"
-                         Subtitle="@(member.NoParent ? $"Nobody hears about {Page.Ministry.Name} for them yet" : "Link another parent or guardian")"
+                         Subtitle="@(member.NoParent ? $"No parent hears about {Page.Ministry.Name} for them yet." : "Link another parent or guardian")"
                          Icon="users" IconTone="@(member.NoParent ? RowTone.Warm : RowTone.Quiet)" OnClick="() => _linking = true" Chevron="true" />
             </ListGroup>
         }

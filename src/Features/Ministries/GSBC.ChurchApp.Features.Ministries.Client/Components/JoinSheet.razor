@@ -5,7 +5,7 @@
 <UnsavedGuard Changed="() => Open && (_note.Trim().Length > 0 || _message != Template)" What="@(InChat ? "your message for the leaders" : "your note for the leaders")" />
 
 <Sheet Open="Open" OpenChanged="OpenChanged" Title="@(Chosen is { Asks: true } && InChat ? $"Ask to join {Page.Ministry.Name}" : $"Join {Page.Ministry.Name}")"
-       Lead="@(Chosen is { Asks: true } && InChat ? $"This starts a chat with {Page.Ministry.Name}'s leaders." : Choices.Count > 1 ? "Who's it for?" : null)">
+       Lead="@(Chosen is { Asks: true } && InChat ? $"This starts a chat with {Page.Ministry.Name}'s leaders." : Choices.Count > 1 ? "Who is joining?" : null)">
     <ChildContent>
         @foreach (JoinChoice choice in Choices)
         {
@@ -25,7 +25,7 @@
         }
         else if (Chosen is { Asks: true })
         {
-            <TextField Label="A note for the leaders (optional)" @bind-Value="_note" Multiline="true" MaxLength="500" />
+            <TextField Label="Note for the leaders" @bind-Value="_note" Multiline="true" MaxLength="500" Hint="Optional. The leaders see this with your request." />
         }
         <Notice Tone="NoticeTone.Warning" Text="@_problem" />
     </ChildContent>

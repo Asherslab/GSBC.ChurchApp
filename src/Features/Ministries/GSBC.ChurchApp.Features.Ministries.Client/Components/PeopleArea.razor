@@ -19,7 +19,7 @@
         }
         @if (asks.Count > 0)
         {
-            <h3 class="ministry-people-head">@(showAttendees ? "Asking to come along" : "Asking to join") (@asks.Count)</h3>
+            <h3 class="ministry-people-head">@(showAttendees ? "Asking to attend" : "Asking to join the team") (@asks.Count)</h3>
             <ListGroup>
                 @foreach (AskLine ask in asks)
                 {
@@ -33,7 +33,7 @@
                                 <Button Small="true" Variant="ButtonVariant.Quiet" Disabled="_busy" OnClick="() => AnswerAsync(ask, false)">Not now</Button>
                                 @if (ask.WaitingForParent)
                                 {
-                                    <span class="hint">@(ask.NoParent ? "Under 18, and no parent is linked yet. Link one on their Family tab in People, so a parent can say yes first." : "Under 18: a parent says yes first, then you can.")</span>
+                                    <span class="hint">@(ask.NoParent ? "They're under 18 and have no parent linked yet. Link a parent on their Family tab in People, so the parent can answer first." : "They're under 18, so a parent answers first, then you can.")</span>
                                 }
                                 else
                                 {
