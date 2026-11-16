@@ -144,14 +144,7 @@ else
             ? $"Saved. It went to {NewsWords.AudienceWords(_audience).ToLowerInvariant()}{_reach} {NewsWords.SentAt(told, Clock)}. Send it again, saying what changed? It replaces the earlier one in their notifications."
             : $"Saved. It was published without a notification. Send one to {NewsWords.AudienceWords(_audience).ToLowerInvariant()}{_reach}, saying what changed?";
 
-    private string TellAgainTitle
-    {
-        get
-        {
-            string words = $"Updated: {(_tellTitle.Trim().Length > 0 ? _tellTitle.Trim() : _title.Trim())}";
-            return words.Length <= NewsLimits.LongestTitle ? words : words[..(NewsLimits.LongestTitle - 1)].TrimEnd() + "…";
-        }
-    }
+    private string TellAgainTitle => NewsWords.Updated(_tellTitle.Trim().Length > 0 ? _tellTitle.Trim() : _title.Trim());
 
     private async Task<string?> TellAgainAsync(TellWords words)
     {

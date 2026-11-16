@@ -61,6 +61,16 @@ public static class NewsWords
         _ => ", with a notification",
     };
 
+    private const string UpdatedMark = "Updated: ";
+
+    public static string Updated(string title)
+    {
+        while (title.StartsWith(UpdatedMark, StringComparison.OrdinalIgnoreCase))
+            title = title[UpdatedMark.Length..].TrimStart();
+        string words = UpdatedMark + title;
+        return words.Length <= NewsLimits.LongestTitle ? words : words[..(NewsLimits.LongestTitle - 1)].TrimEnd() + "…";
+    }
+
     public static string SentAt(DateTime utc, TimeProvider clock)
     {
         DateTime at = ChurchTime.ToChurch(utc);
