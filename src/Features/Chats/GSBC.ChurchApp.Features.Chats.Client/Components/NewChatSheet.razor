@@ -12,7 +12,7 @@
         }
         else
         {
-            <p class="hint">A group chat for the team. Leaders start channels and chats with attendees or parents.</p>
+            <p class="hint">A group chat for @TeamNames.InSentence(MinistryName). Leaders start channels and chats with attendees or parents.</p>
         }
         @if (_draft.Audience != ChatAudiences.Team)
         {
@@ -49,11 +49,11 @@
     private IReadOnlyList<SegmentOption<string>> Audiences => HasAttendees
         ?
         [
-            new(ChatAudiences.Team, "The team", Detail: "Leaders and helpers."),
+            new(ChatAudiences.Team, TeamNames.Of(MinistryName), Detail: "Leaders and helpers."),
             new(ChatAudiences.Attendees, "Attendees and their parents", Detail: "Young people who come along, and their parents."),
             new(ChatAudiences.Parents, "Parents only", Detail: "The parents of those who come along."),
         ]
-        : [new(ChatAudiences.Team, "The team", Detail: "Leaders and helpers.")];
+        : [new(ChatAudiences.Team, TeamNames.Of(MinistryName), Detail: "Leaders and helpers.")];
 
     private string? Blocked => _draft.Name.Trim().Length == 0 ? "Give it a name to start it."
         : _draft.FirstMessage.Trim().Length == 0 ? "Write the first message to start it."
