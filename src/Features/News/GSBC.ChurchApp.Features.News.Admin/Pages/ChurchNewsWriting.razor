@@ -22,7 +22,7 @@
                 <Notice Tone="NoticeTone.Warning" Text="@_problem" />
             </LeadContent>
         </TitleBand>
-        <NewsPostForm @key="post.Id" Post="post" OnAPage="true" OnSaved="_ => Navigation.NavigateTo(Back)" OnCancel="() => Navigation.NavigateTo(Back)" />
+        <NewsPostForm @key="post.Id" Post="post" OnAPage="true" Reach="News.ReachAsync" OnSaved="_ => Navigation.NavigateTo(Back)" OnCancel="() => Navigation.NavigateTo(Back)" />
     }
     else
     {

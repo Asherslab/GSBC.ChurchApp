@@ -9,6 +9,7 @@ public static class NewsWords
 {
     public const string ChurchTab = "church";
     public const string YoursTab = "yours";
+    public const string EveryTab = "every";
 
     public static string Href(string id) => $"news/{id}";
 
@@ -52,10 +53,20 @@ public static class NewsWords
     public static string When(NewsPost post, TimeProvider clock) =>
         ChurchDates.Describe(PostedAt(post), DateLineStyle.Long, withTime: false, clock.GetUtcNow().UtcDateTime) + (post.EditedAt is null ? "" : " · edited");
 
+    public static string Told(NewsPost post, TimeProvider clock) => post.ToldAt switch
+    {
+        null => "",
+        { } told when post.TimesTold > 1 => $", with a notification, sent again {ChurchDates.Describe(told, DateLineStyle.Relative, withTime: true, clock.GetUtcNow().UtcDateTime)}",
+        _ => ", with a notification",
+    };
+
+    public static string Posted(NewsItem item, TimeProvider clock) =>
+        ChurchDates.Describe(item.PostedAt, DateLineStyle.Relative, withTime: false, clock.GetUtcNow().UtcDateTime) + (item.EditedAt is null ? "" : " · edited");
+
     public static string StateLine(NewsPost post, TimeProvider clock) => post.State switch
     {
         NewsState.Published when post.Shared => $"From {post.From}, in church news. Change it in the ministry; the change shows here too.",
-        NewsState.Published => $"Published {When(post, clock)}{(post.ToldAt is not null ? ", with a notification" : "")}.",
+        NewsState.Published => $"Published {When(post, clock)}{Told(post, clock)}.",
         NewsState.Scheduled when post.PublishAt is { } at => $"Publishes by itself {ChurchDates.Describe(at, DateLineStyle.Long, withTime: true, clock.GetUtcNow().UtcDateTime)}.",
         NewsState.WaitingToPublish => $"{post.Author} asks for it to be published.",
         NewsState.Asked => $"{post.From}'s leaders ask for it to go in church news.",

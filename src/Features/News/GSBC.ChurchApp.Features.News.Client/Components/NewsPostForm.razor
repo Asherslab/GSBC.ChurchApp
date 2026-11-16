@@ -11,6 +11,10 @@
 
 <UnsavedGuard Changed="() => Changed" Editing="Post" State="() => Shape" What="this post" />
 
+<TellSheet Open="_tellAgain is not null" Title="@(Post.ToldAt is null ? "Tell people?" : "Tell people again?")" Lead="@TellAgainLead"
+           NotificationTitle="@TellAgainTitle" BodyHint="Say what changed. Leave it empty to use the start of the post." TitleLength="NewsLimits.LongestTitle"
+           OffersUrgent="true" SendLabel="@(Post.ToldAt is null ? "Tell people" : "Tell people again")" OnTell="TellAgainAsync" OnNotNow="FinishAsync" />
+
 @if (OnAPage)
 {
     <WritingDesk SettingsTitle="Who it's for and telling them" SettingsSummary="@Summary">
@@ -61,7 +65,7 @@ else
     private RenderFragment Telling => @<text>
         @if (Post.ToldAt is { } told)
         {
-            <p class="news-form__note">Its notification went @ChurchDates.Describe(told, DateLineStyle.Relative, withTime: true, Clock.GetUtcNow().UtcDateTime).</p>
+            <p class="news-form__note">@ToldLine(told)</p>
         }
         else
         {
@@ -127,6 +131,69 @@ else
     [Parameter, EditorRequired] public required NewsPost Post { get; set; }
     [Parameter] public EventCallback<NewsPost> OnSaved { get; set; }
     [Parameter] public EventCallback OnCancel { get; set; }
+    [Parameter] public Func<string, Task<NewsReach>>? Reach { get; set; }
+
+    private NewsPost? _tellAgain;
+    private string? _reach;
+
+    private string ToldLine(DateTime told) =>
+        $"Its notification {(Post.TimesTold > 1 ? "was sent again" : "went")} {ChurchDates.Describe(told, DateLineStyle.Relative, withTime: true, Clock.GetUtcNow().UtcDateTime)}.";
+
+    private string TellAgainLead =>
+        Post.ToldAt is { } told
+            ? $"Saved. It went to {NewsWords.AudienceWords(_audience).ToLowerInvariant()}{_reach} {ChurchDates.Describe(told, DateLineStyle.Relative, withTime: true, Clock.GetUtcNow().UtcDateTime)}. Send it again, saying what changed? It replaces the earlier one in their notifications."
+            : $"Saved. It was published without a notification. Send one to {NewsWords.AudienceWords(_audience).ToLowerInvariant()}{_reach}, saying what changed?";
+
+    private string TellAgainTitle
+    {
+        get
+        {
+            string words = $"Updated: {(_tellTitle.Trim().Length > 0 ? _tellTitle.Trim() : _title.Trim())}";
+            return words.Length <= NewsLimits.LongestTitle ? words : words[..(NewsLimits.LongestTitle - 1)].TrimEnd() + "…";
+        }
+    }
+
+    private async Task<string?> TellAgainAsync(TellWords words)
+    {
+        if (_tellAgain is not { } saved)
+            return null;
+        try
+        {
+            await Writes.TellAgainAsync(saved.Id, words.Title, words.Body, words.Urgent);
+        }
+        catch (Grpc.Core.RpcException exception)
+        {
+            return exception.Status.Detail;
+        }
+        await FinishAsync();
+        return null;
+    }
+
+    private async Task FinishAsync()
+    {
+        if (_tellAgain is not { } saved)
+            return;
+        _tellAgain = null;
+        await OnSaved.InvokeAsync(saved);
+    }
+
+    private async Task AskToTellAgainAsync(NewsPost saved)
+    {
+        _reach = null;
+        _tellAgain = saved;
+        if (Reach is not null)
+        {
+            try
+            {
+                NewsReach reach = await Reach(_audience);
+                _reach = reach.Phones > 0 ? $" (about {reach.Phones} {(reach.Phones == 1 ? "phone" : "phones")})" : "";
+            }
+            catch (Grpc.Core.RpcException)
+            {
+                _reach = null;
+            }
+        }
+    }
 
     private bool MayPublish => Access.Can(NewsPermissions.Publish);
 
@@ -202,7 +269,10 @@ else
                 await Writes.AskToPublishAsync(saved.Id);
         }
         _loadedShape = Shape;
-        await OnSaved.InvokeAsync(saved);
+        if (Post.State is NewsState.Published && MayPublish)
+            await AskToTellAgainAsync(saved);
+        else
+            await OnSaved.InvokeAsync(saved);
     });
 
     private Task SaveDraftAsync() => RunAsync(async () =>

@@ -351,6 +351,31 @@ public sealed class MinistryFeedTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task StaffWhoSeeEveryMinistrysNewsGetOnlyPostsForEveryoneTheSameFromThePhoneAsFromTheServer()
+    {
+        Guid staff = _people.Add("Sam");
+        _grants[staff] = new GrantSet([new Grant(PermissionPattern.Parse(ChurchNews.SeeMinistriesNode), Scope.Global)]);
+        MinistryRecord office = Ministry("Church office", null);
+        office.Hidden = true;
+        await AddAsync([office], Post(office, "Office hours over Christmas", Audiences.Everyone, 3), Post(_band, "Band night", Audiences.Everyone, 4));
+
+        EveryMinistrysNews server;
+        await using (AsyncServiceScope scope = _services.CreateAsyncScope())
+        {
+            MinistriesService ministries = scope.ServiceProvider.GetRequiredService<MinistriesService>();
+            RpcException refused = await Assert.ThrowsAsync<RpcException>(async () => await ministries.EveryMinistrysNewsAsync(new EveryMinistrysNewsRequest(), Call(_leader)));
+            Assert.Equal(StatusCode.PermissionDenied, refused.StatusCode);
+            server = await ministries.EveryMinistrysNewsAsync(new EveryMinistrysNewsRequest(), Call(staff));
+        }
+
+        Assert.Equal(["Band night", "Welcome, everyone"], server.Posts.Select(post => post.Title));
+        Assert.Equal(["Youth Band", "Youth"], server.Posts.Select(post => post.From));
+        Phone phone = await PhoneOfAsync(staff);
+        Assert.Equal(server.Posts.Select(post => (post.Id, post.From)), (await phone.Ministries.EveryMinistrysNewsAsync()).Select(each => (each.Post.Id, each.Ministry)));
+        Assert.Empty(await (await PhoneOfAsync(_leader)).Ministries.EveryMinistrysNewsAsync());
+    }
+
+    [Fact]
     public async Task AHiddenMinistryAndEverythingInItReachOnlyThePhonesOfItsOwnPeople()
     {
         MinistryRecord office = Ministry("Church office", null);

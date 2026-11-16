@@ -19,6 +19,8 @@ public sealed class OnlineMinistries(ChannelBase channel) : IMinistryReads, IMin
 
     public async Task<LifeGroupsPage> LifeGroupsAsync() => await _ministries.LifeGroupsAsync(new LifeGroupsRequest());
 
+    public async Task<IReadOnlyList<Post>> EveryMinistrysNewsAsync() => (await _ministries.EveryMinistrysNewsAsync(new EveryMinistrysNewsRequest())).Posts;
+
     public async Task<PeopleList> PeopleAsync(string ministryId) => await _leading.PeopleAsync(new MinistryRef { MinistryId = ministryId });
 
     public async Task ParentAnswerAsync(string ministryId, string askId, bool yes) =>
