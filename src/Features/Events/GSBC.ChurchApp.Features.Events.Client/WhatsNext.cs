@@ -8,12 +8,33 @@ namespace GSBC.ChurchApp.Features.Events.Client;
 
 public sealed record WhatsNextWeek(string Heading, string Range, IReadOnlyList<DigestShownItem> Items);
 
-public sealed record WhatsNextDigest(DigestShown? Header, IReadOnlyList<DigestShownItem> Items)
+public sealed record EarlierDigest(string Start, string Range, int Count);
+
+public sealed record WhatsNextDigest(DigestShown? Header, IReadOnlyList<DigestShownItem> Items, IReadOnlyList<EarlierDigest>? Earlier = null)
 {
     private static readonly CultureInfo English = CultureInfo.InvariantCulture;
     private static readonly string[] Numbers = ["No", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Ten", "Eleven", "Twelve"];
 
     public static readonly WhatsNextDigest None = new(null, []);
+
+    public IReadOnlyList<EarlierDigest> Before => Earlier ?? [];
+
+    public IReadOnlyList<DigestShownItem> Coming(DateOnly today) => StillToCome(today);
+
+    public string SentLead
+    {
+        get
+        {
+            string things = Items.Count < Numbers.Length ? $"{Numbers[Items.Count]} {(Items.Count == 1 ? "thing" : "things")}" : $"{Items.Count} things";
+            return Header is { } header ? $"{things} coming up, as the church office sent it on {ChurchTime.ToChurch(header.SentAt).ToString("dddd d MMMM", English)}." : "";
+        }
+    }
+
+    public IReadOnlyList<WhatsNextWeek> WeeksAsSent() => Items
+        .GroupBy(item => ChurchTime.WeekStart(EventDates.Parse(item.FirstDate) ?? DateOnly.MinValue))
+        .OrderBy(week => week.Key)
+        .Select(week => new WhatsNextWeek($"Week of {week.Key.ToString("d MMMM", English)}", RangeOf(week.Key), week.ToList()))
+        .ToList();
 
     private IReadOnlyList<DigestShownItem> StillToCome(DateOnly today) =>
         Items.Where(item => (EventDates.Parse(item.LastDate) ?? EventDates.Parse(item.FirstDate) ?? DateOnly.MaxValue) >= today).ToList();
@@ -71,22 +92,36 @@ public sealed class DigestReader(IServiceProvider services)
 
     public const string Remembered = "events.whats-next";
 
-    public async Task<WhatsNextDigest> LoadAsync()
+    public Task<WhatsNextDigest> LoadAsync() => LoadAsync(null);
+
+    public async Task<WhatsNextDigest> LoadAsync(string? start)
     {
         if (_feeds is not { IsAvailable: true } feeds)
             return WhatsNextDigest.None;
-        IReadOnlyList<StoredRecord> shared = await feeds.ReadPageAsync(new FeedPageQuery(EventsFeeds.Digest, Limit: Page));
-        IReadOnlyList<StoredRecord> yours = await feeds.ReadPageAsync(new FeedPageQuery(EventsFeeds.PrivateDigest, Limit: Page));
-        StoredRecord? header = shared.FirstOrDefault(record => record.Id == HeaderId);
-        if (header is null)
+        List<StoredRecord> records = [.. await feeds.ReadPageAsync(new FeedPageQuery(EventsFeeds.Digest, Limit: Page)),
+            .. await feeds.ReadPageAsync(new FeedPageQuery(EventsFeeds.PrivateDigest, Limit: Page))];
+        List<StoredRecord> headers = records.Where(record => record.Id == HeaderId || record.Id.StartsWith(EarlierPrefix, StringComparison.Ordinal)).ToList();
+        if (headers.FirstOrDefault(record => record.Id == HeaderId) is null)
             return WhatsNextDigest.None;
-        DigestShown shown = Decode<DigestShown>(header);
-        string prefix = $"{shown.Start}/";
-        return new WhatsNextDigest(shown, shared.Concat(yours).Where(record => record.Id.StartsWith(prefix, StringComparison.Ordinal))
-            .Select(Decode<DigestShownItem>).OrderBy(item => item.Order).ToList());
+        List<DigestShown> shown = headers.Select(Decode<DigestShown>).OrderByDescending(header => header.Start, StringComparer.Ordinal).ToList();
+        DigestShown? chosen = start is null ? Decode<DigestShown>(headers.First(record => record.Id == HeaderId)) : shown.FirstOrDefault(header => header.Start == start);
+        if (chosen is null)
+            return WhatsNextDigest.None;
+        List<EarlierDigest> earlier = shown.Where(header => string.CompareOrdinal(header.Start, chosen.Start) < 0)
+            .Select(header => new EarlierDigest(header.Start, RangeOf(header), ItemsOf(records, header).Count)).Where(digest => digest.Count > 0).ToList();
+        return new WhatsNextDigest(chosen, ItemsOf(records, chosen), earlier);
     }
 
+    private static List<DigestShownItem> ItemsOf(IEnumerable<StoredRecord> records, DigestShown header)
+    {
+        string prefix = $"{header.Start}/";
+        return records.Where(record => record.Id.StartsWith(prefix, StringComparison.Ordinal)).Select(Decode<DigestShownItem>).OrderBy(item => item.Order).ToList();
+    }
+
+    private static string RangeOf(DigestShown header) => new WhatsNextDigest(header, []).Range;
+
     private const string HeaderId = "digest";
+    private const string EarlierPrefix = $"{HeaderId}:";
 
     private static T Decode<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] T>(StoredRecord record) =>
         EventsContractsModel.Instance.Deserialize<T>(new MemoryStream(record.Payload));

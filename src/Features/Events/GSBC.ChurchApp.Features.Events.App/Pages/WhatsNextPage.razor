@@ -1,19 +1,20 @@
 @page "/whats-next"
+@page "/whats-next/{Start}"
 @inject DigestReader Reader
 @inject CalendarDiary Diary
 @inject TimeProvider Clock
 @inject Shell Shell
 @inject IJSRuntime Js
 
-<LiveData TValue="WhatsNextScreen" Load="LoadAsync" Feeds="ScreenFeeds" Remember="@DigestReader.Remembered">
+<LiveData TValue="WhatsNextScreen" Load="LoadAsync" Feeds="ScreenFeeds" Remember="@($"{DigestReader.Remembered}.{Start}")">
     <ChildContent>
-        <Page Title="What's next" BackHref="@EventsPlaces.Week" BackLabel="This week" StuckAt="130">
-            <WhatsNextView Digest="context.Value.Digest" Today="Today" HasEvent="item => context.Value.Diary.Find(item.OccurrenceId) is not null"
+        <Page Title="What's next" BackHref="@BackHref" BackLabel="@BackLabel" StuckAt="130">
+            <WhatsNextView Digest="context.Value.Digest" Today="Today" AsSent="@(Start is not null)" HasEvent="item => context.Value.Diary.Find(item.OccurrenceId) is not null"
                            OnAdd="item => AddToCalendarAsync(context.Value.Diary, item)" OnRegister="RegisterAsync" />
         </Page>
     </ChildContent>
     <Loading>
-        <Page Title="What's next" BackHref="@EventsPlaces.Week" BackLabel="This week">
+        <Page Title="What's next" BackHref="@BackHref" BackLabel="@BackLabel">
             <Masthead Title="What's next" />
             <Section First="true"><Skeleton Shape="SkeletonShape.Lines" Count="5" /></Section>
         </Page>
@@ -21,6 +22,12 @@
 </LiveData>
 
 @code {
+    [Parameter] public string? Start { get; set; }
+
+    private string BackHref => Start is null ? EventsPlaces.Week : EventsPlaces.WhatsNext;
+
+    private string BackLabel => Start is null ? "This week" : "What's next";
+
     private sealed record WhatsNextScreen(WhatsNextDigest Digest, Diary Diary);
 
     private static readonly IReadOnlyList<string> ScreenFeeds = [.. DigestReader.Feeds, .. CalendarDiary.Feeds];
@@ -29,7 +36,7 @@
 
     private DateOnly Today => EventWords.Today(Now);
 
-    private async Task<WhatsNextScreen> LoadAsync() => new(await Reader.LoadAsync(), await Diary.LoadAsync());
+    private async Task<WhatsNextScreen> LoadAsync() => new(await Reader.LoadAsync(Start), await Diary.LoadAsync());
 
     private async Task AddToCalendarAsync(Diary diary, DigestShownItem item)
     {

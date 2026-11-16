@@ -20,7 +20,7 @@ public static class WaitingTiles
         "This Sunday's date, theme and verse, opening the bulletin", "the bulletin",
         new TileDefaults("Read the bulletin", Rows: 2, Tone: TileTones.Masthead, Icon: "bulletin", Link: ComingSoonDestinations.Sunday.Path,
             TitleLabel: "Words to open it", ShowsText: false),
-        sample: true, variants:
+        sample: true, offered: false, variants:
         [
             new(Layouts.Poster, "Poster", "The date when small; the theme, the date and the verse with a link to read it when bigger",
                 TileVariant.AnySize, (_, _) => true),

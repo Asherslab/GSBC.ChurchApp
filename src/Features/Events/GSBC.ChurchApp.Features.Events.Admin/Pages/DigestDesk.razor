@@ -29,7 +29,7 @@
     private static readonly IReadOnlyList<SegmentOption<bool>> PreviewOptions = [new(false, "In the app"), new(true, "Email")];
     private static readonly TimeSpan SettleTime = TimeSpan.FromMilliseconds(700);
 
-    private const int EmailWidth = 640;
+    private const int EmailWidth = DigestEmail.Width;
     private const int EmailHeight = 1000;
 
     private DigestDraft? _draft;
@@ -154,6 +154,7 @@
                     <iframe @ref="_emailFrame" class="digest-email" title="The email, as Copy for email gives it" srcdoc="@EmailPage(draft)" sandbox=""
                             width="@EmailWidth" height="@EmailHeight"></iframe>
                 </div>
+                <p class="digest-desk__hint">Copy for email gives this as HTML. In Elvanto, switch the email to its HTML source and paste it in.</p>
             }
             else
             {
@@ -439,7 +440,8 @@
         bool copied;
         try
         {
-            copied = await Js.InvokeAsync<bool>("gsbcEvents.copyHtml", DigestEmail.Html(range, EmailItems(draft), AllEventsLink), DigestEmail.Text(range, EmailItems(draft), AllEventsLink));
+            string html = DigestEmail.Html(range, EmailItems(draft), AllEventsLink);
+            copied = await Js.InvokeAsync<bool>("gsbcEvents.copyHtml", html, html);
         }
         catch (JSException)
         {
@@ -447,8 +449,8 @@
         }
         _busy = null;
         _told = copied
-            ? "Copied. Paste it into a new email: the pictures, headings and buttons come with it."
-            : "Couldn't copy here. Open Email above, select it all and copy.";
+            ? "Copied as HTML. In Elvanto, switch the email to its HTML source and paste it in."
+            : "Couldn't copy: this browser didn't allow it. Try again, or use Chrome, Edge or Safari.";
     }
 
     private async Task SendToAppAsync()

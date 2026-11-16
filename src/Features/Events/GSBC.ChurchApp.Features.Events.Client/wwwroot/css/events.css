@@ -326,3 +326,8 @@ a.whats-next-card__title:active { opacity: 0.7; }
 .digest-desk__reach { margin: 0; text-wrap: pretty; color: var(--ink-2); font-size: var(--text-caption); line-height: 1.45; text-align: center; }
 .digest-desk__test { display: flex; align-items: center; gap: 10px; color: var(--ink-3); font-size: var(--text-caption); line-height: 1.4; }
 .digest-desk__test .btn { flex: none; }
+
+.whats-next-tile .hub-list { margin-top: var(--space-sm); }
+.whats-next-tile .hub-list__entry { padding: var(--space-sm) 0; }
+.whats-next-tile .hub-list__entry:last-child { padding-bottom: 0; }
+.whats-next-tile .hub-list__what { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }

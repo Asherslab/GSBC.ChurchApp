@@ -3,7 +3,7 @@
 <Masthead Title="What's next" Note="@(Digest.Header is null ? null : Digest.Range)">
     @if (Digest.Header is not null && Weeks.Count > 0)
     {
-        <p class="whats-next__lead">@Digest.Lead(Today)</p>
+        <p class="whats-next__lead">@(AsSent ? Digest.SentLead : Digest.Lead(Today))</p>
     }
 </Masthead>
 
@@ -72,6 +72,18 @@
     </Section>
 }
 
+@if (!Preview && Digest.Before.Count > 0)
+{
+    <Section Title="Earlier">
+        <ListGroup>
+            @foreach (EarlierDigest earlier in Digest.Before)
+            {
+                <ListRow Title="@earlier.Range" Subtitle="@(earlier.Count == 1 ? "1 thing" : $"{earlier.Count} things")" Href="@EventsPlaces.SentDigest(earlier.Start)" />
+            }
+        </ListGroup>
+    </Section>
+}
+
 @code {
     [Parameter, EditorRequired] public required WhatsNextDigest Digest { get; set; }
     [Parameter, EditorRequired] public required DateOnly Today { get; set; }
@@ -79,8 +91,9 @@
     [Parameter] public EventCallback<DigestShownItem> OnAdd { get; set; }
     [Parameter] public EventCallback<string> OnRegister { get; set; }
     [Parameter] public bool Preview { get; set; }
+    [Parameter] public bool AsSent { get; set; }
 
-    private IReadOnlyList<WhatsNextWeek> Weeks => Digest.Weeks(Today);
+    private IReadOnlyList<WhatsNextWeek> Weeks => AsSent ? Digest.WeeksAsSent() : Digest.Weeks(Today);
 
     private static IEnumerable<string> Paragraphs(string text) =>
         text.Split("\n\n", StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
