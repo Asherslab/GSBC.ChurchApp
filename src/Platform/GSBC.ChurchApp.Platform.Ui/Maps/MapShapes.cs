@@ -12,10 +12,12 @@ public sealed record MapSource(string Kind, string Location, string Attribution)
 
     public static MapSource Urls(IEnumerable<string> urls, string attribution) => new(FromUrls, string.Join('\n', urls), attribution);
 
-    public IReadOnlyList<string> Locations => Location.Split('\n');
+    public IReadOnlyList<string> Locations => Location.Split('\n', StringSplitOptions.RemoveEmptyEntries);
 
     public static MapSource KeptFile(string id, string attribution) => new(FromKeptFile, id, attribution);
 }
+
+public sealed record MapBackdrop(string Url, MapFrame Bounds, int MaxZoom);
 
 public enum MapLineStyle
 {

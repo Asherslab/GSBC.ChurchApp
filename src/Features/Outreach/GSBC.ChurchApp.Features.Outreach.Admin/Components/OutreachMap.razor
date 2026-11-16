@@ -28,8 +28,8 @@
                     <Map>
                         @if (map.Atlas.Source is { } source)
                         {
-                            <MapView @ref="_view" Source="@source" Reach="@(map.Job == OutreachMapJob.MapAreas && map.Open ? map.Atlas.Reach : map.Atlas.Limits)" Label="@MapLabel" Lines="@Lines" Areas="@Areas" Markers="@Markers"
-                                     Frame="@map.Frame" OnTap="map.TapAsync" OnMoved="MovedAsync">
+                            <MapView @ref="_view" Source="@source" Backdrop="@map.Atlas.Backdrop" Reach="@(map.Job == OutreachMapJob.MapAreas && map.Open ? map.Atlas.Reach : map.Atlas.Limits)" Label="@MapLabel" Lines="@Lines" Areas="@Areas" Markers="@Markers"
+                                     Frame="@map.Frame" OnTap="map.TapAsync" OnMoved="MovedAsync" Outside="@OutsideNote(map)">
                                 <Overlay>
                                     @if (map.Drawing is null)
                                     {
@@ -43,9 +43,11 @@
                                                     CanFinish="@(map.Placed >= 3)" FinishLabel="@drawing.FinishLabel" />
                                     }
                                     <SectionOutlet SectionName="@CardSection" />
-                                    <SectionOutlet SectionName="@LegendSection" />
+                                    <div class="outreach-map__corner">
+                                        <OutreachMapKey />
+                                        <SectionOutlet SectionName="@LegendSection" />
+                                    </div>
                                 </Overlay>
-                                <Outside><OutreachMapOutside /></Outside>
                             </MapView>
                             <MapSketch @ref="_sketch" Map="_view" Tool="@(map.Drawing?.Tool ?? MapSketchTool.None)" OnDrawn="stroke => map.DrawnAsync(stroke.Points)"
                                        OnDrawing="stroke => map.PlacedPoints(stroke.Points.Count)" OnCancelled="map.StopDrawing" />
@@ -203,6 +205,9 @@
         _areas = [.. map.Layers.SelectMany(layer => layer.Areas)];
         _markers = [.. map.Layers.SelectMany(layer => layer.Markers)];
     }
+
+    private static RenderFragment? OutsideNote(OutreachMapContext map) =>
+        map.Atlas.Overview is not null && map.Job == OutreachMapJob.MapAreas ? null : @<OutreachMapOutside Overview="@(map.Atlas.Overview is not null)" />;
 
     private EventCallback WhenPolygon(Func<Task> act) =>
         _context?.Drawing?.Tool == MapSketchTool.Polygon ? EventCallback.Factory.Create(this, act) : default;

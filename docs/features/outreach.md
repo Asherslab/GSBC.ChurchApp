@@ -419,6 +419,17 @@ outreach works on come in **regions**, which the API builds itself, and which ph
 - **Answered in the interview (owner, 2026-11-15):** everyone on the Map tab can look past the edge of the built areas,
   not only in Map areas; all of Australia shows, but areas can't be added outside Queensland (the address data is
   Queensland's) and the place search stays Queensland's.
+- **How the admin map uses it (owner's pick on the decision page, 2026-11-16: "the ground says where walkers have
+  maps").** The overview draws under the region maps on every job of the Map tab, so the map pans over all of Australia
+  (zoomed out to about zoom 3). Land with walker maps is drawn clear; everywhere else sits under a grey veil; over the
+  Queensland border the veil deepens and hatches; waiting and switched-off regions keep their dashed outlines. A key,
+  *Where walkers have maps*, sits bottom left whenever the view reaches past the built regions. Outside the built
+  regions the zoom stops two levels past the overview's own (zoom 12, about suburbs): stopping a pan out there eases the
+  map back out, and framing anything inside lifts the stop again. Coverage, Places, Reports, Saved areas and Plan a day
+  say at the top that they work where walkers have maps (Map areas doesn't: it's the place to add one). Map areas →
+  Add a map area marks squares outside Queensland ("Outside Queensland") and won't add an area that is all outside it.
+  Before the overview is first built, the map behaves as before: held to the built regions and hatched beyond them.
+  Planning a day keeps its own map of the day's region.
 
 ### Where map areas overlap (fixed 2026-11-15, feedback #109)
 

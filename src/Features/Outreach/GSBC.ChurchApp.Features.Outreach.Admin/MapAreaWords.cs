@@ -91,7 +91,20 @@ public static class MapAreaWords
 
     public static string Estimate(CellEstimate estimate) => estimate.HasHomes
         ? $"about {OutreachWords.Plural(Rounded(estimate.Addresses), "letterbox", "letterboxes")}, about {Megabytes(estimate.Bytes)}"
+        : estimate.OutsideQueensland ? "outside Queensland, so it can't be added"
         : "no homes, so it isn't made";
+
+    public static string Unmade(IReadOnlyCollection<CellEstimate> estimates)
+    {
+        int outside = estimates.Count(estimate => estimate.OutsideQueensland);
+        int empty = estimates.Count(estimate => !estimate.HasHomes && !estimate.OutsideQueensland);
+        List<string> parts = [];
+        if (empty > 0)
+            parts.Add($"{OutreachWords.Plural(empty, "square has", "squares have")} no homes and isn't made");
+        if (outside > 0)
+            parts.Add($"{OutreachWords.Plural(outside, "square is", "squares are")} outside Queensland and can't be added: there's no address data there");
+        return string.Join("; ", parts);
+    }
 
     public static string ChangeLabel(int off, int on) => (off, on) switch
     {
@@ -109,9 +122,9 @@ public static class MapAreaWords
         {
             List<CellEstimate> added = check?.Added ?? [];
             long bytes = added.Sum(estimate => estimate.Bytes);
-            int empty = added.Count(estimate => !estimate.HasHomes);
+            string unmade = Unmade(added);
             string size = added.Count == 0 ? "" : $", about {Megabytes(bytes)}";
-            string none = empty == 0 ? "" : $" ({OutreachWords.Plural(empty, "square has", "squares have")} no homes and isn't made)";
+            string none = unmade.Length == 0 ? "" : $" ({unmade})";
             parts.Add($"{OutreachWords.Plural(on, "region builds", "regions build")}{size}{none}");
         }
         return string.Join(". ", parts) + ".";

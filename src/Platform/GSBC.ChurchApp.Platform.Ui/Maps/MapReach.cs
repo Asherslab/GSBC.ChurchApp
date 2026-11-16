@@ -1,6 +1,6 @@
 namespace GSBC.ChurchApp.Platform.Ui.Maps;
 
-public sealed record MapReach(IReadOnlyList<MapFrame> Covered, IReadOnlyList<MapArea> Others, IReadOnlyList<MapMarker> Notes, MapFrame? Limit = null)
+public sealed record MapReach(IReadOnlyList<MapFrame> Covered, IReadOnlyList<MapArea> Others, IReadOnlyList<MapMarker> Notes, MapFrame? Limit = null, IReadOnlyList<MapPoint>? Addable = null)
 {
     private const int Samples = 8;
     private static readonly MapFrame World = new(-85, -180, 85, 180);
@@ -10,6 +10,25 @@ public sealed record MapReach(IReadOnlyList<MapFrame> Covered, IReadOnlyList<Map
     public IReadOnlyList<IReadOnlyList<MapPoint>> Edge() => _edge ??= new MapCover(Covered, []).Loops();
 
     public IReadOnlyList<IReadOnlyList<IReadOnlyList<MapPoint>>> Beyond() => new MapCover([World], Covered).Polygons();
+
+    public IReadOnlyList<IReadOnlyList<MapPoint>> Closed()
+    {
+        if (Addable is not { Count: >= 3 } addable)
+            return [];
+        IReadOnlyList<MapPoint> outer = Ring(World);
+        List<MapPoint> hole = [.. addable, addable[0]];
+        if (Math.Sign(Turning(hole)) == Math.Sign(Turning(outer)))
+            hole.Reverse();
+        return [outer, hole];
+    }
+
+    private static double Turning(IReadOnlyList<MapPoint> ring)
+    {
+        double sum = 0;
+        for (int index = 1; index < ring.Count; index++)
+            sum += (ring[index].Lon - ring[index - 1].Lon) * (ring[index].Lat + ring[index - 1].Lat);
+        return sum;
+    }
 
     public IReadOnlyList<IReadOnlyList<IReadOnlyList<MapPoint>>> Outside(MapFrame box) => new MapCover([box], Covered).Polygons();
 

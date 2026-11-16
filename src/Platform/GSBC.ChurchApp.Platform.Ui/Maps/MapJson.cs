@@ -6,7 +6,7 @@ namespace GSBC.ChurchApp.Platform.Ui.Maps;
 
 public static class MapJson
 {
-    public static string Options(MapSource source, MapPoint? centre, double zoom, bool interactive, bool follow) => Write(json =>
+    public static string Options(MapSource source, MapPoint? centre, double zoom, bool interactive, bool follow, MapBackdrop? backdrop = null) => Write(json =>
     {
         json.WriteStartObject();
         json.WriteStartObject("source");
@@ -22,6 +22,15 @@ public static class MapJson
             json.WriteString(source.Kind == MapSource.FromKeptFile ? "id" : "url", source.Location);
         json.WriteString("attribution", source.Attribution);
         json.WriteEndObject();
+        if (backdrop is not null)
+        {
+            json.WriteStartObject("backdrop");
+            json.WriteString("url", backdrop.Url);
+            json.WritePropertyName("bounds");
+            json.WriteRawValue(Frame(backdrop.Bounds));
+            json.WriteNumber("maxZoom", backdrop.MaxZoom);
+            json.WriteEndObject();
+        }
         if (centre is { } point)
         {
             json.WritePropertyName("centre");
@@ -117,6 +126,16 @@ public static class MapJson
                 Points(json, ring);
             json.WriteEndArray();
         }
+        json.WriteEndArray();
+        json.WritePropertyName("covered");
+        json.WriteStartArray();
+        foreach (MapFrame box in reach.Covered)
+            json.WriteRawValue(Frame(box));
+        json.WriteEndArray();
+        json.WritePropertyName("closed");
+        json.WriteStartArray();
+        foreach (IReadOnlyList<MapPoint> ring in reach.Closed())
+            Points(json, ring);
         json.WriteEndArray();
         json.WritePropertyName("edge");
         json.WriteStartArray();

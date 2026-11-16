@@ -1,0 +1,45 @@
+@using GSBC.ChurchApp.Features.Outreach.Admin.Map
+@using GSBC.ChurchApp.Platform.Ui.Maps
+@inherits OutreachMapPart
+
+@if (Shown)
+{
+    <div class="outreach-map__key" role="group" aria-label="Where walkers have maps">
+        <p class="outreach-map__key-title">Where walkers have maps</p>
+        <ul class="outreach-map__key-rows">
+            <li><span class="outreach-map__key-swatch outreach-map__key-swatch--maps"></span><span><b>Walkers have maps</b> @Regions</span></li>
+            @if (Map.Atlas.Reach.Others.Count > 0)
+            {
+                <li><span class="outreach-map__key-swatch area-desk__swatch area-desk__swatch--waiting"></span><span><b>Waiting to build</b> maps in a few minutes</span></li>
+                <li><span class="outreach-map__key-swatch area-desk__swatch area-desk__swatch--off"></span><span><b>Switched off</b> no maps; history kept</span></li>
+            }
+            <li><span class="outreach-map__key-swatch outreach-map__key-swatch--overview"></span><span><b>Overview only</b> no walker maps yet</span></li>
+            @if (Map.Atlas.Reach.Addable is { Count: > 0 })
+            {
+                <li><span class="outreach-map__key-swatch outreach-map__key-swatch--closed"></span><span><b>Outside Queensland</b> can't be added: no addresses</span></li>
+            }
+        </ul>
+    </div>
+}
+
+@code {
+    private const double AllInside = 1;
+
+    private bool Shown => Map.Atlas.Overview is not null && Map.View is { } view && Map.Atlas.Reach.ShareOf(view) < AllInside;
+
+    private string Regions => Map.Atlas.Regions.Count == 0 ? "none yet" : OutreachWords.Plural(Map.Atlas.Regions.Count, "region", "regions");
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        Map.Moved += Rerender;
+    }
+
+    public override void Dispose()
+    {
+        Map.Moved -= Rerender;
+        base.Dispose();
+    }
+
+    private void Rerender() => _ = InvokeAsync(StateHasChanged);
+}

@@ -67,6 +67,7 @@
 
 @code {
     private const string NewArea = "new";
+    private const int PreviewZoom = 12;
     private const string Lead = "Where the app has maps and streets. Each area is cut into regions of about 10 km; phones download the map and streets of the region they walk in.";
 
     private static readonly IReadOnlyList<string> Feeds = [OutreachMapsFeeds.Builds, OutreachMapsFeeds.Regions];
@@ -253,7 +254,7 @@
                 <TextField Label="Name" @bind-Value="_name" MaxLength="80" Hint="What staff call the place." />
             </div>
             <p class="area-desk__estimate" role="status">@EstimateLine</p>
-            @if (_preview is { } shown && !Mapped(shown))
+            @if (_preview is { } shown && !Mapped(shown) && Map.Atlas.Overview is null)
             {
                 <p class="field__hint area-desk__hint">There's no street map here yet, so the map shows only the places' names. Its own maps come with the build.</p>
             }
@@ -264,6 +265,7 @@
     private string? RadiusProblem => _radius.Trim().Length > 0 && MapAreaWords.Radius(_radius) is null ? "Between 1 and 30 kilometres." : null;
 
     private string? AddBlocked => _centre is null ? "Find a place or click the map first."
+        : _preview is { } outside && outside.Cells.Count > 0 && outside.Cells.All(cell => cell.OutsideQueensland) ? "That's outside Queensland. Areas can only be added in Queensland, where the address data is."
         : MapAreaWords.Radius(_radius) is null ? "Say how far around it, 1 to 30 km."
         : _name.Trim().Length == 0 ? "Give the area a name."
         : _preview is { } preview && preview.Cells.All(cell => !cell.HasHomes) ? "There are no homes here, so there's nothing to build."
@@ -276,8 +278,10 @@
             if (_estimating || _preview is null)
                 return "Counting the letterboxes in each square…";
             List<CellEstimate> homes = _preview.Cells.Where(cell => cell.HasHomes).ToList();
-            int empty = _preview.Cells.Count - homes.Count;
-            string none = empty == 0 ? "" : $" {OutreachWords.Plural(empty, "square has", "squares have")} no homes and isn't made.";
+            string unmade = MapAreaWords.Unmade(_preview.Cells);
+            string none = unmade.Length == 0 ? "" : $" {char.ToUpperInvariant(unmade[0])}{unmade[1..]}.";
+            if (homes.Count == 0 && none.Length > 0)
+                return none.TrimStart();
             return $"{OutreachWords.Plural(homes.Count, "region", "regions")} with homes, about {OutreachWords.Plural(homes.Sum(cell => cell.Addresses), "letterbox", "letterboxes")}, "
                    + $"about {MapAreaWords.Megabytes(homes.Sum(cell => cell.Bytes))} for phones in all.{none}";
         }
@@ -524,7 +528,7 @@
             _preview = preview;
             Draw(preview);
             if (frame)
-                Map.FlyTo(MapFrame.Around(_previewShapes.SelectMany(shape => shape.Points), padding: 48, maxZoom: 13));
+                Map.FlyTo(MapFrame.Around(_previewShapes.SelectMany(shape => shape.Points), padding: 48, maxZoom: PreviewZoom));
         }
         catch (RpcException exception)
         {
@@ -546,9 +550,9 @@
         {
             MapBounds core = preview.Grid.Core(cell.Row, cell.Column);
             MapPoint corner = new(core.North - (core.North - core.South) * 0.12, core.West + (core.East - core.West) * 0.22);
-            return new MapMarker(corner, MapMarkerKind.Note, cell.HasHomes ? MapAreaWords.Estimate(cell) : "No homes");
+            return new MapMarker(corner, MapMarkerKind.Note, cell.HasHomes ? MapAreaWords.Estimate(cell) : cell.OutsideQueensland ? "Outside Queensland" : "No homes");
         }).ToList();
-        if (!Mapped(preview))
+        if (!Mapped(preview) && Map.Atlas.Overview is null)
         {
             double apart = Math.Min(preview.Grid.CellLatitude, preview.Grid.CellLongitude) * 0.22;
             foreach (MapPlace place in preview.Places)
