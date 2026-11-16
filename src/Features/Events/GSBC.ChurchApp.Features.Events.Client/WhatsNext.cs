@@ -31,7 +31,7 @@ public sealed record WhatsNextDigest(DigestShown? Header, IReadOnlyList<DigestSh
     }
 
     public IReadOnlyList<WhatsNextWeek> WeeksAsSent() => Items
-        .GroupBy(item => ChurchTime.WeekStart(EventDates.Parse(item.FirstDate) ?? DateOnly.MinValue))
+        .GroupBy(item => ChurchTime.WeekStart(EventDates.Parse(item.FirstDate) ?? EventDates.Parse(Header?.Start ?? "") ?? DateOnly.MinValue))
         .OrderBy(week => week.Key)
         .Select(week => new WhatsNextWeek($"Week of {week.Key.ToString("d MMMM", English)}", RangeOf(week.Key), week.ToList()))
         .ToList();
@@ -72,13 +72,11 @@ public sealed record WhatsNextDigest(DigestShown? Header, IReadOnlyList<DigestSh
         _ => $"Week of {week.ToString("d MMMM", English)}",
     };
 
-    private static string RangeOf(DateOnly week)
-    {
-        DateOnly last = week.AddDays(6);
-        return week.Month == last.Month
-            ? $"{week.Day} – {last.ToString("d MMMM", English)}"
-            : $"{week.ToString("d MMMM", English)} – {last.ToString("d MMMM", English)}";
-    }
+    private static string RangeOf(DateOnly week) => Dates(week, week.AddDays(6));
+
+    public static string Dates(DateOnly first, DateOnly last) => first.Month == last.Month
+        ? $"{first.Day} – {last.ToString("d MMMM", English)}"
+        : $"{first.ToString("d MMMM", English)} – {last.ToString("d MMMM", English)}";
 
     private static DateOnly Max(DateOnly first, DateOnly second) => first > second ? first : second;
 }
@@ -118,7 +116,8 @@ public sealed class DigestReader(IServiceProvider services)
         return records.Where(record => record.Id.StartsWith(prefix, StringComparison.Ordinal)).Select(Decode<DigestShownItem>).OrderBy(item => item.Order).ToList();
     }
 
-    private static string RangeOf(DigestShown header) => new WhatsNextDigest(header, []).Range;
+    private static string RangeOf(DigestShown header) =>
+        EventDates.Parse(header.Start) is { } start && EventDates.Parse(header.End) is { } end ? WhatsNextDigest.Dates(start, end) : "";
 
     private const string HeaderId = "digest";
     private const string EarlierPrefix = $"{HeaderId}:";

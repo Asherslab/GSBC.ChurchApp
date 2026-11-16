@@ -6,7 +6,7 @@
 @inject Shell Shell
 @inject IJSRuntime Js
 
-<LiveData TValue="WhatsNextScreen" Load="LoadAsync" Feeds="ScreenFeeds" Remember="@($"{DigestReader.Remembered}.{Start}")">
+<LiveData @key="Start" TValue="WhatsNextScreen" Load="LoadAsync" Feeds="ScreenFeeds" Remember="@($"{DigestReader.Remembered}.{Start}")">
     <ChildContent>
         <Page Title="What's next" BackHref="@BackHref" BackLabel="@BackLabel" StuckAt="130">
             <WhatsNextView Digest="context.Value.Digest" Today="Today" AsSent="@(Start is not null)" HasEvent="item => context.Value.Diary.Find(item.OccurrenceId) is not null"
@@ -26,7 +26,7 @@
 
     private string BackHref => Start is null ? EventsPlaces.Week : EventsPlaces.WhatsNext;
 
-    private string BackLabel => Start is null ? "This week" : "What's next";
+    private string BackLabel => Start is null ? "Back" : "What's next";
 
     private sealed record WhatsNextScreen(WhatsNextDigest Digest, Diary Diary);
 

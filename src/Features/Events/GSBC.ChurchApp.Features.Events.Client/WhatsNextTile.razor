@@ -75,7 +75,9 @@
     {
         if (item.Kind == DigestItemKind.NotOn)
             return "Not on";
-        DateOnly day = EventDates.Parse(item.FirstDate) is { } first && first > Today ? first : Today;
+        if (EventDates.Parse(item.FirstDate) is not { } first)
+            return item.Words.When;
+        DateOnly day = first > Today ? first : Today;
         return ChurchDates.Relative(day.ToDateTime(TimeOnly.MinValue), Today.ToDateTime(TimeOnly.MinValue));
     }
 }
