@@ -36,7 +36,7 @@ For a status moving forward through stages, where a segmented track read "like t
 - **Focus:** no ring; a stronger tint and an underlined label. **Narrow (440px or less):** the checks go. **While moving:** all disabled with the progress cursor.
 - **Read only (`ReadOnly`):** plain labels, the current still marked for screen readers; for the person it belongs to, who can see but not move it.
 
-The docked feedback ticket's status, and a prayer request's care steps (New, Followed up, Answered) on the phone and the Prayer desk; the requester sees it read only (Sent, On the wall, Answered). Pressing a stage moves to it, backwards too; leaving the sequence (*Mark not doing*) is a quiet action beside it, not a stage.
+The docked feedback ticket's status, and a prayer request's care steps (New, Answered) on the phone and the Prayer desk; the requester sees it read only (Sent, On the wall, Answered). Pressing a stage moves to it, backwards too; leaving the sequence (*Mark not doing*) is a quiet action beside it, not a stage.
 
 ## Inputs / Fields
 - **Style:** field fill and edge at the 12px radius, an ink-2 label above, ink-2 placeholders (notes at 14px). Every field, the composer and the admin's plain inputs included.

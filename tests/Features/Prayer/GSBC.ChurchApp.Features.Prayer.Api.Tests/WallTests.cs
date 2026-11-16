@@ -92,6 +92,44 @@ public sealed class WallTests : PrayerHost
         Assert.Equal(WallState.TakenDown, (await RecordAsync(id))!.Wall);
     }
 
+    [Fact]
+    public async Task RemovingItWithoutThanksTakesItOffTheWallAtOnce()
+    {
+        string id = await SendAsync(Phone, null, "For a new job", forWall: true);
+        await ShowAsync(id);
+
+        await AppAsync(app => app.AnsweredAsync(Phone, null, new AnsweredSave { Id = id, RemoveFromWall = true }, Cancel));
+
+        Assert.Empty(await WallAsync());
+        Assert.Equal((WallState.TakenDown, CareState.Answered), ((await RecordAsync(id))!.Wall, (await RecordAsync(id))!.Care));
+    }
+
+    [Fact]
+    public async Task RemovingItWithThanksShowsTheThanksForThreeDaysThenTakesItOff()
+    {
+        string id = await SendAsync(Phone, null, "For a new job", forWall: true);
+        await ShowAsync(id);
+
+        await AppAsync(app => app.AnsweredAsync(Phone, null, new AnsweredSave { Id = id, Note = "I start Monday!", RemoveFromWall = true }, Cancel));
+        WallPost post = Assert.Single(await WallAsync());
+        Assert.Equal(("I start Monday!", Clock.GetUtcNow().UtcDateTime.AddDays(3)), (post.AnsweredNote, post.Until));
+
+        Clock.Advance(TimeSpan.FromDays(3));
+        await WithAsync(provider => provider.GetRequiredService<PrayerKeeping>().RunAsync(Cancel));
+        Assert.Empty(await WallAsync());
+    }
+
+    [Fact]
+    public async Task SayingItWasAnsweredWithoutRemovingItLeavesItUpUntilItsDay()
+    {
+        string id = await SendAsync(Phone, null, "For a new job", forWall: true);
+        await ShowAsync(id);
+
+        await AppAsync(app => app.AnsweredAsync(Phone, null, new AnsweredSave { Id = id, Note = "Thank you" }, Cancel));
+
+        Assert.Equal(Clock.GetUtcNow().UtcDateTime.AddDays(30), Assert.Single(await WallAsync()).Until);
+    }
+
     private static Task<RequestDetails> Get(IServiceProvider provider, string id) =>
         provider.GetRequiredService<PastoralCare>().RequestAsync(mayRead: false, id, Cancel);
 }

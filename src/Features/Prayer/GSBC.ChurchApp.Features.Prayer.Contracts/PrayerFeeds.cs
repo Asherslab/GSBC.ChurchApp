@@ -7,4 +7,5 @@ public static class PrayerFeeds
     public const string Inbox = "prayer.inbox";
     public const string Approving = "prayer.approving";
     public const string Care = "prayer.care";
+    public const string Church = "prayer.church";
 }

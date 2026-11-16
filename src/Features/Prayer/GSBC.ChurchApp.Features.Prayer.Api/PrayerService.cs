@@ -6,11 +6,13 @@ using ProtoBuf.Grpc;
 
 namespace GSBC.ChurchApp.Features.Prayer.Api;
 
-internal sealed class PrayerService(PrayerRequests requests) : IPrayerService
+internal sealed class PrayerService(PrayerRequests requests, IAccessEvaluator access) : IPrayerService
 {
     public async ValueTask<Done> SendAsync(PrayerRequestSend request, CallContext context = default)
     {
-        await requests.SendAsync(CallingInstall.Of(context), CallerId(context), request, context.CancellationToken);
+        bool mayPostAsTheChurch = request.FromChurch && context.ServerCallContext?.GetHttpContext().User is { } user
+            && await access.IsAllowedAsync(user, PrayerPermissions.WallNode, null, context.CancellationToken);
+        await requests.SendAsync(CallingInstall.Of(context), CallerId(context), request, mayPostAsTheChurch, context.CancellationToken);
         return new Done();
     }
 

@@ -12,7 +12,7 @@ internal sealed class SamplePrayer(IServiceScopeFactory scopes, IHostEnvironment
 {
     private static readonly (string Text, string Name, bool ShowName, int DaysAgo, int Prayed, WallState Wall, CareState Care, string Answered)[] Samples =
     [
-        ("Please pray for my dad's surgery on Thursday, and for the surgeons.", "Sam Sample", true, 2, 14, WallState.Shown, CareState.FollowedUp, ""),
+        ("Please pray for my dad's surgery on Thursday, and for the surgeons.", "Sam Sample", true, 2, 14, WallState.Shown, CareState.New, ""),
         ("For our family as we move house this month. It has been a hard year.", "", false, 4, 8, WallState.Shown, CareState.New, ""),
         ("For my sister's scan results next week.", "Jo Sample", true, 9, 31, WallState.Shown, CareState.Answered, "Thank you all. The scan came back clear!"),
         ("For wisdom at work, and for my team.", "", false, 10, 5, WallState.Shown, CareState.New, ""),
