@@ -13,6 +13,7 @@
 @inject UiHost Host
 @inject Shell Shell
 @inject IEnumerable<IAppCardSource> CardSources
+@inject IServiceProvider Services
 
 <div class="rich-text-field @(Host.Desktop ? "" : "rich-text-field--phone") @Class" data-headings="@(Headings ? "true" : "false")">
     <div class="rich-text-field__bar" role="toolbar" aria-label="Formatting" data-look-scroll data-look-bleed data-folded="@_folded" @ref="_bar">
@@ -235,6 +236,7 @@
 @code {
     private readonly Dictionary<string, MediaRef> _waiting = [];
     private readonly List<MediaRef> _media = [];
+    private readonly Dictionary<string, string> _folders = [];
     private ElementReference _host;
     private IJSObjectReference? _module;
     private IJSObjectReference? _editor;
@@ -524,6 +526,7 @@
     {
         if (_editor is null)
             return;
+        await FindFoldersAsync();
         List<(MediaRef Media, string? Url)> shown = [];
         foreach (MediaRef media in _media)
             shown.Add((media, media.IsImage || media.IsVideo ? await SourceOfAsync(media) : null));
@@ -583,7 +586,26 @@
         if (_waiting.ContainsKey(media.Id))
             return $"On this phone: {media.FileName}. It's sent with your save.";
         string name = media.FileName.Length > 0 ? media.FileName : media.AltText;
-        return media.Folder.Length > 0 ? $"~/{media.Folder}/{name}" : $"~/{name}";
+        string folder = _folders.TryGetValue(media.Id, out string? current) ? current : media.Folder;
+        return folder.Length > 0 ? $"~/{folder}/{name}" : $"~/{name}";
+    }
+
+    private async Task FindFoldersAsync()
+    {
+        if (Services.GetService(typeof(IMediaPlaces)) is not IMediaPlaces places)
+            return;
+        List<string> unknown = [.. _media.Select(media => media.Id).Where(id => !_waiting.ContainsKey(id) && !_folders.ContainsKey(id)).Distinct()];
+        if (unknown.Count == 0)
+            return;
+        try
+        {
+            IReadOnlyDictionary<string, string> found = await places.FoldersOfAsync(unknown);
+            foreach (string id in unknown)
+                _folders[id] = found.GetValueOrDefault(id, "");
+        }
+        catch (Exception exception) when (exception is Grpc.Core.RpcException or HttpRequestException)
+        {
+        }
     }
 
     private static string FileLine(MediaRef media)

@@ -397,6 +397,9 @@ internal sealed class MediaLibrary(
         _ => items,
     };
 
+    public Task<MediaPlaces> PlacesAsync(ClaimsPrincipal user, MediaPlacesRequest request, CancellationToken cancellationToken) =>
+        folders.PlacesAsync(user, request.Ids, cancellationToken);
+
     public async Task DeleteAsync(string id, CancellationToken cancellationToken)
     {
         Guid mediaId = ParseId(id);

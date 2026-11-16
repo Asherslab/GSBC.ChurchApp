@@ -6,6 +6,6 @@ namespace GSBC.ChurchApp.Features.News.Api;
 internal static class NewsMedia
 {
     public static readonly MediaSystemArea Area = new(NewsAreas.Media, "Church news",
-        "Made by the app: the pictures, video, audio and files in church news posts. One nothing uses any more can be deleted.",
+        "Made by the app: the pictures, video, audio and files uploaded into church news posts. You can delete any that no post uses any more.",
         NewsPermissions.Write, StaffDeleteUnused: true, Uploaders: NewsPermissions.Write, Files: PostMedia.Types);
 }
