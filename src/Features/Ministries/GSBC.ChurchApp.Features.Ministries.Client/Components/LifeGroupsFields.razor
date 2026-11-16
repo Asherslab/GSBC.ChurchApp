@@ -1,13 +1,13 @@
 @inject IMinistryReads Reads
 @inject TimeProvider Clock
 
-<ToggleRow Title="Show in Life Groups" Description="@(Blocked ?? "It's listed with the Life Groups in the app, wherever it sits")" Checked="Shows" CheckedChanged="ShowsChanged"
+<ToggleRow Title="Show in Life Groups" Description="@(Blocked ?? "List this ministry on the Life Groups page in the app, wherever it sits among the ministries.")" Checked="Shows" CheckedChanged="ShowsChanged"
            Disabled="Blocked is not null" Muted="Blocked is not null" />
 @if (Shows)
 {
     <LiveData TValue="LifeGroupsPage" Load="Reads.LifeGroupsAsync" Feeds="Reads.Feeds" Remember="ministries.life-groups" FailedTitle="Can't load the Life Groups' Sundays right now">
-        <Segmented TValue="string" Label="When it shows" ShowLabel="true" Stacked="true" Options="Sundays(context.Value)" Value="@RoundId" ValueChanged="RoundIdChanged"
-                   Hint="All year, or with the groups on a set of Sundays. Staff plan the Sundays on Life Groups in the admin panel." />
+        <Segmented TValue="string" Label="Listed in Life Groups" ShowLabel="true" Stacked="true" Options="Sundays(context.Value)" Value="@RoundId" ValueChanged="RoundIdChanged"
+                   Hint="Choose All year, or a set of Sundays it runs with the other groups. Staff plan the sets of Sundays on the Life Groups page of the admin panel." />
     </LiveData>
 }
 

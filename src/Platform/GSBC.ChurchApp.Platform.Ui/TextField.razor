@@ -1,5 +1,9 @@
 <div class="field @(Problem is null ? "" : "field--problem")">
     <label class="field__label" for="@_id">@Label</label>
+    @if (Hint is not null)
+    {
+        <span class="field__hint" id="@(_id)-hint">@Hint</span>
+    }
     @if (Multiline)
     {
         <textarea id="@_id" class="field__input field__input--multiline" value="@Value" placeholder="@Placeholder" maxlength="@MaxLength" required="@Required" disabled="@Disabled" aria-describedby="@DescribedBy" aria-invalid="@(Problem is null ? null : "true")" @oninput="ChangeAsync"></textarea>
@@ -14,10 +18,6 @@
             @Input
             <span class="field__unit"><span class="field__unit-beside" aria-hidden="true">@Value</span><span class="@(char.IsLetter(Unit[0]) ? "field__unit-word" : null)" id="@(_id)-unit">@Unit</span></span>
         </span>
-    }
-    @if (Hint is not null)
-    {
-        <span class="field__hint" id="@(_id)-hint">@Hint</span>
     }
     @if (Problem is not null)
     {

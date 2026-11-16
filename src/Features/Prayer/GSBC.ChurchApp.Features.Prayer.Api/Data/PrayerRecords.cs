@@ -11,10 +11,10 @@ public sealed class RequestRecord
     public Guid? InstallId { get; set; }
     public Guid? UserId { get; set; }
     public string Name { get; set; } = "";
-    public string Contact { get; set; } = "";
-    public bool WantsContact { get; set; }
     public bool Minor { get; set; }
     public bool ShowName { get; set; }
+    public bool FromChurch { get; set; }
+    public bool ForSomeoneElse { get; set; }
     public CareState Care { get; set; }
     public string AnsweredNote { get; set; } = "";
     public WallState Wall { get; set; }
@@ -51,6 +51,12 @@ public sealed class PrayedRecord
     public Guid InstallId { get; set; }
     public Guid? UserId { get; set; }
     public DateTime At { get; set; }
+}
+
+public sealed class ChurchRecord
+{
+    public int Id { get; set; }
+    public string Name { get; set; } = "";
 }
 
 public sealed class HandledRequestRecord

@@ -6,7 +6,7 @@ namespace GSBC.ChurchApp.Features.Events.Contracts;
 public static class EventsNotifications
 {
     public static readonly NotificationKind Told = new(
-        "events.told", "News about an event in a calendar you have", "Calendar", PerScope: ScopeKind.Calendar, MayBeUrgent: true, Opens: new("/event/{id}"));
+        "events.told", "News about an event on one of your calendars", "Calendar", PerScope: ScopeKind.Calendar, MayBeUrgent: true, Opens: new("/event/{id}"));
 
     public static readonly NotificationKind AskedToPublish = new(
         "events.publish.asked", "An event is waiting for you to publish it", "Calendar", PerScope: ScopeKind.Calendar,
@@ -25,7 +25,7 @@ public static class EventsNotifications
         Waits: true, For: [EventsPermissions.Organise, EventsPermissions.Edit], Opens: new("/event/{id}"));
 
     public static readonly NotificationKind DigestOut = new(
-        "events.digest.out", "What's next, the weekly digest", "Calendar", Opens: new("/whats-next"));
+        "events.digest.out", "What's next each week", "Calendar", Opens: new("/whats-next"));
 
     public static readonly IReadOnlyList<NotificationKind> All = [Told, AskedToPublish, AskedToShow, AskedToShowElsewhere, DetailsNeeded, DigestOut];
 }

@@ -493,7 +493,7 @@ flowchart LR
 | `GSBC.ChurchApp.Features.News.App` | The phone's pages: `/news` (the church, and your ministries' news), `/news/{id}` | Yes |
 | `GSBC.ChurchApp.Features.News.Admin` | The admin panel's Church news desk | Yes |
 | `GSBC.ChurchApp.Features.Prayer.Contracts` | The `Prayer` (app writes) and `Pastoral` (staff) services, request, wall and inbox messages, the `prayer.wall`, `prayer.mine` and `prayer.inbox` feeds, the Hub tile, places, notification kinds and the `prayer.*` permission nodes | Yes |
-| `GSBC.ChurchApp.Features.Prayer.Api` | Prayer requests (schema `prayer`): sending from the app (rate-limited per phone), the pastoral team's notes and follow-up, the moderated prayer wall and its expiry, "I prayed", keeping requests a year; dev sample requests | No |
+| `GSBC.ChurchApp.Features.Prayer.Api` | Prayer requests (schema `prayer`): sending from the app (rate-limited per phone), the pastoral team's notes, the moderated prayer wall and its expiry, "I prayed", keeping requests a year; dev sample requests | No |
 | `GSBC.ChurchApp.Features.Prayer.Client` | The phone's prayer store reader and outbox writes (with what this phone sent kept on it), the wall row, the Hub tile, and the pastoral gRPC calls for the admin panel | Yes |
 | `GSBC.ChurchApp.Features.Prayer.App` | The phone's pages: `/prayer`, `/prayer/ask`, `/prayer/yours/{id}` | Yes |
 | `GSBC.ChurchApp.Features.Prayer.Admin` | The admin panel's Prayer page: the pastoral inbox and choosing what the prayer wall shows | Yes |

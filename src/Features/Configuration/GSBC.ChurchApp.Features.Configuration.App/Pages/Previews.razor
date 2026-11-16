@@ -10,12 +10,12 @@
 @inject IAccess Access
 
 <Page Title="Previews" Place="previews">
-    <Masthead Title="Previews" Note="See the app as it will be, on this phone only" />
+    <Masthead Title="Previews" Note="See upcoming changes to the app on this phone only." />
 
     <LiveData TValue="Previewable" Load="LoadAsync" Feeds="[ConfigurationFeeds.Drafts, ConfigurationFeeds.Placements]" ReloadOn="ChangeKind.Reconnected | ChangeKind.Session | ChangeKind.Access">
         <Section First="true">
             <ListGroup>
-                <ListRow Title="What everyone sees" Subtitle="@(context.Value.Layer is { } layer ? $"Published, with \"{layer.Name}\" on for an event" : "Published")" Icon="home" IconTone="RowTone.Quiet" OnClick="() => ChooseAsync(null)">
+                <ListRow Title="What everyone sees" Subtitle="@(context.Value.Layer is { } layer ? $"Published, with “{layer.Name}” turned on for everyone" : "Published")" Icon="home" IconTone="RowTone.Quiet" OnClick="() => ChooseAsync(null)">
                     <TrailingContent>@Check(Current?.DraftId is null)</TrailingContent>
                 </ListRow>
                 @foreach (Draft draft in context.Value.Drafts)
@@ -27,7 +27,7 @@
             </ListGroup>
             @if (context.Value.Drafts.Count == 0)
             {
-                <EmptyState Icon="eye" Title="No drafts to preview" Body="@(Access.SignedIn ? "When someone shares a draft with you, it shows here." : "Drafts reach this phone once you're signed in on it.")">
+                <EmptyState Icon="eye" Title="No drafts to preview" Body="@(Access.SignedIn ? "When someone shares a draft with you, it shows here." : "Sign in to see drafts shared with you.")">
                     @if (!Access.SignedIn)
                     {
                         <Button Href="account" Icon="user">Sign in</Button>
@@ -37,12 +37,12 @@
         </Section>
     </LiveData>
 
-    <Section Title="Preview it as" Lead="A visitor isn't signed in. A member is signed in with no staff roles. This only changes what this phone previews; nobody else sees a difference.">
-        <Segmented TValue="PreviewViewer" Label="Preview it as" Options="Viewers" Value="@(Current?.As ?? PreviewViewer.Me)" ValueChanged="ShowAsAsync" />
+    <Section Title="Preview the app as" Lead="A visitor isn't signed in. A member is signed in with no staff roles. This only changes what this phone previews; nobody else sees a difference.">
+        <Segmented TValue="PreviewViewer" Label="Preview the app as" Options="Viewers" Value="@(Current?.As ?? PreviewViewer.Me)" ValueChanged="ShowAsAsync" />
     </Section>
 
     <Section Title="Preview on a date">
-        <ToggleRow Title="Preview a later date" Description="See tiles and event layers before they start" Checked="@(Current?.At is not null)" CheckedChanged="UseDateAsync" />
+        <ToggleRow Title="Preview a later date" Description="See tiles and drafts turned on for everyone before they start." Checked="@(Current?.At is not null)" CheckedChanged="UseDateAsync" />
         @if (Current?.At is { } at)
         {
             <div class="ui-after">
@@ -99,7 +99,7 @@
     private static string Describe(Draft draft)
     {
         string changes = draft.Changes.Count == 1 ? "1 change" : $"{draft.Changes.Count} changes";
-        return draft.LayerOn ? $"On for an event · {changes}" : $"{changes} · edited {ChurchTime.ToChurch(draft.UpdatedAt).ToString("ddd d MMM", CultureInfo.InvariantCulture)}";
+        return draft.LayerOn ? $"Turned on for everyone · {changes}" : $"{changes} · edited {ChurchTime.ToChurch(draft.UpdatedAt).ToString("ddd d MMM", CultureInfo.InvariantCulture)}";
     }
 
     private Task ChooseAsync(Draft? draft) =>

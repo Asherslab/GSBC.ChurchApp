@@ -3,7 +3,7 @@
 @inject AccountsOfficeClient Office
 @inject TimeProvider Clock
 
-<Section First="true" Title="Their details" Lead="Who they are. The app uses their birth date to tell who is under 18." Grouped="true">
+<Section First="true" Title="Their details" Lead="Their name, email and birth date. The app uses the birth date to tell whether they're under 18." Grouped="true">
     <FactList>
         <Fact Label="Name">@Person.DisplayName</Fact>
         @if (Person.Email.Length > 0)
@@ -116,8 +116,8 @@ else
     <Sheet Open="_withdrawing" OpenChanged="open => _withdrawing = open" Title="@($"Withdraw {Person.DisplayName}'s invitation?")"
            Lead="The link in their email stops working and the account they haven't set up is removed. You can invite them again.">
         <Actions>
-            <Button Variant="ButtonVariant.Danger" Busy="_busy" OnClick="WithdrawAsync">Withdraw it</Button>
-            <Button Variant="ButtonVariant.Quiet" OnClick="() => _withdrawing = false">Keep it</Button>
+            <Button Variant="ButtonVariant.Danger" Busy="_busy" OnClick="WithdrawAsync">Withdraw the invitation</Button>
+            <Button Variant="ButtonVariant.Quiet" OnClick="() => _withdrawing = false">Keep the invitation</Button>
         </Actions>
     </Sheet>
 }
@@ -132,7 +132,7 @@ else
     </ChildContent>
     <Actions>
         <Button Variant="ButtonVariant.Danger" Busy="_busy" OnClick="DeleteAsync">Delete the account</Button>
-        <Button Variant="ButtonVariant.Quiet" OnClick="() => _deleting = false">Keep it</Button>
+        <Button Variant="ButtonVariant.Quiet" OnClick="() => _deleting = false">Keep the account</Button>
     </Actions>
 </Sheet>
 
@@ -154,13 +154,13 @@ else
     private IReadOnlyList<MenuItem> Actions => Invitation switch
     {
         { Held: true } => [this.Item("Remove them…", Ask(() => _withdrawing = true), "user-x", "Takes away their account and anything they were given", danger: true)],
-        not null => [this.Item("Withdraw the invitation…", Ask(() => _withdrawing = true), "user-x", "The link stops working", danger: true)],
+        not null => [this.Item("Withdraw the invitation…", Ask(() => _withdrawing = true), "user-x", "The link in their invitation stops working.", danger: true)],
         _ =>
         [
             Person.Disabled
                 ? this.Item("Turn the account back on", ToggleAsync, "user-check", "They can sign in with their passkey again")
                 : this.Item("Turn the account off", ToggleAsync, "user-x", "Signs them out everywhere; nothing they made is deleted", danger: true),
-            this.Item("Delete the account…", Ask(() => _deleting = true), "trash-2", "For good: they can't sign in with it again", danger: true, startsGroup: true),
+            this.Item("Delete the account…", Ask(() => _deleting = true), "trash-2", "For good. They can't sign in to this account again.", danger: true, startsGroup: true),
         ],
     };
 

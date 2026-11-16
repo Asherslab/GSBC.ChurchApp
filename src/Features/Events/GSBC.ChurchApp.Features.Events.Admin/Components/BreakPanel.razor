@@ -6,10 +6,10 @@
     <EventHead Day="@EventDates.Parse(_start)" Title="@(_name.Length > 0 ? _name : "New break")" When="@When" Compact="true"
                Actions="@(Break is null ? null : [this.Item("Delete this break", () => { _deleting = true; return Task.CompletedTask; }, "trash-2", danger: true)])" />
     <div class="event-body event-body--editing">
-        <TextField Label="Name" Value="@_name" ValueChanged="value => _name = value" MaxLength="60" Required="true" Placeholder="Christmas break" Hint="Shown on the dates that aren't on." />
+        <TextField Label="Name" Value="@_name" ValueChanged="value => _name = value" MaxLength="60" Required="true" Hint="Shown in the calendar on each date a regular event is paused for this break." />
         <div class="ui-pair">
-            <DateField Label="From" Value="@_start" ValueChanged="value => _start = value" />
-            <DateField Label="To" Value="@_end" Min="@_start" ValueChanged="value => _end = value" />
+            <DateField Label="First day" Value="@_start" ValueChanged="value => _start = value" />
+            <DateField Label="Last day" Value="@_end" Min="@_start" ValueChanged="value => _end = value" />
         </div>
         @if (Break is { UsedBy.Count: > 0 } used)
         {
@@ -21,7 +21,7 @@
                         <li>@(RegularEvents.GetValueOrDefault(id) ?? "A regular event in a calendar that's turned off")</li>
                     }
                 </ul>
-                <span class="field__hint">Changing the dates changes every one of these.</span>
+                <span class="field__hint">Changing the break's dates changes every regular event listed here.</span>
             </div>
         }
         <Notice Tone="NoticeTone.Warning" Text="@_problem" />
@@ -37,7 +37,7 @@
        Lead="@DeleteLead">
     <Actions>
         <Button Block="true" Variant="ButtonVariant.Danger" Busy="_saving" OnClick="DeleteAsync">Delete the break</Button>
-        <Button Block="true" Variant="ButtonVariant.Quiet" OnClick="() => _deleting = false">Keep it</Button>
+        <Button Block="true" Variant="ButtonVariant.Quiet" OnClick="() => _deleting = false">Keep the break</Button>
     </Actions>
 </Sheet>
 
@@ -57,15 +57,15 @@
 
     private string DeleteLead => (Break?.UsedBy.Count ?? 0) switch
     {
-        0 => "No regular event uses it. This can't be undone.",
-        1 => "The regular event that pauses for it is on again on those dates. This can't be undone.",
-        var count => $"The {count} regular events that pause for it are on again on those dates. This can't be undone.",
+        0 => "No regular event uses this break. This can't be undone.",
+        1 => "The regular event that pauses for this break is on again on those dates. This can't be undone.",
+        var count => $"The {count} regular events that pause for this break are on again on those dates. This can't be undone.",
     };
 
     private string? Blocked =>
-        _name.Trim().Length == 0 ? $"Give it a name to {(Break is null ? "add" : "save")} it."
-        : EventDates.Parse(_start) is not { } start || EventDates.Parse(_end) is not { } end ? "Choose the day it starts and the day it ends."
-        : end < start ? "It can't end before it starts."
+        _name.Trim().Length == 0 ? "Enter a name for the break."
+        : EventDates.Parse(_start) is not { } start || EventDates.Parse(_end) is not { } end ? "Choose the break's first and last day."
+        : end < start ? "The last day can't be before the first day."
         : null;
 
     private bool Changed => (_name, _start, _end) != _stored;

@@ -9,16 +9,16 @@
     <Section First="true" Title="@Heading(progress)" Lead="@Summary(progress)">
         <div class="stat-tiles">
             <StatTile Value="@Count(progress.Found)" Label="found on the website" Explanation="@WebsiteSays(progress)" />
-            <StatTile Value="@Count(progress.Copied)" Label="brought across this time" />
+            <StatTile Value="@Count(progress.Copied)" Label="imported this time" />
             <StatTile Value="@Count(progress.Skipped)" Label="already here, skipped" />
-            <StatTile Value="@Count(progress.Failed)" Label="couldn't be brought across" Quiet="progress.Failed == 0" />
+            <StatTile Value="@Count(progress.Failed)" Label="couldn't be imported" Quiet="progress.Failed == 0" />
         </div>
         <Notice Tone="NoticeTone.Warning" Text="@progress.Problem" />
         <Notice Tone="NoticeTone.Warning" Text="@_problem" />
         @if (!Running(progress))
         {
             <div class="panel-actions">
-                <Button Icon="@(progress.State == ImportStates.NotStarted ? "arrow-down" : "refresh")" Busy="_busy" OnClick="StartAsync">@(progress.State == ImportStates.NotStarted ? "Start import" : "Run it again")</Button>
+                <Button Icon="@(progress.State == ImportStates.NotStarted ? "arrow-down" : "refresh")" Busy="_busy" OnClick="StartAsync">@(progress.State == ImportStates.NotStarted ? "Start the import" : "Run the import again")</Button>
             </div>
         }
     </Section>
@@ -32,7 +32,7 @@
 
     @if (progress.Failures.Count > 0)
     {
-        <Section Title="Couldn't be brought across" Lead="Each is tried again when you run the import again, or try one now.">
+        <Section Title="Couldn't be imported" Lead="Each sermon is tried again the next time the import runs. You can also try one now.">
             <ListGroup Boxed="true">
                 @foreach (ImportItem failure in progress.Failures)
                 {
@@ -61,13 +61,13 @@
         ImportStates.NotStarted => "Not run yet",
         ImportStates.Waiting => "Starting…",
         ImportStates.Finding => "Finding the website's sermons…",
-        ImportStates.Importing => "Bringing sermons across…",
-        _ => progress is { Failed: 0, Problem: null } ? "Done" : "Finished, with some left to bring across",
+        ImportStates.Importing => "Importing sermons…",
+        _ => progress is { Failed: 0, Problem: null } ? "Done" : "Finished, but some sermons couldn't be imported",
     };
 
     private static string? Summary(ImportProgress progress) => progress.State switch
     {
-        ImportStates.NotStarted => "Nothing has been brought across yet. Phones won't be told about the sermons it brings: they arrive as already out.",
+        ImportStates.NotStarted => "Nothing has been imported yet. Imported sermons arrive without a notification, as sermons already out.",
         ImportStates.Finding => $"Reading the website's list of sermons: {progress.ListingPages} pages so far.",
         ImportStates.Importing => $"{progress.Waiting} still to go. Each sermon's audio is copied into the church's own storage, so this takes a while.",
         ImportStates.Finished when progress.FinishedAt is { } finished => $"Finished {ChurchTime.ToChurch(finished):d MMMM 'at' h:mm tt}.",
@@ -88,7 +88,7 @@
 
     private static string Now(ImportProgress progress) => progress.Current is { } current
         ? current.Title + (current.Bytes > 0 ? $" · {Megabytes(current.CopiedBytes)} of {Megabytes(current.Bytes)}" : "")
-        : "Getting the next one ready.";
+        : "Getting the next sermon ready.";
 
     private static string Count(int count) => count.ToString("N0");
 

@@ -1,26 +1,26 @@
 <div class="ministry-joining">
     <Segmented TValue="string" Label="Joining the team" ShowLabel="true" Stacked="true"
-               Hint="The team runs it: its leaders, helpers and anyone on the roster. How does someone get on it?"
+               Hint="The team runs the ministry: its leaders, helpers and anyone on the roster. Choose how someone joins the team."
                Options="TeamOptions" Value="TeamJoin" ValueChanged="TeamJoinChanged" />
-    <Segmented TValue="string" Label="Coming along" ShowLabel="true" Stacked="true"
-               Hint="Attendees are the people it's for. How does someone start coming? Parents join for their children."
+    <Segmented TValue="string" Label="Attending" ShowLabel="true" Stacked="true"
+               Hint="Attendees are the people the ministry is for. Choose how someone starts attending. Parents join on behalf of their children."
                Options="AttendOptions" Value="AttendJoin" ValueChanged="AttendJoinChanged" />
 </div>
 
 @code {
     private static readonly IReadOnlyList<SegmentOption<string>> TeamOptions =
     [
-        new(Joining.Open, "Open") { Detail = "Anyone can join the team from the app, straight away." },
-        new(Joining.Ask, "Ask") { Detail = "People ask to join the team, and a leader says yes." },
-        new(Joining.Invite, "Invite only") { Detail = "Nobody can ask. Leaders add people to the team themselves." },
+        new(Joining.Open, "Open") { Detail = "Anyone can join the team in the app, straight away." },
+        new(Joining.Ask, "Ask") { Detail = "People ask to join the team, and a leader approves them." },
+        new(Joining.Invite, "Invite only") { Detail = "Nobody can ask to join. Leaders add people to the team themselves." },
     ];
 
     private static readonly IReadOnlyList<SegmentOption<string>> AttendOptions =
     [
-        new(Joining.Open, "Open") { Detail = "Anyone can tap Join and they're in, straight away." },
-        new(Joining.Ask, "Ask") { Detail = "People ask to come along, and a leader says yes." },
-        new(Joining.Invite, "Invite only") { Detail = "Nobody can ask. Leaders add the people who come." },
-        new(Joining.None, "No attendees") { Detail = "Only the team serves in it. Nobody comes along, so posts are for everyone or the team." },
+        new(Joining.Open, "Open") { Detail = "Anyone can tap Join and start attending straight away." },
+        new(Joining.Ask, "Ask") { Detail = "People ask to attend, and a leader approves them." },
+        new(Joining.Invite, "Invite only") { Detail = "Nobody can ask to attend. Leaders add attendees themselves." },
+        new(Joining.None, "No attendees") { Detail = "This ministry has a team but no attendees. Its posts and files are for everyone or for the team." },
     ];
 
     [Parameter, EditorRequired] public required string TeamJoin { get; set; }

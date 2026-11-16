@@ -17,6 +17,7 @@ internal sealed class MediaFolders(MediaDbContext db, IAccessEvaluator access, I
 {
     public const int MaximumNameLength = 80;
     private const string MadeByTheApp = "Made by the app.";
+    private const string MadeByTheAppShelf = "Made by the app";
 
     private readonly Dictionary<string, MediaSystemArea> _areas = areas.ToDictionary(area => area.Key);
 
@@ -138,7 +139,7 @@ internal sealed class MediaFolders(MediaDbContext db, IAccessEvaluator access, I
             if (!request.MoveContents)
                 throw new RpcException(new Status(StatusCode.FailedPrecondition, $"'{folder.Name}' isn't empty: {Contents(files.Count, subfolders.Count)}. Choose where they go first."));
             if (await StaffFolderAsync(request.MoveContentsInto, cancellationToken) is { } into && await IsWithinAsync(into, folder.Id, cancellationToken))
-                throw Invalid($"Its contents can't go inside '{folder.Name}' while it's being deleted. Choose another folder.");
+                throw Invalid($"The contents can't go into “{folder.Name}” while that folder is being deleted. Choose another folder.");
             await MoveAsync(new MoveRequest
             {
                 ItemIds = [.. files.Select(item => item.Id.ToString())],
@@ -166,13 +167,43 @@ internal sealed class MediaFolders(MediaDbContext db, IAccessEvaluator access, I
         MediaFolder folder = scopeId is null ? root : await SystemFolderAsync(area.Key, scopeId, scopeName, root.Id, cancellationToken);
 
         List<Guid> ids = media.Select(item => ParseId(item.Id)).ToList();
-        List<MediaItem> items = await db.Items.Where(item => ids.Contains(item.Id) && item.FolderId != folder.Id).ToListAsync(cancellationToken);
+        List<MediaItem> items = await db.Items
+            .Where(item => ids.Contains(item.Id) && item.FolderId != folder.Id)
+            .Where(item => item.Area == area.Key || db.Folders.Any(kept => kept.Id == item.FolderId && kept.SystemArea == area.Key))
+            .ToListAsync(cancellationToken);
         foreach (MediaItem item in items)
         {
             item.FolderId = folder.Id;
             db.FeedChanges.Add(FeedChangeRecord.Marker(MediaFeeds.Library, item.Id.ToString(), Now));
         }
         await db.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task<MediaPlaces> PlacesAsync(ClaimsPrincipal user, IEnumerable<string> mediaIds, CancellationToken cancellationToken)
+    {
+        List<Guid> ids = [.. mediaIds.Select(id => Guid.TryParse(id, out Guid parsed) ? parsed : Guid.Empty).Where(id => id != Guid.Empty).Distinct()];
+        Dictionary<Guid, Guid?> places = await db.Items.AsNoTracking().Where(item => ids.Contains(item.Id)).ToDictionaryAsync(item => item.Id, item => item.FolderId, cancellationToken);
+        List<MediaFolder> all = await db.Folders.AsNoTracking().ToListAsync(cancellationToken);
+        HashSet<Guid> hidden = await HiddenAsync(user, all, cancellationToken);
+        Dictionary<Guid, MediaFolder> byId = all.ToDictionary(folder => folder.Id);
+        return new MediaPlaces
+        {
+            Items = [.. places.Select(place => new MediaPlace { Id = place.Key.ToString(), Folder = PathOf(byId, hidden, place.Value) })],
+        };
+    }
+
+    internal static string PathOf(IReadOnlyDictionary<Guid, MediaFolder> folders, IReadOnlySet<Guid> hidden, Guid? folderId)
+    {
+        List<string> names = [];
+        for (Guid? current = folderId; current is { } id && folders.GetValueOrDefault(id) is { } folder; current = folder.ParentId)
+        {
+            if (hidden.Contains(id))
+                return "";
+            names.Insert(0, folder.Name);
+            if (folder is { IsSystem: true, ParentId: null })
+                names.Insert(0, MadeByTheAppShelf);
+        }
+        return string.Join("/", names);
     }
 
     public async Task NameAsync(MediaSystemArea area, string mediaId, string fileName, CancellationToken cancellationToken)
@@ -398,7 +429,7 @@ internal sealed class MediaFolders(MediaDbContext db, IAccessEvaluator access, I
         Caller.UserId(user) ?? throw new RpcException(new Status(StatusCode.Unauthenticated, "Sign in first."));
 
     private static Guid ParseId(string id) =>
-        Guid.TryParse(id, out Guid parsed) ? parsed : throw new RpcException(new Status(StatusCode.NotFound, "No such media."));
+        Guid.TryParse(id, out Guid parsed) ? parsed : throw new RpcException(new Status(StatusCode.NotFound, "That file isn't in the library any more."));
 
     private static RpcException NoSuchFolder() => new(new Status(StatusCode.NotFound, "That folder has been deleted."));
 

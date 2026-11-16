@@ -12,7 +12,7 @@
 
 <LiveData @ref="_live" TValue="HealthOverview" Load="LoadAsync" FailedTitle="Can't load app health right now">
     <Workbench Detail="@Detail()" DetailLabel="Error">
-        <Section First="true" Title="Errors" Lead="Grouped by kind: the same error from many phones is one line. Nothing in them identifies a person.">
+        <Section First="true" Title="Errors" Lead="Errors are grouped by kind, so the same error from many phones shows as one line. Nothing in them identifies a person.">
             <DataTable TItem="ErrorKindSummary" Label="Errors" Items="context.Value.Kinds" Columns="KindColumns" Key="kind => kind.Id.ToString()"
                        Selected="Chosen(context.Value)" SelectedChanged="Choose" SortColumn="4" SortDescending="true">
                 <Empty>

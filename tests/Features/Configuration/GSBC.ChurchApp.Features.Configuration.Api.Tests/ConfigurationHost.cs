@@ -128,7 +128,7 @@ public abstract class ConfigurationHost : IAsyncLifetime
         Use<SyncService, PullReply>(async sync => await sync.PullAsync(
             new PullRequest { Cursors = [new FeedCursor { Feed = feed, Cursor = cursor }] }, new CallContext(caller, new PersonCallContext(caller))));
 
-    private static PatchMessage Add(Surface surface, SurfaceArea area, string? scopeId = null, params (string Key, string Value)[] values) => new()
+    protected static PatchMessage Add(Surface surface, SurfaceArea area, string? scopeId = null, params (string Key, string Value)[] values) => new()
     {
         PlacementId = Guid.CreateVersion7().ToString(),
         Area = area.Key,

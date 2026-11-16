@@ -12,10 +12,10 @@ public sealed class QueuedMinistryWrites(IOutbox outbox, HeldParts held) : IMini
         await SendAsync(MinistryMethods.Join, new JoinRequest { MinistryId = ministry.Id, PersonId = personId, As = place, Note = note });
         bool open = (place == Places.Team ? ministry.TeamJoin : ministry.AttendJoin) == Joining.Open;
         return parentFirst
-            ? new JoinOutcome { Asked = true, Words = "Asked. A parent of yours says yes first, and you'll hear in the app." }
+            ? new JoinOutcome { Asked = true, Words = "Request sent. Your parent approves first, and you'll hear in the app." }
             : open
             ? new JoinOutcome { Joined = true, Words = $"You're in {ministry.Name}." }
-            : new JoinOutcome { Asked = true, Words = "Asked. A leader says yes or no, and you'll hear in the app." };
+            : new JoinOutcome { Asked = true, Words = "Request sent. A leader will answer, and you'll hear in the app." };
     }
 
     public Task LeaveAsync(string ministryId, string personId, string place) =>

@@ -30,6 +30,7 @@ internal sealed class MinistryLeadingService(
     IFamilies families,
     IPeopleIndex people,
     IMinistryCalendars calendars,
+    MinistryCalendarShaper shaper,
     IKeptRegularEvents keptEvents,
     INotifications notifications,
     MinistryFileMedia fileMedia,
@@ -71,9 +72,9 @@ internal sealed class MinistryLeadingService(
         MinistryRecord ministry = Existing(tree, request.MinistryId);
         Guid id = Guid.TryParse(request.AskId, out Guid parsed) ? parsed : Guid.Empty;
         AskRecord ask = await db.Asks.SingleOrDefaultAsync(found => found.Id == id && found.MinistryId == ministry.Id, cancellationToken)
-                        ?? throw new RpcException(new Status(StatusCode.NotFound, "That ask was already answered or taken back."));
+                        ?? throw new RpcException(new Status(StatusCode.NotFound, "That request was already answered or withdrawn."));
         if (request.Yes && ask.WaitingForParent)
-            throw Refused("They're under 18, so a parent says yes first. You'll hear when they do.");
+            throw Refused("They're under 18, so a parent approves first. You'll hear when they do.");
         db.Asks.Remove(ask);
         changes.Touch(ministry.Id);
         await db.SaveChangesAsync(cancellationToken);
@@ -232,7 +233,7 @@ internal sealed class MinistryLeadingService(
     {
         List<SitOutRecord> sitOuts = await db.SitOuts.AsNoTracking().Where(sitOut => sitOut.GroupId == group.Id).ToListAsync(cancellationToken);
         List<string> sundays = group.ShowsInLifeGroups ? MinistryViews.SundaysOf(group, await db.Rounds.AsNoTracking().ToListAsync(cancellationToken), sitOuts) : [];
-        return sundays.Contains(wanted) ? DateOf(wanted) : throw Invalid("Choose one of its Sundays.");
+        return sundays.Contains(wanted) ? DateOf(wanted) : throw Invalid("Choose one of the group's Sundays.");
     }
 
     public async ValueTask<Done> DeletePostAsync(ItemRef request, CallContext context = default)
@@ -298,7 +299,7 @@ internal sealed class MinistryLeadingService(
         TurnedOn(ministry, MinistryParts.Files);
         FileItem wanted = request.File;
         if (wanted.Title.Trim().Length is 0 or > MinistryRules.LongestTitle)
-            throw Invalid($"Give it a name of up to {MinistryRules.LongestTitle} characters.");
+            throw Invalid($"Enter a name of up to {MinistryRules.LongestTitle} characters.");
         if (!MinistryLogic.PostableAudiences(ministry.AttendJoin).Contains(wanted.Audience))
             throw Invalid("Choose who it's for.");
         Guid? media = await fileMedia.VerifyAsync(Guid.TryParse(wanted.MediaId, out Guid mediaId) ? mediaId : null, cancellationToken);
@@ -353,6 +354,7 @@ internal sealed class MinistryLeadingService(
         await db.SaveChangesAsync(cancellationToken);
         MinistryTree after = await views.TreeAsync(cancellationToken);
         await AimCalendarsAsync(tree, after, tree.SeenFrom(id), cancellationToken);
+        await shaper.ShapeAsync(id, cancellationToken);
         return MinistryViews.Details(ministry, after);
     }
 
@@ -489,14 +491,13 @@ internal sealed class MinistryLeadingService(
         MinistryTree tree = await views.TreeAsync(cancellationToken);
         MinistryRecord ministry = Existing(tree, request.MinistryId);
         TurnedOn(ministry, MinistryParts.Calendar);
-        CalendarLine wanted = request.Calendar;
-        Audience audience = MinistryViews.CalendarAudience(wanted.Audience, ministry.Id, tree.IsHidden(ministry.Id));
-        if (!MinistryLogic.PostableAudiences(ministry.AttendJoin).Contains(wanted.Audience))
-            throw Invalid("Choose who the calendar is for.");
-        string name = wanted.Name.Trim().Length > 0 ? wanted.Name : CalendarName(ministry, wanted.Audience);
-        MinistryCalendar saved = wanted.Id.Length > 0
-            ? await calendars.ChangeAsync(ministry.Id, ParseId(wanted.Id), name, audience, cancellationToken)
-            : await calendars.CreateAsync(ministry.Id, name, audience, cancellationToken);
+        string kind = request.Calendar.Audience;
+        if (!MinistryCalendarKinds.All.Contains(kind))
+            throw Invalid("A ministry has a Public calendar and a Team calendar. Choose one of those.");
+        if ((await calendars.OfAsync(ministry.Id, cancellationToken)).FirstOrDefault(calendar => MinistryCalendarPlan.KindOf(calendar.Audience) == kind) is { } existing)
+            return MinistryViews.Calendar(existing);
+        MinistryCalendar saved = await calendars.CreateAsync(ministry.Id, MinistryCalendarKinds.NameOf(kind, ministry.Name),
+            MinistryCalendarPlan.AudienceOf(kind, ministry.Id, tree.IsHidden(ministry.Id)), cancellationToken);
         changes.Touch(ministry.Id);
         await db.SaveChangesAsync(cancellationToken);
         return MinistryViews.Calendar(saved);
@@ -560,10 +561,10 @@ internal sealed class MinistryLeadingService(
         CancellationToken cancellationToken = context.CancellationToken;
         Round wanted = request.Round;
         if (wanted.Name.Trim().Length is 0 or > MinistryRules.LongestName)
-            throw Invalid($"Name them in up to {MinistryRules.LongestName} characters.");
+            throw Invalid($"Enter a name of up to {MinistryRules.LongestName} characters.");
         List<DateOnly> sundays = wanted.Sundays.Select(DateOf).Distinct().Order().ToList();
         if (sundays.Count == 0)
-            throw Invalid("Choose their Sundays.");
+            throw Invalid("Choose the Sundays the groups meet.");
         TimeOnly starts = TimeOf(wanted.Starts, new TimeOnly(9, 0));
         TimeOnly ends = TimeOf(wanted.Ends, new TimeOnly(9, 45));
         if (ends <= starts)
@@ -757,14 +758,6 @@ internal sealed class MinistryLeadingService(
         _ => MinistriesPermissions.AttendeesView,
     };
 
-    private static string CalendarName(MinistryRecord ministry, string audience) => audience switch
-    {
-        Audiences.Team => $"{ministry.Name} team",
-        Audiences.Parents => $"{ministry.Name} parents",
-        Audiences.Attendees => $"{ministry.Name} families",
-        _ => ministry.Name,
-    };
-
     private static string Span(RoundRecord round) =>
         round.Sundays.Min() == round.Sundays.Max()
             ? $"on {round.Sundays.Min().ToString("d MMMM", CultureInfo.InvariantCulture)}"
@@ -789,5 +782,5 @@ internal sealed class MinistryLeadingService(
         : TimeOnly.TryParseExact(text, ["HH:mm", "HH:mm:ss"], CultureInfo.InvariantCulture, DateTimeStyles.None, out TimeOnly value) ? value
         : throw Invalid("That isn't a time.");
 
-    private static Guid ParseId(string id) => Guid.TryParse(id, out Guid parsed) ? parsed : throw Invalid("That isn't here any more.");
+    private static Guid ParseId(string id) => Guid.TryParse(id, out Guid parsed) ? parsed : throw Invalid("This has been deleted or moved.");
 }

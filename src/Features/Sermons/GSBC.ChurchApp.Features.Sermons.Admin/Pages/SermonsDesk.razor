@@ -2,7 +2,7 @@
 @inject SermonsAdminClient Sermons
 @inject UnsavedChanges Unsaved
 
-<TitleBand Title="Sermons" Lead="The AV team uploads each sermon here, and the office gives it a look. What you save is on phones and the website at once.">
+<TitleBand Title="Sermons" Lead="The AV team uploads each sermon here, and the office checks its details. Saved changes show on phones and the website at once.">
     <Actions>
         <Button Variant="ButtonVariant.Quiet" Icon="layers" Href="sermons/series-and-speakers">Series and speakers</Button>
         <Can Permission="SermonsPermissions.Upload">
@@ -70,7 +70,7 @@
             }
             else
             {
-                <EmptyState Icon="sermons" Title="Choose a sermon" Body="Its details, its audio and what to correct show here." />
+                <EmptyState Icon="sermons" Title="Choose a sermon" Body="The sermon's details and audio show here, ready to check or correct." />
             }
         </Detail>
     </Workbench>
@@ -111,12 +111,12 @@
 
     private static IReadOnlyList<FilterOption<string>> Filters(SermonList list) =>
     [
-        new(SermonFilters.NeedsALook, "Needs a look", list.Counts.GetValueOrDefault(SermonFilters.NeedsALook)),
+        new(SermonFilters.NeedsALook, "To check", list.Counts.GetValueOrDefault(SermonFilters.NeedsALook)),
         new(SermonFilters.All, "All", list.Counts.GetValueOrDefault(SermonFilters.All)),
         new(SermonFilters.Hidden, "Hidden", list.Counts.GetValueOrDefault(SermonFilters.Hidden)),
     ];
 
-    private string EmptyTitle => _query.Length > 0 ? $"No sermons match “{_query}”" : _filter == SermonFilters.NeedsALook ? "Nothing needs a look" : "No sermons here";
+    private string EmptyTitle => _query.Length > 0 ? $"No sermons match “{_query}”" : _filter == SermonFilters.NeedsALook ? "Nothing to check" : "No sermons here";
 
     private string EmptyBody => _query.Length > 0 ? "Try part of the title or the speaker's name." : _filter == SermonFilters.NeedsALook ? "Every new sermon has been checked." : "Choose another filter.";
 

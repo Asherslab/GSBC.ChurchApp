@@ -31,6 +31,7 @@ internal sealed record PlacementState(
 
     public void ApplyTo(PlacementRecord record)
     {
+        record.Surface = Surface;
         record.Order = Order;
         record.Hidden = Hidden;
         record.Audience = Audience;

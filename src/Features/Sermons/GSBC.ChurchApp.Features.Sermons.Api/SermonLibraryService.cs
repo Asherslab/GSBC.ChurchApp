@@ -29,7 +29,7 @@ internal sealed class SermonLibraryService(
     public static class Reasons
     {
         public const string JustUploaded = "Just uploaded";
-        public const string NoSeries = "Part of a series?";
+        public const string NoSeries = "No series";
         public const string NewSpeaker = "New speaker";
     }
 
@@ -102,7 +102,7 @@ internal sealed class SermonLibraryService(
     internal static void Correct(SermonRecord sermon, SermonCorrection request, bool speakerExists, bool seriesExists)
     {
         if (request.Title is { } title)
-            sermon.Title = title.Trim() is { Length: > 0 and <= TitleLimit } trimmed ? trimmed : throw Invalid($"Give it a title of up to {TitleLimit} characters.");
+            sermon.Title = title.Trim() is { Length: > 0 and <= TitleLimit } trimmed ? trimmed : throw Invalid($"Enter the sermon's title, up to {TitleLimit} characters.");
 
         if (request.SpeakerId is { } speakerId)
             sermon.SpeakerId = speakerId.Length == 0 ? null

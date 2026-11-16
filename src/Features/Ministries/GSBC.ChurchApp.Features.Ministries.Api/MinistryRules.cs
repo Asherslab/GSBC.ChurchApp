@@ -34,7 +34,7 @@ internal static class MinistryRules
     public static string? WhyNotPost(string title, RichText body, string audience, IReadOnlyCollection<string> mayPostFor)
     {
         if (title.Trim().Length is 0 or > LongestTitle)
-            return $"Give it a title of up to {LongestTitle} characters.";
+            return $"Enter a title of up to {LongestTitle} characters.";
         if (RichTextRules.ProblemsWith(body, allowed: RichTextMedia.Posts) is [var problem, ..])
             return problem;
         if (!Audiences.IsValid(audience))
@@ -45,14 +45,14 @@ internal static class MinistryRules
     public static string? WhyNotDetails(MinistryDetails details)
     {
         if (details.Name.Trim().Length is 0 or > LongestName)
-            return $"Give it a name of up to {LongestName} characters.";
+            return $"Enter a name of up to {LongestName} characters.";
         if (details.Summary.Trim().Length > LongestSummary)
-            return $"Keep the line about it to {LongestSummary} characters.";
+            return $"Keep the short description to {LongestSummary} characters.";
         if (details.About.Trim().Length > LongestText)
-            return $"Keep the about to {LongestText} characters.";
+            return $"Keep the About text to {LongestText} characters.";
         if (!Joining.IsValid(details.TeamJoin, noneAllowed: false))
             return "Choose how people join the team.";
-        return Joining.IsValid(details.AttendJoin, noneAllowed: true) ? null : "Choose how people come along.";
+        return Joining.IsValid(details.AttendJoin, noneAllowed: true) ? null : "Choose how people start attending.";
     }
 
     public static string? WhyNotMove(MinistryTree tree, MinistryRecord ministry, MinistryRecord? under, Func<MinistryRecord?, bool> mayAddUnder)
@@ -76,7 +76,7 @@ internal static class MinistryRules
                 ? $"{tree.Find(parentId!.Value)?.Name} is hidden, and Life Groups are shown to everyone, so this can't show in Life Groups."
                 : "Life Groups are shown to everyone, so a Life Group can't be hidden.";
         if (wanted.Hidden && tree.Below(id).Any(below => below.ShowsInLifeGroups))
-            return "A Life Group sits under it, and Life Groups are shown to everyone, so it can't be hidden.";
+            return "This ministry can't be hidden, because a Life Group sits under it and Life Groups are shown to everyone.";
         return null;
     }
 }

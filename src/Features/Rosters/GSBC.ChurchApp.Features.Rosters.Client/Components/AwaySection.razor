@@ -24,7 +24,7 @@
 else if (TeamAway.Shown(View))
 {
     <DaysAway @key="View.MinistryId" Load="() => TeamAway.LoadAsync(Reads, View)" Feeds="Reads.Feeds" People="TeamAway.People(View)" YourId="@View.YourId" Remember="@($"rosters.away.{View.MinistryId}")"
-              Title="The team's days away" Lead="Leaders can change anyone's days away. Anyone away is flagged when they're put on." />
+              Title="The team's days away" Lead="Leaders can change anyone's days away. Anyone who's away is shown as away when they're put on the roster." />
 }
 else if (View.You.Count > 0)
 {

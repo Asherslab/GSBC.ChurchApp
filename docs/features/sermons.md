@@ -75,8 +75,8 @@ but stays in the admin panel's list until staff delete it. Tests: `SpeakersAndSe
 `sermons.edit` delete from the admin panel (`Library.DeleteSpeaker`, `DeleteSeries`, `DeleteSermon`; `SermonDeletion`).
 Every delete asks first, says what happens, and says it can't be undone.
 
-- **A speaker or a series with sermons:** the dialog says how many and offers one picker, *Where their sermons go*:
-  another speaker (series), or *Leave them without a speaker* (*not in a series*). A speaker or series with none just
+- **A speaker or a series with sermons:** the dialog says how many and offers one picker, *Move the speaker's sermons to* (or *Move the series' sermons to*):
+  another speaker (series), or *Leave the sermons without a speaker* (*Leave the sermons without a series*). A speaker or series with none just
   goes. Hidden sermons go the same way as the rest.
 - **Moving them** puts every sermon credited to it on the one chosen, and series followers follow it (`MoveScopeAsync`).
 - **Leaving them:** the sermons show no speaker, or no series. Series followers stop following (`ForgetScopeAsync`).
@@ -225,7 +225,7 @@ a sermon).
   position, duration, rate, ended). An item is an id, a URL, a title, an artist, an album and an
   artwork URL. **Android** is stubbed; the browser (the admin panel) uses an HTML audio element behind the same
   interface.
-- **Downloads (owner, 2026-11-05):** *Download for when you're offline* on a sermon fetches the audio with a background
+- **Downloads (owner, 2026-11-05):** *Download to listen offline* on a sermon fetches the audio with a background
   `URLSession` (it carries on with the app closed; the AppDelegate hands iOS's completion to `AudioDownloads`), and the
   player plays the file whenever it's there. Files go to the app's **Documents/Sermons** folder under the sermon's title
   ("Anchored In Hope.mp3"), with file sharing on (`UIFileSharingEnabled`, `LSSupportsOpeningDocumentsInPlace`), so
@@ -319,9 +319,9 @@ releasing what used the deleted thing, the podcast feed, and the app-only migrat
   `.impeccable/surfaces/`).
 - **The admin panel (owner, 2026-11-05):** the AV team uploads (first pass), the office checks (second pass); an upload
   is on phones at once (later, with audio tooling, it will wait for a check: a held state and a publish permission).
-  Layout: the *review queue* (Needs a look beside the sermon being checked, *Looks right · next*), chosen over an upload
+  Layout: the *review queue* (To check beside the sermon being checked, *Mark as checked and open the next*), chosen over an upload
   workbench and a two-pass board (`.impeccable/mocks/decision/sermons-admin/`).
-- **Needs a look** is a sermon nobody has checked since it was uploaded, with a reason when its title suggests a series
+- **To check** is a sermon nobody has checked since it was uploaded, with a reason when its title suggests a series
   it isn't in, or its speaker is new. Imported sermons count as checked, so staff don't start with hundreds.
 - **Titles in a series** drop the series' name where the series line already says it ("Anchored: Part 4 - Anchored In
   Hope" shows as "Anchored In Hope" under "Anchored · Part 4"); elsewhere the full title shows.

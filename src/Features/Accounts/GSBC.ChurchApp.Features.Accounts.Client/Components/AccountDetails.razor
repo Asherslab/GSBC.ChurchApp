@@ -16,8 +16,8 @@
         <TextField Label="Name" Value="@(_name ?? context.Value.Profile.DisplayName)" ValueChanged="value => _name = value" AutoComplete="name" />
         @if (_name is not null)
         {
-            <SaveBar Class="ui-after" Label="Save name" Busy="_busy" OnSave="SaveNameAsync" OnCancel="() => _name = null" State="SaveState.Unsaved"
-                     Blocked="@(!Signals.Online ? "Needs a connection." : _name.Trim().Length == 0 ? "Give your name to save it." : null)" />
+            <SaveBar Class="ui-after" Label="Save your name" Busy="_busy" OnSave="SaveNameAsync" OnCancel="() => _name = null" State="SaveState.Unsaved"
+                     Blocked="@(!Signals.Online ? "Your phone needs a connection to save your name." : _name.Trim().Length == 0 ? "Enter your name to save it." : null)" />
         }
         <div class="ui-after">
             <ListGroup>
@@ -79,7 +79,7 @@
     </ChildContent>
     <Actions>
         <Button Block="true" Variant="ButtonVariant.Danger" Busy="_busy" OnClick="DeleteAsync">Delete my account</Button>
-        <Button Block="true" Variant="ButtonVariant.Quiet" OnClick="() => _deleting = false">Keep it</Button>
+        <Button Block="true" Variant="ButtonVariant.Quiet" OnClick="() => _deleting = false">Keep my account</Button>
     </Actions>
 </Sheet>
 
@@ -105,7 +105,7 @@
         {
             _deleting = true;
             return Task.CompletedTask;
-        }, "trash-2", "For good. Signing out is enough to stop using it here.", danger: true),
+        }, "trash-2", "Deletes your account for good. To stop using the app on this phone only, sign out instead.", danger: true),
     ];
 
     private Task SignOutAsync() => RunAsync(Accounts.SignOutAsync);

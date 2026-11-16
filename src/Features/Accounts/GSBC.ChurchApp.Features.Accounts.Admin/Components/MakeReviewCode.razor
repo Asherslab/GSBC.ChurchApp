@@ -26,10 +26,10 @@ else
     <p class="panel-lead">Anyone with the demo account's email and this code can sign in to it until the code expires or you turn it off.</p>
     <form class="panel-form" @onsubmit="MakeAsync">
         <SelectField Label="Demo account" Options="Choices" Value="@UserId" ValueChanged="value => _userId = value" />
-        <TextField Label="What it's for" @bind-Value="_label" AutoComplete="off" Hint="Such as TestFlight 1.2 or App Store 1.0" MaxLength="80" />
-        <TextField Label="Works for" Type="number" Unit="days" Value="@_days" ValueChanged="value => _days = value" Min="1" Max="180" Hint="30 is usually enough for a review" />
+        <TextField Label="Name of the code" @bind-Value="_label" AutoComplete="off" Hint="Shown in the list of codes, so you can tell them apart. Name it after the build you're sending for review." MaxLength="80" />
+        <TextField Label="Days until it expires" Type="number" Value="@_days" ValueChanged="value => _days = value" Min="1" Max="180" Hint="Apple's review usually finishes within 30 days." />
         <Notice Tone="NoticeTone.Warning" Text="@_problem" />
-        <SaveBar Class="ui-after" Submit="true" Label="Make the code" Busy="_busy" Blocked="@(!int.TryParse(_days, out _) ? "Say how many days it works for to make it." : null)"
+        <SaveBar Class="ui-after" Submit="true" Label="Make the code" Busy="_busy" Blocked="@(!int.TryParse(_days, out _) ? "Enter how many days the code stays valid." : null)"
                  OnCancel="CloseAsync" />
     </form>
 }

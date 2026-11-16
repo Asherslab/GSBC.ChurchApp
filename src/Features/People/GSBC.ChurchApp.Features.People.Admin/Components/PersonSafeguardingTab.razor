@@ -36,20 +36,21 @@
             @if (linked)
             {
                 <FactList>
-                    <Fact Label="Number" Text="@Or(saved.CardNumber)" />
-                    <Fact Label="Status" Text="@(saved.CardStatus.Length > 0 ? BlueCards.Words(saved.CardStatus) : "Not given")" />
-                    <Fact Label="Expires" Text="@Or(PeopleWords.Day(saved.CardExpires))" />
+                    <Fact Label="Blue card number" Text="@Or(saved.CardNumber)" />
+                    <Fact Label="Blue card status" Text="@(saved.CardStatus.Length > 0 ? BlueCards.Words(saved.CardStatus) : "Not given")" />
+                    <Fact Label="Expiry date" Text="@Or(PeopleWords.Day(saved.CardExpires))" />
                     <Fact Label="Checked" Text="@PeopleWords.Day(saved.CardChecked)" />
                 </FactList>
             }
             else
             {
                 <div class="people-record">
-                    <TextField Label="Number" Value="@_draft.CardNumber" ValueChanged="value => Edit(() => _draft.CardNumber = value)" MaxLength="30" Disabled="!mayEdit" Placeholder="For example 1234567/2" />
-                    <SelectField Label="Status" Options="Statuses" Value="@_draft.CardStatus" ValueChanged="value => Edit(() => _draft.CardStatus = value)" Disabled="!mayEdit" />
-                    <DateField Label="Expires" Value="@PeopleWords.FieldDay(_draft.CardExpires)" ValueChanged="value => Edit(() => _draft.CardExpires = Day(value))" Disabled="!mayEdit" />
-                    <DateField Label="Checked by the office" Value="@PeopleWords.FieldDay(_draft.CardChecked)" ValueChanged="value => Edit(() => _draft.CardChecked = Day(value))" Disabled="!mayEdit"
-                               Max="@($"{today:yyyy-MM-dd}")" Hint="When someone last looked it up" />
+                    <TextField Label="Blue card number" Value="@_draft.CardNumber" ValueChanged="value => Edit(() => _draft.CardNumber = value)" MaxLength="30" Disabled="!mayEdit"
+                               Hint="As printed on the card, including the number after the slash." />
+                    <SelectField Label="Blue card status" Options="Statuses" Value="@_draft.CardStatus" ValueChanged="value => Edit(() => _draft.CardStatus = value)" Disabled="!mayEdit" />
+                    <DateField Label="Expiry date" Value="@PeopleWords.FieldDay(_draft.CardExpires)" ValueChanged="value => Edit(() => _draft.CardExpires = Day(value))" Disabled="!mayEdit" />
+                    <DateField Label="Date last checked" Value="@PeopleWords.FieldDay(_draft.CardChecked)" ValueChanged="value => Edit(() => _draft.CardChecked = Day(value))" Disabled="!mayEdit"
+                               Max="@($"{today:yyyy-MM-dd}")" Hint="When the church office last checked the card." />
                 </div>
             }
 
@@ -57,17 +58,17 @@
             @if (linked)
             {
                 <FactList>
-                    <Fact Label="Course" Text="@SafeMinistryTraining.Words(saved.TrainingProgress)" />
-                    <Fact Label="Due again" Text="@Or(PeopleWords.Day(saved.TrainingDue))" />
+                    <Fact Label="Progress" Text="@SafeMinistryTraining.Words(saved.TrainingProgress)" />
+                    <Fact Label="Due date" Text="@Or(PeopleWords.Day(saved.TrainingDue))" />
                     <Fact Label="Other training" Text="@OtherTraining(saved)" />
                 </FactList>
             }
             else
             {
                 <div class="people-record">
-                    <DateField Label="Done" Value="@PeopleWords.FieldDay(_draft.TrainingDone)" ValueChanged="value => Edit(() => _draft.TrainingDone = Day(value))" Disabled="!mayEdit" Max="@($"{today:yyyy-MM-dd}")" />
-                    <DateField Label="Due again" Value="@PeopleWords.FieldDay(_draft.TrainingDue)" ValueChanged="value => Edit(() => _draft.TrainingDue = Day(value))" Disabled="!mayEdit"
-                               Hint="Leave it empty for a year after it was done" />
+                    <DateField Label="Date completed" Value="@PeopleWords.FieldDay(_draft.TrainingDone)" ValueChanged="value => Edit(() => _draft.TrainingDone = Day(value))" Disabled="!mayEdit" Max="@($"{today:yyyy-MM-dd}")" />
+                    <DateField Label="Due date" Value="@PeopleWords.FieldDay(_draft.TrainingDue)" ValueChanged="value => Edit(() => _draft.TrainingDue = Day(value))" Disabled="!mayEdit"
+                               Hint="When they need to do the training again. Leave this empty to set it a year after the date completed." />
                 </div>
                 @if (saved.UpdatedAt is { } at)
                 {
@@ -84,7 +85,7 @@
                     @if (linked && mayEdit)
                     {
                         <Menu Label="More for the Safe Ministry Check link" Small="true" Disabled="_busy"
-                              Items="@([this.Item("Unlink…", () => { _confirmingUnlink = true; return Task.CompletedTask; }, "unlink", "Clears their blue card and training here", danger: true)])" />
+                              Items="@([this.Item("Unlink…", () => { _confirmingUnlink = true; return Task.CompletedTask; }, "unlink", "Their blue card and training are cleared from this page.", danger: true)])" />
                     }
                 </Trailing>
                 <ChildContent>
@@ -100,7 +101,7 @@
                 {
                     <SearchPicker TItem="SmcPerson" Label="Link to their Safe Ministry Check record" Items="context.Value.Unmatched" Text="person => person.Name" Detail="SmcDetail"
                                   Value="null" ValueChanged="LinkAsync" Disabled="_busy" Placeholder="Find them by name or email"
-                                  Hint="Only records not linked to anyone are listed. Their blue card and training then come from Safe Ministry Check, replacing what's entered here." />
+                                  Hint="Only records that aren't linked to anyone are listed. Once linked, their blue card and training come from Safe Ministry Check and replace what's entered here." />
                 }
                 else
                 {
@@ -111,7 +112,7 @@
             }
             <Notice Tone="NoticeTone.Warning" Text="@_message" />
             <Sheet Open="_confirmingUnlink" OpenChanged="open => _confirmingUnlink = open" Title="@($"Unlink {Person.FirstName} from Safe Ministry Check?")"
-                   Lead="Their blue card and training are cleared here, and the record isn't matched to anyone automatically again: link it by hand if it's needed.">
+                   Lead="Their blue card and training are cleared here, and their Safe Ministry Check record won't be matched to anyone automatically again, so link it by hand if you need to.">
                 <Actions>
                     <Button Variant="ButtonVariant.Danger" Busy="_busy" OnClick="UnlinkAsync">Unlink</Button>
                     <Button Variant="ButtonVariant.Quiet" Disabled="_busy" OnClick="() => _confirmingUnlink = false">Keep the link</Button>
@@ -124,7 +125,7 @@
             {
                 <h3>From Safe Ministry Check</h3>
                 <p>@Person.FirstName's blue card and training come across from Safe Ministry Check each night, or when someone presses Sync now on the Safe Ministry Check page. To change them, change them in Safe Ministry Check.</p>
-                <p>Only the blue card, training and status come across. When something else there needs looking at, such as a police check or a referee, it's flagged here as "@SafeguardingFlags.CheckWords".</p>
+                <p>Only the blue card, training and status come across. When something else there needs looking at, such as a police check or a referee, it shows here as "@SafeguardingFlags.CheckWords".</p>
             }
             else
             {

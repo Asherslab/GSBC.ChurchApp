@@ -1,6 +1,7 @@
 using GSBC.ChurchApp.Features.Ministries.Client;
 using GSBC.ChurchApp.Features.Ministries.Contracts;
 using GSBC.ChurchApp.Platform.Client.Modules;
+using GSBC.ChurchApp.Platform.Client.News;
 using GSBC.ChurchApp.Platform.Icons;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -22,6 +23,7 @@ public static class MinistriesAdminExtensions
             .AddSingleton<IMinistryReads>(provider => provider.GetRequiredService<OnlineMinistries>())
             .AddSingleton<IMinistryWrites>(provider => provider.GetRequiredService<OnlineMinistries>())
             .AddSingleton<ILinkableCalendars>(provider => provider.GetRequiredService<OnlineMinistries>())
+            .AddEveryMinistrysNews<OnlineEveryMinistrysNews>()
             .AddSingleton(MinistryLinks.Admin);
     }
 }

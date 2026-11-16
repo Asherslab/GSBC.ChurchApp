@@ -138,12 +138,14 @@
             </div>)
         @Item("Asking before a delete: Sheet", "Says what goes with it. The red action is listed first and Keep it last, so the phone stacks red on top and the admin panel puts Keep it at the left.",
             @<Button Variant="ButtonVariant.Danger" Icon="trash-2" OnClick="() => _deleting = true">Delete Easter 2027…</Button>)
+        @Item("Telling people after a change: TellSheet", "Opens after saving a change to something people were told about (an event, a church news post). Its words start filled in; Not now saves without telling.",
+            @<Button Variant="ButtonVariant.Quiet" Icon="send" OnClick="() => _telling = true">Tell people again…</Button>)
         @Item("More actions for a thing: Menu", "The More button (three dots). Delete is last, after a rule, in red.",
             @<div class="gallery__row">
                 <Menu Label="More for Jordan Example" Items="RecordActions" AlignStart="true" />
                 <Menu Label="New" Text="New" Icon="plus" Variant="ButtonVariant.Primary" Items="NewItems" AlignStart="true" Chevron="true" />
             </div>)
-        @Item("A small panel anchored to a control: Popover with MenuButton", "Like the Account menu: a few choices and a line about who you are.",
+        @Item("A small panel anchored to a control: Popover with MenuButton", "The Account menu is one: a few choices and a line saying who you are.",
             @<div class="gallery__anchor">
                 <Button Variant="ButtonVariant.Quiet" Icon="user" OnClick="() => _popover = !_popover">Alex Sample</Button>
                 <Popover Label="Alex's menu" @bind-Open="_popover" Class="gallery__popover">
@@ -457,6 +459,10 @@
     </Actions>
 </Sheet>
 
+<TellSheet Open="_telling" Title="Send the notification again?" Lead="Saved. The notification went to everyone on Monday at 9:02am. Send it again, saying what changed?"
+           NotificationTitle="Updated: Working bee this Saturday" BodyHint="Say what changed." OffersUrgent="true" SendLabel="Send it again"
+           OnTell="_ => { _telling = false; return Task.FromResult<string?>(null); }" OnNotNow="() => _telling = false" />
+
 <PagedSheet @bind-Open="_paged" Count="3" Label="A short tour" ItemName="page">
     <Cover>
         <SheetHeading Icon="gift" Title="@($"Page {context + 1} of 3")" Note="What's new uses this." />
@@ -586,7 +592,7 @@
     private string _ministryName = SampleMinistry;
     private string _tab = "about";
     private int _week;
-    private bool _paged, _deleting, _popover, _tray, _editor = true, _explain, _anonymous = true, _viewing, _banner;
+    private bool _paged, _telling, _deleting, _popover, _tray, _editor = true, _explain, _anonymous = true, _viewing, _banner;
     private string _role = "team";
     private IReadOnlyList<string> _order = ["News", "Calendar", "Chats", "Files"];
     private string _view = "grid";

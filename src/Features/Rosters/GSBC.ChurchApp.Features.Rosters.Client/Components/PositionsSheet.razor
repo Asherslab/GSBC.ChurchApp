@@ -2,23 +2,23 @@
 
 <UnsavedGuard Changed="() => _editing is not null && Changed" What="the position" Save="SaveAsync" />
 
-<Sheet Open="Open" OpenChanged="CloseAsync" Title="@(_editing is null ? "Positions" : _editing.Id.Length == 0 ? "A new position" : _editing.Name)"
-       Lead="@(_editing is null ? "The jobs people do on each date. What a position needs is flagged when someone is put on, but never stops them." : null)">
+<Sheet Open="Open" OpenChanged="CloseAsync" Title="@(_editing is null ? "Positions" : _editing.Id.Length == 0 ? "New position" : _editing.Name)"
+       Lead="@(_editing is null ? "Positions are the jobs people do on each date. If someone doesn't meet a position's requirements, you'll see a warning, but it never stops you putting them on." : null)">
     <Tools>
         @if (_editing is { Id.Length: > 0 } editing)
         {
-            <Menu Label="@($"More for {editing.Name}")" Items="@([this.Item("Delete the position…", () => _deleting = true, "trash-2", "Everyone on it on dates to come comes off", danger: true)])" />
+            <Menu Label="@($"More for {editing.Name}")" Items="@([this.Item("Delete the position…", () => _deleting = true, "trash-2", "Everyone in this position on future dates is taken off.", danger: true)])" />
         }
     </Tools>
     <ChildContent>
         @if (_editing is { } position)
         {
             <TextField Label="Name" @bind-Value="position.Name" MaxLength="60" Required="true" />
-            <SelectField Label="How many people on each date" Value="@position.Needed.ToString(System.Globalization.CultureInfo.InvariantCulture)"
+            <SelectField Label="People needed on each date" Value="@position.Needed.ToString(System.Globalization.CultureInfo.InvariantCulture)"
                          ValueChanged="value => position.Needed = int.Parse(value, System.Globalization.CultureInfo.InvariantCulture)" Options="Counts" />
-            <ToggleRow Title="Needs a current blue card" Description="Read from Safe Ministry Check, or the church office's records" @bind-Checked="position.NeedsBlueCard" />
-            <ToggleRow Title="Needs Safe Ministry training" Description="Current training, from the same records" @bind-Checked="position.NeedsTraining" />
-            <ToggleRow Title="Needs to be trained for it" Description="Leaders tick who's trained. Anyone else goes on as training, with someone trained" @bind-Checked="position.NeedsTrained" />
+            <ToggleRow Title="Needs a current blue card" Description="Checked against Safe Ministry Check or the church office's records." @bind-Checked="position.NeedsBlueCard" />
+            <ToggleRow Title="Needs Safe Ministry training" Description="Checked against the same records." @bind-Checked="position.NeedsTraining" />
+            <ToggleRow Title="Needs training for this position" Description="Leaders tick who is trained. Anyone else serves as a trainee, alongside someone trained." @bind-Checked="position.NeedsTrained" />
             @if (position.NeedsTrained && position.Id.Length > 0)
             {
                 <h3 class="roster-position">Trained for @position.Name</h3>
@@ -29,7 +29,7 @@
                         <ToggleRow @key="member.PersonId" Title="@member.Name" Checked="trained" CheckedChanged="value => TrainAsync(position, member, value)" />
                     }
                 </ListGroup>
-                <p class="roster-hint">These change straight away. Someone not ticked goes on as training and needs someone trained on with them.</p>
+                <p class="roster-hint">These change straight away. Anyone not ticked serves as a trainee, alongside someone trained.</p>
             }
             <Notice Tone="NoticeTone.Warning" Text="@_problem" />
         }
@@ -47,18 +47,18 @@
     <Actions>
         @if (_editing is { } position)
         {
-            <SaveBar Label="@(position.Id.Length == 0 ? "Add the position" : "Save")" New="@(position.Id.Length == 0)" Busy="_busy" OnSave="SaveAsync" OnCancel="() => _editing = null"
+            <SaveBar Label="@(position.Id.Length == 0 ? "Add the position" : "Save the position")" New="@(position.Id.Length == 0)" Busy="_busy" OnSave="SaveAsync" OnCancel="() => _editing = null"
                      CancelLabel="Back" State="@(position.Id.Length > 0 && Changed ? SaveState.Unsaved : null)"
-                     Blocked="@(position.Name.Trim().Length == 0 ? "Give it a name to save it." : null)" />
+                     Blocked="@(position.Name.Trim().Length == 0 ? "Enter a name for the position." : null)" />
         }
     </Actions>
 </Sheet>
 
 <Sheet Open="_deleting" OpenChanged="open => _deleting = open" Title="@($"Delete {_editing?.Name}?")"
-       Lead="Everyone on it on dates to come comes off and hears straight away. Past dates keep its name.">
+       Lead="Everyone in this position on future dates is taken off and told straight away. Past dates keep the position's name.">
     <Actions>
         <Button Block="true" Variant="ButtonVariant.Danger" Disabled="_busy" OnClick="DeleteAsync">Delete the position</Button>
-        <Button Block="true" Variant="ButtonVariant.Quiet" OnClick="() => _deleting = false">Keep it</Button>
+        <Button Block="true" Variant="ButtonVariant.Quiet" OnClick="() => _deleting = false">Keep the position</Button>
     </Actions>
 </Sheet>
 

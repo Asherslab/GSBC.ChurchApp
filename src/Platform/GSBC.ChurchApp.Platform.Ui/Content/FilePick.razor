@@ -55,7 +55,7 @@ else
 
     public ElementReference? Input => _input?.Element;
 
-    private string Keeping => Host.Desktop ? "Adding it…" : "Keeping it on this phone…";
+    private string Keeping => Host.Desktop ? "Adding the file…" : "Saving the file on this phone…";
 
     private string ShownIcon => Icon ?? (Chosen == PickableFiles.Pictures ? "image" : "file");
 
@@ -80,7 +80,7 @@ else
         {
             IReadOnlyList<IBrowserFile> files = Multiple ? args.GetMultipleFiles(int.MaxValue) : [args.File];
             if (files.Count > Limit)
-                problems.Add(Limit == 1 ? "Choose one at a time." : $"Only the first {Limit} were kept; that's the most at once.");
+                problems.Add(Limit == 1 ? "Choose one file at a time." : $"Only the first {Limit} files were added. You can add up to {Limit} at a time.");
             List<ChosenFile> chosen = [];
             for (int index = 0; index < Math.Min(files.Count, Limit); index++)
             {

@@ -158,7 +158,7 @@ public sealed class DigestTests
         DigestItem own = Digests.Merge([], [new DigestEntry { Key = "own:bee", Own = true, Included = true, Words = new DigestWords { Title = "Cleaning bee" } }])[0];
         DigestRecord digest = new() { Start = Start, End = Digests.EndOf(Start, DigestRange.TwoWeeks), SentAt = Now, Sent = Digests.ForApp([agm, anniversary, own], Digests.EndOf(Start, DigestRange.TwoWeeks)) };
 
-        List<EventsPublisher.Row> rows = EventsPublisher.DigestRows(new EventsBook([_services, _members], [], [], [], [], [], []), digest).ToList();
+        List<EventsPublisher.Row> rows = EventsPublisher.DigestRows(new EventsBook([_services, _members], [], [], [], [], [], []), [digest]).ToList();
 
         EventsPublisher.Row membersOnly = Assert.Single(rows, row => row.Feed == EventsFeeds.PrivateDigest);
         Assert.Equal(_members.Audience, membersOnly.Audience);
@@ -214,11 +214,40 @@ public sealed class DigestTests
         DigestRecord digest = new() { Start = Start, End = Digests.EndOf(Start, DigestRange.TwoWeeks), SentAt = Now, Sent = Digests.ForApp([rosterNight, anniversary], Digests.EndOf(Start, DigestRange.TwoWeeks)) };
         EventsBook afterRemoving = new([_services], [], [], [], [], [], []);
 
-        List<EventsPublisher.Row> rows = EventsPublisher.DigestRows(afterRemoving, digest).ToList();
+        List<EventsPublisher.Row> rows = EventsPublisher.DigestRows(afterRemoving, [digest]).ToList();
 
         Assert.DoesNotContain(rows, row => row.Feed == EventsFeeds.PrivateDigest);
         Assert.Equal(["digest", "2026-11-09/date:anniversary"], rows.Select(row => row.RecordId));
         Assert.Equal("One thing coming up: Calendar words.", Digests.Notification(afterRemoving, digest.Sent, NotificationAudience.SignedIn).Body);
+    }
+
+    [Fact]
+    public void TheAppGetsTheLatestDigestAndTheThreeSentBeforeItEachUnderItsOwnHeading()
+    {
+        EventsBook book = new([_services], [], [], [], [], [], []);
+        DigestRecord resent = SentFor(Start.AddDays(-14), "event:changed", Now.AddDays(-13));
+        List<DigestRecord> newestFirst =
+        [
+            SentFor(Start, "event:latest", Now),
+            resent,
+            SentFor(Start.AddDays(-14), "event:first-try", Now.AddDays(-14)),
+            SentFor(Start.AddDays(-28), "event:a", Now.AddDays(-28)),
+            SentFor(Start.AddDays(-42), "event:b", Now.AddDays(-42)),
+            SentFor(Start.AddDays(-56), "event:too-old", Now.AddDays(-56)),
+        ];
+
+        List<EventsPublisher.Row> rows = EventsPublisher.DigestRows(book, newestFirst).ToList();
+
+        Assert.Equal(["digest", "2026-11-09/event:latest", "digest:2026-10-26", "2026-10-26/event:changed", "digest:2026-10-12", "2026-10-12/event:a",
+            "digest:2026-09-28", "2026-09-28/event:b"], rows.Select(row => row.RecordId));
+    }
+
+    private DigestRecord SentFor(DateOnly start, string key, DateTime sentAt)
+    {
+        DigestItem item = Item(key, EventDates.Format(start.AddDays(2)));
+        item.CalendarIds = [_services.Id.ToString()];
+        DateOnly end = Digests.EndOf(start, DigestRange.TwoWeeks);
+        return new DigestRecord { Start = start, End = end, SentAt = sentAt, Sent = Digests.ForApp([item], end) };
     }
 
     private static List<DigestItem> Candidates(EventsBook book) =>

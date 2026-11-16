@@ -21,7 +21,7 @@
                 </EmptyState>
                 break;
             case DestinationState.NotForYou when !Access.SignedIn:
-                <EmptyState Icon="key" Title="Sign in to see this" Body="It's for people signed in to the app. Sign in with your passkey, then open the link again.">
+                <EmptyState Icon="key" Title="Sign in to see this" Body="This is only for people signed in to the app. Sign in with your passkey, then open the link again.">
                     <Button Icon="user" Href="account">Sign in</Button>
                 </EmptyState>
                 break;
@@ -31,12 +31,12 @@
                 </EmptyState>
                 break;
             case DestinationState.Gone:
-                <EmptyState Icon="link" Title="This has been taken down" Body="It may have finished, or the church may have removed it.">
+                <EmptyState Icon="link" Title="This is no longer available" Body="It may have ended, or the church may have removed it.">
                     <Button Variant="ButtonVariant.Quiet" Icon="home" Href="">Go home</Button>
                 </EmptyState>
                 break;
             default:
-                <EmptyState Icon="link" Title="There's nothing here" Body="The link may be old. If someone sent it to you recently, the app may need updating from the App Store.">
+                <EmptyState Icon="link" Title="This page wasn't found" Body="The link may be out of date. If someone sent it to you recently, update the app from the App Store.">
                     <Button Variant="ButtonVariant.Quiet" Icon="home" Href="">Go home</Button>
                 </EmptyState>
                 break;

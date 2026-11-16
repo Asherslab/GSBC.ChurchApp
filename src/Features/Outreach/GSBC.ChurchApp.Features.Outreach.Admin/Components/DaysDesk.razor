@@ -115,7 +115,7 @@
     private string? WhyNotSave =>
         _campaign.Length == 0 ? "Choose the campaign to save it."
         : OutreachRules.DateOf(_date) is null ? "Choose the day to save it."
-        : Asked() is not { } asked ? "Give it a start and an end time."
+        : Asked() is not { } asked ? "Enter a start and an end time."
         : asked.EndsAt <= asked.StartsAt ? "It ends after it starts."
         : null;
 

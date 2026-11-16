@@ -33,7 +33,7 @@ round, not cross multiple rounds" and chose **Sets by stage** (surface brief
   choose a group, the Sundays haven't started; a set with no *shows from* date is shown straight away), *Now on* and
   *Finished in* a year (`LifeGroupRounds.StageOf`, tested). Each set is a card with its time and Sundays (or "Sunday 2 of
   4" while on), its groups (one missing *where it meets* says so), any all-year group off for it, and *Add a group*,
-  *Sundays and time*, *An all-year group isn't on* and *Delete* (when empty).
+  *Sundays and times*, *Mark an all-year group as not on* and *Delete* (when empty).
 - **Finished sets** fold to a line each (dates, number of groups), by year with a year switch; opening one lists its groups
   with *Archive their groups* (asks first).
 - **All-year groups** sit in a strip above the board; one that's off for a set still to come or on now says so.
@@ -53,7 +53,7 @@ regular events". And **all-year groups only follow the sets of Sundays**, for no
   who may plan Life Groups and adds events to that calendar (and publishes, if it needs a publisher) can choose it,
   through Access; the picker offers just those calendars. Removing the calendar removes the entry, and Life Groups then
   says *Not shown in a calendar*.
-- **It's kept in step automatically** on every change to the sets of Sundays (planning, *Sundays and time*, taking a
+- **It's kept in step automatically** on every change to the sets of Sundays (planning, *Sundays and times*, taking a
   Sunday off, deleting a set). Every Sunday in a set is on at that set's time. Every Sunday from the first planned Sunday
   to the last that isn't in a set shows as not on, as a break does: *Between groups* between sets, *No Life Groups this
   Sunday* for one taken off inside a set. **Horizon** (*default*): the first planned Sunday through the last; nothing
@@ -74,7 +74,7 @@ regular events". And **all-year groups only follow the sets of Sundays**, for no
 The owner: "we do need to handle an "all year" lifegroup being cancelled for a specific round", for example an all-year
 group joining one of that set's groups.
 
-- **On the desk**, under a set of Sundays that hasn't finished, *An all-year group isn't on these Sundays* marks one off,
+- **On the desk**, under a set of Sundays that hasn't finished, *Mark an all-year group as not on* marks one off,
   with what to tell its people and, optionally, a group of that set to point them to. Opening it again changes the note,
   or *It's on these Sundays after all* undoes it. Planning permission, as for the sets.
 - **Shown, not hidden** (*default*): Life Groups in the app keeps the group under *All year* (and *Your groups*) with
@@ -106,14 +106,14 @@ kind below:
   with the switch already on). A "Life Groups" ministry is optional: an ordinary ministry for the rotating adult groups and
   whoever runs them.
 - **The sets of Sundays are church-wide** (*default*, Claude's reading of the brief): a set belongs to no ministry; a
-  ministry shown in Life Groups is in one set or *All year* (*When it shows*). Planning sets (*Plan the next groups*,
-  *Sundays and time*, deleting an empty set) needs `ministries.lifegroups.plan`, a church-wide permission: the Ministries
+  ministry shown in Life Groups is in one set or *All year* (*Listed in Life Groups*). Planning sets (*Plan the next groups*,
+  *Sundays and times*, deleting an empty set) needs `ministries.lifegroups.plan`, a church-wide permission: the Ministries
   Manager role has it (staff), and the new **Life Groups planner** role gives only that. Leading a ministry doesn't give it.
   Existing sets were kept as they were and lost their owner.
 - **Adding a Life Group** follows *A new ministry*: under a ministry you may add under (its leaders and staff, through
   Access), or top-level for staff.
 - **The room** is now the ministry's *When and where it meets*, and **Join as a parent** is gone: a parent joins for their
-  child through *Coming along*, as in any ministry (the earlier rule, a parent joining a children's group for their child,
+  child through *Attending*, as in any ministry (the earlier rule, a parent joining a children's group for their child,
   still holds). The one thing lost: the app no longer hides "Me" from adults on a children's group.
 
 ## Built (2026-11-10)

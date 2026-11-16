@@ -5,7 +5,6 @@ using GSBC.ChurchApp.Platform.Api.Access;
 using GSBC.ChurchApp.Platform.Api.Chats;
 using GSBC.ChurchApp.Platform.Api.People;
 using GSBC.ChurchApp.Platform.Contracts.Chats;
-using GSBC.ChurchApp.Platform.Permissions;
 using Microsoft.EntityFrameworkCore;
 
 namespace GSBC.ChurchApp.Features.Chats.Api;
@@ -24,14 +23,14 @@ internal sealed class ChatActions(
         ChatPlace place = await facts.PlaceAsync(ministryId, cancellationToken) ?? throw ChatErrors.Gone("That ministry was deleted.");
         if (!place.ChatsOn)
             throw ChatErrors.Refused(ChatErrors.ChatsOff);
-        bool leads = await facts.IsAllowedAsync(me, ChatsPermissions.Manage, ministryId.ToString(), cancellationToken);
+        bool leads = await facts.IsHeldThereAsync(me, ChatsPermissions.Manage, ministryId.ToString(), cancellationToken);
         if (!leads && !(place.TeamMayStart && await facts.InAudienceAsync(me, place, ChatAudiences.Team, cancellationToken)))
-            throw ChatErrors.Refused(place.TeamMayStart ? "Only the ministry's team can start a chat." : "Only the ministry's leaders can start a chat.");
+            throw ChatErrors.Refused(ChatErrors.NoRoleToStart(place.Name, place.TeamMayStart));
         if (!leads && (request.Kind != ChatKinds.Group || request.Audience != ChatAudiences.Team))
-            throw ChatErrors.Refused("On the team you can start a group chat for the team. Ask a leader for a channel or a chat with attendees or parents.");
+            throw ChatErrors.Refused("Team members can start a group chat for the team. Ask a leader to start a leaders-only chat, or a chat with attendees or parents.");
         string name = NameOf(request.Name);
         if (request.Kind is not (ChatKinds.Group or ChatKinds.Channel))
-            throw ChatErrors.Invalid("Choose a group chat or a channel.");
+            throw ChatErrors.Invalid("Choose who can write in the chat.");
         if (!ChatAudienceRules.IsValid(request.Audience, place))
             throw ChatErrors.Invalid("Choose who the chat is for.");
 
@@ -100,7 +99,7 @@ internal sealed class ChatActions(
     {
         ChatRecord chat = await ManagedAsync(me, request.ChatId, cancellationToken);
         if (!ChatAudienceRules.UsesChosenPeople(chat))
-            throw ChatErrors.Invalid("This chat is for everyone in its audience. Change who it's for to choose people.");
+            throw ChatErrors.Invalid("Everyone the chat is for is in it automatically. Change who's in the chat to choose people one by one.");
 
         List<Guid> adding = request.Add.Select(text => ChatErrors.IdOf(text, "person")).Distinct().ToList();
         List<Guid> removing = request.Remove.Select(text => ChatErrors.IdOf(text, "person")).Distinct().Where(person => person != chat.AskerId).ToList();
@@ -218,7 +217,7 @@ internal sealed class ChatActions(
         if (message.SenderId != me && !leader)
             throw ChatErrors.Refused("You can delete your own messages. A leader can delete any message.");
         if (message.Kind != MessageKinds.Text)
-            throw ChatErrors.Invalid("That line can't be deleted.");
+            throw ChatErrors.Invalid("That message can't be deleted.");
 
         message.DeletedAt = time.GetUtcNow().UtcDateTime;
         message.DeletedBy = me;

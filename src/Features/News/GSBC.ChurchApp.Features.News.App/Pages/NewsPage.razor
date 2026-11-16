@@ -1,7 +1,9 @@
 @page "/news"
 @page "/news/yours"
+@page "/news/every"
 @inject INewsReads News
 @inject IEnumerable<INewsSource> Sources
+@inject IEnumerable<IEveryMinistrysNews> EveryMinistry
 @inject NavigationManager Navigation
 @inject IAccess Access
 @inject NewsLastLooked LastLooked
@@ -9,10 +11,10 @@
 <AddressWatch Changed="StateHasChanged" />
 <Page Title="News" Place="news">
     <Masthead Title="News" Note="From the church and the ministries you're in" />
-    <LiveData TValue="NewsHome" Load="() => NewsHome.LoadAsync(News, Sources)" Feeds="Feeds" ReloadOn="Reload" Remember="news.home">
-        @if (context.Value.InMinistries)
+    <LiveData TValue="NewsHome" Load="() => NewsHome.LoadAsync(News, Sources, SeesEveryMinistry ? EveryMinistry.First() : null)" Feeds="Feeds" ReloadOn="Reload" Remember="news.home">
+        @if (TabsOf(context.Value) is { Count: > 1 } tabs)
         {
-            <TabStrip TValue="string" Label="Whose news" Options="Tabs" Value="@Tab" Sticky="true" Href="Address" />
+            <TabStrip TValue="string" Label="Whose news" Options="tabs" Value="@Tab" Sticky="true" Href="Address" />
         }
         <Section First="true">
             @if (Tab == NewsWords.ChurchTab && Access.Can(NewsPermissions.Write))
@@ -22,7 +24,7 @@
                     @if (context.Value.Waiting > 0)
                     {
                         <ListGroup>
-                            <ListRow Title="@Waiting(context.Value.Waiting)" Subtitle="Drafts, posts waiting to be published and ministries' asks" Icon="clock"
+                            <ListRow Title="@Waiting(context.Value.Waiting)" Subtitle="Drafts, posts waiting to be published and ministries' requests" Icon="clock"
                                      IconTone="RowTone.Warm" Chevron="true" Href="news/desk" />
                         </ListGroup>
                     }
@@ -31,7 +33,7 @@
             @if (Shown(context.Value).Count == 0)
             {
                 <EmptyState Icon="@AppIcons.News" Title="No news yet"
-                            Body="@(Tab == NewsWords.ChurchTab ? "News for the whole church shows here when it's posted." : "News from the ministries you're part of shows here.")" />
+                            Body="@EmptyBody" />
             }
             else
             {
@@ -44,17 +46,47 @@
 @code {
     private const ChangeKind Reload = ChangeKind.Reconnected | ChangeKind.Session | ChangeKind.Access | ChangeKind.Outbox;
 
-    private static readonly IReadOnlyList<TabOption<string>> Tabs = [new(NewsWords.ChurchTab, "The church"), new(NewsWords.YoursTab, "Your ministries")];
+    private static readonly TabOption<string> ChurchTab = new(NewsWords.ChurchTab, "The church");
+    private static readonly TabOption<string> YoursTab = new(NewsWords.YoursTab, "Your ministries");
+    private static readonly TabOption<string> EveryTab = new(NewsWords.EveryTab, "All ministries");
 
     protected override async Task OnInitializedAsync() => await LastLooked.LookedAsync();
 
-    private IReadOnlyList<string> Feeds => [.. News.Feeds, .. Sources.SelectMany(source => source.Feeds)];
+    private bool SeesEveryMinistry => EveryMinistry.Any() && Access.Can(NewsPermissions.SeeMinistries);
 
-    private string Tab => Navigation.ToBaseRelativePath(Navigation.Uri).Split('?')[0].TrimEnd('/') == "news/yours" ? NewsWords.YoursTab : NewsWords.ChurchTab;
+    private IReadOnlyList<string> Feeds =>
+        [.. News.Feeds, .. Sources.SelectMany(source => source.Feeds), .. SeesEveryMinistry ? EveryMinistry.First().Feeds : []];
 
-    private static string Address(string tab) => tab == NewsWords.YoursTab ? "news/yours" : "news";
+    private static IReadOnlyList<TabOption<string>> TabsOf(NewsHome home) =>
+        [ChurchTab, .. home.InMinistries ? [YoursTab] : Array.Empty<TabOption<string>>(), .. home.Every is not null ? [EveryTab] : Array.Empty<TabOption<string>>()];
 
-    private IReadOnlyList<NewsItem> Shown(NewsHome home) => Tab == NewsWords.YoursTab && home.InMinistries ? home.Yours : home.Church;
+    private string Tab => Navigation.ToBaseRelativePath(Navigation.Uri).Split('?')[0].TrimEnd('/') switch
+    {
+        "news/yours" => NewsWords.YoursTab,
+        "news/every" => NewsWords.EveryTab,
+        _ => NewsWords.ChurchTab,
+    };
 
-    private static string Waiting(int count) => count == 1 ? "1 post to look at" : $"{count} posts to look at";
+    private static string Address(string tab) => tab switch
+    {
+        NewsWords.YoursTab => "news/yours",
+        NewsWords.EveryTab => "news/every",
+        _ => "news",
+    };
+
+    private IReadOnlyList<NewsItem> Shown(NewsHome home) => Tab switch
+    {
+        NewsWords.YoursTab when home.InMinistries => home.Yours,
+        NewsWords.EveryTab when home.Every is { } every => every,
+        _ => home.Church,
+    };
+
+    private string EmptyBody => Tab switch
+    {
+        NewsWords.YoursTab => "News from the ministries you're part of shows here.",
+        NewsWords.EveryTab => "Every ministry's posts for everyone show here as they're posted.",
+        _ => "News for the whole church shows here when it's posted.",
+    };
+
+    private static string Waiting(int count) => count == 1 ? "1 post to review" : $"{count} posts to review";
 }

@@ -4,10 +4,10 @@
 @using GSBC.ChurchApp.Platform.Ui.Content
 
 <div class="post-editor">
-    <TextField Label="Title" Value="@Title" ValueChanged="TitleChangedAsync" MaxLength="120" Required="true" Placeholder="Give it a title" />
+    <TextField Label="Title" Value="@Title" ValueChanged="TitleChangedAsync" MaxLength="120" Required="true" />
 
     <RichTextField @ref="_field" Content="Body" ContentChanged="BodyChangedAsync" Label="The post" Headings="true" Allowed="RichTextMedia.Posts" UploadTo="UploadTo"
-                   Placeholder="Write the post. Formatting is in the bar; pictures, video, files and more are under Insert." />
+                   Placeholder="Start writing the post. Use the bar for formatting, and Insert for pictures, video, files and more." />
 
     @if (Settings is not null && SettingsInline)
     {
@@ -49,7 +49,7 @@
     [Parameter, EditorRequired] public required RichText Body { get; set; }
     [Parameter] public EventCallback<RichText> BodyChanged { get; set; }
     [Parameter] public RenderFragment? Settings { get; set; }
-    [Parameter] public string SettingsTitle { get; set; } = "Who, when and telling people";
+    [Parameter] public string SettingsTitle { get; set; } = "Who sees the post, when, and who is told";
     [Parameter] public string SettingsSummary { get; set; } = "";
     [Parameter] public bool SettingsInline { get; set; }
     [Parameter] public UploadTarget? UploadTo { get; set; }

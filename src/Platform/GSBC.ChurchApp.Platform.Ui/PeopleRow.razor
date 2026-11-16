@@ -1,6 +1,6 @@
 @using GSBC.ChurchApp.Platform.Client.People
 
-<LiveData @ref="_live" TValue="PlacePeopleView" Feeds="Source.Feeds" Load="Source.LoadAsync" FailedTitle="Can't load who's on this">
+<LiveData @ref="_live" TValue="PlacePeopleView" Feeds="Source.Feeds" Load="Source.LoadAsync" FailedTitle="Can't load the people">
     @if (context.Value is { Roles.Count: > 0 } view)
     {
         <div class="people-row">
@@ -12,7 +12,7 @@
                     <span class="people-row__count">@(view.People.Count == 1 ? "1 person" : $"{view.People.Count} people")</span>
                 }
             </span>
-            <Button Small="true" Variant="ButtonVariant.Quiet" Icon="users" OnClick="() => _open = true">@(view.MayAdd ? "People" : "See who")</Button>
+            <Button Small="true" Variant="ButtonVariant.Quiet" Icon="users" OnClick="() => _open = true">@(view.MayAdd ? "People" : "See the people")</Button>
         </div>
         <PeopleSheet Source="Source" View="view" Title="@SheetTitle" Lead="@SheetLead" Empty="@Empty" Open="_open" OpenChanged="open => _open = open" OnChanged="ReloadAsync" />
     }
@@ -26,7 +26,7 @@
     [Parameter, EditorRequired] public required string SheetTitle { get; set; }
     [Parameter] public string? SheetLead { get; set; }
     [Parameter] public string Label { get; set; } = "People";
-    [Parameter] public string Empty { get; set; } = "No one yet.";
+    [Parameter] public string Empty { get; set; } = "No one has been added yet.";
 
     private string Summary(PlacePeopleView view) => view.People.Count switch
     {

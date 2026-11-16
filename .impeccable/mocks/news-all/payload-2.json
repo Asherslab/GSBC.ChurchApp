@@ -1,0 +1,46 @@
+{
+  "title": "Notify people again after changing a post (#12)",
+  "question": "When a published church news post is changed, its Telling people settings offer \"Notify people again\", off unless you turn it on. It sends the post's notification again to the same people, starting from its words, which you can change for the re-send; the new one replaces the earlier one in their notifications list. Each sketch shows the admin panel's writing page (left) and the phone's settings sheet (right), with it turned on. Pick one; the other two go.",
+  "reroll": true,
+  "steer": true,
+  "buildPath": { "value": "code", "toggle": false },
+  "options": [
+    {
+      "id": "sent-box",
+      "kind": "assigned",
+      "kicker": "THE ROLL",
+      "label": "Every send listed, then Notify again",
+      "thesis": "A sand box lists when the notification went (first sent, then each re-send) and to whom. Under it a button, Notify people again when I save, turns on and shows the words ready to change. The save button says Save and notify again.",
+      "palette": ["#f4efe7", "#2a3d5e", "#00776d", "#ffffff"],
+      "materials": ["sand box with each send", "toggle button", "words and Urgent", "Save and notify again"],
+      "viewport": "Writing page for a published post; Telling people shows two sends, the button on, the words below; the foot says Save and notify again.",
+      "risk": "The most to read; the list of sends grows with every re-send.",
+      "html": ".impeccable/mocks/news-all/n-a-sent-box.html",
+      "htmlFrame": "1440x900"
+    },
+    {
+      "id": "preview",
+      "kind": "dealt",
+      "label": "A switch, and how it will look",
+      "thesis": "One line says when it last went (and that it was sent twice). A Notify people again switch; on, it shows the notification as it will appear on a lock screen, with Change the words to edit it.",
+      "palette": ["#2a3d5e", "#22334f", "#00776d", "#ffffff"],
+      "materials": ["sent line", "switch", "lock-screen preview", "Change the words"],
+      "viewport": "Telling people with the switch on and a lock-screen notification preview under it.",
+      "risk": "The words are one tap further away; the preview is a picture of a phone inside a phone on the app.",
+      "html": ".impeccable/mocks/news-all/n-b-preview.html",
+      "htmlFrame": "1440x900"
+    },
+    {
+      "id": "folded",
+      "kind": "dealt",
+      "label": "A switch, the words folded",
+      "thesis": "The sent line, then a Notify people again switch that says who gets it (about 140 phones). On, a folded line shows its words, opening to change them. The quietest of the three.",
+      "palette": ["#2a3d5e", "#f4efe7", "#00776d", "#ffffff"],
+      "materials": ["sent line", "switch with its reach", "folded words"],
+      "viewport": "Telling people with the switch on and one folded line for its words.",
+      "risk": "Easy to send the old words without looking at them.",
+      "html": ".impeccable/mocks/news-all/n-c-folded.html",
+      "htmlFrame": "1440x900"
+    }
+  ]
+}

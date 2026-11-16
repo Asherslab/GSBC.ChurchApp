@@ -1,0 +1,46 @@
+{
+  "title": "Every ministry's news, for staff (#11)",
+  "question": "Staff with the new \"See every ministry's news\" permission (Church news Publishers to start) get an \"All ministries\" choice in the admin panel's Church news, and a third tab in the app's News. It lists every ministry's posts that are for everyone, newest first, each naming its ministry. Publishers can put one in church news from its ⋯ menu. Each sketch shows the admin panel (left) and the phone (right). Pick one; the other two go.",
+  "reroll": true,
+  "steer": true,
+  "buildPath": { "value": "code", "toggle": false },
+  "options": [
+    {
+      "id": "table",
+      "kind": "assigned",
+      "kicker": "THE ROLL",
+      "label": "A table to go through",
+      "thesis": "In the admin panel, All ministries shows a table: the post, its ministry, when it was posted and whether it's in church news; choosing a row shows the post beside it. On the phone, the third tab is the usual News page of every ministry's posts, each saying which ministry it's from.",
+      "palette": ["#2a3d5e", "#f4efe7", "#00776d", "#ffffff"],
+      "materials": ["rail group: Every ministry", "table with Ministry and Church news columns", "post beside it with ⋯", "third tab on the phone"],
+      "viewport": "Church news with All ministries chosen under its own heading in the rail; a table of seven posts; Working bee this Saturday open beside it, its ⋯ showing Put it in church news…; the phone on the All ministries tab.",
+      "risk": "A table is denser than the rest of the desk's lists; the pictures only show once a post is open.",
+      "html": ".impeccable/mocks/news-all/a-table.html",
+      "htmlFrame": "1440x900"
+    },
+    {
+      "id": "rows",
+      "kind": "dealt",
+      "label": "Rows like the rest of the desk",
+      "thesis": "All ministries lists posts as the desk's other groups do: title, the ministry in accent, who posted it and when, a picture at the right, and a pill when it's in church news or asking to be. The phone's third tab shows the same pills in each post's line.",
+      "palette": ["#2a3d5e", "#f4efe7", "#00776d", "#e7ae74"],
+      "materials": ["same rows as the desk", "ministry line in accent", "In church news / Asking pills", "pills in the phone's line"],
+      "viewport": "All ministries chosen; six rows with pictures, two with pills; the chosen post open beside them; the phone's tab with the lead post and rows, two marked.",
+      "risk": "Fewer posts fit on a screen than in a table; with many ministries you scroll to find one.",
+      "html": ".impeccable/mocks/news-all/b-rows.html",
+      "htmlFrame": "1440x900"
+    },
+    {
+      "id": "narrow",
+      "kind": "dealt",
+      "label": "Narrow it to one ministry",
+      "thesis": "Like the rows, plus a Ministry group in the rail (with counts) to show one ministry's posts at a time. On the phone, chips under the tabs do the same: Every ministry, then each ministry with posts.",
+      "palette": ["#2a3d5e", "#f4efe7", "#00776d", "#ffffff"],
+      "materials": ["Ministry group in the rail with counts", "rows", "ministry chips on the phone"],
+      "viewport": "All ministries chosen, the rail listing ministries under it with Every ministry chosen; rows of posts; the phone's tab with a row of ministry chips above the posts.",
+      "risk": "A long list of ministries in the rail and the chips; more to look past when you only want the newest.",
+      "html": ".impeccable/mocks/news-all/c-narrow.html",
+      "htmlFrame": "1440x900"
+    }
+  ]
+}

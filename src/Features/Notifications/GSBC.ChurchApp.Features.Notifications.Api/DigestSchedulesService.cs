@@ -18,7 +18,7 @@ internal sealed class DigestSchedulesService(DigestSchedules schedules, IAccessE
     {
         NotificationKind kind = KindOf(request.Kind);
         if (!await MayChangeAsync(kind, User(context), context.CancellationToken))
-            throw new RpcException(new Status(StatusCode.PermissionDenied, "You can't change when these are sent."));
+            throw new RpcException(new Status(StatusCode.PermissionDenied, "You don't have permission to change when these notifications are sent."));
         if (ProblemWith(request) is { } problem)
             throw new RpcException(new Status(StatusCode.InvalidArgument, problem));
 
@@ -30,9 +30,9 @@ internal sealed class DigestSchedulesService(DigestSchedules schedules, IAccessE
 
     public static string? ProblemWith(DigestScheduleChange change) => change switch
     {
-        { AfterMinutes.Count: 0, DailyAtMinute: null } => "Choose at least one time to send them.",
-        { AfterMinutes.Count: > MostEarlyDigests } => $"Choose at most {MostEarlyDigests} times after it starts.",
-        _ when change.AfterMinutes.Any(minutes => minutes < 1 || minutes > LongestWait.TotalMinutes) => "Each time after it starts is between a minute and a week.",
+        { AfterMinutes.Count: 0, DailyAtMinute: null } => "Choose at least one time to send these notifications.",
+        { AfterMinutes.Count: > MostEarlyDigests } => $"Choose at most {MostEarlyDigests} times.",
+        _ when change.AfterMinutes.Any(minutes => minutes < 1 || minutes > LongestWait.TotalMinutes) => "Each time must be between a minute and a week.",
         { DailyAtMinute: < 0 or >= 24 * 60 } => "Choose a time of day.",
         _ => null,
     };

@@ -116,7 +116,7 @@ internal sealed class PlacementEditor(
         (SurfaceArea area, string? scopeId, Permission needed) = rules.Required(areaKey, requestedScope, publishing);
         if (!await access.IsAllowedAsync(caller, needed.Node, scopeId, cancellationToken))
             throw new RpcException(new Status(StatusCode.PermissionDenied,
-                publishing ? $"You can't put changes to {area.Title} out to everyone. Ask someone who can publish it." : $"You can't arrange {area.Title}."));
+                publishing ? $"Your role doesn't let you publish changes to {area.Title}. Ask someone who can." : $"Your role doesn't let you change {area.Title}."));
 
         return (area, scopeId);
     }

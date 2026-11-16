@@ -20,7 +20,7 @@ Every tile is a repeatable surface in the Hub area (`home.hub`), declared as a `
 (Platform.Contracts, `HubTiles.cs`). All kinds share one set of settings (`TileSettings`): width and
 height in grid cells, a colour (a theme tone), an icon, its icon colour, a title, a line under it, a
 picture with the part to keep in view, and what it opens. A kind can add settings of its own (This
-week has *How many to show*).
+week has *Number of events shown*).
 
 - **Link tile** (`hub.tile`, Platform.Contracts): anything that is a title, a line, an icon, a picture and a
   link (Give, the Bible, Prayer, Life Groups, Ministries, Visit us, a campaign). Staff write everything.
@@ -44,7 +44,10 @@ week has *How many to show*).
       page with room for it (2 × 2 and bigger), otherwise the post itself in Highlight.
     - With no news it shows its title and "Nothing new yet". Its picture setting isn't used: the posts bring their own.
     - `HubTile` gained a `Banner` slot for the urgent band. Option D on the decision page, no tile at all, was declined.
-  - **Waiting for their feature** (`WaitingTiles`, in Configuration until the feature exists): Sunday bulletin (date, the year's theme and verse), This week (the next
+  - **What's next** (Events, `hub.whats-next`): the latest weekly digest, headline first
+    ([events.md](events.md), *What's next on Home*). It took over every Sunday bulletin tile in place on 2026-11-16 (UAT
+    feedback #17; `TileReplacing`), and the bulletin kind is no longer offered.
+  - **Waiting for their feature** (`WaitingTiles`, in Configuration until the feature exists): Sunday bulletin (retired, see What's next), This week (the next
     gatherings from the church's weekly rhythm) and Outreach day (its live "outreach is on" state comes
     with Outreach) show sample content. When Sermons (and so on) is built, it takes its kind and view into
     its own feature and replaces the sample.
@@ -95,8 +98,8 @@ proof uses the same theme, so the warning now measures a custom theme too. In da
 turn muddy. The text colour is the
 role the theme pairs with the background (`on-masthead`, `on-primary`, …), which the theme already
 keeps readable, so staff can't make unreadable text. The settings panel shows the tile in light and
-dark and reads the contrast off the render. Icon colours are *Goes with the tile*, Main colour, Links
-and live, Marker, Quiet, or (for uploaded icons) *Its own colours*.
+dark and reads the contrast off the render. Icon colours are *Matches the tile*, Main colour, Links
+and live, Marker, Quiet, or (for uploaded icons) *The icon's own colours*.
 
 ### The fade over a picture
 
@@ -111,7 +114,7 @@ picture, and the phone shows it live; it's a tile setting, so drafts, copies and
 The masthead's title and the line under it are a Hub surface of their own, **Top of Home** (`hub.top`, one per
 Home, an arrangement like the grid) (owner, 2026-11-09). The title is the staff's words (40 characters,
 "Good Shepherd" to start, also the top bar's title once Home scrolls); the line under it is *Today's date* (as
-before), *Your own words* (80 characters; left empty, nothing shows) or *Nothing*. `HubSurfaces.Top.In`
+before), *Your own line* (80 characters; left empty, nothing shows) or *Nothing*. `HubSurfaces.Top.In`
 reads it for `HomeScreen`, so the app, the canvas and every preview draw the same. A title longer than 16
 characters may wrap, balanced, instead of running off the phone. On the canvas, click the masthead to change it.
 
@@ -255,7 +258,7 @@ Drafts → a draft → **Home screen** (desktop; the narrow layout keeps the lis
   drafts list, the middle column and the settings each scroll on their own. Since App styling (2026-11-09,
   [drafts.md](../architecture/drafts.md)) the phone is a sticky column as tall as the window and the settings
   column scrolls with the page.
-- **Settings:** size steppers, its layout ("Best for this size (now …)" or one chosen; layouts that need
+- **Settings:** size steppers, its layout ("Automatic (currently …)" or one chosen; layouts that need
   a picture or a bigger tile are greyed out with the reason), colour swatches with their names, the chosen
   icon with **Change icon** opening the grid and upload, words, picture (the picture sheet, see [media.md](media.md)) and the part to keep in
   view, Opens (a place through the place picker, or a web page), who sees it, its dates and Shown. When the

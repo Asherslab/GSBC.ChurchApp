@@ -16,7 +16,11 @@ for the owner to redirect.
 - **Who can start a chat is per ministry** (owner, 2026-11-12: "make it configurable per ministry"; default leaders
   only). Settings → What it uses → *Who can start a chat*: leaders, or the team too. Team members start **group chats
   for the team**; channels and chats with attendees or parents stay with leaders, who also change and delete chats.
-  `Chats.Start` is `[SignedIn]` and checks it (`ChatPlace.TeamMayStart`).
+  `Chats.Start` is `[SignedIn]` and checks it (`ChatPlace.TeamMayStart`). **Starting needs a role at that ministry**
+  (owner, 2026-11-16, UAT error c9384495): a grant held everywhere (the Owner's `*`, Ministries Manager) isn't
+  membership, so it doesn't start a chat either; before, it saved a chat its starter wasn't in and then refused the
+  first message. `GrantSet.IsHeldAt` on the server and `IAccess.CanHere` on the client ask the same question; the Chats
+  tab tells such a person to give themselves a role there.
 - **A ministry's people changing reaches its chats at once** (2026-11-12): Chats handles Platform's
   `IMinistryPeopleChanged` as well as watching grants.
 - **Where:** *Chats* (`/chats`: every chat you're in, newest first, a parent's yes waiting on top), a ministry's
@@ -139,7 +143,7 @@ from the page. They picked the **folded** layout on the decision page (`.impecca
 - **Who can start a chat** is explained in a ministry's Chats tab to someone who can't ("Production's leaders start
   chats here", or "leaders and team" when the ministry lets the team start them).
 - Reactions use the shared `BubbleReactions`; the message box is the shared `Composer`
-  (2026-11-12): reply or edit context, *Writing for* chips, mentions and picked files in its `Above`, the paperclip in
+  (2026-11-12): reply or edit context, *Writing on behalf of* chips, mentions and picked files in its `Above`, the paperclip in
   `Attach`, and Send turning to a check while editing. Send feedback on the phone uses the same component.
 - **A reply's quote goes to the original** (#67, owner: "Tapping on the reply box should take me to the original
   message"). The quote is a button (`MessageBubble`'s `OnQuote`); tapping it scrolls the original to the middle and rings
@@ -253,7 +257,7 @@ From the decision page, each built:
 4. **Starting a chat:** one sheet; the first message (the why) is required.
 5. **A parent's yes:** in the chat, where the composer would be.
 6. **Reporting:** a sheet choosing leaders or the safety team; handling is in the admin panel.
-7. **Admin:** one desk, *Chat safety* since 2026-11-13, with Reports, Chats, Paused people and Checks log; reading a chat
+7. **Admin:** one desk, *Chat safety* since 2026-11-13, with Reports, Chats, Paused people and Log of checks; reading a chat
    asks why.
 8. **Asking to join:** the Join sheet gains the editable first message; leaders add from the chat.
 

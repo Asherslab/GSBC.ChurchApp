@@ -143,7 +143,7 @@ internal sealed class ImportRunner(IServiceScopeFactory scopes, TimeProvider tim
         IOException => "The download was cut short.",
         InvalidDataException => "A file from the website wasn't what it said it was.",
         OperationCanceledException => null,
-        _ => "Something went wrong bringing it across. Try it again.",
+        _ => "Something went wrong importing this sermon. Try again.",
     };
 
     private static DateOnly? DayOf(string websitePath) =>

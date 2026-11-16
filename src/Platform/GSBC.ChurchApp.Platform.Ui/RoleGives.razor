@@ -27,7 +27,7 @@
     [Parameter] public string Who { get; set; } = "them";
 
     private string Heading(AbilityGroup group, int index) =>
-        group.BecauseTheJobNeedsIt ? $"Also, from {group.Area}, because the job needs it:"
+        group.BecauseTheJobNeedsIt ? $"Also from {group.Area}, because this role needs it:"
         : index == 0 ? $"{Role.Name} lets {Who}:"
         : $"In {group.Area}:";
 }

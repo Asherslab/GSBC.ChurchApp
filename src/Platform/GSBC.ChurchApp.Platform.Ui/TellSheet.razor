@@ -1,0 +1,64 @@
+<Sheet Open="Open" OpenChanged="ToggledAsync" Title="@Title" Lead="@Lead">
+    <ChildContent>
+        <TextField Label="Notification title" Value="@_title" ValueChanged="value => _title = value" MaxLength="@TitleLength" />
+        <TextField Label="Notification text" Value="@_body" ValueChanged="value => _body = value" Multiline="true" MaxLength="240" Hint="@BodyHint" />
+        @if (OffersUrgent)
+        {
+            <ToggleRow Title="Urgent" Description="For something people need to know now. The notification arrives during quiet hours too." @bind-Checked="_urgent" />
+        }
+        <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+    </ChildContent>
+    <Actions>
+        <Button Block="true" Icon="send" Busy="_telling" OnClick="TellAsync">@SendLabel</Button>
+        <Button Block="true" Variant="ButtonVariant.Quiet" Disabled="_telling" OnClick="NotNow">Don't send a notification</Button>
+    </Actions>
+</Sheet>
+
+@code {
+    private string _title = "";
+    private string _body = "";
+    private bool _urgent;
+    private string? _problem;
+    private bool _telling;
+    private bool _wasOpen;
+
+    [Parameter] public bool Open { get; set; }
+    [Parameter, EditorRequired] public required string Title { get; set; }
+    [Parameter] public string? Lead { get; set; }
+    [Parameter] public string NotificationTitle { get; set; } = "";
+    [Parameter] public string NotificationBody { get; set; } = "";
+    [Parameter] public string? BodyHint { get; set; } = "Optional. Shown under the notification's title.";
+    [Parameter] public int TitleLength { get; set; } = 80;
+    [Parameter] public bool OffersUrgent { get; set; }
+    [Parameter] public string SendLabel { get; set; } = "Send the notification";
+    [Parameter, EditorRequired] public required Func<TellWords, Task<string?>> OnTell { get; set; }
+    [Parameter] public EventCallback OnNotNow { get; set; }
+
+    protected override void OnParametersSet()
+    {
+        if (Open && !_wasOpen)
+            (_title, _body, _urgent, _problem) = (NotificationTitle, NotificationBody, false, null);
+        _wasOpen = Open;
+    }
+
+    private async Task ToggledAsync(bool open)
+    {
+        if (!open)
+            await OnNotNow.InvokeAsync();
+    }
+
+    private Task NotNow() => OnNotNow.InvokeAsync();
+
+    private async Task TellAsync()
+    {
+        (_telling, _problem) = (true, null);
+        try
+        {
+            _problem = await OnTell(new TellWords(_title.Trim(), _body.Trim(), OffersUrgent && _urgent));
+        }
+        finally
+        {
+            _telling = false;
+        }
+    }
+}

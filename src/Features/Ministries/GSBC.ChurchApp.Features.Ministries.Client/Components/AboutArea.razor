@@ -3,15 +3,15 @@
 
 @if (Page.You.ForYourYes.Count > 0)
 {
-    <Section First="true" Title="Waiting for your yes">
+    <Section First="true" Title="Waiting for your answer">
         <ListGroup>
             @foreach (AskLine ask in Page.You.ForYourYes)
             {
-                <ListRow @key="ask.Id" Title="@MinistryWords.AskTitle(ask)" Subtitle="They're under 18, so a parent says yes first. Its leaders know they asked, and hear your answer." Icon="users" IconTone="RowTone.Warm">
+                <ListRow @key="ask.Id" Title="@MinistryWords.AskTitle(ask)" Subtitle="They're under 18, so a parent answers first. The ministry's leaders know they've asked, and will hear your answer." Icon="users" IconTone="RowTone.Warm">
                     <Below>
                         <div class="ui-actions">
-                            <Button Small="true" Variant="ButtonVariant.Quiet" Disabled="_busy" OnClick="() => RunAsync(() => Ministries.ParentAnswerAsync(Page.Ministry.Id, ask.Id, false))">Not yet</Button>
-                            <Button Small="true" Busy="_busy" OnClick="() => RunAsync(() => Ministries.ParentAnswerAsync(Page.Ministry.Id, ask.Id, true))">Yes</Button>
+                            <Button Small="true" Variant="ButtonVariant.Quiet" Disabled="_busy" OnClick="() => RunAsync(() => Ministries.ParentAnswerAsync(Page.Ministry.Id, ask.Id, false))">Not now</Button>
+                            <Button Small="true" Busy="_busy" OnClick="() => RunAsync(() => Ministries.ParentAnswerAsync(Page.Ministry.Id, ask.Id, true))">Yes, they can join</Button>
                         </div>
                     </Below>
                 </ListRow>
@@ -64,9 +64,9 @@
         <ListGroup>
             @foreach (AskLine ask in Page.You.Asked)
             {
-                <ListRow @key="ask.Id" Title="@MinistryWords.AskTitle(ask)" Subtitle="@($"Asked {MinistryWords.Ago(ask.AskedAt, Clock.GetUtcNow().UtcDateTime).ToLowerInvariant()}. {(!ask.WaitingForParent ? "A leader says yes or no." : Page.Ministry.TeamJoin == Joining.Open ? "When a parent of yours says yes, you're on." : "A parent of yours says yes first, then a leader.")}")" Icon="clock" IconTone="RowTone.Quiet">
+                <ListRow @key="ask.Id" Title="@MinistryWords.AskTitle(ask)" Subtitle="@($"Asked {MinistryWords.Ago(ask.AskedAt, Clock.GetUtcNow().UtcDateTime).ToLowerInvariant()}. {(!ask.WaitingForParent ? "A leader will answer." : Page.Ministry.TeamJoin == Joining.Open ? "You'll join the team once your parent says yes." : "Your parent answers first, then a leader.")}")" Icon="clock" IconTone="RowTone.Quiet">
                     <TrailingContent>
-                        <Button Small="true" Variant="ButtonVariant.Quiet" Disabled="_busy" OnClick="() => RunAsync(() => Ministries.WithdrawAsync(Page.Ministry.Id, ask.Id))">Take back</Button>
+                        <Button Small="true" Variant="ButtonVariant.Quiet" Disabled="_busy" OnClick="() => RunAsync(() => Ministries.WithdrawAsync(Page.Ministry.Id, ask.Id))">Withdraw the request</Button>
                     </TrailingContent>
                 </ListRow>
             }
@@ -76,7 +76,7 @@
 
 @if (Page.SubMinistries.Count > 0)
 {
-    <Section Title="Ministries under it">
+    <Section Title="Ministries under this one">
         <ListGroup>
             @foreach (MinistrySummary under in Page.SubMinistries)
             {
@@ -89,7 +89,7 @@
 @if (MinistryAreas.For(Page).Count == 1 && !Page.You.MayEditSettings && MinistryParts.All.Any(part => MinistryAreas.Uses(Page, part.Key)))
 {
     <Section>
-        <p class="hint">@Page.Ministry.Name's news, calendar and files are for the people in it.</p>
+        <p class="hint">@Page.Ministry.Name's news, calendar and files are for the ministry's own people.</p>
     </Section>
 }
 
@@ -127,11 +127,11 @@
             if (Page.You.Roles.Contains(Roles.Team))
                 leaving.Add(("", Places.Team, "Leave the team"));
             if (Page.You.Roles.Contains(Roles.Attendee))
-                leaving.Add(("", Places.Attending, "Stop coming along"));
+                leaving.Add(("", Places.Attending, "Stop attending"));
             foreach (ChildPlace child in Page.You.Children)
             {
                 if (child.Attends)
-                    leaving.Add((child.Id, Places.Attending, $"{child.Name} stops coming"));
+                    leaving.Add((child.Id, Places.Attending, $"{child.Name} stops attending"));
                 if (child.OnTeam)
                     leaving.Add((child.Id, Places.Team, $"{child.Name} leaves the team"));
             }

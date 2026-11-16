@@ -49,7 +49,7 @@ internal sealed class PeopleService(
         else if (request.Adult)
             person.SaysAdult = true;
         else
-            throw Invalid("Give your birth date, or say you're 18 or older.");
+            throw Invalid("Enter your birth date, or choose I'm 18 or older.");
 
         person.UpdatedAt = Now;
         await families.TouchAsync([me], cancellationToken: cancellationToken);
@@ -103,7 +103,7 @@ internal sealed class PeopleService(
         if (asks.All(ask => ask.ParentEmail != email))
         {
             if (asks.Count >= MostWaitingAsks)
-                throw Refused($"There are already {MostWaitingAsks} asks waiting. Take one back first.");
+                throw Refused($"There are already {MostWaitingAsks} requests waiting. Withdraw one first.");
             db.Asks.Add(new LinkAskRecord { Id = Guid.CreateVersion7(), ChildId = childId, ParentEmail = email, AskedBy = me, AskedAt = Now });
         }
         await families.TouchAsync([childId, me, .. parentId is { } asked ? [asked] : Array.Empty<Guid>()], cancellationToken: cancellationToken);
@@ -120,7 +120,7 @@ internal sealed class PeopleService(
         Guid me = Me(context);
         LinkAskRecord ask = await FindAskAsync(request.AskId, cancellationToken);
         if (!(await NormalizedEmailsAsync(me, cancellationToken)).Contains(ask.ParentEmail))
-            throw Refused("This ask is for someone else.");
+            throw Refused("This request is for someone else.");
 
         db.Asks.Remove(ask);
         await families.TouchAsync([ask.ChildId, ask.AskedBy, me], cancellationToken: cancellationToken);
@@ -154,7 +154,7 @@ internal sealed class PeopleService(
         Guid me = Me(context);
         (Guid parentId, Guid childId) = (ParseId(request.ParentId), ParseId(request.ChildId));
         FamilyLink link = await db.Links.SingleOrDefaultAsync(found => found.ParentId == parentId && found.ChildId == childId, cancellationToken)
-            ?? throw new RpcException(new Status(StatusCode.NotFound, "They aren't linked."));
+            ?? throw new RpcException(new Status(StatusCode.NotFound, "Those two people aren't linked."));
 
         DateOnly? born = (await db.People.AsNoTracking().SingleOrDefaultAsync(person => person.UserId == childId, cancellationToken))?.BirthDate;
         bool office = await AllowedAsync(context, PeoplePermissions.FamiliesManageNode, null, cancellationToken);
@@ -314,7 +314,7 @@ internal sealed class PeopleService(
 
     private async Task<LinkAskRecord> FindAskAsync(string id, CancellationToken cancellationToken) =>
         await db.Asks.SingleOrDefaultAsync(ask => ask.Id == ParseId(id), cancellationToken)
-        ?? throw new RpcException(new Status(StatusCode.NotFound, "That ask was already answered or taken back."));
+        ?? throw new RpcException(new Status(StatusCode.NotFound, "That request was already answered or withdrawn."));
 
     private async Task<IReadOnlyList<string>> NormalizedEmailsAsync(Guid userId, CancellationToken cancellationToken) =>
         (await emails.EmailsOfAsync([userId], cancellationToken)).Select(Normalize).ToList();

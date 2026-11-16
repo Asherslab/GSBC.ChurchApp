@@ -6,6 +6,10 @@ namespace GSBC.ChurchApp.Features.Accounts.Contracts;
 
 public static class AccountsDestinations
 {
+    public const string WelcomePath = "/welcome";
+
+    public static string WelcomeLink(string siteUrl, string code) => $"{siteUrl.TrimEnd('/')}{WelcomePath}?code={code}";
+
     public static readonly DestinationPage Account = new("/account", "Account", AppIcons.Account, DestinationAreas.Pages, "More → Account: sign in, your name and family", Audience.Everyone);
 
     public static readonly DestinationPage Security = new("/account/security", "Security", AppIcons.Security, DestinationAreas.Pages, "More → Account → Security: passkeys and where you're signed in", Audience.Everyone);

@@ -13,9 +13,10 @@ public sealed class Surface
 
     public Surface(string key, SurfaceArea area, string title, string description, IReadOnlyList<Setting> settings,
         string introducedIn = FirstRelease, bool shownByDefault = true, int defaultOrder = 0, bool repeatable = false,
-        Func<SettingValues, IEnumerable<string>>? check = null, TextSetting? uniqueBy = null)
+        Func<SettingValues, IEnumerable<string>>? check = null, TextSetting? uniqueBy = null, string? replaces = null)
     {
         _check = check;
+        Replaces = replaces;
         UniqueBy = uniqueBy;
         if (settings.Select(setting => setting.Key).Distinct().Count() != settings.Count)
             throw new ArgumentException($"Surface '{key}' declares a setting key twice.", nameof(settings));
@@ -43,6 +44,7 @@ public sealed class Surface
     public int DefaultOrder { get; }
     public bool Repeatable { get; }
     public TextSetting? UniqueBy { get; }
+    public string? Replaces { get; }
 
     public bool NeedsNewerApp => IntroducedIn != FirstRelease;
 

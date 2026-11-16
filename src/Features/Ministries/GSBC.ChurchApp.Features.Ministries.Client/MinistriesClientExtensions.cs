@@ -22,6 +22,7 @@ public static class MinistriesClientExtensions
             .AddSingleton<StoredMinistries>()
             .AddSingleton<IMinistryReads>(provider => provider.GetRequiredService<StoredMinistries>())
             .AddNewsSource<MinistryNewsSource>()
+            .AddEveryMinistrysNews<StoredEveryMinistrysNews>()
             .AddMediaPrefetch(_ => MinistryPostMedia.Prefetch(MinistriesFeeds.Posts))
             .AddMediaPrefetch(_ => MinistryPostMedia.Prefetch(MinistriesFeeds.PrivatePosts))
             .AddSingleton<IMinistryWrites, QueuedMinistryWrites>()

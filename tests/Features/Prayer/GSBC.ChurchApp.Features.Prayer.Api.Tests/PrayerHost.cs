@@ -35,7 +35,8 @@ public abstract class PrayerHost : IAsyncLifetime
         services.AddSingleton<INotifications>(Told);
         services.AddSingleton<IPeopleIndex>(People);
         services.AddSingleton<IFamilies>(People);
-        services.AddScoped<PrayerPublisher>().AddScoped<PrayerTelling>().AddScoped<PrayerRequests>().AddScoped<PastoralCare>().AddScoped<PrayerKeeping>().AddScoped<HandledRequests>();
+        services.AddScoped<PrayerPublisher>().AddScoped<PrayerTelling>().AddScoped<PrayerRequests>().AddScoped<PastoralCare>().AddScoped<PrayerKeeping>().AddScoped<HandledRequests>()
+            .AddScoped<ChurchName>();
         services.AddScoped<PrayerPersonData>();
         services.AddSyncData();
         services.AddPrayerData();
@@ -72,7 +73,7 @@ public abstract class PrayerHost : IAsyncLifetime
     {
         string id = Guid.NewGuid().ToString();
         await AppAsync(app => app.SendAsync(install, user,
-            new PrayerRequestSend { Id = id, Text = text, ForWall = forWall, ShowName = showName, Name = name }, Cancel));
+            new PrayerRequestSend { Id = id, Text = text, ForWall = forWall, ShowName = showName, Name = name }, false, Cancel));
         return id;
     }
 

@@ -21,13 +21,13 @@
 <StartChatSheet Desk="Desk" Open="_starting" OpenChanged="open => _starting = open" />
 
 <Sheet Open="_deleting is not null" OpenChanged="open => { if (!open) _deleting = null; }" Title="@($"Delete {_deleting?.Name}?")"
-       Lead="Everyone in it loses the chat. The church keeps its messages and the log, so auditors can still check it.">
+       Lead="The chat is deleted for everyone in it. The church keeps its messages and the log, so auditors can still check it.">
     <ChildContent>
         <Notice Tone="NoticeTone.Warning" Text="@_problem" />
     </ChildContent>
     <Actions>
         <Button Variant="ButtonVariant.Danger" Busy="_busy" OnClick="DeleteAsync">Delete the chat</Button>
-        <Button Variant="ButtonVariant.Quiet" OnClick="() => _deleting = null">Keep it</Button>
+        <Button Variant="ButtonVariant.Quiet" OnClick="() => _deleting = null">Keep the chat</Button>
     </Actions>
 </Sheet>
 
@@ -57,7 +57,7 @@
     private void Choose(DeskChat chat) => (_chosenId, _reason, _problem) = (chat.Id, "", null);
 
     private IReadOnlyList<MenuItem> Actions(DeskChat chat) => chat.MayManage
-        ? [this.Item("Delete the chat…", () => _deleting = chat, "trash-2", "For everyone in it. The church keeps its messages.", danger: true)]
+        ? [this.Item("Delete the chat…", () => _deleting = chat, "trash-2", "The chat is deleted for everyone in it. The church keeps its messages.", danger: true)]
         : [];
 
     private RenderFragment Detail(DeskChat chat) =>
@@ -69,7 +69,7 @@
             }
             @if (Checks.Of(chat.Id) is { } open)
             {
-                <p class="hint">You opened it earlier: "@open.Reason".</p>
+                <p class="hint">You opened this chat earlier because: "@open.Reason".</p>
                 <div class="ui-actions">
                     <Button Icon="eye" Href="@ChatChecks.PageOf(chat.Id)">Open the chat again</Button>
                 </div>
@@ -77,7 +77,7 @@
             else
             {
                 <LoggedNotice>Reading a chat is logged with your name, the time and why. The leaders of @chat.MinistryName and the church's chat auditors can see the log.</LoggedNotice>
-                <TextField Label="Why are you reading this chat?" Hint="Kept in the log with your name and the time." Value="@_reason" ValueChanged="value => _reason = value" MaxLength="ChatLimits.NoteLength" />
+                <TextField Label="Reason for reading this chat" Hint="Kept in the log with your name and the time." Value="@_reason" ValueChanged="value => _reason = value" MaxLength="ChatLimits.NoteLength" />
                 <Notice Tone="NoticeTone.Warning" Text="@_problem" />
                 <div class="ui-actions">
                     <Button Icon="eye" Busy="_busy" Disabled="@(_reason.Trim().Length == 0)" OnClick="() => OpenAsync(chat)">Open the chat</Button>

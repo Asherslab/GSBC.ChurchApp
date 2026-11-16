@@ -1,7 +1,7 @@
 @inject IMinistryWrites Ministries
 @inject MinistryLookups Lookups
 
-<Sheet Open="Open" OpenChanged="ClosingAsync" Title="@(Role == Roles.Attendee ? "Add attendees" : $"Add to the {Page.Ministry.Name} team")" Lead="Find them by name. They need to be in the app; a child is added by their parent first.">
+<Sheet Open="Open" OpenChanged="ClosingAsync" Title="@(Role == Roles.Attendee ? "Add attendees" : $"Add to the {Page.Ministry.Name} team")" Lead="Find people by name. They need an account in the app; a parent adds a child to the app first.">
     <ChildContent>
         @if (_added.Count > 0)
         {
@@ -10,8 +10,8 @@
         @if (Role != Roles.Attendee && Givable.Count > 1)
         {
             <div class="field">
-                <span class="field__label">Add them as</span>
-                <RoleMenu TValue="string" Label="Add them as" Roles="Givable" Value="@Chosen" ValueChanged="value => _role = value" Block="true" />
+                <span class="field__label">Role</span>
+                <RoleMenu TValue="string" Label="Role" Roles="Givable" Value="@Chosen" ValueChanged="value => _role = value" Block="true" />
             </div>
         }
         <PersonFinder Find="FindAsync" ActionText="@($"Add as {MinistryWords.Role(Chosen).ToLowerInvariant()}")" Busy="@_busy" AutoFocus="true" Leave="_addedIds" OnChosen="AddAsync" />

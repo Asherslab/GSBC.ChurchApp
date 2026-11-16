@@ -10,7 +10,7 @@
         {
             <Section First="true">
                 <EmptyState Icon="check" Title="Nothing to do here now"
-                            Body="It's been decided and followed up, or deleted. The full inbox, with everything followed up, is in the admin panel under Prayer.">
+                            Body="This request has been answered and is off the prayer wall, or it was deleted. The full inbox, including answered requests, is in the admin panel under Prayer.">
                     <Button Variant="ButtonVariant.Quiet" Href="prayer/approve">Back to To approve</Button>
                 </EmptyState>
             </Section>
@@ -36,7 +36,7 @@
                 }
                 @if (item.Pending is { } pending)
                 {
-                    <SaveStatus State="@(pending.Failed ? SaveState.Failed : SaveState.Waiting)" WaitingText="@($"{pending.What}. Waiting to send; it goes by itself when you're back online")"
+                    <SaveStatus State="@(pending.Failed ? SaveState.Failed : SaveState.Waiting)" WaitingText="@($"{pending.What}. Waiting to send. It goes by itself when you're back online.")"
                                 FailedText="@($"Couldn't send: {pending.What.ToLowerInvariant()}")" Detail="@pending.Problem" Retry="() => Approvals.RetryAsync(Id)" />
                 }
             </div>
@@ -44,7 +44,7 @@
                 <p class="prayer-request__text">@item.Text</p>
                 @if (item.Minor)
                 {
-                    <Notice Tone="NoticeTone.Warning" Text="They're under 18. Take extra care with what's shared, and follow the church's child safety policy if anything in it worries you." />
+                    <Notice Tone="NoticeTone.Warning" Text="They're under 18. Take extra care with what's shared, and follow the church's child safety policy if anything in the request worries you." />
                 }
             </Section>
             @if (item.Wall is { } wall)
@@ -53,21 +53,6 @@
             }
             @if (item.Care is { } pastoral)
             {
-                <Section Grouped="true" Title="Getting in touch">
-                    <ChildContent>
-                        @if (pastoral.Contact.Length > 0)
-                        {
-                            <ListGroup>
-                                <ListRow Title="@pastoral.Contact" Subtitle="@(pastoral.WantsContact ? "They'd like someone to get in touch" : null)"
-                                         Icon="@(pastoral.Contact.Contains('@') ? "mail" : "phone")" Href="@ContactLink(pastoral.Contact)" External="true" />
-                            </ListGroup>
-                        }
-                        else
-                        {
-                            <p class="prayer-request__fact">@(pastoral.WantsContact ? "They'd like someone to get in touch. " : "")@(pastoral.SignedIn ? "They're in People in the admin panel." : "They didn't sign in or leave a way to reach them.")</p>
-                        }
-                    </ChildContent>
-                </Section>
                 <Section Grouped="true" Title="Notes for the pastoral team" Lead="Only people who can read prayer requests see these. The person never does.">
                     <ChildContent>
                         @foreach (CareNote note in pastoral.Notes.Where(note => !_deleted.Contains(note.Id)))
@@ -83,7 +68,7 @@
                         <TextField Label="Add a note" Multiline="true" MaxLength="2000" @bind-Value="_note" />
                     </ChildContent>
                     <Foot>
-                        <SaveBar Label="Add the note" New="true" Blocked="@(_note.Trim().Length == 0 ? "Write the note to add it." : null)" OnSave="AddNoteAsync" />
+                        <SaveBar Label="Add the note" New="true" Blocked="@(_note.Trim().Length == 0 ? "Write the note first." : null)" OnSave="AddNoteAsync" />
                     </Foot>
                 </Section>
             }
@@ -91,10 +76,10 @@
     </LiveData>
 </Page>
 
-<Sheet Open="_deletingNote is not null" OpenChanged="open => _deletingNote = open ? _deletingNote : null" Title="Delete this note?" Lead="Nobody on the pastoral team will see it again. This can't be undone.">
+<Sheet Open="_deletingNote is not null" OpenChanged="open => _deletingNote = open ? _deletingNote : null" Title="Delete this note?" Lead="Nobody on the pastoral team will see the note again. This can't be undone.">
     <Actions>
         <Button Block="true" Variant="ButtonVariant.Danger" OnClick="DeleteNoteAsync">Delete the note</Button>
-        <Button Block="true" Variant="ButtonVariant.Quiet" OnClick="() => _deletingNote = null">Keep it</Button>
+        <Button Block="true" Variant="ButtonVariant.Quiet" OnClick="() => _deletingNote = null">Keep the note</Button>
     </Actions>
 </Sheet>
 
@@ -110,11 +95,10 @@
     private DateTime Now => Clock.GetUtcNow().UtcDateTime;
 
     private static string From(StaffCase item) => item.Care is { } care
-        ? care.SignedIn || care.From == PrayerWords.NoName ? care.From : $"{care.From}, not signed in"
+        ? care.SignedIn || care.FromChurch || care.ForSomeoneElse || care.From == PrayerWords.NoName
+            ? PrayerWords.FromTheDesk(care.From, care.FromChurch, care.ForSomeoneElse)
+            : $"{care.From}, not signed in"
         : item.Wall is { ShortName.Length: > 0 } wall ? $"{wall.ShortName}, who'd like their name shown" : "They asked for no name";
-
-    private static string ContactLink(string contact) =>
-        contact.Contains('@') ? $"mailto:{contact}" : $"tel:{new string(contact.Where(c => char.IsDigit(c) || c == '+').ToArray())}";
 
     private async Task<bool> ShowAsync(WallSave save, WallCase wall)
     {

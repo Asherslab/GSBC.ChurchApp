@@ -11,9 +11,13 @@
 
 <UnsavedGuard Changed="() => Changed" Editing="Post" State="() => Shape" What="this post" />
 
+<TellSheet Open="_tellAgain is not null" Title="@(Post.ToldAt is null ? "Send a notification about this post?" : "Send the notification again?")" Lead="@TellAgainLead"
+           NotificationTitle="@TellAgainTitle" BodyHint="Say what changed, for example that the start time moved. Leave this empty to use the start of the post." TitleLength="NewsLimits.LongestTitle"
+           OffersUrgent="true" SendLabel="@(Post.ToldAt is null ? "Send the notification" : "Send it again")" OnTell="TellAgainAsync" OnNotNow="FinishAsync" />
+
 @if (OnAPage)
 {
-    <WritingDesk SettingsTitle="Who it's for and telling them" SettingsSummary="@Summary">
+    <WritingDesk SettingsTitle="Who it's for and notifications" SettingsSummary="@Summary">
         <ChildContent>
             <PostEditor @ref="_editor" Title="@_title" TitleChanged="title => _title = title" Body="_body" BodyChanged="BodyChanged" UploadTo="Target" />
             <Notice Tone="NoticeTone.Warning" Text="@_problem" />
@@ -22,16 +26,16 @@
             <Section Grouped="true" Title="Who it's for">
                 <AudiencePicker Label="Who it's for" ShowLabel="false" Value="@_audience" ValueChanged="audience => _audience = audience" />
             </Section>
-            <Section Grouped="true" Title="Telling people">@Telling</Section>
+            <Section Grouped="true" Title="Notification">@Telling</Section>
             @if (MayPublish && Post.State is not NewsState.Published)
             {
                 <Section Grouped="true" Title="When">@Timing</Section>
             }
-            <Section Grouped="true" Title="A link at the end">@Linking</Section>
+            <Section Grouped="true" Title="Link at the end of the post">@Linking</Section>
         </Settings>
         <Preview>
             <PhoneFrame Label="The post, as it will look in the app's News" OnRoute="news" Back="News" Title="@_title.Trim()">
-                <Section First="true"><PostView FillsPage="true" Title="@(_title.Trim().Length > 0 ? _title.Trim() : "Its title")" Content="Draft" Author="@Post.Author" Posted="Clock.GetUtcNow().UtcDateTime" For="@NewsWords.AudienceWords(_audience)" LinkPath="@_linkPath.Trim()" LinkLabel="@_linkLabel.Trim()" /></Section>
+                <Section First="true"><PostView FillsPage="true" Title="@(_title.Trim().Length > 0 ? _title.Trim() : "Title of the post")" Content="Draft" Author="@Post.Author" Posted="Clock.GetUtcNow().UtcDateTime" For="@NewsWords.AudienceWords(_audience)" LinkPath="@_linkPath.Trim()" LinkLabel="@_linkLabel.Trim()" /></Section>
             </PhoneFrame>
         </Preview>
         <Foot>@Saving</Foot>
@@ -61,28 +65,28 @@ else
     private RenderFragment Telling => @<text>
         @if (Post.ToldAt is { } told)
         {
-            <p class="news-form__note">Its notification went @ChurchDates.Describe(told, DateLineStyle.Relative, withTime: true, Clock.GetUtcNow().UtcDateTime).</p>
+            <p class="news-form__note">@ToldLine(told)</p>
         }
         else
         {
-            <ToggleRow Title="Send a notification" Description="It opens the post. People who turned church news off don't get it." @bind-Checked="_tell" />
+            <ToggleRow Title="Send a notification" Description="Tapping the notification opens the post. People who turned off church news notifications don't get it." @bind-Checked="_tell" />
             @if (_tell)
             {
-                <TextField Label="What it says" Value="@_tellTitle" ValueChanged="text => _tellTitle = text" Placeholder="@_title" MaxLength="120"
-                           Hint="Leave it empty to use the title" />
-                <TextField Label="Its line" Value="@_tellBody" ValueChanged="text => _tellBody = text" Multiline="true" MaxLength="240"
-                           Hint="Leave it empty to use the start of the post" />
-                <ToggleRow Title="Urgent" Description="Buzzes phones in quiet hours too, for something people need to know now" @bind-Checked="_urgent" />
+                <TextField Label="Notification title" Value="@_tellTitle" ValueChanged="text => _tellTitle = text" MaxLength="120"
+                           Hint="Leave this empty to use the post's title." />
+                <TextField Label="Notification text" Value="@_tellBody" ValueChanged="text => _tellBody = text" Multiline="true" MaxLength="240"
+                           Hint="Leave this empty to use the start of the post." />
+                <ToggleRow Title="Urgent" Description="For something people need to know now. The notification arrives during quiet hours too." @bind-Checked="_urgent" />
             }
         }
     </text>;
 
     private RenderFragment Linking => @<text>
-        <TextField Label="@(OnAPage ? "Link to (optional)" : "A link at the end (optional)")" Value="@_linkPath" ValueChanged="path => _linkPath = path" Type="url" Placeholder="/events or https://…"
-                   Hint="A page in the app, such as an event, or a web address" Problem="@LinkProblem" />
+        <TextField Label="Link at the end of the post" Value="@_linkPath" ValueChanged="path => _linkPath = path" Type="url"
+                   Hint="Optional. A page in the app, such as an event, or a web address starting with https://. A button at the end of the post opens it." Problem="@LinkProblem" />
         @if (_linkPath.Trim().Length > 0)
         {
-            <TextField Label="The link's words" Value="@_linkLabel" ValueChanged="label => _linkLabel = label" Placeholder="Open it" MaxLength="40" />
+            <TextField Label="Button text" Value="@_linkLabel" ValueChanged="label => _linkLabel = label" MaxLength="40" Hint="The words on the button. Leave this empty to show “Open it”." />
         }
     </text>;
 
@@ -90,7 +94,7 @@ else
         <Segmented TValue="bool" Label="When" ShowLabel="@(!OnAPage)" Options="WhenOptions" Value="_later" ValueChanged="later => _later = later" />
         @if (_later)
         {
-            <DateTimeField Label="Publish it at" Value="@_publishAt" ValueChanged="value => _publishAt = value" Problem="@LaterProblem" />
+            <DateTimeField Label="Publish on" Value="@_publishAt" ValueChanged="value => _publishAt = value" Problem="@LaterProblem" />
         }
     </text>;
 
@@ -127,6 +131,62 @@ else
     [Parameter, EditorRequired] public required NewsPost Post { get; set; }
     [Parameter] public EventCallback<NewsPost> OnSaved { get; set; }
     [Parameter] public EventCallback OnCancel { get; set; }
+    [Parameter] public Func<string, Task<NewsReach>>? Reach { get; set; }
+
+    private NewsPost? _tellAgain;
+    private string? _reach;
+
+    private string ToldLine(DateTime told) =>
+        $"The notification {(Post.TimesTold > 1 ? "was sent again" : "was sent")} {NewsWords.SentAt(told, Clock)}.";
+
+    private string TellAgainLead =>
+        Post.ToldAt is { } told
+            ? $"Saved. The notification went to {NewsWords.AudienceWords(_audience).ToLowerInvariant()}{_reach} {NewsWords.SentAt(told, Clock)}. Send it again, saying what changed? The new one replaces the earlier one in their notifications."
+            : $"Saved. The post was published without a notification. Send one to {NewsWords.AudienceWords(_audience).ToLowerInvariant()}{_reach}, saying what changed?";
+
+    private string TellAgainTitle => NewsWords.Updated(_tellTitle.Trim().Length > 0 ? _tellTitle.Trim() : _title.Trim());
+
+    private async Task<string?> TellAgainAsync(TellWords words)
+    {
+        if (_tellAgain is not { } saved)
+            return null;
+        try
+        {
+            await Writes.TellAgainAsync(saved.Id, words.Title, words.Body, words.Urgent);
+        }
+        catch (Grpc.Core.RpcException exception)
+        {
+            return exception.Status.Detail;
+        }
+        await FinishAsync();
+        return null;
+    }
+
+    private async Task FinishAsync()
+    {
+        if (_tellAgain is not { } saved)
+            return;
+        _tellAgain = null;
+        await OnSaved.InvokeAsync(saved);
+    }
+
+    private async Task AskToTellAgainAsync(NewsPost saved)
+    {
+        _reach = null;
+        _tellAgain = saved;
+        if (Reach is not null)
+        {
+            try
+            {
+                NewsReach reach = await Reach(_audience);
+                _reach = reach.Phones > 0 ? $" (about {reach.Phones} {(reach.Phones == 1 ? "phone" : "phones")})" : "";
+            }
+            catch (Grpc.Core.RpcException)
+            {
+                _reach = null;
+            }
+        }
+    }
 
     private bool MayPublish => Access.Can(NewsPermissions.Publish);
 
@@ -171,13 +231,13 @@ else
 
     private string SaveLabel =>
         Post.State == NewsState.Published ? "Save"
-        : !MayPublish ? "Ask for it to be published"
-        : _later ? "Schedule it"
-        : NewsWords.AudienceWords(_audience) == "Everyone" ? "Post for everyone" : "Post it";
+        : !MayPublish ? "Ask for the post to be published"
+        : _later ? "Schedule the post"
+        : NewsWords.AudienceWords(_audience) == "Everyone" ? "Post for everyone" : "Publish the post";
 
     private string? Blocked =>
-        _title.Trim().Length == 0 ? "Give it a title to post it or save it as a draft."
-        : _later && MayPublish && Later is null ? "Choose when to publish it."
+        _title.Trim().Length == 0 ? "Enter a title for the post."
+        : _later && MayPublish && Later is null ? "Choose when to publish the post."
         : LaterProblem ?? LinkProblem;
 
     private string _id = "";
@@ -202,7 +262,10 @@ else
                 await Writes.AskToPublishAsync(saved.Id);
         }
         _loadedShape = Shape;
-        await OnSaved.InvokeAsync(saved);
+        if (Post.State is NewsState.Published && MayPublish)
+            await AskToTellAgainAsync(saved);
+        else
+            await OnSaved.InvokeAsync(saved);
     });
 
     private Task SaveDraftAsync() => RunAsync(async () =>

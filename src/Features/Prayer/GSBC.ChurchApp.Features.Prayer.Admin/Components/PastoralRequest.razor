@@ -6,7 +6,7 @@
 <LiveData @ref="_live" TValue="RequestDetails" Load="LoadAsync" Feeds="Feeds" FailedTitle="Can't open this request right now">
     @{ RequestDetails request = context.Value; InboxLine line = request.Line; }
     <PaneHead Title="@From(request)" Lead="@($"Sent {ChurchDates.Describe(line.SentAt, DateLineStyle.Short, withTime: true, Now)}")"
-              Actions="@(request.MayRead ? Actions : null)" OnClose="OnClose" />
+              Actions="@(request.MayDelete ? Actions : null)" OnClose="OnClose" />
     <div class="prayer-request">
         <div class="prayer-request__main">
             @if (line.Minor)
@@ -24,7 +24,7 @@
             <p class="prayer-request__text">@line.Text</p>
             @if (line.Minor)
             {
-                <Notice Tone="NoticeTone.Warning" Text="They're under 18. Take extra care with what's shared, and follow the church's child safety policy if anything in it worries you." />
+                <Notice Tone="NoticeTone.Warning" Text="They're under 18. Take extra care with what's shared, and follow the church's child safety policy if anything in the request worries you." />
             }
             <Notice Tone="NoticeTone.Warning" Text="@_problem" />
         </div>
@@ -36,22 +36,6 @@
 
         @if (request.MayRead)
         {
-            <Section Grouped="true" Title="Getting in touch" Lead="@(line.WantsContact ? "They'd like someone to get in touch." : null)">
-                <ChildContent>
-                    @if (request.Contact.Length > 0)
-                    {
-                        <p class="prayer-request__fact">@request.Contact</p>
-                    }
-                    @if (request.PersonId.Length > 0)
-                    {
-                        <p class="prayer-request__fact"><a class="text-link" href="people/@request.PersonId">@line.From in People</a></p>
-                    }
-                    else if (request.Contact.Length == 0)
-                    {
-                        <p class="prayer-request__fact">They didn't sign in or leave a way to reach them.</p>
-                    }
-                </ChildContent>
-            </Section>
             <Section Grouped="true" Title="Notes for the pastoral team" Lead="Only people who can read prayer requests see these. The person never does.">
                 <ChildContent>
                     @foreach (CareNote note in request.Notes)
@@ -67,10 +51,10 @@
                     <TextField Label="Add a note" Multiline="true" MaxLength="2000" @bind-Value="_note" />
                 </ChildContent>
                 <Foot>
-                    <SaveBar Label="Add the note" New="true" Busy="@(_busy == "note")" Blocked="@(_note.Trim().Length == 0 ? "Write the note to add it." : null)" OnSave="AddNoteAsync" />
+                    <SaveBar Label="Add the note" New="true" Busy="@(_busy == "note")" Blocked="@(_note.Trim().Length == 0 ? "Write the note first." : null)" OnSave="AddNoteAsync" />
                 </Foot>
             </Section>
-            <Section Grouped="true" Title="What's happened">
+            <Section Grouped="true" Title="History">
                 <ol class="prayer-steps">
                     @foreach (CareStep step in request.History)
                     {
@@ -84,15 +68,15 @@
 
 <Sheet Open="_deleting" OpenChanged="open => _deleting = open" Title="Delete this prayer request?" Lead="It goes from the pastoral team, the prayer wall and the person's phone, with its notes. This can't be undone.">
     <Actions>
-        <Button Block="true" Variant="ButtonVariant.Danger" Busy="@(_busy == "delete")" OnClick="DeleteAsync">Delete it</Button>
-        <Button Block="true" Variant="ButtonVariant.Quiet" OnClick="() => _deleting = false">Keep it</Button>
+        <Button Block="true" Variant="ButtonVariant.Danger" Busy="@(_busy == "delete")" OnClick="DeleteAsync">Delete the request</Button>
+        <Button Block="true" Variant="ButtonVariant.Quiet" OnClick="() => _deleting = false">Keep the request</Button>
     </Actions>
 </Sheet>
 
-<Sheet Open="_deletingNote is not null" OpenChanged="open => _deletingNote = open ? _deletingNote : null" Title="Delete this note?" Lead="Nobody on the pastoral team will see it again. This can't be undone.">
+<Sheet Open="_deletingNote is not null" OpenChanged="open => _deletingNote = open ? _deletingNote : null" Title="Delete this note?" Lead="Nobody on the pastoral team will see the note again. This can't be undone.">
     <Actions>
         <Button Block="true" Variant="ButtonVariant.Danger" Busy="@(_busy == "note")" OnClick="DeleteNoteAsync">Delete the note</Button>
-        <Button Block="true" Variant="ButtonVariant.Quiet" OnClick="() => _deletingNote = null">Keep it</Button>
+        <Button Block="true" Variant="ButtonVariant.Quiet" OnClick="() => _deletingNote = null">Keep the note</Button>
     </Actions>
 </Sheet>
 
@@ -119,8 +103,8 @@
     private IReadOnlyList<MenuItem> NoteActions(string noteId) =>
         [this.Item("Delete this note…", () => { _deletingNote = noteId; }, "trash-2", danger: true)];
 
-    private static string From(RequestDetails request) => request.SignedIn
-        ? request.Line.From
+    private static string From(RequestDetails request) => request.SignedIn || request.FromChurch || request.ForSomeoneElse
+        ? PrayerWords.FromTheDesk(request.Line.From, request.FromChurch, request.ForSomeoneElse)
         : request.Line.From == PrayerWords.NoName ? "Not signed in, no name given" : $"{request.Line.From}, not signed in";
 
     private static WallCase WallCaseOf(RequestDetails request) => new()

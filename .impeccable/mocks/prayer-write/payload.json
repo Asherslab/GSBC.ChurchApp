@@ -1,0 +1,46 @@
+{
+  "title": "Prayer: writing a request in the admin panel",
+  "question": "Prayer wall staff can now write a prayer request in the admin panel (#9). As you chose: it goes straight onto the wall (or only to the pastoral team), it can be from My name, Someone else (type their name), No name or the church, and any prayer wall staff can change or take down one from the church. The church's name starts as GSBC and can be changed under Prayer → Settings. The three differ in where you write it. The phone's Ask for prayer screen gets the same name choices for these staff. Lock one, steer it, or ask for another hand.",
+  "options": [
+    {
+      "id": "page",
+      "kind": "assigned",
+      "kicker": "THE ROLL",
+      "label": "A page to write on",
+      "thesis": "Write a request (top right of Prayer) opens a page of its own, like writing a post: a white page for the words, and a column on the right with who it's from, who reads it, the day it leaves, how the wall will show it, and Cancel and Put it on the wall at its foot.",
+      "palette": ["#2a3d5e", "#f4efe7", "#00776d", "#e7ae74", "#ffffff"],
+      "materials": ["writing page", "radio rows with a sentence each", "segmented", "date field", "wall preview card", "save bar"],
+      "viewport": "Title band 'Write a prayer request' with a way back to Prayer; the words on a white page on sand; the settings column on the right.",
+      "risk": "Leaves the inbox to write a short request.",
+      "html": ".impeccable/mocks/prayer-write/page.html",
+      "htmlFrame": "1440x900"
+    },
+    {
+      "id": "posting-as",
+      "kind": "dealt",
+      "label": "Who it's from, at the top",
+      "thesis": "Write a request opens a blank request in the right-hand pane, as adding works everywhere in the admin panel. It starts with who it's from as a button and menu (each choice with a sentence), then the words, who reads it, the day it leaves, and Cancel and Put it on the wall.",
+      "palette": ["#2a3d5e", "#f4efe7", "#00776d", "#e7ae74", "#ffffff"],
+      "materials": ["record pane", "from menu", "text field", "segmented", "date field", "save bar"],
+      "viewport": "The inbox stays as it is; the right pane shows New prayer request with From: GSBC opened as a menu.",
+      "risk": "Who it's from is hidden in a menu until you open it.",
+      "html": ".impeccable/mocks/prayer-write/posting-as.html",
+      "htmlFrame": "1440x900"
+    },
+    {
+      "id": "wall-card",
+      "kind": "dealt",
+      "label": "Write it as the wall shows it",
+      "thesis": "A blank request in the right-hand pane, drawn as the prayer wall's card: you type into the card, and who it's from is a four-way switch under it, so you see exactly what people will read. Then the day it leaves, a link to make it only for the pastoral team instead, and Cancel and Put it on the wall.",
+      "palette": ["#2a3d5e", "#f4efe7", "#00776d", "#e7ae74", "#ffffff"],
+      "materials": ["record pane", "wall card as the field", "segmented", "date field", "save bar"],
+      "viewport": "The inbox stays; the right pane shows the wall card with the words typed in, GSBC · Just now, and My name / Someone else / No name / GSBC under it.",
+      "risk": "Someone else's name needs a field the card has to make room for.",
+      "html": ".impeccable/mocks/prayer-write/wall-card.html",
+      "htmlFrame": "1440x900"
+    }
+  ],
+  "reroll": true,
+  "steer": true,
+  "buildPath": { "value": "code", "toggle": true }
+}

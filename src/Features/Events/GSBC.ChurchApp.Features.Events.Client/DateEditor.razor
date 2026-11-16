@@ -12,7 +12,7 @@
 }
 else
 {
-    <Page Title="This date" OnBack="LeaveAsync" TopBar="TopBarStyle.Solid">
+    <Page Title="Change this date" OnBack="LeaveAsync" TopBar="TopBarStyle.Solid">
         <ChildContent><EditScope Edited="() => { }">@Body</EditScope></ChildContent>
     </Page>
 }
@@ -71,7 +71,7 @@ else
             _desk = await Editing.DeskAsync();
             if (await Editing.RegularEventAsync(CalendarId, RegularEventId) is not { } detail)
             {
-                _loadProblem = "It isn't on this phone. It may have been deleted, or you may no longer edit its calendar.";
+                _loadProblem = "This date isn't on this phone. It may have been deleted, or you may no longer be an editor of its calendar.";
                 return;
             }
             _draft = EventDraft.From(detail, Date, Now);
@@ -199,7 +199,7 @@ else
                 One of the @draft.Every.Fields.Title, @draft.RepeatWords.
                 @if (_kept.By.Length == 0)
                 {
-                    <button type="button" class="date-of__link" @onclick="OpenRegular">Edit the regular event ›</button>
+                    <button type="button" class="date-of__link" @onclick="OpenRegular">Change the regular event ›</button>
                 }
             </p>
         </div>;
@@ -207,11 +207,11 @@ else
     private RenderFragment FieldsOf(EventDraft draft) => @<text>
         @if (draft.NotOnThisDate)
         {
-            <p class="event-off"><Icon Name="circle-off" Size="IconSize.Small" />Not on this date. People see it as not on, and calendar apps leave it out.</p>
+            <p class="event-off"><Icon Name="circle-off" Size="IconSize.Small" />Not on this date. The app shows it as not on, and calendar apps leave it out.</p>
         }
         else if (_inBreak is not null)
         {
-            <p class="event-off"><Icon Name="circle-off" Size="IconSize.Small" />Not on: it's in @(_inBreak.Length > 0 ? _inBreak : "a break"). Breaks are changed on the regular event.</p>
+            <p class="event-off"><Icon Name="circle-off" Size="IconSize.Small" />Not on: this date is in @(_inBreak.Length > 0 ? _inBreak : "a break"). Change breaks on the regular event.</p>
         }
         <TextField Label="Title on this date" Value="@OnDate.Fields.Title" ValueChanged="value => OnDate.Fields.Title = value" MaxLength="120" Required="true"
                    Placeholder="@draft.Every.Fields.Title" />
@@ -222,19 +222,19 @@ else
         </div>
         @Usual(draft, EventFieldKeys.Time, $"Usually {UsualTime(draft)}.")
         <PlaceEditor Place="OnDate.Fields.Place" PlaceChanged="place => OnDate.Fields.Place = place" Used="_placesUsed" Missing="@(draft.Needs.Contains(EventFieldKeys.Place))" />
-        @Usual(draft, EventFieldKeys.Place, draft.Every.Fields.Place is { } usual ? $"Usually at {PlaceName(usual)}." : "Usually no place.")
+        @Usual(draft, EventFieldKeys.Place, draft.Every.Fields.Place is { } usual ? $"Usually at {PlaceName(usual)}." : "Usually there's no place.")
         <EventAbout @ref="_about" @key="_aboutVersion" Label="About this date" Text="OnDate.Fields.Description" TextChanged="text => OnDate.Fields.Description = text"
-                    Placeholder="What's different this time" />
-        @Usual(draft, EventFieldKeys.Description, "This date has its own About.")
+                    Hint="Say what's different on this date. It replaces the regular event's About." />
+        @Usual(draft, EventFieldKeys.Description, "This date has its own About instead of the usual one.")
     </text>;
 
     private RenderFragment Saving(EventDraft draft) =>
-        @<SaveBar Block="!OnAPage" Label="Save this date" Busy="_saving" OnSave="() => SaveAsync(draft.NotOnThisDate)" OnCancel="LeaveAsync" Blocked="@(OnDate.Fields.Title.Trim().Length == 0 ? "Give it a title to save it." : null)" State="SaveLine" SavedText="@SavedWords"
+        @<SaveBar Block="!OnAPage" Label="Save this date" Busy="_saving" OnSave="() => SaveAsync(draft.NotOnThisDate)" OnCancel="LeaveAsync" Blocked="@(OnDate.Fields.Title.Trim().Length == 0 ? "Enter a title for this date." : null)" State="SaveLine" SavedText="@SavedWords"
                   WaitingText="@EditWaiting.WaitingWords" FailedText="@EditWaiting.FailedWords" Detail="@Waiting?.Problem" Retry="() => Editing.RetryAsync(ItemKey)" />;
 
     private IReadOnlyList<MenuItem> DateActions(EventDraft draft) =>
     [
-        this.Item(draft.NotOnThisDate ? "On again" : "Not on this date", () => SaveAsync(!draft.NotOnThisDate), "circle-off", disabled: _saving),
+        this.Item(draft.NotOnThisDate ? "Put this date back on" : "Not on this date", () => SaveAsync(!draft.NotOnThisDate), "circle-off", disabled: _saving),
     ];
 
     private string? _stored;
@@ -271,7 +271,7 @@ else
     private static DateSave SaveMessage(EventDraft draft) => draft.ToDateSave(draft.NotOnThisDate);
 
     private RenderFragment? Usual(EventDraft draft, string key, string words) => !draft.DateDiffers(key) ? null :
-        @<p class="usual-line">@words <button type="button" class="usual-line__back" @onclick="() => PutBack(draft, key)">Put it back</button></p>;
+        @<p class="usual-line">@words <button type="button" class="usual-line__back" @onclick="() => PutBack(draft, key)">Use the usual</button></p>;
 
     private static string UsualTime(EventDraft draft) => draft.Every.StartMinute is null ? "all day" : EventDates.Times(draft.Every.StartMinute, draft.Every.EndMinute);
 

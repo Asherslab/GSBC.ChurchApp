@@ -33,6 +33,7 @@ public static class EventsClientExtensions
             .AddSingleton<WideningWords>()
             .AddSingleton(new CalendarSetView(CalendarSetList.For))
             .AddHubTile<ComingUpTile>(EventsTiles.Week)
+            .AddHubTile<WhatsNextTile>(EventsTiles.WhatsNext)
             .AddAppCardView<EventCard>(AppCardKind.Event)
             .AddAppCardSource<EventCardChoices>();
 }

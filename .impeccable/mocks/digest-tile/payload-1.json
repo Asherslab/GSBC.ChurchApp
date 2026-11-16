@@ -1,0 +1,46 @@
+{
+  "title": "What's next on Home: the tile that replaces the Sunday bulletin",
+  "question": "Each sketch is dev's Home with the bulletin's 1 × 2 tile turned into What's next (as you picked: swapped in place), its other sizes, and, the same in every option, the foot of the What's next page with Earlier digests and the email block Copy for email gives Elvanto. The digest is a sample. Pick the tile; steer anything about the page foot or the email in the box. My recommendation: B. It's the only one that reads as the bulletin's front page (navy, the headline thing this week, what follows under a rule), so the swap feels like the same tile grown up. A shows each thing's picture but changes under your thumb; C is clear but looks like This week, which already sits on Home.",
+  "options": [
+    {
+      "id": "turning",
+      "kind": "assigned",
+      "kicker": "THE ROLL",
+      "label": "A: One thing at a time",
+      "thesis": "The tile shows one thing from the digest at a time with its picture behind, turning to the next every few seconds; dots show how many. A date that isn't on shows on navy. It holds still when the phone asks for less motion, and opens What's next at that thing.",
+      "palette": ["#2a3d5e", "#ffffff", "#d5c9b7", "#18233a"],
+      "materials": ["the digest's own pictures", "a slow cross-fade", "dots for how many", "navy for a date that isn't on"],
+      "viewport": "Where the bulletin was, a tall tile: the baptism picture, 'What's next · 1 of 4', Baptisms, This Sunday · 10:30am, then it turns to Christmas Day.",
+      "risk": "It's the only Home tile that moves, so it pulls the eye on every visit, and the words change while someone is reading them. Items without a picture look plainer than the rest.",
+      "html": ".impeccable/mocks/digest-tile/a-turning.html",
+      "htmlFrame": "1440x900"
+    },
+    {
+      "id": "headline",
+      "kind": "dealt",
+      "label": "B: The headline and what follows",
+      "thesis": "Navy, like the bulletin it replaces: the first thing in the digest as the headline with its when line, the next ones under a rule, and 'Read What's next' at the foot. One row tall it's a line ('Baptisms this Sunday and 3 more'); a single cell says how many; 2 × 2 adds the headline's picture on top.",
+      "palette": ["#2a3d5e", "#ffffff", "#d5c9b7", "#00776d"],
+      "materials": ["masthead tone", "headline, then rows under a hairline", "the lead's picture at 2 × 2", "go line"],
+      "viewport": "Where the bulletin was, a tall navy tile: 'What's next', Baptisms, This Sunday · 10:30am, then No Bible Study & Prayer and Christmas Day service, then Read What's next.",
+      "risk": "Only the first thing gets a picture, and only at 2 × 2. Long titles are cut short in the rows of a one-column tile.",
+      "html": ".impeccable/mocks/digest-tile/b-headline.html",
+      "htmlFrame": "1440x900"
+    },
+    {
+      "id": "agenda",
+      "kind": "dealt",
+      "label": "C: A short agenda",
+      "thesis": "A white card titled What's next with 'All 4', listing the digest's things with the time and day beside each, the way This week lists the calendar. A date that isn't on reads 'Not on'. A single cell shows the next thing and when.",
+      "palette": ["#ffffff", "#18233a", "#00776d", "#545e70"],
+      "materials": ["raised card", "This week's list rows", "All 4 link"],
+      "viewport": "Where the bulletin was, a tall white card: What's next · All 4, 10:30am Sun Baptisms, Not on Wed No Bible Study & Prayer, 9am Fri Christmas Day service.",
+      "risk": "It looks almost the same as the This week tile already on Home, so the two are hard to tell apart, and it shows no pictures at all.",
+      "html": ".impeccable/mocks/digest-tile/c-agenda.html",
+      "htmlFrame": "1440x900"
+    }
+  ],
+  "reroll": true,
+  "steer": true,
+  "buildPath": { "value": "code" }
+}

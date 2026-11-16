@@ -143,8 +143,12 @@ markdown ... plenty of it could be under a 'extras' dropdown".
   handle to drag it, *Add a picture beside it* (a gallery), *Replace* and *Take it out*; cut and paste moves it too.
 - **No ids in sight** (owner, 2026-11-14: "i don't want the media links to look super ugly in markdown ... handle that
   invisibly ... something like ~/Main Photos/church-ministry.jpg"). The stored line keeps `media:<id>`, and the editor
-  never shows it: each file reads as its place in the library (`~/Main Photos/church-ministry.jpg`, from `MediaRef.Folder`,
-  set when it's chosen; files chosen before this show `~/name`).
+  never shows it: each file reads as its place in the library (`~/Main Photos/church-ministry.jpg`). In the admin panel
+  the editor asks Media where each file is now when it opens (`Media.Places`, gRPC, through `IMediaPlaces`), so a
+  reopened post shows the real folder; before 2026-11-16 the folder came only from choosing the file, so a saved post
+  showed `~/church-ministry.jpg` (UAT feedback). The phone doesn't look it up (posts carry no folder, so staff folder
+  names never reach readers): it shows the folder of a file just chosen, otherwise `~/name`. A file in a folder the
+  viewer can't open shows `~/name` too.
 - **Split into cards** (owner, 2026-11-14: "we could use something similar to horizontal rule to specify a 'card split'
   instead, e.g. `===`"): `===` on a line of its own where a block starts. Under a line of text it stays text (never a
   setext heading). On the post page each part opens under a navy rule (a sand bar until the bulletin item, below); a notification's line and a
@@ -273,6 +277,40 @@ instead of deleting them".
   news following it as it follows edits now: archiving the ministry's post would take it off church news, and putting it
   back would leave it out until it's shared again. A ministry's post has no drafts of its own yet; it reaches church
   news only once it's published in the ministry.
+
+## Every ministry's news, and telling people again (UAT, 2026-11-16)
+
+Feedback #11 (a staff member, admin panel): "Add an 'All Ministries' filter to show all ministry's news posts for staff
+to go through and look at if desired. Also add that as a tab option in the app under the news page, only for staff with
+permission to view all news in admin center." The owner said yes to the app tab. #12 (the owner, app): "Add optional
+ability to renotify people when a news post is edited or updated."
+
+- **Interview (owner, 2026-11-16):** a new permission, *See every ministry's posts for everyone* (`news.ministries`),
+  given to Church news Publishers; anyone can be given it under Roles. Only posts for everyone (never a team's,
+  leaders' or parents' posts, nor a hidden ministry's). Staff read them and open the ministry; publishers can also put
+  one in church news. Telling people again starts from the post's notification words, which can be changed.
+- **All ministries** (the owner's pick on the decision page, *Rows like the rest of the desk*,
+  `.impeccable/mocks/news-all/b-rows.html`): on the Church news desk, a second rail heading *Every ministry* with *All
+  ministries* and its count; rows like the desk's (title, the ministry in accent, by and when, *In church news* or
+  *Asking*, the picture); the post opens in the pane with ⋯ *Put the post in church news…* (publishers, confirmed with *Send a
+  notification*) and *Open the post in …*. The newest 200 posts.
+- **The app's third tab, All ministries** (`/news/every`), for the same permission. The phone already syncs every
+  ministry's posts for everyone (`ministries.posts`), so the tab reads its store; no new feed, no direct call. Its rows
+  open the ministry's post page, where publishers already have *Put it in church news…*. The tabs show when there are
+  two or more (The church, Your ministries if you're in one, All ministries).
+- **Telling people again** (the owner re-rolled a switch in the settings with "it should be a popup like changing a
+  calendar event does", then picked *Tell people again, saying what changed*, `.impeccable/mocks/news-all/t-a-what-changed.html`):
+  saving a change to a published post opens "Send the notification again?" (or "Send a notification about this post?" if
+  it went without one): it went to whom (and, at the desk, about how many phones) and when; *Notification title* starts
+  as "Updated: …", *Notification text* says what changed (empty uses the post's opening); *Urgent*; *Send it again* or
+  *Don't send a notification*. The new notification replaces the
+  earlier one in everyone's notifications (the earlier one is recalled first). Built as the shared `TellSheet`
+  (Platform.Ui), which the calendar's *Tell people?* now uses too.
+- **Each send is counted** (`times_told`): the settings say "The notification was sent again …", and the desk's state
+  line "Published …, with a notification, sent again today at 3:58pm". Only publishers can tell again
+  (`News.TellAgain`), only on a published church news post, never on a ministry's post shown in church news.
+- **The admin desk needs `news.write` as before:** someone given only *See every ministry's news* sees the app's tab but
+  not the admin panel's Church news (*default*).
 
 ## How it's built
 

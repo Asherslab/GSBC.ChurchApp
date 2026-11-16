@@ -1,6 +1,7 @@
 @using GSBC.ChurchApp.Platform.Common
 @inject UiHost Host
 @inject TimeProvider Clock
+@inject IJSRuntime Js
 
 @if (!Host.Desktop)
 {
@@ -11,8 +12,12 @@ else
 {
     <div class="field date-field @(ShownProblem is null ? "" : "field--problem")" @onkeydown="OnFieldKeyAsync">
         <label class="field__label" for="@_id">@Label</label>
+        @if (Hint is not null)
+        {
+            <span class="field__hint" id="@(_id)-hint">@Hint</span>
+        }
         <div class="date-field__box">
-            <input id="@_id" class="field__input date-field__input" type="text" inputmode="text" value="@_text" placeholder="@(Placeholder ?? "Like 15 Nov")"
+            <input id="@_id" class="field__input date-field__input" type="text" inputmode="text" value="@_text" placeholder="@Placeholder"
                    required="@Required" disabled="@Disabled" autocomplete="@(AutoComplete ?? "off")" aria-describedby="@DescribedBy" aria-invalid="@(ShownProblem is null ? null : "true")"
                    @oninput="Typed" @onchange="CommitAsync" />
             <button type="button" class="date-field__open" aria-label="Choose a date" aria-haspopup="dialog" aria-expanded="@(_open ? "true" : "false")" disabled="@Disabled"
@@ -22,7 +27,7 @@ else
             @if (_open)
             {
                 <button type="button" class="date-field__away" tabindex="-1" aria-label="Close the calendar" @onclick="Close"></button>
-                <div class="date-field__popover" role="dialog" aria-label="@($"Choose {Label.ToLowerInvariant()}")">
+                <div class="date-field__popover" popover="manual" @ref="_popover" role="dialog" aria-label="@($"Choose {Label.ToLowerInvariant()}")">
                     @if (_picking == Picking.Days)
                     {
                         <div class="date-field__month">
@@ -114,10 +119,6 @@ else
         {
             <span class="date-field__readback" id="@(_id)-readback"><Icon Name="check" Size="IconSize.Small" />@readback</span>
         }
-        @if (Hint is not null)
-        {
-            <span class="field__hint" id="@(_id)-hint">@Hint</span>
-        }
         @if (ShownProblem is not null)
         {
             <span class="field__problem" id="@(_id)-problem">@ShownProblem</span>
@@ -140,6 +141,7 @@ else
     private bool _focusPending;
     private DateOnly _month;
     private DateOnly _focus;
+    private ElementReference _popover;
 
     [Parameter, EditorRequired] public required string Label { get; set; }
     [Parameter] public string Value { get; set; } = "";
@@ -162,6 +164,7 @@ else
     private int Aligned => _month.Year - Mod(_month.Year, YearsShown);
 
     private DateOnly Today => ChurchTime.Today(Clock);
+    private DateOnly Earliest => TypedDates.Day(Min) is { } min && min > Today ? min : Today;
     private DateOnly? Chosen => TypedDates.Day(Value);
     private DateOnly FirstShown => _month.AddDays(-(((int)_month.DayOfWeek + 6) % 7));
     private string? ShownProblem => Problem ?? _typingProblem;
@@ -208,7 +211,7 @@ else
         }
         if (!TypedDates.TryParseDay(_text, Today, out DateOnly day))
         {
-            _typingProblem = "Type a date like 15 Nov, 15/11/2026 or next Sunday.";
+            _typingProblem = "Type a date such as 15 Nov, 15/11/2026 or next Sunday, or choose one from the calendar.";
             return;
         }
         if (OutOfRange(day) is { } problem)
@@ -230,8 +233,8 @@ else
     }
 
     private string? OutOfRange(DateOnly day) =>
-        TypedDates.Day(Min) is { } min && day < min ? $"That's before {TypedDates.Show(min)}."
-        : TypedDates.Day(Max) is { } max && day > max ? $"That's after {TypedDates.Show(max)}."
+        TypedDates.Day(Min) is { } min && day < min ? $"Choose a date on or after {TypedDates.Show(min)}."
+        : TypedDates.Day(Max) is { } max && day > max ? $"Choose a date on or before {TypedDates.Show(max)}."
         : null;
 
     private bool Allowed(DateOnly day) => OutOfRange(day) is null;
@@ -252,7 +255,7 @@ else
             Close();
             return Task.CompletedTask;
         }
-        DateOnly start = TypedDates.TryParseDay(_text, Today, out DateOnly typed) ? typed : Chosen ?? Today;
+        DateOnly start = TypedDates.TryParseDay(_text, Today, out DateOnly typed) ? typed : Chosen ?? Earliest;
         _focus = start;
         _month = new DateOnly(start.Year, start.Month, 1);
         _picking = Picking.Days;
@@ -364,6 +367,7 @@ else
         if (!_open || !_focusPending)
             return;
         _focusPending = false;
+        await PopoverPlacement.FloatAsync(Js, _popover);
         if (_picking == Picking.Months)
             await _picks[FirstAllowed(_month.Month - 1, 12, index => AllowedMonth(new DateOnly(_month.Year, index + 1, 1)))].FocusAsync();
         else if (_picking == Picking.Years)

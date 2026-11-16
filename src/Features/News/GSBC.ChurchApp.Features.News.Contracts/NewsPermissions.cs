@@ -20,5 +20,9 @@ public static class NewsPermissions
         new(ChurchNews.PublishNode, ScopeKind.Global,
             "Publish, schedule and delete church news and send its notifications, and put ministries' posts into church news", area: "Church news");
 
-    public static readonly IReadOnlyList<Permission> All = [Write, Publish];
+    public static readonly Permission SeeMinistries =
+        new(ChurchNews.SeeMinistriesNode, ScopeKind.Global,
+            "See every ministry's posts for everyone, under All ministries in Church news and in the app's News", area: "Church news");
+
+    public static readonly IReadOnlyList<Permission> All = [Write, Publish, SeeMinistries];
 }

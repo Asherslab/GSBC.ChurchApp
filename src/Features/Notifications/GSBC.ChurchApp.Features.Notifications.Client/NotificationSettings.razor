@@ -30,7 +30,7 @@ else if (Push.Permission != PushRegistration.Granted)
             <ListGroup>
                 @foreach (KindChoice choice in area)
                 {
-                    <ToggleRow Title="@choice.Kind.Description" Description="@(choice.Kind.Mandatory ? "Always on: it's about your account's safety" : null)"
+                    <ToggleRow Title="@choice.Kind.Description" Description="@(choice.Kind.Mandatory ? "Always on, because these are about your account's security." : null)"
                                Checked="choice.Push" Disabled="choice.Kind.Mandatory" CheckedChanged="push => Preferences.SetAsync(choice.Kind, push)" />
                 }
             </ListGroup>

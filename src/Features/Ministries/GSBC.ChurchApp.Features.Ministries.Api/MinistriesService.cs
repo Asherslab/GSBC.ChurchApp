@@ -7,6 +7,7 @@ using GSBC.ChurchApp.Platform.Common;
 using GSBC.ChurchApp.Platform.Api.Calendars;
 using GSBC.ChurchApp.Platform.Api.Notifications;
 using GSBC.ChurchApp.Platform.Api.People;
+using GSBC.ChurchApp.Platform.Contracts.News;
 using GSBC.ChurchApp.Platform.Contracts.Notifications;
 using GSBC.ChurchApp.Platform.Permissions;
 using Microsoft.EntityFrameworkCore;
@@ -26,6 +27,7 @@ internal sealed class MinistriesService(
     TimeProvider time) : IMinistriesService
 {
     private const int LongestNote = 500;
+    public const int EveryMinistrysNewsKept = 200;
 
     public async ValueTask<MinistryDirectory> DirectoryAsync(DirectoryRequest request, CallContext context = default)
     {
@@ -122,7 +124,7 @@ internal sealed class MinistriesService(
         Guid me = SignedIn(context);
         Guid person = await ForWhomAsync(me, request.PersonId, cancellationToken);
         if (!Places.IsValid(request.As))
-            throw Invalid("Choose whether it's to join the team or to come along.");
+            throw Invalid("Choose whether to join the team or to attend.");
         string note = request.Note.Trim();
         if (note.Length > LongestNote)
             throw Invalid($"Keep the note to {LongestNote} characters.");
@@ -143,9 +145,9 @@ internal sealed class MinistriesService(
             Guid askId = await AskAsync(ministry, person, request.As, me, note, waitingForParent: true, cancellationToken);
             await TellParentsAsync(ministry, askId, name, facts, cancellationToken);
             await TellLeadersAsync(MinistriesNotifications.Asked, ministry, $"{name} asks to join the team",
-                facts.Parents.Count > 0 ? "They're under 18, so a parent says yes first. You'll hear when they do." : "They're under 18 and no parent is linked to them yet. Link one in People.",
+                facts.Parents.Count > 0 ? "They're under 18, so a parent approves first. You'll hear when they do." : "They're under 18 and have no parent linked yet. Link a parent in People.",
                 $"ministries/young-asks/{askId:N}", me, cancellationToken);
-            return new JoinOutcome { Asked = true, Words = "Asked. A parent of yours says yes first, and you'll hear in the app." };
+            return new JoinOutcome { Asked = true, Words = "Request sent. Your parent approves first, and you'll hear in the app." };
         }
         if (decision.Joins)
         {
@@ -158,9 +160,9 @@ internal sealed class MinistriesService(
         }
 
         await AskAsync(ministry, person, request.As, me, note, waitingForParent: false, cancellationToken);
-        await TellLeadersAsync(MinistriesNotifications.Asked, ministry, $"{name} asks to {(request.As == Places.Team ? "join the team" : "come along")}",
+        await TellLeadersAsync(MinistriesNotifications.Asked, ministry, $"{name} asks to {(request.As == Places.Team ? "join the team" : "attend")}",
             $"In {ministry.Name}. Answer in the app.", $"ministries/asks/{ministry.Id:N}", me, cancellationToken);
-        return new JoinOutcome { Asked = true, Words = "Asked. A leader says yes or no, and you'll hear in the app." };
+        return new JoinOutcome { Asked = true, Words = "Request sent. A leader will answer, and you'll hear in the app." };
     }
 
     public async ValueTask<Done> ParentAnswerAsync(AskRef request, CallContext context = default)
@@ -169,10 +171,10 @@ internal sealed class MinistriesService(
         Guid me = SignedIn(context);
         Guid id = Guid.TryParse(request.AskId, out Guid parsed) ? parsed : Guid.Empty;
         AskRecord ask = await db.Asks.SingleOrDefaultAsync(found => found.Id == id && found.WaitingForParent, cancellationToken)
-                        ?? throw new RpcException(new Status(StatusCode.NotFound, "That ask was already answered or taken back."));
+                        ?? throw new RpcException(new Status(StatusCode.NotFound, "That request was already answered or withdrawn."));
         FamilyFacts facts = (await views.FactsAsync([ask.PersonId], cancellationToken))[ask.PersonId];
         if (!facts.Parents.Contains(me))
-            throw new RpcException(new Status(StatusCode.PermissionDenied, "Only their parent can say yes to this."));
+            throw new RpcException(new Status(StatusCode.PermissionDenied, "Only their parent can approve this."));
         MinistryTree tree = await views.TreeAsync(cancellationToken);
         MinistryRecord ministry = Existing(tree, ask.MinistryId.ToString());
         string name = (await people.NamesAsync([ask.PersonId], cancellationToken)).GetValueOrDefault(ask.PersonId) ?? "Someone";
@@ -230,7 +232,7 @@ internal sealed class MinistriesService(
     {
         foreach (Guid parent in child.Parents)
             await notifications.RaiseAsync(new Notification(MinistriesNotifications.ForYourYes, NotificationAudience.Person(parent),
-                $"{First(name)} asks to join {ministry.Name}'s team", "Say yes or not yet in the app. Its leaders know they asked.", $"/ministries/{ministry.Id}",
+                $"{First(name)} asks to join {ministry.Name}'s team", "Answer the request in the app. The ministry's leaders know they've asked.", $"/ministries/{ministry.Id}",
                 Subject: $"ministries/parent/{askId:N}", Action: "Answer") { Actor = child.PersonId }, cancellationToken);
     }
 
@@ -266,13 +268,27 @@ internal sealed class MinistriesService(
         Guid me = SignedIn(context);
         Guid id = Guid.TryParse(request.AskId, out Guid parsed) ? parsed : Guid.Empty;
         AskRecord ask = await db.Asks.SingleOrDefaultAsync(found => found.Id == id, cancellationToken)
-                        ?? throw new RpcException(new Status(StatusCode.NotFound, "That ask was already answered."));
+                        ?? throw new RpcException(new Status(StatusCode.NotFound, "That request was already answered."));
         if (ask.AskedBy != me && ask.PersonId != me && !await families.MayActForAsync(me, ask.PersonId, cancellationToken))
-            throw new RpcException(new Status(StatusCode.PermissionDenied, "That isn't your ask to take back."));
+            throw new RpcException(new Status(StatusCode.PermissionDenied, "That isn't your request to withdraw."));
         db.Asks.Remove(ask);
         changes.Touch(ask.MinistryId);
         await db.SaveChangesAsync(cancellationToken);
         return new Done();
+    }
+
+    public async ValueTask<EveryMinistrysNews> EveryMinistrysNewsAsync(EveryMinistrysNewsRequest request, CallContext context = default)
+    {
+        CancellationToken cancellationToken = context.CancellationToken;
+        GrantSet grants = await views.GrantsAsync(SignedIn(context), cancellationToken);
+        if (!grants.IsAllowed(ChurchNews.SeeingMinistries))
+            throw new RpcException(new Status(StatusCode.PermissionDenied, "Only staff who see every ministry's news can do that."));
+        MinistryTree tree = await views.TreeAsync(cancellationToken);
+        List<Guid> shown = tree.All.Where(ministry => !tree.IsHidden(ministry.Id) && MinistryViews.IsOn(ministry, MinistryParts.News)).Select(ministry => ministry.Id).ToList();
+        List<PostRecord> posts = await db.Posts.AsNoTracking()
+            .Where(post => post.Audience == Audiences.Everyone && shown.Contains(post.MinistryId))
+            .OrderByDescending(post => post.PostedAt).Take(EveryMinistrysNewsKept).ToListAsync(cancellationToken);
+        return new EveryMinistrysNews { Posts = posts.Select(post => MinistryViews.Post(post, tree.Find(post.MinistryId)!.Name)).ToList() };
     }
 
     public async ValueTask<WaitingList> WaitingAsync(WaitingRequest request, CallContext context = default)
@@ -415,7 +431,7 @@ internal sealed class MinistriesService(
         return MinistryViews.MaySeeMinistry(grants, tree, ministry.Id) ? ministry : throw NotHere();
     }
 
-    private static RpcException NotHere() => new(new Status(StatusCode.NotFound, "That ministry isn't here any more."));
+    private static RpcException NotHere() => new(new Status(StatusCode.NotFound, "That ministry has been deleted or archived."));
 
     public static Guid? Me(CallContext context)
     {

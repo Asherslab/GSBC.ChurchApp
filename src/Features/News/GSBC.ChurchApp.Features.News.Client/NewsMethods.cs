@@ -11,6 +11,7 @@ public static class NewsMethods
     public const string Archive = News + "Archive";
     public const string PutBack = News + "PutBack";
     public const string Delete = News + "Delete";
+    public const string TellAgain = News + "TellAgain";
     public const string TryOnMyPhone = News + "TryOnMyPhone";
     public const string AnswerAsk = News + "AnswerAsk";
 }

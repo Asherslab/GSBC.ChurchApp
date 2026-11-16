@@ -3,15 +3,15 @@
 @inject IRosterReads Reads
 @inject TimeProvider Clock
 
-<UnsavedGuard Changed="() => Open && Changed" What="how the roster works" Save="SaveAsync" />
+<UnsavedGuard Changed="() => Open && Changed" What="the roster settings" Save="SaveAsync" />
 
-<Sheet Open="Open" OpenChanged="OpenChanged" Title="How the roster works" Lead="@($"For {View.MinistryName}. Leaders always see the whole roster, and the team can always mark days away.")">
+<Sheet Open="Open" OpenChanged="OpenChanged" Title="Roster settings" Lead="@($"Settings for {View.MinistryName}'s roster. Leaders always see the whole roster, and the team can always mark their days away.")">
     <ChildContent>
         <Section Grouped="true" First="true" Title="Answers">
-            <ToggleRow Title="Ask people to answer" Description="They say whether they can do each date, and leaders hear when someone can't" @bind-Checked="_draft.Replies" />
+            <ToggleRow Title="Ask people to answer" Description="People say whether they can serve on each date, and leaders are told when someone can't." @bind-Checked="_draft.Replies" />
             @if (_draft.Replies)
             {
-                <SelectField Label="If someone hasn't answered" Value="@Number(_draft.NudgeAfterDays)" ValueChanged="value => _draft.NudgeAfterDays = Parse(value)" Options="Nudges" />
+                <SelectField Label="Reminder to answer" Value="@Number(_draft.NudgeAfterDays)" ValueChanged="value => _draft.NudgeAfterDays = Parse(value)" Options="Nudges" />
             }
             <SelectField Label="Reminder before each date" Value="@Number(_draft.RemindDaysBefore)" ValueChanged="value => _draft.RemindDaysBefore = Parse(value)" Options="Reminders" />
         </Section>
@@ -20,14 +20,14 @@
                        Options="@([.. OpenSwaps.All.Select(value => new SegmentOption<string>(value, RosterLines.OpenSwapsWords(value), Detail: RosterLines.OpenSwapsDetail(value)))])" />
         </Section>
         <Section Grouped="true" Title="Asking one person">
-            <ToggleRow Title="@RosterLines.WaysWords(SwapWays.Direct)" Description="They choose who on the team to ask, and that person says yes or can't" @bind-Checked="_draft.DirectSwaps" />
+            <ToggleRow Title="@RosterLines.WaysWords(SwapWays.Direct)" Description="The person who can't serve chooses someone on the team to ask, who then accepts or declines." @bind-Checked="_draft.DirectSwaps" />
         </Section>
         <p class="roster-say" aria-live="polite">@RosterLines.SwapSentence(_draft, Example.Who, Example.When)</p>
         <Section Grouped="true" Title="What the team sees">
             <Segmented TValue="string" Label="What the team sees" Rows="true" Value="@_draft.WhoSees" ValueChanged="value => _draft.WhoSees = value"
                        Options="@([.. new[] { WhoSees.Everything, WhoSees.WithYou, WhoSees.Yours }.Select(value => new SegmentOption<string>(value, RosterLines.WhoSeesWords(value)))])" />
         </Section>
-        <Section Grouped="true" Title="Calendars it rosters from" Lead="Add a date suggests events from these calendars first; every other calendar is still there.">
+        <Section Grouped="true" Title="Calendars to roster from" Lead="When you add a date, events from these calendars are suggested first. Every other calendar is still available.">
             @if (Open)
             {
                 <LiveData TValue="IReadOnlyList<EventChoice>" Load="() => Reads.EventChoicesAsync(View.MinistryId)" Feeds="Reads.Feeds">
@@ -38,7 +38,7 @@
                         }
                         @if (_draft.Calendars.Count == 0)
                         {
-                            <p class="hint">With none chosen, it starts on @(View.MinistryName)'s own calendars.</p>
+                            <p class="hint">If none are chosen, @(View.MinistryName)'s own calendars are suggested first.</p>
                         }
                     </ChildContent>
                     <Loading><Skeleton Shape="SkeletonShape.Lines" Count="3" /></Loading>
@@ -48,7 +48,7 @@
         <Notice Tone="NoticeTone.Warning" Text="@_problem" />
     </ChildContent>
     <Actions>
-        <SaveBar Label="Save" Busy="_busy" OnSave="SaveAsync" OnCancel="() => OpenChanged.InvokeAsync(false)" State="@(Changed ? SaveState.Unsaved : null)" />
+        <SaveBar Label="Save the settings" Busy="_busy" OnSave="SaveAsync" OnCancel="() => OpenChanged.InvokeAsync(false)" State="@(Changed ? SaveState.Unsaved : null)" />
     </Actions>
 </Sheet>
 
@@ -57,7 +57,7 @@
         [new("0", "No reminder"), new("1", "The day before"), .. new[] { 2, 3, 4, 5, 6, 7 }.Select(days => new FieldOption(Number(days), $"{days} days before"))];
 
     private static readonly IReadOnlyList<FieldOption> Nudges =
-        [new("0", "Don't remind them"), new("1", "Remind them after a day"), .. new[] { 2, 3, 4, 5, 7 }.Select(days => new FieldOption(Number(days), $"Remind them after {days} days"))];
+        [new("0", "No reminder"), new("1", "After 1 day"), .. new[] { 2, 3, 4, 5, 7 }.Select(days => new FieldOption(Number(days), $"After {days} days"))];
 
     private RosterSettings _draft = new();
     private bool _busy;

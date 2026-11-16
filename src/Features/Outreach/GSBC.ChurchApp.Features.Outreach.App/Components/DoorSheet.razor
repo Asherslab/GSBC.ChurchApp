@@ -14,7 +14,7 @@
             {
                 <TextField Label="First name" MaxLength="OutreachRules.LongestFirstName" AutoComplete="off" @bind-Value="_name" />
                 <TextField Label="Phone or email" MaxLength="OutreachRules.LongestContact" AutoComplete="off" AutoCapitalize="off" @bind-Value="_contact" />
-                <TextField Label="Anything to pass on (optional)" Multiline="true" MaxLength="OutreachRules.LongestNote" @bind-Value="_note" />
+                <TextField Label="Anything to pass on" Hint="Optional." Multiline="true" MaxLength="OutreachRules.LongestNote" @bind-Value="_note" />
             }
         }
         else if (_hostile)

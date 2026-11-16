@@ -13,7 +13,7 @@
 }
 else
 {
-    <Page Title="@(RegularEventId is null ? "New regular event" : "Regular event")" OnBack="LeaveAsync" BackLabel="@BackLabel" TopBar="TopBarStyle.Solid">
+    <Page Title="@(RegularEventId is null ? "New regular event" : "Change the regular event")" OnBack="LeaveAsync" BackLabel="@BackLabel" TopBar="TopBarStyle.Solid">
         <ChildContent><div class="regular-page"><EditScope Edited="() => { }">@Body</EditScope></div></ChildContent>
     </Page>
 }
@@ -23,7 +23,7 @@ else
     <Actions><Button Block="true" OnClick="CloseSheet">Done</Button></Actions>
 </Sheet>
 
-<Sheet Open="_sheet == EditorSheet.Breaks" OpenChanged="SheetToggled" Title="Breaks" Lead="Dates it isn't on. People see the first two weeks of a break as not on.">
+<Sheet Open="_sheet == EditorSheet.Breaks" OpenChanged="SheetToggled" Title="Breaks" Lead="The dates this regular event isn't on. The app shows every date of a break as not on.">
     <ChildContent>@if (_draft is { } draft) { <RepeatEditor Draft="draft" Breaks="_breaks" Part="RepeatPart.Breaks" /> }</ChildContent>
     <Actions><Button Block="true" OnClick="CloseSheet">Done</Button></Actions>
 </Sheet>
@@ -43,7 +43,7 @@ else
     <Actions><Button Block="true" OnClick="CloseSheet">Done</Button></Actions>
 </Sheet>
 
-<Sheet Open="_sheet == EditorSheet.KeepOwn" OpenChanged="SheetToggled" Title="Some dates keep their own" Lead="These dates were changed on their own, so they keep what they have:">
+<Sheet Open="_sheet == EditorSheet.KeepOwn" OpenChanged="SheetToggled" Title="Some dates keep their own" Lead="These dates were changed one at a time, so they keep their own changes:">
     <ChildContent>
         <ul class="kept-list">
             @foreach (KeptValue kept in _keepOwn)
@@ -54,7 +54,7 @@ else
     </ChildContent>
     <Actions>
         <Button Block="true" Busy="_saving" OnClick="() => SaveAsync(keepOwnConfirmed: true)">Save every date</Button>
-        <Button Block="true" Variant="ButtonVariant.Quiet" OnClick="CloseSheet">Go back</Button>
+        <Button Block="true" Variant="ButtonVariant.Quiet" OnClick="CloseSheet">Don't save yet</Button>
     </Actions>
 </Sheet>
 
@@ -65,7 +65,7 @@ else
        Lead="The regular event and all its dates come off every phone and calendar app. This can't be undone.">
     <Actions>
         <Button Block="true" Variant="ButtonVariant.Danger" Busy="_saving" OnClick="DeleteAsync">Delete the regular event</Button>
-        <Button Block="true" Variant="ButtonVariant.Quiet" OnClick="CloseSheet">Keep it</Button>
+        <Button Block="true" Variant="ButtonVariant.Quiet" OnClick="CloseSheet">Keep the regular event</Button>
     </Actions>
 </Sheet>
 
@@ -146,7 +146,7 @@ else
             {
                 if (await Editing.RegularEventAsync(CalendarId, regularId) is not { } detail)
                 {
-                    _loadProblem = "It isn't on this phone. It may have been deleted, or you may no longer edit its calendar.";
+                    _loadProblem = "This regular event isn't on this phone. It may have been deleted, or you may no longer be an editor of its calendar.";
                     return;
                 }
                 Show(detail);
@@ -244,7 +244,7 @@ else
                     }
                     <section class="regular-col" aria-labelledby="regular-every">
                         <h2 class="regular-col__head" id="regular-every">Every date</h2>
-                        <p class="regular-col__lead">What each date has, unless that date is changed on its own.</p>
+                        <p class="regular-col__lead">What every date shows, unless that date has been changed on its own.</p>
                         @if (draft.IsNew)
                         {
                             @CalendarChoice(draft)
@@ -253,7 +253,7 @@ else
                     </section>
                     <section class="regular-col" aria-labelledby="regular-runs">
                         <h2 class="regular-col__head" id="regular-runs">How it runs</h2>
-                        <p class="regular-col__lead">How it repeats, its breaks, and what each date needs before it's on.</p>
+                        <p class="regular-col__lead">How often it's on, when it takes a break, and what each date needs filled in.</p>
                         @HowItRuns(draft)
                     </section>
                 </div>
@@ -307,9 +307,9 @@ else
                     <EditScope Edited="() => { }">
                         @if (draft.IsNew)
                         {
-                            <Section Grouped="true" Title="Its calendar">@CalendarChoice(draft)</Section>
+                            <Section Grouped="true" Title="Calendar and who sees it">@CalendarChoice(draft)</Section>
                         }
-                        <Section Grouped="true" Title="Its dates and where it shows" Lead="How it repeats, its breaks, and what each date needs before it's on.">@HowItRuns(draft)</Section>
+                        <Section Grouped="true" Title="Dates and where it shows" Lead="How often it's on, when it takes a break, and what each date needs filled in.">@HowItRuns(draft)</Section>
                     </EditScope>
                 </Settings>
                 <Preview>
@@ -325,7 +325,7 @@ else
     </EmptyState>;
 
     private RenderFragment? Asked => !_asked ? null :
-        @<p class="event-saved" role="status"><Icon Name="check" Size="IconSize.Small" />Asked. The calendar's publishers have been told.</p>;
+        @<p class="event-saved" role="status"><Icon Name="check" Size="IconSize.Small" />Sent for publishing. The calendar's publishers have been told.</p>;
 
     private string HeadLabel => EventWords.LabelOf(Fields.Label, Fields.Title, CalendarName);
 
@@ -336,15 +336,15 @@ else
             <EventHead Label="@HeadLabel" Title="@HeadTitle" Compact="OnAPage" Actions="actions">
                 <p class="event-head__when regular-head__pattern"><Icon Name="repeat" Size="IconSize.Small" />@Pattern(draft)</p>
             </EventHead>
-            <DateStrip Dates="_dates" Today="Today" Selected="@SelectedDate" Picked="PickAsync" Hint="@(_kept.By.Length > 0 ? "Choose a date to see it" : "Choose a date to change only that date")"
-                       Empty="@(draft.IsNew ? "Its dates show here once it's added." : "It has no more dates. Change how it repeats to carry it on.")" />
+            <DateStrip Dates="_dates" Today="Today" Selected="@SelectedDate" Picked="PickAsync" Hint="@(_kept.By.Length > 0 ? "Choose a date to see what it shows" : "Choose a date to change only that date")"
+                       Empty="@(draft.IsNew ? "The dates show here once the regular event is added." : "This regular event has no more dates. Change how it repeats to add more.")" />
         </div>;
 
     private RenderFragment CalendarChoice(EventDraft draft) =>
         @<SelectField Label="Calendar" Options="CalendarOptions" Value="@draft.CalendarId" ValueChanged="ChooseCalendar" />;
 
     private RenderFragment EveryDate(EventDraft draft) => @<text>
-        <TitleFields Fields="Fields" CalendarName="@CalendarName" Placeholder="Morning service" />
+        <TitleFields Fields="Fields" CalendarName="@CalendarName" />
         <TimesEditor Timed="draft.Every" />
         <EventFieldsEditor @ref="_fields" Fields="Fields" PlacesUsed="_placesUsed" PicturesUsed="_pictures" Needs="draft.Needs" />
     </text>;
@@ -353,10 +353,10 @@ else
         <div class="list regular-runs">
             <ListRow Chevron="true" Title="Repeats" Trailing="@RepeatsLine(draft)" OnClick="() => OpenAsync(EditorSheet.Repeats)" />
             <ListRow Chevron="true" Title="Breaks" Trailing="@BreaksLine(draft)" OnClick="() => OpenAsync(EditorSheet.Breaks)" />
-            <ListRow Chevron="true" Title="Each date needs" Trailing="@NeedsLine(draft)" OnClick="() => OpenAsync(EditorSheet.Needs)" />
+            <ListRow Chevron="true" Title="What each date needs" Trailing="@NeedsLine(draft)" OnClick="() => OpenAsync(EditorSheet.Needs)" />
             <ListRow Chevron="true" Title="Also shown on" Trailing="@AlsoOnLine(draft)" OnClick="() => OpenAsync(EditorSheet.AlsoOn)" />
             <ListRow Chevron="true" Title="Shown in the app" Trailing="@ShowingEditor.Words(draft)" OnClick="() => OpenAsync(EditorSheet.Showing)" />
-            <ToggleRow Title="List every date on the website" Description="Off: the website lists it once under Every week, with its changed dates." Checked="draft.ListEveryDate" CheckedChanged="listed => draft.ListEveryDate = listed" />
+            <ToggleRow Title="List every date on the website" Description="When off, the website lists this event once under Every week, along with any dates that are different." Checked="draft.ListEveryDate" CheckedChanged="listed => draft.ListEveryDate = listed" />
         </div>
         @if (!draft.IsNew && RegularEventId is { } regularEventId && Organisers is not null)
         {
@@ -366,7 +366,7 @@ else
 
     private RenderFragment Saving(EventDraft draft) =>
         @<SaveBar Block="!OnAPage" New="draft.IsNew" Label="@(draft.IsNew ? "Add the regular event" : "Save every date")" Busy="_saving" OnCancel="LeaveAsync"
-                  Blocked="@(Fields.Title.Trim().Length == 0 ? $"Give it a title to {(draft.IsNew ? "add" : "save")} it." : null)" State="SaveLine" SavedText="@SavedWords"
+                  Blocked="@(Fields.Title.Trim().Length == 0 ? "Enter a title for the regular event." : null)" State="SaveLine" SavedText="@SavedWords"
                   WaitingText="@EditWaiting.WaitingWords" FailedText="@EditWaiting.FailedWords" Detail="@Waiting?.Problem" Retry="() => Editing.RetryAsync(ItemKey)"
                   OnSave="() => SaveAsync(keepOwnConfirmed: false)" />;
 
@@ -374,7 +374,7 @@ else
         ? []
         :
         [
-            .. MustAsk && draft is { Asked: false, WasShown: false } ? [this.Item("Ask to publish", AskAsync, "send", "The calendar's publishers are told")] : Array.Empty<MenuItem>(),
+            .. MustAsk && draft is { Asked: false, WasShown: false } ? [this.Item("Ask to publish", AskAsync, "send", "Tells the calendar's publishers that it's ready.")] : Array.Empty<MenuItem>(),
             this.Item("Delete the regular event", () => OpenAsync(EditorSheet.Delete), "trash-2", danger: true, startsGroup: true),
         ];
 
@@ -423,13 +423,13 @@ else
     {
         List<string> names = [.. _breaks.Breaks.Where(entry => draft.BreakIds.Contains(entry.Id)).Select(entry => entry.Name)
             .Concat(draft.OwnBreaks.Select(entry => entry.Name).Where(name => name.Length > 0))];
-        return names.Count == 0 ? "None" : string.Join(", ", names);
+        return names.Count == 0 ? "No breaks" : string.Join(", ", names);
     }
 
     private static string NeedsLine(EventDraft draft) => draft.Needs.Count == 0
-        ? "Nothing"
+        ? "Nothing needed"
         : EventWords.Join(Capital(string.Join(", ", draft.Needs.Select(EventWords.Need))),
-            draft.RemindDaysBefore.Count == 0 ? "nobody reminded" : $"reminded {string.Join(" and ", draft.RemindDaysBefore.OrderDescending())} days before");
+            draft.RemindDaysBefore.Count == 0 ? "no reminders" : $"reminded {string.Join(" and ", draft.RemindDaysBefore.OrderDescending())} days before");
 
     private string AlsoOnLine(EventDraft draft)
     {

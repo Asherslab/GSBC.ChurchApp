@@ -1,7 +1,7 @@
 @inject OversightClient Oversight
 
 <LiveData TValue="Log" Load="() => Oversight.LogAsync()" Feeds="[ChatsFeeds.Oversight]" FailedTitle="Can't load the log right now">
-    <DataTable TItem="LogLine" Label="Checks log" Items="Shown(context.Value)" Columns="Columns" Key="line => line.Id" SortColumn="0" SortDescending="true">
+    <DataTable TItem="LogLine" Label="Log of checks" Items="Shown(context.Value)" Columns="Columns" Key="line => line.Id" SortColumn="0" SortDescending="true">
         <Toolbar>
             <FilterChips TValue="string" Label="Show" Options="Filters" Value="_filter" ValueChanged="value => _filter = value" />
         </Toolbar>

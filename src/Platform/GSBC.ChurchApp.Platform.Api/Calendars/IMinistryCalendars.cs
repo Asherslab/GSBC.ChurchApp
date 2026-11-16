@@ -18,9 +18,16 @@ public interface IMinistryCalendars
 
     ValueTask RemoveAsync(Guid ministryId, Guid calendarId, CancellationToken cancellationToken);
 
+    ValueTask MergeAsync(Guid ministryId, Guid fromCalendarId, Guid intoCalendarId, CancellationToken cancellationToken);
+
     ValueTask<IReadOnlyList<MinistryCalendar>> ForEveryoneAsync(CancellationToken cancellationToken) => ValueTask.FromResult<IReadOnlyList<MinistryCalendar>>([]);
 }
 
 public sealed record MinistryCalendar(Guid Id, Guid MinistryId, string Name, string Slug, Audience Audience, bool Hidden);
 
 public sealed record MinistryCalendarRemoval(string Name, int Events, int RegularEvents);
+
+public interface ICalendarMerges
+{
+    ValueTask MergedAsync(Guid fromCalendarId, Guid intoCalendarId, CancellationToken cancellationToken);
+}

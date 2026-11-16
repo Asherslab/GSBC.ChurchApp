@@ -13,6 +13,7 @@ public sealed class PrayerDbContext(DbContextOptions<PrayerDbContext> options) :
     public DbSet<StepRecord> Steps => Set<StepRecord>();
     public DbSet<PrayedRecord> Prayed => Set<PrayedRecord>();
     public DbSet<HandledRequestRecord> HandledRequests => Set<HandledRequestRecord>();
+    public DbSet<ChurchRecord> Church => Set<ChurchRecord>();
 
     protected override string Schema => SchemaName;
 
@@ -48,6 +49,12 @@ public sealed class PrayerDbContext(DbContextOptions<PrayerDbContext> options) :
             entity.HasIndex(prayed => new { prayed.InstallId, prayed.At });
             entity.HasIndex(prayed => prayed.UserId);
             entity.HasOne<RequestRecord>().WithMany().HasForeignKey(prayed => prayed.RequestId).OnDelete(DeleteBehavior.Cascade);
+        });
+        modelBuilder.Entity<ChurchRecord>(entity =>
+        {
+            entity.ToTable("church");
+            entity.HasKey(church => church.Id);
+            entity.Property(church => church.Id).ValueGeneratedNever();
         });
         modelBuilder.Entity<HandledRequestRecord>(entity =>
         {

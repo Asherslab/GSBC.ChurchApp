@@ -12,16 +12,16 @@ public static class WaitingTiles
         public const string JustALink = "link";
     }
 
-    private static readonly TileVariant Link = new(Layouts.JustALink, "Just a link", "The icon and the title, with a count where there is one",
+    private static readonly TileVariant Link = new(Layouts.JustALink, "Link only", "Shows the icon and title, with a count when there is one.",
         TileVariant.AnySize, (_, _) => false);
 
     public static readonly HubTileKind Bulletin = new("hub.bulletin", "Sunday bulletin",
         "This Sunday's date, theme and verse, opening the bulletin", "the bulletin",
         new TileDefaults("Read the bulletin", Rows: 2, Tone: TileTones.Masthead, Icon: "bulletin", Link: ComingSoonDestinations.Sunday.Path,
-            TitleLabel: "Words to open it", ShowsText: false),
-        sample: true, variants:
+            TitleLabel: "Link text", ShowsText: false),
+        sample: true, offered: false, variants:
         [
-            new(Layouts.Poster, "Poster", "The date when small; the theme, the date and the verse with a link to read it when bigger",
+            new(Layouts.Poster, "Poster", "Small tiles show the date. Larger tiles show the theme, the date and the verse, with a link to read it.",
                 TileVariant.AnySize, (_, _) => true),
             new(Layouts.Theme, "Theme first", "The year's theme is the title at every size",
                 TileVariant.AnySize, (_, _) => false),

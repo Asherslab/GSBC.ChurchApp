@@ -42,7 +42,7 @@ public sealed class CampaignForm
         BundlesMade.Trim().Length > 0 && Int(BundlesMade) is not (>= 0 and <= CampaignStages.MostBundlesMade) ? "Give a whole number, or leave it empty." : null;
 
     public string? Blocked =>
-        Name.Trim().Length == 0 ? "Give it a name to save it."
+        Name.Trim().Length == 0 ? "Enter a name for the campaign."
         : OutreachRules.DateOf(Starts) is { } starts && OutreachRules.DateOf(Ends) is { } ends && ends < starts ? "It ends on or after the day it starts."
         : BundleSizeProblem ?? WrapUpProblem ?? BundlesMadeProblem;
 

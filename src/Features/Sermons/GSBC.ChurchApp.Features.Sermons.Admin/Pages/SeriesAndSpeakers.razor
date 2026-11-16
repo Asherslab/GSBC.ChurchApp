@@ -5,7 +5,7 @@
 <UnsavedGuard Changed="() => Changed" What="@(_speaker is null ? "this series" : "this speaker")" Save="SaveBeforeLeavingAsync" />
 
 <TitleBand Title="Series and speakers" BackHref="sermons" BackText="Sermons"
-           Lead="Name a series, give it a picture and a line about it; keep the list of speakers, with their names and photos.">
+           Lead="Each sermon series with its picture and description, and every speaker with their name and photo.">
     <Actions>
         <Can Permission="SermonsPermissions.Edit">
             <Button Icon="plus" OnClick="() => OpenAsync(_tab == Tab.Series ? NewSeries : NewSpeaker)">@(_tab == Tab.Series ? "New series" : "New speaker")</Button>
@@ -62,11 +62,11 @@
             <div class="series-desk__edit">
             @if (_series is { } editing)
             {
-                <PaneHead Title="@(editing.Id.Length == 0 ? "A new series" : editing.Name)" Lead="@(editing.Id.Length == 0 ? "Fill in what you know; the rest can wait." : SermonText.Sermons(editing.Count))"
-                          Actions="@(editing.Id.Length == 0 ? null : [this.Item("Delete this series…", AskToDeleteSeriesAsync, "trash-2", "Says first where its sermons go", danger: true, disabled: _busy)])"
+                <PaneHead Title="@(editing.Id.Length == 0 ? "A new series" : editing.Name)" Lead="@(editing.Id.Length == 0 ? "Only the name is needed now. You can add the rest later." : SermonText.Sermons(editing.Count))"
+                          Actions="@(editing.Id.Length == 0 ? null : [this.Item("Delete this series…", AskToDeleteSeriesAsync, "trash-2", "You choose where the series' sermons go first.", danger: true, disabled: _busy)])"
                           OnClose="() => OpenAsync(Close)" />
                 <TextField Label="Name" @bind-Value="_name" MaxLength="80" />
-                <TextField Label="About the series" Multiline="true" Hint="Optional: shown on the series in the app." @bind-Value="_description" MaxLength="600" />
+                <TextField Label="About the series" Multiline="true" Hint="A short description, shown on the series' page in the app. Optional." @bind-Value="_description" MaxLength="600" />
                 <span class="field__label">Picture</span>
                 <div class="sermon-picture">
                     <div class="sermon-upload__art">
@@ -86,14 +86,14 @@
                 </div>
                 <Notice Tone="NoticeTone.Warning" Text="@_problem" />
                 <SaveBar New="@(editing.Id.Length == 0)" Label="@(editing.Id.Length == 0 ? "Add the series" : "Save")" Busy="_busy" OnSave="SaveSeriesAsync" OnCancel="() => OpenAsync(Close)"
-                         State="SaveBar.For(Changed, _saved)" Blocked="@(_name.Trim().Length == 0 ? $"Give it a name to {(editing.Id.Length == 0 ? "add" : "save")} it." : null)" />
+                         State="SaveBar.For(Changed, _saved)" Blocked="@(_name.Trim().Length == 0 ? "Enter a name for the series." : null)" />
             }
             else if (_speaker is { } speaker)
             {
-                <PaneHead Title="@(speaker.Id.Length == 0 ? "A new speaker" : speaker.Name)" Lead="@(speaker.Id.Length == 0 ? "They can be chosen for any sermon once added." : SermonText.Sermons(speaker.Count))"
-                          Actions="@(speaker.Id.Length == 0 ? null : [this.Item("Delete this speaker…", () => { _deleting = true; return Task.CompletedTask; }, "trash-2", "Says first where their sermons go", danger: true, disabled: _busy)])"
+                <PaneHead Title="@(speaker.Id.Length == 0 ? "A new speaker" : speaker.Name)" Lead="@(speaker.Id.Length == 0 ? "Once added, the speaker can be chosen for any sermon." : SermonText.Sermons(speaker.Count))"
+                          Actions="@(speaker.Id.Length == 0 ? null : [this.Item("Delete this speaker…", () => { _deleting = true; return Task.CompletedTask; }, "trash-2", "You choose where the speaker's sermons go first.", danger: true, disabled: _busy)])"
                           OnClose="() => OpenAsync(Close)" />
-                <TextField Label="Name" @bind-Value="_name" MaxLength="80" Hint="As it shows in the app, for example “Ps Jo Ellery”." />
+                <TextField Label="Name" @bind-Value="_name" MaxLength="80" Hint="The name as the app shows it, with a title such as Ps or Rev if they use one." />
                 <span class="field__label">Photo</span>
                 <div class="series-desk__photo">
                     <Avatar Name="@_name" Photo="ShownPhoto(speaker)" Size="72" />
@@ -113,7 +113,7 @@
                 </div>
                 <Notice Tone="NoticeTone.Warning" Text="@_problem" />
                 <SaveBar New="@(speaker.Id.Length == 0)" Label="@(speaker.Id.Length == 0 ? "Add the speaker" : "Save")" Busy="_busy" OnSave="SaveSpeakerAsync" OnCancel="() => OpenAsync(Close)"
-                         State="SaveBar.For(Changed, _saved)" Blocked="@(_name.Trim().Length == 0 ? $"Give them a name to {(speaker.Id.Length == 0 ? "add" : "save")} them." : null)" />
+                         State="SaveBar.For(Changed, _saved)" Blocked="@(_name.Trim().Length == 0 ? "Enter the speaker's name." : null)" />
             }
             else
             {
@@ -133,8 +133,8 @@
                 @if (doomedSpeaker.Count > 0)
                 {
                     <p class="sheet__lead">@SermonText.Sermons(doomedSpeaker.Count) @(doomedSpeaker.Count == 1 ? "is" : "are") credited to them.</p>
-                    <SearchPicker TItem="SpeakerDetail" Label="Where their sermons go" Items="OtherSpeakers(context.Value, doomedSpeaker)" Text="SpeakerName" Detail="SpeakerCount"
-                                  Value="_moveSpeakerTo" ValueChanged="speaker => _moveSpeakerTo = speaker" NoneText="Leave them without a speaker" Placeholder="Find a speaker" />
+                    <SearchPicker TItem="SpeakerDetail" Label="Move the speaker's sermons to" Items="OtherSpeakers(context.Value, doomedSpeaker)" Text="SpeakerName" Detail="SpeakerCount"
+                                  Value="_moveSpeakerTo" ValueChanged="speaker => _moveSpeakerTo = speaker" NoneText="Leave the sermons without a speaker" Placeholder="Find a speaker" />
                 }
                 @foreach (string line in DeletionWords.Speaker(doomedSpeaker, _moveSpeakerTo))
                 {
@@ -146,8 +146,8 @@
                 @if (deletion.Sermons > 0)
                 {
                     <p class="sheet__lead">@SermonText.Sermons(deletion.Sermons) @(deletion.Sermons == 1 ? "is" : "are") in it.</p>
-                    <SearchPicker TItem="SeriesDetail" Label="Where its sermons go" Items="OtherSeries(context.Value, doomedSeries)" Text="SeriesName" Detail="SeriesCount"
-                                  Value="_moveSeriesTo" ValueChanged="series => _moveSeriesTo = series" NoneText="Leave them not in a series" Placeholder="Find a series" />
+                    <SearchPicker TItem="SeriesDetail" Label="Move the series' sermons to" Items="OtherSeries(context.Value, doomedSeries)" Text="SeriesName" Detail="SeriesCount"
+                                  Value="_moveSeriesTo" ValueChanged="series => _moveSeriesTo = series" NoneText="Leave the sermons without a series" Placeholder="Find a series" />
                 }
                 @foreach (string line in DeletionWords.Series(deletion, _moveSeriesTo))
                 {

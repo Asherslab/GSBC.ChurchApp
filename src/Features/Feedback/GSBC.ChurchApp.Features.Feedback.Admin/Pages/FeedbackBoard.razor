@@ -8,7 +8,7 @@
         <div class="feedback-desk__main">
             <TitleBand Title="Feedback" Lead="@Lead(context.Value)">
                 <Actions>
-                    <SearchField Label="Find feedback" Placeholder="Words or #number" Value="@_query" ValueChanged="SearchAsync" Class="feedback-desk__search" />
+                    <SearchField Label="Find feedback" Placeholder="Words or a number" Value="@_query" ValueChanged="SearchAsync" Class="feedback-desk__search" />
                 </Actions>
             </TitleBand>
             <TabStrip TValue="DeskView" Label="Show" Options="Views" Value="_view" ValueChanged="view => _view = view" />
@@ -63,7 +63,7 @@
     [
         .. FeedbackWords.Board.Select(status => status == TicketStatus.Resolved
             ? new BoardColumn<TicketStatus>(status, FeedbackWords.Status(status), Narrow: true, Shown: ResolvedShown, More: More)
-            : new BoardColumn<TicketStatus>(status, FeedbackWords.Status(status), status == TicketStatus.New ? "Nothing new." : "Nothing here.")),
+            : new BoardColumn<TicketStatus>(status, FeedbackWords.Status(status), status == TicketStatus.New ? "No new feedback." : "No feedback with this status.")),
         new(TicketStatus.NotDoing, FeedbackWords.Status(TicketStatus.NotDoing), Narrow: true, Folds: true, Shown: ResolvedShown, More: More),
     ];
 

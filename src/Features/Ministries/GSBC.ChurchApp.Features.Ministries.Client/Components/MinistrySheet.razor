@@ -3,17 +3,17 @@
 
 <UnsavedGuard Changed="() => Open && (_name.Length > 0 || _summary.Length > 0 || _meets.Length > 0)" What="@(_shows ? "the new Life Group" : "the new ministry")" />
 
-<Sheet Open="Open" OpenChanged="OpenChanged" Title="@(_shows ? "A new Life Group" : "A new ministry")" Lead="It's a ministry like any other. Its leaders do the rest: people, posts, files and the ministries under it.">
+<Sheet Open="Open" OpenChanged="OpenChanged" Title="@(_shows ? "New Life Group" : "New ministry")" Lead="@(_shows ? "A Life Group works like any other ministry. The group's leaders can then add people, posts and files." : "The new ministry's leaders can then add people, posts, files and other ministries under it.")">
     <ChildContent>
         <LiveData TValue="MinistryDirectory" Load="Reads.DirectoryAsync" Feeds="Reads.Feeds" Remember="ministries.directory" FailedTitle="Can't load the ministries right now">
             <ChildContent>
                 @{
                     _directory = context.Value;
                 }
-                <SitsUnderPicker Directory="_directory" UnderId="@(Under?.Id ?? "")" UnderIdChanged="id => _underId = id" Hint="Its leaders lead the new ministry too." />
+                <SitsUnderPicker Directory="_directory" UnderId="@(Under?.Id ?? "")" UnderIdChanged="id => _underId = id" Hint="The leaders of the ministry you choose will lead this one too." />
                 <TextField Label="Name" @bind-Value="_name" MaxLength="60" Required="true" />
-                <TextField Label="In a line" @bind-Value="_summary" MaxLength="140" />
-                <TextField Label="When and where it meets" @bind-Value="_meets" MaxLength="140" />
+                <TextField Label="Short description" @bind-Value="_summary" MaxLength="140" Hint="One sentence shown under the ministry's name in the Ministries list and at the top of its page." />
+                <TextField Label="When and where it meets" @bind-Value="_meets" MaxLength="140" Hint="Shown on the ministry's About tab." />
                 <LifeGroupsFields Shows="_shows" ShowsChanged="value => _shows = value" RoundId="@_roundId" RoundIdChanged="value => _roundId = value" />
                 <JoiningFields TeamJoin="@_teamJoin" TeamJoinChanged="value => _teamJoin = value" AttendJoin="@_attendJoin" AttendJoinChanged="value => _attendJoin = value" />
                 <Notice Tone="NoticeTone.Warning" Text="@_problem" />
@@ -50,8 +50,8 @@
         _directory.Ministries.FirstOrDefault(ministry => ministry.MayAddUnder && ministry.Id == (_underId ?? UnderId));
 
     private string? Blocked =>
-        _name.Trim().Length == 0 ? "Give it a name to add it."
-        : Under is null && !_directory.MayCreate ? "Choose the ministry it sits under to add it."
+        _name.Trim().Length == 0 ? (_shows ? "Enter a name for the Life Group." : "Enter a name for the ministry.")
+        : Under is null && !_directory.MayCreate ? "Choose which ministry this one sits under."
         : null;
 
     protected override void OnParametersSet()

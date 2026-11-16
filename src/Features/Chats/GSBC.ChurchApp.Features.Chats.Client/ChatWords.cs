@@ -42,7 +42,7 @@ public static class ChatText
     public static string Preview(ChatCard card)
     {
         if (card.LastPreview.Length == 0)
-            return card.YouMayManage ? "No messages yet. Say why you started it." : "No messages yet.";
+            return card.YouMayManage ? "No messages yet. Say why you started the chat." : "No messages yet.";
         string sender = card.LastSender.Split(' ')[0];
         return $"{sender}: {card.LastPreview}";
     }
@@ -60,7 +60,7 @@ public static class ChatText
             return $"{First(card.ForChildren[0].Name)}'s chat · you can read it";
         return card.Kind switch
         {
-            ChatKinds.Channel => $"Leaders post · {count}",
+            ChatKinds.Channel => $"Leaders only · {count}",
             ChatKinds.Ask => $"With {card.MinistryName}'s leaders",
             _ => $"{Audience(card.Audience)} · {count}",
         };

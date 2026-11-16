@@ -21,7 +21,7 @@ internal sealed class CalendarSetupService(
         CalendarInfo wanted = request.Calendar;
         string name = wanted.Name.Trim();
         if (name.Length is 0 or > LongestName)
-            throw Invalid($"Give the calendar a name of up to {LongestName} characters.");
+            throw Invalid($"Enter a calendar name of up to {LongestName} characters.");
         if (wanted.Description.Trim().Length > LongestDescription)
             throw Invalid($"Keep the description to {LongestDescription} characters.");
         string slug = wanted.Slug.Trim().Length > 0 ? wanted.Slug.Trim().ToLowerInvariant() : CalendarLinks.SlugOf(name);
@@ -122,7 +122,7 @@ internal sealed class CalendarSetupService(
         DateOnly start = EventDates.Parse(request.StartDate) ?? throw Invalid("Choose the break's first date.");
         DateOnly end = EventDates.Parse(request.EndDate) ?? start;
         if (name.Length == 0)
-            throw Invalid("Give the break a name, such as “Christmas break”.");
+            throw Invalid("Enter a name for the break.");
         if (end < start)
             throw Invalid("A break can't end before it starts.");
 

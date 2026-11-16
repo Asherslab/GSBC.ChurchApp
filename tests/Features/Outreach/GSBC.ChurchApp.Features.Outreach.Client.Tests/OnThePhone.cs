@@ -173,6 +173,8 @@ internal sealed class SignedOut : IAccess
     public bool Can(Permission permission, string? objectId = null) => false;
 
     public bool CanSomewhere(Permission permission) => false;
+
+    public bool CanHere(Permission permission, string objectId) => false;
 }
 
 internal sealed class Phone

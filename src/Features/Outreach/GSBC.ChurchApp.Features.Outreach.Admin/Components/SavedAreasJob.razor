@@ -109,7 +109,7 @@
 
     private bool Changed => _editing is { } editing && (IsNew || _name != editing.Name || _note != editing.Note || !SameShape(_points, editing.Area));
 
-    private string? WhyNotSave => _name.Trim().Length == 0 ? "Give it a name to save it." : _points.Count < 3 ? "Draw it on the map to save it." : null;
+    private string? WhyNotSave => _name.Trim().Length == 0 ? "Enter a name for the saved area." : _points.Count < 3 ? "Draw it on the map to save it." : null;
 
     private async Task<OutreachDesk> LoadAsync()
     {

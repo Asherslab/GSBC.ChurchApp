@@ -17,14 +17,18 @@
                     <span class="place-field__title">@(context.Value.State == DestinationState.Available ? context.Value.Title : "This place can't be opened")</span>
                     <span class="place-field__where">@(context.Value.State == DestinationState.Available ? PlaceWords.Subtitle(context.Value, Clock.GetUtcNow().UtcDateTime) : PlaceWords.Unavailable(context.Value.State))</span>
                 </span>
-                <Button Variant="ButtonVariant.Quiet" Small="true" Icon="pencil" OnClick="() => _choosing = true">Change</Button>
-                <Button Variant="ButtonVariant.Quiet" Small="true" Icon="x" AriaLabel="Open nothing" OnClick="() => ValueChanged.InvokeAsync(null)" />
+                <Button Variant="ButtonVariant.Quiet" Small="true" Icon="pencil" OnClick="() => _choosing = true">Change the place</Button>
+                <Button Variant="ButtonVariant.Quiet" Small="true" Icon="x" AriaLabel="Remove the place" OnClick="() => ValueChanged.InvokeAsync(null)" />
             </div>
         </LiveData>
     }
     else
     {
         <Button Variant="ButtonVariant.Quiet" Icon="link" OnClick="() => _choosing = true">@ChooseLabel</Button>
+    }
+    @if (Hint is not null)
+    {
+        <span class="field__hint">@Hint</span>
     }
     @if (Problem is not null)
     {
@@ -47,6 +51,7 @@
     [Parameter] public string ChooseLabel { get; set; } = "Choose a place in the app";
     [Parameter] public string SheetTitle { get; set; } = "Choose a place in the app";
     [Parameter] public string? SheetLead { get; set; }
+    [Parameter] public string? Hint { get; set; }
     [Parameter] public string? Problem { get; set; }
 
     private async Task ChooseAsync(Destination place)

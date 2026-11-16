@@ -1,6 +1,7 @@
 using System.Globalization;
 using GSBC.ChurchApp.Features.Ministries.Contracts;
 using GSBC.ChurchApp.Platform.Client.Modules;
+using GSBC.ChurchApp.Platform.Contracts.Content;
 
 namespace GSBC.ChurchApp.Features.Ministries.Client;
 
@@ -26,26 +27,34 @@ public static class MinistryWords
 
     public static string WhoReads(string audience, MinistryDetails ministry) => audience switch
     {
-        Audiences.Team => $"Only the {ministry.Name} team sees this.",
+        Audiences.Team => $"Only {TeamNames.InSentence(ministry.Name)} sees this.",
         Audiences.Attendees => $"Attendees of {ministry.Name}, their parents and the team see this.",
         Audiences.Parents => $"Only parents of attendees of {ministry.Name}, and the team, see this.",
         _ when MinistryLogic.IsHidden(ministry) => $"{ministry.Name} is hidden, so only its own people, the leaders above it and staff see this.",
         _ => "Anyone with the app sees this, including visitors.",
     };
 
-    public const string HidesFromEveryoneElse = "Only its own people and staff see it";
+    public const string HidesFromEveryoneElse = "Only the ministry's own people and staff can see it.";
 
     public const string WhoSeesHidden =
-        "Only its team, attendees and their parents, the leaders above it and ministry staff can see it or ask to join; "
-        + "leaders add anyone else. The ministries under it are hidden too.";
+        "Only the ministry's team, attendees and their parents, the leaders of the ministries above it, and ministry staff can see it or ask to join. "
+        + "Leaders add anyone else themselves. The ministries under it are hidden too.";
 
-    public static string HiddenBecause(string above) => $"Hidden, because {above} is. Only its own people and staff see it.";
+    public static string HiddenBecause(string above) => $"Hidden because {above} is hidden. Only this ministry's own people and staff can see it.";
 
-    public static string Short(string audience, MinistryDetails ministry) =>
-        audience == Audiences.Everyone && MinistryLogic.IsHidden(ministry) ? "Everyone who sees it" : Short(audience);
+    public static string Short(string audience, MinistryDetails ministry) => audience switch
+    {
+        Audiences.Team => TeamNames.Of(ministry.Name),
+        Audiences.Everyone when MinistryLogic.IsHidden(ministry) => "Everyone who can see this ministry",
+        _ => Short(audience),
+    };
 
-    public static string PostFor(string audience, MinistryDetails ministry) =>
-        audience == Audiences.Everyone && MinistryLogic.IsHidden(ministry) ? "Post for everyone who sees it" : PostFor(audience);
+    public static string PostFor(string audience, MinistryDetails ministry) => audience switch
+    {
+        Audiences.Team => $"Post for {TeamNames.InSentence(ministry.Name)}",
+        Audiences.Everyone when MinistryLogic.IsHidden(ministry) => "Post for everyone who can see this ministry",
+        _ => PostFor(audience),
+    };
 
     public static string PostFor(string audience) => audience switch
     {
@@ -68,15 +77,15 @@ public static class MinistryWords
         Roles.Leader => "Leader",
         Roles.Admin => "Admin",
         Roles.Team => "Team",
-        _ => "Attends",
+        _ => "Attendee",
     };
 
     public static string Allows(string role) => role switch
     {
-        Roles.Leader => "Leads it and everything under it, and is listed as a leader",
-        Roles.Admin => "Can do everything a leader can, without being listed as one",
-        Roles.Team => "Sees what's for the team: its news, files, chats and roster",
-        _ => "Comes along, and sees what's for attendees and their families",
+        Roles.Leader => "Leads the ministry and every ministry under it, and is listed as a leader.",
+        Roles.Admin => "Can do everything a leader can, without being listed as a leader.",
+        Roles.Team => "Sees what's shared with the team: its news, files, chats and roster.",
+        _ => "Attends, and sees what's shared with attendees and their families.",
     };
 
     public static string HeroNote(MinistryDetails ministry) => ministry.Summary.Length > 0 ? ministry.Summary : ministry.Meets;
@@ -100,7 +109,7 @@ public static class MinistryWords
             return "On the team";
         if (attending.Count > 0)
             return $"{Names(attending)} {(attending.Count == 1 ? "attends" : "attend")}";
-        return you.Roles.Contains(Roles.Attendee) ? "You come along" : "";
+        return you.Roles.Contains(Roles.Attendee) ? "You attend" : "";
     }
 
     public static string Possessive(string name) => MinistryNames.Possessive(name);
@@ -161,7 +170,7 @@ public static class MinistryWords
             : hhmm;
 
     public static string AskTitle(AskLine ask) =>
-        ask.As == Places.Team ? $"{ask.Name} asks to join the team" : $"{ask.Name}{(ask.Age is { } age ? $", {age}," : "")} asks to come along";
+        ask.As == Places.Team ? $"{ask.Name} asks to join the team" : $"{ask.Name}{(ask.Age is { } age ? $", {age}," : "")} asks to attend";
 
     public static string AskDetail(AskLine ask, DateTime now)
     {

@@ -28,6 +28,15 @@ public interface IPastoralService
     [Requires(PrayerPermissions.WallNode)]
     ValueTask<Done> KeepPrivateAsync(RequestRef request, CallContext context = default);
 
-    [Requires(PrayerPermissions.ReadNode)]
+    [Requires(PrayerPermissions.WallNode)]
     ValueTask<Done> DeleteAsync(RequestRef request, CallContext context = default);
+
+    [Requires(PrayerPermissions.WallNode)]
+    ValueTask<Done> WriteAsync(PastoralWrite request, CallContext context = default);
+
+    [Requires(PrayerPermissions.WallNode)]
+    ValueTask<WritingStart> StartWritingAsync(Nothing request, CallContext context = default);
+
+    [Requires(PrayerPermissions.SettingsNode)]
+    ValueTask<Done> NameTheChurchAsync(PrayerChurch request, CallContext context = default);
 }

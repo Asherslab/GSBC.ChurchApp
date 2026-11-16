@@ -1,5 +1,5 @@
 <SearchPicker TItem="MinistrySummary" Label="Sits under" Items="Places" Text="PathOf" Value="Under" ValueChanged="ChooseAsync"
-              NoneText="@(Directory.MayCreate && TopLevelAllowed ? "Nothing: it's a top-level ministry" : null)" Placeholder="Find a ministry"
+              NoneText="@(Directory.MayCreate && TopLevelAllowed ? "None (a top-level ministry)" : null)" Placeholder="Find a ministry"
               Hint="@Hint" Disabled="Disabled" />
 
 @code {

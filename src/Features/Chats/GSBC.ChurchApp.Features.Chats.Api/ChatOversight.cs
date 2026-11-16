@@ -59,11 +59,11 @@ internal sealed class ChatOversight(
                 })
                 .ToList(),
             Ministries = all
-                .Where(place => grants.IsAllowed(ChatsPermissions.Manage, place.MinistryId.ToString()) || checkable.Contains(place.MinistryId))
+                .Where(place => grants.IsHeldAt(ChatsPermissions.Manage, place.MinistryId.ToString()) || checkable.Contains(place.MinistryId))
                 .Select(place => new DeskMinistry
                 {
                     Id = place.MinistryId.ToString(), Name = place.Name, ChatsOn = place.ChatsOn,
-                    MayManage = grants.IsAllowed(ChatsPermissions.Manage, place.MinistryId.ToString()),
+                    MayManage = grants.IsHeldAt(ChatsPermissions.Manage, place.MinistryId.ToString()),
                     Audiences = [.. place.Audiences.Keys, ChatAudiences.Chosen],
                 })
                 .ToList(),
@@ -191,7 +191,7 @@ internal sealed class ChatOversight(
         if (outcome.Length == 0)
             throw ChatErrors.Invalid("Say what was done. It's kept with the report.");
         if (outcome.Length > ChatLimits.NoteLength)
-            throw ChatErrors.Invalid($"Keep it to {ChatLimits.NoteLength} characters.");
+            throw ChatErrors.Invalid($"Keep the note to {ChatLimits.NoteLength} characters.");
         if (report.HandledAt is not null)
             return;
         report.HandledAt = time.GetUtcNow().UtcDateTime;
@@ -226,7 +226,7 @@ internal sealed class ChatOversight(
         Guid person = ChatErrors.IdOf(request.PersonId, "person");
         string reason = request.Reason.Trim();
         if (request.Paused && reason.Length == 0)
-            throw ChatErrors.Invalid("Say why. It's kept in the log.");
+            throw ChatErrors.Invalid("Give a reason for the pause. It's kept in the log.");
         if (reason.Length > ChatLimits.NoteLength)
             throw ChatErrors.Invalid($"Keep the reason to {ChatLimits.NoteLength} characters.");
         bool already = (await facts.PausedAsync(cancellationToken)).Contains(person);

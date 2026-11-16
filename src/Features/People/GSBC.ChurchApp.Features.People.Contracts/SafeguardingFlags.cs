@@ -25,7 +25,7 @@ public sealed record SafeguardingFlag(FlagSubject Subject, string Kind, string W
 public static class SafeguardingFlags
 {
     public const int SoonDays = 60;
-    public const string CheckWords = "Check Safe Ministry Check";
+    public const string CheckWords = "To look at in Safe Ministry Check";
 
     public static IReadOnlyList<SafeguardingFlag> For(SafeguardingRecord? record, DateOnly today)
     {

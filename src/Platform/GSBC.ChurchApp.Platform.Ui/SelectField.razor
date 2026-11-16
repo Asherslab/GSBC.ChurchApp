@@ -1,5 +1,9 @@
 <div class="field @(Problem is null ? "" : "field--problem")">
     <label class="field__label" for="@_id">@Label</label>
+    @if (Hint is not null)
+    {
+        <span class="field__hint" id="@(_id)-hint">@Hint</span>
+    }
     <span class="field__select">
         <select id="@_id" class="field__input" value="@Value" disabled="@Disabled" aria-describedby="@(Hint is null ? null : $"{_id}-hint")" @onchange="ChangeAsync">
             @foreach (FieldOption option in Options)
@@ -9,10 +13,6 @@
         </select>
         <Icon Name="chevron-right" Size="IconSize.Small" Class="field__chevron" />
     </span>
-    @if (Hint is not null)
-    {
-        <span class="field__hint" id="@(_id)-hint">@Hint</span>
-    }
     @if (Problem is not null)
     {
         <span class="field__problem">@Problem</span>

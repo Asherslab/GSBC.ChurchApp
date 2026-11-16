@@ -94,6 +94,8 @@ internal sealed class NoCalendars : IMinistryCalendars
 
     public ValueTask<MinistryCalendarRemoval> WhatGoesAsync(Guid ministryId, Guid calendarId, CancellationToken cancellationToken) => throw new NotSupportedException();
 
+    public ValueTask MergeAsync(Guid ministryId, Guid fromCalendarId, Guid intoCalendarId, CancellationToken cancellationToken) => throw new NotSupportedException();
+
     public ValueTask RemoveAsync(Guid ministryId, Guid calendarId, CancellationToken cancellationToken) => ValueTask.CompletedTask;
 }
 

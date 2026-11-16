@@ -7,7 +7,7 @@
 
 <UnsavedGuard Changed="() => Open" Editing="Draft" State="() => Shape" What="@(IsDocument ? "this file" : "this link")" />
 
-<Sheet Open="Open" OpenChanged="CloseAsync" Title="@Title" Lead="@(IsDocument ? $"A document or picture from this {Device}, for the people who need it." : "A document, form, recording or page on the web, for the people who need it.")">
+<Sheet Open="Open" OpenChanged="CloseAsync" Title="@Title" Lead="@(IsDocument ? $"Share a document or picture from this {Device} with the people who need it." : "Share a link to a document, form, recording or web page with the people who need it.")">
     <ChildContent>
         @if (IsDocument && Draft.Id.Length == 0)
         {
@@ -19,7 +19,7 @@
                         <Icon Name="file" />
                         <span class="ministry-picked__about">
                             <strong>@chosen.File.Name</strong>
-                            <span class="quiet">Sent when you add it.</span>
+                            <span class="quiet">It uploads when you add the file.</span>
                         </span>
                         <Button Small="true" Variant="ButtonVariant.Quiet" Disabled="_busy" OnClick="() => _chosen = null">Choose another</Button>
                     </div>
@@ -35,7 +35,7 @@
                     <Icon Name="file" />
                     <span class="ministry-picked__about">
                         <strong>@picked.FileName</strong>
-                        <span class="quiet">On this phone. It's sent when you add it, as soon as the phone is online.</span>
+                        <span class="quiet">This file is on this phone. It uploads when you add the file, as soon as the phone is online.</span>
                     </span>
                     <Button Small="true" Variant="ButtonVariant.Quiet" Disabled="_busy" OnClick="ChooseAnotherAsync">Choose another</Button>
                 </div>
@@ -45,18 +45,18 @@
                 <FilePick Box="true" Label="Choose a document or picture" Hint="From this phone's photos or files" ImagesOnly="false" OnPicked="Picked" />
             }
         }
-        <TextField Label="Name" @bind-Value="Draft.Title" MaxLength="120" Required="true" Placeholder="Helpers' guide" />
+        <TextField Label="Name" @bind-Value="Draft.Title" MaxLength="120" Required="true" />
         @if (!IsDocument)
         {
-            <TextField Label="Web address" @bind-Value="Draft.Url" Type="url" Placeholder="https://" AutoCapitalize="off" />
+            <TextField Label="Web address" @bind-Value="Draft.Url" Type="url" Hint="Paste the full web address, starting with https://." AutoCapitalize="off" />
         }
-        <TextField Label="A line about it (optional)" @bind-Value="Draft.Note" MaxLength="200" />
+        <TextField Label="Description" @bind-Value="Draft.Note" MaxLength="200" Hint="Optional. Shown under the name in the ministry's Files tab." />
         <Segmented TValue="string" Label="Who it's for" ShowLabel="true" Stacked="true" Options="Audiences" Value="Draft.Audience" ValueChanged="value => Draft.Audience = value" />
         <p class="ministry-who">@MinistryWords.WhoReads(Draft.Audience, Page.Ministry)</p>
         <Notice Tone="NoticeTone.Warning" Text="@_problem" />
     </ChildContent>
     <Actions>
-        <SaveBar Block="true" Label="@(Draft.Id.Length > 0 ? "Save" : IsDocument ? "Add the file" : "Add the link")" Busy="_busy" OnSave="SaveAsync" Blocked="@Blocked" />
+        <SaveBar Block="true" Label="@(Draft.Id.Length > 0 ? IsDocument ? "Save the file" : "Save the link" : IsDocument ? "Add the file" : "Add the link")" Busy="_busy" OnSave="SaveAsync" Blocked="@Blocked" />
     </Actions>
 </Sheet>
 
@@ -96,9 +96,9 @@
     };
 
     private string? Blocked =>
-        IsDocument && Draft.Id.Length == 0 && _picked is null && _chosen is null ? "Choose the file to add it."
-        : Draft.Title.Trim().Length == 0 ? "Give it a name to add it."
-        : !IsDocument && Draft.Url.Trim().Length == 0 ? "Paste its web address to add it."
+        IsDocument && Draft.Id.Length == 0 && _picked is null && _chosen is null ? "Choose a file to add."
+        : Draft.Title.Trim().Length == 0 ? IsDocument ? "Enter a name for the file." : "Enter a name for the link."
+        : !IsDocument && Draft.Url.Trim().Length == 0 ? "Paste the link's web address."
         : null;
 
     private object Shape => (Draft.Title, Draft.Url, Draft.Note, Draft.Audience, _picked?.Url, _chosen?.File.Name);

@@ -3,7 +3,7 @@
 @if (ButtonOnly)
 {
     <span role="status" aria-live="polite">
-        <Button Variant="ButtonVariant.Quiet" Small="true" Icon="@(_copied ? "check" : _failed ? "alert" : ButtonIcon)" OnClick="CopyAsync">@(_copied ? "Copied" : _failed ? "Couldn't copy: select the address" : Label)</Button>
+        <Button Variant="ButtonVariant.Quiet" Small="true" Icon="@(_copied ? "check" : _failed ? "alert" : ButtonIcon)" OnClick="CopyAsync">@(_copied ? "Copied" : _failed ? "Couldn't copy. Select the link instead." : Label)</Button>
     </span>
 }
 else
@@ -14,7 +14,7 @@ else
             <input id="@_id" class="copy-field__input" readonly value="@Value" onfocus="this.select()" />
             <Button Variant="ButtonVariant.Quiet" Small="true" Icon="@(_copied ? "check" : "copy")" OnClick="CopyAsync">@(_copied ? "Copied" : "Copy")</Button>
         </div>
-        <p class="copy-field__hint" role="status" aria-live="polite">@(_failed ? "Couldn't copy here. Select it and press ⌘C or Ctrl+C." : Hint)</p>
+        <p class="copy-field__hint" role="status" aria-live="polite">@(_failed ? "Couldn't copy here. Select the text and press ⌘C or Ctrl+C." : Hint)</p>
     </div>
 }
 

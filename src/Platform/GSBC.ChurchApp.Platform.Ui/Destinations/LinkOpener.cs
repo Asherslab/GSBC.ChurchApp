@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Components;
 
 namespace GSBC.ChurchApp.Platform.Ui.Destinations;
 
-public sealed class LinkOpener(NavigationManager navigation, DestinationsClient destinations, IAccess access, Shell shell)
+public sealed class LinkOpener(NavigationManager navigation, DestinationsClient destinations, IAccess access, Shell shell, IEnumerable<LinkIntoTheApp> linksIntoTheApp)
 {
     public const string UnavailablePath = "unavailable";
 
@@ -27,6 +27,12 @@ public sealed class LinkOpener(NavigationManager navigation, DestinationsClient 
                 break;
             default:
                 return;
+        }
+
+        if (IsLinkIntoTheApp(link))
+        {
+            Go(InAppTarget(link), replace);
+            return;
         }
 
         switch (destinations.Catalog.Resolve(link))
@@ -74,6 +80,9 @@ public sealed class LinkOpener(NavigationManager navigation, DestinationsClient 
         $"{UnavailablePath}?to={Uri.EscapeDataString(path)}&why={state.ToString().ToLowerInvariant()}";
 
     private Viewer Viewer => new(access.SignedIn, node => access.Can(new Permission(node, ScopeKind.Global, "")));
+
+    private bool IsLinkIntoTheApp(string link) =>
+        DestinationPaths.RouteOf(link) is { } route && linksIntoTheApp.Any(entry => string.Equals(entry.Route, route, StringComparison.OrdinalIgnoreCase));
 
     private string? OwnShareLink(string link) =>
         LinkTargets.KindOf(link) == LinkKind.Web && Uri.TryCreate(link, UriKind.Absolute, out Uri? uri)

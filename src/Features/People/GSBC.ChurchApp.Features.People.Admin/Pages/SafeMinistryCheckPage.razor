@@ -15,8 +15,8 @@
             <div class="stat-tiles">
                 <StatTile Value="@status.People.ToString("N0")" Label="people in Safe Ministry Check" />
                 <StatTile Value="@status.Linked.ToString("N0")" Label="linked to someone in the app" />
-                <StatTile Value="@status.ToMatch.ToString("N0")" Label="still to match" Quiet="status.ToMatch == 0" Explanation="Listed below" />
-                <StatTile Value="@status.ToCheck.ToString("N0")" Label="to check there" Quiet="status.ToCheck == 0" Explanation="@($"Flagged “{SafeguardingFlags.CheckWords}” on Safeguarding")" />
+                <StatTile Value="@status.ToMatch.ToString("N0")" Label="records still to match" Quiet="status.ToMatch == 0" Explanation="Listed below" />
+                <StatTile Value="@status.ToCheck.ToString("N0")" Label="to check in Safe Ministry Check" Quiet="status.ToCheck == 0" Explanation="@($"Shown as “{SafeguardingFlags.CheckWords}” on Safeguarding")" />
             </div>
         }
         <Notice Tone="NoticeTone.Warning" Text="@(status.Problem is { } problem ? $"The last sync didn't finish: {problem}" : null)" />
@@ -49,12 +49,12 @@
         <p class="hint">@Detail(_chosen)</p>
         @if (Access.Can(PeoplePermissions.SafeguardingEdit))
         {
-            <PersonFinder Label="Who is it in the app?" Placeholder="Find them by name or email" Find="FindAsync" ActionText="Link" AutoFocus="true"
+            <PersonFinder Label="Person in the app" Placeholder="Find them by name or email" Find="FindAsync" ActionText="Link to this person" AutoFocus="true"
                           Busy="@_linkingTo" OnChosen="LinkAsync" />
         }
         else
         {
-            <Notice Text="A Safeguarding Manager can link it." />
+            <Notice Text="Only a Safeguarding Manager can link this record." />
         }
         <Notice Tone="NoticeTone.Warning" Text="@_sheetProblem" />
     }

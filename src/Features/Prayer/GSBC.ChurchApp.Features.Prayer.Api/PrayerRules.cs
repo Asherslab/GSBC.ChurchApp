@@ -10,7 +10,8 @@ internal static class PrayerRules
     public const int LongestNote = 2000;
     public const int LongestAnsweredNote = 500;
     public const int LongestName = 60;
-    public const int LongestContact = 120;
+    public const int LongestChurchName = 40;
+    public const string ChurchNameToStart = "GSBC";
     public const int RequestsPerDay = 5;
     public const int PrayersPerDay = 300;
 
@@ -18,6 +19,7 @@ internal static class PrayerRules
     public static readonly TimeSpan OnTheWallFor = TimeSpan.FromDays(30);
     public static readonly TimeSpan LongestOnTheWall = TimeSpan.FromDays(365);
     public static readonly TimeSpan KeptFor = TimeSpan.FromDays(365);
+    private static readonly TimeSpan ThanksShownFor = TimeSpan.FromDays(3);
 
     public static string Clip(string value, int longest)
     {
@@ -30,6 +32,12 @@ internal static class PrayerRules
     public static bool MayPrayMore(int prayedInTheLastDay) => prayedInTheLastDay < PrayersPerDay;
 
     public static string ShortName(string name) => PersonNames.Short(name);
+
+    public static string WallName(RequestRecord request) => request.FromChurch ? request.Name : ShortName(request.Name);
+
+    private static bool IsShared(RequestRecord request) => request.FromChurch || request.ForSomeoneElse;
+
+    public static bool MayDelete(RequestRecord request, bool mayRead) => mayRead || IsShared(request);
 
     public static bool IsOnTheWall(RequestRecord request, DateTime now) =>
         request.Wall == WallState.Shown && request.WallUntil > now;
@@ -52,6 +60,9 @@ internal static class PrayerRules
 
     public static bool IsDueForDeletion(RequestRecord request, DateTime now) => request.ChangedAt <= now - KeptFor;
 
+    public static DateTime UntilWithThanks(DateTime? until, DateTime now) =>
+        until is { } day && day <= now + ThanksShownFor ? day : now + ThanksShownFor;
+
     public static DateTime? ClampedUntil(DateTime until, DateTime now) =>
         until <= now || until > now + LongestOnTheWall ? null : until;
 
@@ -59,7 +70,7 @@ internal static class PrayerRules
     {
         Id = request.Id.ToString(),
         Text = request.WallText,
-        Name = request.WallShowsName ? ShortName(request.Name) : "",
+        Name = request.WallShowsName ? WallName(request) : "",
         ShownAt = request.WallShownAt ?? request.SentAt,
         Until = request.WallUntil ?? request.SentAt,
         Prayed = request.Prayed,
@@ -77,7 +88,7 @@ internal static class PrayerRules
         Prayed = request.Prayed,
         Answered = request.Care == CareState.Answered,
         AnsweredNote = request.AnsweredNote,
-        WallName = request.Wall == WallState.Shown && request.WallShowsName ? ShortName(request.Name) : "",
+        WallName = request.Wall == WallState.Shown && request.WallShowsName ? WallName(request) : "",
         WallText = request.Wall == WallState.Shown ? request.WallText : "",
     };
 
@@ -88,7 +99,7 @@ internal static class PrayerRules
         SentAt = request.SentAt,
         Wall = request.Wall,
         Minor = request.Minor,
-        ShortName = request.ShowName ? ShortName(request.Name) : "",
+        ShortName = request.ShowName ? WallName(request) : "",
         WallText = request.WallText,
         WallShowsName = request.WallShowsName,
         WallUntil = request.Wall == WallState.Shown ? request.WallUntil : null,
@@ -106,12 +117,12 @@ internal static class PrayerRules
         Wall = request.Wall,
         Minor = request.Minor,
         SignedIn = request.UserId is not null,
-        WantsContact = request.WantsContact,
-        Contact = request.Contact,
         AnsweredNote = request.AnsweredNote,
         Notes = notes.Select(note => new CareNote { Id = note.Id.ToString(), Text = note.Text, Author = names.GetValueOrDefault(note.AuthorId, "Someone"), At = note.At })
             .ToList(),
         ChangedAt = request.ChangedAt,
+        FromChurch = request.FromChurch,
+        ForSomeoneElse = request.ForSomeoneElse,
     };
 
     public static string From(RequestRecord request) => request.Name.Length > 0 ? request.Name : "No name";
@@ -125,7 +136,6 @@ internal static class PrayerRules
         Care = request.Care,
         Wall = request.Wall,
         Minor = request.Minor,
-        WantsContact = request.WantsContact,
         ChangedAt = request.ChangedAt,
     };
 }

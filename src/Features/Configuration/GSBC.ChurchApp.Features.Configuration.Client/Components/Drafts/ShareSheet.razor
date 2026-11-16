@@ -1,8 +1,8 @@
 @inject IPeopleDirectory Directory
 
 <PeopleSheet Source="Reviewers" View="View" Title="@($"Share “{Draft.Name}”")" Open="Open" OpenChanged="OpenChanged"
-             Lead="Reviewers preview it on their phone and watch it change as you edit. They can't change it."
-             Empty="Not shared with anyone yet." />
+             Lead="Reviewers can preview this draft on their phone and see it update as you edit. They can't change it."
+             Empty="This draft isn't shared with anyone yet." />
 
 @code {
     private const string ReviewerRole = "reviewer";

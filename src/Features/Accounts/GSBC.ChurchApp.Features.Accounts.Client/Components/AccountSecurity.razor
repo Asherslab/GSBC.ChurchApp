@@ -6,7 +6,7 @@
 <LiveData @ref="_live" TValue="SecurityView" Feeds="Reads.Feeds" Load="LoadAsync" FailedTitle="Can't reach the church's server">
     @if (!Signals.Online)
     {
-        <Section First="true"><Notice Text="Needs a connection to change. This is how it was when your phone last had a signal." /></Section>
+        <Section First="true"><Notice Text="You need a connection to change these. This is how they looked when your phone was last online." /></Section>
     }
     @if (!context.Value.DemoAccount)
     {

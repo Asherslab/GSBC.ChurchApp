@@ -7,7 +7,7 @@
     @{ List<InboxEntry> waiting = context.Value.Where(entry => entry.Item.Waiting).ToList(); }
     @if (context.Value.Count == 0)
     {
-        <EmptyState Icon="bell" Title="Nothing yet" Body="Announcements from the church, and anything that needs you, will show here." />
+        <EmptyState Icon="bell" Title="No notifications yet" Body="Announcements from the church, and anything that needs your attention, will show here." />
     }
     else
     {
@@ -31,7 +31,7 @@
                         </ListRow>
                     }
                 </ListGroup>
-                <p class="hint">Things that need you stay here until they're done, wherever you do them.</p>
+                <p class="hint">Items that need your attention stay here until they're done, wherever you do them.</p>
             </Section>
         }
         else

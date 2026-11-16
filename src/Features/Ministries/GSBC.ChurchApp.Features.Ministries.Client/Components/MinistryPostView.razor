@@ -57,29 +57,29 @@
     }
 </LiveData>
 
-<Sheet Open="_sharing" OpenChanged="open => _sharing = open" Title="@(_taking ? "Take it off church news?" : "Put it in church news?")"
-       Lead="@(_taking ? "It stays in the ministry's news." : "Everyone sees it in News as it is here, saying where it's from. The ministry's changes follow it there.")">
+<Sheet Open="_sharing" OpenChanged="open => _sharing = open" Title="@(_taking ? "Take this post off church news?" : "Put this post in church news?")"
+       Lead="@(_taking ? "The post stays in the ministry's News." : "Everyone will see the post in News, showing which ministry it's from. Changes the ministry makes appear there too.")">
     <ChildContent>
         @if (!_taking)
         {
-            <ToggleRow Title="Send a notification" Description="Tells everyone with the app, opening the post" @bind-Checked="_tell" />
+            <ToggleRow Title="Send a notification" Description="Notifies everyone with the app. Tapping the notification opens the post." @bind-Checked="_tell" />
         }
         <Notice Tone="NoticeTone.Warning" Text="@_problem" />
     </ChildContent>
     <Actions>
-        <Button Block="true" Variant="@(_taking ? ButtonVariant.Danger : ButtonVariant.Primary)" Busy="_busy" OnClick="ShareAsync">@(_taking ? "Take it off" : "Put it in church news")</Button>
+        <Button Block="true" Variant="@(_taking ? ButtonVariant.Danger : ButtonVariant.Primary)" Busy="_busy" OnClick="ShareAsync">@(_taking ? "Take the post off church news" : "Put the post in church news")</Button>
         <Button Block="true" Variant="ButtonVariant.Quiet" OnClick="() => _sharing = false">Not now</Button>
     </Actions>
 </Sheet>
 
 <Sheet Open="_deleting" OpenChanged="open => _deleting = open" Title="Delete this post?"
-       Lead="@(_shown?.ChurchNews == ChurchNewsStates.Shared ? "It goes from this ministry's news and from church news. This can't be undone." : "It goes from the news for everyone it was for. This can't be undone.")">
+       Lead="@(_shown?.ChurchNews == ChurchNewsStates.Shared ? "The post is removed from this ministry's News and from church news. This can't be undone." : "The post is removed for everyone it was for. This can't be undone.")">
     <ChildContent>
         <Notice Tone="NoticeTone.Warning" Text="@_problem" />
     </ChildContent>
     <Actions>
         <Button Block="true" Variant="ButtonVariant.Danger" Busy="_busy" OnClick="DeleteAsync">Delete the post</Button>
-        <Button Block="true" Variant="ButtonVariant.Quiet" OnClick="() => _deleting = false">Keep it</Button>
+        <Button Block="true" Variant="ButtonVariant.Quiet" OnClick="() => _deleting = false">Keep the post</Button>
     </Actions>
 </Sheet>
 
@@ -104,9 +104,9 @@
             items.Add(this.Item("Change the post", () => (_draft, _changing) = (PostSheet.DraftOf(post, page), true), "pencil"));
         if (Access.Can(ChurchNews.Publishing) && post.From.Length == 0 && post.Audience == Audiences.Everyone && !MinistryLogic.IsHidden(page.Ministry))
             items.Add(post.ChurchNews == ChurchNewsStates.Shared
-                ? this.Item("Take it off church news…", () => Share(taking: true), "megaphone")
-                : this.Item("Put it in church news…", () => Share(taking: false), "megaphone",
-                    detail: post.ChurchNews == ChurchNewsStates.Asked ? "Its leaders asked for this" : null));
+                ? this.Item("Take the post off church news…", () => Share(taking: true), "megaphone")
+                : this.Item("Put the post in church news…", () => Share(taking: false), "megaphone",
+                    detail: post.ChurchNews == ChurchNewsStates.Asked ? "The ministry's leaders asked for this." : null));
         if (mine)
             items.Add(this.Item("Delete the post…", () => (_deleting, _problem) = (true, null), "trash-2", danger: true, startsGroup: true));
         return items;

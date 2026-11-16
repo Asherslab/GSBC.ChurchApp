@@ -11,7 +11,7 @@
     }
     @if (Page.Posts.Count == 0)
     {
-        <EmptyState Icon="megaphone" Title="Nothing posted yet" Body="@(Page.You.MayPostFor.Count > 0 ? "Post news here: each post is for everyone, attendees and their parents, parents, or the team." : "News from this ministry shows here.")" />
+        <EmptyState Icon="megaphone" Title="Nothing posted yet" Body="@(Page.You.MayPostFor.Count > 0 ? "Post news for this ministry here. Each post can be for everyone, for attendees and their parents, for parents only, or for the team." : "News from this ministry shows here.")" />
     }
     @foreach (string audience in MinistryWords.BoxOrder.Where(audience => Page.Posts.Any(post => post.Audience == audience)))
     {

@@ -8,9 +8,9 @@
     @{ Shape(context.Value); }
     <section class="prayed-times" aria-labelledby="prayed-times-title">
         <h2 id="prayed-times-title" class="prayed-times__title">When people hear someone prayed</h2>
-        <p class="prayed-times__lead">When someone prays for a request on the prayer wall, the person who asked hears about it in the app. These are the times their phone tells them, counted from when it went on the wall.</p>
+        <p class="prayed-times__lead">When someone prays for a request on the prayer wall, the person who asked hears about it in the app. These are the times their phone tells them, counted from when the request went on the wall.</p>
 
-        <ol class="prayed-times__line" aria-label="When they're told">
+        <ol class="prayed-times__line" aria-label="When the person who asked is told">
             <li class="prayed-times__stop prayed-times__stop--start"><span>On the wall</span></li>
             @foreach ((int minutes, int gap) in PrayedTimes.Gaps(_form!.After))
             {
@@ -25,18 +25,18 @@
         @if (context.Value.MayChange)
         {
             <div class="prayed-times__group">
-                <h3 class="prayed-times__heading">A few times after it goes on the wall</h3>
-                <p class="prayed-times__hint">Each one says how many prayed since the last. Nothing goes when nobody did. Any that fall between 9pm and 7am wait until 7am.</p>
-                <ChipPicker TItem="int" Label="Times after it goes on the wall" Items="PrayedTimes.Choices" Text="PrayedTimes.Long" Chosen="_form.After"
-                            ChosenChanged="ChooseTimes" Placeholder="Add a time" Empty="Every time is chosen" />
+                <h3 class="prayed-times__heading">A few times after a request goes on the wall</h3>
+                <p class="prayed-times__hint">Each notification says how many people prayed since the last one. None is sent if nobody did. Any that fall between 9pm and 7am wait until 7am.</p>
+                <ChipPicker TItem="int" Label="Times after a request goes on the wall" Items="PrayedTimes.Choices" Text="PrayedTimes.Long" Chosen="_form.After"
+                            ChosenChanged="ChooseTimes" Placeholder="Add a time" Empty="All the times are already chosen." />
             </div>
 
             <div class="prayed-times__group">
-                <ToggleRow Title="Then once a day" Description="While people keep praying for it" Checked="@(_form.DailyAt is not null)" CheckedChanged="ChooseDaily" />
+                <ToggleRow Title="Then once a day" Description="After those, once a day while people keep praying for the request." Checked="@(_form.DailyAt is not null)" CheckedChanged="ChooseDaily" />
                 @if (_form.DailyAt is { } at)
                 {
                     <SelectField Label="Each day at" Options="PrayedTimes.DayTimes" Value="@at.ToString(System.Globalization.CultureInfo.InvariantCulture)"
-                                 ValueChanged="ChooseDayTime" Hint="Church time." />
+                                 ValueChanged="ChooseDayTime" Hint="In the church's local time." />
                 }
             </div>
 

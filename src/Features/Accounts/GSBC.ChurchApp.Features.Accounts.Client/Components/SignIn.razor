@@ -14,14 +14,14 @@
 }
 else if (_mode == Mode.SignIn)
 {
-    <Section First="true" Title="Sign in" Lead="With the passkey saved on this device. Face ID, Touch ID or your screen lock confirms it's you.">
+    <Section First="true" Title="Sign in" Lead="Use the passkey saved on this device. Face ID, Touch ID or your screen lock confirms it's you.">
         <Button Block="true" Icon="key" Busy="_busy" OnClick="SignInAsync">Sign in with a passkey</Button>
     </Section>
     <Section>
         <ListGroup>
-            <ListRow Title="Create an account" Subtitle="With your name, your email and a passkey" Icon="plus" IconTone="RowTone.Accent" OnClick="() => Switch(Mode.SignUp)" />
+            <ListRow Title="Create an account" Subtitle="You need your name, your email and this device." Icon="plus" IconTone="RowTone.Accent" OnClick="() => Switch(Mode.SignUp)" />
             <ListRow Title="Lost your passkey?" Subtitle="Get a link by email to add a new one" Icon="lock" IconTone="RowTone.Quiet" OnClick="() => Switch(Mode.Recover)" />
-            <ListRow Title="Got a code from your parent?" Subtitle="Sign in to the account they made for you" Icon="users" IconTone="RowTone.Quiet" OnClick="() => Switch(Mode.FamilyCode)" />
+            <ListRow Title="Have a code from your parent?" Subtitle="Sign in to the account they made for you" Icon="users" IconTone="RowTone.Quiet" OnClick="() => Switch(Mode.FamilyCode)" />
         </ListGroup>
         @if (Codes.IsAvailable)
         {
@@ -59,7 +59,7 @@ else if (_mode == Mode.SignUp)
     <Section First="true" Title="Create an account" Lead="Then this device makes a passkey, so there's no password to remember.">
         <TextField Label="Your name" Value="@_name" ValueChanged="value => _name = value" AutoComplete="name" />
         <div class="ui-after">
-            <TextField Label="Email" Type="email" Value="@_email" ValueChanged="value => _email = value" AutoComplete="email" Hint="For getting back in if you lose your passkeys" />
+            <TextField Label="Email" Type="email" Value="@_email" ValueChanged="value => _email = value" AutoComplete="email" Hint="We use it to help you back into your account if you lose your passkeys." />
         </div>
         @foreach (ISignUpQuestion question in Questions.OrderBy(question => question.Order))
         {
@@ -74,7 +74,7 @@ else if (_mode == Mode.SignUp)
 else
 {
     <Section First="true" Title="Get back in" Lead="We'll email a link that adds a new passkey to your account. It works for 2 hours.">
-        <TextField Label="Your account's email" Type="email" Value="@_email" ValueChanged="value => _email = value" AutoComplete="email" />
+        <TextField Label="Your email address" Type="email" Value="@_email" ValueChanged="value => _email = value" AutoComplete="email" />
         <div class="ui-actions ui-after">
             <Button Variant="ButtonVariant.Quiet" OnClick="() => Switch(Mode.SignIn)">Back</Button>
             <Button Busy="_busy" Disabled="@(_email.Trim().Length == 0)" OnClick="RecoverAsync">Email me a link</Button>

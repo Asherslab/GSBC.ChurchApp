@@ -44,9 +44,9 @@ internal sealed class AnnouncementsService(
     {
         Guid author = Actor(context);
         if (request.Title.Trim() is not { Length: > 0 and <= TitleLimit } title)
-            throw Invalid($"Give it a title of up to {TitleLimit} characters.");
+            throw Invalid($"Enter a title of up to {TitleLimit} characters.");
         if (request.Body.Length > BodyLimit)
-            throw Invalid($"Keep it to {BodyLimit} characters: a lock screen shows only the start.");
+            throw Invalid($"Keep the message to {BodyLimit} characters. A lock screen shows only the start.");
         string? link = string.IsNullOrWhiteSpace(request.Link) ? null : request.Link.Trim();
         if (link is not null && LinkTargets.KindOf(link) is not (LinkKind.InApp or LinkKind.Web))
             throw Invalid("A link is a page in the app (/…) or a web address (https://…).");
@@ -63,8 +63,8 @@ internal sealed class AnnouncementsService(
         else if (record.State is AnnouncementState.Sent or AnnouncementState.Scheduled or AnnouncementState.Recalled)
         {
             throw new RpcException(new Status(StatusCode.FailedPrecondition, record.State == AnnouncementState.Scheduled
-                ? "It's scheduled. Cancel it first to change it."
-                : "It's been sent, so it can't change. Copy it into a new announcement instead."));
+                ? "This announcement is scheduled. Cancel it first to change it."
+                : "This announcement has been sent, so it can't be changed. Copy it into a new announcement instead."));
         }
 
         record.Title = title;
@@ -86,7 +86,7 @@ internal sealed class AnnouncementsService(
     {
         AnnouncementRecord record = await FindAsync(request, context.CancellationToken);
         if (record.State is AnnouncementState.Sent or AnnouncementState.Recalled)
-            throw new RpcException(new Status(StatusCode.FailedPrecondition, "It's been sent, so it stays in the history."));
+            throw new RpcException(new Status(StatusCode.FailedPrecondition, "This announcement has been sent, so it stays in the history."));
         db.Announcements.Remove(record);
         Mark(record, deleted: true);
         await db.SaveChangesAsync(context.CancellationToken);
@@ -134,7 +134,7 @@ internal sealed class AnnouncementsService(
         if (record.State == AnnouncementState.Recalled)
             throw Recalled();
         if (record.State is AnnouncementState.Sent or AnnouncementState.Scheduled)
-            throw new RpcException(new Status(StatusCode.FailedPrecondition, "It's already sent or scheduled."));
+            throw new RpcException(new Status(StatusCode.FailedPrecondition, "This announcement is already sent or scheduled."));
 
         DateTime now = time.GetUtcNow().UtcDateTime;
         if (request.SendAt is { } sendAt && sendAt > now)
@@ -213,7 +213,7 @@ internal sealed class AnnouncementsService(
             record.RecalledById is { } recaller ? (await people.NamesAsync([recaller], cancellationToken)).GetValueOrDefault(recaller) : null);
 
     private static RpcException Recalled() =>
-        new(new Status(StatusCode.FailedPrecondition, "It's been recalled. Copy it into a new announcement to send it again."));
+        new(new Status(StatusCode.FailedPrecondition, "This announcement was recalled. Copy it into a new announcement to send it again."));
 
     private static string Subject(AnnouncementRecord record) => $"announcement/{record.Id}";
 
@@ -235,12 +235,12 @@ internal sealed class AnnouncementsService(
         Person when Guid.TryParse(audience.UserId, out Guid userId) => NotificationAudience.Person(userId),
         Holding when audience.Node is { } node && permissions.ByNode.TryGetValue(node, out Permission? permission) =>
             NotificationAudience.Holding(permission, string.IsNullOrEmpty(audience.ObjectId) ? null : audience.ObjectId),
-        _ => throw Invalid("Choose who it's for."),
+        _ => throw Invalid("Choose who the announcement is for."),
     };
 
     private async Task<AnnouncementRecord> FindAsync(AnnouncementRequest request, CancellationToken cancellationToken) =>
         (Guid.TryParse(request.Id, out Guid id) ? await db.Announcements.FindAsync([id], cancellationToken) : null)
-        ?? throw new RpcException(new Status(StatusCode.NotFound, "That announcement has gone."));
+        ?? throw new RpcException(new Status(StatusCode.NotFound, "That announcement has been deleted."));
 
     private static Guid Actor(CallContext context) =>
         Caller.UserId(context.ServerCallContext!.GetHttpContext().User) ?? throw new RpcException(new Status(StatusCode.Unauthenticated, "Sign in first."));

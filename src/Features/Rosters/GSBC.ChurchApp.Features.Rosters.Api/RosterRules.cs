@@ -60,18 +60,18 @@ internal static class RosterRules
     public static string? WhyNotAskSwap(bool mayAct, bool archived, string? way, string state, bool alreadyAsked, DateTime startsAt, DateTime now, bool toIsOnTeam) =>
         !mayAct ? "Only they, or a parent of theirs, can ask for a swap."
         : WhyNotChange(archived, startsAt, now)
-          ?? (way is null ? "This roster doesn't swap that way."
-              : !Replies.Fills(state) ? "They've said they can't do it, so a leader finds someone else."
-              : alreadyAsked ? "A swap is already asked for this date."
+          ?? (way is null ? "This roster doesn't allow that kind of swap."
+              : !Replies.Fills(state) ? "They've said they can't serve, so a leader will find someone else."
+              : alreadyAsked ? "A swap has already been requested for this date."
               : way == SwapWays.Direct && !toIsOnTeam ? "Choose someone on the team to ask."
               : null);
 
     public static string? WhyNotTake(SwapRecord swap, Guid taker, Guid? onNow, bool takerOnTeam, bool mayAct, bool archived, DateTime startsAt, DateTime now) =>
-        !mayAct ? "Only they, or a parent of theirs, can take it."
+        !mayAct ? "Only they, or a parent of theirs, can take this place."
         : WhyNotChange(archived, startsAt, now)
-          ?? (swap.State != SwapStates.Open ? "Someone has already taken it, or it's been called off."
-              : swap.Way == SwapWays.Direct && swap.AskedTo != taker ? "This swap was asked of someone else."
-              : onNow == taker ? "They're already on for it."
+          ?? (swap.State != SwapStates.Open ? "Someone has already taken this place, or the swap was cancelled."
+              : swap.Way == SwapWays.Direct && swap.AskedTo != taker ? "This swap request was sent to someone else."
+              : onNow == taker ? "They're already on the roster for this date."
               : !takerOnTeam ? "Only the team can take a place on the roster."
               : null);
 

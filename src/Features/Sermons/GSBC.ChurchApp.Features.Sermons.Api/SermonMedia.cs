@@ -6,7 +6,7 @@ namespace GSBC.ChurchApp.Features.Sermons.Api;
 internal static class SermonMedia
 {
     public static readonly MediaSystemArea Pictures = new("sermons", "Sermon artwork",
-        "Pictures of sermons, series and speakers that the app keeps itself, such as those brought across from the old website. Each picture is kept once, however many sermons use it, and Media makes the sizes phones need. One nothing uses any more can be deleted.",
+        "Pictures of sermons, series and speakers that the app keeps itself, such as those brought across from the old website. Each picture is kept once, however many sermons use it, and Media makes the sizes phones need. You can delete any that no sermon, series or speaker uses any more.",
         SermonsPermissions.Edit, StaffDeleteUnused: true);
 
     public static readonly MediaSystemArea Audio = new("sermons-audio", "Sermon audio",

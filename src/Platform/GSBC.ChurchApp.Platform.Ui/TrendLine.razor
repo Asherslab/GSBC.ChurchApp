@@ -96,7 +96,7 @@
     [Parameter] public string ComparisonName { get; set; } = "Last year";
     [Parameter] public string PeriodName { get; set; } = "Week";
     [Parameter] public string? Note { get; set; }
-    [Parameter] public string Empty { get; set; } = "Not enough to draw yet. It fills in as phones report; the table below has every number.";
+    [Parameter] public string Empty { get; set; } = "There isn't enough data for a chart yet. The chart fills in as phones report back, and the table below lists every number.";
 
     private int DrawnPoints => Points.Count(point => point.Value is not null);
 

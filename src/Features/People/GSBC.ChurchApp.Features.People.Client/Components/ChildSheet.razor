@@ -58,7 +58,7 @@
                     {
                         <ListRow @key="ask.Id" Title="@($"Waiting for {ask.ParentEmail}")" Subtitle="@($"Asked {PeopleWords.When(ask.AskedAt)}")" Icon="clock" IconTone="RowTone.Quiet">
                             <TrailingContent>
-                                <Button Small="true" Variant="ButtonVariant.Quiet" Disabled="_busy" OnClick="() => RunAsync(() => People.WithdrawAsync(ask.Id).AsTask())">Take back</Button>
+                                <Button Small="true" Variant="ButtonVariant.Quiet" Disabled="_busy" OnClick="() => RunAsync(() => People.WithdrawAsync(ask.Id).AsTask())">Withdraw the request</Button>
                             </TrailingContent>
                         </ListRow>
                     }
@@ -67,7 +67,7 @@
                     <TextField Label="Their email" Type="email" Value="@_email" ValueChanged="value => _email = value" AutoComplete="email" />
                 </div>
                 <div class="ui-actions ui-after">
-                    <Button Small="true" Variant="ButtonVariant.Quiet" Busy="_busy" Disabled="@(_email.Trim().Length == 0)" OnClick="AskAsync">Ask them</Button>
+                    <Button Small="true" Variant="ButtonVariant.Quiet" Busy="_busy" Disabled="@(_email.Trim().Length == 0)" OnClick="AskAsync">Send the request</Button>
                 </div>
             </Section>
 
@@ -87,7 +87,7 @@
     <Sheet Open="_confirming" OpenChanged="open => _confirming = open" Title="@($"{RemoveLabel(removing)}?")" Lead="@RemoveWarning(removing)">
         <Actions>
             <Button Block="true" Variant="ButtonVariant.Danger" Busy="_busy" OnClick="() => RemoveAsync(removing)">@RemoveLabel(removing)</Button>
-            <Button Block="true" Variant="ButtonVariant.Quiet" OnClick="() => _confirming = false">Keep</Button>
+            <Button Block="true" Variant="ButtonVariant.Quiet" OnClick="() => _confirming = false">Keep them</Button>
         </Actions>
     </Sheet>
 }
@@ -128,7 +128,7 @@
         : $"{child.Name} keeps their account, and you stop seeing their details. A parent or the church office can link you again.";
 
     private static string CodeHint(SignInCodeReply code) =>
-        $"Works once, until {code.ExpiresAt.ToLocalTime():h:mm tt d MMM}. On their phone: open the app, go to Account, then “Got a code from your parent?”.";
+        $"Works once, until {code.ExpiresAt.ToLocalTime():h:mm tt d MMM}. On their phone: open the app, go to Account, then “Have a code from your parent?”.";
 
     private Task OpenChanged(bool open) => open ? Task.CompletedTask : CloseAsync();
 
@@ -141,7 +141,7 @@
         if (_name is { } name)
             await People.RenameAsync(Child!.Id, name);
         if (_born is { } born)
-            await People.SetBirthDateAsync(Child!.Id, PeopleWords.ParseDay(born) ?? throw new RpcException(new Status(StatusCode.InvalidArgument, "Choose a birth date.")));
+            await People.SetBirthDateAsync(Child!.Id, PeopleWords.ParseDay(born) ?? throw new RpcException(new Status(StatusCode.InvalidArgument, "Enter their birth date.")));
         (_name, _born) = (null, null);
     });
 

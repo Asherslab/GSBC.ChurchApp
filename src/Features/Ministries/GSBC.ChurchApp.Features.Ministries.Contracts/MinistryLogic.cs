@@ -18,7 +18,7 @@ public static class MinistryLogic
         : roles.Contains(Roles.Admin) ? "You look after it"
         : roles.Contains(Roles.Team) ? "On the team"
         : childrenAttending.Count > 0 ? $"{Names(childrenAttending)} {(childrenAttending.Count == 1 ? "attends" : "attend")}"
-        : roles.Contains(Roles.Attendee) ? "You come along"
+        : roles.Contains(Roles.Attendee) ? "You attend"
         : "";
 
     public static bool IsHidden(MinistryDetails ministry) => ministry.Hidden || ministry.HiddenBy.Length > 0;

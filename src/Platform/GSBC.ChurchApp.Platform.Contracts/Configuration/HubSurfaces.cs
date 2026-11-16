@@ -13,7 +13,7 @@ public static class HubSurfaces
     public const string PublishNode = "config.hub.publish";
 
     public static readonly Permission Publish =
-        new(PublishNode, ScopeKind.Global, "Put changes to the Home screen out to everyone, or on for an event", area: "App");
+        new(PublishNode, ScopeKind.Global, "Publish changes to the Home screen for everyone, or turn them on for a few days", area: "App");
 
     public static readonly Measure TileTapped = new("hub.tile.tapped", "Home screen tiles tapped",
         "Taps on each Home screen tile. One person tapping twice counts twice", SubjectKinds.HubTile, SplitByGroup: true);
@@ -33,10 +33,10 @@ public static class HubSurfaces
         public static readonly TextSetting Title = new("title", "Title", required: true, maxLength: 40);
         public static readonly TextSetting Subtitle = new("subtitle", "Subtitle", maxLength: 80);
         public static readonly TextSetting Link = new("link", "Opens", required: true, maxLength: 500, isLink: true,
-            help: "The web page the tile opens, starting with https://");
+            help: "The web address the tile opens, starting with https://.");
         public static readonly ColourSetting Colour = new("colour", "Colour", TileColours, "plain");
         public static readonly YesNoSetting Wide = new("wide", "Full width");
-        public static readonly MediaSetting Image = new("image", "Picture", help: "Shown on the tile, behind its title");
+        public static readonly MediaSetting Image = new("image", "Picture", help: "Shown on the tile, behind its title.");
 
         public static readonly Surface Surface = new("hub.link", Area, "Link tile",
             "A tile that opens a web page: the Bible, a sign-up form, a campaign",
@@ -46,7 +46,7 @@ public static class HubSurfaces
     public static class Grid
     {
         public static readonly NumberSetting Columns = new("columns", "Columns", HubGrid.FewestColumns, HubGrid.FewestColumns, HubGrid.MostColumns,
-            help: "How many columns of tiles Home has on a phone");
+            help: "The number of columns of tiles on Home on a phone.");
 
         public static readonly Surface Surface = new("hub.grid", Area, "The grid", "How many columns Home's tiles are laid out in",
             [Columns], defaultOrder: -1000);
@@ -63,10 +63,10 @@ public static class HubSurfaces
 
         public static readonly TextSetting Title = new("title", "Title", "Good Shepherd", required: true, maxLength: 40);
 
-        public static readonly ChoiceSetting Under = new("under", "Under the title",
-            [new(Today, "Today's date"), new(Words, "Your own words"), new(Nothing, "Nothing")], Today);
+        public static readonly ChoiceSetting Under = new("under", "Line under the title",
+            [new(Today, "Today's date"), new(Words, "Your own line"), new(Nothing, "Nothing")], Today);
 
-        public static readonly TextSetting Line = new("line", "Your words", maxLength: 80, help: "Shown under the title when Under the title is Your own words");
+        public static readonly TextSetting Line = new("line", "Your line", maxLength: 80, help: "Leave this empty to show nothing under the title.");
 
         public static readonly Surface Surface = new("hub.top", Area, "Top of Home", "The title at the top of Home and the line under it",
             [Title, Under, Line], defaultOrder: -2000);
@@ -106,7 +106,7 @@ public static class HubSurfaces
     }
 
     public static readonly HubTileKind PlainTile = new("hub.tile", "Link tile",
-        "Your own words, icon, picture and link: Give, the Bible, Visit us, a campaign, a page on the website", "",
+        "A tile with your own text, icon, picture and link, such as to giving, a Bible reading or a page on the website.", "",
         new TileDefaults("A new tile", Icon: "sparkles", TitleRequired: true));
 
     public static bool IsArrangement(Surface surface) =>

@@ -8,13 +8,13 @@
 
 <UnsavedGuard Changed="() => _answering && _note.Trim().Length > 0" What="the words for the wall" />
 
-<Sheet Open="_answering" OpenChanged="open => _answering = open" Title="Mark it answered"
-       Lead="Anything to say? If it's on the prayer wall, the wall shows it under the request, and the person hears it was answered.">
+<Sheet Open="_answering" OpenChanged="open => _answering = open" Title="Mark as answered"
+       Lead="Add a few words if you like. If the request is on the prayer wall, they show under it. The person who asked is told it was answered.">
     <ChildContent>
-        <TextField Label="Words for the wall" Hint="Optional" Multiline="true" MaxLength="500" @bind-Value="_note" />
+        <TextField Label="Words for the wall" Hint="Optional. Shown under the request on the prayer wall." Multiline="true" MaxLength="500" @bind-Value="_note" />
     </ChildContent>
     <Actions>
-        <SaveBar Block="true" Label="Mark it answered" Busy="Busy" OnSave="AnsweredAsync" OnCancel="() => _answering = false" New="true" />
+        <SaveBar Block="true" Label="Mark as answered" Busy="Busy" OnSave="AnsweredAsync" OnCancel="() => _answering = false" New="true" />
     </Actions>
 </Sheet>
 
@@ -22,7 +22,6 @@
     private static readonly IReadOnlyList<SegmentOption<CareState>> Stages =
     [
         new(CareState.New, PrayerWords.Care(CareState.New)),
-        new(CareState.FollowedUp, PrayerWords.Care(CareState.FollowedUp)),
         new(CareState.Answered, PrayerWords.Care(CareState.Answered)),
     ];
 

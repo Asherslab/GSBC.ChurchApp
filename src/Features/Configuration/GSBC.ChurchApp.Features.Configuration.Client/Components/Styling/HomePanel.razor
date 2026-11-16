@@ -17,7 +17,7 @@
     @if (NotShown.Count > 0 || Removed.Count > 0)
     {
         <section class="hub-canvas__hidden" aria-labelledby="home-hidden">
-            <h3 id="home-hidden">Not on the phone for @Preview.Words(RoleNames)</h3>
+            <h3 id="home-hidden">Not shown on Home for @Preview.Words(RoleNames)</h3>
             <ListGroup>
                 @foreach ((ArrangedSurface entry, string why) in NotShown)
                 {
@@ -25,7 +25,7 @@
                 }
                 @foreach (PlacementPatch removed in Removed)
                 {
-                    <ListRow Title="@(removed.Base?.Values.GetValueOrDefault(HubTileKeys.Title) ?? "A tile")" Subtitle="Taken out in this draft" Icon="x" IconTone="RowTone.Quiet" Class="row--muted">
+                    <ListRow Title="@(removed.Base?.Values.GetValueOrDefault(HubTileKeys.Title) ?? "A tile")" Subtitle="Removed in this draft" Icon="x" IconTone="RowTone.Quiet" Class="row--muted">
                         <TrailingContent><Button Variant="ButtonVariant.Quiet" Small="true" Icon="undo" OnClick="() => OnPutBack.InvokeAsync(removed.PlacementId)">Put back</Button></TrailingContent>
                     </ListRow>
                 }
@@ -59,9 +59,9 @@
     private string WhyHidden(ArrangedSurface entry)
     {
         if (entry.Hidden)
-            return "Hidden: Shown is off";
+            return "Hidden: “Show on Home” is off";
         if (entry.StartsAt is { } starts && At < starts)
-            return $"Shows from {DraftWords.Day(starts)}";
+            return $"Shown from {DraftWords.Day(starts)}";
         if (entry.EndsAt is { } ends && At >= ends)
             return $"Ended {DraftWords.Day(ends.AddTicks(-1))}";
         return entry.Audience.IsForRoles ? $"Only for {RoleWords.List(entry.Audience.RoleIds, RoleNames)}" : "Only for people who are signed in";

@@ -30,12 +30,12 @@ internal sealed class NewsTelling(INotifications notifications)
 
     public Task WaitingAsync(PostRecord post, Guid actor, CancellationToken cancellationToken) =>
         notifications.RaiseAsync(new Notification(NewsNotifications.WaitingToPublish, NotificationAudience.Holding(NewsPermissions.Publish),
-            $"Waiting for you to publish: {post.Title}", $"{post.AuthorName} asks for it to go in church news.", NewsDestinations.PostPath(post.Id.ToString()),
+            $"Waiting for you to publish: {post.Title}", $"{post.AuthorName} asks for this post to go in church news.", NewsDestinations.PostPath(post.Id.ToString()),
             Subject: WaitingSubject(post.Id)) { Actor = actor }, cancellationToken);
 
     public Task AskedAsync(PostRecord post, Guid actor, CancellationToken cancellationToken) =>
         notifications.RaiseAsync(new Notification(NewsNotifications.Asked, NotificationAudience.Holding(NewsPermissions.Publish),
-            $"{post.FromName} asks for church news: {post.Title}", $"{post.AskedByName} asks for it to go to the whole church.",
+            $"{post.FromName} asks for church news: {post.Title}", $"{post.AskedByName} asks for this post to go to the whole church.",
             NewsDestinations.PostPath(post.Id.ToString()), Subject: AskSubject(post.Id)) { Actor = actor }, cancellationToken);
 
     public Task AnsweredAsync(PostRecord post, bool yes, Guid actor, CancellationToken cancellationToken) =>

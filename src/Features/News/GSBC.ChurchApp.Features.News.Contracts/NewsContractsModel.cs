@@ -11,6 +11,7 @@ namespace GSBC.ChurchApp.Features.News.Contracts;
 [ProtoSerializable(typeof(NewsSave))]
 [ProtoSerializable(typeof(NewsRef))]
 [ProtoSerializable(typeof(PublishRequest))]
+[ProtoSerializable(typeof(TellAgainRequest))]
 [ProtoSerializable(typeof(AskAnswer))]
 [ProtoSerializable(typeof(ReachRequest))]
 [ProtoSerializable(typeof(NewsReach))]

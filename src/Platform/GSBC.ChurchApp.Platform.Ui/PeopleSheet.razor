@@ -19,7 +19,7 @@ else
     private RenderFragment Body => @<text>
         @if (View.MayAdd)
         {
-            <PersonFinder Label="Add someone" Placeholder="Add someone: find them by name" Find="Source.FindAsync" ActionText="@($"Add as {FirstGivable!.Name}")"
+            <PersonFinder Label="Add a person by name" Find="Source.FindAsync" ActionText="@($"Add as {FirstGivable!.Name}")"
                           Leave="View.People.Select(person => person.Id).ToList()" Busy="@_busy" OnChosen="AddAsync" />
         }
         <Notice Tone="NoticeTone.Warning" Text="@_problem" />
@@ -37,7 +37,7 @@ else
                             <span class="people-sheet__who"><span class="people-sheet__name">@person.Name</span>@if (person.Detail is { } detail) {<span class="people-sheet__detail">@detail</span>}</span>
                             @if (person.RoleIds.All(roleId => View.Roles.FirstOrDefault(role => role.Id == roleId)?.Refusal is null))
                             {
-                                <Button Small="true" Variant="ButtonVariant.Quiet" Busy="@(_busy == person.Id)" OnClick="() => TakeOffAsync(person)">Take off</Button>
+                                <Button Small="true" Variant="ButtonVariant.Quiet" Busy="@(_busy == person.Id)" AriaLabel="@($"Remove {person.Name}")" OnClick="() => TakeOffAsync(person)">Remove</Button>
                             }
                         </div>
                         <div class="people-sheet__ticks">
@@ -66,7 +66,7 @@ else
     [Parameter, EditorRequired] public required PlacePeopleView View { get; set; }
     [Parameter, EditorRequired] public required string Title { get; set; }
     [Parameter] public string? Lead { get; set; }
-    [Parameter] public string Empty { get; set; } = "No one yet.";
+    [Parameter] public string Empty { get; set; } = "No one has been added yet.";
     [Parameter] public bool Open { get; set; }
     [Parameter] public bool Inline { get; set; }
     [Parameter] public EventCallback<bool> OpenChanged { get; set; }

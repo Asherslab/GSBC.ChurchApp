@@ -7,7 +7,7 @@ Home is the Hub: a compact masthead, then one grid of tiles on the gutter. The g
 
 ## Home tiles and their layouts (signature)
 See docs/features/home.md. A tile is never refused for its size: each kind declares **layouts** (`TileVariant`), and
-the tile draws the one chosen, or **Best for this size**, the default for its size and picture. A layout that
+the tile draws the one chosen, or **Automatic**, the default for its size and picture. A layout that
 doesn't suit the size, or needs a picture the tile hasn't got (`TileVariant.NeedsPicture`), falls back to the
 default. Sizes are read against the grid (a 3-wide tile on 2 columns is 2 × 1). Add new layouts to this table as they
 come up (owner, 2026-11-04).
@@ -19,7 +19,7 @@ above the words), **behind** (picture fills the tile, words over a masthead-deep
 
 **Picture layouts on every kind** (owner, 2026-11-04, note 22): every kind with its own catalogue also offers Picture
 behind, above and beside (`TileVariants.Pictures`), suiting the same sizes as a Link tile's and the default when there
-is a picture (Latest sermon and News have their own, below). In them a kind's content shrinks to a title, one line and, from two cells up, its go line (*Picture layouts draw* below). **Best for this size** keeps a kind's designed layout until a picture is chosen.
+is a picture (Latest sermon and News have their own, below). In them a kind's content shrinks to a title, one line and, from two cells up, its go line (*Picture layouts draw* below). **Automatic** keeps a kind's designed layout until a picture is chosen.
 A kind none of whose layouts show a picture hides the Picture field (`HubTileKind.UsesPicture`); today every kind uses one.
 
 | Kind | Layout (suits) | Draws | Default |
@@ -29,12 +29,11 @@ A kind none of whose layouts show a picture hides the Picture field (`HubTileKin
 | Latest sermon | Cover first (any) | 1 × 1: cover and play; one row: title beside the cover; taller: cover above the title, 2 × 2 adds the length; the tile's picture replaces the cover | always |
 | | Where you're up to (any) | play, title and how long (progress once Sermons plays), no cover | never |
 | | Picture behind (more than one cell) | title, date and play over the shade | never |
-| Sunday bulletin | Poster (any) | 1 × 1: "Sunday 8 Nov" and the open words; one row: theme with date · verse; taller: the bulletin cover | always |
-| | Theme first (any) | the year's theme as the title at every size | never |
-| | Verse (more than one cell) | the week's verse large, the reference small | never |
-| | *Picture layouts draw* | the theme, the date and verse, "Read the bulletin" | |
-| This week (one-off events, specials and dates not on) | Agenda (any) | 1 × 1: the next thing over when ("Tomorrow 7pm", "Not on Saturday"); one row: up to three; taller: as many as fit, up to *How many to show*; nothing coming: "Nothing special coming up" | always |
-| | Just a link (any) | icon, title and "3 things coming up" | never |
+| What's next (the weekly digest; took over the Sunday bulletin's tiles, 2026-11-16; starts 2 rows tall in Top of Home) | Headline (any) | 1 × 1: title and "3 things coming up"; one row: "Baptisms and 2 more" (just one: its title and when line); taller: no icon, the first thing as the headline with its when line, the next ones under hairlines (`hub-list--after`: title, then its short day, "Tomorrow" or "Not on", at two columns), the tile's words (*What's next*) at the foot on one line; two columns or more with a picture: the tile's picture, else the lead's, on top and fewer rows under it; nothing to tell: "Nothing in What's next yet" | always |
+| | Link only (any) | icon, title and how many things are coming up | never |
+| | *Picture layouts draw* | the lead's title and when line, "What's next" | |
+| This week (one-off events, specials and dates not on) | Agenda (any) | 1 × 1: the next thing over when ("Tomorrow 7pm", "Not on Saturday"); one row: up to three; taller: as many as fit, up to *Number of events shown*; nothing coming: "Nothing special coming up" | always |
+| | Link only (any) | icon, title and "3 things coming up" | never |
 | | *Picture layouts draw* | the title, the next thing and when, "Calendar" | |
 | Notifications | Count and newest (any) | bell, "3 unread", the newest title | 1 × 1 |
 | | Newest in full (any) | the newest notice and its first lines, the count above | one row, wider |
@@ -51,8 +50,8 @@ A kind none of whose layouts show a picture hides the Picture field (`HubTileKin
 | | (no news) | the tile's title and "Nothing new yet" | |
 
 In the editor a layout that doesn't suit the tile stays listed but greyed, its caption saying why: "Needs a wider
-tile", "Needs a taller tile", "Needs a bigger tile", or "Needs a picture: choose one under Picture". The automatic
-choice reads "Best for this size (now Picture beside)".
+tile", "Make the tile taller to use this layout.", "Make the tile bigger to use this layout.", or "Add a picture under Picture to use this layout.". The automatic
+choice reads "Automatic (currently Picture beside)".
 
 Recorded on the decision pages but not built: This week as a day strip, the sermon series card, Outreach's map card
 (needs real routes), and News as no tile at all (declined). The pages are in `.impeccable/mocks/decision/hub-variants/<kind>/`.
@@ -65,13 +64,13 @@ The compact masthead: the title "Good Shepherd" on one line (the display size or
 - **Frame:** the title balanced, breaking only between words, never hyphenated; up to two secondary lines (three on a poster); a go line with a chevron. A tile can carry a live dot or an orange unread dot by its title.
 - **Corner mark on picture tiles** (owner, 2026-11-04, note 21): a picture behind or above shows › (in the app) or ↗ (a web page) in a round chip at the top right; beside, the plain mark. Not on a tile with its own go line or play button.
 - **Fitting the words:** each tile is a size container. At 112px wide or less the lines and go icon drop and the title shrinks. At 200px or less the play disc moves to the top right, an agenda's time stacks above its event, and unread-dot titles may take two lines. A poster 240px wide or more carries a larger icon.
-- **Icon:** the row tile; its colour, for staff: Goes with the tile, Buttons, Accent, Highlight, Grey, or Its own colours (only for an uploaded drawing).
+- **Icon:** the row tile; its colour, for staff: Matches the tile, Buttons, Accent, Highlight, Grey, or The icon's own colours (only for an uploaded drawing).
 - **Mark:** a solid-toned poster two or more rows tall carries the church mark at 7% off its bottom-right corner. With no picture, a sermon cover is the masthead with the mark.
 - **Press and focus:** the whole tile is one target; a tile's own action (the primary play disc) sits at its bottom right above it.
 - **Agenda inside a tile:** hairline-ruled entries with a tabular time column; a date that isn't on reads "Not on" there, its title at 400. On the phone each entry is its own button opening that date's page; the rest of the tile opens the calendar.
 - **Ministries and Life Groups tiles:** Ministries, when you're in any: "Your ministries" with up to two lines (a newest post title, or the name and your place). Life Groups, in a group: "Your Life Group" and "Name · Room, 9am"; with new groups coming, the staff's title over "New groups from 1 February". Otherwise the staff's title and words.
 - **Banner:** `HubTile`'s `Banner` slot is a marker strip across the top, above the picture, opening its own target (a `HubListEntry` with `hub-tile__banner`): icon, one line of words, chevron. The corner mark moves under it. Only News's urgent band uses it.
-- **Date after the title:** `hub-list--after` is for a single "what came before" row under a tile's lead: the title ellipsized, the date after it, quiet. Lists keep a when-first column with ages: "Just now", "46 min ago", "3 hours ago", "Yesterday", the weekday within the week, then "9 Nov".
+- **Date after the title:** `hub-list--after` is for quiet rows under a tile's lead (News's "what came before", What's next's following things): the title ellipsized, the date after it, quiet. Lists keep a when-first column with ages: "Just now", "46 min ago", "3 hours ago", "Yesterday", the weekday within the week, then "9 Nov".
 
 ## Hub canvas (signature)
 Home arranged on App styling's phone inside a draft: the phone is the canvas; the panel holds the Home screen controls or the chosen tile's settings.
@@ -90,5 +89,5 @@ Home arranged on App styling's phone inside a draft: the phone is the canvas; th
 ## Tab bar canvas
 The same phone as the Hub canvas, showing the draft's tab bar, with the Tab bar panel beside it.
 - **On the phone:** clicking a tab (ringed in marker) opens it in the panel. Home and More open the Tab bar panel and can't be chosen (tooltips: Home is always first, More always last).
-- **Tab bar panel:** a head with "Home first, up to three tabs you choose, then More."; Add a tab (primary, for whoever may change it); then *On the bar, in order*: numbered sand rows with the tab's icon and word, a marker dot when the draft changed it, and quiet *Move left* and *Move right*. Home opens the list and More closes it, as outlined rows with a lock ("Always first", "Always last" as tooltip and for screen readers). Tabs not on the bar for the person previewed follow, saying why, and a caption says a place that isn't a tab is still in More.
-- **Settings panel:** the tile settings' shape under a *Tab bar* back link: Opens (the place field, without places another tab already opens), On the tab (the word, its 12-letter limit as a hint, and the icon picker without *No icon* or uploads; with no icon yet "Comes with the place you choose"), Who sees it and when with *On the bar* (the switch that puts a starting tab back), and *Take it off the bar* as the danger action.
+- **Tab bar panel:** a head with "Home is always first and More always last, with up to three tabs of your choice between them."; Add a tab (primary, for whoever may change it); then *On the tab bar, in order*: numbered sand rows with the tab's icon and word, a marker dot when the draft changed it, and quiet *Move left* and *Move right*. Home opens the list and More closes it, as outlined rows with a lock ("Always first", "Always last" as tooltip and for screen readers). Tabs not on the bar for the person previewed follow, saying why, and a caption says a place that isn't a tab is still in More.
+- **Settings panel:** the tile settings' shape under a *Tab bar* back link: Opens (the place field, without places another tab already opens), On the tab (the word, its 12-letter limit as a hint, and the icon picker without *No icon* or uploads; with no icon yet "Taken from the page you choose"), Who sees it and when with *On the bar* (the switch that puts a starting tab back), and *Take off the tab bar* as the danger action.

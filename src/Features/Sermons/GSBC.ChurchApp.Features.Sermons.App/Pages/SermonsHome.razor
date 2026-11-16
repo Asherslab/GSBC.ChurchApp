@@ -34,7 +34,7 @@
         if (view.Shelf.Sermons.Count == 0)
             return @<Page Title="Sermons" Place="sermons">
                 <Masthead Title="Sermons" Note="Listen and watch, wherever you are" />
-                <EmptyState Icon="sermons" Title="Sermons will be here soon" Body="They arrive the first time the app connects, and stay on this phone after that." />
+                <EmptyState Icon="sermons" Title="Sermons will be here soon" Body="Sermons arrive the first time the app connects, and stay on this phone after that." />
             </Page>;
 
         AudioState audio = Player.Audio.State;
@@ -122,7 +122,7 @@
 
             <Section Title="Notifications">
                 <ListGroup>
-                    <FollowSwitch Title="Tell me when a new sermon is out" Description="A notification on this phone when each new sermon arrives. Follow a single series from its page." />
+                    <FollowSwitch Title="Tell me when a new sermon is out" Description="Get a notification on this phone when each new sermon arrives. To follow one series only, use the switch on that series' page." />
                 </ListGroup>
             </Section>
 

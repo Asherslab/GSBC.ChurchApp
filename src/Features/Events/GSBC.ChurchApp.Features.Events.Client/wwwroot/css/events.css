@@ -75,8 +75,6 @@
 .event-waiting:not(:empty) { padding: 10px var(--gutter) 0; }
 .event-section { margin: 12px 0 -4px; font-size: var(--text-title); font-weight: 700; letter-spacing: -0.015em; }
 .event-body .prose { margin: 0; }
-.event-date .row__trail { color: var(--ink-3); }
-.event-date--off .row__title { color: var(--ink-3); font-weight: 400; }
 
 .event-body--editing { gap: 6px; padding-bottom: 24px; }
 .event-body--editing > .field, .event-body--editing > .add-row, .event-body--editing > .event-off { margin-top: 10px; }
@@ -326,3 +324,11 @@ a.whats-next-card__title:active { opacity: 0.7; }
 .digest-desk__reach { margin: 0; text-wrap: pretty; color: var(--ink-2); font-size: var(--text-caption); line-height: 1.45; text-align: center; }
 .digest-desk__test { display: flex; align-items: center; gap: 10px; color: var(--ink-3); font-size: var(--text-caption); line-height: 1.4; }
 .digest-desk__test .btn { flex: none; }
+
+.whats-next-tile.hub-tile--poster .hub-tile__words { flex: 1; margin-top: 0; padding-top: 0; }
+.whats-next-tile .hub-tile__go { margin-top: auto; padding-top: var(--space-md); white-space: nowrap; }
+.whats-next-tile .hub-list { grid-template-columns: minmax(0, 1fr); min-width: 0; margin-top: var(--space-sm); }
+.whats-next-tile .hub-list__entry { min-width: 0; padding: var(--space-sm) 0; }
+.whats-next-tile .hub-list__entry:last-child { padding-bottom: 0; }
+.whats-next-tile .hub-list__what { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.whats-next-tile .hub-list__when { max-width: 45%; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }

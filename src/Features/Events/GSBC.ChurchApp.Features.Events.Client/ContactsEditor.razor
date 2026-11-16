@@ -1,7 +1,7 @@
 <div class="field editor-list">
     @if (Contacts.Count > 0)
     {
-        <span class="field__label">Contact</span>
+        <span class="field__label">Contacts</span>
     }
     @foreach (EventContact contact in Contacts)
     {
@@ -43,7 +43,7 @@
     private static string Named(EventContact contact) => contact.Name.Length > 0 ? contact.Name : "A contact with no name yet";
 
     private static string Reach(EventContact contact) =>
-        EventWords.Join(contact.Phone, contact.Email) is { Length: > 0 } reach ? reach : "No phone or email yet";
+        EventWords.Join(contact.Phone, contact.Email) is { Length: > 0 } reach ? reach : "No phone number or email address";
 
     private void Add()
     {

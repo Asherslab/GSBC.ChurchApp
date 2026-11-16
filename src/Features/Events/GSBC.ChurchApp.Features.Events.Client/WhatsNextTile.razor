@@ -1,0 +1,83 @@
+@using GSBC.ChurchApp.Platform.Contracts.Configuration
+@using GSBC.ChurchApp.Platform.Ui.Surfaces
+@inject DigestReader Reader
+@inject TimeProvider Clock
+
+<LiveData TValue="WhatsNextDigest" Load="Reader.LoadAsync" Feeds="DigestReader.Feeds" Remember="@($"{DigestReader.Remembered}.tile.{Entry.Placement?.Id}")">
+    <ChildContent>@Drawn(context.Value.Coming(Today))</ChildContent>
+    <Loading>@Drawn([])</Loading>
+    <Failed>@Drawn([])</Failed>
+</LiveData>
+
+@code {
+    [CascadingParameter] public HubContext Hub { get; set; } = HubContext.Still;
+    [Parameter, EditorRequired] public required ArrangedSurface Entry { get; set; }
+
+    private TileLook Look => TileLook.Of(EventsTiles.WhatsNext, Entry.Values);
+
+    private TileVariant Variant => EventsTiles.WhatsNext.VariantFor(Look, Hub.Columns);
+
+    private TileSpan Span => new(Math.Min(Look.Columns, Hub.Columns), Look.Rows);
+
+    private DateOnly Today => EventWords.Today(Clock.GetUtcNow().UtcDateTime);
+
+    private RenderFragment Drawn(IReadOnlyList<DigestShownItem> coming)
+    {
+        TileLook look = Look;
+        string? id = Entry.Placement?.Id;
+        if (coming.Count == 0)
+            return @<HubTile Look="@(look with { Image = null })" Title="@look.Title" Lines="Quiet" PlacementId="@id" />;
+        DigestShownItem lead = coming[0];
+        if (WordsTileView.ShapeOf(Variant) is { } shape)
+            return @<HubTile Look="look" Layout="shape" Title="@lead.Words.Title" Lines="[WhatsNextDigest.WhenLine(lead.Words)]" Cover="@CoverOf(lead)"
+                             Go="@(Span is { Columns: 1, Rows: 1 } ? null : look.Text)" PlacementId="@id" />;
+        if (Variant.Key == EventsTiles.JustALink || Span is { Columns: 1, Rows: 1 })
+            return @<HubTile Look="@(look with { Image = null })" Title="@look.Title" Lines="[Count(coming)]" PlacementId="@id" />;
+        if (Span.Rows == 1)
+            return @<HubTile Look="@(look with { Image = null })" Title="@look.Title" Lines="[RowLine(coming)]" PlacementId="@id" />;
+
+        bool pictured = Span.Columns > 1 && (look.Image is not null || lead.Picture is not null);
+        return @<HubTile Look="@(look with { Icon = "", Image = pictured ? look.Image : null })" Layout="@(pictured ? TileShape.Picture : TileShape.Poster)"
+                         Title="@lead.Words.Title" Lines="[WhatsNextDigest.WhenLine(lead.Words)]" Cover="@(pictured ? CoverOf(lead) : null)" Go="@look.Text"
+                         Class="whats-next-tile" PlacementId="@id">
+            @if (coming.Skip(1).Take(Following(pictured)).ToList() is { Count: > 0 } following)
+            {
+                <span class="hub-list hub-list--after">
+                    @foreach (DigestShownItem item in following)
+                    {
+                        <span class="hub-list__entry">
+                            <span class="hub-list__what">@item.Words.Title</span>
+                            @if (Span.Columns > 1 && ShortWhen(item) is { Length: > 0 } when)
+                            {
+                                <span class="hub-list__when">@when</span>
+                            }
+                        </span>
+                    }
+                </span>
+            }
+        </HubTile>;
+    }
+
+    private static readonly IReadOnlyList<string> Quiet = ["Nothing in What's next yet"];
+
+    private int Following(bool pictured) => pictured ? Span.Rows : Span.Rows * 2 - (Span.Columns > 1 ? 1 : 2);
+
+    private static RenderFragment? CoverOf(DigestShownItem item) =>
+        item.Picture is { } picture ? @<MediaCover Media="picture" Alt="" /> : null;
+
+    private static string Count(IReadOnlyList<DigestShownItem> coming) =>
+        coming.Count == 1 ? "1 thing coming up" : $"{coming.Count} things coming up";
+
+    private static string RowLine(IReadOnlyList<DigestShownItem> coming) =>
+        coming.Count == 1 ? $"{coming[0].Words.Title} · {WhatsNextDigest.WhenLine(coming[0].Words)}" : $"{coming[0].Words.Title} and {coming.Count - 1} more";
+
+    private string ShortWhen(DigestShownItem item)
+    {
+        if (item.Kind == DigestItemKind.NotOn)
+            return "Not on";
+        if (EventDates.Parse(item.FirstDate) is not { } first)
+            return "";
+        DateOnly day = first > Today ? first : Today;
+        return ChurchDates.Relative(day.ToDateTime(TimeOnly.MinValue), Today.ToDateTime(TimeOnly.MinValue));
+    }
+}

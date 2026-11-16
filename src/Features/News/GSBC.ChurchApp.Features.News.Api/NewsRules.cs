@@ -8,29 +8,32 @@ namespace GSBC.ChurchApp.Features.News.Api;
 
 internal static class NewsRules
 {
-    public const int LongestTitle = 120;
-    public const int LongestTell = 240;
+    public const int LongestTitle = NewsLimits.LongestTitle;
+    public const int LongestTell = NewsLimits.LongestTell;
     public const int LongestLinkLabel = 40;
     public const string DefaultLinkLabel = "Open it";
 
     public static string? WhyNot(NewsPost post)
     {
         if (post.Title.Trim().Length == 0)
-            return "Give it a title.";
+            return "Enter a title for the post.";
         if (post.Title.Trim().Length > LongestTitle)
             return $"Keep the title under {LongestTitle} characters.";
         if (RichTextRules.ProblemsWith(post.Body, allowed: RichTextMedia.Posts) is [var first, ..])
             return first;
         if (!Audience.TryParse(post.Audience, out _))
-            return "Choose who it's for.";
+            return "Choose who the post is for.";
         if (post.LinkPath.Trim().Length > 0 && !LinkTargets.IsSafe(post.LinkPath.Trim()))
             return "The link has to be a page in the app or an https:// address.";
         if (post.LinkLabel.Trim().Length > LongestLinkLabel)
             return $"Keep the link's words under {LongestLinkLabel} characters.";
-        if (post.TellTitle.Trim().Length > LongestTitle || post.TellBody.Trim().Length > LongestTell)
-            return $"Keep the notification under {LongestTitle} characters for its title and {LongestTell} for its line.";
-        return null;
+        return WhyNotTell(post.TellTitle, post.TellBody);
     }
+
+    public static string? WhyNotTell(string title, string body) =>
+        title.Trim().Length > LongestTitle || body.Trim().Length > LongestTell
+            ? $"Keep the notification under {LongestTitle} characters for its title and {LongestTell} for its line."
+            : null;
 
     public static bool IsPublished(PostRecord post) => post.State == NewsState.Published;
 
@@ -75,6 +78,7 @@ internal static class NewsRules
         TellBody = post.TellBody,
         Urgent = post.Urgent,
         ToldAt = post.ToldAt,
+        TimesTold = post.TimesTold,
         From = post.FromName,
         FromLink = post.FromLink,
         Shared = IsShared(post),

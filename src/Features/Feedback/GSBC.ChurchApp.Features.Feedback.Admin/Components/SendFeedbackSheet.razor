@@ -2,8 +2,8 @@
 @inject FeedbackFromAdmin Feedback
 @inject IJSRuntime JS
 
-<UnsavedGuard Changed="() => HasDraft" What="your feedback" />
-<Sheet Open="Open" OpenChanged="OpenChanged" Title="Send feedback" Lead="About the admin panel: something broken, looking wrong, or an idea?" LayerClass="feedback-send-layer">
+<UnsavedGuard Changed="() => HasDraft" What="your feedback" KeptAcrossPages="true" />
+<Sheet Open="Open" OpenChanged="OpenChanged" Title="Send feedback" Lead="Tell us about something in the admin panel that's broken or looks wrong, or share an idea." LayerClass="feedback-send-layer">
     <ChildContent>
         <div class="feedback-send" @ref="_zone">
             <div class="feedback-send__take">
@@ -28,14 +28,14 @@
                 {
                     <FilePick @ref="_pick" Box="true" Label="Paste, drop or choose screenshots and videos" Kinds="PickableFiles.PicturesAndVideos" Multiple="true" Limit="Room"
                               TooLarge="FeedbackLimits.TooLarge" TakesPaste="true" DropOn=".feedback-send" Class="feedback-send__drop" OnChosen="ChosenAsync">
-                        <strong>Paste <kbd>@(_commandKey ? "⌘V" : "Ctrl V")</kbd> or drop screenshots and videos</strong><span>@(context ? "Sending…" : $"Or click to choose. Up to {FeedbackLimits.MostAttachments}")</span>
+                        <strong>Paste <kbd>@(_commandKey ? "⌘V" : "Ctrl V")</kbd> or drop screenshots and videos</strong><span>@(context ? "Sending…" : $"Or click to choose up to {FeedbackLimits.MostAttachments} from this computer.")</span>
                     </FilePick>
                 }
             </div>
             <Notice Tone="NoticeTone.Warning" Text="@_captureProblem" />
-            <TextField Label="Tell us about it" Multiline="true" MaxLength="FeedbackLimits.LongestText" @bind-Value="_text"
-                       Placeholder="What happened, what you expected, or your idea" />
-            <p class="feedback-sentwith"><Icon Name="info" Size="IconSize.Small" /><span>Sent with it: @SentWith</span></p>
+            <TextField Label="Your feedback" Multiline="true" MaxLength="FeedbackLimits.LongestText" @bind-Value="_text"
+                       Hint="Describe what happened and what you expected, or share your idea." />
+            <p class="feedback-sentwith"><Icon Name="info" Size="IconSize.Small" /><span>Sent with your feedback: @SentWith</span></p>
             <Notice Tone="NoticeTone.Warning" Text="@_problem" />
         </div>
     </ChildContent>
@@ -81,7 +81,7 @@
 
     private string? Blocked =>
         _files.Any(file => file.Media is null) ? "Wait for the files to finish sending."
-        : HasDraft ? null : "Write something or add a picture.";
+        : HasDraft ? null : "Write your feedback or add a screenshot.";
 
     private string SentWith
     {
@@ -180,7 +180,7 @@
         catch (RpcException exception)
         {
             _problem = exception.StatusCode == StatusCode.ResourceExhausted
-                ? $"You've sent {FeedbackLimits.WithTheRoleADay} today, the most for a day. Your words and files are kept here; send it tomorrow."
+                ? $"You've sent {FeedbackLimits.WithTheRoleADay} today, the most for a day. Your feedback and files stay here, so you can send them tomorrow."
                 : $"It couldn't be sent: {exception.Status.Detail} Your words and files are kept here.";
         }
         finally

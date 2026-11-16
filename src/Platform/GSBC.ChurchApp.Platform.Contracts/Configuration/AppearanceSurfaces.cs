@@ -13,7 +13,7 @@ public static class AppearanceSurfaces
     public const string PublishNode = "config.appearance.publish";
 
     public static readonly Permission Publish =
-        new(PublishNode, ScopeKind.Global, "Put a change of colours out to everyone, or on for an event", area: "App");
+        new(PublishNode, ScopeKind.Global, "Publish changes to the colours for everyone, or turn them on for a few days", area: "App");
 
     public static readonly SurfaceArea Area = new("app.appearance", "Colours", "The colours everyone sees in the app", ScopeKind.Global, Edit, Publish, Ordered: false);
 
@@ -46,19 +46,19 @@ public static class AppearanceSurfaces
     public static class CustomTheme
     {
         public static readonly TextSetting Name = new("name", "Name", defaultValue: "New theme", required: true, maxLength: 40);
-        public static readonly FontSetting Font = new("font", "Masthead font", Fonts, "montserrat");
+        public static readonly FontSetting Font = new("font", "Masthead font", Fonts, "montserrat", "Used for the large title at the top of each main page.");
         public static readonly FontSetting BodyFont = new("body-font", "Text font", Fonts, "montserrat",
             help: "Used for everything else. Keep it easy to read at small sizes.");
 
         public static readonly HexColourSetting LightMasthead = new("light-masthead", "Masthead", "#2a3d5e");
         public static readonly HexColourSetting LightPrimary = new("light-primary", "Main buttons", "#2a3d5e");
-        public static readonly HexColourSetting LightAccent = new("light-accent", "Links and live", "#008176");
+        public static readonly HexColourSetting LightAccent = new("light-accent", "Links and live items", "#008176");
         public static readonly HexColourSetting LightMarker = new("light-marker", "Marker", "#e7ae74");
         public static readonly HexColourSetting LightTint = new("light-tint", "Shaded boxes", "#f4efe7");
 
         public static readonly HexColourSetting DarkMasthead = new("dark-masthead", "Masthead", "", workedOutWhenEmpty: true);
         public static readonly HexColourSetting DarkPrimary = new("dark-primary", "Main buttons", "", workedOutWhenEmpty: true);
-        public static readonly HexColourSetting DarkAccent = new("dark-accent", "Links and live", "", workedOutWhenEmpty: true);
+        public static readonly HexColourSetting DarkAccent = new("dark-accent", "Links and live items", "", workedOutWhenEmpty: true);
         public static readonly HexColourSetting DarkMarker = new("dark-marker", "Marker", "", workedOutWhenEmpty: true);
         public static readonly HexColourSetting DarkTint = new("dark-tint", "Raised panels", "", workedOutWhenEmpty: true);
 

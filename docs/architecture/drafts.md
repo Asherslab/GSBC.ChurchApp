@@ -96,7 +96,7 @@ permission for every area touched.
 - **Preview controls say they preview** (owner, 2026-11-09, after a meeting with staff: "Show Home for:
   Everyone" read as if it decided who sees Home). Every control that changes only what a preview shows is
   worded as previewing: *Preview the draft as*, *Preview in* (light or dark), *Preview the draft on*, *Preview
-  on* (the phone model), and on the phone *Preview it as* and *Preview on a date*. Never "Show … for".
+  on* (the phone model), and on the phone *Preview the app as* and *Preview a later date*. Never "Show … for".
 
 ## How it's built
 
@@ -142,7 +142,7 @@ and previews on the phone); the dealt sketches are in `.impeccable/mocks/decisio
   approve on their phones.
 - **Must not feel like Git or like ceremony.** On screen there are no branches, diffs, merges, conflicts or
   revisions. Staff read "What everyone sees" (not "Live"), and a field changed underneath a draft is
-  "Changed for everyone since you edited it" with *Keep mine* / *Use everyone's*. A typo fix is edit, then
+  "Changed for everyone since you last edited this" with *Keep mine* / *Use everyone's*. A typo fix is edit, then
   *Publish now*.
 - **Until 2026-11-09 the admin panel's drafts page was a three-pane workbench** (owner's choice then; replaced by *App styling*, below): drafts down the left (the
   event layer as one navy band at the top, then *Waiting to publish*, *Open*, *Published recently*, each
@@ -154,7 +154,7 @@ and previews on the phone); the dealt sketches are in `.impeccable/mocks/decisio
 - **See it two ways** (owner): the optional phone preview beside the editor, and your real phone. The
   preview draws Home through the app's own `HomeScreen`, and other areas' surfaces generically.
 - **The phone** gets More → Previews (*What
-  everyone sees* or a draft; *Preview it as* Me, A visitor, A member; *Preview on a date*), and the banner, docked to
+  everyone sees* or a draft; *Preview the app as* Me, A visitor, A member; *Preview a later date*), and the banner, docked to
   the top of the tab bar on every screen: *Previewing "X" · as a visitor · date · Exit*.
 - **Drafts are made and edited in the admin panel only;** the app has no Drafts screen (owner,
   2026-11-03: admin work stays in the admin panel).
@@ -241,7 +241,7 @@ panel's draft showed on the phone, previewing that draft, within a second of "Sa
   app's own Home on a chosen iPhone, true size, scaled to fit, with a pop-out window at
   `/drafts/{id}/preview`), and read-only Home screen and Colours pages whose *Change it* starts a
   draft.
-- **App:** More → Previews (a draft or what everyone sees, *Preview it as*, *Preview on a date*), the banner
+- **App:** More → Previews (a draft or what everyone sees, *Preview the app as*, *Preview a later date*), the banner
   (hideable until the app next comes to the foreground), and Home as the Hub's tiles
   ([home.md](../features/home.md)). The phone previews from the signed-in account.
 
@@ -306,9 +306,9 @@ theme can be fully published on 01/01/2027." Turning a draft on for everyone con
 (`ForEveryoneSheet`, opened from More) now offers three clearly different choices, as stacked segments
 with a line each:
 
-- **Turn it on now:** everyone sees it until it's turned off, or until an optional time; nothing is published.
-- **Turn it on between two dates:** the event layer, scheduled, as before; both dates are needed here.
-- **Publish it on a date:** at that moment it's published for good, exactly as *Publish now* would be,
+- **Turn on now:** everyone sees it until it's turned off, or until an optional time; nothing is published.
+- **Turn on between two dates:** the event layer, scheduled, as before; both dates are needed here.
+- **Publish on a date:** at that moment it's published for good, exactly as *Publish now* would be,
   with nothing to turn off.
 
 **How it works:** `Drafts.SchedulePublish` (gRPC) records `publish_at` and who scheduled it on the draft's
@@ -333,8 +333,8 @@ gets a conflict and finds nothing next time. Tested by `ScheduledPublishTests` o
 - **A deleted draft** simply isn't published: deleting it cancels the schedule with it.
 - **A draft that's also on as the event layer** can be scheduled to publish; publishing turns the layer
   off, as *Publish now* does.
-- **Shown** on the draft ("Publishes on Friday 1 January 2027, 12am, for good.", with *Change the time*
-  and *Don't publish it then*), in More, and in the Drafts list's own group *Publishing on a date*.
+- **Shown** on the draft ("This draft is published for good on Friday 1 January 2027, 12am.", with *Change the time*
+  and *Cancel the scheduled publish*), in More, and in the Drafts list's group *Turned on for everyone, or scheduled*.
 
 ## Open
 

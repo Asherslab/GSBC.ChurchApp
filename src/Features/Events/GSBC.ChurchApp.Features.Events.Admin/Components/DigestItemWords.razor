@@ -1,8 +1,8 @@
 <section class="digest-words" aria-labelledby="digest-words-title">
     <header class="digest-words__head">
         <div class="digest-words__heading">
-            <h2 id="digest-words-title">@(Item.Shown.Title.Length > 0 ? Item.Shown.Title : "Something new")</h2>
-            <span class="digest-words__note">@(Own ? "Not on the calendar, in the digest only" : "Words for the digest only")</span>
+            <h2 id="digest-words-title">@(Item.Shown.Title.Length > 0 ? Item.Shown.Title : "New item")</h2>
+            <span class="digest-words__note">@(Own ? "In the digest only, not on the calendar" : "Changes here apply to the digest only.")</span>
         </div>
         <button type="button" class="icon-btn" aria-label="Close" @onclick="Closed"><Icon Name="x" Size="IconSize.Small" /></button>
     </header>
@@ -13,17 +13,17 @@
                        MaxLength="@(multiline ? 2000 : 200)" Type="@(field == DigestFields.Register ? "url" : "text")" />
             @if (!Own && Item.Changed.Contains(field))
             {
-                <button type="button" class="digest-words__back" @onclick="() => PutBack(field)">@(field == DigestFields.Description ? "Back to the calendar's words" : "Use the calendar's")</button>
+                <button type="button" class="digest-words__back" @onclick="() => PutBack(field)">@(field == DigestFields.Description ? "Back to the calendar's words" : "Use the calendar's wording")</button>
             }
         </div>
     }
     @if (Own)
     {
-        <Button Variant="ButtonVariant.Quiet" Small="true" Icon="x" OnClick="Removed">Take it out of the digest</Button>
+        <Button Variant="ButtonVariant.Quiet" Small="true" Icon="x" OnClick="Removed">Remove from the digest</Button>
     }
     else if (Item.Missing.Count > 0)
     {
-        <p class="digest-words__missing">The calendar still needs @string.Join(" and ", Item.Missing.Select(EventWords.Need)) for this. The digest says so until it's set, unless you reword it.</p>
+        <p class="digest-words__missing">The event in the calendar still needs @string.Join(" and ", Item.Missing.Select(EventWords.Need)). The digest says so until the event has it, unless you reword this item.</p>
     }
 </section>
 
@@ -37,12 +37,12 @@
 
     private IEnumerable<(string, string, string?, bool)> Fields =>
     [
-        (DigestFields.Label, "Label", null, false),
+        (DigestFields.Label, "Line above the title", null, false),
         (DigestFields.Title, "Title", null, false),
-        (DigestFields.When, "When it says", Own ? "In words: \"This Saturday 14 November\"" : null, false),
+        (DigestFields.When, "When", Own ? "Write the day in words, such as “This Saturday, 14 November”." : null, false),
         (DigestFields.Time, "Time", null, false),
-        (DigestFields.Description, "What it says", "Plain words. A blank line starts a new paragraph.", true),
-        (DigestFields.Register, "Register link", "Shows a Register button", false),
+        (DigestFields.Description, "Description", "Leave a blank line to start a new paragraph.", true),
+        (DigestFields.Register, "Registration link", "A web address for signing up. Adds a Register button.", false),
     ];
 
     private Task Set(string field, string value)

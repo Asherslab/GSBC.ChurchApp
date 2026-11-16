@@ -8,9 +8,10 @@ public static class PrayerWords
 {
     public const string Note = "Our pastoral team would love to pray with you.";
     public const string NoName = "No name";
-    public const string Private = "Only the pastoral team reads it, unless you ask for it on the prayer wall too.";
+    public const string Private = "Only the pastoral team reads your request, unless you also ask for it on the prayer wall.";
     public const string CantSendHere = "Prayer requests are sent from the church app on a phone.";
-    public const string ShortNameHint = "Your first name and the first letter of your last, like Sam S.";
+    public const string FromTheChurch = "From the church. Any prayer wall staff can change the request or take it down.";
+    public const string ShortNameHint = "Your first name and the first letter of your last name, such as Sam S.";
 
     public static string Excerpt(string text, int longest = 90)
     {
@@ -32,7 +33,7 @@ public static class PrayerWords
 
     public static string Status(YourLine line) => line.Sending switch
     {
-        Sending.Waiting => "Waiting to send. It goes by itself when you're back online",
+        Sending.Waiting => "Waiting to send. It goes by itself when you're back online.",
         Sending.CouldNotSend => "Couldn't send",
         _ => string.Join(" · ", new[] { Where(line), line.Answered ? "Answered" : null }.OfType<string>()),
     };
@@ -41,11 +42,14 @@ public static class PrayerWords
     {
         WallState.Shown when line.WallUntil is { } until => $"On the prayer wall until {Day(until)} · {Prayed(line.Prayed)}",
         WallState.Shown => $"On the prayer wall · {Prayed(line.Prayed)}",
-        WallState.Waiting when line.Known => "With the pastoral team, who'll read it before the wall",
+        WallState.Waiting when line.Known => "With the pastoral team, who'll read your request before it goes on the wall",
         WallState.Ended => $"Was on the prayer wall · {Prayed(line.Prayed)}",
-        WallState.TakenDown => "With the pastoral team. You took it off the wall",
+        WallState.TakenDown => "With the pastoral team. You took your request off the wall",
         _ => "With the pastoral team",
     };
+
+    public static string FromTheDesk(string name, bool fromChurch, bool forSomeoneElse) =>
+        fromChurch ? $"{name}, from the church" : forSomeoneElse ? $"{name}, written in for them" : name;
 
     public static string WhoAndWhen(WallPost post, DateTime now) =>
         $"{(post.Name.Length > 0 ? post.Name : NoName)} · {ChurchDates.Ago(post.ShownAt, now)}";
@@ -65,12 +69,7 @@ public static class PrayerWords
         return $"{from} · {ChurchDates.Ago(item.SentAt, now)}";
     }
 
-    public static string Care(CareState care) => care switch
-    {
-        CareState.FollowedUp => "Followed up",
-        CareState.Answered => "Answered",
-        _ => "New",
-    };
+    public static string Care(CareState care) => care == CareState.Answered ? "Answered" : "New";
 
     public static string WallLine(WallState wall) => wall switch
     {
@@ -78,7 +77,7 @@ public static class PrayerWords
         WallState.Shown => "On the prayer wall",
         WallState.KeptPrivate => "Kept off the prayer wall",
         WallState.Ended => "Was on the prayer wall",
-        WallState.TakenDown => "They took it off the prayer wall",
+        WallState.TakenDown => "They took the request off the prayer wall",
         _ => "Only for the pastoral team",
     };
 }

@@ -10,7 +10,7 @@
 
 @if (OnAPage)
 {
-    <TitleBand Title="@Heading" BrowserTitle="@Heading" BackHref="@BackHref" BackText="@Page.Ministry.Name" Lead="@($"In {Page.Ministry.Name}. A title and the post. Pictures, video, files and more are under Insert.")">
+    <TitleBand Title="@Heading" BrowserTitle="@Heading" BackHref="@BackHref" BackText="@Page.Ministry.Name" Lead="@($"A post in {MinistryWords.Possessive(Page.Ministry.Name)} News. Pictures, video, files and more are under Insert.")">
         <Actions>
             @if (Draft.Id.Length > 0)
             {
@@ -30,7 +30,7 @@
         </Settings>
         <Preview>
             <PhoneFrame Label="The post, as it will look in the ministry's News" OnRoute="" Back="@Page.Ministry.Name" Title="@Draft.Title.Trim()">
-                <Section First="true"><PostView FillsPage="true" Title="@(Draft.Title.Trim().Length > 0 ? Draft.Title.Trim() : "Its title")" Content="_body" From="@Page.Ministry.Name" Posted="Clock.GetUtcNow().UtcDateTime" For="@MinistryWords.Short(Draft.Audience, Page.Ministry)" /></Section>
+                <Section First="true"><PostView FillsPage="true" Title="@(Draft.Title.Trim().Length > 0 ? Draft.Title.Trim() : "The post's title")" Content="_body" From="@Page.Ministry.Name" Posted="Clock.GetUtcNow().UtcDateTime" For="@MinistryWords.Short(Draft.Audience, Page.Ministry)" /></Section>
             </PhoneFrame>
         </Preview>
         <Foot>@Saving</Foot>
@@ -38,7 +38,7 @@
 }
 else
 {
-    <Sheet Open="Open" OpenChanged="OpenChanged" Title="@Heading" Lead="@($"In {Page.Ministry.Name}.")">
+    <Sheet Open="Open" OpenChanged="OpenChanged" Title="@Heading" Lead="@($"A post in {MinistryWords.Possessive(Page.Ministry.Name)} News.")">
         <Tools>
             @if (Draft.Id.Length > 0)
             {
@@ -60,13 +60,13 @@ else
     </Sheet>
 }
 
-<Sheet Open="_deleting" OpenChanged="open => _deleting = open" Title="Delete this post?" Lead="It goes from the news for everyone it was for. This can't be undone.">
+<Sheet Open="_deleting" OpenChanged="open => _deleting = open" Title="Delete this post?" Lead="The post is removed for everyone it was for. This can't be undone.">
     <ChildContent>
         <Notice Tone="NoticeTone.Warning" Text="@_problem" />
     </ChildContent>
     <Actions>
         <Button Block="true" Variant="ButtonVariant.Danger" Disabled="_busy" OnClick="DeleteAsync">Delete the post</Button>
-        <Button Block="true" Variant="ButtonVariant.Quiet" OnClick="() => _deleting = false">Keep it</Button>
+        <Button Block="true" Variant="ButtonVariant.Quiet" OnClick="() => _deleting = false">Keep the post</Button>
     </Actions>
 </Sheet>
 
@@ -75,7 +75,7 @@ else
         @if (AboutASunday)
         {
             <SelectField Label="Which Sunday" Options="SundayChoices" Value="@Draft.Sunday" ValueChanged="value => Draft.Sunday = value" />
-            <ToggleRow Title="@SundayPosts.NoClass" Description="Coming up shows the Sunday struck through" Checked="Draft.NoClass" CheckedChanged="NoClassChanged" />
+            <ToggleRow Title="@SundayPosts.NoClass" Description="The Sunday is struck through under Coming up, on the ministry's Calendar tab." Checked="Draft.NoClass" CheckedChanged="NoClassChanged" />
         }
     </text>;
 
@@ -85,16 +85,16 @@ else
     </text>;
 
     private RenderFragment Telling => @<text>
-        <ToggleRow Title="Important" Description="Sends a notification to everyone it's for, straight away" @bind-Checked="Draft.Important" />
+        <ToggleRow Title="Important" Description="Sends a notification straight away to everyone the post is for." @bind-Checked="Draft.Important" />
         @if (Draft.Audience == Contracts.Audiences.Everyone && !MinistryLogic.IsHidden(Page.Ministry))
         {
-            <ToggleRow Title="Ask for church news" Description="Church staff can put it in the News tab for the whole church, saying it's from this ministry" @bind-Checked="Draft.AskWholeChurch" />
+            <ToggleRow Title="Ask for church news" Description="Asks church staff to put this post in the church's News tab, showing which ministry it's from." @bind-Checked="Draft.AskWholeChurch" />
         }
     </text>;
 
     private RenderFragment Saving => @<text>
-        <SaveBar Label="@(Draft.Id.Length == 0 ? MinistryWords.PostFor(Draft.Audience, Page.Ministry) : "Save")" Busy="_busy" OnSave="SaveAsync" OnCancel="() => OpenChanged.InvokeAsync(false)" New="@(Draft.Id.Length == 0)"
-                 Blocked="@(Draft.Title.Trim().Length == 0 ? "Give it a title to post it." : null)" />
+        <SaveBar Label="@(Draft.Id.Length == 0 ? MinistryWords.PostFor(Draft.Audience, Page.Ministry) : "Save the post")" Busy="_busy" OnSave="SaveAsync" OnCancel="() => OpenChanged.InvokeAsync(false)" New="@(Draft.Id.Length == 0)"
+                 Blocked="@(Draft.Title.Trim().Length == 0 ? "Enter a title for the post." : null)" />
     </text>;
 
     private string Heading => Draft.Id.Length > 0 ? "Change the post" : AboutASunday ? "Tell the group about a Sunday" : "New post";
@@ -132,7 +132,7 @@ else
     private string Summary => string.Join(" · ", new[]
     {
         MinistryWords.Short(Draft.Audience, Page.Ministry),
-        Draft.Important ? "Notifies them" : "No notification",
+        Draft.Important ? "Sends a notification" : "No notification",
         Draft is { AskWholeChurch: true, Audience: Contracts.Audiences.Everyone } ? "Asks for church news" : "",
     }.Where(part => part.Length > 0));
 

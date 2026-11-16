@@ -37,19 +37,14 @@ public sealed class PrayerApprovals(ILocalFeeds feeds, IOutbox outbox, ILocalPre
     }
 
     public Task ShowAsync(WallSave save, bool change) =>
-        QueueAsync(save.Id, "ShowOnWall", save, change ? "Changing it on the prayer wall" : "Putting it on the prayer wall");
+        QueueAsync(save.Id, "ShowOnWall", save, change ? "Changing the request on the prayer wall" : "Putting the request on the prayer wall");
 
     public Task KeepPrivateAsync(string id, bool shown) =>
-        QueueAsync(id, "KeepPrivate", new RequestRef { Id = id }, shown ? "Taking it off the prayer wall" : "Keeping it off the prayer wall");
+        QueueAsync(id, "KeepPrivate", new RequestRef { Id = id }, shown ? "Taking the request off the prayer wall" : "Keeping the request off the prayer wall");
 
     public Task CareAsync(string id, CareState care, string answeredNote = "") =>
         QueueAsync(id, "Care", new CareChange { Id = id, Care = care, AnsweredNote = answeredNote.Trim() },
-            care switch
-            {
-                CareState.Answered => "Marking it answered",
-                CareState.FollowedUp => "Marking it followed up",
-                _ => "Marking it new again",
-            });
+            care == CareState.Answered ? "Marking the request answered" : "Marking the request new again");
 
     public Task AddNoteAsync(string id, string text) =>
         QueueAsync(id, "AddNote", new NoteSave { RequestId = id, Text = text.Trim() }, "Adding your note");

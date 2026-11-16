@@ -274,6 +274,10 @@
 
 .news-desk__preview { max-width: 720px; }
 
+.news-desk__scope { margin: 0 0 var(--space-sm); max-width: 65ch; font-size: var(--text-caption); line-height: 1.45; color: var(--ink-2); }
+
+.news-desk__from { display: block; margin-top: var(--space-3xs); font-size: var(--text-caption); font-weight: 600; color: var(--accent); }
+
 .news-desk__preview .media-strip { margin: 0; border-radius: var(--radius); overflow: hidden; }
 
 .news-desk__answer { display: flex; justify-content: space-between; gap: var(--space-sm); width: 100%; }

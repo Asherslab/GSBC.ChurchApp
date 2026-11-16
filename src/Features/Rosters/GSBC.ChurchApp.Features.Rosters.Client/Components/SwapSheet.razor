@@ -11,7 +11,7 @@
         <ChildContent>
             @if (ways.Count > 1)
             {
-                <Segmented TValue="string" Label="How" ShowLabel="true" Stacked="true" Value="way" ValueChanged="value => _way = value"
+                <Segmented TValue="string" Label="Ask" ShowLabel="true" Stacked="true" Value="way" ValueChanged="value => _way = value"
                            Options="ways.Select(each => new SegmentOption<string>(each, Short(each), Detail: RosterLines.AskerWords(each, date.View.Settings))).ToList()" />
             }
             else
@@ -23,7 +23,7 @@
                 <SelectField Label="Who to ask" Value="@_to" ValueChanged="value => _to = value"
                              Options="@(date.View.TeamNames.Where(person => person.Id != date.For.Id).Select(person => new FieldOption(person.Id, person.Name)).Prepend(new FieldOption("", "Choose someone")).ToList())" />
             }
-            <TextField Label="A note for them (if you like)" @bind-Value="_note" MaxLength="200" />
+            <TextField Label="Note" @bind-Value="_note" MaxLength="200" Hint="Optional. Sent with your request." />
             <Notice Tone="NoticeTone.Warning" Text="@_problem" />
         </ChildContent>
         <Actions>

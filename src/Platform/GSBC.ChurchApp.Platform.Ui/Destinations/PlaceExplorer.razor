@@ -50,10 +50,10 @@
     private string ShortLink(Destination place) => Link(place) is var link && new Uri(link) is var uri ? $"{uri.Host}{uri.AbsolutePath}" : link;
 
     private string Note(Destination place) => Destinations.Catalog.KindByKey(place.Kind)?.OpensOutside == true
-        ? "On a phone with the app, the link opens this in the phone's browser. Anyone else is shown how to get the app."
-        : "On a phone with the app, the link opens it there. Anyone else is shown how to get the app.";
+        ? "On a phone with the app, the link opens this page in the phone's browser. Anyone else is shown how to get the app."
+        : "On a phone with the app, the link opens this place in the app. Anyone else is shown how to get the app.";
 
-    private static string WhoLine(Destination place) => place.WhoCanOpen == "Everyone" ? "Everyone can open it" : $"{place.WhoCanOpen} can open it";
+    private static string WhoLine(Destination place) => place.WhoCanOpen == "Everyone" ? "Everyone can open this" : $"{place.WhoCanOpen} can open this";
 
     private IEnumerable<(PlaceAction Action, string Href)> ActionsFor(Destination place) => Actions
         .Where(action => action.Requires is null || Access.Can(action.Requires))

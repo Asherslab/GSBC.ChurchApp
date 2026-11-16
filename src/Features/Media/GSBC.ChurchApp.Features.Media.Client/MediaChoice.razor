@@ -15,7 +15,7 @@
     </div>
     @if (_uploading && PhoneUpload)
     {
-        <FilePick Box="true" Label="@UploadLabel" Hint="From this phone. It's sent with your save, as soon as the phone is online."
+        <FilePick Box="true" Label="@UploadLabel" Hint="A picture from this phone is uploaded with your save, as soon as the phone is online."
                   ImagesOnly="ImagesOnly" Kinds="Kinds" OnPicked="media => OnPick.InvokeAsync(media)" />
     }
     else if (_uploading && DirectUpload is { } direct)
@@ -67,7 +67,7 @@
                 else
                 {
                     <EmptyState Icon="image" Title="@(Searching ? "Nothing matches" : FontsOnly ? (_folderId is null ? "No font files here" : "No font files in this folder") : _folderId is null ? $"No {Noun}s yet" : $"No {Noun}s in this folder")"
-                                Body="@(Searching ? "Try another word." : FontsOnly ? "Upload the church's font file, or open the folder it's in. Only use a font the church is licensed to use in an app." : _folderId is null ? "Upload one, and it's kept in Media for any tile or page." : "Open another folder, or upload one into this folder.")" />
+                                Body="@(Searching ? "Try another word." : FontsOnly ? "Upload the church's font file, or open the folder it's in. Only use a font the church is licensed to use in an app." : _folderId is null ? "Upload a file here, and Media keeps it for any tile or page." : "Open another folder, or upload a file into this one.")" />
                 }
             </LiveData>
         </LiveData>

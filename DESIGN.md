@@ -999,6 +999,7 @@ component, never a copy.
 | A group of settings | `Section Grouped` (+ `Foot`) | Admin: a card the full width of its pane, short fields two to a line (`ui-pair--wide`; owner, 2026-11-12, #71), title and lead inside, a sand foot for its save bar or "These change straight away". Phone: an inset group. A Save-button form and switches that change at once never share a group. |
 | Switching views | `TabStrip`, `Segmented`, `FilterChips` | Tabs (the underline) for different things; Segmented for the same list two ways; chips only to narrow down. Chips never switch views; Segmented never picks what tabs should show. A page's title band and tabs are drawn once, outside what the tabs swap, so changing tab never blanks them; each tab's own buttons reach the band through a `SectionOutlet`, and its body uses `Remember` (owner, 2026-11-15). `DesignDriftRules` fails on a tab head drawn by more than one tab. |
 | Tools for a list | `Workbench` rail with `FilterChips Rail` (admin); main button + `Menu` (phone) | Search and filter groups live in the rail, one `FilterChips Rail` per group, with counts. On the phone the main action is one wide button and the rest go in its ⋯ `Menu`. |
+| Telling people after a change | `TellSheet` | Opens after Save on something people were already told about (a changed event, a published church news post): "Tell people?" or "Tell people again?", its words filled in, *Tell people* and *Not now* (saves without telling). Never a switch left on in the settings (owner, 2026-11-16, #12). |
 | More actions | `Menu` | One ⋯ button; its panel is always whole on screen (#69); items made with `this.Item(...)` (`MenuItems`) say what they do; Delete last and red, after a rule (`startsGroup`). A hand-built panel uses `MenuButton` rows. |
 | Actions on a row in a list | `ListRow` with `Actions` | The row opens the thing; its ⋯ sits beside the row, never inside its link. Delete or Unlink last and red, asking once in a `Sheet` (#50). |
 | Putting things in order | `ReorderList` | Drag by the handle (touch or mouse); ⋯ has Move up and Move down; each move applies at once and shows the moment it's dropped (#58, #62). `Quiet` (a short list in a narrow column): handle on hover or focus, Alt ↑ ↓, no ⋯, a caption saying how. An optional preview follows the drag (owner, 2026-11-12). |
@@ -1026,7 +1027,7 @@ component, never a copy.
 | Writing a post | `PostEditor` (+ `WritingDesk` in the admin panel) | A title and one `RichTextField` holding the whole post, pictures and all in place (owner, 2026-11-14). Phone: a full-screen page. Admin: a page of its own (`WritingDesk`), never the record pane (owner, 2026-11-13, #83). Files upload with the save. |
 | Formatted text | `RichTextField` | Live Markdown with one bar of quiet icons and a navy **Insert** at the right; each place says what it allows with `RichTextMedia`. Media and cards in place, each with a pill of tools above it (owner, 2026-11-13, 2026-11-14, #92, #93). `RichTextEditor` is the older field until places move (events moved, 2026-11-14). Detail: [posts.md](docs/design/posts.md), *Formatted text*. |
 | Something in the app inside a post | `AppCardFrame` (+ a feature's card via `AddAppCardView`) | An event, sermon, ministry or Life Group as a card in the writer's pick of *Side rule* (default), *Timetable line* or *Box* (owner, 2026-11-14), filled from the synced store; inserted from Insert → *From the app* (`AppCardPicker`). |
-| Writing on a page (admin) | `WritingDesk` | The work as a white page on sand (up to 800px) with Write and Preview on a phone tabs; settings in a 360px column on the right that folds; the save bar at the column's foot (owner, 2026-11-13). |
+| Writing on a page (admin) | `WritingDesk` | The work as a white page on sand (up to 800px) with Write and Preview on a phone tabs; settings in a 360px column on the right that folds; the save bar at the column's foot (owner, 2026-11-13). Also how prayer wall staff write a prayer request ([prayer.md](docs/design/prayer.md)). |
 | A map | `MapView` (Platform.Ui `Maps/`), drawing `mapStyle` (`wwwroot/map/map-style.js`) over a region's map file | The base map shows what bounds a walk (parks, places that aren't homes, main roads) with homes' streets white and quiet, no icons. Screens draw on top: the walk in deep aqua (bright aqua at night) with a white edge, streets walked recently in ink-3 at 45%, you in orange; attribution under every map. A map that follows you keeps you in the middle until it is dragged (then a quiet *Follow me* on it); otherwise it frames what it shows. Drawing on it (an area, a lasso, a cut, a brush, a pin) and routes' labels: `MapSketch` beside the `MapView`. Admin outreach maps show every built region as one map (`OutreachAtlas`) over a low-zoom map of all of Australia (`MapView.Backdrop`): land with walker maps is clear, everything else sits under the flat map veil, and outside Queensland under a deeper veil with the hatch; a "Where walkers have maps" key sits bottom left above any legend while the view reaches past our maps, and a note top centre (below *Layers* on a narrow map) says "Past the edge of our maps" (`MapReach`; owner's pick, 2026-11-16). Without the overview, what's beyond is hatched and the note says "No map here yet". Detail: [maps.md](docs/design/maps.md). |
 | A map to work on, with its list beside it (admin) | `MapDesk` (Platform.Ui `Maps/`) | The map fills the work area under the title band, edge to edge and to the foot of the window; a pane on the right (460px, 380px at 1360px and under) with its own foot for the page's actions. Tools float on the map: a rail top left, a hint top centre, hover facts top right, the chosen thing's actions bottom centre. At 760px and under the map sits above the pane. Kept for a single map job with its list; Outreach's planner and map areas moved into `MapWorkspace` (2026-11-15). Detail: [outreach.md](docs/design/outreach.md). |
 | Many map jobs on one map (admin) | `MapWorkspace` + `MapCard` + `MapDrawBar` (Platform.Ui `Maps/`) | A dock of jobs (icon over name, the open one in Selected Fill with an orange bar, counts in orange) down the map's left edge; the job's drawer (320px, 280px at 1200px and under; a wide job 440px, 380px at 1360px and under, 340px at 1200px and under) folds out beside it with its actions in a white foot ruled off by a hairline, and folds away with its chevron or the job's button again. The map fills the rest to the window's foot. What's chosen on the map opens in a `MapCard` top right (its Save in the card's white foot; hidden while drawing, at the map's foot on a map under 640px wide); drawing shows a navy `MapDrawBar` top centre with the instruction, Undo last point, Cancel and Finish, never instructions in the attribution's grey (#106). Layers and legends float on the map. At 760px and under the dock runs across the top, then the map, then the drawer. Outreach's Map tab uses it, its day planner included (owner, 2026-11-15, #107). Detail: [outreach.md](docs/design/outreach.md). |
@@ -1214,6 +1215,7 @@ file for what you touch:
 | [media.md](docs/design/media.md) | The media library |
 | [places-and-styling.md](docs/design/places-and-styling.md) | Places in the app, App styling |
 | [maps.md](docs/design/maps.md) | The outreach base map: its palette, what it draws and leaves out, labels, what screens draw on top, its looks and glyphs |
+| [words.md](docs/design/words.md) | Labels, descriptions, placeholders, sentences, buttons and problem lines |
 | [components.md](docs/design/components.md) | Which component draws each part, with its main parameters, and where the styles live |
 
 ### Saving
@@ -1221,17 +1223,35 @@ A form with unsaved changes always asks before they're lost (owner, 2026-11-10).
 always tell which they're on:
 
 - **Saves by itself** (long work with its own publish or send step: App styling drafts, an announcement, the digest):
-  `SaveStatus` near its title ("Saving…", "Saved", "Couldn't save. Trying again by itself." with *Try now*, or why it
+  `SaveStatus` near its title ("Saving…", "Saved", "Couldn't save. The app will try again by itself." with *Try now*, or why it
   can't save yet). No Save button.
 - **Saves with a button** (everything else): one `SaveBar`, as the pattern map places it, its button named for what it
   does ("Save", "Add the ministry"). Can't save yet: the button is disabled and the reason is written above it, never
   only in a tooltip.
 - **Instant changes** (a switch, a role tick, linking a person) need no Save; they sit in their own group, whose foot
   says "These change straight away", never beside a Save button.
-- **Leaving:** `UnsavedGuard` asks (*Save and go on*, *Discard the changes*, *Stay here*); a screen that swaps what's open
+- **Leaving:** `UnsavedGuard` asks (*Save and leave*, *Discard the changes*, *Stay here*); a screen that swaps what's open
   without navigating asks `UnsavedChanges.MayLeaveAsync()` first. `SaveRules` enforces it.
 
 Where the save goes on each surface: [saving.md](docs/design/saving.md).
+
+### Words on screen
+Proper, plain sentences on every label, description, button and message (owner, 2026-11-16, UAT #18: "proper
+grammar, proper sentences … 'in it': in what?"). Detail and examples: [words.md](docs/design/words.md).
+
+- **A label names the thing** ("Last day", "Short description"): never a fragment, a question or a bracket.
+- **A field whose purpose isn't obvious has a description** saying what it does and where people will see it,
+  between the label and the field in ink 2 (the problem line stays under the field).
+- **No bare "it" or "in it":** name the thing ("this ministry"), headings included.
+- **No example placeholders.** A format, or what an empty field means, goes in the description ("Leave this empty
+  to …").
+- **Whole sentences** for descriptions, details, empty states and problem lines; a blocked line names the field and
+  the fix ("Enter a name for the ministry.").
+- **Buttons name what they act on,** in a confirm too ("Delete the chat", "Keep the chat").
+- **One word for each thing everywhere; nothing internal on screen** (ids, permission keys, code names). Messages from
+  the server follow the same rules.
+
+`WordingRules` fails on the worst patterns.
 
 ### Examples in copy
 **Copy never names a real ministry, group, room or person as an example** (owner, 2026-11-10). Placeholders, hints,

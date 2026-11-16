@@ -89,7 +89,8 @@ public sealed class MinistryFeedTests : IAsyncLifetime
             .AddScoped<MinistryChurchNews>()
             .AddScoped(provider => new AppCardChecks([new MinistryCardSource(provider.GetRequiredService<MinistryViews>())], new PlaceAccess(provider.GetRequiredService<IAccessEvaluator>())))
             .AddScoped(provider => new MinistryLeadingService(provider.GetRequiredService<MinistriesDbContext>(), provider.GetRequiredService<AppCardChecks>(), provider.GetRequiredService<MinistryViews>(),
-                provider.GetRequiredService<MinistryChanges>(), null!, null!, _roles, _people, _people, _calendars, new KeptInSundays(), _told, null!,
+                provider.GetRequiredService<MinistryChanges>(), null!, null!, _roles, _people, _people, _calendars,
+                new MinistryCalendarShaper(provider.GetRequiredService<MinistriesDbContext>(), provider.GetRequiredService<MinistryViews>(), _calendars), new KeptInSundays(), _told, null!,
                 provider.GetRequiredService<MinistryPostMedia>(), provider.GetRequiredService<MinistryChurchNews>(), provider.GetRequiredService<IAccessEvaluator>(), _clock))
             .AddMinistriesData()
             .AddSyncData()
@@ -278,7 +279,7 @@ public sealed class MinistryFeedTests : IAsyncLifetime
         }
         Assert.False(_roles.Holds(Roles.Team, teen, _youth.Id));
         Assert.Contains(_told.Raised, told => told.Kind == MinistriesNotifications.ForYourYes && told.Audience == NotificationAudience.Person(_visitor));
-        Assert.Contains(_told.Raised, told => told.Kind == MinistriesNotifications.Asked && told.Body.Contains("a parent says yes first", StringComparison.Ordinal));
+        Assert.Contains(_told.Raised, told => told.Kind == MinistriesNotifications.Asked && told.Body.Contains("a parent approves first", StringComparison.Ordinal));
 
         MinistryPage parents = await ServerPageAsync(_visitor, _youth.Id);
         AskLine waiting = Assert.Single(parents.You.ForYourYes);
@@ -348,6 +349,31 @@ public sealed class MinistryFeedTests : IAsyncLifetime
         RpcException gone = await Assert.ThrowsAsync<RpcException>(() => SavePostAsync(_leader, _youth, NewPost("Gone", Audiences.Everyone, $"::ministry{{id={Guid.CreateVersion7()}}}")));
         Assert.All([notAGroup, hidden, gone], refused => Assert.Equal(StatusCode.InvalidArgument, refused.StatusCode));
         Assert.Equal(gone.Status.Detail, hidden.Status.Detail);
+    }
+
+    [Fact]
+    public async Task StaffWhoSeeEveryMinistrysNewsGetOnlyPostsForEveryoneTheSameFromThePhoneAsFromTheServer()
+    {
+        Guid staff = _people.Add("Sam");
+        _grants[staff] = new GrantSet([new Grant(PermissionPattern.Parse(ChurchNews.SeeMinistriesNode), Scope.Global)]);
+        MinistryRecord office = Ministry("Church office", null);
+        office.Hidden = true;
+        await AddAsync([office], Post(office, "Office hours over Christmas", Audiences.Everyone, 3), Post(_band, "Band night", Audiences.Everyone, 4));
+
+        EveryMinistrysNews server;
+        await using (AsyncServiceScope scope = _services.CreateAsyncScope())
+        {
+            MinistriesService ministries = scope.ServiceProvider.GetRequiredService<MinistriesService>();
+            RpcException refused = await Assert.ThrowsAsync<RpcException>(async () => await ministries.EveryMinistrysNewsAsync(new EveryMinistrysNewsRequest(), Call(_leader)));
+            Assert.Equal(StatusCode.PermissionDenied, refused.StatusCode);
+            server = await ministries.EveryMinistrysNewsAsync(new EveryMinistrysNewsRequest(), Call(staff));
+        }
+
+        Assert.Equal(["Band night", "Welcome, everyone"], server.Posts.Select(post => post.Title));
+        Assert.Equal(["Youth Band", "Youth"], server.Posts.Select(post => post.From));
+        Phone phone = await PhoneOfAsync(staff);
+        Assert.Equal(server.Posts.Select(post => (post.Id, post.From)), (await phone.Ministries.EveryMinistrysNewsAsync()).Select(each => (each.Post.Id, each.Ministry)));
+        Assert.Empty(await (await PhoneOfAsync(_leader)).Ministries.EveryMinistrysNewsAsync());
     }
 
     [Fact]
@@ -563,6 +589,8 @@ public sealed class MinistryFeedTests : IAsyncLifetime
         public bool Can(Permission permission, string? objectId = null) => grants.IsAllowed(permission, objectId);
 
         public bool CanSomewhere(Permission permission) => grants.IsAllowedSomewhere(permission);
+
+        public bool CanHere(Permission permission, string objectId) => grants.IsHeldAt(permission, objectId);
     }
 
     private sealed class Granted(Dictionary<Guid, GrantSet> grants) : IAccessEvaluator
@@ -685,6 +713,8 @@ public sealed class MinistryFeedTests : IAsyncLifetime
         }
 
         public ValueTask<MinistryCalendarRemoval> WhatGoesAsync(Guid ministryId, Guid calendarId, CancellationToken cancellationToken) => throw new NotSupportedException();
+
+        public ValueTask MergeAsync(Guid ministryId, Guid fromCalendarId, Guid intoCalendarId, CancellationToken cancellationToken) => throw new NotSupportedException();
 
         public ValueTask RemoveAsync(Guid ministryId, Guid calendarId, CancellationToken cancellationToken) => throw new NotSupportedException();
     }

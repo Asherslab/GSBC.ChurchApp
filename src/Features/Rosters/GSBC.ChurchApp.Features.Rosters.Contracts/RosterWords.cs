@@ -19,7 +19,7 @@ public static class Replies
 
 public static class Training
 {
-    public const string AloneFlag = "Training: needs someone trained on with them";
+    public const string AloneFlag = "Trainee: needs someone trained alongside";
 
     public static bool IsTrainee(bool positionNeedsTrained, bool trained) => positionNeedsTrained && !trained;
 

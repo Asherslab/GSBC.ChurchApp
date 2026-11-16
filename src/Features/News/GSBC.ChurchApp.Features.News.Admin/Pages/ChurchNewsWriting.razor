@@ -22,7 +22,7 @@
                 <Notice Tone="NoticeTone.Warning" Text="@_problem" />
             </LeadContent>
         </TitleBand>
-        <NewsPostForm @key="post.Id" Post="post" OnAPage="true" OnSaved="_ => Navigation.NavigateTo(Back)" OnCancel="() => Navigation.NavigateTo(Back)" />
+        <NewsPostForm @key="post.Id" Post="post" OnAPage="true" Reach="News.ReachAsync" OnSaved="_ => Navigation.NavigateTo(Back)" OnCancel="() => Navigation.NavigateTo(Back)" />
     }
     else
     {
@@ -32,10 +32,10 @@
 </LiveData>
 
 <Sheet Open="_archiving" OpenChanged="open => _archiving = open" Title="Archive this post?"
-       Lead="It leaves everyone's News, and its notification is taken back from phones that haven't opened it. You can put it back from Archived.">
+       Lead="The post comes out of everyone's News, and its notification is taken back from phones that haven't opened it. You can put the post back from Archived.">
     <Actions>
-        <Button OnClick="ArchiveAsync">Archive it</Button>
-        <Button Variant="ButtonVariant.Quiet" OnClick="() => _archiving = false">Keep it</Button>
+        <Button OnClick="ArchiveAsync">Archive the post</Button>
+        <Button Variant="ButtonVariant.Quiet" OnClick="() => _archiving = false">Keep the post</Button>
     </Actions>
 </Sheet>
 
@@ -70,11 +70,11 @@
         List<MenuItem> items = [];
         if (post.State is NewsState.Scheduled && publishes || post.State == NewsState.WaitingToPublish)
             items.Add(this.Item("Back to writing", () => RunAsync(() => Writes.BackToWritingAsync(post.Id)), "pencil",
-                post.State == NewsState.Scheduled ? "It won't publish until it's posted again" : "Nobody is asked to publish it any more"));
+                post.State == NewsState.Scheduled ? "The post won't publish until it's posted again." : "Nobody is asked to publish the post any more."));
         if (publishes || post.State is NewsState.Draft or NewsState.WaitingToPublish)
             items.Add(post.State == NewsState.Published
-                ? this.Item("Archive…", () => { _archiving = true; }, "archive", "Takes it out of everyone's News. You can put it back.", startsGroup: true)
-                : this.Item("Archive", ArchiveAsync, "archive", "Keeps it under Archived. You can put it back.", startsGroup: true));
+                ? this.Item("Archive…", () => { _archiving = true; }, "archive", "Takes the post out of everyone's News. You can put it back.", startsGroup: true)
+                : this.Item("Archive", ArchiveAsync, "archive", "Keeps the post under Archived. You can put it back.", startsGroup: true));
         return items;
     }
 

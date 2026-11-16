@@ -4,7 +4,7 @@ namespace GSBC.ChurchApp.Features.People.Client;
 
 public static class PeopleWords
 {
-    public const string WhoSees = "Only you, your parents and the church's safeguarding team see it.";
+    public const string WhoSees = "Only you, your parents and the church's safeguarding team see your birth date.";
 
     public static string Age(DateTime? born, DateOnly today) =>
         born is { } day ? Ages.YearsOn(WireDates.FromWire(day), today).ToString() : "Age not given";

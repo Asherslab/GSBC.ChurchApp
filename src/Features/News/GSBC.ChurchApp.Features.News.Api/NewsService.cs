@@ -38,6 +38,9 @@ internal sealed class NewsService(NewsDesk desk, NewsTelling telling, IAccessEva
         return new Done();
     }
 
+    public async ValueTask<NewsPost> TellAgainAsync(TellAgainRequest request, CallContext context = default) =>
+        await desk.TellAgainAsync(await WriterAsync(context), NewsDesk.ParseId(request.Id), request, context.CancellationToken);
+
     public async ValueTask<Done> TryOnMyPhoneAsync(NewsRef request, CallContext context = default)
     {
         await desk.TryOnPhoneAsync(await WriterAsync(context), NewsDesk.ParseId(request.Id), context.CancellationToken);
@@ -66,7 +69,7 @@ internal sealed class NewsService(NewsDesk desk, NewsTelling telling, IAccessEva
         Guid id = Caller.UserId(user) ?? throw new RpcException(new Status(StatusCode.Unauthenticated, "Sign in first."));
         bool publishes = await access.IsAllowedAsync(user, NewsPermissions.Publish.Node, null, context.CancellationToken);
         if (!publishes && !await access.IsAllowedAsync(user, NewsPermissions.Write.Node, null, context.CancellationToken))
-            throw new RpcException(new Status(StatusCode.PermissionDenied, "Not permitted."));
+            throw new RpcException(new Status(StatusCode.PermissionDenied, "You don't have permission to do that."));
         return new Writer(id, publishes);
     }
 }

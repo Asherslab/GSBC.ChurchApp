@@ -7,7 +7,7 @@
 <UnsavedGuard Changed="() => _file is not null" What="@(_busy ? "the upload that's still going" : "the picture you chose")" />
 
 <div class="media-upload">
-    <DropBox Icon="image" Prompt="@Label" Hint="@(_file is null ? "Drop it here, or click to choose one from this computer" : _checking ? $"{_file.Name}: checking the library…" : _file.Name)" Busy="_busy">
+    <DropBox Icon="image" Prompt="@Label" Hint="@(_file is null ? "Drop the file here, or click to choose one from this computer." : _checking ? $"{_file.Name}: checking the library…" : _file.Name)" Busy="_busy">
         <InputFile @ref="_picker" OnChange="ChooseAsync" accept="@MediaTypes.AcceptedFiles(FontsOnly)" disabled="@_busy" class="visually-hidden" />
     </DropBox>
     @if (_file is not null && _match is { Media: { } existing } match)
@@ -55,14 +55,14 @@
     }
     else if (_file is not null)
     {
-        <TextField Label="Description" Hint="For people using screen readers: what the picture shows." @bind-Value="_altText" />
+        <TextField Label="Picture description" Hint="What the picture shows, read aloud by screen readers for people who can't see it." @bind-Value="_altText" />
         @if (MediaTypes.WarnsWhenLarge(ContentTypeOf(_file), _file.Size))
         {
             <Notice Tone="NoticeTone.Warning">@_file.Name is @Megabytes(_file.Size). Everyone who sees it downloads all of that, often on mobile data. Shrink it first if you can.</Notice>
         }
         <div class="panel-actions">
             <Button Icon="arrow-up" Busy="_busy" Disabled="_checking" OnClick="UploadAsync">@(_addAgain ? (_asNewPicture ? "Add as a new picture" : "Add a second copy") : MediaTypes.WarnsWhenLarge(ContentTypeOf(_file), _file.Size) ? "Upload anyway" : "Upload")</Button>
-            <Button Variant="ButtonVariant.Quiet" Disabled="_busy" OnClick="Reset">Choose another</Button>
+            <Button Variant="ButtonVariant.Quiet" Disabled="_busy" OnClick="Reset">Choose another file</Button>
         </div>
     }
     <Notice Tone="NoticeTone.Warning" Text="@_error" />

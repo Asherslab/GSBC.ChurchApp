@@ -19,7 +19,7 @@
                 <button type="button" class="text-link" @onclick="StartAsync">Try again</button>
                 break;
             default:
-                <button type="button" class="text-link" @onclick="StartAsync"><Icon Name="arrow-down" Size="IconSize.Small" />@SermonText.Join("Download for when you're offline", Size(Sermon.AudioBytes))</button>
+                <button type="button" class="text-link" @onclick="StartAsync"><Icon Name="arrow-down" Size="IconSize.Small" />@SermonText.Join("Download to listen offline", Size(Sermon.AudioBytes))</button>
                 break;
         }
     </div>

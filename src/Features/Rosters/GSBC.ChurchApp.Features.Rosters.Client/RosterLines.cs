@@ -95,7 +95,7 @@ public static class RosterLines
     public static string TrainingWith(Assignment trainee, IEnumerable<Assignment> samePosition)
     {
         List<string> trained = samePosition.Where(each => each.Id != trainee.Id && each.Fills && !each.Training).Select(each => First(each.Name)).ToList();
-        return trained.Count == 0 ? "Training, with someone trained" : $"Training, with {string.Join(" and ", trained)}";
+        return trained.Count == 0 ? "Trainee, alongside someone trained" : $"Trainee, alongside {string.Join(" and ", trained)}";
     }
 
     public static int Filled(RosterDate date, Position position) => In(date, position).Count(assignment => assignment.Fills);
@@ -120,7 +120,7 @@ public static class RosterLines
         if (position.NeedsTraining && !member.TrainingCurrent)
             flags.Add("Safe Ministry training not current");
         if (Training.IsTrainee(position.NeedsTrained, position.Trained.Contains(member.PersonId)))
-            flags.Add(In(date, position).Any(assignment => assignment.Fills) ? "Goes on training, with someone trained" : "Goes on training: needs someone trained on with them");
+            flags.Add(In(date, position).Any(assignment => assignment.Fills) ? "Would serve as a trainee, alongside someone trained" : "Would serve as a trainee and needs someone trained alongside");
         flags.AddRange(date.Assignments.Where(assignment => assignment.PersonId == member.PersonId && Replies.Fills(assignment.State))
             .Select(assignment => $"Already on {assignment.PositionName}"));
         return flags;
@@ -138,50 +138,50 @@ public static class RosterLines
         [
             people,
             needs.Count == 0 ? "" : $"needs {string.Join(" and ", needs)}",
-            position.NeedsTrained ? "trained, or with someone trained" : "",
+            position.NeedsTrained ? "trained, or alongside someone trained" : "",
         ]).Where(part => part.Length > 0));
     }
 
     public static string WaysWords(string way) => way switch
     {
-        SwapWays.Team => "Anyone on the team can take it",
-        SwapWays.Approve => "Anyone on the team can offer, and a leader says yes",
+        SwapWays.Team => "Anyone on the team can take the place",
+        SwapWays.Approve => "Anyone on the team can offer, and a leader approves",
         SwapWays.Direct => "They can ask someone on the team themselves",
         _ => way,
     };
 
     public static string AskerWords(string way, RosterSettings settings) => way switch
     {
-        SwapWays.Direct => "You choose who on the team to ask, and they say yes or can't",
-        SwapWays.Open when settings.OpenSwaps == OpenSwaps.Approve => "Anyone on the team can offer to take it, and a leader says yes",
-        _ => "Anyone on the team can take it",
+        SwapWays.Direct => "You choose who on the team to ask, and they accept or decline",
+        SwapWays.Open when settings.OpenSwaps == OpenSwaps.Approve => "Anyone on the team can offer to take your place, and a leader approves",
+        _ => "Anyone on the team can take your place",
     };
 
     public static string OpenSwapsWords(string openSwaps) => openSwaps switch
     {
-        OpenSwaps.Off => "Nobody takes it",
-        OpenSwaps.Approve => "Anyone can offer, and a leader says yes",
-        _ => "Anyone on the team can take it",
+        OpenSwaps.Off => "No swaps with the team",
+        OpenSwaps.Approve => "Anyone on the team can offer, and a leader approves",
+        _ => "Anyone on the team can take the place",
     };
 
     public static string OpenSwapsDetail(string openSwaps) => openSwaps switch
     {
-        OpenSwaps.Off => "They ask a leader to find someone instead",
-        OpenSwaps.Approve => "A leader chooses who takes it",
-        _ => "Whoever takes it is on straight away",
+        OpenSwaps.Off => "The person asks a leader to find someone instead.",
+        OpenSwaps.Approve => "A leader chooses who takes the place.",
+        _ => "Whoever takes the place is on the roster straight away.",
     };
 
     public static string SwapSentence(RosterSettings settings, string who, string when)
     {
-        string opening = $"So when {who} can't do {when},";
+        string opening = $"So when {who} can't serve on {when},";
         bool team = settings.OpenSwaps != OpenSwaps.Off;
-        string leader = settings.OpenSwaps == OpenSwaps.Approve ? " A leader says yes to whoever offers." : "";
+        string leader = settings.OpenSwaps == OpenSwaps.Approve ? " A leader approves whoever offers." : "";
         return (team, settings.DirectSwaps) switch
         {
             (false, false) => $"{opening} they tell a leader, who finds someone else.",
-            (true, false) => $"{opening} they ask the team, and stay on until it's taken.{leader} Leaders hear.",
-            (false, true) => $"{opening} they ask someone on the team they choose, and stay on until it's taken. Leaders hear.",
-            (true, true) => $"{opening} they ask the whole team or someone they choose, and stay on until it's taken.{leader} Leaders hear.",
+            (true, false) => $"{opening} they ask the team, and stay on the roster until someone takes their place.{leader} Leaders are told.",
+            (false, true) => $"{opening} they ask someone on the team they choose, and stay on the roster until that person takes their place. Leaders are told.",
+            (true, true) => $"{opening} they ask the whole team or someone they choose, and stay on the roster until someone takes their place.{leader} Leaders are told.",
         };
     }
 

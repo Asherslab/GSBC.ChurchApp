@@ -14,7 +14,7 @@
     }
     else if (_managing)
     {
-        <p class="tile-settings__note">Change a name to rename it; it saves as you type. Only staff see these names.</p>
+        <p class="tile-settings__note">Edit a name to rename the tile. Names save as you type, and only staff see them.</p>
     }
     <div class="add-tile__kinds">
         @foreach (ArrangedSurface saved in Saved)
@@ -30,7 +30,7 @@
                         <TextField Label="Name in the library" Value="@(_renaming.GetValueOrDefault(saved.Placement.Id) ?? name)" MaxLength="HubSurfaces.Saved.Name.MaxLength"
                                    Problem="@RenameProblem(saved)" ValueChanged="text => RenameAsync(saved, text)" />
                     </span>
-                    <Button Variant="ButtonVariant.Quiet" Small="true" Icon="x" AriaLabel="@($"Take “{name}” out of the library")" Tooltip="Take it out of the library" OnClick="() => TakeOutAsync(saved)"><span class="saved-tiles__take-words">Take out</span></Button>
+                    <Button Variant="ButtonVariant.Quiet" Small="true" Icon="x" AriaLabel="@($"Remove “{name}” from the library")" Tooltip="Remove from the library" OnClick="() => TakeOutAsync(saved)"><span class="saved-tiles__take-words">Take out</span></Button>
                 </div>
             }
             else if (kind is not null)
@@ -48,7 +48,7 @@
         @foreach (ArrangedSurface gone in _takenOut)
         {
             <div class="add-tile__kind add-tile__kind--gone" @key="@($"gone-{gone.Placement!.Id}")" role="status">
-                <span class="add-tile__words"><span>“@gone.Values.Get(HubSurfaces.Saved.Name)” is out of the library</span></span>
+                <span class="add-tile__words"><span>Removed “@gone.Values.Get(HubSurfaces.Saved.Name)” from the library.</span></span>
                 <Button Variant="ButtonVariant.Quiet" Small="true" Icon="undo" OnClick="() => PutBackAsync(gone)">Undo</Button>
             </div>
         }
@@ -63,7 +63,7 @@
     private bool _managing;
 
     [Parameter, EditorRequired] public required IReadOnlyList<ArrangedSurface> Saved { get; set; }
-    [Parameter] public string Empty { get; set; } = "Nothing saved yet. Choose a tile on the phone and Save to the library to reuse it here.";
+    [Parameter] public string Empty { get; set; } = "No saved tiles yet. To save one, choose a tile on the phone and use Save to the library.";
     [Parameter] public EventCallback<ArrangedSurface> OnAdd { get; set; }
     [Parameter] public EventCallback<(ArrangedSurface Saved, string Name)> OnRename { get; set; }
     [Parameter] public EventCallback<ArrangedSurface> OnTakeOut { get; set; }
@@ -90,7 +90,7 @@
         if (_renaming.GetValueOrDefault(saved.Placement!.Id) is not { } text)
             return null;
         if (string.IsNullOrWhiteSpace(text))
-            return "Give it a name.";
+            return "Enter a name for the saved tile.";
         return UniqueNames.Taken(text, Saved.Where(other => other != saved).Select(other => other.Values.Get(HubSurfaces.Saved.Name))) is { } taken
             ? $"There's already one called “{taken}”."
             : null;
