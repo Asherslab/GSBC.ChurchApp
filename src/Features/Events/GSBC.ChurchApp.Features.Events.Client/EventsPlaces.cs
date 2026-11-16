@@ -8,6 +8,9 @@ public static class EventsPlaces
     public const string Month = "/week?view=month";
     public const string Calendars = "/week/calendars";
     public const string NewEvent = "/event/new";
+    public const string WhatsNext = "/whats-next";
+
+    public static string SentDigest(string start) => $"{WhatsNext}/{start}";
 
     public static string EventPath(string occurrenceId) => EventsDestinations.Event.PathOf(occurrenceId);
 
