@@ -1,7 +1,7 @@
 <Sheet Open="Open" OpenChanged="ToggledAsync" Title="@Title" Lead="@Lead">
     <ChildContent>
         <TextField Label="Notification" Value="@_title" ValueChanged="value => _title = value" MaxLength="@TitleLength" />
-        <TextField Label="More" Value="@_body" ValueChanged="value => _body = value" Multiline="true" MaxLength="240" Hint="@BodyHint" />
+        <TextField Label="More" Value="@_body" ValueChanged="value => _body = value" Multiline="true" MaxLength="240" Hint="@BodyHint" Placeholder="@BodyPlaceholder" />
         @if (OffersUrgent)
         {
             <ToggleRow Title="Urgent" Description="Buzzes phones in quiet hours too, for something people need to know now" @bind-Checked="_urgent" />
@@ -28,6 +28,7 @@
     [Parameter] public string NotificationTitle { get; set; } = "";
     [Parameter] public string NotificationBody { get; set; } = "";
     [Parameter] public string? BodyHint { get; set; }
+    [Parameter] public string? BodyPlaceholder { get; set; }
     [Parameter] public int TitleLength { get; set; } = 80;
     [Parameter] public bool OffersUrgent { get; set; }
     [Parameter] public string SendLabel { get; set; } = "Tell people";

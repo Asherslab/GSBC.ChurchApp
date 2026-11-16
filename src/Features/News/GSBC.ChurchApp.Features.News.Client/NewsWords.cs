@@ -57,7 +57,7 @@ public static class NewsWords
     public static string Told(NewsPost post, TimeProvider clock) => post.ToldAt switch
     {
         null => "",
-        { } told when post.TimesTold > 1 => $", with a notification, sent again {SentAt(told, clock)}",
+        { } told when post.TimesTold > 1 => $", with a notification (sent again {SentAt(told, clock)})",
         _ => ", with a notification",
     };
 
@@ -77,6 +77,9 @@ public static class NewsWords
         string day = ChurchDates.Relative(at.Date, ChurchTime.ToChurch(clock.GetUtcNow().UtcDateTime).Date);
         return $"{(day is "Today" or "Yesterday" ? day.ToLowerInvariant() : $"on {day}")} at {ChurchDates.Time(at)}";
     }
+
+    public static string InASentence(string when) =>
+        when.StartsWith("Today", StringComparison.Ordinal) || when.StartsWith("Yesterday", StringComparison.Ordinal) ? char.ToLowerInvariant(when[0]) + when[1..] : when;
 
     public static string Posted(NewsItem item, TimeProvider clock) =>
         ChurchDates.Describe(item.PostedAt, DateLineStyle.Relative, withTime: false, clock.GetUtcNow().UtcDateTime) + (item.EditedAt is null ? "" : " · edited");

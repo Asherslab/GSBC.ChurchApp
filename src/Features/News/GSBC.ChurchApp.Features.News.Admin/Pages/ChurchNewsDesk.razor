@@ -99,6 +99,7 @@
     private RenderFragment MinistriesList(IReadOnlyList<MinistryNewsItem> every) => @<text>
         @if (every.Count > 0)
         {
+            <p class="news-desk__scope">Every ministry's posts for everyone, newest first. Posts for a team, leaders or parents, and hidden ministries' posts, stay in their ministry.</p>
             <ListGroup>
                 @foreach (MinistryNewsItem post in every)
                 {
@@ -131,13 +132,13 @@
         Filter(view.Posts) == Every ? MinistryDetailOf(view.Every) : Chosen(view.Posts) is not null ? DetailOf(view.Posts) : null;
 
     private RenderFragment? MinistryDetailOf(IReadOnlyList<MinistryNewsItem> every) => ChosenMinistryPost(every) is { } post ? @<text>
-        <PaneHead Title="@post.Item.Title" Lead="@($"{post.Item.From} · for everyone · posted {NewsWords.Posted(post.Item, Clock)}")" Actions="MinistryActions(post)"
+        <PaneHead Title="@post.Item.Title" Lead="@($"{post.Item.From} · for everyone · posted {NewsWords.InASentence(NewsWords.Posted(post.Item, Clock))}")" Actions="MinistryActions(post)"
                   OnClose="() => _chosenMinistryPost = null" />
         <div class="news-desk__preview">
             <PostView Title="@post.Item.Title" Content="post.Item.Body" From="@post.Item.From" FromHref="@post.Item.Href" Author="@post.Item.Author"
                       Posted="post.Item.PostedAt" Edited="post.Item.EditedAt is not null" For="Everyone" />
         </div>
-        <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+        <Notice Tone="NoticeTone.Warning" Text="@(_sharing ? null : _problem)" />
     </text> : null;
 
     private RenderFragment DetailOf(IReadOnlyList<NewsPost> posts) => @<text>

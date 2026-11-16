@@ -12,7 +12,7 @@
 <UnsavedGuard Changed="() => Changed" Editing="Post" State="() => Shape" What="this post" />
 
 <TellSheet Open="_tellAgain is not null" Title="@(Post.ToldAt is null ? "Tell people?" : "Tell people again?")" Lead="@TellAgainLead"
-           NotificationTitle="@TellAgainTitle" BodyHint="Say what changed. Leave it empty to use the start of the post." TitleLength="NewsLimits.LongestTitle"
+           NotificationTitle="@TellAgainTitle" BodyHint="Say what changed. Leave it empty to use the start of the post." BodyPlaceholder="Such as: It now starts at 9am." TitleLength="NewsLimits.LongestTitle"
            OffersUrgent="true" SendLabel="@(Post.ToldAt is null ? "Tell people" : "Tell people again")" OnTell="TellAgainAsync" OnNotNow="FinishAsync" />
 
 @if (OnAPage)
