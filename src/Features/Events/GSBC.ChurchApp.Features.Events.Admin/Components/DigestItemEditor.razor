@@ -81,7 +81,7 @@
 
     private string Heading => Shown.Title.Trim().Length > 0 ? Shown.Title : IsNew ? "Something else for the digest" : "Untitled";
 
-    private string? Blocked => Own && Shown.Title.Trim().Length == 0 ? "Give it a title." : null;
+    private string? Blocked => Own && Shown.Title.Trim().Length == 0 ? "Enter a title for the item." : null;
 
     private string? ChangedLine => Item.Kind is DigestItemKind.Own ? null
         : _working.Changed.Count == 0 ? null

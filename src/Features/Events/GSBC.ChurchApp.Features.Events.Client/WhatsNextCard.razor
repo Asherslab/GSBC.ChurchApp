@@ -57,7 +57,7 @@ else
     private RenderFragment Title(string css)
     {
         if (Preview && OnPick.HasDelegate)
-            return @<button type="button" class="@css whats-next__pick" aria-label="@($"Change {TitleWords}")" @onclick="() => OnPick.InvokeAsync(Item)">@TitleWords</button>;
+            return @<Button Variant="ButtonVariant.Link" Class="@($"{css} whats-next__pick")" AriaLabel="@($"Change {TitleWords}")" OnClick="() => OnPick.InvokeAsync(Item)">@TitleWords</Button>;
         if (!Preview && Item is { Kind: DigestItemKind.News, Link.Length: > 0 })
             return @<a class="@css" href="@Item.Link">@TitleWords</a>;
         if (!Preview && HasEvent?.Invoke(Item) == true)
