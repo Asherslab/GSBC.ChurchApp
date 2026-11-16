@@ -427,7 +427,7 @@ from the child's sheet (through `IFamilies.LinkAsync`, only for people in that m
 what they are"). Settings and *A new ministry* share `JoiningFields`: *Joining the team* and *Coming along*, each labelled
 with a hint saying what it controls, and every option saying what happens to the person joining. Every Ministries and Life Groups form asks
 before you leave it with unsaved changes (owner, 2026-11-10: "can accidentally lose my progress"): Platform.Ui's
-`UnsavedGuard`, with *Save and go on* where the form saves with a button.
+`UnsavedGuard`, with *Save and leave* where the form saves with a button.
 
 **Ministries, not teams** (owner, 2026-11-10: "i think we stick with "ministries" language, not "teams". our church
 treats them as ministries"). A ministry under another is a ministry: *Ministries under it*, *Add a ministry*, *A
