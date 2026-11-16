@@ -18,7 +18,7 @@
             {
                 <SectionContent SectionName="@OutreachMap.DrawerSection">@Adding</SectionContent>
                 <SectionContent SectionName="@OutreachMap.FootSection">
-                    <SaveBar Label="Add and build it" New="true" Busy="_busy" Blocked="@AddBlocked" OnSave="AddAsync" OnCancel="BackAsync" />
+                    <SaveBar Label="@(_preview is { } shared && MapAreaWords.AllShared(shared.Cells) ? "Add it" : "Add and build it")" New="true" Busy="_busy" Blocked="@AddBlocked" OnSave="AddAsync" OnCancel="BackAsync" />
                 </SectionContent>
             }
             else if (_areaId is not null)

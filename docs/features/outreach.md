@@ -472,7 +472,7 @@ of squares another area has on (2026-11-15) are gone; the shared grid stays.
   have it (`CellEstimate.AlsoIn`). Switching it off in one area, or deleting that area, leaves it for the others; only a
   square no area has on is deleted (files, feed record, addresses), and *What uses a region* lists only those. Each
   area's drawer says where else a square is ("also in Around the church"), and a square switched off here but on
-  elsewhere reads "Off in this area. It's on in Around the church, so phones still get it."
+  elsewhere reads "Switched off here: it's on in Around the church, so phones still get it."
 - **Building:** an area's build builds the squares it has on that are waiting, whichever area asked for them; an area
   waiting only on squares another area built finishes at once. *Rebuild* marks all of the area's squares, shared ones
   included. An area left built while a square it has on still waits (another area asked for it, then switched it off)

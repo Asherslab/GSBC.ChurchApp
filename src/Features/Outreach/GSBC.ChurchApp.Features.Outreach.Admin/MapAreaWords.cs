@@ -84,11 +84,11 @@ public static class MapAreaWords
                 $"{OutreachWords.Plural(region.Letterboxes, "letterbox", "letterboxes")} · {Megabytes(cell.Bytes)} · version {region.Version.ToString(Invariant)}{alsoIn}",
             CellLook.Empty => "Bush or water: no homes, so phones get nothing here",
             CellLook.Waiting => $"Builds next{alsoIn}",
-            CellLook.Off when others.Count > 0 => $"Off in this area. It's on in {Names(others)}, so phones still get it.",
+            CellLook.Off when others.Count > 0 => $"Switched off here: it's on in {Names(others)}, so phones still get it.",
             CellLook.Off => "Switched off: phones don't get it. Switch it on to build it again.",
             CellLook.Adding when others.Count > 0 => $"Adding · already in {Names(others)}, so nothing new builds or downloads",
             CellLook.Adding => Estimate(cell, check) is { } estimate ? $"Adding · {estimate}" : "Adding · builds when you save",
-            CellLook.SwitchingOff when others.Count > 0 => $"Switching off here · it stays on in {Names(others)}, so phones keep it",
+            CellLook.SwitchingOff when others.Count > 0 => $"Switching off here: it stays on in {Names(others)}, so phones keep it",
             CellLook.SwitchingOff when cell.Bytes == 0 => "Switching off · it isn't built, so phones have nothing to drop",
             CellLook.SwitchingOff => $"Switching off · phones drop {Megabytes(cell.Bytes)}",
             _ => "Click to add it to the area",
@@ -113,7 +113,7 @@ public static class MapAreaWords
         : estimate.OutsideQueensland ? "Outside Queensland"
         : "No homes";
 
-    public static string? Count(CellEstimate estimate) => estimate.HasHomes ? Rounded(estimate.Addresses).ToString("N0", Invariant) : null;
+    public static string? Count(CellEstimate estimate) => estimate.HasHomes && estimate.AlsoIn.Count == 0 ? Rounded(estimate.Addresses).ToString("N0", Invariant) : null;
 
     public static string Unmade(IReadOnlyCollection<CellEstimate> estimates)
     {
@@ -142,25 +142,28 @@ public static class MapAreaWords
         if (going.Count > 0)
             parts.Add($"{OutreachWords.Plural(going.Count, "region goes", "regions go")} from phones{(check is { FreedBytes: > 0 } ? $", {Megabytes(check.FreedBytes)}" : "")}");
         if (staying.Count > 0)
-            parts.Add($"{OutreachWords.Plural(staying.Count, "region stays", "regions stay")} on phones for {Names([.. staying.SelectMany(cell => cell.OtherAreas).Distinct()])}");
+            parts.Add($"{OutreachWords.Plural(staying.Count, "region stays", "regions stay")} on phones: {(staying.Count == 1 ? "it's" : "they're")} also in {Names([.. staying.SelectMany(cell => cell.OtherAreas).Distinct()])}");
         if (on > 0)
         {
             List<CellEstimate> added = check?.Added ?? [];
             List<CellEstimate> shared = [.. added.Where(estimate => estimate.AlsoIn.Count > 0)];
             List<CellEstimate> fresh = [.. added.Where(estimate => estimate.AlsoIn.Count == 0)];
-            int building = added.Count == 0 ? on : fresh.Count;
-            if (building > 0)
+            int building = added.Count == 0 ? on : fresh.Count(estimate => estimate.HasHomes);
+            string unmade = Unmade(fresh);
+            if (building > 0 || unmade.Length > 0)
             {
-                string unmade = Unmade(fresh);
-                string size = fresh.Count == 0 ? "" : $", about {Megabytes(fresh.Sum(estimate => estimate.Bytes))}";
+                string size = fresh.Count == 0 ? "" : $", about {Megabytes(fresh.Where(estimate => estimate.HasHomes).Sum(estimate => estimate.Bytes))}";
                 string none = unmade.Length == 0 ? "" : $" ({unmade})";
-                parts.Add($"{OutreachWords.Plural(building, "region builds", "regions build")}{size}{none}");
+                parts.Add(building == 0 ? $"{char.ToUpperInvariant(unmade[0])}{unmade[1..]}" : $"{OutreachWords.Plural(building, "region builds", "regions build")}{size}{none}");
             }
             if (shared.Count > 0)
                 parts.Add($"{OutreachWords.Plural(shared.Count, "region is", "regions are")} already in {Names([.. shared.SelectMany(estimate => estimate.AlsoIn).Distinct()])}, so {(shared.Count == 1 ? "it doesn't" : "they don't")} build again");
         }
         return string.Join(". ", parts) + ".";
     }
+
+    public static bool AllShared(IReadOnlyCollection<CellEstimate> cells) =>
+        cells.Any(cell => cell.HasHomes) && cells.Where(cell => cell.HasHomes).All(cell => cell.AlsoIn.Count > 0);
 
     public static string AddEstimate(IReadOnlyCollection<CellEstimate> cells)
     {
@@ -177,8 +180,8 @@ public static class MapAreaWords
         return (shared.Count, fresh.Count) switch
         {
             (0, _) => $"{found}, about {size} for phones in all.{none}",
-            (_, 0) => $"{found}. All of them are already in {others}, so nothing new builds or downloads.{none}",
-            _ => $"{found}. {OutreachWords.Plural(shared.Count, "is", "are")} already in {others}; the other {fresh.Count.ToString(Invariant)} build, about {size} for phones.{none}",
+            (_, 0) => $"{found}. {(shared.Count == 1 ? "It's" : "All of them are")} already in {others}, so nothing new builds or downloads.{none}",
+            _ => $"{found}. {OutreachWords.Plural(shared.Count, "is", "are")} already in {others}; {(fresh.Count == 1 ? "the other one builds" : $"the other {fresh.Count.ToString(Invariant)} build")}, about {size} for phones.{none}",
         };
     }
 
@@ -190,10 +193,12 @@ public static class MapAreaWords
         string others = Names([.. on.SelectMany(cell => cell.AlsoIn).Distinct()]);
         string stays = shared.Count == 0 ? ""
             : $"{OutreachWords.Plural(shared.Count, "region stays", "regions stay")} on phones: {(shared.Count == 1 ? "it's" : "they're")} also in {others}. ";
+        string bytes = Megabytes(going.Sum(region => region.Streets.Bytes + region.Map.Bytes));
         string goes = going.Count == 0 ? ""
-            : $"{(shared.Count == 0 ? "Its" : "The other")} {OutreachWords.Plural(going.Count, "region goes", "regions go")} from phones and {(going.Count == 1 ? "its" : "their")} maps and streets are deleted"
-              + $" ({Megabytes(going.Sum(region => region.Streets.Bytes + region.Map.Bytes))}). ";
-        return goes + stays + "What walkers did there, coverage and history, stays. You can add the place again later; it builds as a new area.";
+            : shared.Count == 0 ? $"Its {OutreachWords.Plural(going.Count, "region goes", "regions go")} from phones and {(going.Count == 1 ? "its" : "their")} maps and streets are deleted ({bytes}). "
+            : going.Count == 1 ? $"The other region goes from phones and its maps and streets are deleted ({bytes}). "
+            : $"The other {going.Count.ToString(Invariant)} regions go from phones and their maps and streets are deleted ({bytes}). ";
+        return stays + goes + "What walkers did there, coverage and history, stays. You can add the place again later; it builds as a new area.";
     }
 
     public static string Use(RegionUse use) => use.Kind switch
