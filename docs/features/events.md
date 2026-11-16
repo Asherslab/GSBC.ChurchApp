@@ -246,7 +246,8 @@ all four on 2026-11-08):
   head sets a white date block (weekday, day, month) beside the label, the title and the time with how it repeats
   ("8:30–11:30 · every second Saturday"); a picture, when there is one, sits under the head. Then *Add to calendar*
   (primary), *Register* when there is one, and *Share*; the change note in an orange-tinted box; the place and
-  contacts as facts (an address opens Maps, a site-map place the map); *About*; *Other dates* of the regular event.
+  contacts as facts (an address opens Maps, a site-map place the map); *About*. No *Other dates* list (owner,
+  2026-11-16: "Remove other dates for regular events"); a date that's not on shows its not-on note and no change note.
   Missing details read in plain words where they'd be (*Place to be announced*).
 - **Changing an event: *Edit where you read it*** (owner, 2026-11-08, over a step-by-step flow and an editable
   sentence; `.impeccable/mocks/decision/events-edit/`). *Edit* on the event page turns it into its editing state:
@@ -386,8 +387,8 @@ over moving its events to another calendar first or keeping it 30 days to put ba
   by weekday or date, a list of dates; start and optional end), specials, named and own breaks, showings on other
   calendars, and the rows last published. An iCal-copied calendar is read-only (`ICalSource`; events carry `SourceUid`).
 - **Dated rows:** `EventsBook` loads the calendar and `Expansion` works out each regular event's dates within 30 days
-  back and 12 months ahead; a special overrides only what it changed; a break's first 14 days show as not on with its
-  name and when it's back. `EventsPublisher` publishes on every change and every 15 minutes (the window slides), and a
+  back and 12 months ahead; a special overrides only what it changed; every date a break covers shows as not on with
+  its name and when it's back (owner, 2026-11-16; until then only its first 14 days, the rest left out). `EventsPublisher` publishes on every change and every 15 minutes (the window slides), and a
   date leaving the window is sent as a delete.
 - **Feeds:** `events.calendars` and `events.public` (public); `events.calendars.private`, `events.private` and
   `events.contacts` (each row carries its audience, below); `events.admin` (markers for the workbench, per calendar).
@@ -418,7 +419,7 @@ the locked sketches and finish-reviewed (`.impeccable/review/events/`).
   that follows the list, chips, Browse; regular events quiet, specials and one-offs fuller, not on with an icon and a
   line under, *Changed* until opened); `/week?view=month` is the month (marks, key, the chosen day's rows);
   `/event/{id}` is *The date block* (Add to calendar, Register, Share, the change note, place and contacts as facts,
-  About, Other dates, missing details in plain words); `/week/calendars` is Browse (in your week, more calendars,
+  About, missing details in plain words); `/week/calendars` is Browse (in your week, more calendars,
   subscribe to all yours or everything public); `/calendar/{id}` is a calendar's page with its own Subscribe;
   `/event/new` starts a new event.
 - **Editing** (`Events.Client`, shared): *Edit where you read it* (`EventEditor`): the head previews the event; title,
@@ -662,7 +663,7 @@ approved mocks (surface briefs `.impeccable/surfaces/tures-events-admin-pages-di
   date) so a date can say what differs and put a field back (`DateDiffers`, `PutBack`).
 - **Contracts:** `RegularEventDetail.Dates` (each date from today to 12 months ahead, with its own title and time,
   whether it's changed, and whether it's not on and why) replaces `NextDates`. A break's dates are all there as not
-  on, not only its first 14 days as on the phone's calendar, because the strip is where breaks are checked.
+  on, as on the phone's calendar, because the strip is where breaks are checked.
   `Editing.RegularEvents` (`[Requires(events.edit)]` at the calendar) lists a calendar's regular events with how each
   repeats, its next date and how many dates are changed. The server model is unchanged.
 - **The phone:** `/calendar/{id}/regular/{regular}` is a regular event's page, `/calendar/{id}/regular/new` a new one
@@ -845,8 +846,8 @@ digests from the page's foot; Copy for email gives only the content block. Decis
   Change and Remove beside it; Home's settings show it in its own proportions.
 - **Other dates on a date with its own title** (owner, 2026-11-09: "Other Dates under a special event version of a repeat
   date (e.g. Anniversary Sunday) doesn't make a lot of sense … let's hide them if the event title is different than
-  normal"): a date of a regular event whose title differs from the regular event's shows no Other dates, on the app's
-  event page and the website's. A date changed only in time or place keeps them. One rule, `OccurrenceListing.OtherDates`
+  normal"): a date of a regular event whose title differs from the regular event's shows no Other dates on the
+  website's event page (the app's no longer lists other dates). A date changed only in time or place keeps them. One rule, `OccurrenceListing.OtherDates`
   (Events.Contracts): a special has its own title when a plain date of the same regular event has a different title, so
   no contract change was needed.
 - **The digest desk, reviewed again** (owner, 2026-11-09: "needs a proper impeccable review"; the when line ran past the
@@ -891,8 +892,7 @@ For Life Groups in the calendar ([life-groups.md](life-groups.md#life-groups-in-
   it by a key, gives its title, About, where tapping opens, its dates with their times and the dates not on with why.
   Events stores it as an ordinary regular event (`Keeper`, `KeptBy`, `OpensAt` on `regular_events`): weekly when the
   dates are a weekly run, a list of dates otherwise; the usual time is the one most dates have, the rest are time-only
-  specials; each run of not-on dates with one reason is an own break, so it shows as a break does (its first two weeks
-  as not on, then left out). Every change replaces its specials and breaks in one transaction and publishes.
+  specials; each run of not-on dates with one reason is an own break, so it shows as a break does (every date as not on). Every change replaces its specials and breaks in one transaction and publishes.
 - **No special cases downstream:** every feed, iCal link, the digest and notifications read it as any regular event.
   Two differences only: a kept event's time-only dates aren't shown as specials, and an occurrence carries
   `KeptBy`/`OpensAt`, so rows and Home open the feature's page and the event page links to it.

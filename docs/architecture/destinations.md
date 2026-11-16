@@ -97,6 +97,10 @@ which shows the shared not-found state when the item is gone.
   `/open/*` beside `/welcome` (`AppAssociation.LinksIntoTheApp`), served as the same static file as before.
   The app's `applinks:` entitlement now names `GSBC_LINKS_DOMAIN`, the app host, in every environment
   (`webcredentials:` still names `GSBC_ASSOCIATED_DOMAIN`, which is the apex in production for passkeys).
+- **The app opens a link it's handed with `LinkOpener`**, which only knows the destination catalogue. A page the
+  phone opens from outside that isn't a place, such as `/welcome?code=…` from an invitation email, is declared with
+  `AddLinkIntoTheApp` by its feature (Accounts.App for Welcome) and opened as it is, query included. Without it the
+  invitation link opened on "Not found" (UAT #15, 2026-11-16).
 - **Anywhere else**, the gateway serves the admin panel's static files as for any client route, and its
   `/open/{*path}` page (no sidebar, no sign-in) names the place if it's public and says how to get the app.
   It varies nothing per request on the server, so no new API path (AGENTS.md); the name comes from

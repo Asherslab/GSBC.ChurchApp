@@ -16,7 +16,11 @@ for the owner to redirect.
 - **Who can start a chat is per ministry** (owner, 2026-11-12: "make it configurable per ministry"; default leaders
   only). Settings → What it uses → *Who can start a chat*: leaders, or the team too. Team members start **group chats
   for the team**; channels and chats with attendees or parents stay with leaders, who also change and delete chats.
-  `Chats.Start` is `[SignedIn]` and checks it (`ChatPlace.TeamMayStart`).
+  `Chats.Start` is `[SignedIn]` and checks it (`ChatPlace.TeamMayStart`). **Starting needs a role at that ministry**
+  (owner, 2026-11-16, UAT error c9384495): a grant held everywhere (the Owner's `*`, Ministries Manager) isn't
+  membership, so it doesn't start a chat either; before, it saved a chat its starter wasn't in and then refused the
+  first message. `GrantSet.IsHeldAt` on the server and `IAccess.CanHere` on the client ask the same question; the Chats
+  tab tells such a person to give themselves a role there.
 - **A ministry's people changing reaches its chats at once** (2026-11-12): Chats handles Platform's
   `IMinistryPeopleChanged` as well as watching grants.
 - **Where:** *Chats* (`/chats`: every chat you're in, newest first, a parent's yes waiting on top), a ministry's

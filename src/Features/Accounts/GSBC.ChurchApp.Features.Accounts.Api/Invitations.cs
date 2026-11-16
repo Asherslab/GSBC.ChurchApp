@@ -72,7 +72,7 @@ internal sealed class Invitations(
     {
         user.InvitationHeld = false;
         await OpenCodes(user.Id).ExecuteDeleteAsync(cancellationToken);
-        string link = $"{options.Value.SiteUrl.TrimEnd('/')}/welcome?code={codes.IssueToken(user.Id, CodePurpose.Invitation, OneTimeCodes.InvitationLifetime)}";
+        string link = AccountsDestinations.WelcomeLink(options.Value.SiteUrl, codes.IssueToken(user.Id, CodePurpose.Invitation, OneTimeCodes.InvitationLifetime));
         audit.Record(action, user.Id, actorId);
         await db.SaveChangesAsync(cancellationToken);
         return AccountEmails.Invite(user.Email!, user.DisplayName, link);
