@@ -57,6 +57,9 @@ in folders should not unlink them from the various pieces they are used in." Dec
   "Not used" work inside a folder, counted by the server (`MediaList.Counts`).
 - **Live:** folder and file changes mark the `media.library` feed, so two admins see each other's
   moves through `LiveData`.
+- **Where a file is** (`Media.Places`, `media.view`, 2026-11-16): each file's folder path now, such as `Main Photos/2026`
+  or `Made by the app/Church news`, for the post editor's library path. A folder the viewer can't open gives an empty
+  path, so its name never shows (`AFilesPlaceIsWhereItIsNowAndNeverAFolderTheViewerCantOpen`).
 
 ### System folders: made by the app
 

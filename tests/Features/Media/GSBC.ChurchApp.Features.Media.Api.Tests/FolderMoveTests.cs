@@ -79,6 +79,35 @@ public sealed class FolderMoveTests : MediaLibraryHost
         Assert.Equal(Guid.Parse(mainImages.Id), (await FolderOfAsync(letterboxing.Id)).Folder);
     }
 
+    [Fact]
+    public async Task AFilesPlaceIsWhereItIsNowAndNeverAFolderTheViewerCantOpen()
+    {
+        ClaimsPrincipal staff = Person(), member = Person(), overseer = Person();
+        FolderInfo photos = await FoldersCallAsync(folders => folders.CreateAsync(staff, new CreateFolderRequest { Name = "Main Photos" }, Cancellation));
+        FolderInfo year = await FoldersCallAsync(folders => folders.CreateAsync(staff, new CreateFolderRequest { Name = "2026", ParentId = photos.Id }, Cancellation));
+        MediaRef banner = await UploadAsync(staff, Jpeg(seed: 43), "image/jpeg", fileName: "banner.jpg");
+        MediaRef loose = await UploadAsync(staff, Jpeg(seed: 44), "image/jpeg", fileName: "loose.jpg");
+        await FoldersCallAsync(folders => Done(folders.MoveAsync(new MoveRequest { ItemIds = [banner.Id], Into = photos.Id }, Cancellation)));
+        Members.Add(member, "chat-11");
+        MediaRef shared = (await SendAsync(member, Jpeg(seed: 45), new BeginUploadRequest
+        {
+            FileName = "camp.jpg", ContentType = "image/jpeg", Bytes = Jpeg(seed: 45).Length, Area = Chats.Key, AreaScopeId = "chat-11",
+        })).Item!.Media!;
+        await FoldersCallAsync(folders => Done(folders.FileAsync(Chats, "chat-11", "Youth group", [shared], Cancellation)));
+        await FoldersCallAsync(folders => Done(folders.MoveAsync(new MoveRequest { ItemIds = [banner.Id], Into = year.Id }, Cancellation)));
+        Access.Grant(overseer, MediaPermissions.SystemViewNode, null);
+
+        Dictionary<string, string> seenByStaff = await PlacesAsync(staff, banner, loose, shared);
+        Dictionary<string, string> seenByOverseer = await PlacesAsync(overseer, shared);
+
+        Assert.Equal(("Main Photos/2026", "", ""), (seenByStaff[banner.Id], seenByStaff[loose.Id], seenByStaff[shared.Id]));
+        Assert.Equal("Made by the app/Chats/Youth group", seenByOverseer[shared.Id]);
+    }
+
+    private async Task<Dictionary<string, string>> PlacesAsync(ClaimsPrincipal user, params MediaRef[] media) =>
+        (await LibraryCallAsync(library => library.PlacesAsync(user, new MediaPlacesRequest { Ids = [.. media.Select(item => item.Id)] }, Cancellation)))
+        .Items.ToDictionary(place => place.Id, place => place.Folder);
+
     private async Task<(Guid? Folder, string? Area)> FolderOfAsync(string mediaId)
     {
         await using AsyncServiceScope scope = Services.CreateAsyncScope();

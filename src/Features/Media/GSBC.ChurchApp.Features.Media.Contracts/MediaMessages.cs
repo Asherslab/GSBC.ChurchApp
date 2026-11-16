@@ -109,6 +109,25 @@ public sealed class MediaList
 }
 
 [ProtoContract]
+public sealed class MediaPlacesRequest
+{
+    [ProtoMember(1)] public List<string> Ids { get; set; } = [];
+}
+
+[ProtoContract]
+public sealed class MediaPlaces
+{
+    [ProtoMember(1)] public List<MediaPlace> Items { get; set; } = [];
+}
+
+[ProtoContract]
+public sealed class MediaPlace
+{
+    [ProtoMember(1)] public string Id { get; set; } = "";
+    [ProtoMember(2)] public string Folder { get; set; } = "";
+}
+
+[ProtoContract]
 public sealed class MediaCounts
 {
     [ProtoMember(1)] public int All { get; set; }

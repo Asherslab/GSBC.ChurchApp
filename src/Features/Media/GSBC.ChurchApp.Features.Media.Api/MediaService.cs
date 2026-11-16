@@ -23,6 +23,9 @@ internal sealed class MediaService(MediaLibrary library) : IMediaService
     public async ValueTask<MediaList> ListAsync(MediaQuery request, CallContext context = default) =>
         await library.ListAsync(UserOf(context), request, context.CancellationToken);
 
+    public async ValueTask<MediaPlaces> PlacesAsync(MediaPlacesRequest request, CallContext context = default) =>
+        await library.PlacesAsync(UserOf(context), request, context.CancellationToken);
+
     public async ValueTask<MediaItemInfo> RemoveOriginalAsync(RemoveOriginalRequest request, CallContext context = default) =>
         await library.RemoveOriginalAsync(request.Id, context.CancellationToken);
 

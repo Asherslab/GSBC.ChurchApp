@@ -17,6 +17,7 @@ internal sealed class MediaFolders(MediaDbContext db, IAccessEvaluator access, I
 {
     public const int MaximumNameLength = 80;
     private const string MadeByTheApp = "Made by the app.";
+    private const string MadeByTheAppShelf = "Made by the app";
 
     private readonly Dictionary<string, MediaSystemArea> _areas = areas.ToDictionary(area => area.Key);
 
@@ -176,6 +177,33 @@ internal sealed class MediaFolders(MediaDbContext db, IAccessEvaluator access, I
             db.FeedChanges.Add(FeedChangeRecord.Marker(MediaFeeds.Library, item.Id.ToString(), Now));
         }
         await db.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task<MediaPlaces> PlacesAsync(ClaimsPrincipal user, IEnumerable<string> mediaIds, CancellationToken cancellationToken)
+    {
+        List<Guid> ids = [.. mediaIds.Select(id => Guid.TryParse(id, out Guid parsed) ? parsed : Guid.Empty).Where(id => id != Guid.Empty).Distinct()];
+        Dictionary<Guid, Guid?> places = await db.Items.AsNoTracking().Where(item => ids.Contains(item.Id)).ToDictionaryAsync(item => item.Id, item => item.FolderId, cancellationToken);
+        List<MediaFolder> all = await db.Folders.AsNoTracking().ToListAsync(cancellationToken);
+        HashSet<Guid> hidden = await HiddenAsync(user, all, cancellationToken);
+        Dictionary<Guid, MediaFolder> byId = all.ToDictionary(folder => folder.Id);
+        return new MediaPlaces
+        {
+            Items = [.. places.Select(place => new MediaPlace { Id = place.Key.ToString(), Folder = PathOf(byId, hidden, place.Value) })],
+        };
+    }
+
+    internal static string PathOf(IReadOnlyDictionary<Guid, MediaFolder> folders, IReadOnlySet<Guid> hidden, Guid? folderId)
+    {
+        List<string> names = [];
+        for (Guid? current = folderId; current is { } id && folders.GetValueOrDefault(id) is { } folder; current = folder.ParentId)
+        {
+            if (hidden.Contains(id))
+                return "";
+            names.Insert(0, folder.Name);
+            if (folder is { IsSystem: true, ParentId: null })
+                names.Insert(0, MadeByTheAppShelf);
+        }
+        return string.Join("/", names);
     }
 
     public async Task NameAsync(MediaSystemArea area, string mediaId, string fileName, CancellationToken cancellationToken)
