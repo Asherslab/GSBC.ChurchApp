@@ -72,8 +72,8 @@ public sealed class PrayerOnPhone(ILocalFeeds feeds, IOutbox outbox, ILocalPrefe
         });
     }
 
-    public async Task AnsweredAsync(string id, string note) =>
-        await outbox.EnqueueAsync(Service + "Answered", new AnsweredSave { Id = id, Note = note.Trim() }, PrayerContractsModel.Instance);
+    public async Task AnsweredAsync(string id, string note, bool removeFromWall) =>
+        await outbox.EnqueueAsync(Service + "Answered", new AnsweredSave { Id = id, Note = note.Trim(), RemoveFromWall = removeFromWall }, PrayerContractsModel.Instance);
 
     public async Task TakeDownAsync(string id) =>
         await outbox.EnqueueAsync(Service + "TakeDown", new RequestRef { Id = id }, PrayerContractsModel.Instance);

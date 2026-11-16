@@ -57,9 +57,12 @@ is the owner's is marked so.
 - Each shows where it is: waiting to send, couldn't send, with the pastoral team, on the wall until a day with its
   prayer count, was on the wall, answered. Its page (2026-11-12) opens on the same sand band as staff see, with the
   steps read only (owner, 2026-11-12): *Sent*, *On the wall* (only when they asked for it) and *Answered*. The main
-  action is *It was answered* (with optional words of thanks the wall shows), one wide button; the band's ⋯ menu holds
-  *Take it off the prayer wall* (it can't go back) and *Delete it* (from the pastoral team and the wall; can't be
-  undone), each asking once.
+  action is one wide button. On the wall it is *Remove from prayer wall* (UAT feedback #7, 2026-11-16; the owner: a
+  change of words, not of what it does): it marks the request answered with optional words of thanks. **With thanks the
+  wall shows them under the request for 3 days, then it comes down; with none it comes down at once** (owner,
+  2026-11-16). Off the wall it stays *It was answered*. The band's ⋯ menu holds *Take it off the prayer wall* while it
+  still waits for the wall (it can't go back) and *Delete it* (from the pastoral team and the wall; can't be undone),
+  each asking once.
 
 ## The prayer wall
 
@@ -125,7 +128,7 @@ is the owner's is marked so.
 
 | Kind | Who | When |
 |---|---|---|
-| `prayer.new` *Someone sends a prayer request* | holders of `prayer.requests.read` | a request arrives; waits until it's marked answered |
+| `prayer.new` *Someone sends a prayer request* | holders of `prayer.requests.read` | a request arrives; waits until it's marked answered (by staff or the person) |
 | `prayer.wall.waiting` *A prayer request asks to be on the prayer wall* | holders of `prayer.wall.moderate` | a request asks for the wall; one notification per person with the one above (most specific first); waits until the wall is decided |
 | `prayer.prayed` *How many people have prayed for your prayer request* (renamed 2026-11-12 from "Someone prays…", which read as one notification per prayer) | the person | a digest (below); opens their request |
 | `prayer.answered` *The pastoral team marks your prayer request answered* | the person | staff mark it answered; opens their request |

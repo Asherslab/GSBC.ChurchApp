@@ -16,6 +16,7 @@ internal static class PrayerRules
     public static readonly TimeSpan OnTheWallFor = TimeSpan.FromDays(30);
     public static readonly TimeSpan LongestOnTheWall = TimeSpan.FromDays(365);
     public static readonly TimeSpan KeptFor = TimeSpan.FromDays(365);
+    public static readonly TimeSpan ThanksShownFor = TimeSpan.FromDays(3);
 
     public static string Clip(string value, int longest)
     {
@@ -58,6 +59,9 @@ internal static class PrayerRules
     public static bool ShowsNameOnTheWall(RequestRecord request, bool staffShowName) => staffShowName && request.ShowName && request.Name.Length > 0;
 
     public static bool IsDueForDeletion(RequestRecord request, DateTime now) => request.ChangedAt <= now - KeptFor;
+
+    public static DateTime UntilWithThanks(DateTime? until, DateTime now) =>
+        until is { } day && day <= now + ThanksShownFor ? day : now + ThanksShownFor;
 
     public static DateTime? ClampedUntil(DateTime until, DateTime now) =>
         until <= now || until > now + LongestOnTheWall ? null : until;
