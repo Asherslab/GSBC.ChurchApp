@@ -30,4 +30,8 @@ namespace GSBC.ChurchApp.Features.Prayer.Contracts;
 [ProtoSerializable(typeof(CareCase))]
 [ProtoSerializable(typeof(QueuedOnPhone))]
 [ProtoSerializable(typeof(StaffQueue))]
+[ProtoSerializable(typeof(PastoralWrite))]
+[ProtoSerializable(typeof(PrayerChurch))]
+[ProtoSerializable(typeof(Nothing))]
+[ProtoSerializable(typeof(WritingStart))]
 public partial class PrayerContractsModel : TypeModel;

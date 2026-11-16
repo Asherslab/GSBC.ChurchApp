@@ -1,0 +1,82 @@
+<!doctype html><html lang="en-AU"><head><meta charset="utf-8"><title>A page to write on</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet"><style>
+:root{--navy:#2a3d5e;--sand:#f4efe7;--sand2:#e9e1d4;--ink:#18233a;--ink2:#545e70;--ink3:#626a79;--aqua:#00776d;--marker:#e7ae74;--mink:#8a5422;--line:rgba(42,61,94,.12);--field:#f4efe7;--edge:rgba(98,106,121,.7);--sel:#f4efe7}
+*{box-sizing:border-box;margin:0;padding:0}
+body{width:1440px;height:900px;overflow:hidden;font-family:Montserrat,-apple-system,system-ui,sans-serif;color:var(--ink);background:#fff;font-size:15px;display:flex}
+.side{width:248px;flex:none;background:var(--navy);color:#fff;padding:22px 14px 16px}
+.brand{font-weight:700;font-size:17px;padding:0 10px 18px}
+.jump{background:rgba(255,255,255,.12);color:rgba(255,255,255,.76);border-radius:9px;height:38px;display:flex;align-items:center;padding:0 10px;font-size:14px;font-weight:600;margin-bottom:18px}
+.glabel{color:#d5c9b7;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;padding:0 10px 6px;margin-top:14px}
+.lnk{height:38px;display:flex;align-items:center;padding:0 10px;border-radius:9px;color:rgba(255,255,255,.76);font-size:14px;font-weight:600;position:relative}
+.lnk.on{background:rgba(255,255,255,.12);color:#fff}.lnk.on:before{content:"";position:absolute;left:-14px;top:8px;bottom:8px;width:4px;border-radius:0 3px 3px 0;background:var(--marker)}
+.cnt{margin-left:auto;background:var(--marker);color:#2a1a08;border-radius:999px;font-size:12px;font-weight:700;padding:1px 7px}
+.work{flex:1;display:flex;flex-direction:column;min-width:0}
+.band{display:flex;align-items:flex-end;justify-content:space-between;padding:26px 32px 18px;border-bottom:1px solid var(--line)}
+.band h1{font-size:27px;font-weight:700;letter-spacing:-.02em}.band p{font-size:14px;color:var(--ink2);margin-top:4px}
+.crumb{font-size:14px;font-weight:600;color:var(--aqua);margin-bottom:6px}
+.btn{height:44px;border-radius:22px;padding:0 18px;display:inline-flex;align-items:center;gap:8px;font-weight:600;font-size:14.5px;background:var(--navy);color:#fff;border:0;white-space:nowrap}
+.btn.q{background:var(--field);color:var(--ink);border:1px solid var(--edge)}
+.bench{flex:1;display:flex;min-height:0}
+.rail{width:248px;flex:none;background:var(--sand);padding:24px 16px}
+.search{background:#fff;border:1px solid var(--edge);border-radius:12px;height:40px;display:flex;align-items:center;padding:0 12px;color:var(--ink3);font-size:14px;margin-bottom:16px}
+.rf{height:38px;display:flex;align-items:center;padding:0 8px;border-radius:9px;font-size:14px;font-weight:600;color:var(--ink2)}
+.rf.on{background:#fff;color:var(--ink)}.rf .n{margin-left:auto;color:var(--mink);font-size:12px;font-weight:700}
+.list{flex:1;padding:8px 24px;min-width:0}
+table{width:100%;border-collapse:collapse}th{font-size:13px;color:var(--ink3);font-weight:400;text-align:left;padding:8px 12px;border-bottom:1px solid var(--line)}
+td{padding:12px;border-bottom:1px solid var(--line);vertical-align:top;font-size:14px}td.q{color:var(--ink2);white-space:nowrap}
+td strong{font-weight:600;display:block;margin-bottom:5px}
+.pill{display:inline-block;font-size:12px;font-weight:700;border-radius:999px;padding:3px 9px;background:rgba(231,174,116,.3);color:var(--mink);margin-right:4px}
+.pill.a{background:rgba(0,119,109,.12);color:var(--aqua)}.pill.c{background:var(--navy);color:#fff}
+.pane{width:440px;flex:none;border-left:1px solid var(--line);padding:24px 24px 0;display:flex;flex-direction:column;overflow:hidden}
+.ph{display:flex;align-items:flex-start;gap:8px;margin-bottom:18px}.ph h2{font-size:22px;font-weight:700;letter-spacing:-.02em}.ph p{font-size:14px;color:var(--ink2);margin-top:3px}
+.ph .x{margin-left:auto;width:36px;height:36px;border-radius:18px;background:var(--field);display:flex;align-items:center;justify-content:center;color:var(--ink2);flex:none}
+.lbl{font-size:14px;font-weight:600;color:var(--ink2);display:block;margin:16px 0 6px}
+.hint{font-size:13px;color:var(--ink3);margin-top:6px;line-height:1.4}
+.ta{background:var(--field);border:1px solid var(--edge);border-radius:12px;padding:13px 14px;font-size:15px;line-height:1.5;min-height:120px}
+.inp{background:var(--field);border:1px solid var(--edge);border-radius:12px;padding:0 14px;height:44px;display:flex;align-items:center;font-size:15px}
+.seg{display:flex;background:var(--field);border:1px solid var(--edge);border-radius:12px;padding:3px;font-size:14px;font-weight:600;color:var(--ink2)}.seg span{flex:1;text-align:center;padding:8px 6px;border-radius:9px}.seg .on{background:#fff;color:var(--ink);box-shadow:0 1px 3px rgba(24,35,58,.14)}
+.rows{border:1px solid var(--edge);border-radius:12px;background:var(--field);overflow:hidden}
+.ro{display:flex;gap:12px;padding:11px 14px;border-top:1px solid var(--line);align-items:flex-start}.ro:first-child{border-top:0}
+.ro .dot{width:18px;height:18px;border-radius:9px;border:2px solid var(--ink3);flex:none;margin-top:2px}.ro.on .dot{border:6px solid var(--navy)}
+.ro.on{background:#fff}.ro b{font-weight:600;font-size:14.5px;display:block}.ro small{font-size:13px;color:var(--ink2)}
+.foot{margin-top:auto;border-top:1px solid var(--line);padding:14px 0 18px;display:flex;align-items:center;justify-content:space-between}
+.foot .why{font-size:13px;color:var(--ink2);text-align:right;margin-bottom:8px}
+.grp{background:#fff;border-radius:14px;box-shadow:0 1px 2px rgba(24,35,58,.08),0 0 0 1px var(--line);padding:16px 20px 18px;margin-bottom:16px}
+.grp h3{font-size:16px;font-weight:700;margin-bottom:2px}.grp > p{font-size:13.5px;color:var(--ink2)}
+.wallcard{background:#fff;border-radius:14px;box-shadow:0 1px 2px rgba(24,35,58,.08),0 0 0 1px var(--line);padding:14px 16px}
+.wallcard .w{font-size:15px;line-height:1.5}.wallcard .by{display:flex;align-items:center;gap:8px;margin-top:10px;font-size:13.5px;color:var(--ink2);font-weight:600}
+.pray{margin-left:auto;height:34px;border-radius:17px;padding:0 14px;background:var(--sand);color:var(--ink);font-size:13px;font-weight:600;display:flex;align-items:center}
+.menu{position:absolute;background:#fff;border-radius:12px;box-shadow:0 10px 30px rgba(24,35,58,.18),0 0 0 1px var(--line);padding:6px;width:330px}
+.mi{display:flex;gap:10px;padding:8px;border-radius:9px;align-items:flex-start}.mi.on{background:var(--sand)}.mi b{font-weight:600;font-size:14.5px;display:block}.mi small{font-size:13px;color:var(--ink2)}
+.tick{width:18px;color:var(--aqua);font-weight:700;flex:none}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.chip{height:34px;border-radius:17px;padding:0 12px;display:flex;align-items:center;font-size:13.5px;background:var(--field);border:1px solid var(--edge);color:var(--ink2)}.chip.on{background:var(--navy);color:#fff;border-color:var(--navy)}
+.link{color:var(--aqua);font-weight:600;font-size:14px}
+</style></head>
+<body><nav class="side"><div class="brand">Good Shepherd</div><div class="jump">Jump to…</div>
+<div class="glabel">This week</div><div class="lnk">Office week</div><div class="lnk">News</div><div class="lnk">Calendar</div>
+<div class="glabel">People</div><div class="lnk">People</div><div class="lnk">Ministries</div><div class="lnk on">Prayer <span class="cnt">3</span></div><div class="lnk">Chats</div>
+<div class="glabel">The app</div><div class="lnk">Home</div><div class="lnk">App styling</div><div class="lnk">Media</div></nav><main class="work"><header class="band"><div><div class="crumb">‹ Prayer</div><h1>Write a prayer request</h1><p>It goes straight onto the prayer wall, or only to the pastoral team.</p></div></header>
+<div class="bench" style="background:var(--sand)">
+ <div style="flex:1;padding:28px 32px;display:flex;justify-content:center">
+  <div style="width:720px;background:#fff;border-radius:14px;padding:28px 32px 40px;box-shadow:0 1px 2px rgba(24,35,58,.08)">
+   <span class="lbl" style="margin-top:0">What can we pray for?</span>
+   <div class="ta" style="min-height:300px;font-size:17px">For our missionaries as they settle into a new country this month: for language, friendships, and good health for the children.</div>
+   <p class="hint">Up to 2,000 characters. The wall shows these words as they are.</p>
+  </div>
+ </div>
+ <aside style="width:380px;background:#fff;border-left:1px solid var(--line);padding:22px 22px 0;display:flex;flex-direction:column">
+  <span class="lbl" style="margin-top:0">On the prayer wall, from</span>
+  <div class="rows">
+   <div class="ro"><span class="dot"></span><div><b>My name</b><small>Shown as Sam S.</small></div></div>
+   <div class="ro"><span class="dot"></span><div><b>Someone else</b><small>Type the name of who asked</small></div></div>
+   <div class="ro"><span class="dot"></span><div><b>No name</b></div></div>
+   <div class="ro on"><span class="dot"></span><div><b>GSBC</b><small>From the church. Any prayer wall staff can change it.</small></div></div>
+  </div>
+  <span class="lbl">Who reads it</span>
+  <div class="seg"><span class="on">The prayer wall</span><span>Only the pastoral team</span></div>
+  <span class="lbl">Shows until</span><div class="inp">Wed 16 December</div>
+  <span class="lbl">How the wall shows it</span>
+  <div class="wallcard"><p class="w">For our missionaries as they settle into a new country this month…</p><div class="by">GSBC · Just now <span class="pray">Pray</span></div></div>
+  <div class="foot"><span class="btn q">Cancel</span><span class="btn">Put it on the wall</span></div>
+ </aside>
+</div></main></body></html>

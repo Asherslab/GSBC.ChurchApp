@@ -21,6 +21,10 @@
                 }
             </button>
         }
+        else if (Preview)
+        {
+            <span class="prayer-pray" aria-hidden="true"><Icon Name="prayer" Size="IconSize.Small" /><span>Pray</span></span>
+        }
         else if (Line.Post.Prayed > 0)
         {
             <span class="prayer-post__count">@PrayerWords.Prayed(Line.Post.Prayed)</span>
@@ -32,4 +36,5 @@
     [Parameter, EditorRequired] public required WallLine Line { get; set; }
     [Parameter] public EventCallback<bool> OnPray { get; set; }
     [Parameter] public bool CanPray { get; set; } = true;
+    [Parameter] public bool Preview { get; set; }
 }

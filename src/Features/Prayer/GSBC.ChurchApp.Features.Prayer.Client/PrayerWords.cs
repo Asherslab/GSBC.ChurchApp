@@ -10,6 +10,7 @@ public static class PrayerWords
     public const string NoName = "No name";
     public const string Private = "Only the pastoral team reads it, unless you ask for it on the prayer wall too.";
     public const string CantSendHere = "Prayer requests are sent from the church app on a phone.";
+    public const string FromTheChurch = "From the church. Any prayer wall staff can change it or take it down.";
     public const string ShortNameHint = "Your first name and the first letter of your last, like Sam S.";
 
     public static string Excerpt(string text, int longest = 90)
@@ -47,6 +48,9 @@ public static class PrayerWords
         _ => "With the pastoral team",
     };
 
+    public static string FromTheDesk(string name, bool fromChurch, bool forSomeoneElse) =>
+        fromChurch ? $"{name}, from the church" : forSomeoneElse ? $"{name}, written in for them" : name;
+
     public static string WhoAndWhen(WallPost post, DateTime now) =>
         $"{(post.Name.Length > 0 ? post.Name : NoName)} · {ChurchDates.Ago(post.ShownAt, now)}";
 
@@ -65,12 +69,7 @@ public static class PrayerWords
         return $"{from} · {ChurchDates.Ago(item.SentAt, now)}";
     }
 
-    public static string Care(CareState care) => care switch
-    {
-        CareState.FollowedUp => "Followed up",
-        CareState.Answered => "Answered",
-        _ => "New",
-    };
+    public static string Care(CareState care) => care == CareState.Answered ? "Answered" : "New";
 
     public static string WallLine(WallState wall) => wall switch
     {

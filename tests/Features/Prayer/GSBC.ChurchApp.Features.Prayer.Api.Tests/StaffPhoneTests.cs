@@ -9,7 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace GSBC.ChurchApp.Features.Prayer.Api.Tests;
 
-[Integration("Staff phones sync only what their role may see: approvers get only wall requests, without contact details or notes; an approval queued offline is applied once")]
+[Integration("Staff phones sync only what their role may see: approvers get only wall requests, without full names or notes; an approval queued offline is applied once")]
 public sealed class StaffPhoneTests : PrayerHost
 {
     private static readonly Guid Phone = Guid.CreateVersion7();
@@ -26,20 +26,19 @@ public sealed class StaffPhoneTests : PrayerHost
     }
 
     [Fact]
-    public async Task AnApproverSeesNeitherTheirContactDetailsNorTheirFullName()
+    public async Task AnApproverNeverSeesTheirFullName()
     {
         Guid person = Guid.CreateVersion7();
         People.Names[person] = "Sam Sample";
         await AppAsync(app => app.SendAsync(Phone, person, new PrayerRequestSend
         {
-            Id = Guid.NewGuid().ToString(), Text = "For my job interview", ForWall = true, ShowName = true, WantsContact = true, Contact = "0400 000 000",
-        }, Cancel));
+            Id = Guid.NewGuid().ToString(), Text = "For my job interview", ForWall = true, ShowName = true,
+        }, false, Cancel));
 
         WallCase approving = PrayerPayloads.Decode<WallCase>(Assert.Single(await LiveRowsAsync(PrayerFeeds.Approving)).Payload);
         CareCase care = PrayerPayloads.Decode<CareCase>(Assert.Single(await LiveRowsAsync(PrayerFeeds.Care)).Payload);
 
         Assert.Equal("Sam S.", approving.ShortName);
-        Assert.Equal("0400 000 000", care.Contact);
         Assert.Equal("Sam Sample", care.From);
     }
 
@@ -85,7 +84,7 @@ public sealed class StaffPhoneTests : PrayerHost
     }
 
     [Fact]
-    public async Task OnceDecidedAndFollowedUpARequestLeavesStaffPhones()
+    public async Task OnceDecidedAndAnsweredARequestLeavesStaffPhones()
     {
         string id = await SendAsync(Phone, null, "For our marriage", forWall: true);
 
@@ -93,7 +92,7 @@ public sealed class StaffPhoneTests : PrayerHost
         Assert.Empty(await LiveRowsAsync(PrayerFeeds.Approving));
         Assert.Single(await LiveRowsAsync(PrayerFeeds.Care));
 
-        await StaffAsync(care => care.CareAsync(Staff, new CareChange { Id = id, Care = CareState.FollowedUp }, null, Cancel));
+        await StaffAsync(care => care.CareAsync(Staff, new CareChange { Id = id, Care = CareState.Answered }, null, Cancel));
         Assert.Empty(await LiveRowsAsync(PrayerFeeds.Care));
     }
 
@@ -109,6 +108,19 @@ public sealed class StaffPhoneTests : PrayerHost
         await WithAsync(provider => provider.GetRequiredService<PrayerKeeping>().RunAsync(Cancel));
 
         Assert.Equal([waiting], (await RowsAsync(PrayerFeeds.Approving)).Select(row => row.RecordId));
+        Assert.Equal([waiting, onlyPastors], (await RowsAsync(PrayerFeeds.Care)).Select(row => row.RecordId));
+    }
+
+    [Fact]
+    public async Task APastoralTeamFeedClearedOnItsOwnIsFilledAgain()
+    {
+        string waiting = await SendAsync(Phone, null, "For the wall", forWall: true);
+        string onlyPastors = await SendAsync(Phone, null, "Only the pastors");
+        await WithAsync(provider => provider.GetRequiredService<Data.PrayerDbContext>().FeedChanges
+            .Where(change => change.Feed == PrayerFeeds.Care).ExecuteDeleteAsync(Cancel));
+
+        await WithAsync(provider => provider.GetRequiredService<PrayerKeeping>().RunAsync(Cancel));
+
         Assert.Equal([waiting, onlyPastors], (await RowsAsync(PrayerFeeds.Care)).Select(row => row.RecordId));
     }
 

@@ -1,0 +1,71 @@
+@inject PastoralClient Pastoral
+@inject IAccess Access
+
+<UnsavedGuard Changed="() => _name is not null && _name.Trim() != _saved" What="the church's name" />
+
+<LiveData TValue="WritingStart" Load="Pastoral.StartWritingAsync" Feeds="ChurchFeeds" FailedTitle="Can't load the church's name right now">
+    @{ Shape(context.Value.ChurchName); }
+    <Section Grouped="true" Title="The church's name on the prayer wall"
+             Lead="Prayer requests written from the church show this name. Changing it changes them on the wall too.">
+        <ChildContent>
+            @if (MayChange)
+            {
+                <TextField Label="The church's name" MaxLength="40" AutoCapitalize="words" Value="@(_name ?? "")" ValueChanged="name => _name = name" Problem="@_problem" />
+            }
+            else
+            {
+                <p class="prayer-request__fact">@_saved</p>
+            }
+        </ChildContent>
+        <Foot>
+            @if (MayChange)
+            {
+                <SaveBar Label="Save" Busy="_busy" Blocked="@Blocked" State="SaveBar.For(_name?.Trim() != _saved, _justSaved)" OnSave="SaveAsync" />
+            }
+            else
+            {
+                <Notice Text="Only the pastoral team can change it." />
+            }
+        </Foot>
+    </Section>
+</LiveData>
+
+@code {
+    private static readonly IReadOnlyList<string> ChurchFeeds = [PrayerFeeds.Church];
+
+    private string _saved = "";
+    private string? _name;
+    private bool _busy;
+    private bool _justSaved;
+    private string? _problem;
+
+    private bool MayChange => Access.Can(PrayerPermissions.Settings);
+
+    private string? Blocked => (_name ?? "").Trim().Length == 0 ? "Give the church a name." : null;
+
+    private void Shape(string stored)
+    {
+        if (_name is null || _name.Trim() == _saved)
+            _name = stored;
+        _saved = stored;
+    }
+
+    private async Task SaveAsync()
+    {
+        (_busy, _problem) = (true, null);
+        try
+        {
+            await Pastoral.NameTheChurchAsync(_name!.Trim());
+            _saved = _name = _name.Trim();
+            _justSaved = true;
+        }
+        catch (RpcException exception)
+        {
+            _problem = exception.Status.Detail;
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+}
