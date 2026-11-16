@@ -16,7 +16,7 @@ internal sealed class EventsPublisher(EventsDbContext db, TimeProvider time)
     public static readonly IReadOnlyList<string> EachRowFeeds = [EventsFeeds.PrivateCalendars, EventsFeeds.Private, EventsFeeds.Contacts, EventsFeeds.PrivateDigest];
     private static readonly IReadOnlyList<string> Published = [EventsFeeds.Calendars, .. EachRowFeeds, EventsFeeds.Public, EventsFeeds.Digest, EventsFeeds.Editing];
     private const string DigestHeader = "digest";
-    public const int EarlierDigests = 3;
+    private const int EarlierDigests = 3;
     private const int DigestsLooked = 12;
 
     internal sealed record Row(string Feed, string RecordId, byte[] Payload, string? Audience, DateTime? StartsAt = null, DateTime? EndsAt = null, string? SortKey = null, string? GroupKey = null);

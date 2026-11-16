@@ -7,8 +7,8 @@ public static class EventsTiles
 {
     public const string Agenda = "agenda";
     public const string JustALink = "link";
-    public const string Headline = "headline";
-    public const string RetiredBulletin = "hub.bulletin";
+    private const string Headline = "headline";
+    private const string RetiredBulletin = "hub.bulletin";
 
     public static readonly NumberSetting Entries = new("entries", "How many to show", 2, 1, 4);
 
@@ -28,7 +28,7 @@ public static class EventsTiles
     public static readonly HubTileKind WhatsNext = new("hub.whats-next", "What's next",
         "The weekly digest: the first thing coming up as the headline and what follows, opening What's next", "the weekly digest",
         new TileDefaults("What's next", Rows: 2, Tone: TileTones.Masthead, Icon: AppIcons.WeeklyDigest, Link: EventsDestinations.WhatsNext.Path,
-            Text: "What's next", TitleLabel: "Title above the headline", TextLabel: "Words to open it"),
+            Text: "What's next", TitleLabel: "Title when small", TextLabel: "Words to open it"),
         variants:
         [
             new(Headline, "Headline", "The first thing as the headline and what follows under it; how many when small",

@@ -12,7 +12,7 @@ internal sealed class TileReplacing(IServiceScopeFactory scopes, SurfaceCatalog 
 {
     private static readonly IReadOnlyList<string> KeptValues = [HubTileKeys.Columns, HubTileKeys.Rows];
 
-    public static string KeyFor(string retired) => $"replaced:{retired}";
+    private static string KeyFor(string retired) => $"replaced:{retired}";
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
