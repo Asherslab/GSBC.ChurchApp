@@ -143,8 +143,12 @@ markdown ... plenty of it could be under a 'extras' dropdown".
   handle to drag it, *Add a picture beside it* (a gallery), *Replace* and *Take it out*; cut and paste moves it too.
 - **No ids in sight** (owner, 2026-11-14: "i don't want the media links to look super ugly in markdown ... handle that
   invisibly ... something like ~/Main Photos/church-ministry.jpg"). The stored line keeps `media:<id>`, and the editor
-  never shows it: each file reads as its place in the library (`~/Main Photos/church-ministry.jpg`, from `MediaRef.Folder`,
-  set when it's chosen; files chosen before this show `~/name`).
+  never shows it: each file reads as its place in the library (`~/Main Photos/church-ministry.jpg`). In the admin panel
+  the editor asks Media where each file is now when it opens (`Media.Places`, gRPC, through `IMediaPlaces`), so a
+  reopened post shows the real folder; before 2026-11-16 the folder came only from choosing the file, so a saved post
+  showed `~/church-ministry.jpg` (UAT feedback). The phone doesn't look it up (posts carry no folder, so staff folder
+  names never reach readers): it shows the folder of a file just chosen, otherwise `~/name`. A file in a folder the
+  viewer can't open shows `~/name` too.
 - **Split into cards** (owner, 2026-11-14: "we could use something similar to horizontal rule to specify a 'card split'
   instead, e.g. `===`"): `===` on a line of its own where a block starts. Under a line of text it stays text (never a
   setext heading). On the post page each part opens under a navy rule (a sand bar until the bulletin item, below); a notification's line and a
