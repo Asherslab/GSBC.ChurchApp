@@ -139,7 +139,7 @@ internal sealed class MediaFolders(MediaDbContext db, IAccessEvaluator access, I
             if (!request.MoveContents)
                 throw new RpcException(new Status(StatusCode.FailedPrecondition, $"'{folder.Name}' isn't empty: {Contents(files.Count, subfolders.Count)}. Choose where they go first."));
             if (await StaffFolderAsync(request.MoveContentsInto, cancellationToken) is { } into && await IsWithinAsync(into, folder.Id, cancellationToken))
-                throw Invalid($"Its contents can't go inside '{folder.Name}' while it's being deleted. Choose another folder.");
+                throw Invalid($"The contents can't go into “{folder.Name}” while that folder is being deleted. Choose another folder.");
             await MoveAsync(new MoveRequest
             {
                 ItemIds = [.. files.Select(item => item.Id.ToString())],
@@ -429,7 +429,7 @@ internal sealed class MediaFolders(MediaDbContext db, IAccessEvaluator access, I
         Caller.UserId(user) ?? throw new RpcException(new Status(StatusCode.Unauthenticated, "Sign in first."));
 
     private static Guid ParseId(string id) =>
-        Guid.TryParse(id, out Guid parsed) ? parsed : throw new RpcException(new Status(StatusCode.NotFound, "No such media."));
+        Guid.TryParse(id, out Guid parsed) ? parsed : throw new RpcException(new Status(StatusCode.NotFound, "That file isn't in the library any more."));
 
     private static RpcException NoSuchFolder() => new(new Status(StatusCode.NotFound, "That folder has been deleted."));
 

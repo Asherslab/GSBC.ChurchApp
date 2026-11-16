@@ -10,7 +10,7 @@
                 @ondragenter="() => _over = droppable ? folder.Id : null" @ondragleave="() => Leave(folder)"
                 @ondragover:preventDefault="droppable" @ondrop="() => DropAsync(folder)">
                 <button type="button" class="folder-tile__open" @onclick="() => OnOpen.InvokeAsync(folder)"
-                        aria-label="@(folder.CanOpen ? null : $"{folder.Name}, only people it was shared with can open it")">
+                        aria-label="@(folder.CanOpen ? null : $"{folder.Name}, only the people this folder is shared with can open it")">
                     <span class="folder-tile__icon"><Icon Name="@(folder.IsSystem ? "lock" : "folder")" /></span>
                     <span class="folder-tile__text">
                         <span class="folder-tile__name">@folder.Name</span>

@@ -126,12 +126,12 @@
             }
         </SelectionTray>
 
-        <MoveToSheet Open="_sheet == FolderSheet.Move" Map="map" Title="@_moveTitle" Lead="Things that use them keep working: moving only changes where you find them here."
+        <MoveToSheet Open="_sheet == FolderSheet.Move" Map="map" Title="@_moveTitle" Lead="Moving files only changes where they're kept in Media. Anything that uses them keeps working."
                      Current="@_moveFrom" Suggested="@_moveFrom" Blocked="target => IsBlocked(map, target)" Busy="_busy" Problem="@_sheetProblem"
                      OnMove="MoveAsync" OnCancel="CloseSheet" />
 
         <Sheet Open="_sheet is FolderSheet.Create or FolderSheet.Rename" OpenChanged="_ => CloseSheet()" Title="@(_sheet == FolderSheet.Create ? "New folder" : "Rename folder")"
-               Lead="@(_sheet == FolderSheet.Create ? $"In {map.PathName(_folderId)}." : null)">
+               Lead="@(_sheet == FolderSheet.Create ? $"The new folder goes in {map.PathName(_folderId)}." : null)">
             <ChildContent>
                 <form class="panel-form" @onsubmit="SaveNameAsync" @onsubmit:preventDefault="true">
                     <TextField Label="Name" @bind-Value="_name" MaxLength="80" Problem="@_sheetProblem" AutoFocus="true" />
@@ -144,12 +144,12 @@
         </Sheet>
 
         <MoveToSheet Open="_sheet == FolderSheet.Delete" Map="map" Title="@($"Delete “{_sheetFolder?.Name}”?")" Action="Move them and delete"
-                     Lead="@($"It has {Contents(map, _sheetFolder)}. Nothing is deleted with it: choose where they go. Things that use them keep working.")"
+                     Lead="@($"“{_sheetFolder?.Name}” holds {Contents(map, _sheetFolder)}. They aren't deleted: choose a folder to move them to. Anything that uses them keeps working.")"
                      Current="@_sheetFolder?.Id" Suggested="@_sheetFolder?.ParentId" Blocked="target => target is not null && _sheetFolder is not null && map.IsWithin(target, _sheetFolder.Id)"
                      Busy="_busy" Problem="@_sheetProblem" OnMove="target => DeleteFolderAsync(true, target)" OnCancel="CloseSheet" />
 
         <Sheet Open="_confirming && Single is not null" OpenChanged="open => _confirming = open" Title="@($"Delete “{(Single?.Media is { } chosen ? NameOf(chosen) : "")}”?")"
-               Lead="It isn't used anywhere, so nothing in the app changes. This can't be undone.">
+               Lead="The file isn't used anywhere, so nothing in the app changes. This can't be undone.">
             <ChildContent><Notice Tone="NoticeTone.Warning" Text="@_error" /></ChildContent>
             <Actions>
                 <Button Variant="ButtonVariant.Danger" Busy="_busy" OnClick="DeleteAsync">Delete it</Button>
@@ -157,7 +157,7 @@
             </Actions>
         </Sheet>
 
-        <Sheet Open="_sheet == FolderSheet.DeleteEmpty" OpenChanged="_ => CloseSheet()" Title="@($"Delete “{_sheetFolder?.Name}”?")" Lead="It's empty, so nothing else changes.">
+        <Sheet Open="_sheet == FolderSheet.DeleteEmpty" OpenChanged="_ => CloseSheet()" Title="@($"Delete “{_sheetFolder?.Name}”?")" Lead="The folder is empty, so nothing else changes.">
             <ChildContent><Notice Tone="NoticeTone.Warning" Text="@_sheetProblem" /></ChildContent>
             <Actions>
                 <Button Variant="ButtonVariant.Danger" Busy="_busy" OnClick="() => DeleteFolderAsync(false, null)">Delete folder</Button>
@@ -277,7 +277,7 @@
 
     private RenderFragment? Detail(FolderMap map) => _uploading
         ? @<text>
-              <PaneHead Title="Upload" Lead="@($"Pictures (JPEG, PNG, WebP) or a PDF. It goes into {(_shelf == Shelf.Library && _folderId is not null && !Searching ? map.PathName(_folderId) : "the Library")}.")" OnClose="() => _uploading = false" />
+              <PaneHead Title="Upload" Lead="@($"Pictures (JPEG, PNG or WebP) or PDFs. Uploads go into {(_shelf == Shelf.Library && _folderId is not null && !Searching ? map.PathName(_folderId) : "the Library")}.")" OnClose="() => _uploading = false" />
               <MediaUpload FolderId="@(_shelf == Shelf.Library && !Searching ? _folderId : null)" OnUploaded="UploadedAsync" />
           </text>
         : Single is not { Media: { } media } selected ? null : @<text>
@@ -308,10 +308,10 @@
                   }
                   <dt>Used in</dt>
                   <dd>@UsedIn(selected.Uses)</dd>
-                  @if (selected.PrivateTo is { } audience)
+                  @if (selected.PrivateTo is not null)
                   {
-                      <dt>Who sees it</dt>
-                      <dd>Only people with @audience.Permission@(audience.ScopeId is null ? "" : $" in {audience.ScopeId}")</dd>
+                      <dt>Who can see this file</dt>
+                      <dd>Only the people this file is shared with</dd>
                   }
               </dl>
               @if (selected.Original is { } original)
@@ -327,11 +327,11 @@
               }
               @if (map.Find(selected.FolderId) is { IsSystem: true, UnusedDeletable: false })
               {
-                  <p class="panel-hint">The app keeps this file where it put it.</p>
+                  <p class="panel-hint">The app keeps this file in its own folder, so it can't be moved here.</p>
               }
               else if (selected.Uses > 0)
               {
-                  <p class="panel-hint">It can be deleted once nothing uses it.</p>
+                  <p class="panel-hint">This file can be deleted once nothing uses it.</p>
               }
               <Notice Tone="NoticeTone.Warning" Text="@_error" />
           </text>;
@@ -384,7 +384,7 @@
 
     private string EmptyTitle(FolderMap map) => Searching || _filter != MediaFilter.All
         ? "Nothing matches"
-        : map.Find(_folderId) is { CanOpen: false } ? "Only people it was shared with can see these" : _folderId is null ? "No pictures yet" : "This folder is empty";
+        : map.Find(_folderId) is { CanOpen: false } ? "Only the people this folder is shared with can see what's in it" : _folderId is null ? "No pictures yet" : "This folder is empty";
 
     private string EmptyBody => Searching || _filter != MediaFilter.All
         ? "Try another word, or show everything."
@@ -423,7 +423,7 @@
     {
         if (_map.Find(folderId) is { CanOpen: false } locked)
         {
-            _problem = $"Only people “{locked.Name}” was shared with can see what's in it.";
+            _problem = $"Only the people “{locked.Name}” is shared with can see what's in it.";
             return;
         }
         await OpenFolderAsync(folderId);
@@ -688,7 +688,7 @@
         if (uploaded.PutBack)
         {
             await RevealAsync(item);
-            _moved = $"The original of “{NameOf(item.Media)}” is back, so it's whole again. Nothing new was added.";
+            _moved = $"The original of “{NameOf(item.Media)}” is back in the library. No new file was added.";
             return;
         }
         if (uploaded.AlreadyInLibrary)
