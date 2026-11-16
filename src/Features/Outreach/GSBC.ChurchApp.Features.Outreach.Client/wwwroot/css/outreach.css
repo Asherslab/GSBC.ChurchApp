@@ -208,7 +208,21 @@
 .outreach-map__layers > .btn { background: var(--page); box-shadow: var(--map-float); }
 .outreach-map__layers-panel { position: absolute; top: calc(100% + var(--space-2xs)); left: 0; width: 20rem; padding: var(--space-sm) var(--space-md); }
 .outreach-map__layers-title { margin: 0 0 var(--space-2xs); font-size: var(--text-label); font-weight: 700; }
-.outreach-map__legend { position: absolute; left: var(--space-md); bottom: var(--space-md); z-index: 1; display: grid; gap: var(--space-2xs); width: min(20rem, calc(100% - 2 * var(--space-md))); padding: var(--space-sm) var(--space-md); border-radius: var(--radius-field); background: var(--page); box-shadow: var(--map-float); }
+.outreach-map__corner { position: absolute; left: var(--space-md); bottom: var(--space-md); z-index: 1; display: grid; justify-items: start; gap: var(--space-xs); width: min(20rem, calc(100% - 2 * var(--space-md))); pointer-events: none; }
+.outreach-map__corner > * { pointer-events: auto; }
+.outreach-map__key { display: grid; gap: var(--space-2xs); padding: var(--space-sm) var(--space-md); border-radius: var(--radius-field); background: var(--page); box-shadow: var(--map-float); }
+.outreach-map__key-title { margin: 0; font-size: var(--text-caption); font-weight: 700; }
+.outreach-map__key-rows { display: grid; gap: var(--space-2xs); margin: 0; padding: 0; list-style: none; color: var(--ink-2); font-size: var(--text-caption); }
+.outreach-map__key-rows li { display: flex; align-items: center; gap: var(--space-xs); }
+.outreach-map__key-rows b { color: var(--ink); font-weight: 600; }
+.outreach-map__key-swatch { flex: none; width: 22px; height: 14px; border: 1px solid color-mix(in srgb, var(--ink-3) 55%, transparent); border-radius: 0; }
+.outreach-map__key-swatch--maps { background: var(--map-land); }
+.outreach-map__key-swatch--waiting { border: 1.5px dashed var(--live); background: color-mix(in srgb, var(--live) 12%, var(--map-land)); }
+.outreach-map__key-swatch--off { border: 1.5px dashed var(--ink-3); background: repeating-linear-gradient(45deg, transparent 0 3px, color-mix(in srgb, var(--ink-3) 45%, transparent) 3px 4.5px), var(--map-land); }
+@media (max-width: 1279px) { .outreach-map .map-view__outside { top: calc(2 * var(--space-md) + 2.5rem); } }
+.outreach-map__key-swatch--overview { background: linear-gradient(var(--map-veil), var(--map-veil)), var(--map-land); }
+.outreach-map__key-swatch--closed { background: repeating-linear-gradient(45deg, transparent 0 3px, color-mix(in srgb, var(--ink-3) 40%, transparent) 3px 4.5px), linear-gradient(var(--map-veil), var(--map-veil)), linear-gradient(var(--map-veil), var(--map-veil)), var(--map-land); }
+.outreach-map__legend { display: grid; gap: var(--space-2xs); width: 100%; padding: var(--space-sm) var(--space-md); border-radius: var(--radius-field); background: var(--page); box-shadow: var(--map-float); }
 .outreach-map__legend-title { display: flex; justify-content: space-between; gap: var(--space-sm); margin: 0; font-size: var(--text-caption); font-weight: 600; font-variant-numeric: tabular-nums; }
 .outreach-map__legend-title span + span { color: var(--ink-2); font-weight: 400; }
 .outreach-map__none { display: grid; place-items: center; height: 100%; padding: var(--section) var(--space-lg); }

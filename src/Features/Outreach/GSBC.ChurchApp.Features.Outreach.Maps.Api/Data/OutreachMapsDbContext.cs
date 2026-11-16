@@ -13,6 +13,7 @@ public sealed class OutreachMapsDbContext(DbContextOptions<OutreachMapsDbContext
     public DbSet<MapCellRecord> Cells => Set<MapCellRecord>();
     public DbSet<PlaceRecord> Places => Set<PlaceRecord>();
     public DbSet<AddressRecord> Addresses => Set<AddressRecord>();
+    public DbSet<OverviewRecord> Overviews => Set<OverviewRecord>();
 
     protected override string Schema => SchemaName;
 
@@ -57,6 +58,11 @@ public sealed class OutreachMapsDbContext(DbContextOptions<OutreachMapsDbContext
             entity.HasIndex(address => address.RegionId);
             entity.HasIndex(address => address.Key).HasOperators("text_pattern_ops");
             entity.HasIndex(address => new { address.Number, address.Key }).HasOperators("text_ops", "text_pattern_ops");
+        });
+        modelBuilder.Entity<OverviewRecord>(entity =>
+        {
+            entity.ToTable("overviews");
+            entity.HasKey(overview => overview.Id);
         });
     }
 }

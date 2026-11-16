@@ -151,11 +151,13 @@ open routes first; a row opens the route.
 Every outreach map in the admin panel (Coverage, a place or a report, a saved area, the planner, map areas) draws every built
 region as one seamless map (`OutreachAtlas.Source`, one map file per region; owner, 2026-11-15: "i should be able to
 scroll around the whole map we have"). Where our maps end is plain (`MapReach`): everything outside the built regions'
-squares is hatched in the map's ground with ink-3 stripes, the edge is a thin ink line, and squares still to build or switched off
-show in the Map areas page's dashed looks with "Waiting to build", "Building…", "Switched off" or "No homes" (to people
-who look after maps). Panning stops a few kilometres past the edge. When the view is mostly beyond it, a card in the
-middle says "No map here yet" and that outreach maps cover the map areas, with a link to Map areas for those who may
-change them (`OutreachMapOutside`). The phone keeps one region at a time (offline downloads).
+squares sits under the map veil over a low-zoom map of all of Australia (deeper and hatched outside Queensland, where areas
+can't be added), the edge is a thin ink line, and squares still to build or switched off show in the Map areas page's
+dashed looks with "Waiting to build", "Building…", "Switched off" or "No homes" (to people who look after maps). A key,
+"Where walkers have maps", sits bottom left while the view reaches past our maps, and when the view is mostly beyond them
+a note top centre says "Past the edge of our maps" (`OutreachMapKey`, `OutreachMapOutside`; owner's pick, 2026-11-16).
+Detail: [maps.md](maps.md), *Past the edge of our maps*. Before the overview is built, the map is held to our regions,
+hatched beyond, with "No map here yet". The phone keeps one region at a time (offline downloads).
 
 ## Coverage
 A job on the Map tab. Each region's streets load as it comes into view. The drawer, top to bottom: Campaign, the

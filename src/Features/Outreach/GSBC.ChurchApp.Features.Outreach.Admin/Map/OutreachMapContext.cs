@@ -106,6 +106,14 @@ public sealed class OutreachMapContext(string scope, OutreachAtlas atlas, Outrea
         FlyTo(new MapFrame(middle - up / 2, around.West, middle + up / 2, around.West + across * CardRoom, 60, 17));
     }
 
+    public IReadOnlyList<MapFrame> Clearing { get; private set; } = [];
+
+    public void Clear(IReadOnlyList<MapFrame> boxes)
+    {
+        Clearing = boxes;
+        Redraw();
+    }
+
     public void SawView(MapFrame view)
     {
         View = view;

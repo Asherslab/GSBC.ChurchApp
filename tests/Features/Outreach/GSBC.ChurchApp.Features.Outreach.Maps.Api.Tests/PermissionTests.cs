@@ -7,9 +7,9 @@ namespace GSBC.ChurchApp.Features.Outreach.Maps.Api.Tests;
 public sealed class PermissionTests
 {
     [Fact]
-    public void EverythingButReadingTheRegionsNeedsMapAreasManage()
+    public void EverythingButReadingTheRegionsAndOverviewNeedsMapAreasManage()
     {
-        IEnumerable<MethodInfo> managing = typeof(IOutreachMapsService).GetMethods().Where(method => method.Name != nameof(IOutreachMapsService.RegionsAsync));
+        IEnumerable<MethodInfo> managing = typeof(IOutreachMapsService).GetMethods().Where(method => method.Name is not (nameof(IOutreachMapsService.RegionsAsync) or nameof(IOutreachMapsService.OverviewAsync)));
 
         Assert.All(managing, method => Assert.Equal(OutreachMapsPermissions.ManageNode, method.GetCustomAttribute<RequiresAttribute>()?.Node));
     }

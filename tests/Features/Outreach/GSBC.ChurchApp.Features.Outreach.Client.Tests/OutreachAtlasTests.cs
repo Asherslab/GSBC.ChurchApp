@@ -47,6 +47,47 @@ public sealed class OutreachAtlasTests
         Assert.True(InRing(hatching[1], Middle(annerley.Core)));
     }
 
+    [Fact]
+    public void WithTheOverviewEveryJobPansAllOfAustraliaAndOutsideQueenslandIsClosed()
+    {
+        OutreachAtlas held = Atlas();
+        OutreachAtlas overview = new([.. Church.Regions, .. SouthBrisbane.Regions], [Church, SouthBrisbane], Overview());
+
+        Assert.True(held.Limits.Limit!.North < -26 && held.Limits.Limit.West > 152, "Without the overview the map is held to our regions");
+        Assert.Null(held.Backdrop);
+        Assert.Empty(held.Limits.Closed());
+        Assert.Equal(new MapFrame(-44.5, 112.5, -9, 154), overview.Limits.Limit);
+        Assert.Equal(new MapBackdrop("https://media.test/australia.pmtiles", new MapFrame(-44.5, 112.5, -9, 154), 10), overview.Backdrop);
+        IReadOnlyList<IReadOnlyList<MapPoint>> closed = overview.Limits.Closed();
+        Assert.Equal(2, closed.Count);
+        Assert.False(InRing(closed[1], new MapPoint(-33.87, 151.21)), "Sydney is outside Queensland");
+        Assert.True(InRing(closed[1], new MapPoint(-26.19, 152.66)), "Gympie is in Queensland");
+        Assert.True(Turning(closed[0]) * Turning(closed[1]) < 0, "The hole winds the other way, or MapLibre fills it");
+    }
+
+    [Fact]
+    public void WithNoRegionsYetTheOverviewStillShowsAMapOfQueensland()
+    {
+        OutreachAtlas atlas = new([], [], Overview());
+
+        Assert.NotNull(atlas.Source);
+        Assert.Empty(atlas.Source.Locations);
+        Assert.True(atlas.Opening is { North: >= -9.5, South: <= -28.5 });
+        Assert.Null(new OutreachAtlas([], [], new MapOverview()).Source);
+    }
+
+    private static MapOverview Overview() => new()
+    {
+        Map = new MapFile { Url = "https://media.test/australia.pmtiles" },
+        Bounds = new MapBounds { South = -44.5, West = 112.5, North = -9, East = 154 },
+        MaxZoom = 10,
+        Addable = [new MapCorner { Latitude = -9, Longitude = 138 }, new MapCorner { Latitude = -9, Longitude = 154.5 }, new MapCorner { Latitude = -28.165, Longitude = 154.5 },
+            new MapCorner { Latitude = -29, Longitude = 141 }, new MapCorner { Latitude = -26, Longitude = 141 }, new MapCorner { Latitude = -26, Longitude = 138 }],
+    };
+
+    private static double Turning(IReadOnlyList<MapPoint> ring) =>
+        ring.Zip(ring.Skip(1)).Sum(pair => (pair.Second.Lon - pair.First.Lon) * (pair.Second.Lat + pair.First.Lat));
+
     private static OutreachAtlas Atlas() => new([.. Church.Regions, .. SouthBrisbane.Regions], [Church, SouthBrisbane]);
 
     private static MapArea Area(string id, MapGrid grid, params MapCell[] cells)

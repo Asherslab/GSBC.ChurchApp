@@ -93,3 +93,12 @@ public sealed class RegionFileRecord
     public required string RegionId { get; set; }
     public long Version { get; set; }
 }
+
+public sealed class OverviewRecord
+{
+    public required string Id { get; set; }
+    public required string MapKey { get; set; }
+    public long MapBytes { get; set; }
+    public int MaxZoom { get; set; }
+    public DateTime BuiltAt { get; set; }
+}

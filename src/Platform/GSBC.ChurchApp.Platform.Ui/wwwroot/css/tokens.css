@@ -20,6 +20,7 @@
   --page: #ffffff;
   --surface: #ffffff;
   --map-land: #f7f4ee;
+  --map-veil: rgba(98, 106, 121, 0.3);
   --sand: #f4efe7;
   --sand-strong: #e9e1d4;
   --segment-on: var(--surface);
@@ -127,6 +128,7 @@
   --page: #141d31;
   --surface: #1d2840;
   --map-land: #141d31;
+  --map-veil: rgba(98, 106, 121, 0.25);
   --sand: #1d2840;
   --sand-strong: #26334f;
   --segment-on: #34446a;
