@@ -27,7 +27,7 @@
                 @Field(DigestFields.Title, "Title", null, false)
                 @if (Item.Kind != DigestItemKind.News)
                 {
-                    <div class="ui-pair digest-editor__when">
+                    <div class="ui-pair">
                         @Field(DigestFields.When, "When", Own ? "The day in words, such as “This Saturday, 14 November”." : null, false)
                         @Field(DigestFields.Time, "Time", null, false)
                     </div>

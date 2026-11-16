@@ -315,7 +315,6 @@ a.whats-next-card__title:active { opacity: 0.7; }
 .digest-editor__field--reworded .field__input, .digest-editor__field--reworded .picture-field__preview { box-shadow: inset 0 0 0 2px var(--accent); }
 .digest-editor__field .field__input--multiline { field-sizing: content; min-height: 5lh; max-height: 14lh; }
 .digest-editor__back { justify-self: end; }
-.digest-editor__when { grid-template-columns: minmax(0, 1fr) 10rem; align-items: start; }
 .digest-editor__missing { margin: 0; color: var(--ink-2); font-size: var(--text-caption); line-height: 1.45; }
 .digest-editor__look { position: sticky; top: 0; display: grid; gap: var(--space-sm); align-content: start; padding: var(--space-lg); border-radius: var(--radius); background: var(--sand); }
 .digest-editor__look-title { margin: 0; color: var(--ink-2); font-size: var(--text-caption); font-weight: 700; }

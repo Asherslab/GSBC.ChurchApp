@@ -69,7 +69,5 @@
   "quietFirst": {},
   "splitView": {},
   "deleteOutsideMenu": {},
-  "fieldRows": {
-    "src/Features/Events/GSBC.ChurchApp.Features.Events.Admin/Components/DigestItemWords.razor": 1
-  }
+  "fieldRows": {}
 }
