@@ -57,8 +57,11 @@ internal sealed class ChatFacts(
     }
 
     public async Task<bool> InAudienceAsync(Guid userId, ChatPlace place, string audience, CancellationToken cancellationToken) =>
-        place.Audiences.TryGetValue(audience, out Audience? found) && found is { Node: { } node, At: { } at }
-        && await IsAllowedAsync(userId, new Permission(node, at.Kind, node), at.ObjectId, cancellationToken);
+        place.Audiences.TryGetValue(audience, out Audience? found) && found is { Node: { } node, At: { ObjectId: { } objectId } at }
+        && await IsHeldThereAsync(userId, new Permission(node, at.Kind, node), objectId, cancellationToken);
+
+    public async Task<bool> IsHeldThereAsync(Guid userId, Permission permission, string objectId, CancellationToken cancellationToken) =>
+        (await access.GrantsForAsync(userId, cancellationToken)).IsHeldAt(permission, objectId);
 
     public async Task<bool> IsAllowedAsync(Guid userId, Permission permission, string? objectId, CancellationToken cancellationToken) =>
         (await access.GrantsForAsync(userId, cancellationToken)).IsAllowed(permission, objectId);
@@ -77,8 +80,7 @@ internal sealed class ChatFacts(
         return _holders[(permission.Node, objectId)] = here;
     }
 
-    internal static bool HeldThere(GrantSet grants, Permission permission, string objectId) =>
-        new GrantSet(grants.Grants.Where(grant => !grant.Scope.IsGlobal).ToList()).IsAllowed(permission, objectId);
+    internal static bool HeldThere(GrantSet grants, Permission permission, string objectId) => grants.IsHeldAt(permission, objectId);
 }
 
 internal static class ChatAudienceRules

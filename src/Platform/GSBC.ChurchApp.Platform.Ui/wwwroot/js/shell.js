@@ -32,37 +32,53 @@ window.gsbcShell = (() => {
   });
 
   const edgeSwipe = () => {
-    const edge = 24;
-    let start = null;
+    const edge = 28;
+    const slop = 10;
+    const settle = 'transform 200ms cubic-bezier(0.22, 1, 0.36, 1)';
+    let swipe = null;
+    const backOf = (page) => page?.querySelector(':scope > .topbar .icon-btn--back');
+    const settleBack = (page) => {
+      page.style.transition = settle;
+      page.style.transform = '';
+      setTimeout(() => { page.style.transition = ''; }, 220);
+    };
     document.addEventListener('touchstart', (event) => {
-      const page = scroller();
       const touch = event.touches[0];
-      const own = event.target instanceof Element && !!event.target.closest('.sheet-layer');
-      start = page?.dataset.backHref && touch.clientX < edge && !own ? { x: touch.clientX, y: touch.clientY, page, dx: 0, at: event.timeStamp } : null;
-    }, { passive: true });
+      const target = event.target instanceof Element ? event.target : null;
+      const page = event.touches.length === 1 && touch.clientX < edge && !target?.closest('.sheet-layer, dialog') ? target?.closest('.page-scroll') : null;
+      const button = backOf(page);
+      swipe = button ? { x: touch.clientX, y: touch.clientY, page, button, dx: 0, at: event.timeStamp, tracking: false } : null;
+    }, { capture: true, passive: true });
     document.addEventListener('touchmove', (event) => {
-      if (!start) return;
+      if (!swipe) return;
       const touch = event.touches[0];
-      start.dx = Math.max(0, touch.clientX - start.x);
-      if (Math.abs(touch.clientY - start.y) > start.dx) { start.page.style.transform = ''; start = null; return; }
-      if (!reducedMotion.matches) start.page.style.transform = `translateX(${start.dx}px)`;
-    }, { passive: true });
-    document.addEventListener('touchend', (event) => {
-      if (!start) return;
-      const { page, dx, at } = start;
-      start = null;
-      const fast = dx / Math.max(1, event.timeStamp - at) > 0.5;
-      if (dx > innerWidth * 0.35 || (fast && dx > 40)) {
-        window.gsbcShell.haptic('light');
-        page.style.transition = 'transform 180ms cubic-bezier(0.22, 1, 0.36, 1)';
-        page.style.transform = reducedMotion.matches ? '' : 'translateX(100%)';
-        setTimeout(() => back(page.dataset.backHref), reducedMotion.matches ? 0 : 160);
-      } else {
-        page.style.transition = 'transform 200ms cubic-bezier(0.22, 1, 0.36, 1)';
-        page.style.transform = '';
-        setTimeout(() => { page.style.transition = ''; }, 220);
+      const dx = touch.clientX - swipe.x;
+      const dy = touch.clientY - swipe.y;
+      if (!swipe.tracking) {
+        if (Math.hypot(dx, dy) < slop) return;
+        if (dx <= Math.abs(dy)) { swipe = null; return; }
+        swipe.tracking = true;
       }
-    });
+      event.preventDefault();
+      event.stopPropagation();
+      swipe.dx = Math.max(0, dx);
+      if (!reducedMotion.matches) swipe.page.style.transform = `translateX(${swipe.dx}px)`;
+    }, { capture: true, passive: false });
+    const finish = (event, cancelled) => {
+      if (!swipe?.tracking) { swipe = null; return; }
+      const { page, button, dx, at } = swipe;
+      swipe = null;
+      const fast = dx / Math.max(1, event.timeStamp - at) > 0.5;
+      if (cancelled || !(dx > innerWidth * 0.35 || (fast && dx > 40))) { settleBack(page); return; }
+      page.style.transition = 'transform 180ms cubic-bezier(0.22, 1, 0.36, 1)';
+      page.style.transform = reducedMotion.matches ? '' : 'translateX(100%)';
+      setTimeout(() => {
+        button.click();
+        requestAnimationFrame(() => { if (page.isConnected) settleBack(page); });
+      }, reducedMotion.matches ? 0 : 160);
+    };
+    document.addEventListener('touchend', (event) => finish(event, false), true);
+    document.addEventListener('touchcancel', (event) => finish(event, true), true);
   };
   edgeSwipe();
 

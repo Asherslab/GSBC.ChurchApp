@@ -1,8 +1,9 @@
 @inject UiHost Host
+@inject IJSRuntime Js
 
 @if (!Host.Desktop)
 {
-    <TextField Label="@Label" Type="time" Value="@Value" ValueChanged="ValueChanged" Min="@Min" Max="@Max" Hint="@Hint" Problem="@Problem" Required="Required" Disabled="Disabled" />
+    <TextField Label="@Label" Type="time" Value="@Value" ValueChanged="PickedAsync" Min="@Min" Max="@Max" Hint="@Hint" Problem="@ShownProblem" Required="Required" Disabled="Disabled" />
 }
 else
 {
@@ -19,7 +20,7 @@ else
             @if (_open)
             {
                 <button type="button" class="date-field__away" tabindex="-1" aria-label="Close the times" @onclick="Close"></button>
-                <div class="date-field__popover date-field__popover--times" role="listbox" aria-label="@($"Choose {Label.ToLowerInvariant()}")" data-keep-arrows>
+                <div class="date-field__popover date-field__popover--times" popover="manual" data-field-width @ref="_popover" role="listbox" aria-label="@($"Choose {Label.ToLowerInvariant()}")" data-keep-arrows>
                     @for (int index = 0; index < Times.Count; index++)
                     {
                         int at = index;
@@ -62,6 +63,7 @@ else
     private string? _typingProblem;
     private bool _open;
     private bool _focusPending;
+    private ElementReference _popover;
     private int _active;
 
     [Parameter, EditorRequired] public required string Label { get; set; }
@@ -147,6 +149,12 @@ else
 
     private bool Allowed(TimeOnly time) => OutOfRange(time) is null;
 
+    private Task PickedAsync(string value)
+    {
+        _typingProblem = TypedDates.Time(value) is { } time ? OutOfRange(time) : null;
+        return _typingProblem is null ? ValueChanged.InvokeAsync(value) : Task.CompletedTask;
+    }
+
     private void Toggle()
     {
         if (_open)
@@ -204,6 +212,7 @@ else
         if (!_open || !_focusPending || !_options.TryGetValue(_active, out ElementReference option))
             return;
         _focusPending = false;
+        await PopoverPlacement.FloatAsync(Js, _popover);
         await option.FocusAsync();
     }
 }

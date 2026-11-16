@@ -29,9 +29,12 @@
     [Parameter, EditorRequired] public required string What { get; set; }
     [Parameter] public Func<Task<bool>>? Save { get; set; }
     [Parameter] public Func<SaveState>? Autosave { get; set; }
+    [Parameter] public bool KeptAcrossPages { get; set; }
 
     private object? _editing;
     private object? _snapshot;
+
+    internal bool AsksBeforeLeavingAPage => !KeptAcrossPages && HasChanges;
 
     internal bool HasChanges =>
         Autosave is not null ? Autosave() != SaveState.Saved : (Changed?.Invoke() ?? true) && (State is null || !Equals(State(), _snapshot));
@@ -68,7 +71,7 @@
 
     private async Task CheckAsync(LocationChangingContext context)
     {
-        if (HasChanges && !await AskAsync())
+        if (AsksBeforeLeavingAPage && !await AskAsync())
             context.PreventNavigation();
     }
 

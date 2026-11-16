@@ -61,6 +61,8 @@ internal sealed class Church : IPermissionHolders, IAccessEvaluator, IRoleAssign
         Grant(person, ChatsPermissions.CheckNode, Scope.Of(ScopeKind.Ministry, MinistryId.ToString()));
     }
 
+    public void OwnsEverything(Guid person) => Grant(person, "*", Scope.Global);
+
     public void Audits(Guid person) => Grant(person, ChatsPermissions.AuditNode, Scope.Global);
 
     public void Carded(params Guid[] people) => _carded.UnionWith(people);

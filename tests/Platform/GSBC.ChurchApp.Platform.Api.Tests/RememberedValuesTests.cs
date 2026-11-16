@@ -47,6 +47,8 @@ public sealed class RememberedValuesTests
 
         public bool CanSomewhere(Permission permission) => false;
 
+        public bool CanHere(Permission permission, string objectId) => false;
+
         public void Change() => Changed?.Invoke();
     }
 }

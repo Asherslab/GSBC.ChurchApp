@@ -564,6 +564,8 @@ public sealed class MinistryFeedTests : IAsyncLifetime
         public bool Can(Permission permission, string? objectId = null) => grants.IsAllowed(permission, objectId);
 
         public bool CanSomewhere(Permission permission) => grants.IsAllowedSomewhere(permission);
+
+        public bool CanHere(Permission permission, string objectId) => grants.IsHeldAt(permission, objectId);
     }
 
     private sealed class Granted(Dictionary<Guid, GrantSet> grants) : IAccessEvaluator
