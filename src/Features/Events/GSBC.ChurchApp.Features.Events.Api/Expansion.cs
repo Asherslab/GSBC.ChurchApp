@@ -126,7 +126,7 @@ internal static class Expansion
 
     private static string BackOn(RegularEventRecord regular, IReadOnlyDictionary<DateOnly, SpecialRecord> specials, IReadOnlyList<BreakRecord> breaks, DateOnly date) =>
         DatesOf(regular.Pattern, date.AddDays(1), date.AddDays(LookingForBackOnDays))
-            .FirstOrDefault(next => specials.GetValueOrDefault(next)?.NotOn != true && !breaks.Any(stop => stop.StartDate <= next && next <= stop.EndDate)) is { } back && back != default
+            .FirstOrDefault(next => specials.GetValueOrDefault(next)?.NotOn != true && !breaks.Any(stop => stop.StartDate <= next && next <= stop.EndDate)) is var back && back != default
             ? EventDates.Format(back)
             : "";
 

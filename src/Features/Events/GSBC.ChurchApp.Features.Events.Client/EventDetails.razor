@@ -10,7 +10,7 @@
         <div class="event-actions">@Actions</div>
     }
     @Note
-    @if (!Occurrence.NotOn && Occurrence.ChangeNote.Length > 0 && Occurrence.ChangedAt is not null)
+    @if (Occurrence is { NotOn: false, ChangeNote.Length: > 0, ChangedAt: not null })
     {
         <p class="event-change"><strong>Changed</strong>@Occurrence.ChangeNote</p>
     }
