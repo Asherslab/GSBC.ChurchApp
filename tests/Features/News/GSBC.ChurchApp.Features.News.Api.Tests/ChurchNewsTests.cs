@@ -66,6 +66,34 @@ public sealed class ChurchNewsTests : NewsHost
     }
 
     [Fact]
+    public async Task TellingPeopleAgainReplacesTheEarlierNotificationWithTheNewWordsAndCountsTheSend()
+    {
+        NewsPost post = await PublishedAsync(await WriteAsync(Draft()));
+        Guid id = Guid.Parse(post.Id);
+        TellAgainRequest words = new() { Id = post.Id, Title = "Updated: Carols on the lawn", Body = "Now at 7pm.", Urgent = true };
+
+        await Assert.ThrowsAsync<RpcException>(() => DeskAsync(desk => desk.TellAgainAsync(Writing, id, words, Cancel)));
+        NewsPost told = await DeskAsync(desk => desk.TellAgainAsync(Publishing, id, words, Cancel));
+
+        Assert.Equal(2, told.TimesTold);
+        Assert.Contains(NewsTelling.Subject(id), Told.Recalled);
+        Notification again = Told.Raised[^1];
+        Assert.Equal(("Updated: Carols on the lawn", "Now at 7pm.", true), (again.Title, again.Body, again.Urgent));
+        Assert.Equal(NotificationAudience.Everyone, again.Audience);
+        Assert.Equal(2, Told.Raised.Count);
+    }
+
+    [Fact]
+    public async Task OnlyAPublishedPostCanTellPeopleAgain()
+    {
+        NewsPost draft = await WriteAsync(Draft());
+
+        await Assert.ThrowsAsync<RpcException>(() =>
+            DeskAsync(desk => desk.TellAgainAsync(Publishing, Guid.Parse(draft.Id), new TellAgainRequest { Id = draft.Id, Title = "Updated" }, Cancel)));
+        Assert.Empty(Told.Raised);
+    }
+
+    [Fact]
     public async Task APostWithTellingOffIsPublishedQuietly()
     {
         await PublishedAsync(await WriteAsync(Draft(tell: false)));

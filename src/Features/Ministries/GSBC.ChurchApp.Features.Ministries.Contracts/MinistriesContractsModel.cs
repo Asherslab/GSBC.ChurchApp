@@ -54,6 +54,8 @@ namespace GSBC.ChurchApp.Features.Ministries.Contracts;
 [ProtoSerializable(typeof(RoundRef))]
 [ProtoSerializable(typeof(WaitingRequest))]
 [ProtoSerializable(typeof(WaitingList))]
+[ProtoSerializable(typeof(EveryMinistrysNewsRequest))]
+[ProtoSerializable(typeof(EveryMinistrysNews))]
 [ProtoSerializable(typeof(MoveRequest))]
 [ProtoSerializable(typeof(MovePreview))]
 [ProtoSerializable(typeof(LeadChange))]

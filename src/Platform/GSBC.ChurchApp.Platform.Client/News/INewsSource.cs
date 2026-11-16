@@ -21,8 +21,31 @@ public interface INewsSource
     Task<NewsFromSource> LoadAsync();
 }
 
+public enum ChurchNewsStanding
+{
+    None,
+    Asked,
+    InChurchNews,
+    Kept,
+}
+
+public sealed record MinistryNewsItem(NewsItem Item, string MinistryId, ChurchNewsStanding Standing);
+
+public interface IEveryMinistrysNews
+{
+    IReadOnlyList<string> Feeds { get; }
+
+    Task<IReadOnlyList<MinistryNewsItem>> LoadAsync();
+
+    Task PutInChurchNewsAsync(MinistryNewsItem post, bool tell);
+}
+
 public static class NewsSources
 {
+    public static IServiceCollection AddEveryMinistrysNews<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TSource>(this IServiceCollection services)
+        where TSource : class, IEveryMinistrysNews =>
+        services.AddSingleton<IEveryMinistrysNews, TSource>();
+
     public static IServiceCollection AddNewsSource<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicConstructors)] TSource>(this IServiceCollection services)
         where TSource : class, INewsSource =>
         services.AddSingleton<INewsSource, TSource>();

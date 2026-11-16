@@ -1,25 +1,10 @@
 @inject IEventEditing Editing
 
-<Sheet Open="Open" OpenChanged="ToggledAsync" Title="Tell people about this change?" Lead="@($"Sends a notification to everyone who has the {CalendarName} calendar. Tapping it opens the event.")">
-    <ChildContent>
-        <TextField Label="Notification title" Value="@_title" ValueChanged="value => _title = value" MaxLength="80" />
-        <TextField Label="Message" Value="@_body" ValueChanged="value => _body = value" Multiline="true" MaxLength="240" Hint="Optional. Shown under the title." />
-        <Notice Tone="NoticeTone.Warning" Text="@_problem" />
-    </ChildContent>
-    <Actions>
-        <Button Block="true" Icon="send" Busy="_telling" OnClick="TellAsync">Tell people</Button>
-        <Button Block="true" Variant="ButtonVariant.Quiet" OnClick="() => Done.InvokeAsync(SavedWords)">Not now</Button>
-    </Actions>
-</Sheet>
+<TellSheet Open="Open" Title="Tell people about this change?" Lead="@($"Sends a notification to everyone who has the {CalendarName} calendar. Tapping it opens the event.")"
+           NotificationTitle="@Title" NotificationBody="@Body" OnTell="TellAsync" OnNotNow="() => Done.InvokeAsync(SavedWords)" />
 
 @code {
     public const string SavedWords = "Saved.";
-
-    private string _title = "";
-    private string _body = "";
-    private string? _problem;
-    private bool _telling;
-    private bool _wasOpen;
 
     [Parameter] public bool Open { get; set; }
     [Parameter, EditorRequired] public required string CalendarId { get; set; }
@@ -29,34 +14,12 @@
     [Parameter] public string Body { get; set; } = "";
     [Parameter] public EventCallback<string> Done { get; set; }
 
-    protected override void OnParametersSet()
+    private async Task<string?> TellAsync(TellWords words)
     {
-        if (Open && !_wasOpen)
-        {
-            _title = Title;
-            _body = Body;
-            _problem = null;
-        }
-        _wasOpen = Open;
-    }
-
-    private async Task ToggledAsync(bool open)
-    {
-        if (!open)
-            await Done.InvokeAsync(SavedWords);
-    }
-
-    private async Task TellAsync()
-    {
-        _telling = true;
-        _problem = null;
-        EditSent sent = await Editing.TellPeopleAsync(new TellPeople { CalendarId = CalendarId, OccurrenceId = OccurrenceId, Title = _title.Trim(), Body = _body.Trim() });
-        _telling = false;
+        EditSent sent = await Editing.TellPeopleAsync(new TellPeople { CalendarId = CalendarId, OccurrenceId = OccurrenceId, Title = words.Title, Body = words.Body });
         if (!sent.Succeeded)
-        {
-            _problem = sent.Problem;
-            return;
-        }
+            return sent.Problem;
         await Done.InvokeAsync(sent.Queued ? "Saved. People will be notified once this phone is back online." : "Saved, and people have been told.");
+        return null;
     }
 }

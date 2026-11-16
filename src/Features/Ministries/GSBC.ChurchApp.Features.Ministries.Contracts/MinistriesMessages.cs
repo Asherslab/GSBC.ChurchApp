@@ -173,6 +173,15 @@ public sealed class Post
 }
 
 [ProtoContract]
+public sealed class EveryMinistrysNewsRequest;
+
+[ProtoContract]
+public sealed class EveryMinistrysNews
+{
+    [ProtoMember(1)] public List<Post> Posts { get; set; } = [];
+}
+
+[ProtoContract]
 public sealed class FileItem
 {
     [ProtoMember(1)] public string Id { get; set; } = "";

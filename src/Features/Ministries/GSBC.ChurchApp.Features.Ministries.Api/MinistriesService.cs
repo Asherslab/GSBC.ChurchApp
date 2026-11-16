@@ -7,6 +7,7 @@ using GSBC.ChurchApp.Platform.Common;
 using GSBC.ChurchApp.Platform.Api.Calendars;
 using GSBC.ChurchApp.Platform.Api.Notifications;
 using GSBC.ChurchApp.Platform.Api.People;
+using GSBC.ChurchApp.Platform.Contracts.News;
 using GSBC.ChurchApp.Platform.Contracts.Notifications;
 using GSBC.ChurchApp.Platform.Permissions;
 using Microsoft.EntityFrameworkCore;
@@ -26,6 +27,7 @@ internal sealed class MinistriesService(
     TimeProvider time) : IMinistriesService
 {
     private const int LongestNote = 500;
+    public const int EveryMinistrysNewsKept = 200;
 
     public async ValueTask<MinistryDirectory> DirectoryAsync(DirectoryRequest request, CallContext context = default)
     {
@@ -273,6 +275,20 @@ internal sealed class MinistriesService(
         changes.Touch(ask.MinistryId);
         await db.SaveChangesAsync(cancellationToken);
         return new Done();
+    }
+
+    public async ValueTask<EveryMinistrysNews> EveryMinistrysNewsAsync(EveryMinistrysNewsRequest request, CallContext context = default)
+    {
+        CancellationToken cancellationToken = context.CancellationToken;
+        GrantSet grants = await views.GrantsAsync(SignedIn(context), cancellationToken);
+        if (!grants.IsAllowed(ChurchNews.SeeingMinistries))
+            throw new RpcException(new Status(StatusCode.PermissionDenied, "Only staff who see every ministry's news can do that."));
+        MinistryTree tree = await views.TreeAsync(cancellationToken);
+        List<Guid> shown = tree.All.Where(ministry => !tree.IsHidden(ministry.Id) && MinistryViews.IsOn(ministry, MinistryParts.News)).Select(ministry => ministry.Id).ToList();
+        List<PostRecord> posts = await db.Posts.AsNoTracking()
+            .Where(post => post.Audience == Audiences.Everyone && shown.Contains(post.MinistryId))
+            .OrderByDescending(post => post.PostedAt).Take(EveryMinistrysNewsKept).ToListAsync(cancellationToken);
+        return new EveryMinistrysNews { Posts = posts.Select(post => MinistryViews.Post(post, tree.Find(post.MinistryId)!.Name)).ToList() };
     }
 
     public async ValueTask<WaitingList> WaitingAsync(WaitingRequest request, CallContext context = default)

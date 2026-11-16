@@ -23,6 +23,7 @@ public sealed class PostRecord
     public string TellBody { get; set; } = "";
     public bool Urgent { get; set; }
     public DateTime? ToldAt { get; set; }
+    public int TimesTold { get; set; }
     public string? Source { get; set; }
     public Guid? SourceId { get; set; }
     public Guid? FromId { get; set; }
