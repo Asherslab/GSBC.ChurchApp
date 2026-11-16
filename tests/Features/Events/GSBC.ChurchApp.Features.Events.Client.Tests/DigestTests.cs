@@ -58,6 +58,24 @@ public sealed class DigestTests
     }
 
     [Fact]
+    public void TheEmailSitsCentredOnAFullWidthBackgroundWithEachPictureWhereStaffChoseAndAPostLinkingToItself()
+    {
+        EmailItem beside = new(DigestItemKind.Event, new DigestWords { Title = "Baptisms" }, "https://media.example.org/baptisms.jpg", "", "");
+        EmailItem across = beside with { Words = new DigestWords { Title = "Carols" }, PictureUrl = "https://media.example.org/carols.jpg", PictureAt = DigestPictureAt.Across };
+        EmailItem post = new(DigestItemKind.News, new DigestWords { Title = "Christmas offering" }, null, "", "", Link: "https://dev-app.example.org/open/news/offering");
+
+        string html = DigestEmail.Html("Monday 14 – Sunday 27 December", [beside, across, post], "https://dev-app.example.org/open/week", "https://media.example.org/church.jpg");
+
+        Assert.StartsWith("<table role=\"presentation\" width=\"100%\"", html);
+        Assert.Contains("width=\"100%\" align=\"center\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" bgcolor=\"#ffffff\" style=\"width:100%;max-width:600px", html);
+        Assert.True(html.IndexOf("church.jpg", StringComparison.Ordinal) < html.IndexOf("What's Next at Good Shepherd", StringComparison.Ordinal));
+        Assert.Matches("<td width=\"34%\"[^>]*><img src=\"https://media.example.org/baptisms.jpg\"", html);
+        Assert.DoesNotMatch("<td width=\"34%\"[^>]*><img src=\"https://media.example.org/carols.jpg\"", html);
+        Assert.Contains("href=\"https://dev-app.example.org/open/news/offering\"", html);
+        Assert.Contains(">Read the post</a>", html);
+    }
+
+    [Fact]
     public void AnEarlierDigestReadsAsItWasSentWithNothingDroppedItsWeeksNamedByDateAndEachDayNamedOutright()
     {
         WhatsNextDigest digest = new(Fortnight, [Item("agm", "2026-11-12"), Item("high-tea", "2026-11-21"), Item("own:bee", "")]);

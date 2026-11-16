@@ -1,0 +1,44 @@
+{
+  "title": "Weekly digest (2 of 4): the dialog that opens when you choose a thing",
+  "question": "Clicking a thing in the list (or in the preview) opens it in a dialog: its picture (from the media library, for every kind of thing, your #25), the line above the title, title, When and Time on one line, description and registration link, with Cancel bottom left and Save bottom right; Remove from the digest is in the ⋯ at the top. A reworded field has an aqua ring and 'Use the calendar's wording'. Pick the layout. My recommendation: B. It shows the thing as the app and the email will show it while you reword it, so you don't have to save to check how a long title or a picture looks; the dialog is wide, but the page behind is dimmed anyway.",
+  "options": [
+    {
+      "id": "one-column",
+      "kind": "grounded",
+      "label": "A: One column of fields",
+      "thesis": "A 640px dialog: the picture across the top with Change picture, then the fields in one column. The preview behind it updates when you save.",
+      "palette": ["#1d2840", "#2d374d", "#2ec4b6", "#f2ede4"],
+      "materials": ["cover picture with Change picture", "stacked fields", "Cancel / Save foot"],
+      "viewport": "Baptisms: picture, Line above the title, Title (reworded), When + Time, Description; Cancel and Save at the foot.",
+      "risk": "You only see how it looks once you've saved and the dialog has closed.",
+      "html": ".impeccable/mocks/digest-2/d-one-column.html",
+      "htmlFrame": "1440x900"
+    },
+    {
+      "id": "with-look",
+      "kind": "grounded",
+      "label": "B: Fields beside how it will look",
+      "thesis": "A wide dialog: the fields on the left; on the right the thing as the app's card and as the email's row, changing as you type.",
+      "palette": ["#1d2840", "#141d31", "#2ec4b6", "#ffffff"],
+      "materials": ["fields left", "live app card and email row right", "Cancel / Save foot"],
+      "viewport": "Fields with the reworded title on the left; the Baptisms card and email row with the new title on the right.",
+      "risk": "It covers most of the page, and the two small previews repeat what the big preview shows after saving.",
+      "html": ".impeccable/mocks/digest-2/e-with-look.html",
+      "htmlFrame": "1440x900"
+    },
+    {
+      "id": "picture-beside",
+      "kind": "grounded",
+      "label": "C: The picture beside the fields",
+      "thesis": "A square picture in a left column with Change picture and Remove, and under it where the thing comes from (calendar, date, place, Open the event); the fields on the right.",
+      "palette": ["#1d2840", "#2d374d", "#2ec4b6", "#b2b8c5"],
+      "materials": ["square picture column", "where it's from", "fields on the right"],
+      "viewport": "Picture and 'From the calendar · Services · Sunday 20 December' on the left, the fields on the right.",
+      "risk": "The square crop isn't how the app (wide) or the email shows the picture.",
+      "html": ".impeccable/mocks/digest-2/f-picture-beside.html",
+      "htmlFrame": "1440x900"
+    }
+  ],
+  "steer": true,
+  "followup": true
+}

@@ -755,6 +755,38 @@
         ],
         "roleHint": "Phone frame bezel ring and cutout only; device hardware, never a UI colour."
       },
+      "email-paper": {
+        "role": "neutral",
+        "displayName": "Email Paper",
+        "canonical": "#ffffff",
+        "tonalRamp": [
+          "#ffffff",
+          "#f7f7f7",
+          "#ededed",
+          "#d9d9d9",
+          "#bfbfbf",
+          "#999999",
+          "#737373",
+          "#4d4d4d"
+        ],
+        "roleHint": "The digest email's white column, where the admin panel shows the email; always light."
+      },
+      "email-behind": {
+        "role": "neutral",
+        "displayName": "Email Behind",
+        "canonical": "#e9eef4",
+        "tonalRamp": [
+          "#f6f8fb",
+          "#e9eef4",
+          "#d3dce7",
+          "#b6c3d3",
+          "#8fa1b7",
+          "#6a7f99",
+          "#4c5f77",
+          "#334256"
+        ],
+        "roleHint": "The full-width grey around the digest email's column; always light."
+      },
       "on-masthead-2": {
         "role": "primary",
         "displayName": "Masthead Text 2",

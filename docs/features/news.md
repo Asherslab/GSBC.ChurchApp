@@ -344,3 +344,12 @@ ability to renotify people when a news post is edited or updated."
 - **Offline:** the newest 30 posts' pictures, video and audio are fetched to the phone in the background, within the
   phone cache's limits: a file over 5 MB is fetched when it's first played or shown, not before (stricter than the 25 MB
   the owner allowed; raising it means changing the native cache's limit for every feature).
+
+## In the weekly digest (2026-11-17, UAT #26)
+
+Staff can put a published post in the weekly digest (Events, *Weekly digest*). News serves Events through
+`INewsHighlights` (Platform.Api/News, `NewsHighlights`): the newest published posts and the current title, opening words,
+first picture, posted date, audience and link of chosen ones. After every save that changes a post, `NewsPublisher.SaveAsync`
+tells each `INewsWatcher` which posts changed, so a digest holding one is republished with its current audience, or
+without it once it's archived, deleted or unpublished. See [events.md](events.md), *Weekly digest round 2*.
+

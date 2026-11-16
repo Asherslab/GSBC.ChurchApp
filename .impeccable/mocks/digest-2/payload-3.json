@@ -1,0 +1,44 @@
+{
+  "title": "Weekly digest (3 of 4): the email",
+  "question": "Every option fixes #27 the same way: the email is centred with a soft background filling the width on a computer, and on a phone the column fills the screen with no background margin. Each sketch shows Mail at a desk (left) and on a phone (right), in light; in Apple Mail's dark mode the colours are set so it stays readable instead of being inverted into the pale lavender you saw. Pictures are each thing's own (event, news post or the one you chose). Pick the layout of the things in it. My recommendation: A without the photo banner unless you want it. It is the layout people already know from the old What's Next: picture on the left, words on the right, which keeps the email short; the banner would be one church photo you set once.",
+  "options": [
+    {
+      "id": "beside",
+      "kind": "grounded",
+      "label": "A: Picture on the left, like the old email",
+      "thesis": "Each thing as a row: its picture on the left (about 190px), label, title, when and words on the right; a thing without a picture uses the full width. Optional: a church photo across the top, as the old email had.",
+      "palette": ["#e9eef4", "#ffffff", "#2a3d5e", "#007a70"],
+      "materials": ["centred 600px column on a full-width background", "picture-left rows", "optional church photo banner"],
+      "viewport": "Church photo, the navy What's Next bar, then No Bible Study, Baptisms and the food pantry post as rows.",
+      "risk": "On a phone the picture shrinks to about 110px beside the words.",
+      "html": ".impeccable/mocks/digest-2/g-email-beside.html",
+      "htmlFrame": "1440x900"
+    },
+    {
+      "id": "on-top",
+      "kind": "grounded",
+      "label": "B: Picture across the top of each thing",
+      "thesis": "As the email is now, centred: each thing's picture full width above its words.",
+      "palette": ["#e9eef4", "#ffffff", "#2a3d5e", "#007a70"],
+      "materials": ["centred column", "full-width pictures", "one thing per block"],
+      "viewport": "Navy bar, No Bible Study, then Baptisms with a wide picture above it.",
+      "risk": "Long: three or four things fill a screen, so people scroll a lot to reach the end.",
+      "html": ".impeccable/mocks/digest-2/h-email-on-top.html",
+      "htmlFrame": "1440x900"
+    },
+    {
+      "id": "lead",
+      "kind": "grounded",
+      "label": "C: The first thing big, the rest as rows",
+      "thesis": "The first thing in the digest leads with a wide picture; everything after it is a picture-left row, as A.",
+      "palette": ["#e9eef4", "#ffffff", "#2a3d5e", "#9a5a1c"],
+      "materials": ["centred column", "a lead with a wide picture", "picture-left rows"],
+      "viewport": "Navy bar, Baptisms with a wide picture, then No Bible Study and the food pantry post as rows.",
+      "risk": "Whatever you put first gets the big picture, so the order also decides the look.",
+      "html": ".impeccable/mocks/digest-2/i-email-lead.html",
+      "htmlFrame": "1440x900"
+    }
+  ],
+  "steer": true,
+  "followup": true
+}

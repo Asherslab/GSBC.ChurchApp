@@ -4,15 +4,20 @@ using Grpc.Core;
 using GSBC.ChurchApp.Features.Events.Api.Data;
 using GSBC.ChurchApp.Features.Events.Contracts;
 using GSBC.ChurchApp.Platform.Api.Access;
+using GSBC.ChurchApp.Platform.Api.Media;
+using GSBC.ChurchApp.Platform.Api.News;
 using GSBC.ChurchApp.Platform.Api.Notifications;
 using GSBC.ChurchApp.Platform.Common;
+using GSBC.ChurchApp.Platform.Contracts.Media;
 using Microsoft.EntityFrameworkCore;
 using ProtoBuf.Grpc;
 
 namespace GSBC.ChurchApp.Features.Events.Api;
 
-internal sealed class DigestService(EventsDbContext db, EventsPublisher publisher, INotifications notifications, TimeProvider time) : IDigestService
+internal sealed class DigestService(
+    EventsDbContext db, EventsPublisher publisher, INotifications notifications, INewsHighlights news, IMediaReferences media, TimeProvider time) : IDigestService
 {
+    private const int RecentPosts = 30;
     private const int LongestWords = 200;
     private const int LongestDescription = 2000;
     private const int MostEntries = 60;
@@ -38,15 +43,19 @@ internal sealed class DigestService(EventsDbContext db, EventsPublisher publishe
         if (range == DigestRange.Custom && chosenEnd is null)
             throw Invalid("Choose the day the digest ends.");
         List<DigestEntry> entries = Checked(request.Entries);
+        MediaRef? topPicture = request.TopPicture;
+        await VerifyPicturesAsync(entries, cancellationToken);
         DigestRecord record = await RecordAsync(id, cancellationToken);
         record.Start = start;
         record.Range = range;
         record.End = Digests.EndOf(start, range, chosenEnd);
         record.CalendarIds = request.CalendarIds.Select(calendar => Guid.TryParse(calendar, out Guid calendarId) ? calendarId : Guid.Empty).Where(calendar => calendar != Guid.Empty).Distinct().ToList();
         EventsBook book = await EventsBook.LoadAsync(db, cancellationToken);
-        IReadOnlySet<string> showing = Digests.Candidates(book, record.Start, record.End, CalendarsOf(book, record), time.GetUtcNow().UtcDateTime)
+        IReadOnlySet<string> showing = Digests.Candidates(book, record.Start, record.End, time.GetUtcNow().UtcDateTime)
             .Select(item => item.Key).ToHashSet();
         record.Entries = Digests.Kept(record.Entries, entries, showing);
+        record.TopPicture = topPicture is null ? null : (await media.VerifyAsync([topPicture], cancellationToken))[0];
+        await media.UseAsync(EventPictures.DigestOwner(record.Id), PicturesOf(record), cancellationToken);
         record.UpdatedAt = time.GetUtcNow().UtcDateTime;
         record.UpdatedBy = Caller.UserId(UserOf(context));
         await db.SaveChangesAsync(cancellationToken);
@@ -60,7 +69,8 @@ internal sealed class DigestService(EventsDbContext db, EventsPublisher publishe
         DigestRecord record = await db.Digests.SingleOrDefaultAsync(digest => digest.Id == id, cancellationToken)
             ?? throw new RpcException(new Status(StatusCode.FailedPrecondition, "Wait for the digest to save, then send it."));
         EventsBook book = await EventsBook.LoadAsync(db, cancellationToken);
-        SentDigest sent = Digests.ForApp(ItemsOf(book, record), record.End);
+        IReadOnlyDictionary<Guid, HighlightedPost> posts = await PostsOfAsync(record.Entries.Select(entry => entry.Key), cancellationToken);
+        SentDigest sent = Digests.ForApp(ItemsOf(book, posts, record), record.End);
         if (sent.Items.Count == 0)
             throw new RpcException(new Status(StatusCode.FailedPrecondition, "Tick at least one item to send."));
 
@@ -74,7 +84,7 @@ internal sealed class DigestService(EventsDbContext db, EventsPublisher publishe
         await publisher.PublishAsync(cancellationToken);
         if (Digests.Notifies(record, request.NotifyAgain))
         {
-            await notifications.RaiseOneOfAsync(Digests.ForEveryoneWhoSeesIt(book, sent, record.Start).Select(each => each with { Actor = record.SentBy }).ToList(), cancellationToken);
+            await notifications.RaiseOneOfAsync(Digests.ForEveryoneWhoSeesIt(book, posts, sent, record.Start).Select(each => each with { Actor = record.SentBy }).ToList(), cancellationToken);
             record.NotifiedAt = now;
             await db.SaveChangesAsync(cancellationToken);
         }
@@ -91,14 +101,17 @@ internal sealed class DigestService(EventsDbContext db, EventsPublisher publishe
             throw new RpcException(new Status(StatusCode.Unauthenticated, "Sign in to send the digest to your phone."));
 
         EventsBook book = await EventsBook.LoadAsync(db, cancellationToken);
-        await notifications.RaiseAsync(Digests.Notification(book, latest.Sent, NotificationAudience.Person(me)) with { Test = true, Actor = me }, cancellationToken);
+        IReadOnlyDictionary<Guid, HighlightedPost> posts = await PostsOfAsync(latest.Sent.Items.Select(item => item.Item.Key), cancellationToken);
+        await notifications.RaiseAsync(Digests.Notification(book, posts, latest.Sent, NotificationAudience.Person(me)) with { Test = true, Actor = me }, cancellationToken);
         return new Done();
     }
 
     private async Task<DigestDraft> DraftAsync(DigestRecord record, CancellationToken cancellationToken)
     {
         EventsBook book = await EventsBook.LoadAsync(db, cancellationToken);
-        List<DigestItem> items = ItemsOf(book, record);
+        IReadOnlyDictionary<Guid, HighlightedPost> posts = await PostsOfAsync(record.Entries.Select(entry => entry.Key), cancellationToken);
+        List<DigestItem> items = ItemsOf(book, posts, record);
+        IReadOnlyList<HighlightedPost> recent = await news.RecentAsync(RecentPosts, cancellationToken);
         DigestRecord? latest = await LatestSentAsync(cancellationToken);
         return new DigestDraft
         {
@@ -109,6 +122,9 @@ internal sealed class DigestService(EventsDbContext db, EventsPublisher publishe
             CalendarIds = CalendarsOf(book, record).Select(id => id.ToString()).ToList(),
             Calendars = book.Calendars.Values.OrderBy(calendar => calendar.Order).ThenBy(calendar => calendar.Name).Select(EventsPublisher.CalendarPayload).ToList(),
             Items = items,
+            Calendar = Digests.Candidates(book, record.Start, record.End, time.GetUtcNow().UtcDateTime),
+            Posts = recent.Select(Digests.NewsItem).ToList(),
+            TopPicture = record.TopPicture,
             SavedAt = record.UpdatedAt != default ? record.UpdatedAt : null,
             SentAt = record.SentAt,
             NotifiedAt = record.NotifiedAt,
@@ -117,8 +133,24 @@ internal sealed class DigestService(EventsDbContext db, EventsPublisher publishe
         };
     }
 
-    private List<DigestItem> ItemsOf(EventsBook book, DigestRecord record) =>
-        Digests.Merge(Digests.Candidates(book, record.Start, record.End, CalendarsOf(book, record), time.GetUtcNow().UtcDateTime), record.Entries);
+    private List<DigestItem> ItemsOf(EventsBook book, IReadOnlyDictionary<Guid, HighlightedPost> posts, DigestRecord record) =>
+        Digests.Merge(Digests.Candidates(book, record.Start, record.End, time.GetUtcNow().UtcDateTime), posts, record.Entries);
+
+    private Task<IReadOnlyDictionary<Guid, HighlightedPost>> PostsOfAsync(IEnumerable<string> keys, CancellationToken cancellationToken) =>
+        news.PublishedAsync(Digests.PostsIn(keys), cancellationToken);
+
+    private static List<MediaRef> PicturesOf(DigestRecord record) =>
+        [.. new[] { record.TopPicture }.OfType<MediaRef>(), .. record.Entries.Where(entry => entry.Changed.Contains(DigestFields.Picture)).Select(entry => entry.Words.Picture).OfType<MediaRef>()];
+
+    private async Task VerifyPicturesAsync(List<DigestEntry> entries, CancellationToken cancellationToken)
+    {
+        List<DigestEntry> pictured = entries.Where(entry => entry.Changed.Contains(DigestFields.Picture) && entry.Words.Picture is not null).ToList();
+        if (pictured.Count == 0)
+            return;
+        IReadOnlyList<MediaRef> verified = await media.VerifyAsync(pictured.Select(entry => entry.Words.Picture!).ToList(), cancellationToken);
+        for (int index = 0; index < pictured.Count; index++)
+            pictured[index].Words = pictured[index].Words.WithPicture(verified[index]);
+    }
 
     private static IReadOnlySet<Guid> CalendarsOf(EventsBook book, DigestRecord record) =>
         record.CalendarIds is { } chosen ? chosen.Where(book.Calendars.ContainsKey).ToHashSet() : Digests.DefaultCalendars(book);
@@ -168,7 +200,7 @@ internal sealed class DigestService(EventsDbContext db, EventsPublisher publishe
         }
         return entries.Select(entry => new DigestEntry
         {
-            Key = entry.Key, Included = entry.Included, Own = entry.Own, Words = entry.Words.Copy(),
+            Key = entry.Key, Included = entry.Included, Own = entry.Own, Words = entry.Words.Copy(), PictureAt = Enum.IsDefined(entry.PictureAt) ? entry.PictureAt : DigestPictureAt.Beside,
             Changed = entry.Own ? [.. DigestFields.All] : entry.Changed.Where(DigestFields.All.Contains).Distinct().ToList(),
         }).ToList();
     }

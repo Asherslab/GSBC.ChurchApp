@@ -1,0 +1,213 @@
+@using GSBC.ChurchApp.Platform.Ui.Content
+@using GSBC.ChurchApp.Platform.Contracts.Media
+@inject IJSRuntime Js
+
+<UnsavedGuard Changed="() => Changed" What="your changes to this item" />
+<Sheet Open="true" OpenChanged="_ => Cancel()" Widest="true" Title="@Heading" Lead="@Source" LayerClass="digest-editor-layer">
+    <Tools>
+        @if (!IsNew)
+        {
+            <Menu Label="@($"More for {Heading}")" Items="Tools" Small="true" />
+        }
+    </Tools>
+    <ChildContent>
+        <div class="digest-editor">
+            <div class="digest-editor__fields">
+                <div class="@FieldClass(DigestFields.Picture)">
+                    <PictureField Label="Picture" Value="Shown.Picture" ValueChanged="SetPicture" AsCover="true" Adding="Choose a picture"
+                                  Hint="@PictureHint" Unavailable="Pictures can only be chosen in the admin panel." />
+                    @BackTo(DigestFields.Picture)
+                </div>
+                @if (Shown.Picture is not null && _working.Kind != DigestItemKind.NotOn)
+                {
+                    <Segmented TValue="DigestPictureAt" Label="Picture in the email" ShowLabel="true" Options="PictureAtOptions" Value="_working.PictureAt" ValueChanged="SetPictureAt"
+                               Hint="Where the picture sits in the email. The app always shows it across the top." />
+                }
+                @Field(DigestFields.Label, "Line above the title", "Optional. A few words above the title, such as the ministry it's from.", false)
+                @Field(DigestFields.Title, "Title", null, false)
+                @if (Item.Kind != DigestItemKind.News)
+                {
+                    <div class="ui-pair">
+                        @Field(DigestFields.When, "When", Own ? "The day in words, such as “This Saturday, 14 November”." : null, false)
+                        @Field(DigestFields.Time, "Time", null, false)
+                    </div>
+                }
+                @Field(DigestFields.Description, "Description", "Leave a blank line to start a new paragraph.", true)
+                @Field(DigestFields.Register, "Registration link", "A web address for signing up. Adds a Register button.", false)
+                @if (Item is { Kind: not DigestItemKind.Own, Missing.Count: > 0 })
+                {
+                    <p class="digest-editor__missing">The event in the calendar still needs @string.Join(" and ", Item.Missing.Select(EventWords.Need)). The digest says so until the event has it, unless you reword it here.</p>
+                }
+            </div>
+            <aside class="digest-editor__look" aria-label="How it will look">
+                <h3 class="digest-editor__look-title">In the app</h3>
+                <div class="digest-editor__card">
+                    <WhatsNextCard Item="AppItem" When="@WhatsNextDigest.WhenLine(Shown)" Preview="true" />
+                </div>
+                <h3 class="digest-editor__look-title">In the email</h3>
+                <div class="digest-editor__email">
+                    <iframe @ref="_emailFrame" class="digest-editor__email-frame" title="This item in the email" srcdoc="@EmailHtml" sandbox="allow-same-origin" width="@DigestEmail.Width" height="@EmailHeight"></iframe>
+                </div>
+            </aside>
+        </div>
+    </ChildContent>
+    <Actions>
+        <SaveBar Label="@(IsNew ? "Add to the digest" : "Save")" New="IsNew" OnSave="Save" OnCancel="Cancel" Blocked="@Blocked" Detail="@(IsNew ? null : ChangedLine)" />
+    </Actions>
+</Sheet>
+
+@code {
+    private static readonly IReadOnlyList<SegmentOption<DigestPictureAt>> PictureAtOptions =
+        [new(DigestPictureAt.Beside, "Beside the words"), new(DigestPictureAt.Across, "Across the top")];
+
+    private const int EmailHeight = 900;
+    private const double EmailScale = 0.54;
+
+    private ElementReference _emailFrame;
+
+    private DigestItem _working = new();
+    private string _started = "";
+
+    [Parameter, EditorRequired] public required DigestItem Item { get; set; }
+    [Parameter] public bool IsNew { get; set; }
+    [Parameter] public Func<string, string> Shareable { get; set; } = link => link;
+    [Parameter] public EventCallback<DigestItem> OnSave { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+    [Parameter] public EventCallback OnRemove { get; set; }
+
+    private DigestWords Shown => _working.Shown;
+
+    private bool Own => Item.Kind == DigestItemKind.Own;
+
+    private bool Changed => Snapshot(_working) != _started;
+
+    private string Heading => Shown.Title.Trim().Length > 0 ? Shown.Title : IsNew ? "Something else for the digest" : "Untitled";
+
+    private string? Blocked => Own && Shown.Title.Trim().Length == 0 ? "Enter a title for the item." : null;
+
+    private string? ChangedLine => Item.Kind is DigestItemKind.Own ? null
+        : _working.Changed.Count == 0 ? null
+        : $"Reworded for the digest: {string.Join(", ", _working.Changed.Select(NameOf))}";
+
+    private string Source => Item.Kind switch
+    {
+        DigestItemKind.Own => "Written for the digest; it isn't on the calendar or in church news.",
+        DigestItemKind.News when EventDates.Parse(Item.Posted) is { } posted =>
+            $"A church news post from {EventWords.LongDate(posted)}. What you change here is for the digest only; the post keeps its own words.",
+        DigestItemKind.News => "A church news post. What you change here is for the digest only; the post keeps its own words.",
+        _ => $"From the {Item.CalendarName} calendar{DatesOf(Item)}. What you change here is for the digest only; the calendar keeps its own words.",
+    };
+
+    private string PictureHint => Item.Kind switch
+    {
+        DigestItemKind.Own => "From the media library. Shown in the app and the email.",
+        DigestItemKind.News => "The post's own picture. Choose another from the media library for the digest only.",
+        DigestItemKind.NotOn => "A date that isn't on shows without a picture in the email.",
+        _ => "The event's picture. Choose another from the media library for the digest only.",
+    };
+
+    private IReadOnlyList<MenuItem> Tools => [this.Item("Remove from the digest", () => OnRemove.InvokeAsync(), "trash", danger: true)];
+
+    private DigestShownItem AppItem => new()
+    {
+        Key = Item.Key, Kind = Item.Kind, Words = Shown, Picture = Shown.Picture, Place = Item.Place, Contacts = Item.Contacts,
+        OccurrenceId = Item.OccurrenceIds.FirstOrDefault() ?? "", Link = Item.Link, Posted = Item.Posted,
+    };
+
+    private string EmailHtml =>
+        $"<!doctype html><html><head><meta charset=\"utf-8\"></head><body style=\"margin:0;background:#ffffff\">{DigestEmail.ItemHtml(EmailItem.Of(_working, Shareable))}</body></html>";
+
+    protected override void OnInitialized()
+    {
+        _working = Copy(Item);
+        _started = Snapshot(_working);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+            await Js.InvokeVoidAsync("gsbcEvents.fitFrameHeight", _emailFrame, EmailScale);
+    }
+
+    private RenderFragment Field(string field, string label, string? hint, bool multiline) =>
+        @<div class="@FieldClass(field)">
+            <TextField Label="@label" Value="@Shown[field]" ValueChanged="value => Set(field, value)" Multiline="multiline" Hint="@hint"
+                       MaxLength="@(multiline ? 2000 : 200)" Type="@(field == DigestFields.Register ? "url" : "text")" />
+            @BackTo(field)
+        </div>;
+
+    private RenderFragment BackTo(string field) => !Own && _working.Changed.Contains(field)
+        ? @<Button Variant="ButtonVariant.Link" Class="digest-editor__back" OnClick="() => PutBack(field)">@BackWords(field)</Button>
+        : @<text></text>;
+
+    private string FieldClass(string field) =>
+        $"digest-editor__field {(!Own && _working.Changed.Contains(field) ? "digest-editor__field--reworded" : "")}";
+
+    private string BackWords(string field) => (field, Item.Kind) switch
+    {
+        (DigestFields.Picture, DigestItemKind.News) => "Use the post's picture",
+        (DigestFields.Picture, _) => "Use the event's picture",
+        (_, DigestItemKind.News) => "Use the post's words",
+        (DigestFields.Description, _) => "Back to the calendar's words",
+        _ => "Use the calendar's wording",
+    };
+
+    private static string NameOf(string field) => field switch
+    {
+        DigestFields.Label => "line above the title",
+        DigestFields.Title => "title",
+        DigestFields.When => "when",
+        DigestFields.Time => "time",
+        DigestFields.Description => "description",
+        DigestFields.Register => "registration link",
+        _ => "picture",
+    };
+
+    private static string DatesOf(DigestItem item) =>
+        EventDates.Parse(item.FirstDate) is not { } first ? ""
+        : EventDates.Parse(item.LastDate) is { } last && last != first ? $", {EventWords.Range(first, last)}"
+        : $", {EventWords.LongDate(first)}";
+
+    private void Set(string field, string value)
+    {
+        _working.Words = _working.Words.With(field, value);
+        if (Own || value != _working.CalendarWords[field])
+        {
+            if (!_working.Changed.Contains(field))
+                _working.Changed.Add(field);
+        }
+        else
+            _working.Changed.Remove(field);
+    }
+
+    private void SetPicture(MediaRef? picture)
+    {
+        _working.Words = _working.Words.WithPicture(picture);
+        if (!_working.Changed.Contains(DigestFields.Picture))
+            _working.Changed.Add(DigestFields.Picture);
+    }
+
+    private void SetPictureAt(DigestPictureAt at) => _working.PictureAt = at;
+
+    private void PutBack(string field)
+    {
+        _working.Changed.Remove(field);
+        _working.Words = field == DigestFields.Picture ? _working.Words.WithPicture(null) : _working.Words.With(field, "");
+    }
+
+    private Task Save() => OnSave.InvokeAsync(_working);
+
+    private Task Cancel() => OnCancel.InvokeAsync();
+
+    private static DigestItem Copy(DigestItem item) => new()
+    {
+        Key = item.Key, Kind = item.Kind, Included = item.Included, IsNew = item.IsNew, CalendarWords = item.CalendarWords.Copy(), Words = item.Words.Copy(),
+        Changed = [.. item.Changed], Picture = item.Picture, Place = item.Place, Contacts = item.Contacts, OccurrenceIds = [.. item.OccurrenceIds],
+        FirstDate = item.FirstDate, LastDate = item.LastDate, CalendarId = item.CalendarId, CalendarName = item.CalendarName, ForEveryone = item.ForEveryone,
+        Missing = [.. item.Missing], CalendarIds = [.. item.CalendarIds], Special = item.Special, Link = item.Link, Posted = item.Posted, OnlyFor = item.OnlyFor,
+        PictureAt = item.PictureAt,
+    };
+
+    private static string Snapshot(DigestItem item) =>
+        string.Join('\u001f', [.. DigestFields.All.Select(field => item.Shown[field]), item.Shown.Picture?.Id ?? "", item.PictureAt.ToString(), string.Join(',', item.Changed.Order())]);
+}

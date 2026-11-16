@@ -1,0 +1,94 @@
+@using GSBC.ChurchApp.Platform.Contracts.Media
+
+@if (Item.Kind == DigestItemKind.NotOn)
+{
+    <Card Tone="CardTone.Callout" Class="whats-next-off">
+        <span class="whats-next-off__head"><Icon Name="circle-off" Size="IconSize.Small" />@Title("whats-next-off__title")</span>
+        <span class="whats-next-off__when">@When</span>
+        @if (Item.Words.Description.Length > 0)
+        {
+            <span class="whats-next-off__about">@Item.Words.Description</span>
+        }
+    </Card>
+}
+else
+{
+    <Card Tone="CardTone.Raised" Class="whats-next-card" Media="@CoverOf(Item.Picture)" Footer="@Actions()">
+        @if (Label is { Length: > 0 } label)
+        {
+            <span class="whats-next-card__label @(Item.Kind == DigestItemKind.News ? "whats-next-card__label--news" : "")">@label</span>
+        }
+        @Title("whats-next-card__title")
+        @if (When is { Length: > 0 } when)
+        {
+            <span class="whats-next-card__when">@when</span>
+        }
+        @foreach (string paragraph in Paragraphs(Item.Words.Description))
+        {
+            <span class="whats-next-card__about">@paragraph</span>
+        }
+        @if (Item.Place.Length > 0)
+        {
+            <span class="whats-next-card__fact"><Icon Name="map-pin" Size="IconSize.Small" />@Item.Place</span>
+        }
+        @if (Item.Contacts.Length > 0)
+        {
+            <span class="whats-next-card__fact"><Icon Name="user" Size="IconSize.Small" />@Item.Contacts</span>
+        }
+    </Card>
+}
+
+@code {
+    [Parameter, EditorRequired] public required DigestShownItem Item { get; set; }
+    [Parameter] public string When { get; set; } = "";
+    [Parameter] public bool Preview { get; set; }
+    [Parameter] public Func<DigestShownItem, bool>? HasEvent { get; set; }
+    [Parameter] public EventCallback<DigestShownItem> OnAdd { get; set; }
+    [Parameter] public EventCallback<string> OnRegister { get; set; }
+    [Parameter] public EventCallback<DigestShownItem> OnPick { get; set; }
+
+    private string Label =>
+        Item.Words.Label == Item.Words.Title ? ""
+        : Item.Kind == DigestItemKind.News && EventDates.Parse(Item.Posted) is { } posted
+            ? EventWords.Join(Item.Words.Label, EventWords.LongDate(posted))
+            : Item.Words.Label;
+
+    private string TitleWords => Item.Words.Title.Length > 0 ? Item.Words.Title : "Untitled";
+
+    private RenderFragment Title(string css)
+    {
+        if (Preview && OnPick.HasDelegate)
+            return @<Button Variant="ButtonVariant.Link" Class="@($"{css} whats-next__pick")" AriaLabel="@($"Change {TitleWords}")" OnClick="() => OnPick.InvokeAsync(Item)">@TitleWords</Button>;
+        if (!Preview && Item is { Kind: DigestItemKind.News, Link.Length: > 0 })
+            return @<a class="@css" href="@Item.Link">@TitleWords</a>;
+        if (!Preview && HasEvent?.Invoke(Item) == true)
+            return @<a class="@css" href="@EventsPlaces.EventPath(Item.OccurrenceId)">@TitleWords</a>;
+        return @<strong class="@css">@TitleWords</strong>;
+    }
+
+    private static IEnumerable<string> Paragraphs(string text) =>
+        text.Split("\n\n", StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+    private static RenderFragment? CoverOf(MediaRef? picture) =>
+        picture is null ? null : @<MediaCover Media="picture" Alt="" />;
+
+    private RenderFragment? Actions()
+    {
+        if (Item is { Kind: DigestItemKind.News, Link.Length: > 0 })
+            return @<Button Small="true" Variant="ButtonVariant.Quiet" Icon="chevron-right" Href="@(Preview ? null : Item.Link)">Read the post</Button>;
+        bool register = Item.Words.RegisterLink.Length > 0;
+        bool add = Preview ? Item.OccurrenceId.Length > 0 : HasEvent?.Invoke(Item) == true;
+        if (!register && !add)
+            return null;
+        return @<text>
+            @if (register)
+            {
+                <Button Small="true" Icon="external-link" OnClick="() => Preview ? Task.CompletedTask : OnRegister.InvokeAsync(Item.Words.RegisterLink)">Register</Button>
+            }
+            @if (add)
+            {
+                <Button Small="true" Variant="ButtonVariant.Quiet" Icon="calendar-plus" OnClick="() => Preview ? Task.CompletedTask : OnAdd.InvokeAsync(Item)">Add to calendar</Button>
+            }
+        </text>;
+    }
+}

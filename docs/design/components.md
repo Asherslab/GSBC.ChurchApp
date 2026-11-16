@@ -21,7 +21,7 @@ The system ships in `src/Platform/GSBC.ChurchApp.Platform.Ui`; the app links all
 | Callout, picture card, navy card | `Card` | `CardTone.Callout`, `Raised` (only where a picture leads), `Masthead` |
 | Rows and boxed lists | `ListGroup`, `ListRow` | Tile tones, chevron or external-link icon; `Reading`, `TitleExtra`, `Below`; `Unread` sets the dot and weight; `Current` marks the open one (`aria-current`) |
 | Pull to refresh | `PullToRefresh` | Wraps the whole page body, masthead included. Touch only, so offer a button too |
-| Sheet | `Sheet` | Escape and the scrim close it; centred on wide screens; `Cover` adds the navy band (name it with `Label`); `Wide`; `LayerClass`. A native `<dialog>` via `showModal()` so no ancestor clips it; opening moves focus in without scrolling the page, to an `autofocus` child if there is one, and closing returns it |
+| Sheet | `Sheet` | Escape and the scrim close it; centred on wide screens; `Cover` adds the navy band (name it with `Label`); `Wide` (760px); `Widest` (1080px, for one item's fields beside its live look; its actions held in view); `ActionsInView` (the actions held at its foot while a long list scrolls); `LayerClass`. A native `<dialog>` via `showModal()` so no ancestor clips it; opening moves focus in without scrolling the page, to an `autofocus` child if there is one, and closing returns it |
 | Sheet heading | `SheetHeading` | `Icon`, `Title`, `Note`; goes in a sheet's `Cover` |
 | Paged sheet | `PagedSheet` | `Count`, `Cover`, `Page`, `Action`; dots, swipe, Next and Done |
 | Facts | `FactList`, `Fact` | A fact with neither text nor `ChildContent` is skipped |
@@ -45,7 +45,7 @@ The system ships in `src/Platform/GSBC.ChurchApp.Platform.Ui`; the app links all
 | Filters | `FilterChips`, `FilterOption` | One choice from a set, optional counts; `Rail` for the workbench's rail |
 | Office week | `IOfficeWeekSource`, `OfficeWeek` | Features contribute tasks and spans (`Everyone`, `Layer`, `Draft`); `NavEntry.Summary` is an area's one line |
 | Day rail | `DayRail` | `Days` 7 or 14; `Legend`; `Selected`; a span ending where it starts is a moment |
-| Admin workbench | `Workbench` | `Aside`, main, `Detail`; `FoldAside` hides the rail while a record is open at 1360px and under; `Narrow`; `Showing` |
+| Admin workbench | `Workbench` | `Aside`, main, `Detail`; `FoldAside` hides the rail while a record is open at 1360px and under; `WideDetail` gives the detail column the free room (a list beside a large preview); `Narrow`; `Showing` |
 | Record head | `PaneHead` | `Title`, `Lead`, `Actions` (the ⋯ menu), `Tools`, `OnOpen`, `OnClose` |
 | More actions | `Menu`, `MenuItem`, `MenuItems`, `MenuButton` | `this.Item(label, action, icon:, detail:, danger:, startsGroup:, @checked:, disabled:)`; `Text`; `MenuButton` is a row in a hand-built panel |
 | A small panel | `Popover` | Focus moves in; Escape and a click outside close it |
@@ -94,6 +94,7 @@ The system ships in `src/Platform/GSBC.ChurchApp.Platform.Ui`; the app links all
 | Week rail | `WeekRail` | `Days` (`RailDay`), `Today`, `Here`, `Picked` |
 | Choose several on and off | `ToggleChips` | `ToggleChip`; `toggle-chips--wrap` wraps instead of scrolling |
 | Calendar | `DaySection`, `MonthGrid`, `EventHead`, `DateBlock`, `EventDetails`, `EventEditor`, `ComingUpTile` (Events Client) | Both sides (`InPanel`); admin page `CalendarWorkbench`, `CalendarSettingsPanel`, `BreakPanel` |
+| Weekly digest and What's next | `WhatsNextView`, `WhatsNextCard`, `DigestEmail` (Events Client); `DigestDesk`, `DigestItemEditor`, `DigestAddSheet` (Events Admin) | `WhatsNextCard` `Preview` and `OnPick` in the desk; `DigestEmail.Html` and `ItemHtml`; `events.css` |
 | Chats | `ChatsList`, `ChatView`, `ChatFrame`, `ChatPeople`, `ChatComposer`, `MessageActions` (Chats Client); `ChatsPanel` (Chats Admin) | One screen both sides: `ChatFrame` is the phone's `Page`, or `InPanel` a `PaneHead` and `Beside` pane; `MessageActions InPanel` is a `Popover`; `chats.css` |
 | Icons, mark | `Icon`, `BrandMark` | Lucide paths (ISC); the mark is the logo pack's file as a mask, never redrawn |
 

@@ -2,7 +2,7 @@
   "spacing": {
     "src/Features/Analytics/GSBC.ChurchApp.Features.Analytics.Client/wwwroot/css/analytics.css": 10,
     "src/Features/Configuration/GSBC.ChurchApp.Features.Configuration.Client/wwwroot/css/drafts.css": 112,
-    "src/Features/Events/GSBC.ChurchApp.Features.Events.Client/wwwroot/css/events.css": 187,
+    "src/Features/Events/GSBC.ChurchApp.Features.Events.Client/wwwroot/css/events.css": 154,
     "src/Features/Feedback/GSBC.ChurchApp.Features.Feedback.Client/wwwroot/css/feedback.css": 46,
     "src/Features/Media/GSBC.ChurchApp.Features.Media.Client/wwwroot/css/media.css": 46,
     "src/Features/Ministries/GSBC.ChurchApp.Features.Ministries.Client/wwwroot/css/ministries.css": 28,
@@ -29,9 +29,8 @@
     "src/Features/Configuration/GSBC.ChurchApp.Features.Configuration.Client/Components/Styling/StylingPhone.razor": 4,
     "src/Features/Configuration/GSBC.ChurchApp.Features.Configuration.Client/Components/Styling/StylingWorkspace.razor": 7,
     "src/Features/Configuration/GSBC.ChurchApp.Features.Configuration.Client/Components/Styling/TabsPanel.razor": 1,
-    "src/Features/Events/GSBC.ChurchApp.Features.Events.Admin/Components/DigestItemWords.razor": 2,
     "src/Features/Events/GSBC.ChurchApp.Features.Events.Admin/Pages/CalendarWorkbench.razor": 3,
-    "src/Features/Events/GSBC.ChurchApp.Features.Events.Admin/Pages/DigestDesk.razor": 3,
+    "src/Features/Events/GSBC.ChurchApp.Features.Events.Admin/Pages/DigestDesk.razor": 1,
     "src/Features/Events/GSBC.ChurchApp.Features.Events.App/Pages/EventPage.razor": 1,
     "src/Features/Events/GSBC.ChurchApp.Features.Events.App/Pages/MonthView.razor": 2,
     "src/Features/Events/GSBC.ChurchApp.Features.Events.Client/AddableField.razor": 1,
@@ -70,7 +69,5 @@
   "quietFirst": {},
   "splitView": {},
   "deleteOutsideMenu": {},
-  "fieldRows": {
-    "src/Features/Events/GSBC.ChurchApp.Features.Events.Admin/Components/DigestItemWords.razor": 1
-  }
+  "fieldRows": {}
 }

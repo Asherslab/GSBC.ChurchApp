@@ -27,6 +27,8 @@ A bottom sheet over the scrim with a grabber, heading and lead. At 720px and up 
 - **Actions:** DESIGN.md, *Pattern map* (Deleting): the phone stacks them full width, main on top; the admin panel puts the main one right, the back-out (Keep it, Cancel, Stay here) far left. A confirm says what goes with the thing and asks once.
 - **Tools:** a sheet editing one item puts its ⋯ menu (Delete last, red) on the title's line (`Tools`), never its own row; the roster's sheets use it.
 - **Wide:** a sheet with a whole list to choose from (the place picker) is 760px on wide screens.
+- **Widest:** a sheet editing one item where how it looks matters (a digest item) is 1080px, the fields beside the item as it will show; its actions stay in view.
+- **Actions in view:** a sheet with a long list (adding to the digest) keeps its actions at its foot, ruled off, while the list scrolls; with the keyboard up they go back into the flow.
 - **Cover:** an optional navy band across the top in masthead colours. It says what the sheet is about, so a covered sheet is usually named by its label, not a title.
 - **Paged sheet:** a few items, each with cover and body; orange page dots (44px targets) and a swipe turn the page. Actions: an optional per-page primary over Next, which reads Done last; with no action, Next is primary. Only a page change slides; one item shows no dots.
 - **Sheet heading:** a covered sheet's head: an icon tile beside the title, with an optional beige note line. What's new and the notifications welcome use it.
