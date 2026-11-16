@@ -450,14 +450,40 @@ over its own square); the drawing was at fault:
   region's view now sees the campaign's coverage whichever region it was recorded in.
 - **On the phone nothing changes:** a walk or a day's route uses one region, so one map and one set of streets, and
   coverage is keyed by OpenStreetMap street, so a street walked from either area is done in both.
-- **Areas share one grid from now on (owner, 2026-11-15:** "One shared grid", asked whether a new area that overlaps
-  another should snap to it). A new area takes the oldest area's grid (same square size and lines) and is the squares
-  of that grid that its square reaches by at least a quarter of a square, leaving out squares another area on the grid
-  has switched on; a square another area has switched off can be taken (the inner city out of *Around the church*).
-  Switching on a square another area has on is refused ("A region you add is already in another area. Switch it off
-  there first."). Adding an area where every square is taken is refused too. Areas made before this keep their own grid
-  and the drawing above copes with them; in dev, *South Brisbane* moves onto the shared grid by deleting it and adding it
-  again (its region ids change once).
+- **Areas share one grid (owner, 2026-11-15:** "One shared grid", asked whether a new area that overlaps another
+  should snap to it). A new area takes the oldest area's grid (same square size and lines) and is the squares of that
+  grid that its square reaches by at least a quarter of a square.
+
+### A square can be in more than one area (2026-11-16)
+
+The owner, shown *Add a map area* refusing with "A region you add is already in another area. Switch it off there
+first.": "what? no. we have square blocks, and cities aren't perfect squares. regions will have to be able to overlap".
+Areas describe places staff care about (a city, a suburb cluster), and those overlap. The refusals and the leaving out
+of squares another area has on (2026-11-15) are gone; the shared grid stays.
+
+- **A square is built once and shared.** Its build state lives in `outreach_maps.squares` (waiting to build, no homes,
+  its last version and name) and its region (the map file, the streets file, its letterboxes, its feed record) belongs to
+  the square, not to an area. `outreach_maps.cells` is now only "this area includes this square, on or off". A square's
+  id is the grid's id and its place on the grid (`church-c3`, `church-rm1c3`): every area on the shared grid gives the
+  same square the same id, so its region id never changes when areas come and go. The grid's id is the oldest area's
+  id when the grid was made (`areas.grid_id`; *Around the church*'s ids are unchanged).
+- **A square is on while any area has it on.** Adding an area or switching a square on where another area already has
+  it builds nothing and downloads nothing new; the estimate gives that square's real size and says which areas already
+  have it (`CellEstimate.AlsoIn`). Switching it off in one area, or deleting that area, leaves it for the others; only a
+  square no area has on is deleted (files, feed record, addresses), and *What uses a region* lists only those. Each
+  area's drawer says where else a square is ("also in Around the church"), and a square switched off here but on
+  elsewhere reads "Off in this area. It's on in Around the church, so phones still get it."
+- **Building:** an area's build builds the squares it has on that are waiting, whichever area asked for them; an area
+  waiting only on squares another area built finishes at once. *Rebuild* marks all of the area's squares, shared ones
+  included. An area left built while a square it has on still waits (another area asked for it, then switched it off)
+  goes back to waiting so the square still builds.
+- **Phones download each square once**, as the regions feed has one record per square; coverage and planning already
+  count each street once where regions overlap.
+- **Areas made on a grid of their own move onto the shared grid by themselves** at start-up (dev's *South Brisbane*):
+  the squares of the shared grid that its switched-on squares reach by a quarter, those already built shared at once
+  and the rest built by the next run; its old regions are deleted (their ids change once). The owner has nothing to do.
+- **The admin map opens on the church**: the regions list now carries the church's location, as a region no longer
+  belongs to one area.
 
 ### The map's look (2026-11-15)
 

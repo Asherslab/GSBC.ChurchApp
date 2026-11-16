@@ -15,8 +15,10 @@ public enum CellLook
     Edge,
 }
 
-public sealed record AreaCell(CellRef Cell, CellLook Look, string Name, OutreachRegion? Region, MapBounds Core)
+public sealed record AreaCell(CellRef Cell, CellLook Look, string Name, OutreachRegion? Region, MapBounds Core, IReadOnlyList<string>? AlsoIn = null)
 {
+    public IReadOnlyList<string> OtherAreas => AlsoIn ?? [];
+
     public bool OnAfter => Look is CellLook.Built or CellLook.Empty or CellLook.Waiting or CellLook.Adding;
 
     public MapPoint Middle => new((Core.South + Core.North) / 2, (Core.West + Core.East) / 2);
@@ -43,7 +45,7 @@ public static class MapAreaDrawing
                 (false, true) => CellLook.Adding,
                 _ => CellLook.Off,
             };
-            return new AreaCell(at, look, region?.Name ?? cell.Name, region, area.Grid.Core(at.Row, at.Column));
+            return new AreaCell(at, look, region?.Name ?? cell.Name, region, area.Grid.Core(at.Row, at.Column), cell.AlsoIn);
         }).ToList();
         HashSet<CellRef> known = area.Cells.Select(cell => cell.Ref).ToHashSet();
         cells.AddRange(changed.Where(cell => !known.Contains(cell)).Select(cell => new AreaCell(cell, CellLook.Adding, "", null, area.Grid.Core(cell.Row, cell.Column))));

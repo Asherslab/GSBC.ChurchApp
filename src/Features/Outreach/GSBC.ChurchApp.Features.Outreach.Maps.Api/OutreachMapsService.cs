@@ -207,16 +207,13 @@ internal sealed class OutreachMapsService(
         List<string> wanted = [.. ids.Values];
         Dictionary<string, RegionRecord> built = await db.Regions.AsNoTracking().Where(region => wanted.Contains(region.Id)).ToDictionaryAsync(region => region.Id, cancellationToken);
         HashSet<string> empty = [.. await db.Squares.AsNoTracking().Where(square => wanted.Contains(square.Id) && square.Empty && !square.Pending).Select(square => square.Id).ToListAsync(cancellationToken)];
-        List<CellRef> unknown = [.. cells.Where(cell => !built.ContainsKey(ids[cell]) && !empty.Contains(ids[cell]))];
-        Dictionary<CellRef, CellEstimate> counted = (await estimates.EstimateAsync(grid, unknown, cancellationToken)).ToDictionary(estimate => new CellRef { Row = estimate.Row, Column = estimate.Column });
+        List<CellRef> counting = [.. cells.Where(cell => !empty.Contains(ids[cell]))];
+        Dictionary<CellRef, CellEstimate> counted = (await estimates.EstimateAsync(grid, counting, cancellationToken)).ToDictionary(estimate => new CellRef { Row = estimate.Row, Column = estimate.Column });
         return [.. cells.Select(cell =>
         {
-            CellEstimate estimate = counted.GetValueOrDefault(cell) ?? new CellEstimate
-            {
-                Row = cell.Row, Column = cell.Column,
-                Addresses = built.GetValueOrDefault(ids[cell])?.Letterboxes ?? 0,
-                Bytes = built.GetValueOrDefault(ids[cell]) is { } region ? region.StreetsBytes + region.MapBytes : 0,
-            };
+            CellEstimate estimate = counted.GetValueOrDefault(cell) ?? new CellEstimate { Row = cell.Row, Column = cell.Column };
+            if (built.GetValueOrDefault(ids[cell]) is { } region)
+                estimate.Bytes = region.StreetsBytes + region.MapBytes;
             estimate.AlsoIn = alsoIn(ids[cell], exceptArea);
             return estimate;
         })];
