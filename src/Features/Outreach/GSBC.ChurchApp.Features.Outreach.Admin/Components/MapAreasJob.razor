@@ -18,7 +18,7 @@
             {
                 <SectionContent SectionName="@OutreachMap.DrawerSection">@Adding</SectionContent>
                 <SectionContent SectionName="@OutreachMap.FootSection">
-                    <SaveBar Label="Add and build it" New="true" Busy="_busy" Blocked="@AddBlocked" OnSave="AddAsync" OnCancel="BackAsync" />
+                    <SaveBar Label="@(_preview is { } shared && MapAreaWords.AllShared(shared.Cells) ? "Add it" : "Add and build it")" New="true" Busy="_busy" Blocked="@AddBlocked" OnSave="AddAsync" OnCancel="BackAsync" />
                 </SectionContent>
             }
             else if (_areaId is not null)
@@ -114,9 +114,14 @@
 
     private List<CellRef> On => _cells.Where(cell => cell.Look == CellLook.Adding).Select(cell => cell.Cell).ToList();
 
+    private List<AreaCell> SwitchingOff => _cells.Where(cell => cell.Look == CellLook.SwitchingOff).ToList();
+
+    private int Dropped => SwitchingOff.Count(cell => cell.OtherAreas.Count == 0);
+
     private string ConfirmLead =>
-        $"Phones drop {OutreachWords.Plural(Off.Count, "region", "regions")} and {(Off.Count == 1 ? "its" : "their")} maps and streets are deleted{(_check is { FreedBytes: > 0 } ? $" ({MapAreaWords.Megabytes(_check.FreedBytes)})" : "")}. "
+        $"Phones drop {OutreachWords.Plural(Dropped, "region", "regions")} and {(Dropped == 1 ? "its" : "their")} maps and streets are deleted{(_check is { FreedBytes: > 0 } ? $" ({MapAreaWords.Megabytes(_check.FreedBytes)})" : "")}. "
         + "What walkers did there, coverage and history, stays. Switch one back on to build it again."
+        + (Dropped < Off.Count ? $" {MapAreaWords.ChangeSummary([.. SwitchingOff.Where(cell => cell.OtherAreas.Count > 0)], 0, null)}" : "")
         + (On.Count > 0 ? $" {OutreachWords.Plural(On.Count, "new region builds", "new regions build")} straight after." : "");
 
     private RenderFragment All(MapAreaList list) => @<div>
@@ -213,10 +218,10 @@
         ? null
         : _changed.Count > 0
             ? @<div>
-                <p class="outreach-map-areas__summary">@MapAreaWords.ChangeSummary(Off.Count, On.Count, _check)</p>
+                <p class="outreach-map-areas__summary">@MapAreaWords.ChangeSummary(SwitchingOff, On.Count, _check)</p>
                 <SaveBar Label="@MapAreaWords.ChangeLabel(Off.Count, On.Count)" Busy="_busy" Blocked="@_check?.Problem" OnSave="AskToSaveAsync" OnCancel="Cancel" />
             </div>
-            : @<p class="outreach-map-areas__summary">Phones download the region they walk in. Switching one off deletes its maps; coverage and history there stay.</p>;
+            : @<p class="outreach-map-areas__summary">Phones download the region they walk in. Switching one off deletes its maps unless another area has it on; coverage and history there stay.</p>;
 
     private RenderFragment Adding => @<div>
         @Back
@@ -278,13 +283,7 @@
         {
             if (_estimating || _preview is null)
                 return "Counting the letterboxes in each square…";
-            List<CellEstimate> homes = _preview.Cells.Where(cell => cell.HasHomes).ToList();
-            string unmade = MapAreaWords.Unmade(_preview.Cells);
-            string none = unmade.Length == 0 ? "" : $" {char.ToUpperInvariant(unmade[0])}{unmade[1..]}.";
-            if (homes.Count == 0 && none.Length > 0)
-                return none.TrimStart();
-            return $"{OutreachWords.Plural(homes.Count, "region", "regions")} with homes, about {OutreachWords.Plural(homes.Sum(cell => cell.Addresses), "letterbox", "letterboxes")}, "
-                   + $"about {MapAreaWords.Megabytes(homes.Sum(cell => cell.Bytes))} for phones in all.{none}";
+            return MapAreaWords.AddEstimate(_preview.Cells);
         }
     }
 
@@ -442,7 +441,7 @@
 
     private async Task AskToSaveAsync()
     {
-        if (Off.Count > 0)
+        if (Dropped > 0)
             _confirming = true;
         else
             await SaveAsync();
@@ -479,7 +478,7 @@
             await AddAsync();
             return _problem is null;
         }
-        if (Off.Count > 0)
+        if (Dropped > 0)
             return false;
         await SaveAsync();
         return _problem is null;

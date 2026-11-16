@@ -5,7 +5,9 @@ using GSBC.ChurchApp.Features.Outreach.Maps.Api.Regions;
 using GSBC.ChurchApp.Features.Outreach.Maps.Contracts;
 using GSBC.ChurchApp.Features.Outreach.Routing;
 using GSBC.ChurchApp.Platform.Storage;
+using GSBC.ChurchApp.Features.Outreach.Maps.Api.Sources;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using ProtoBuf.Grpc;
 
 namespace GSBC.ChurchApp.Features.Outreach.Maps.Api;
@@ -13,12 +15,13 @@ namespace GSBC.ChurchApp.Features.Outreach.Maps.Api;
 internal sealed class OutreachMapsService(
     OutreachMapsDbContext db,
     AreaBuildRunner runner,
-    AreaBuilder builder,
     PlaceIndex places,
     RegionEstimates estimates,
+    MapSquares squares,
     OverviewMap overview,
     IEnumerable<IRegionUses> uses,
     IBlobStore blobs,
+    IOptions<MapSourcesOptions> options,
     TimeProvider time) : IOutreachMapsService
 {
     private DateTime Now => time.GetUtcNow().UtcDateTime;
@@ -27,6 +30,8 @@ internal sealed class OutreachMapsService(
     {
         Regions = (await db.Regions.AsNoTracking().OrderBy(region => region.Id).ToListAsync(context.CancellationToken))
             .Select(region => RegionFeed.ToMessage(region, blobs)).ToList(),
+        ChurchLatitude = options.Value.ChurchLatitude,
+        ChurchLongitude = options.Value.ChurchLongitude,
     };
 
     public async ValueTask<MapOverview> OverviewAsync(MapOverviewRequest request, CallContext context = default) =>
@@ -43,16 +48,16 @@ internal sealed class OutreachMapsService(
         CheckRadius(request.RadiusKm);
         GeoPoint centre = Centre(request.CentreLatitude, request.CentreLongitude);
         HashSet<string> taken = [.. await db.Areas.Select(area => area.Id).ToListAsync(cancellationToken), .. MapAreas.Reserved];
-        (MapGrid grid, List<CellRef> planned) = await PlanAsync(centre, request.RadiusKm * 1000, cancellationToken);
-        if (planned.Count == 0)
-            throw Invalid("Every region there is already in another area.");
-        (MapAreaRecord added, List<MapCellRecord> cells) = MapAreas.New(MapAreas.Slug(name, taken), name, grid, planned, Now);
+        (MapGrid grid, string? gridId, List<CellRef> planned) = await PlanAsync(centre, request.RadiusKm * 1000, cancellationToken);
+        string id = MapAreas.Slug(name, taken);
+        (MapAreaRecord added, List<MapCellRecord> cells) = MapAreas.New(id, name, gridId ?? id, grid, planned, Now);
         db.Areas.Add(added);
         db.Cells.AddRange(cells);
+        await squares.SwitchOnAsync(added.Id, cells, cancellationToken);
         db.FeedChanges.Add(RegionFeed.BuildChanged(added.Id, Now));
         await db.SaveChangesAsync(cancellationToken);
         runner.Wake();
-        return MapAreas.ToMessage(added, cells, [], blobs);
+        return await MessageAsync(added, cancellationToken);
     }
 
     public async ValueTask<MapArea> RenameAsync(RenameMapArea request, CallContext context = default)
@@ -72,7 +77,8 @@ internal sealed class OutreachMapsService(
     {
         CancellationToken cancellationToken = context.CancellationToken;
         MapAreaRecord area = await FindAsync(request.Id, cancellationToken);
-        await db.Cells.Where(cell => cell.AreaId == area.Id && cell.On).ExecuteUpdateAsync(set => set.SetProperty(cell => cell.Pending, true), cancellationToken);
+        List<string> on = await db.Cells.Where(cell => cell.AreaId == area.Id && cell.On).Select(cell => cell.SquareId).ToListAsync(cancellationToken);
+        await db.Squares.Where(square => on.Contains(square.Id)).ExecuteUpdateAsync(set => set.SetProperty(square => square.Pending, true), cancellationToken);
         return await QueueAsync(area, cancellationToken);
     }
 
@@ -90,10 +96,12 @@ internal sealed class OutreachMapsService(
         if (area.State == MapAreaStates.Building)
             throw new RpcException(new Status(StatusCode.FailedPrecondition, "Its maps are being built. Delete it once that finishes."));
         area.DeletedAt = Now;
-        db.Cells.RemoveRange(await db.Cells.Where(cell => cell.AreaId == area.Id).ToListAsync(cancellationToken));
+        List<MapCellRecord> cells = await db.Cells.Where(cell => cell.AreaId == area.Id).ToListAsync(cancellationToken);
+        db.Cells.RemoveRange(cells);
         db.FeedChanges.Add(RegionFeed.BuildChanged(area.Id, Now));
-        await builder.RemoveAsync((await db.Regions.Where(region => region.AreaId == area.Id).Select(region => region.Id).ToListAsync(cancellationToken)).ToHashSet(), cancellationToken);
-        await builder.ForgetOldFilesAsync(cancellationToken);
+        await db.SaveChangesAsync(cancellationToken);
+        await squares.LetGoAsync([.. cells.Select(cell => cell.SquareId)], cancellationToken);
+        await WakeStrandedAsync(cancellationToken);
         return await ListAsync(cancellationToken);
     }
 
@@ -105,12 +113,12 @@ internal sealed class OutreachMapsService(
         CancellationToken cancellationToken = context.CancellationToken;
         CheckRadius(request.RadiusKm);
         GeoPoint centre = Centre(request.CentreLatitude, request.CentreLongitude);
-        (MapGrid grid, List<CellRef> cells) = await PlanAsync(centre, request.RadiusKm * 1000, cancellationToken);
+        (MapGrid grid, string? gridId, List<CellRef> cells) = await PlanAsync(centre, request.RadiusKm * 1000, cancellationToken);
         GeoBounds reach = RegionGrid.Union(cells.Select(cell => RegionGrid.Core(grid, cell.Row, cell.Column)));
         return new MapAreaPreview
         {
             Grid = grid,
-            Cells = await estimates.EstimateAsync(grid, cells, cancellationToken),
+            Cells = await EstimateAsync(grid, gridId, null, cells, cancellationToken),
             Places = await places.WithinAsync(reach, cancellationToken),
         };
     }
@@ -121,7 +129,9 @@ internal sealed class OutreachMapsService(
         MapAreaRecord area = await FindAsync(request.AreaId, cancellationToken);
         List<MapCellRecord> cells = await db.Cells.AsNoTracking().Where(cell => cell.AreaId == area.Id).ToListAsync(cancellationToken);
         RegionChange change = Effective(request, cells);
-        HashSet<string> going = cells.Where(cell => cell.On && change.Off.Contains(Ref(cell))).Select(cell => cell.Id).ToHashSet();
+        List<string> off = [.. cells.Where(cell => cell.On && change.Off.Contains(Ref(cell))).Select(cell => cell.SquareId)];
+        HashSet<string> shared = await squares.OnElsewhereAsync(area.Id, off, cancellationToken);
+        HashSet<string> going = [.. off.Where(id => !shared.Contains(id))];
         List<RegionRecord> regions = await db.Regions.AsNoTracking().Where(region => going.Contains(region.Id)).ToListAsync(cancellationToken);
         List<RegionUse> found = [];
         if (regions.Count > 0)
@@ -129,8 +139,8 @@ internal sealed class OutreachMapsService(
                 found.AddRange(await source.UsesAsync(regions.Select(region => region.Id).ToList(), cancellationToken));
         return new RegionChangeCheck
         {
-            Problem = MapCells.Problem(OnCells(cells), cells.Select(Ref).ToList(), change, await ElsewhereAsync(area, cancellationToken)),
-            Added = await estimates.EstimateAsync(RegionGrid.GridOf(area), change.On, cancellationToken),
+            Problem = MapCells.Problem(OnCells(cells), cells.Select(Ref).ToList(), change),
+            Added = await EstimateAsync(RegionGrid.GridOf(area), area.GridId, area.Id, change.On, cancellationToken),
             Uses = found,
             FreedBytes = regions.Sum(region => region.StreetsBytes + region.MapBytes),
         };
@@ -142,54 +152,77 @@ internal sealed class OutreachMapsService(
         MapAreaRecord area = await FindAsync(request.AreaId, cancellationToken);
         List<MapCellRecord> cells = await db.Cells.Where(cell => cell.AreaId == area.Id).ToListAsync(cancellationToken);
         RegionChange change = Effective(request, cells);
-        if (MapCells.Problem(OnCells(cells), cells.Select(Ref).ToList(), change, await ElsewhereAsync(area, cancellationToken)) is { } problem)
+        if (MapCells.Problem(OnCells(cells), cells.Select(Ref).ToList(), change) is { } problem)
             throw Invalid(problem);
         if (change.Off.Count > 0 && area.State == MapAreaStates.Building)
             throw new RpcException(new Status(StatusCode.FailedPrecondition, "Its maps are being built. Switch regions off once that finishes."));
 
-        foreach (MapCellRecord cell in cells.Where(cell => change.Off.Contains(Ref(cell))))
-            (cell.On, cell.Pending, cell.Empty) = (false, false, false);
+        List<MapCellRecord> switchedOff = [.. cells.Where(cell => change.Off.Contains(Ref(cell)))];
+        foreach (MapCellRecord cell in switchedOff)
+            cell.On = false;
+        List<MapCellRecord> switchedOn = [];
         foreach (CellRef on in change.On)
         {
-            MapCellRecord cell = cells.FirstOrDefault(known => Ref(known).Equals(on)) ?? Added(area, on);
-            (cell.On, cell.Pending, cell.Empty) = (true, true, false);
+            MapCellRecord cell = cells.FirstOrDefault(known => Ref(known).Equals(on)) ?? Added(on);
+            cell.On = true;
+            switchedOn.Add(cell);
         }
         MapAreas.Fit(area, cells);
+        await squares.SwitchOnAsync(area.Id, switchedOn, cancellationToken);
         db.FeedChanges.Add(RegionFeed.BuildChanged(area.Id, Now));
         await db.SaveChangesAsync(cancellationToken);
-        await builder.RemoveAsync(cells.Where(cell => change.Off.Contains(Ref(cell))).Select(cell => cell.Id).ToHashSet(), cancellationToken);
-        await builder.ForgetOldFilesAsync(cancellationToken);
-        return change.On.Count > 0 ? await QueueAsync(area, cancellationToken) : await MessageAsync(area, cancellationToken);
+        await squares.LetGoAsync([.. switchedOff.Select(cell => cell.SquareId)], cancellationToken);
+        if (change.On.Count > 0)
+            return await QueueAsync(area, cancellationToken);
+        await WakeStrandedAsync(cancellationToken);
+        return await MessageAsync(area, cancellationToken);
 
-        MapCellRecord Added(MapAreaRecord to, CellRef at)
+        MapCellRecord Added(CellRef at)
         {
-            MapCellRecord cell = new() { Id = RegionGrid.RegionId(to.Id, at.Row, at.Column), AreaId = to.Id, Row = at.Row, Column = at.Column };
+            MapCellRecord cell = MapAreas.Cell(area, at);
             db.Cells.Add(cell);
             cells.Add(cell);
             return cell;
         }
     }
 
-    private async Task<(MapGrid Grid, List<CellRef> Cells)> PlanAsync(GeoPoint centre, double radiusMetres, CancellationToken cancellationToken)
+    private async Task<(MapGrid Grid, string? GridId, List<CellRef> Cells)> PlanAsync(GeoPoint centre, double radiusMetres, CancellationToken cancellationToken)
     {
-        List<MapAreaRecord> areas = await db.Areas.AsNoTracking().Where(area => area.DeletedAt == null).OrderBy(area => area.CreatedAt).ToListAsync(cancellationToken);
-        if (areas.Count == 0)
-            return RegionGrid.Plan(centre, radiusMetres);
-        MapGrid shared = RegionGrid.GridOf(areas[0]);
-        return RegionGrid.Plan(centre, radiusMetres, shared, await OnCellsAsync(areas.Where(area => RegionGrid.SameLines(RegionGrid.GridOf(area), shared)), cancellationToken));
+        MapAreaRecord? oldest = await db.Areas.AsNoTracking().Where(area => area.DeletedAt == null).OrderBy(area => area.CreatedAt).FirstOrDefaultAsync(cancellationToken);
+        if (oldest is null)
+        {
+            (MapGrid grid, List<CellRef> cells) = RegionGrid.Plan(centre, radiusMetres);
+            return (grid, null, cells);
+        }
+        (MapGrid shared, List<CellRef> reached) = RegionGrid.Plan(centre, radiusMetres, RegionGrid.GridOf(oldest));
+        return (shared, oldest.GridId, reached);
     }
 
-    private async Task<HashSet<CellRef>> ElsewhereAsync(MapAreaRecord area, CancellationToken cancellationToken)
+    private async Task<List<CellEstimate>> EstimateAsync(MapGrid grid, string? gridId, string? exceptArea, IReadOnlyCollection<CellRef> cells, CancellationToken cancellationToken)
     {
-        MapGrid grid = RegionGrid.GridOf(area);
-        List<MapAreaRecord> others = await db.Areas.AsNoTracking().Where(other => other.DeletedAt == null && other.Id != area.Id).ToListAsync(cancellationToken);
-        return await OnCellsAsync(others.Where(other => RegionGrid.SameLines(RegionGrid.GridOf(other), grid)), cancellationToken);
+        if (gridId is null)
+            return await estimates.EstimateAsync(grid, cells, cancellationToken);
+        Func<string, string?, List<string>> alsoIn = await squares.AlsoInAsync(cancellationToken);
+        Dictionary<CellRef, string> ids = cells.ToDictionary(cell => cell, cell => RegionGrid.RegionId(gridId, cell.Row, cell.Column));
+        List<string> wanted = [.. ids.Values];
+        Dictionary<string, RegionRecord> built = await db.Regions.AsNoTracking().Where(region => wanted.Contains(region.Id)).ToDictionaryAsync(region => region.Id, cancellationToken);
+        HashSet<string> empty = [.. await db.Squares.AsNoTracking().Where(square => wanted.Contains(square.Id) && square.Empty && !square.Pending).Select(square => square.Id).ToListAsync(cancellationToken)];
+        List<CellRef> counting = [.. cells.Where(cell => !empty.Contains(ids[cell]))];
+        Dictionary<CellRef, CellEstimate> counted = (await estimates.EstimateAsync(grid, counting, cancellationToken)).ToDictionary(estimate => new CellRef { Row = estimate.Row, Column = estimate.Column });
+        return [.. cells.Select(cell =>
+        {
+            CellEstimate estimate = counted.GetValueOrDefault(cell) ?? new CellEstimate { Row = cell.Row, Column = cell.Column };
+            if (built.GetValueOrDefault(ids[cell]) is { } region)
+                estimate.Bytes = region.StreetsBytes + region.MapBytes;
+            estimate.AlsoIn = alsoIn(ids[cell], exceptArea);
+            return estimate;
+        })];
     }
 
-    private async Task<HashSet<CellRef>> OnCellsAsync(IEnumerable<MapAreaRecord> areas, CancellationToken cancellationToken)
+    private async Task WakeStrandedAsync(CancellationToken cancellationToken)
     {
-        List<string> ids = [.. areas.Select(area => area.Id)];
-        return [.. (await db.Cells.AsNoTracking().Where(cell => ids.Contains(cell.AreaId) && cell.On).ToListAsync(cancellationToken)).Select(Ref)];
+        if (await squares.QueueStrandedAsync(cancellationToken))
+            runner.Wake();
     }
 
     private static RegionChange Effective(RegionChange request, List<MapCellRecord> cells)
@@ -217,18 +250,24 @@ internal sealed class OutreachMapsService(
         return await MessageAsync(area, cancellationToken);
     }
 
-    private async Task<MapAreaList> ListAsync(CancellationToken cancellationToken)
+    private async Task<MapAreaList> ListAsync(CancellationToken cancellationToken, string? only = null)
     {
-        List<MapAreaRecord> areas = await db.Areas.AsNoTracking().Where(area => area.DeletedAt == null).OrderBy(area => area.CreatedAt).ToListAsync(cancellationToken);
-        ILookup<string, RegionRecord> regions = (await db.Regions.AsNoTracking().ToListAsync(cancellationToken)).ToLookup(region => region.AreaId);
-        ILookup<string, MapCellRecord> cells = (await db.Cells.AsNoTracking().ToListAsync(cancellationToken)).ToLookup(cell => cell.AreaId);
-        return new MapAreaList { Areas = areas.Select(area => MapAreas.ToMessage(area, cells[area.Id], regions[area.Id], blobs)).ToList() };
+        List<MapAreaRecord> areas = await db.Areas.AsNoTracking().Where(area => area.DeletedAt == null && (only == null || area.Id == only))
+            .OrderBy(area => area.CreatedAt).ToListAsync(cancellationToken);
+        List<string> ids = [.. areas.Select(area => area.Id)];
+        ILookup<string, MapCellRecord> cells = (await db.Cells.AsNoTracking().Where(cell => ids.Contains(cell.AreaId)).ToListAsync(cancellationToken)).ToLookup(cell => cell.AreaId);
+        List<string> squareIds = [.. cells.SelectMany(cell => cell).Select(cell => cell.SquareId).Distinct()];
+        Dictionary<string, MapSquareRecord> known = await db.Squares.AsNoTracking().Where(square => squareIds.Contains(square.Id)).ToDictionaryAsync(square => square.Id, cancellationToken);
+        Dictionary<string, RegionRecord> regions = await db.Regions.AsNoTracking().Where(region => squareIds.Contains(region.Id)).ToDictionaryAsync(region => region.Id, cancellationToken);
+        Func<string, string?, List<string>> alsoIn = await squares.AlsoInAsync(cancellationToken);
+        return new MapAreaList
+        {
+            Areas = [.. areas.Select(area => MapAreas.ToMessage(area, [.. cells[area.Id]], known, regions, square => alsoIn(square, area.Id), blobs))],
+        };
     }
 
     private async Task<MapArea> MessageAsync(MapAreaRecord area, CancellationToken cancellationToken) =>
-        MapAreas.ToMessage(area,
-            await db.Cells.AsNoTracking().Where(cell => cell.AreaId == area.Id).ToListAsync(cancellationToken),
-            await db.Regions.AsNoTracking().Where(region => region.AreaId == area.Id).ToListAsync(cancellationToken), blobs);
+        (await ListAsync(cancellationToken, area.Id)).Areas.Single();
 
     private async Task<MapAreaRecord> FindAsync(string id, CancellationToken cancellationToken) =>
         await db.Areas.FirstOrDefaultAsync(area => area.Id == id && area.DeletedAt == null, cancellationToken)

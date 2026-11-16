@@ -34,7 +34,7 @@ public sealed class RegionVersionTests
     private static RegionRecord Region(long version, string fingerprint, string mapKey) => new()
     {
         Id = "church-a1",
-        AreaId = "church",
+        GridId = "church",
         Name = "Albany Creek",
         Version = version,
         StreetsKey = "streets.streets",

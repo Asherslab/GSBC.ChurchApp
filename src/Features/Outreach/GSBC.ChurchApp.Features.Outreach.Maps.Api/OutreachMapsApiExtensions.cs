@@ -28,6 +28,7 @@ public static class OutreachMapsApiExtensions
         });
         services.AddMemoryCache();
         services.AddScoped<AreaBuilder>();
+        services.AddScoped<MapSquares>();
         services.AddScoped<PlaceIndex>();
         services.AddScoped<AddressIndex>();
         services.AddScoped<IAddressSearch>(provider => provider.GetRequiredService<AddressIndex>());

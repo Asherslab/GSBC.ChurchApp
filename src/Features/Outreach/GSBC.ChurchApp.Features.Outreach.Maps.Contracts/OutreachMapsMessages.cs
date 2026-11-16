@@ -31,7 +31,7 @@ public sealed class MapFile
 public sealed class OutreachRegion
 {
     [ProtoMember(1)] public string Id { get; set; } = "";
-    [ProtoMember(2)] public string AreaId { get; set; } = "";
+    [ProtoMember(2)] public string GridId { get; set; } = "";
     [ProtoMember(3)] public string Name { get; set; } = "";
     [ProtoMember(4, IsRequired = true)] public MapBounds Core { get; set; } = new();
     [ProtoMember(5, IsRequired = true)] public MapBounds Bounds { get; set; } = new();
@@ -74,6 +74,7 @@ public sealed class MapCell
     [ProtoMember(5)] public bool Pending { get; set; }
     [ProtoMember(6)] public bool Empty { get; set; }
     [ProtoMember(7)] public string Name { get; set; } = "";
+    [ProtoMember(8)] public List<string> AlsoIn { get; set; } = [];
 
     public CellRef Ref => new() { Row = Row, Column = Column };
 }
@@ -106,6 +107,8 @@ public sealed class MapAreaListRequest;
 public sealed class RegionList
 {
     [ProtoMember(1)] public List<OutreachRegion> Regions { get; set; } = [];
+    [ProtoMember(2)] public double ChurchLatitude { get; set; }
+    [ProtoMember(3)] public double ChurchLongitude { get; set; }
 }
 
 [ProtoContract]
@@ -205,6 +208,7 @@ public sealed class CellEstimate
     [ProtoMember(3)] public int Addresses { get; set; }
     [ProtoMember(4)] public long Bytes { get; set; }
     [ProtoMember(5)] public bool OutsideQueensland { get; set; }
+    [ProtoMember(6)] public List<string> AlsoIn { get; set; } = [];
 
     public bool HasHomes => Addresses > 0;
 }

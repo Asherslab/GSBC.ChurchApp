@@ -30,14 +30,14 @@ internal sealed class AreaBuilder(OutreachMapsDbContext db, IMapSources sources,
     {
         Stopwatch elapsed = Stopwatch.StartNew();
         MapGrid grid = RegionGrid.GridOf(area);
-        List<MapCellRecord> pending = await db.Cells.Where(cell => cell.AreaId == area.Id && cell.On && cell.Pending)
-            .OrderBy(cell => cell.Row).ThenBy(cell => cell.Column).ToListAsync(cancellationToken);
-        List<List<MapCellRecord>> groups = MapCells.Groups(pending, cell => new CellRef { Row = cell.Row, Column = cell.Column });
+        List<MapSquareRecord> pending = await Mine(area).Where(square => square.Pending)
+            .OrderBy(square => square.Row).ThenBy(square => square.Column).ToListAsync(cancellationToken);
+        List<List<MapSquareRecord>> groups = MapCells.Groups(pending, square => new CellRef { Row = square.Row, Column = square.Column });
         (area.StepsDone, area.Steps) = (0, groups.Count * FetchSteps + pending.Count);
-        foreach (List<MapCellRecord> group in groups)
+        foreach (List<MapSquareRecord> group in groups)
             await BuildCellsAsync(area, grid, group, elapsed, cancellationToken);
 
-        bool more = await db.Cells.AnyAsync(cell => cell.AreaId == area.Id && cell.On && cell.Pending, cancellationToken);
+        bool more = await Mine(area).AnyAsync(square => square.Pending, cancellationToken);
         area.State = more ? MapAreaStates.Waiting : MapAreaStates.Built;
         area.Stage = null;
         (area.StepsDone, area.Steps) = (0, 0);
@@ -48,36 +48,40 @@ internal sealed class AreaBuilder(OutreachMapsDbContext db, IMapSources sources,
         await db.SaveChangesAsync(cancellationToken);
     }
 
-    private async Task BuildCellsAsync(MapAreaRecord area, MapGrid grid, List<MapCellRecord> pending, Stopwatch elapsed, CancellationToken cancellationToken)
+    private IQueryable<MapSquareRecord> Mine(MapAreaRecord area) =>
+        db.Squares.Where(square => db.Cells.Any(cell => cell.AreaId == area.Id && cell.On && cell.SquareId == square.Id));
+
+    private async Task BuildCellsAsync(MapAreaRecord area, MapGrid grid, List<MapSquareRecord> pending, Stopwatch elapsed, CancellationToken cancellationToken)
     {
-        Dictionary<string, MapCellRecord> records = pending.ToDictionary(cell => cell.Id);
-        List<RegionCell> cells = pending.Select(cell => RegionGrid.CellOf(area.Id, grid, cell.Row, cell.Column)).ToList();
+        Dictionary<string, MapSquareRecord> records = pending.ToDictionary(square => square.Id);
+        List<RegionCell> cells = pending.Select(square => RegionGrid.CellOf(area.GridId, grid, square.Row, square.Column)).ToList();
         GeoBounds reach = RegionGrid.Union(cells.Select(cell => cell.Bounds));
 
         HashSet<string> building = records.Keys.ToHashSet();
         AreaStreets streets = await PlaceLetterboxesAsync(area, cells, building, reach, cancellationToken);
         IRangeReader tiles = await sources.TilesAsync(cancellationToken);
 
-        HashSet<string> taken = (await db.Regions.Where(region => region.AreaId == area.Id && !building.Contains(region.Id))
+        HashSet<string> taken = (await db.Regions.Where(region => !building.Contains(region.Id))
             .Select(region => region.Name).ToListAsync(cancellationToken)).ToHashSet();
         List<(RegionCell Cell, string Name)> kept = Named(cells.Where(cell => streets.HomesIn(cell.Core) > 0).Select(cell => (cell, streets.NameFor(cell.Core))).ToList(), area.Name, taken);
         area.Steps -= cells.Count - kept.Count;
         for (int i = 0; i < kept.Count; i++)
         {
             await StageAsync(area, $"Building {kept[i].Name} ({i + 1} of {kept.Count})", cancellationToken);
-            MapCellRecord record = records[kept[i].Cell.Id];
+            MapSquareRecord record = records[kept[i].Cell.Id];
             RegionRecord region = await PublishAsync(area, kept[i].Cell, kept[i].Name, record.Version, streets, tiles, cancellationToken);
             (record.Pending, record.Empty, record.Version, record.Name) = (false, false, region.Version, region.Name);
             await db.SaveChangesAsync(cancellationToken);
         }
         HashSet<string> withHomes = kept.Select(pair => pair.Cell.Id).ToHashSet();
-        List<MapCellRecord> empty = pending.Where(cell => !withHomes.Contains(cell.Id)).ToList();
-        foreach (MapCellRecord cell in empty)
+        List<MapSquareRecord> empty = pending.Where(cell => !withHomes.Contains(cell.Id)).ToList();
+        foreach (MapSquareRecord cell in empty)
             (cell.Pending, cell.Empty) = (false, true);
         await RemoveAsync(empty.Select(cell => cell.Id).ToHashSet(), cancellationToken);
         await ForgetOldFilesAsync(cancellationToken);
 
-        List<RegionRecord> regions = await db.Regions.AsNoTracking().Where(region => region.AreaId == area.Id).ToListAsync(cancellationToken);
+        List<string> mine = await Mine(area).Select(square => square.Id).ToListAsync(cancellationToken);
+        List<RegionRecord> regions = await db.Regions.AsNoTracking().Where(region => mine.Contains(region.Id)).ToListAsync(cancellationToken);
         PlacementCounts counts = streets.Counts;
         area.Report = JsonSerializer.Serialize(new MapAreaReport
         {
@@ -158,7 +162,7 @@ internal sealed class AreaBuilder(OutreachMapsDbContext db, IMapSources sources,
 
             if (region is null)
             {
-                region = new RegionRecord { Id = cell.Id, AreaId = area.Id, Name = name, StreetsKey = streetsKey, StreetsFingerprint = fingerprint, MapKey = mapKey };
+                region = new RegionRecord { Id = cell.Id, GridId = area.GridId, Name = name, StreetsKey = streetsKey, StreetsFingerprint = fingerprint, MapKey = mapKey };
                 db.Regions.Add(region);
             }
             region.Name = name;

@@ -48,18 +48,15 @@ public sealed class MapCellTests
     }
 
     [Fact]
-    public void AnAreaAddedOverAnotherSnapsToItsGridAndLeavesOutTheRegionsItAlreadyHas()
+    public void AnAreaAddedOverAnotherSnapsToItsGridAndTakesInTheSquaresTheyShare()
     {
         (MapGrid church, List<CellRef> churchCells) = RegionGrid.Plan(Church, 20_000);
-        HashSet<CellRef> taken = [.. churchCells];
 
-        (MapGrid grid, List<CellRef> cells) = RegionGrid.Plan(new GeoPoint(-27.5327, 153.1544), 15_000, church, taken);
+        (MapGrid grid, List<CellRef> cells) = RegionGrid.Plan(new GeoPoint(-27.5327, 153.1544), 15_000, church);
 
         Assert.True(RegionGrid.SameLines(church, grid));
-        Assert.NotEmpty(cells);
-        Assert.DoesNotContain(cells, taken.Contains);
+        Assert.Contains(cells, churchCells.Contains);
         Assert.Contains(cells, cell => cell.Row == churchCells.Max(each => each.Row) + 1);
-        Assert.NotNull(MapCells.Problem(cells, cells, Change(on: [(4, 4)]), taken));
     }
 
     [Fact]

@@ -14,7 +14,7 @@ internal static class RegionFeed
     public static OutreachRegion ToMessage(RegionRecord region, IBlobStore blobs) => new()
     {
         Id = region.Id,
-        AreaId = region.AreaId,
+        GridId = region.GridId,
         Name = region.Name,
         Core = new MapBounds { South = region.CoreSouth, West = region.CoreWest, North = region.CoreNorth, East = region.CoreEast },
         Bounds = new MapBounds { South = region.South, West = region.West, North = region.North, East = region.East },

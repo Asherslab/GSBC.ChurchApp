@@ -61,6 +61,7 @@ internal sealed class MapsHost : IAsyncDisposable
             .AddSingleton<IMapSources>(sources)
             .AddSingleton<IRegionUses>(uses)
             .AddScoped<AreaBuilder>()
+            .AddScoped<MapSquares>()
             .AddScoped<PlaceIndex>()
             .AddScoped<AddressIndex>()
             .AddScoped<RegionEstimates>()
@@ -99,6 +100,12 @@ internal sealed class MapsHost : IAsyncDisposable
         return await read(scope.ServiceProvider.GetRequiredService<OutreachMapsDbContext>());
     }
 
+    public async Task WithSquaresAsync(Func<OutreachMapsDbContext, MapSquares, Task> work)
+    {
+        await using AsyncServiceScope scope = _services.CreateAsyncScope();
+        await work(scope.ServiceProvider.GetRequiredService<OutreachMapsDbContext>(), scope.ServiceProvider.GetRequiredService<MapSquares>());
+    }
+
     public async Task BuildAsync(string areaId)
     {
         Clock.Advance(TimeSpan.FromHours(1));
@@ -108,7 +115,10 @@ internal sealed class MapsHost : IAsyncDisposable
     }
 
     public Task<List<RegionRecord>> RegionsAsync(string areaId) =>
-        WithDbAsync(db => db.Regions.AsNoTracking().Where(region => region.AreaId == areaId).OrderBy(region => region.Id).ToListAsync());
+        WithDbAsync(db => db.Regions.AsNoTracking()
+            .Where(region => db.Cells.Any(cell => cell.AreaId == areaId && cell.On && cell.SquareId == region.Id)).OrderBy(region => region.Id).ToListAsync());
+
+    public Task<List<RegionRecord>> AllRegionsAsync() => WithDbAsync(db => db.Regions.AsNoTracking().OrderBy(region => region.Id).ToListAsync());
 
     public async Task<BlobInfo?> FindAsync(string key)
     {

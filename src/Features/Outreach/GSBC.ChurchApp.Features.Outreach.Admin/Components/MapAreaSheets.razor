@@ -44,10 +44,7 @@
     private bool _busy;
     private string? _problem;
 
-    private string DeleteLead => _deleting is not { } area ? "" :
-        $"Its {OutreachWords.Plural(area.Regions.Count, "region", "regions")} go from phones and their maps and streets are deleted"
-        + $" ({MapAreaWords.Megabytes(area.Regions.Sum(region => region.Streets.Bytes + region.Map.Bytes))}). "
-        + "What walkers did there, coverage and history, stays. You can add the place again later; it builds as a new area.";
+    private string DeleteLead => _deleting is not { } area ? "" : MapAreaWords.DeleteLead(area);
 
     public static IReadOnlyList<MenuItem> Actions(IHandleEvent owner, Area area, MapAreaSheets? sheets, bool busy, Func<Task> rebuild) =>
     [
