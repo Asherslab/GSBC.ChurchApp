@@ -59,11 +59,11 @@ internal sealed class ChatOversight(
                 })
                 .ToList(),
             Ministries = all
-                .Where(place => grants.IsAllowed(ChatsPermissions.Manage, place.MinistryId.ToString()) || checkable.Contains(place.MinistryId))
+                .Where(place => grants.IsHeldAt(ChatsPermissions.Manage, place.MinistryId.ToString()) || checkable.Contains(place.MinistryId))
                 .Select(place => new DeskMinistry
                 {
                     Id = place.MinistryId.ToString(), Name = place.Name, ChatsOn = place.ChatsOn,
-                    MayManage = grants.IsAllowed(ChatsPermissions.Manage, place.MinistryId.ToString()),
+                    MayManage = grants.IsHeldAt(ChatsPermissions.Manage, place.MinistryId.ToString()),
                     Audiences = [.. place.Audiences.Keys, ChatAudiences.Chosen],
                 })
                 .ToList(),
