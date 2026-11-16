@@ -1,0 +1,46 @@
+{
+  "title": "Telling people again after changing a post (#12)",
+  "question": "As you asked: saving a change to a published church news post opens a popup, like changing a calendar event does. It sends the post's notification again to the same people (off unless you choose it), and the new one replaces the earlier one in their notifications list. Each sketch shows it in the admin panel (left) and on the phone (right). Pick one; the other two go.",
+  "reroll": true,
+  "steer": true,
+  "buildPath": { "value": "code", "toggle": false },
+  "options": [
+    {
+      "id": "what-changed",
+      "kind": "assigned",
+      "kicker": "THE ROLL",
+      "label": "Tell people again, saying what changed",
+      "thesis": "After Save: \"Tell people again?\" says when it went and to how many phones. Its words start as \"Updated: <title>\" with a line to say what changed; Urgent is there too. Tell people again, or Not now.",
+      "palette": ["#2a3d5e", "#f4efe7", "#ffffff", "#545e70"],
+      "materials": ["popup after Save", "reach and when it went", "Updated: words", "Urgent"],
+      "viewport": "The writing page dimmed behind a Tell people again? dialog; the phone with the same as a sheet.",
+      "risk": "You write the change line each time; a little more to read.",
+      "html": ".impeccable/mocks/news-all/t-a-what-changed.html",
+      "htmlFrame": "1440x900"
+    },
+    {
+      "id": "calendar-sheet",
+      "kind": "dealt",
+      "label": "The calendar's popup, as it is",
+      "thesis": "Exactly the sheet a changed event shows: \"Tell people?\", Notification and More, filled with the post's own notification words; Tell people or Not now.",
+      "palette": ["#2a3d5e", "#f4efe7", "#ffffff", "#545e70"],
+      "materials": ["the same Tell people sheet", "post's words prefilled", "two buttons"],
+      "viewport": "The dialog over the writing page and the sheet on the phone, with the post's original notification words.",
+      "risk": "The words don't say it's an update unless you change them.",
+      "html": ".impeccable/mocks/news-all/t-b-calendar-sheet.html",
+      "htmlFrame": "1440x900"
+    },
+    {
+      "id": "ask-first",
+      "kind": "dealt",
+      "label": "Ask first, then the words",
+      "thesis": "After Save, two plain choices: Tell people again… (then its words, to change or send) or Just save. Nothing to read past when you only fixed a typo.",
+      "palette": ["#2a3d5e", "#f4efe7", "#ffffff", "#545e70"],
+      "materials": ["two big choices", "words on the next step"],
+      "viewport": "The dialog with Tell people again… and Just save, on the desk and the phone.",
+      "risk": "One more tap when you do want to tell people.",
+      "html": ".impeccable/mocks/news-all/t-c-ask-first.html",
+      "htmlFrame": "1440x900"
+    }
+  ]
+}

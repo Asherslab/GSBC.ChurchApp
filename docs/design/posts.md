@@ -4,11 +4,11 @@ Detail behind [DESIGN.md](../../DESIGN.md) for the news page, a post's page, wri
 
 ## News page (phone)
 `/news`, its own tab: masthead "News", note "From the church and the ministries you're in", then `NewsList` (owner, 2026-11-13; order in DESIGN.md, *Pattern map*).
-- **Whose news:** a sticky link-mode tab strip, *The church* (`/news`) and *Your ministries* (`/news/yours`, every ministry you're in), shown only to someone in a ministry.
+- **Whose news:** a sticky link-mode tab strip, *The church* (`/news`), *Your ministries* (`/news/yours`, every ministry you're in, for someone in a ministry) and *All ministries* (`/news/every`, every ministry's posts for everyone, for holders of `news.ministries`; 2026-11-16, #11); shown when there are two or more.
 - **Urgent today:** one marker band each above everything, no hairline: a marker News tile, the title, "Today · " and the text's start in marker-ink, a marker-ink chevron.
 - **The lead:** the newest other post: its first picture at 16:9 (sand-strong while loading), the title, two lines of ink-2 text, the meta line. No picture, no frame.
 - **Rows:** the rest, newest first: title, two lines of text (cut at 160 characters), the meta line, the first picture as a square at the right.
-- **Meta line:** "From …" in accent with the Ministries icon for a ministry's post, any state in marker-ink, how long ago ("· edited"). Every story is a link.
+- **Meta line:** "From …" in accent with the Ministries icon for a ministry's post, how long ago ("· edited"), then any state in marker-ink (since 2026-11-16, so the date stays beside who it's from). Every story is a link.
 - **Staff tools** (*The church*, for church news writers): a block primary "New post"; while anything waits, a warm row "3 posts to look at" ("Drafts, posts waiting to be published and ministries' asks") to *To look at* (`/news/desk`), with sections *Ministries asking*, *Waiting to be published*, *Scheduled*, *Being written*, *Archived* (a people icon for an ask, a clock for scheduled, the archive box for archived, a pencil otherwise).
 - **Empty:** "No news yet": "News for the whole church shows here when it's posted." (*The church*), "News from the ministries you're part of shows here." (*Your ministries*).
 
@@ -39,6 +39,7 @@ Detail behind [DESIGN.md](../../DESIGN.md) for the news page, a post's page, wri
 - **The post:** one `RichTextField` with `Headings` and `RichTextMedia.Posts`, labelled "The post", placeholder "Write the post. Formatting is in the bar; pictures, video, files and more are under Insert."; `===` splits cards.
 - **Settings row** (phone): one sand row "Everyone · Notification on · Now" opening a sheet with Done; inside a sheet they sit inline under "Who it's for and telling them"; on a writing page, the settings column.
 - **Church news settings:** *Who it's for*, *Send a notification* with *What it says*, *Its line*, *Urgent* (once sent, a line saying when), *A link at the end (optional)* with *The link's words*, and for publishers *When* (Now or Later, *Publish it at*).
+- **Telling people again** (2026-11-16, #12): saving a published church news post opens `TellSheet`, "Tell people again?" ("Tell people?" if it went without one), Notification "Updated: …", More (what changed), Urgent, *Tell people again* and *Not now*; the settings line reads "Its notification was sent again …" once it has been.
 - **Saving:** `SaveBar` with Cancel at the left, its primary "Post for everyone", "Post it", "Schedule it", "Ask for it to be published" (non-publishers) or "Save" once published; quiet *Save as a draft* after Cancel on anything not yet published, then *Send to my phone* on a saved draft; no title: "Give it a title to post it or save it as a draft."
 
 ## Formatted text
@@ -60,7 +61,8 @@ Detail behind [DESIGN.md](../../DESIGN.md) for the news page, a post's page, wri
 
 ## Church news desk (admin)
 `/news` under This week: `TitleBand` "Church news" with quiet *Earlier announcements* (with a clock, for those who may see them) and primary *New post*, opening `/news/write`. The desk is the list; posts are written on their own page (owner, 2026-11-13, #83).
-- **Rail:** one `FilterChips Rail` group with counts: *Ministries asking*, *Being written*, *Scheduled*, *Published*, *Kept in ministries*, *Archived*; it opens on asks if any, then being written, then published. On a laptop it folds into *Show*.
+- **Rail:** one `FilterChips Rail` group with counts: *Ministries asking*, *Being written*, *Scheduled*, *Published*, *Kept in ministries*, *Archived*; it opens on asks if any, then being written, then published. For holders of `news.ministries`, a second group *Every ministry* with *All ministries* (2026-11-16, #11). On a laptop it folds into *Show*.
+- **All ministries:** a caption line saying what's in it (posts for everyone, newest first; team, leaders', parents' and hidden ministries' posts stay in their ministry), then rows with the title, the ministry in accent (`news-desk__from`), "By … · when", a pill (*In church news* accent, *Asking* marker) and the picture; the pane has `PaneHead` ("Kids church · for everyone · posted 2h ago"), ⋯ *Put it in church news…* (publishers, a sheet with *Send a notification*, *Put it in church news* and *Not now*) and *Open it in …*, then the post's page. Empty: "No ministry news yet".
 - **List:** title over a line ("Kids church · asked by …", "By …", "Publishes tomorrow 9am", or "From …" and the date), a pill (*Asking*, *Waiting to be published*, *Urgent* in marker; *From a ministry* in accent) and a thumbnail; the chosen row is current. Empty: "Posts show here as they're written, asked for, scheduled and published."
 - **Record pane:** `PaneHead`, a state line ("Published 13 November, with a notification."), ⋯: *Back to writing* (scheduled or waiting), a rule, *Archive* or, for a ministry's post, *Take it off church news…*; an archived post: *Put it back*, a rule, *Delete it for good…*. A post you may change opens on `/news/{id}/change`; the pane shows the post's page (up to 720px) for asks, shared posts and what you can't change.
 - **An ask:** a grouped section "… asks for this to go in church news" with *Send a notification*, its foot quiet *Keep it in …* at the left and *Put it in church news* at the right.

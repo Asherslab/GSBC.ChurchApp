@@ -138,6 +138,10 @@ namespace GSBC.ChurchApp.Features.News.Api.Data.Migrations
                         .HasColumnType("text")
                         .HasColumnName("tell_title");
 
+                    b.Property<int>("TimesTold")
+                        .HasColumnType("integer")
+                        .HasColumnName("times_told");
+
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasColumnType("text")

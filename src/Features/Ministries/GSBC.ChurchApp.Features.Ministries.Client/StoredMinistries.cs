@@ -4,6 +4,7 @@ using GSBC.ChurchApp.Features.Ministries.Contracts;
 using GSBC.ChurchApp.Platform.Client.Access;
 using GSBC.ChurchApp.Platform.Client.Feeds;
 using GSBC.ChurchApp.Platform.Common;
+using GSBC.ChurchApp.Platform.Contracts.News;
 using GSBC.ChurchApp.Platform.Permissions;
 
 namespace GSBC.ChurchApp.Features.Ministries.Client;
@@ -110,6 +111,17 @@ public sealed class StoredMinistries(ILocalFeeds feeds, IAccess access, TimeProv
             .Where(post => places.Contains(post.MinistryId) && MaySee(map, post.Audience, post.MinistryId))
             .OrderByDescending(post => post.PostedAt).Take(MostPosts).ToList();
         return new YourNews(places.Count > 0, posts.Select(post => (post, map.Find(post.MinistryId)!.Ministry.Name)).ToList());
+    }
+
+    public async Task<IReadOnlyList<(Post Post, string Ministry)>> EveryMinistrysNewsAsync()
+    {
+        if (!access.Can(ChurchNews.SeeingMinistries))
+            return [];
+        MinistryMap map = await MapAsync();
+        return (await AllAsync<Post>(MinistriesFeeds.Posts))
+            .Where(post => post.Audience == Audiences.Everyone && map.Find(post.MinistryId) is { } card && MinistryLogic.IsOn(card.Ministry, MinistryParts.News))
+            .OrderByDescending(post => post.PostedAt).Take(MostPosts)
+            .Select(post => (post, map.Find(post.MinistryId)!.Ministry.Name)).ToList();
     }
 
     public async Task<LifeGroupsPage> LifeGroupsAsync()

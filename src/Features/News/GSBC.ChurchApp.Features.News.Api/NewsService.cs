@@ -38,6 +38,9 @@ internal sealed class NewsService(NewsDesk desk, NewsTelling telling, IAccessEva
         return new Done();
     }
 
+    public async ValueTask<NewsPost> TellAgainAsync(TellAgainRequest request, CallContext context = default) =>
+        await desk.TellAgainAsync(await WriterAsync(context), NewsDesk.ParseId(request.Id), request, context.CancellationToken);
+
     public async ValueTask<Done> TryOnMyPhoneAsync(NewsRef request, CallContext context = default)
     {
         await desk.TryOnPhoneAsync(await WriterAsync(context), NewsDesk.ParseId(request.Id), context.CancellationToken);

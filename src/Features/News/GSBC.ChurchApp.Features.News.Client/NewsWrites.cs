@@ -41,6 +41,9 @@ public sealed class NewsWrites(IWrites writes, IServiceProvider services)
 
     public Task DeleteAsync(string id) => SendAsync(NewsMethods.Delete, new NewsRef { Id = id });
 
+    public Task TellAgainAsync(string id, string title, string body, bool urgent) =>
+        SendAsync(NewsMethods.TellAgain, new TellAgainRequest { Id = id, Title = title, Body = body, Urgent = urgent });
+
     public Task TryOnMyPhoneAsync(string id) => SendAsync(NewsMethods.TryOnMyPhone, new NewsRef { Id = id });
 
     public Task AnswerAskAsync(string id, bool yes, bool tell) => SendAsync(NewsMethods.AnswerAsk, new AskAnswer { Id = id, Yes = yes, Tell = tell });
