@@ -45,7 +45,7 @@ public sealed class LibraryFilesBackFromPostsTests : MediaLibraryHost
         await using AsyncServiceScope after = Services.CreateAsyncScope();
         MediaDbContext moved = after.ServiceProvider.GetRequiredService<MediaDbContext>();
         Dictionary<Guid, Guid?> folders = await moved.Items.ToDictionaryAsync(item => item.Id, item => item.FolderId, Cancellation);
-        Assert.Equal(((Guid?)null, (Guid?)null, ChurchNews, ChatFolder), (folders[Letterboxing], folders[Schedule], folders[UploadedIntoAPost], folders[SharedInAChat]));
+        Assert.Equal((null, null, ChurchNews, ChatFolder), (folders[Letterboxing], folders[Schedule], folders[UploadedIntoAPost], folders[SharedInAChat]));
     }
 
     private static string Key(char fill, string extension) => $"{new string(fill, 64)}.{extension}";
