@@ -25,7 +25,7 @@ public static class EventsNotifications
         Waits: true, For: [EventsPermissions.Organise, EventsPermissions.Edit], Opens: new("/event/{id}"));
 
     public static readonly NotificationKind DigestOut = new(
-        "events.digest.out", "What's next, the weekly digest", "Calendar", Opens: new("/whats-next"));
+        "events.digest.out", "What's next each week", "Calendar", Opens: new("/whats-next"));
 
     public static readonly IReadOnlyList<NotificationKind> All = [Told, AskedToPublish, AskedToShow, AskedToShowElsewhere, DetailsNeeded, DigestOut];
 }

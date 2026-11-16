@@ -14,7 +14,7 @@
 <UnsavedGuard What="the digest" Autosave="() => _save" Save="SaveBeforeLeavingAsync" />
 @inject IJSRuntime Js
 
-<LiveData TValue="DigestDraft" Load="LoadAsync" Feeds="DeskFeeds" FailedTitle="Can't make the digest right now">
+<LiveData TValue="DigestDraft" Load="LoadAsync" Feeds="DeskFeeds" FailedTitle="The digest can't be opened right now">
     <ChildContent>@Drawn()</ChildContent>
     <Loading>
         <TitleBand Title="Weekly digest" BackHref="@CalendarBack" BackText="Calendar" />
@@ -25,7 +25,7 @@
 @code {
     private static readonly IReadOnlyList<string> DeskFeeds = [EventsFeeds.Public, EventsFeeds.Digest];
     private static readonly IReadOnlyList<SegmentOption<DigestRange>> RangeOptions =
-        [new(DigestRange.OneWeek, "One week"), new(DigestRange.TwoWeeks, "Two weeks"), new(DigestRange.Month, "Month"), new(DigestRange.Custom, "Custom")];
+        [new(DigestRange.OneWeek, "One week"), new(DigestRange.TwoWeeks, "Two weeks"), new(DigestRange.Month, "One month"), new(DigestRange.Custom, "Choose dates")];
     private static readonly IReadOnlyList<SegmentOption<bool>> PreviewOptions = [new(false, "In the app"), new(true, "Email")];
     private static readonly TimeSpan SettleTime = TimeSpan.FromMilliseconds(700);
 
@@ -64,16 +64,16 @@
 
     private RenderFragment Drawn() => _draft is not { } draft ? @<text></text> : @<text>
         <TitleBand Title="Weekly digest" BackHref="@CalendarBack" BackText="Calendar"
-                   Lead="What's next at Good Shepherd, made from the calendar: its one-off events, specials and breaks. Untick what you'd leave out, drag to reorder and reword anything for the digest. The calendar itself doesn't change." />
+                   Lead="Made from the calendar's one-off events, special dates and breaks. Untick anything to leave out, drag to reorder, and reword anything for the digest. The calendar itself doesn't change." />
         <Workbench DetailLabel="The chosen item and the preview" Showing="@(Chosen(draft) is null ? WorkbenchPane.Main : WorkbenchPane.Detail)">
         <ChildContent>
-            <SaveStatus State="_save" SavedText="@(draft.SavedAt is null ? "Saves as you change it" : "Saved")" Detail="@SentLine(draft)" Retry="SaveNowAsync" />
+            <SaveStatus State="_save" SavedText="@(draft.SavedAt is null ? "Changes save automatically" : "Saved")" Detail="@SentLine(draft)" Retry="SaveNowAsync" />
 
             <div class="digest-desk__choices">
                 <DateField Label="From" Value="@draft.Start" ValueChanged="ChooseStartAsync" />
                 <div class="field digest-desk__length">
                     <span class="field__label" aria-hidden="true">How long</span>
-                    <Segmented TValue="DigestRange" Label="How long" Options="RangeOptions" Value="draft.Range" ValueChanged="ChooseRangeAsync" />
+                    <Segmented TValue="DigestRange" Label="Covers" Options="RangeOptions" Value="draft.Range" ValueChanged="ChooseRangeAsync" />
                 </div>
                 @if (draft.Range == DigestRange.Custom)
                 {
@@ -88,7 +88,7 @@
 
             @if (draft.Items.Count == 0)
             {
-                <EmptyState Icon="calendar" Title="Nothing special on these dates" Body="No one-off events, specials or breaks in the calendars you chose. Add something not on the calendar, or choose a longer range." />
+                <EmptyState Icon="calendar" Title="Nothing special on these dates" Body="The chosen calendars have no one-off events, special dates or breaks on these dates. Add something not on the calendar, or choose a longer range." />
             }
             else
             {
@@ -101,7 +101,7 @@
                             draggable="true" @ondragstart="() => _dragging = item.Key" @ondragend="() => _dragging = null"
                             @ondragover:preventDefault="true" @ondrop="() => Drop(at)">
                             <span class="digest-row__grip" aria-hidden="true"><Icon Name="grip" Size="IconSize.Small" /></span>
-                            <input type="checkbox" class="digest-row__tick" checked="@item.Included" aria-label="@($"Put {item.Shown.Title} in the digest")"
+                            <input type="checkbox" class="digest-row__tick" checked="@item.Included" aria-label="@($"Include {item.Shown.Title} in the digest")"
                                    @onchange="() => Change(() => item.Included = !item.Included)" />
                             <span class="digest-row__thumb">
                                 @if (item.Picture is { } picture)
@@ -140,7 +140,7 @@
             <div class="digest-desk__add">
                 <Button Variant="ButtonVariant.Quiet" Small="true" Icon="plus" OnClick="AddOwn">Add something not on the calendar</Button>
             </div>
-            <p class="digest-desk__hint">Regular events aren't listed unless a date is different, isn't on or still needs its details. <strong>Rewording</strong> changes the digest only; the event in the calendar keeps its own words.</p>
+            <p class="digest-desk__hint">Regular events are listed only when a date is different, isn't on, or still needs details. <strong>Rewording</strong> changes the digest only; the event in the calendar keeps its own words.</p>
         </ChildContent>
         <Detail>
             @if (Chosen(draft) is { } chosen)
@@ -180,7 +180,7 @@
                 <p class="digest-desk__reach" role="status">@(_told ?? ReachLine(draft))</p>
                 @if (PrivateInEmail(draft) is { } privateNote)
                 {
-                    <ToggleRow Title="Put private calendars' things in the email" Description="@privateNote" Checked="_includePrivate" CheckedChanged="value => _includePrivate = value" />
+                    <ToggleRow Title="Include events from private calendars in the email" Description="@privateNote" Checked="_includePrivate" CheckedChanged="value => _includePrivate = value" />
                 }
                 @if (draft.SentAsItIs)
                 {
@@ -215,7 +215,7 @@
         if (item.Missing.Count > 0)
             yield return ("Needs details", PillTone.Marker);
         if (item.Shown.RegisterLink.Length > 0)
-            yield return ("Register link", PillTone.Accent);
+            yield return ("Registration link", PillTone.Accent);
     }
 
     private static string DetailOf(DigestItem item)
@@ -263,7 +263,7 @@
             return null;
         List<string> calendars = only.Select(item => item.CalendarName).Distinct().ToList();
         string names = calendars.Count == 1 ? calendars[0] : $"{string.Join(", ", calendars.Take(calendars.Count - 1))} and {calendars[^1]}";
-        string things = only.Count == 1 ? "1 thing" : $"{only.Count} things";
+        string things = only.Count == 1 ? "1 item" : $"{only.Count} items";
         return _includePrivate
             ? $"The email includes {things} only for {names}. Send it only to people they're for."
             : $"The email leaves out {things} only for {names}.";
@@ -272,14 +272,14 @@
     private string ReachLine(DigestDraft draft)
     {
         if (draft.Items.All(item => !item.Included))
-            return "Tick something to send it to the app or copy it for email.";
+            return "Tick at least one item to send to the app or copy for email.";
         int count = draft.Items.Count(item => item.Included);
-        string things = count == 1 ? "1 thing" : $"{count} things";
+        string things = count == 1 ? "1 item" : $"{count} items";
         return draft switch
         {
-            { SentAsItIs: true, NotifiedAt: { } notified } => $"It's in the app as it is. People were notified {Ago(notified)}.",
-            { SentAsItIs: true } => "It's in the app as it is.",
-            { NotifiedAt: null } => $"Puts {things} on What's next and notifies everyone who'll see at least one of them. Quiet hours hold the buzz until morning.",
+            { SentAsItIs: true, NotifiedAt: { } notified } => $"The app shows this digest as it is now. People were notified {Ago(notified)}.",
+            { SentAsItIs: true } => "The app shows this digest as it is now.",
+            { NotifiedAt: null } => $"Puts {things} on What's next and notifies everyone who'll see at least one of them. Anyone in quiet hours is notified in the morning.",
             _ when _notifyAgain => $"Puts {things} on What's next and notifies everyone who'll see them again.",
             _ => $"Puts {things} on What's next. Nobody is notified again.",
         };
@@ -368,7 +368,7 @@
         DigestItem own = new()
         {
             Key = $"{OwnPrefix}{Guid.NewGuid():N}", Kind = DigestItemKind.Own, Included = true, ForEveryone = true, Changed = [.. DigestFields.All],
-            Words = new DigestWords { Title = "Something new", When = "" },
+            Words = new DigestWords { Title = "New item", When = "" },
         };
         _draft.Items.Add(own);
         _selected = own.Key;
@@ -469,8 +469,8 @@
             _notifyAgain = false;
             await Shell.HapticAsync();
             _told = notifies
-                ? "Sent. It's on What's next, and everyone who'll see it is being notified (after quiet hours, if it's late)."
-                : "Sent. It's on What's next; nobody was notified again.";
+                ? "Sent. The digest is on What's next, and everyone who will see it is being notified (after quiet hours, if it's late)."
+                : "Sent. The digest is on What's next. Nobody was notified again.";
         }
         catch (RpcException exception)
         {
@@ -487,7 +487,7 @@
         try
         {
             await Editing.Digest.SendToMyPhoneAsync(new DigestRef { Id = draft.Id });
-            _told = "Sent to your phone, marked Test. Tap it to open What's next.";
+            _told = "Sent to your phone, marked Test. Tap the notification to open What's next.";
         }
         catch (RpcException exception)
         {

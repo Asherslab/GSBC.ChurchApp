@@ -735,7 +735,7 @@ approved mocks (surface briefs `.impeccable/surfaces/tures-events-admin-pages-di
 - **Staff choices outlive the calendar:** saved per digest as entries (ticked, order, which fields are reworded and to
   what). Each time it opens, the calendar is read again: an event that's gone drops out, a new one slots in after the last
   item dated on or before it and is marked *New on the calendar*, and a field not reworded follows the calendar. Typing a
-  field back to the calendar's words keeps it in step again; *Use the calendar's* puts it back.
+  field back to the calendar's words keeps it in step again; *Use the calendar's wording* puts it back.
 - **Things not on the calendar** (*Add something not on the calendar*): every field is staff's; for everyone in the app.
 - **Who:** `events.digest`, a global permission, and a *Digest maker* role (Owner includes it). Not given to Calendars
   manager automatically: the office chooses who makes the digest.
@@ -767,11 +767,11 @@ approved mocks (surface briefs `.impeccable/surfaces/tures-events-admin-pages-di
   headings, pictures and buttons. Pictures are their public media addresses; a private picture is left out. *See all
   events* is the app host's shared link to This week (`/open/week`), which opens the app or says how to get it.
   **Private calendars' things are left out of the email by default** (owner, 2026-11-08: "yes"): the email doesn't know
-  who it goes to. Under *Copy for email* the page says how many it leaves out and for whom ("The email leaves out 2 things
-  only for Kids team and Church members."), with a switch, *Put private calendars' things in the email*, for an email to
+  who it goes to. Under *Copy for email* the page says how many it leaves out and for whom ("The email leaves out 2 items
+  only for Kids team and Church members."), with a switch, *Include events from private calendars in the email*, for an email to
   the people they're for. The switch isn't saved: each copy starts without them.
 - **The admin page** follows the approved mock in Platform.Ui's `SplitView`: the list (grip, tick, picture, label, title
-  with pills: *Reworded*, *New on the calendar*, *Needs details*, *Register link*, *Only for Kids team*; place and contact;
+  with pills: *Reworded*, *New on the calendar*, *Needs details*, *Registration link*, *Only for Kids team*; place and contact;
   the when line and time) and, on the right, the chosen item's words, *In the app | Email*, the preview, *Copy for email*
   and *Send to the app* in a footer that stays in view, with failures shown beside it. A reworded field has an aqua ring.
   Once the app has it as it is, the button reads *Sent to the app*. The email preview is
@@ -792,7 +792,7 @@ digests from the page's foot; Copy for email gives only the content block. Decis
   when line, the next ones under rules (their day after them when the tile is two columns wide; things added by hand
   have no date, so none), and the go line (*What's next*) at the foot. At two columns and two rows the lead's
   picture (or the tile's own) sits on top. One row: "Baptisms and 2 more". One cell, or *Just a link*: how many
-  things are coming up. Nothing sent or everything passed: "Nothing new to tell yet". The picture layouts show the lead.
+  things are coming up. Nothing sent or everything passed: "Nothing in What's next yet". The picture layouts show the lead.
   The sketch's small "What's next" label above the headline was left out (craft floor: no eyebrow over a heading); the
   go line says it.
 - **Replacing the bulletin:** a tile kind may name the retired kind it takes over (`HubTileReplacement`,
@@ -801,7 +801,7 @@ digests from the page's foot; Copy for email gives only the content block. Decis
   place, who sees it and its size; the bulletin's words, link and layout go. The Sunday bulletin kind is no longer
   offered. A phone still on the older app doesn't draw the new tile until it updates.
 - **Earlier digests:** the publisher keeps the latest sent digest exactly as before (header `digest`) and the three
-  sent before it, one per start date, under `digest:<start>`. *What's next* ends with *Earlier* (their dates and how many
+  sent before it, one per start date, under `digest:<start>`. *What's next* ends with *Earlier editions* (their dates and how many
   things each); `/whats-next/<start>` shows one as it was sent: nothing dropped, weeks named by their dates, each dated thing's actual day in place of "This Sunday", things added
   by hand in its first week, "as the church office sent it on Monday 2 November".
 - **Copy for email** gives the content block only, 600px wide, with every style inline, tables throughout and buttons
@@ -811,7 +811,7 @@ digests from the page's foot; Copy for email gives only the content block. Decis
   plain-text copy is gone.
 - **Checked** on a backend at `Dev__PortOffset=1000` with main's database copied: bulletin tiles at five sizes turned
   into What's next on restart; a digest sent from the desk showed on Home and on What's next in the Simulator, light and
-  dark; an earlier digest opened from *Earlier*; Copy for email's clipboard held the HTML source.
+  dark; an earlier digest opened from *Earlier editions*; Copy for email's clipboard held the HTML source.
 
 ## The owner's feedback (2026-11-09)
 
@@ -825,7 +825,7 @@ digests from the page's foot; Copy for email gives only the content block. Decis
   date next month.
 - **Storage:** a digest is a row of its own (`id`), with its `start`, `end` and `range`, instead of one per fortnight
   keyed by its Monday. Migration `DigestRanges` gives each existing digest an id and its end (start + weeks), one week as
-  *One week*, two as *Two weeks* and three as *Custom*; sent digests keep their snapshot, notification time and feed rows.
+  *One week*, two as *Two weeks* and three as *Choose dates*; sent digests keep their snapshot, notification time and feed rows.
   The contracts carry the id (`DigestQuery.Id`, `DigestSave.Id`, `DigestRef.Id`) with `Start`, `End` and `Range`.
 - **Which digest the desk opens:** the one last worked on since this Monday that hasn't ended (`Digests.Current`), so
   staff come back to the same digest all week and can still *Send again*; otherwise a new one from today, two weeks,
@@ -854,7 +854,7 @@ digests from the page's foot; Copy for email gives only the content block. Decis
   list, the arrows sat on it, the when column moved per row, the controls were loosely stacked and the chips shouted):
   impeccable's critique (design review and detector, 27/40, snapshot in `.impeccable/critique/`), then a polish pass and
   the finish review. Rows are a grid with a when column that wraps and ends at the same place in every row, arrows
-  always shown; From, How long and To in one row with the range under them; the calendars as Platform.Ui's new quiet
+  always shown; From, Covers and To in one row with the range under them; the calendars as Platform.Ui's new quiet
   toggle chips under a label. Keyboard: moving a row keeps focus on it and says where it went, and Platform.Ui's
   Segmented now moves with the arrow keys (every segmented control). [posts.md](../design/posts.md) has *Weekly digest desk*.
 - **Checked** on a backend of its own (`Dev__PortOffset=1000`, main's database copied with pg_dump): the migration on

@@ -31,9 +31,9 @@ public static class EventsTiles
             Text: "What's next", TitleLabel: "Title when small", TextLabel: "Words to open it"),
         variants:
         [
-            new(Headline, "Headline", "The first thing as the headline and what follows under it; how many when small",
+            new(Headline, "Headline", "Shows the first item as the headline, with what follows under it. A small tile shows how many items there are.",
                 TileVariant.AnySize, (_, _) => true),
-            new(JustALink, "Just a link", "The icon and the title, with how many things are coming up",
+            new(JustALink, "Link only", "Shows the icon and title, with how many things are coming up.",
                 TileVariant.AnySize, (_, _) => false),
             .. TileVariants.Pictures,
         ],
