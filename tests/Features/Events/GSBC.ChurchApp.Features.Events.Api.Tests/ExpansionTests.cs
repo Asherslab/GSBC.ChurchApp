@@ -27,7 +27,7 @@ public sealed class ExpansionTests
     }
 
     [Fact]
-    public void ABreakShowsItsFirstDatesAsNotOnWithItsNameAndWhenItsBackThenLeavesTheRestOut()
+    public void ABreakShowsEveryDateItCoversAsNotOnWithItsNameAndWhenItsBack()
     {
         RegularEventRecord evening = Regular("Evening service", Weekly(DayOfWeek.Sunday));
         BreakRecord christmas = new() { Name = "Christmas break", StartDate = new DateOnly(2026, 12, 21), EndDate = new DateOnly(2027, 1, 25) };
@@ -35,8 +35,8 @@ public sealed class ExpansionTests
         List<EventOccurrence> dates = Expansion.OccurrencesOf(evening, new Dictionary<DateOnly, SpecialRecord>(), [christmas],
             new DateOnly(2026, 12, 20), new DateOnly(2027, 2, 7)).ToList();
 
-        Assert.Equal(["2026-12-20", "2026-12-27", "2027-01-03", "2027-01-31", "2027-02-07"], dates.Select(date => date.Date));
-        Assert.All(dates.Where(date => date.Date is "2026-12-27" or "2027-01-03"), date =>
+        Assert.Equal(["2026-12-20", "2026-12-27", "2027-01-03", "2027-01-10", "2027-01-17", "2027-01-24", "2027-01-31", "2027-02-07"], dates.Select(date => date.Date));
+        Assert.All(dates.Where(date => date.Date is not ("2026-12-20" or "2027-01-31" or "2027-02-07")), date =>
             Assert.Equal((true, "Christmas break", "2027-01-31", "Evening service"), (date.NotOn, date.NotOnReason, date.BackOn, date.Fields.Title)));
         Assert.False(dates[0].NotOn);
     }
@@ -82,6 +82,17 @@ public sealed class ExpansionTests
         Assert.Equal(["2026-12-27", "2027-01-03", "2027-01-10", "2027-01-17", "2027-01-24"], run.Where(date => date.NotOn).Select(date => date.Date));
         Assert.All(run.Where(date => date.NotOn), date => Assert.Equal("Christmas break", date.NotOnReason));
         Assert.Equal(("Evening service", 18 * 60, false), (run[^1].Title, run[^1].StartMinute, run[^1].NotOn));
+    }
+
+    [Fact]
+    public void ADateWhoseEndIsNotAfterItsStartHasNoEnd()
+    {
+        RegularEventRecord sunday = Regular("Sunday Service", Weekly(DayOfWeek.Sunday));
+        (sunday.StartMinute, sunday.EndMinute) = (10 * 60 + 30, 0);
+
+        EventOccurrence date = Expansion.OccurrencesOf(sunday, new Dictionary<DateOnly, SpecialRecord>(), [], new DateOnly(2026, 11, 22), new DateOnly(2026, 11, 22)).Single();
+
+        Assert.Equal(date.StartsAt, date.EndsAt);
     }
 
     private static RegularPattern Weekly(DayOfWeek day) => new() { Repeats = Repeats.Weekly, Days = [day], StartDate = "2026-01-04" };

@@ -12,7 +12,7 @@
                 }
                 <SitsUnderPicker Directory="_directory" UnderId="@(Under?.Id ?? "")" UnderIdChanged="id => _underId = id" Hint="Its leaders lead the new ministry too." />
                 <TextField Label="Name" @bind-Value="_name" MaxLength="60" Required="true" />
-                <TextField Label="In a line" @bind-Value="_summary" MaxLength="140" />
+                <TextField Label="The ministry's purpose in one line" @bind-Value="_summary" MaxLength="140" Hint="Shown under its name on its page and in the lists of ministries." />
                 <TextField Label="When and where it meets" @bind-Value="_meets" MaxLength="140" />
                 <LifeGroupsFields Shows="_shows" ShowsChanged="value => _shows = value" RoundId="@_roundId" RoundIdChanged="value => _roundId = value" />
                 <JoiningFields TeamJoin="@_teamJoin" TeamJoinChanged="value => _teamJoin = value" AttendJoin="@_attendJoin" AttendJoinChanged="value => _attendJoin = value" />

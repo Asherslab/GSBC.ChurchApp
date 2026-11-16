@@ -20,6 +20,7 @@ public static class MediaAdminExtensions
             .AddSingleton(provider => new MediaUploadClient(provider.GetRequiredService<Grpc.Core.ChannelBase>(), new HttpClient()))
             .AddSingleton(new MediaDirectUpload(typeof(MediaUpload)))
             .AddSingleton<IDirectUploads, MediaDirectUploads>()
+            .AddSingleton<IMediaPlaces, MediaPlacesClient>()
             .AddSingleton<IFontLibrary>(provider => new FontLibrary(provider.GetRequiredService<Grpc.Core.ChannelBase>(), provider.GetRequiredService<GSBC.ChurchApp.Platform.Client.Access.IAccess>()))
             .AddPlaceAction(new PlaceAction("Open in Media", "image", place => place.Kind == MediaDestinations.File.Key ? "media" : null, MediaPermissions.View, Leads: true));
     }

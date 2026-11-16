@@ -1,6 +1,7 @@
 using System.Globalization;
 using GSBC.ChurchApp.Features.Ministries.Contracts;
 using GSBC.ChurchApp.Platform.Client.Modules;
+using GSBC.ChurchApp.Platform.Contracts.Content;
 
 namespace GSBC.ChurchApp.Features.Ministries.Client;
 
@@ -26,7 +27,7 @@ public static class MinistryWords
 
     public static string WhoReads(string audience, MinistryDetails ministry) => audience switch
     {
-        Audiences.Team => $"Only the {ministry.Name} team sees this.",
+        Audiences.Team => $"Only {TeamNames.InSentence(ministry.Name)} sees this.",
         Audiences.Attendees => $"Attendees of {ministry.Name}, their parents and the team see this.",
         Audiences.Parents => $"Only parents of attendees of {ministry.Name}, and the team, see this.",
         _ when MinistryLogic.IsHidden(ministry) => $"{ministry.Name} is hidden, so only its own people, the leaders above it and staff see this.",
@@ -41,11 +42,19 @@ public static class MinistryWords
 
     public static string HiddenBecause(string above) => $"Hidden, because {above} is. Only its own people and staff see it.";
 
-    public static string Short(string audience, MinistryDetails ministry) =>
-        audience == Audiences.Everyone && MinistryLogic.IsHidden(ministry) ? "Everyone who sees it" : Short(audience);
+    public static string Short(string audience, MinistryDetails ministry) => audience switch
+    {
+        Audiences.Team => TeamNames.Of(ministry.Name),
+        Audiences.Everyone when MinistryLogic.IsHidden(ministry) => "Everyone who sees it",
+        _ => Short(audience),
+    };
 
-    public static string PostFor(string audience, MinistryDetails ministry) =>
-        audience == Audiences.Everyone && MinistryLogic.IsHidden(ministry) ? "Post for everyone who sees it" : PostFor(audience);
+    public static string PostFor(string audience, MinistryDetails ministry) => audience switch
+    {
+        Audiences.Team => $"Post for {TeamNames.InSentence(ministry.Name)}",
+        Audiences.Everyone when MinistryLogic.IsHidden(ministry) => "Post for everyone who sees it",
+        _ => PostFor(audience),
+    };
 
     public static string PostFor(string audience) => audience switch
     {
