@@ -4,6 +4,7 @@ using GSBC.ChurchApp.Platform.Api.Access;
 using GSBC.ChurchApp.Platform.Api.Calendars;
 using GSBC.ChurchApp.Platform.Api.Hosting;
 using GSBC.ChurchApp.Platform.Api.Media;
+using GSBC.ChurchApp.Platform.Api.News;
 using GSBC.ChurchApp.Platform.Api.People;
 using GSBC.ChurchApp.Platform.Api.Sync;
 using GSBC.ChurchApp.Platform.Permissions;
@@ -19,6 +20,7 @@ public static class EventsApiExtensions
     {
         services.AddEventsData();
         services.AddScoped<EventsPublisher>();
+        services.AddScoped<INewsWatcher, DigestNewsWatcher>();
         services.AddScoped<IPersonData, EventsPersonData>();
         services.AddScoped<EventWriter>();
         services.AddScoped<HandledRequests>();

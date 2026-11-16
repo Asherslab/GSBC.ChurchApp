@@ -1,0 +1,47 @@
+{
+  "title": "Weekly digest, round 2 (1 of 4): the desk, now that everything is added by hand",
+  "question": "As you said: a digest starts empty and staff add each thing from the calendar, from church news or by writing it; choosing a thing opens it in a dialog (next round), so the right side stays the preview. Each sketch is the admin panel's Weekly digest with five things added (one is a Members-only news post). Pick the layout; steer anything in the box. My recommendation: A. The preview gets the room it needs to show the email at a readable size (your #27 is about how the email looks), the list stays a short running order, and the three add buttons sit where the list ends. B hides the preview behind a button, so you can't see the email while you order things; C keeps the picker open all the time, which pushes what's in the digest below the fold.",
+  "options": [
+    {
+      "id": "preview-led",
+      "kind": "assigned",
+      "kicker": "THE ROLL",
+      "label": "A: The running order beside a big preview",
+      "thesis": "The list of what's in the digest on the left (grip, picture, where it came from, title, when, ⋯), with From the calendar, A church news post and Something else under it; the right half is the preview, In the app or Email, big enough to read, with Copy for email and Send at its foot.",
+      "palette": ["#141d31", "#1d2840", "#2ec4b6", "#f2ede4"],
+      "materials": ["running order with a grip", "three add buttons at the list's end", "a large preview canvas", "dialog to edit"],
+      "viewport": "Dates at the top left, five things in order under them, the email at a readable scale on the right, Send under it.",
+      "risk": "The list column is narrower than today's, so a long title wraps onto two lines.",
+      "html": ".impeccable/mocks/digest-2/a-preview-led.html",
+      "htmlFrame": "1440x900"
+    },
+    {
+      "id": "running-order",
+      "kind": "dealt",
+      "label": "B: One column of big cards",
+      "thesis": "No side column: each thing is a large card with its picture and words much as people will see them, in one centred column; three dashed boxes at the end add from the calendar, church news or by hand. Preview, Copy for email and Send sit in the title bar; Preview opens the app and email full size.",
+      "palette": ["#141d31", "#1d2840", "#2ec4b6", "#f0c493"],
+      "materials": ["big cards close to the finished look", "dashed add boxes", "actions in the title bar"],
+      "viewport": "Dates and Saved at the top of a centred column, then the cards: Not on, Baptisms, the food pantry post, Christmas Day.",
+      "risk": "You can't see the real app or email while you edit, only cards that look like them; four or five things fill the screen.",
+      "html": ".impeccable/mocks/digest-2/b-running-order.html",
+      "htmlFrame": "1440x900"
+    },
+    {
+      "id": "add-panel",
+      "kind": "dealt",
+      "label": "C: A picker always open above the list",
+      "thesis": "Above what's in the digest sits a panel with tabs, From the calendar | Church news | Something else: the calendar tab lists everything in the dates by day, with calendar filters, and + Add beside each (or ✓ In the digest). The phone preview stays on the right as now.",
+      "palette": ["#141d31", "#1d2840", "#2ec4b6", "#34446a"],
+      "materials": ["tabbed picker always visible", "+ Add per result", "In the digest list below", "phone preview on the right"],
+      "viewport": "Dates, then the picker showing Wed 16 to Fri 25 with three already added, then the start of In the digest; the phone on the right.",
+      "risk": "The picker takes the top half, so what's actually in the digest starts below the fold once there are a few things.",
+      "html": ".impeccable/mocks/digest-2/c-add-panel.html",
+      "htmlFrame": "1440x900"
+    }
+  ],
+  "reroll": true,
+  "steer": true,
+  "followup": true,
+  "buildPath": { "value": "code" }
+}

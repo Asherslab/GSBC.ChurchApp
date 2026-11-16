@@ -19,6 +19,7 @@ public static class NewsApiExtensions
         services.AddNewsData();
         services.AddScoped<NewsPublisher>().AddScoped<NewsTelling>().AddScoped<NewsDesk>();
         services.AddScoped<IChurchNews, ChurchNewsShares>();
+        services.AddScoped<INewsHighlights, NewsHighlights>();
         services.AddScoped<IPersonData, NewsPersonData>();
         services.AddHostedService<NewsSchedule>();
         services.AddPermissions(NewsPermissions.All);

@@ -1,0 +1,91 @@
+@using GSBC.ChurchApp.Platform.Contracts.Media
+
+<Sheet Open="true" OpenChanged="_ => OnClose.InvokeAsync()" Wide="true" Title="@Title" Lead="@Lead" LayerClass="digest-add-layer">
+    <ChildContent>
+        <div class="digest-add">
+            @Filter
+            @if (Groups.Count == 0)
+            {
+                <EmptyState Icon="@EmptyIcon" Title="@EmptyTitle" Body="@EmptyBody" />
+            }
+            @foreach (DigestPickGroup group in Groups)
+            {
+                <section class="digest-add__group" aria-label="@group.Heading">
+                    <h3 class="digest-add__day">@group.Heading</h3>
+                    <ul class="digest-add__list">
+                        @foreach (DigestItem item in group.Items)
+                        {
+                            bool added = Added.Contains(item.Key);
+                            <li class="digest-add__row @(added ? "digest-add__row--added" : "")" @key="item.Key">
+                                <span class="digest-add__thumb">
+                                    @if (item.Shown.Picture is { } picture)
+                                    {
+                                        <MediaImage Media="picture" Size="MediaSizeName.Thumbnail" Alt="" />
+                                    }
+                                </span>
+                                <span class="digest-add__words">
+                                    <span class="digest-add__title">@item.Shown.Title
+                                        @foreach ((string words, PillTone tone) in Pills(item))
+                                        {
+                                            <Pill Tone="tone">@words</Pill>
+                                        }
+                                    </span>
+                                    <span class="digest-add__detail">@Detail(item)</span>
+                                </span>
+                                @if (added)
+                                {
+                                    <span class="digest-add__added"><Icon Name="check" Size="IconSize.Small" />In the digest</span>
+                                }
+                                else
+                                {
+                                    <Button Small="true" Variant="ButtonVariant.Tinted" Icon="plus" OnClick="() => OnAdd.InvokeAsync(item)" AriaLabel="@($"Add {item.Shown.Title} to the digest")">Add</Button>
+                                }
+                            </li>
+                        }
+                    </ul>
+                </section>
+            }
+        </div>
+    </ChildContent>
+    <Actions>
+        <div class="digest-add__foot">
+            <span class="digest-add__count" role="status">@CountLine</span>
+            <Button OnClick="() => OnClose.InvokeAsync()">Done</Button>
+        </div>
+    </Actions>
+</Sheet>
+
+@code {
+    [Parameter, EditorRequired] public required string Title { get; set; }
+    [Parameter] public string? Lead { get; set; }
+    [Parameter, EditorRequired] public required IReadOnlyList<DigestPickGroup> Groups { get; set; }
+    [Parameter, EditorRequired] public required IReadOnlySet<string> Added { get; set; }
+    [Parameter, EditorRequired] public required Func<DigestItem, string> Detail { get; set; }
+    [Parameter] public RenderFragment? Filter { get; set; }
+    [Parameter] public string EmptyIcon { get; set; } = "calendar";
+    [Parameter] public string EmptyTitle { get; set; } = "Nothing here";
+    [Parameter] public string? EmptyBody { get; set; }
+    [Parameter] public EventCallback<DigestItem> OnAdd { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+
+    private string CountLine
+    {
+        get
+        {
+            int count = Groups.SelectMany(group => group.Items).Count(item => Added.Contains(item.Key));
+            return count switch { 0 => "", 1 => "1 of these is in the digest", _ => $"{count} of these are in the digest" };
+        }
+    }
+
+    private static IEnumerable<(string, PillTone)> Pills(DigestItem item)
+    {
+        if (item.Kind == DigestItemKind.NotOn)
+            yield return ("Not on", PillTone.Marker);
+        else if (item.Missing.Count > 0)
+            yield return ("Needs details", PillTone.Marker);
+        else if (item is { Kind: DigestItemKind.Event, Special: true })
+            yield return (item.Key.StartsWith("event:", StringComparison.Ordinal) ? "One-off" : "Special date", PillTone.Accent);
+        if (DigestDeskWords.OnlyFor(item) is { } onlyFor)
+            yield return (onlyFor, PillTone.Quiet);
+    }
+}

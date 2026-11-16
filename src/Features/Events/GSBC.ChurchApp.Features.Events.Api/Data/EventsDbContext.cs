@@ -1,5 +1,6 @@
 using System.Text.Json;
 using GSBC.ChurchApp.Platform.Api.Sync;
+using GSBC.ChurchApp.Platform.Contracts.Media;
 using GSBC.ChurchApp.Platform.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
@@ -110,6 +111,9 @@ public sealed class EventsDbContext(DbContextOptions<EventsDbContext> options) :
             entity.HasIndex(digest => digest.Start);
             Json(entity.Property(digest => digest.Entries));
             Json(entity.Property(digest => digest.Sent));
+            entity.Property(digest => digest.TopPicture).HasColumnType("jsonb").HasConversion(
+                value => value == null ? null : JsonSerializer.Serialize(value, JsonSerializerOptions.Web),
+                json => json == null ? null : JsonSerializer.Deserialize<MediaRef>(json, JsonSerializerOptions.Web));
         });
     }
 

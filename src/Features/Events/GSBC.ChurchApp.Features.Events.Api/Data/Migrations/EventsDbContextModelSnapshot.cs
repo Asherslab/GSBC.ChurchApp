@@ -19,7 +19,7 @@ namespace GSBC.ChurchApp.Features.Events.Api.Data.Migrations
 #pragma warning disable 612, 618
             modelBuilder
                 .HasDefaultSchema("events")
-                .HasAnnotation("ProductVersion", "10.0.14")
+                .HasAnnotation("ProductVersion", "10.0.15")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -259,6 +259,10 @@ namespace GSBC.ChurchApp.Features.Events.Api.Data.Migrations
                     b.Property<DateOnly>("Start")
                         .HasColumnType("date")
                         .HasColumnName("start");
+
+                    b.Property<string>("TopPicture")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("top_picture");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone")

@@ -236,8 +236,12 @@
 .whats-next__items { display: grid; gap: 14px; }
 .whats-next-card .card__body { gap: 2px; }
 .whats-next-card__label { color: var(--accent); font-size: var(--text-caption); font-weight: 700; }
+.whats-next-card__label--news { color: var(--ink-2); }
 .whats-next-card__title { color: var(--ink); font-size: var(--text-lead); font-weight: 700; line-height: 1.25; letter-spacing: -0.01em; text-decoration: none; }
 a.whats-next-card__title:active { opacity: 0.7; }
+.whats-next__pick { padding: 0; border: 0; background: none; font-family: inherit; text-align: left; cursor: pointer; text-decoration: underline; text-decoration-color: transparent; text-underline-offset: 3px; transition: text-decoration-color 140ms var(--ease-out); }
+.whats-next__pick:hover { text-decoration-color: currentColor; }
+.whats-next__pick:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: var(--radius-inner); }
 .whats-next-card__when { color: var(--primary); font-size: var(--text-row); font-weight: 600; font-variant-numeric: tabular-nums; }
 .whats-next-card__about { display: block; margin-top: 8px; color: var(--ink-2); font-size: var(--text-row); line-height: 1.5; }
 .whats-next-card__fact { display: flex; align-items: center; gap: 6px; margin-top: 8px; color: var(--ink-2); font-size: var(--text-caption); }
@@ -246,6 +250,7 @@ a.whats-next-card__title:active { opacity: 0.7; }
 .whats-next-off .card__body { gap: 2px; }
 .whats-next-off__head { display: flex; align-items: center; gap: 8px; color: var(--ink); font-size: var(--text-row); }
 .whats-next-off__head .icon { color: var(--marker-ink); }
+.whats-next-off__title { color: inherit; font-size: inherit; font-weight: 700; }
 .whats-next-off__when { padding-left: 24px; color: var(--ink-2); font-size: var(--text-caption); font-weight: 600; }
 .whats-next-off__about { padding-left: 24px; color: var(--ink-2); font-size: var(--text-caption); line-height: 1.45; }
 
