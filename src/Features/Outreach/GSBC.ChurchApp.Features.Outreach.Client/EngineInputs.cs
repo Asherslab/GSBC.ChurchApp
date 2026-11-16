@@ -5,6 +5,7 @@ using RoutingPoint = GSBC.ChurchApp.Features.Outreach.Routing.GeoPoint;
 using RecordPoint = GSBC.ChurchApp.Features.Outreach.Contracts.GeoPoint;
 using RecordStretch = GSBC.ChurchApp.Features.Outreach.Contracts.Stretch;
 using RoutingCovered = GSBC.ChurchApp.Features.Outreach.Routing.CoveredStretch;
+using RecordCovered = GSBC.ChurchApp.Features.Outreach.Contracts.CoveredStretch;
 
 namespace GSBC.ChurchApp.Features.Outreach.Client;
 
@@ -40,8 +41,14 @@ public static class EngineInputs
     public static StreetSide Side(Side side) => side == Routing.Side.Right ? StreetSide.Right : StreetSide.Left;
 
     public static SideStretch? SideStretch(StreetGraph graph, RecordStretch stretch) =>
-        StreetKey.TryParse(stretch.Street, out StreetKey key) && graph.StreetOf(key) is { } street && stretch.From < stretch.To
-            ? new SideStretch(street, Side(stretch.Side), stretch.From / (double)OutreachRules.WholeStreet, stretch.To / (double)OutreachRules.WholeStreet)
+        StreetKey.TryParse(stretch.Street, out StreetKey key) ? SideStretch(graph, key, stretch.Side, stretch.From, stretch.To) : null;
+
+    public static SideStretch? SideStretch(StreetGraph graph, StreetKey key, RecordCovered covered) =>
+        SideStretch(graph, key, covered.Side, covered.From, covered.To);
+
+    private static SideStretch? SideStretch(StreetGraph graph, StreetKey key, StreetSide side, int from, int to) =>
+        graph.StreetOf(key) is { } street && from < to
+            ? new SideStretch(street, Side(side), from / (double)OutreachRules.WholeStreet, to / (double)OutreachRules.WholeStreet)
             : null;
 
     public static RecordStretch Stretch(StreetGraph graph, string region, long version, SideStretch stretch)

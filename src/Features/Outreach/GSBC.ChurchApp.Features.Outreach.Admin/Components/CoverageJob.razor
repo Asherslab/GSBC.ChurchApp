@@ -106,7 +106,10 @@
     private string? _problem;
     private Shown? _shown;
     private Dictionary<string, CoverageView> _views = [];
-    private IReadOnlyList<MapLine> _lines = [];
+    private HashSet<string> _building = [];
+    private Task<IReadOnlyList<CoverageRecord>>? _records;
+    private readonly Dictionary<string, MapLineSet> _lineSets = [];
+    private IReadOnlyList<MapLineSet> _shownSets = [];
     private IReadOnlyList<MapLine> _drawn = [];
     private CoverageTally? _tally;
     private DateTimeOffset _drewAt;
@@ -116,6 +119,8 @@
     public override IReadOnlyList<LayerCount> Shows => [new(OutreachLayer.Coverage, 0)];
 
     public override IReadOnlyList<MapLine> Lines => Map.Shows(OutreachLayer.Coverage) ? _drawn : [];
+
+    public override IReadOnlyList<MapLineSet> LineSets => Map.Shows(OutreachLayer.Coverage) ? _shownSets : [];
 
     public override IReadOnlyList<MapArea> Areas => _choice is { Area: { } drawn } ? [new MapArea(drawn, "--ink", Dashed: true)] : [];
 
@@ -142,40 +147,61 @@
         Task<CoverageMap> coverage = Outreach.CoverageAsync(Map.Scope, campaign);
         await Task.WhenAll(desk, coverage);
         Shown shown = new(await desk, campaign, await coverage);
-        _shown = shown;
-        _views = [];
-        await ShowViewsAsync();
+        HashSet<string> shownBefore = [.. _views.Keys];
+        (_shown, _views, _building, _tally) = (shown, [], [], null);
+        _records = CoverageRecord.ReadAsync(shown.Coverage.Streets, new FrameBudget(Time));
+        foreach (string gone in _lineSets.Keys.Where(region => Map.Atlas.Regions.All(each => each.Id != region)).ToList())
+            _lineSets.Remove(gone);
+        _ = ShowViewsAsync(Map.Atlas.Regions.Where(region => shownBefore.Contains(region.Id)));
         return shown;
     }
 
-    private void Moved() => _ = MovedAsync();
+    private void Moved() => _ = ShowViewsAsync([]);
 
-    private async Task MovedAsync()
+    private async Task ShowViewsAsync(IEnumerable<OutreachRegion> rebuilding)
     {
-        await ShowViewsAsync();
-        await InvokeAsync(StateHasChanged);
-    }
-
-    private async Task ShowViewsAsync()
-    {
-        if (_shown is not { } shown || (Map.View ?? Map.Frame) is not { } view)
+        if (_shown is not { } shown || _records is not { } reading || (Map.View ?? Map.Frame) is not { } view)
             return;
-        List<OutreachRegion> missing = [.. Map.Atlas.In(view).Where(region => !_views.ContainsKey(region.Id))];
-        if (missing.Count > 0)
+        HashSet<string> building = _building;
+        List<OutreachRegion> missing = [.. Map.Atlas.In(view).Concat(rebuilding).Where(region => !_views.ContainsKey(region.Id) && building.Add(region.Id))];
+        _tally = Tally(view);
+        await InvokeAsync(StateHasChanged);
+        if (missing.Count == 0)
+            return;
+        FrameBudget budget = new(Time);
+        IReadOnlyList<CoverageRecord> records = await reading;
+        Task<StreetGraph>[] graphs = [.. missing.Select(Graphs.LoadAsync)];
+        for (int index = 0; index < missing.Count; index++)
         {
-            _tally = null;
-            int restDays = RestDays(shown);
-            DateOnly today = ChurchTime.Today(Time);
-            StreetGraph[] graphs = await Task.WhenAll(missing.Select(Graphs.LoadAsync));
+            OutreachRegion region = missing[index];
+            if (await Loaded(graphs[index]) is not { } graph)
+            {
+                building.Remove(region.Id);
+                continue;
+            }
+            CoverageView built = await CoverageView.BuildAsync(graph, records, RestDays(shown), ChurchTime.Today(Time), Map.Atlas.Owns(region), budget);
             if (!ReferenceEquals(shown, _shown))
                 return;
-            for (int index = 0; index < missing.Count; index++)
-                _views[missing[index].Id] = new CoverageView(graphs[index], shown.Coverage.Streets, restDays, today, Map.Atlas.Owns(missing[index]));
-            _lines = [.. _views.Values.SelectMany(each => each.Lines())];
+            _views[region.Id] = built;
+            _lineSets[region.Id] = new MapLineSet(region.Id, built.Lines);
+            _shownSets = [.. _lineSets.Values];
             RefreshChoice();
             Redraw();
+            _tally = (Map.View ?? Map.Frame) is { } now ? Tally(now) : null;
+            await InvokeAsync(StateHasChanged);
         }
-        _tally = Tally(view);
+    }
+
+    private static async Task<StreetGraph?> Loaded(Task<StreetGraph> graph)
+    {
+        try
+        {
+            return await graph;
+        }
+        catch (HttpRequestException)
+        {
+            return null;
+        }
     }
 
     private CoverageTally? Tally(MapFrame view)
@@ -198,9 +224,7 @@
 
     private void Redraw()
     {
-        _drawn = _choice is { Street: { } street } && _choiceView is { } view
-            ? [new MapLine(view.StreetShape(street), MapLineStyle.Chosen), .. _lines]
-            : _lines;
+        _drawn = _choice is { Street: { } street } && _choiceView is { } view ? [new MapLine(view.StreetShape(street), MapLineStyle.Chosen)] : [];
         Map.Redraw();
     }
 

@@ -10,6 +10,8 @@ public interface IOutreachMapLayer
 
     IReadOnlyList<MapLine> Lines { get; }
 
+    IReadOnlyList<MapLineSet> LineSets { get; }
+
     IReadOnlyList<MapArea> Areas { get; }
 
     IReadOnlyList<MapMarker> Markers { get; }

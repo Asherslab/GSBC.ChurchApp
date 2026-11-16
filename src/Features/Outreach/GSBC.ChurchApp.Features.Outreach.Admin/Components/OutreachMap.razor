@@ -28,7 +28,7 @@
                     <Map>
                         @if (map.Atlas.Source is { } source)
                         {
-                            <MapView @ref="_view" Source="@source" Reach="@(map.Job == OutreachMapJob.MapAreas && map.Open ? map.Atlas.Reach : map.Atlas.Limits)" Label="@MapLabel" Lines="@Lines" Areas="@Areas" Markers="@Markers"
+                            <MapView @ref="_view" Source="@source" Reach="@(map.Job == OutreachMapJob.MapAreas && map.Open ? map.Atlas.Reach : map.Atlas.Limits)" Label="@MapLabel" Lines="@Lines" LineSets="@LineSets" Areas="@Areas" Markers="@Markers"
                                      Frame="@map.Frame" OnTap="map.TapAsync" OnMoved="MovedAsync">
                                 <Overlay>
                                     @if (map.Drawing is null)
@@ -102,6 +102,7 @@
     private MapSketch? _sketch;
     private int _drawnVersion = -1;
     private IReadOnlyList<MapLine> _lines = [];
+    private IReadOnlyList<MapLineSet> _lineSets = [];
     private IReadOnlyList<MapArea> _areas = [];
     private IReadOnlyList<MapMarker> _markers = [];
 
@@ -137,6 +138,15 @@
         {
             Collect();
             return _lines;
+        }
+    }
+
+    private IReadOnlyList<MapLineSet> LineSets
+    {
+        get
+        {
+            Collect();
+            return _lineSets;
         }
     }
 
@@ -200,6 +210,7 @@
             return;
         _drawnVersion = map.Version;
         _lines = [.. map.Layers.SelectMany(layer => layer.Lines)];
+        _lineSets = [.. map.Layers.SelectMany(layer => layer.LineSets)];
         _areas = [.. map.Layers.SelectMany(layer => layer.Areas)];
         _markers = [.. map.Layers.SelectMany(layer => layer.Markers)];
     }

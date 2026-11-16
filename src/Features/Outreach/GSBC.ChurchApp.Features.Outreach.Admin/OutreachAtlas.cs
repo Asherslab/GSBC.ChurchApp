@@ -12,10 +12,12 @@ public sealed class OutreachAtlas
     private const double RoomToPan = 0.05;
     private const double AroundChurch = 0.025;
     private static readonly IReadOnlySet<CellRef> NothingChanged = new HashSet<CellRef>();
+    private readonly Placed[] _placed;
 
     public OutreachAtlas(IReadOnlyList<OutreachRegion> regions, IReadOnlyList<Maps.Contracts.MapArea> areas)
     {
         Regions = [.. regions.Where(region => region.Map.Url.Length > 0).OrderBy(region => region.Id, StringComparer.Ordinal)];
+        _placed = [.. Regions.Select(Placed.Of)];
         List<AreaCell> unbuilt = [.. areas.SelectMany(area => MapAreaDrawing.Cells(area, NothingChanged)
             .Where(cell => cell.Look is CellLook.Waiting or CellLook.Off or CellLook.Empty)
             .Select(cell => cell with { Name = Note(area, cell) }))];
@@ -49,11 +51,16 @@ public sealed class OutreachAtlas
     public static MapFrame Around(IEnumerable<OutreachRegion> regions) =>
         MapFrame.Around(regions.SelectMany(region => MapReach.Ring(Box(region.Core))), padding: 24, maxZoom: 15);
 
-    public OutreachRegion? RegionAt(MapPoint point) =>
-        Regions.FirstOrDefault(region => MapReach.Inside(Box(region.Core), point))
-        ?? Regions.FirstOrDefault(region => MapReach.Inside(Box(region.Bounds), point));
+    public OutreachRegion? RegionAt(MapPoint point) => RegionAt(_placed, point);
 
-    public Func<MapPoint, bool> Owns(OutreachRegion region) => point => RegionAt(point)?.Id == region.Id;
+    public Func<MapPoint, bool> Owns(OutreachRegion region)
+    {
+        Placed own = Placed.Of(region);
+        MapFrame reach = new(Math.Min(own.Core.South, own.Bounds.South), Math.Min(own.Core.West, own.Bounds.West),
+            Math.Max(own.Core.North, own.Bounds.North), Math.Max(own.Core.East, own.Bounds.East));
+        Placed[] near = [.. _placed.Where(other => Touch(other.Core, reach) || Touch(other.Bounds, reach))];
+        return point => RegionAt(near, point)?.Id == region.Id;
+    }
 
     public IEnumerable<OutreachRegion> In(MapFrame view) =>
         Regions.Where(region => region.Core.South < view.North && region.Core.North > view.South && region.Core.West < view.East && region.Core.East > view.West);
@@ -67,6 +74,18 @@ public sealed class OutreachAtlas
     }
 
     private static MapFrame Box(MapBounds bounds) => MapAreaDrawing.Box(bounds);
+
+    private static OutreachRegion? RegionAt(Placed[] regions, MapPoint point) =>
+        Array.Find(regions, region => MapReach.Inside(region.Core, point))?.Region
+        ?? Array.Find(regions, region => MapReach.Inside(region.Bounds, point))?.Region;
+
+    private static bool Touch(MapFrame one, MapFrame other) =>
+        one.South <= other.North && one.North >= other.South && one.West <= other.East && one.East >= other.West;
+
+    private sealed record Placed(OutreachRegion Region, MapFrame Core, MapFrame Bounds)
+    {
+        public static Placed Of(OutreachRegion region) => new(region, Box(region.Core), Box(region.Bounds));
+    }
 
     private static string Note(Maps.Contracts.MapArea area, AreaCell cell) => cell.Look switch
     {
