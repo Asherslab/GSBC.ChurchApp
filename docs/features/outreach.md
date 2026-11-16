@@ -759,14 +759,16 @@ panes, etc. can also be used to expand and change "Map Areas" and view coverage.
     holds no street index (it would read whole `.streets` files, up to 1.5 MB a region, per call or need a new one),
     each call adds a round trip, and the browser already has those streets to draw coverage and find the street you
     click.
-  - reading a region's streets, building its coverage and making its lines run in slices of about 8 ms that give the
+  - reading a region's streets (unzipping it too), building its coverage and making its lines run in slices of about 8 ms that give the
     browser a turn between (`FrameBudget`, Platform.Ui), never on a WASM thread. "Counting…" shows until every region in
     view is built.
   - each region's coverage lines go to the map once, as numbers rather than JSON, and only the regions that changed
     are added or taken away (`MapView.LineSets`, maplibre's `updateData`).
   - which region owns a street (each street counted once where areas overlap) checks only the regions near it.
-  After: Safari's engine no frame gap over 80 ms after a pan; in Chromium the only long frames left are maplibre's own
-  drawing in headless software GL. The other map jobs don't recompute anything when the map moves.
+  After (with the Australia overview underneath): in Safari's engine most pans show no frame gap over 60 ms; a pan
+  that loads several new regions at once can still show one of 110–210 ms, varying run to run. In Chromium the long
+  frames left are maplibre's own drawing in headless software GL. The other map jobs don't recompute anything when the
+  map moves.
 
 ### Open (for stage 2 and the owner)
 

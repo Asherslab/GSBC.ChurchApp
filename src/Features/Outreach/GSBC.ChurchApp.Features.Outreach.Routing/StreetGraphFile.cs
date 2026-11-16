@@ -11,6 +11,7 @@ public static class StreetGraphFile
 
     private const int AlongSteps = 10_000;
     private const int ItemsPerStep = 2_000;
+    private const int BytesPerStep = 64 * 1024;
     private const double DecimetresPerMetre = 10;
     private const byte Plain = 0;
     private const byte Deflated = 1;
@@ -42,7 +43,7 @@ public static class StreetGraphFile
         return stream.ToArray();
     }
 
-    public static StreetGraph Read(Stream input) => ReadPayload(Payload(input));
+    public static StreetGraph Read(Stream input) => Steps(input).Last()!;
 
     public static StreetGraph Read(byte[] bytes)
     {
@@ -53,29 +54,37 @@ public static class StreetGraphFile
     public static IEnumerable<StreetGraph?> ReadInSteps(byte[] bytes)
     {
         using MemoryStream stream = new(bytes, writable: false);
-        return PayloadSteps(Payload(stream));
+        foreach (StreetGraph? step in Steps(stream))
+            yield return step;
     }
 
-    private static byte[] Payload(Stream input)
+    private static IEnumerable<StreetGraph?> Steps(Stream input)
     {
-        Span<byte> header = stackalloc byte[Magic.Length + 3];
+        byte[] header = new byte[Magic.Length + 3];
         input.ReadExactly(header);
-        if (!header[..Magic.Length].SequenceEqual(Magic))
+        if (!header.AsSpan(0, Magic.Length).SequenceEqual(Magic))
             throw new InvalidDataException("This isn't a street graph file.");
-        ushort version = BitConverter.ToUInt16(header.Slice(Magic.Length, 2));
+        ushort version = BitConverter.ToUInt16(header, Magic.Length);
         if (version != FormatVersion)
             throw new InvalidDataException($"Street graph format {version} isn't supported; this app reads format {FormatVersion}.");
-        using MemoryStream buffer = new();
-        if (header[^1] == Deflated)
+        using MemoryStream payload = new();
+        Stream source = header[^1] == Deflated ? new ZLibStream(input, CompressionMode.Decompress, leaveOpen: true) : input;
+        try
         {
-            using ZLibStream zlib = new(input, CompressionMode.Decompress, leaveOpen: true);
-            zlib.CopyTo(buffer);
+            byte[] chunk = new byte[BytesPerStep];
+            for (int read = source.Read(chunk); read > 0; read = source.Read(chunk))
+            {
+                payload.Write(chunk, 0, read);
+                yield return null;
+            }
         }
-        else
+        finally
         {
-            input.CopyTo(buffer);
+            if (!ReferenceEquals(source, input))
+                source.Dispose();
         }
-        return buffer.ToArray();
+        foreach (StreetGraph? step in PayloadSteps(payload.ToArray()))
+            yield return step;
     }
 
     private static void WritePayload(StreetGraph graph, Stream output)
@@ -170,8 +179,6 @@ public static class StreetGraphFile
         w.CopyTo(output);
     }
 
-    private static StreetGraph ReadPayload(byte[] payload) => PayloadSteps(payload).Last()!;
-
     private static IEnumerable<StreetGraph?> PayloadSteps(byte[] payload)
     {
         PayloadReader r = new(payload);
@@ -184,7 +191,11 @@ public static class StreetGraphFile
 
         string[] table = new string[r.Count()];
         for (int i = 0; i < table.Length; i++)
+        {
+            if (i % ItemsPerStep == ItemsPerStep - 1)
+                yield return null;
             table[i] = r.String();
+        }
 
         int nodes = r.Count();
         double[] nodeX = new double[nodes], nodeY = new double[nodes];
