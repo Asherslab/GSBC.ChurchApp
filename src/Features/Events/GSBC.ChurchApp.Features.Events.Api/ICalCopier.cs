@@ -100,7 +100,7 @@ internal sealed class ICalCopier(EventsDbContext db, ICalFetcher fetcher, Events
 
     private static string Problem(Exception exception) => exception switch
     {
-        HttpRequestException { StatusCode: { } status } => $"The calendar's address answered {(int)status}.",
+        HttpRequestException { StatusCode: { } status } => $"The calendar's address returned an error ({(int)status}).",
         HttpRequestException => "The calendar's address couldn't be reached.",
         TaskCanceledException => "The calendar's address took too long to answer.",
         _ => exception.Message,

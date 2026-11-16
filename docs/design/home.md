@@ -33,8 +33,8 @@ A kind none of whose layouts show a picture hides the Picture field (`HubTileKin
 | | Theme first (any) | the year's theme as the title at every size | never |
 | | Verse (more than one cell) | the week's verse large, the reference small | never |
 | | *Picture layouts draw* | the theme, the date and verse, "Read the bulletin" | |
-| This week (one-off events, specials and dates not on) | Agenda (any) | 1 × 1: the next thing over when ("Tomorrow 7pm", "Not on Saturday"); one row: up to three; taller: as many as fit, up to *How many to show*; nothing coming: "Nothing special coming up" | always |
-| | Just a link (any) | icon, title and "3 things coming up" | never |
+| This week (one-off events, specials and dates not on) | Agenda (any) | 1 × 1: the next thing over when ("Tomorrow 7pm", "Not on Saturday"); one row: up to three; taller: as many as fit, up to *Number of events shown*; nothing coming: "Nothing special coming up" | always |
+| | Link only (any) | icon, title and "3 things coming up" | never |
 | | *Picture layouts draw* | the title, the next thing and when, "Calendar" | |
 | Notifications | Count and newest (any) | bell, "3 unread", the newest title | 1 × 1 |
 | | Newest in full (any) | the newest notice and its first lines, the count above | one row, wider |

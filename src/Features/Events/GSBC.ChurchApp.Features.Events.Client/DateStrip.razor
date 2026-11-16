@@ -50,7 +50,7 @@
     [Parameter, EditorRequired] public required IReadOnlyList<RegularDate> Dates { get; set; }
     [Parameter] public DateOnly Today { get; set; }
     [Parameter] public string? Selected { get; set; }
-    [Parameter] public string Empty { get; set; } = "Its dates show here once it's saved.";
+    [Parameter] public string Empty { get; set; } = "The dates show here once the event is saved.";
     [Parameter] public EventCallback<RegularDate> Picked { get; set; }
     [Parameter] public string Hint { get; set; } = "Choose a date to change only that date";
 

@@ -4,14 +4,14 @@
 <PlaceEditor Place="Fields.Place" PlaceChanged="place => Fields.Place = place" Used="PlacesUsed" Missing="@(Needs.Contains(EventFieldKeys.Place))" />
 <ContactsEditor Contacts="Fields.Contacts" />
 <EventAbout @ref="_about" Label="About" Text="Fields.Description" TextChanged="text => Fields.Description = text"
-            Placeholder="What it is, who it's for, what to bring. Formatting is in the bar; pictures, video, files and more are under Insert." />
-<AddableField Label="Register link" Adding="Register link" Shown="Fields.RegisterLink.Length > 0">
-    <TextField Label="Register link" Type="url" Value="@Fields.RegisterLink" ValueChanged="value => Fields.RegisterLink = value.Trim()"
-               Placeholder="https://" Hint="Opens in the app's browser. The app never counts registrations." />
+            Hint="Say what the event is, who it's for and what to bring. Use the bar for formatting, and Insert for pictures, video and files." />
+<AddableField Label="Registration link" Adding="Registration link" Shown="Fields.RegisterLink.Length > 0">
+    <TextField Label="Registration link" Type="url" Value="@Fields.RegisterLink" ValueChanged="value => Fields.RegisterLink = value.Trim()"
+               Hint="A web address where people sign up. It opens in the app's browser; the app doesn't count registrations." />
 </AddableField>
 <LinksEditor Links="Fields.Links" />
 <PictureField Label="Picture" Value="Fields.Picture" ValueChanged="picture => Fields.Picture = picture" AsCover="true" Adding="Add a picture" Offered="PicturesUsed"
-              Unavailable="Pictures are added in the admin panel." />
+              Unavailable="Pictures can only be added in the admin panel." />
 
 @code {
     private EventAbout? _about;

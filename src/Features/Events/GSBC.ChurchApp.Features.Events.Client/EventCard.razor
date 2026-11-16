@@ -22,7 +22,7 @@
     }
     else if (Editing)
     {
-        <AppCardMissing Text="This event isn't in the app any more, or you can't see it. Take it out or choose another." />
+        <AppCardMissing Text="This event isn't in the app any more, or you can't see it. Remove the card or choose another event." />
     }
     else if (EventCardFacts.IsOver(Card, Now) && EventCardFacts.DayOf(Card) is { } day)
     {
@@ -38,7 +38,7 @@
 
     private DateTime Now => Clock.GetUtcNow().UtcDateTime;
 
-    private static string Meta(EventCardShown shown) => shown.AsPattern ? "Event · regularly" : "Event";
+    private static string Meta(EventCardShown shown) => shown.AsPattern ? "Regular event" : "Event";
 
     private string WhenOf(EventOccurrence occurrence) =>
         Card.Look == AppCardLook.Line ? EventWords.Times(occurrence) : $"{EventWords.LongDate(EventWords.DayOf(occurrence))}, {EventWords.Times(occurrence)}";

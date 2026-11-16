@@ -6,11 +6,11 @@
     <span class="field__label">Also shown on</span>
     @if (Draft.IsNew)
     {
-        <span class="field__hint">Once it's saved, it can show on other calendars too. Who edits it stays with @HomeName.</span>
+        <span class="field__hint">Once the event is saved, it can also show on other calendars. Only the editors of @HomeName can change it.</span>
     }
     else if (Others.Count == 0)
     {
-        <span class="field__hint">There are no other calendars to show it on.</span>
+        <span class="field__hint">There are no other calendars to show this event on.</span>
     }
     else
     {
@@ -54,7 +54,7 @@
 
     private string Hint => _note.Length > 0 ? _note
         : Asking.Count > 0 ? $"{string.Join(" and ", Asking)} {(Asking.Count == 1 ? "asks" : "ask")} to show it too: turn {(Asking.Count == 1 ? "it" : "them")} on to agree."
-        : Waiting.Count > 0 ? $"Waiting for {string.Join(" and ", Waiting)} to agree. A calendar you don't edit is asked first."
+        : Waiting.Count > 0 ? $"Waiting for {string.Join(" and ", Waiting)} to agree. When you aren't an editor of a calendar, its editors are asked first."
         : "A calendar you don't edit is asked first; its editors decide.";
 
     private static bool IsAskingUs(ShowingOn showing) => showing is { AskedByOther: true, Agreed: false };
@@ -114,7 +114,7 @@
         if (show)
             Draft.AlsoOn.Add(new ShowingOn { CalendarId = otherId, Agreed = agreed });
         _note = !show ? $"Taken off {other.Calendar.Name}."
-            : agreed ? $"Shown on {other.Calendar.Name} too, once it's shown."
+            : agreed ? $"It will also show on {other.Calendar.Name} once it's shown in the app."
             : $"{other.Calendar.Name}'s editors have been asked.";
         _confirming = null;
     }

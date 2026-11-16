@@ -67,7 +67,7 @@ unrelated and isn't used here.
    Elvanto for rosters and services only, not for events, so Elvanto isn't a source of events. The church
    website has an events page, but staff stopped keeping it up a month or two ago (its editor frustrated
    them).
-7. **A Register link** on an event, opened in the app's browser. The app never counts registrations; a
+7. **A registration link** on an event, opened in the app's browser. The app never counts registrations; a
    reminder that registrations are low is a person's decision, sent as any notification is.
 
 8. **Reading iCal in:** a calendar can copy an outside iCal address (school term dates, a Google Calendar a
@@ -141,7 +141,7 @@ events, specials and breaks, and some arrive before their details ("full details
 
 19. **Title, calendar and when** (start and end, all day, or several days for a camp), and optionally: a short
     **label** when the calendar's name isn't the right one ("Ladies Event"), a **picture** (Media), a
-    **description** ([rich text](../architecture/rich-text.md)), a **place**, **contacts**, a **Register link**
+    **description** ([rich text](../architecture/rich-text.md)), a **place**, **contacts**, a **registration link**
     and other links (a flyer).
 20. **A place is a site-map place or an address.** A site-map place (`PlaceId`, [site-map.md](site-map.md))
     opens the map; an address (Teralba Park, a bowls club) opens the phone's maps app. Addresses used before are
@@ -267,7 +267,7 @@ all four on 2026-11-08):
   event in the date's editor.
 - **Calendar setup lives in the workbench too** (owner, 2026-11-08: "settings per calendar on the workbench, breaks
   & etc"; `workbench-settings.html`), not on a page of its own. Since 2026-11-12 they are the calendar's *Settings*
-  tab (see *A calendar's own page* below): description, who it's for (Hub tiles' picker), *Shown on new phones*, *Needs a publisher*, who can edit it
+  tab (see *A calendar's own page* below): description, who it's for (Hub tiles' picker), *In everyone's week to start with*, *Needs a publisher*, who can edit it
   (Calendar editor holders at that calendar, given through Access), an iCal address to copy from for a read-only
   calendar, and its link for calendar apps. *Breaks* lists the named breaks in the middle pane (dates, and which
   regular events use each) and opens the chosen one on the right. Setup controls show only to holders of
@@ -298,7 +298,7 @@ the switch, and nobody could tell what a regular event was. The direction the ow
     *Delete the regular event*.
 38. **A date is just that date.** Opening Sunday 15 November is that Sunday only: changing it (time, place, a title
     such as *Anniversary Sunday Service*, its About) always affects only that day, and *Not on this date* is there;
-    a line at the top says "One of the Morning service, every Sunday. Edit the regular event ›". The *This date only |
+    a line at the top says "One of the Morning service, every Sunday. Change the regular event ›". The *This date only |
     Every …* switch is gone.
 39. **Regular events are visible as such:** each calendar has a **Regular events** list (the admin panel's workbench,
     and a calendar's page in the app for its editors); dates of a regular event carry a small repeat mark in lists;
@@ -584,7 +584,7 @@ approved mocks (surface briefs `.impeccable/surfaces/tures-events-admin-pages-di
   with nothing for each app to get wrong. Each date's UID is `{occurrence id}@calendar.gsbc-churchapp`, so it's
   updated in place. Times go out in UTC, all-day dates as dates. A date that's not on is left out (decision 11).
 - **What an event carries in a calendar app:** title, place (a site-map place's name, or the address), the
-  description, what's still missing in plain words (*Place to be announced*), the Register link (as `URL` and in the
+  description, what's still missing in plain words (*Place to be announced*), the registration link (as `URL` and in the
   description) and other links, and the label as a category. **Contacts are left out**: their details are only for
   people signed in, and a calendar file is fetched by an app, not a person.
 - **The gateway asks the API over gRPC.** The gateway keeps no Events data; its four routes call `CalendarFiles.Read`,
@@ -672,8 +672,8 @@ approved mocks (surface briefs `.impeccable/surfaces/tures-events-admin-pages-di
   + on This week and Month; after the choice, both editors offer only the calendars you edit.
 - **The admin panel:** a picked calendar's middle pane has *Agenda | Month | Regular events*. A regular event opens
   across the middle and right panes; choosing a date in its strip opens that date on the right beside it. A date chosen
-  in the agenda opens on the right, and *Edit the regular event ›* opens the regular event.
-- **After the finish review:** *How it runs* is rows that say their value (Repeats, Breaks, Each date needs, Also shown
+  in the agenda opens on the right, and *Change the regular event ›* opens the regular event.
+- **After the finish review:** *How it runs* is rows that say their value (Repeats, Breaks, What each date needs, Also shown
   on, Shown in the app), each opening a sheet with just that part. In the admin panel *Save every
   date* sits at the right of the navy head with whether it's shown; on the phone it stays in the foot bar. The strip is
   one row that scrolls (a thin scrollbar with a mouse), its key shows the changed dot and the not-on ring, and it

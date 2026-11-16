@@ -14,7 +14,7 @@
             break;
         case Repeats.MonthlyByWeekday:
             <div class="ui-pair">
-                <SelectField Label="Which" Options="Weeks" Value="@Draft.Pattern.WeekOfMonth.ToString(CultureInfo.InvariantCulture)"
+                <SelectField Label="Week of the month" Options="Weeks" Value="@Draft.Pattern.WeekOfMonth.ToString(CultureInfo.InvariantCulture)"
                              ValueChanged="value => Draft.Pattern.WeekOfMonth = int.Parse(value, CultureInfo.InvariantCulture)" />
                 <SelectField Label="Day" Options="DayOptions" Value="@(Draft.Pattern.Days.FirstOrDefault().ToString())"
                              ValueChanged="value => Draft.Pattern.Days = [Enum.Parse<DayOfWeek>(value)]" />
@@ -41,8 +41,9 @@
     @if (Draft.Pattern.Repeats != Repeats.OnDates)
     {
         <div class="ui-pair">
-            <DateField Label="Starting" Value="@Draft.Pattern.StartDate" ValueChanged="value => Draft.Pattern.StartDate = value" />
-            <DateField Label="Until (optional)" Value="@Draft.Pattern.EndDate" Min="@Draft.Pattern.StartDate" ValueChanged="value => Draft.Pattern.EndDate = value" />
+            <DateField Label="First date" Value="@Draft.Pattern.StartDate" ValueChanged="value => Draft.Pattern.StartDate = value" />
+            <DateField Label="Last date" Value="@Draft.Pattern.EndDate" Min="@Draft.Pattern.StartDate" ValueChanged="value => Draft.Pattern.EndDate = value"
+                       Hint="Leave this empty to keep the regular event going with no end." />
         </div>
     }
 }
@@ -56,23 +57,23 @@
     @if (Breaks.Breaks.Count > 0)
     {
         <div class="field">
-            <span class="field__label">Not on during</span>
+            <span class="field__label">Not on during these breaks</span>
             <ToggleChips TValue="string" Label="Named breaks" Chips="BreakChips" Toggled="ToggleBreak" Class="toggle-chips--wrap" />
-            <span class="field__hint">The office keeps these. Fixing a break's dates fixes every regular event using it.</span>
+            <span class="field__hint">The church office looks after these breaks. Changing a break's dates changes every regular event that uses it.</span>
         </div>
     }
     @foreach (BreakInfo own in Draft.OwnBreaks)
     {
         <div class="editor-list__item">
-            <TextField Label="Break" Value="@own.Name" ValueChanged="value => own.Name = value" Placeholder="Camp weekend" MaxLength="60" />
+            <TextField Label="Name of the break" Value="@own.Name" ValueChanged="value => own.Name = value" MaxLength="60" Hint="Shown on each date the event isn't on." />
             <div class="ui-pair">
-                <DateField Label="From" Value="@own.StartDate" ValueChanged="value => own.StartDate = value" />
-                <DateField Label="To" Value="@own.EndDate" Min="@own.StartDate" ValueChanged="value => own.EndDate = value" />
+                <DateField Label="First day" Value="@own.StartDate" ValueChanged="value => own.StartDate = value" />
+                <DateField Label="Last day" Value="@own.EndDate" Min="@own.StartDate" ValueChanged="value => own.EndDate = value" />
             </div>
             <Button Variant="ButtonVariant.Quiet" Small="true" Icon="x" OnClick="() => Draft.OwnBreaks.Remove(own)">Remove this break</Button>
         </div>
     }
-    <button type="button" class="add-row" @onclick="() => Draft.OwnBreaks.Add(new BreakInfo())"><Icon Name="plus" Size="IconSize.Small" />Add a break just for this</button>
+    <button type="button" class="add-row" @onclick="() => Draft.OwnBreaks.Add(new BreakInfo())"><Icon Name="plus" Size="IconSize.Small" />Add a break for this event only</button>
 }
 @if (Shows(RepeatPart.Needs))
 {
@@ -87,6 +88,7 @@
         <div class="field">
             <span class="field__label">Remind the organisers</span>
             <ToggleChips TValue="int" Label="Days before to remind" Chips="ReminderChips" Toggled="ToggleReminder" Class="toggle-chips--wrap" />
+            <span class="field__hint">How many days before each date the organisers are reminded, if something's still missing.</span>
         </div>
     }
 }
@@ -101,8 +103,8 @@
     [
         new(nameof(Repeats.Weekly), "Every week"),
         new(nameof(Repeats.EverySecondWeek), "Every second week"),
-        new(nameof(Repeats.MonthlyByWeekday), "Monthly, on a weekday (the first Sunday…)"),
-        new(nameof(Repeats.MonthlyByDate), "Monthly, on a date (the 15th…)"),
+        new(nameof(Repeats.MonthlyByWeekday), "Monthly, on the same weekday (such as the first Sunday)"),
+        new(nameof(Repeats.MonthlyByDate), "Monthly, on the same date (such as the 15th)"),
         new(nameof(Repeats.OnDates), "On dates I choose"),
     ];
 
@@ -130,8 +132,8 @@
         ReminderDays.Select(days => new ToggleChip<int>(days, days == 1 ? "The day before" : $"{days} days before", Draft.RemindDaysBefore.Contains(days))).ToList();
 
     private string NeedsHint => Draft.Needs.Count == 0
-        ? "Nothing yet, so nobody is reminded. Tick what's filled in shortly before each date (outreach Saturdays need a place)."
-        : "Until it's set, the date says so in plain words (Place to be announced) and the organisers are reminded.";
+        ? "Nothing is needed, so no one is reminded. Choose anything that's filled in shortly before each date, such as a place that changes each time."
+        : "Until it's filled in, the date says so (for example, “Place to be announced”) and the organisers are reminded.";
 
     private static string Capital(string words) => char.ToUpperInvariant(words[0]) + words[1..];
 

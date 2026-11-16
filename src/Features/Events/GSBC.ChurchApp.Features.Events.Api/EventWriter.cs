@@ -454,13 +454,13 @@ internal sealed class EventWriter(EventsDbContext db, EventsPublisher publisher,
             fields.Description = UploadedMedia.Resolve(description, await media.VerifyAsync(uploaded.Select(id => new MediaRef { Id = id }).ToList(), cancellationToken));
         string title = fields.Title.Trim();
         if (title.Length is 0 or > LongestTitle)
-            throw Invalid($"Give it a title of up to {LongestTitle} characters.");
+            throw Invalid($"Enter a title of up to {LongestTitle} characters.");
         if (fields.Label.Trim().Length > LongestLabel)
-            throw Invalid($"Keep the label to {LongestLabel} characters.");
+            throw Invalid($"Keep the line above the title to {LongestLabel} characters.");
         if (fields.Description is { Markdown.Length: > RichText.MaximumLength })
-            throw Invalid("The description is too long.");
+            throw Invalid("The About text is too long.");
         if (fields.RegisterLink.Trim() is { Length: > 0 } register && !IsWebAddress(register))
-            throw Invalid("The Register link needs to be a web address.");
+            throw Invalid("The registration link needs to be a web address.");
         if (fields.Links.Any(link => !IsWebAddress(link.Url.Trim())))
             throw Invalid("Each link needs to be a web address.");
 
@@ -508,7 +508,7 @@ internal sealed class EventWriter(EventsDbContext db, EventsPublisher publisher,
         DateOnly start = EventDates.Parse(pattern.StartDate) ?? today;
         DateOnly? end = EventDates.Parse(pattern.EndDate);
         if (end < start)
-            throw Invalid("It can't end before it starts.");
+            throw Invalid("The last date can't be before the first date.");
         List<DayOfWeek> days = pattern.Days.Where(Enum.IsDefined).Distinct().ToList();
         List<DateOnly> dates = pattern.Dates.Select(EventDates.Parse).OfType<DateOnly>().Distinct().Order().ToList();
         string? problem = pattern.Repeats switch
@@ -516,7 +516,7 @@ internal sealed class EventWriter(EventsDbContext db, EventsPublisher publisher,
             Repeats.Weekly or Repeats.EverySecondWeek when days.Count == 0 => "Choose the days it's on.",
             Repeats.MonthlyByWeekday when days.Count != 1 || pattern.WeekOfMonth is not (-1 or (>= 1 and <= 4)) => "Choose which week of the month and which day.",
             Repeats.MonthlyByDate when pattern.DayOfMonth is < 1 or > 31 => "Choose the date in the month.",
-            Repeats.OnDates when dates.Count == 0 => "Choose its dates.",
+            Repeats.OnDates when dates.Count == 0 => "Choose the dates it's on.",
             _ when !Enum.IsDefined(pattern.Repeats) => "Choose how it repeats.",
             _ => null,
         };
@@ -546,10 +546,10 @@ internal sealed class EventWriter(EventsDbContext db, EventsPublisher publisher,
 
     private static (DateOnly, DateOnly?, int?, int?) Times(EventTimes times)
     {
-        DateOnly start = EventDates.Parse(times.StartDate) ?? throw Invalid("Choose its date.");
+        DateOnly start = EventDates.Parse(times.StartDate) ?? throw Invalid("Choose the date it's on.");
         DateOnly? end = EventDates.Parse(times.EndDate);
         if (end < start)
-            throw Invalid("It can't end before it starts.");
+            throw Invalid("The event can't end before it starts.");
         (int? startMinute, int? endMinute) = Minutes(times.StartMinute, times.EndMinute);
         return (start, end == start ? null : end, startMinute, endMinute);
     }
@@ -575,7 +575,7 @@ internal sealed class EventWriter(EventsDbContext db, EventsPublisher publisher,
     private static Guid? IdOf(string existing, string newId) =>
         existing.Length > 0 ? ParseId(existing) : Guid.TryParse(newId, out Guid chosen) && chosen != Guid.Empty ? chosen : null;
 
-    private static Guid ParseId(string id) => Guid.TryParse(id, out Guid parsed) ? parsed : throw NotHere("That isn't here any more.");
+    private static Guid ParseId(string id) => Guid.TryParse(id, out Guid parsed) ? parsed : throw NotHere("That event isn't here any more.");
 
     private static RpcException Invalid(string message) => new(new Status(StatusCode.InvalidArgument, message));
 

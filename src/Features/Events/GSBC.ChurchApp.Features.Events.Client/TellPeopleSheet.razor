@@ -1,9 +1,9 @@
 @inject IEventEditing Editing
 
-<Sheet Open="Open" OpenChanged="ToggledAsync" Title="Tell people?" Lead="@($"A notification to everyone who has {CalendarName}, opening the event.")">
+<Sheet Open="Open" OpenChanged="ToggledAsync" Title="Tell people about this change?" Lead="@($"Sends a notification to everyone who has the {CalendarName} calendar. Tapping it opens the event.")">
     <ChildContent>
-        <TextField Label="Notification" Value="@_title" ValueChanged="value => _title = value" MaxLength="80" />
-        <TextField Label="More" Value="@_body" ValueChanged="value => _body = value" Multiline="true" MaxLength="240" />
+        <TextField Label="Notification title" Value="@_title" ValueChanged="value => _title = value" MaxLength="80" />
+        <TextField Label="Message" Value="@_body" ValueChanged="value => _body = value" Multiline="true" MaxLength="240" Hint="Optional. Shown under the title." />
         <Notice Tone="NoticeTone.Warning" Text="@_problem" />
     </ChildContent>
     <Actions>
@@ -57,6 +57,6 @@
             _problem = sent.Problem;
             return;
         }
-        await Done.InvokeAsync(sent.Queued ? "Saved. People are told as soon as it's sent." : "Saved, and people have been told.");
+        await Done.InvokeAsync(sent.Queued ? "Saved. People will be notified once this phone is back online." : "Saved, and people have been told.");
     }
 }

@@ -20,7 +20,7 @@ Every tile is a repeatable surface in the Hub area (`home.hub`), declared as a `
 (Platform.Contracts, `HubTiles.cs`). All kinds share one set of settings (`TileSettings`): width and
 height in grid cells, a colour (a theme tone), an icon, its icon colour, a title, a line under it, a
 picture with the part to keep in view, and what it opens. A kind can add settings of its own (This
-week has *How many to show*).
+week has *Number of events shown*).
 
 - **Link tile** (`hub.tile`, Platform.Contracts): anything that is a title, a line, an icon, a picture and a
   link (Give, the Bible, Prayer, Life Groups, Ministries, Visit us, a campaign). Staff write everything.

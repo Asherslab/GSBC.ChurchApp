@@ -31,8 +31,8 @@
     [Parameter] public string Action { get; set; } = "Subscribe";
 
     private string Waiting => Mine
-        ? "Your own link for calendar apps needs a connection to fetch. It holds everything in your week, private calendars included. Try again when you're online."
-        : "This calendar is private, so it's subscribed to through your own link, which needs a connection to fetch. Try again when you're online.";
+        ? "Your own calendar link can only be fetched online. It includes everything in your week, private calendars too. Try again when you're online."
+        : "This calendar is private, so you subscribe through your own link, which can only be fetched online. Try again when you're online.";
 
     protected override async Task OnParametersSetAsync()
     {

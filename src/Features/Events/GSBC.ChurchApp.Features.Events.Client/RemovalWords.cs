@@ -28,10 +28,10 @@ public static class RemovalWords
     private static string WhatGoes(CalendarRemoval removal) =>
         Capitalised((removal.Events, removal.RegularEvents) switch
         {
-            (0, 0) => "It has no events.",
-            (_, 0) => $"{Count(removal.Events, "event")} in it go{(removal.Events == 1 ? "es" : "")} too.",
-            (0, _) => $"{Count(removal.RegularEvents, "regular event")} in it, with every date, go{(removal.RegularEvents == 1 ? "es" : "")} too.",
-            _ => $"{Count(removal.Events, "event")} and {Count(removal.RegularEvents, "regular event")} (with every date) in it go too.",
+            (0, 0) => "This calendar has no events.",
+            (_, 0) => $"Its {Count(removal.Events, "event")} {(removal.Events == 1 ? "is" : "are")} removed too.",
+            (0, _) => $"Its {Count(removal.RegularEvents, "regular event")}, with every date, {(removal.RegularEvents == 1 ? "is" : "are")} removed too.",
+            _ => $"Its {Count(removal.Events, "event")} and {Count(removal.RegularEvents, "regular event")}, with every date, are removed too.",
         });
 
     private static string WhoHasIt(CalendarRemoval removal)
@@ -42,7 +42,7 @@ public static class RemovalWords
             1 => "One person or phone has added it",
             _ => $"{removal.AddedBy} people and phones have added it",
         };
-        string defaults = removal.ShownOnNewPhones ? ", and it's shown on every new phone" : "";
+        string defaults = removal.ShownOnNewPhones ? ", and it's in everyone's week to start with" : "";
         string apps = removal.ForEveryone ? " Calendar apps subscribed to its link stop getting it." : "";
         return $"{added}{defaults}. It comes off every phone that has it the next time it connects.{apps}";
     }
