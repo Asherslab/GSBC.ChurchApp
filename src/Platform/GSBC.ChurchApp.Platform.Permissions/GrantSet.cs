@@ -16,6 +16,9 @@ public sealed class GrantSet(IReadOnlyList<Grant> grants)
             .Distinct()
             .Any(objectId => IsAllowed(permission, objectId));
 
+    public bool IsHeldAt(Permission permission, string objectId) =>
+        new GrantSet(Grants.Where(grant => !grant.Scope.IsGlobal).ToList()).IsAllowed(permission, objectId);
+
     public bool IsAllowed(Permission permission, string? objectId = null)
     {
         int bestSpecificity = -1;

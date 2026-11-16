@@ -23,7 +23,7 @@ else
     <Actions><Button Block="true" OnClick="CloseSheet">Done</Button></Actions>
 </Sheet>
 
-<Sheet Open="_sheet == EditorSheet.Breaks" OpenChanged="SheetToggled" Title="Breaks" Lead="Dates it isn't on. People see the first two weeks of a break as not on.">
+<Sheet Open="_sheet == EditorSheet.Breaks" OpenChanged="SheetToggled" Title="Breaks" Lead="Dates it isn't on. People see every date of a break as not on.">
     <ChildContent>@if (_draft is { } draft) { <RepeatEditor Draft="draft" Breaks="_breaks" Part="RepeatPart.Breaks" /> }</ChildContent>
     <Actions><Button Block="true" OnClick="CloseSheet">Done</Button></Actions>
 </Sheet>

@@ -20,9 +20,6 @@ public sealed record Diary(IReadOnlyList<CalendarInfo> Calendars, IReadOnlyList<
     public IReadOnlyList<EventOccurrence> In(IReadOnlySet<string> calendarIds) =>
         Occurrences.Where(occurrence => calendarIds.Contains(occurrence.CalendarId) || occurrence.AlsoOn.Any(calendarIds.Contains)).ToList();
 
-    public IReadOnlyList<EventOccurrence> OtherDates(EventOccurrence occurrence, DateTime nowUtc) =>
-        OccurrenceListing.OtherDates(occurrence, Occurrences.Where(other => other.EndsAt >= nowUtc)).ToList();
-
     public IReadOnlyList<EventContact> ContactsOf(EventOccurrence occurrence) =>
         ContactDetails.TryGetValue(occurrence.Id, out List<EventContact>? detailed) ? detailed : occurrence.Fields.Contacts;
 }
