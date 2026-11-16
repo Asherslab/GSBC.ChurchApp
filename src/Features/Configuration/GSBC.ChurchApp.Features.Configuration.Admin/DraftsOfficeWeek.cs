@@ -25,7 +25,7 @@ internal sealed class DraftsOfficeWeek(DraftsClient drafts, DatedChanges dated, 
     {
         string href = $"app-styling/{draft.Id}";
         if (draft is { Mine: true, ToCheck: > 0 })
-            yield return new OfficeTask(draft.Name, "Changed for everyone since you edited it", href, "Check", draft.UpdatedAt);
+            yield return new OfficeTask(draft.Name, "Changed for everyone since you last edited this", href, "Check", draft.UpdatedAt);
         else if (draft.Status == DraftStatus.WaitingToPublish)
             yield return new OfficeTask(draft.Name, draft.Mine ? "You asked to publish it" : "Waiting to publish", href, "Open", draft.UpdatedAt);
         else if (!draft.Mine && !seesEveryDraft)

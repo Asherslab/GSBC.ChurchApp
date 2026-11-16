@@ -33,7 +33,7 @@
         <SelectField Label="@Setting.Label" Options="@IconOptions" Value="@Value" ValueChanged="SetAsync" Problem="@Problem" />
         break;
     case LinkSetting:
-        <TextField Label="@Setting.Label" Value="@Value" ValueChanged="SetAsync" Hint="A place in the app such as /sermons, or a web page starting with https://" Problem="@Problem" />
+        <TextField Label="@Setting.Label" Value="@Value" ValueChanged="SetAsync" Hint="A page in the app, or a web address starting with https://." Problem="@Problem" />
         break;
     case SvgIconSetting:
         <div class="media-setting">

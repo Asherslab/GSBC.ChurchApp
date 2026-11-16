@@ -26,12 +26,12 @@ public sealed class LinkSetting(string key, string label, string defaultValue = 
         if (text.Length == 0)
             return null;
         if (text.Length > MostCharacters)
-            return $"{Label} can be up to {MostCharacters} characters.";
+            return $"A link can be up to {MostCharacters} characters.";
         return LinkTargets.KindOf(text) switch
         {
             LinkKind.InApp => null,
             LinkKind.Web when text.StartsWith("https://", StringComparison.OrdinalIgnoreCase) => null,
-            _ => $"{Label} has to be a place in the app or a web page starting with https://.",
+            _ => "Choose a page in the app, or enter a web address starting with https://.",
         };
     }
 }
@@ -118,7 +118,7 @@ public static class TileTones
 {
     public static readonly TileTone Sand = new("sand", "Soft", "sand", "ink", false);
     public static readonly TileTone Raised = new("raised", "Card", "surface", "ink", false);
-    public static readonly TileTone Masthead = new("masthead", "Top of Home", "masthead", "on-masthead", true);
+    public static readonly TileTone Masthead = new("masthead", "Masthead colour", "masthead", "on-masthead", true);
     public static readonly TileTone Primary = new("primary", "Buttons", "primary", "on-primary", true);
     public static readonly TileTone LiveSoft = new("live-soft", "Pale accent", "live", "ink", false);
     private static readonly TileTone Live = new("live", "Accent", "live", "on-live", true);
@@ -139,12 +139,12 @@ public static class IconTones
 
     public static readonly IReadOnlyList<Choice> Choices =
     [
-        new(Auto, "Goes with the tile"),
+        new(Auto, "Matches the tile"),
         new("primary", "Buttons"),
         new("accent", "Accent"),
         new("warm", "Highlight"),
         new("quiet", "Grey"),
-        new(Own, "Its own colours"),
+        new(Own, "The icon's own colours"),
     ];
 }
 
@@ -157,7 +157,7 @@ public sealed record TileDefaults(
     string Icon = "",
     string Link = "",
     string TitleLabel = "Title",
-    string TextLabel = "Words under it",
+    string TextLabel = "Line under the title",
     string TitleHelp = "",
     string TextHelp = "",
     bool TitleRequired = false,
@@ -180,20 +180,20 @@ public sealed record TileSettings(
     public IReadOnlyList<Setting> All => [Columns, Rows, Tone, Icon, IconTone, Title, Text, Image, Focus, Link, Layout, Fade];
 
     public static TileSettings For(TileDefaults defaults, IReadOnlyList<TileVariant> variants) => new(
-        new NumberSetting(HubTileKeys.Columns, "Width", defaults.Columns, 1, HubGrid.MostColumns, help: "How many columns across"),
-        new NumberSetting(HubTileKeys.Rows, "Height", defaults.Rows, 1, HubGrid.MostRows, help: "How many rows down"),
+        new NumberSetting(HubTileKeys.Columns, "Width", defaults.Columns, 1, HubGrid.MostColumns, help: "The number of columns the tile spans."),
+        new NumberSetting(HubTileKeys.Rows, "Height", defaults.Rows, 1, HubGrid.MostRows, help: "The number of rows the tile spans."),
         new ColourSetting(HubTileKeys.Tone, "Colour", TileTones.Choices, (defaults.Tone ?? TileTones.Sand).Value),
         new IconSetting(HubTileKeys.Icon, "Icon", defaults.Icon),
         new ChoiceSetting(HubTileKeys.IconTone, "Icon colour", IconTones.Choices, IconTones.Auto),
         new TextSetting(HubTileKeys.Title, defaults.TitleLabel, defaults.Title, required: defaults.TitleRequired, maxLength: 60, help: defaults.TitleHelp),
         new TextSetting(HubTileKeys.Text, defaults.TextLabel, defaults.Text, maxLength: 140, help: defaults.TextHelp),
-        new MediaSetting(HubTileKeys.Image, "Picture", help: "Fills the top of the tile, or all of a small one"),
+        new MediaSetting(HubTileKeys.Image, "Picture", help: "Fills the top of the tile, or the whole tile if it's small."),
         new FocusSetting(HubTileKeys.Focus, "Keep in view"),
         new LinkSetting(HubTileKeys.Link, "Opens", defaults.Link),
         new ChoiceSetting(HubTileKeys.Layout, "Layout",
-            [new Choice(TileVariant.Automatic, "Best for this size"), .. variants.Select(variant => new Choice(variant.Key, variant.Label))], TileVariant.Automatic),
+            [new Choice(TileVariant.Automatic, "Automatic"), .. variants.Select(variant => new Choice(variant.Key, variant.Label))], TileVariant.Automatic),
         new ColourSetting(HubTileKeys.Fade, "Fade over the picture", TileTones.Choices, TileTones.Masthead.Value,
-            help: "The colour that fades over the picture behind the words"));
+            help: "The colour shaded over the picture behind the words, so they stay easy to read."));
 }
 
 public static class HubTileKeys

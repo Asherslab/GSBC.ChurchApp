@@ -83,7 +83,7 @@
 </Page>
 
 <Sheet Open="_discarding is not null" OpenChanged="open => { if (!open) _discarding = null; }" Title="Discard this change?"
-       Lead="It hasn't reached the church's server, so it's lost from this phone. This can't be undone.">
+       Lead="This change hasn't reached the church's server, so deleting it here loses it for good.">
     <Actions>
         <Button Variant="ButtonVariant.Danger" OnClick="DiscardAsync">Discard it</Button>
         <Button Variant="ButtonVariant.Quiet" OnClick="() => _discarding = null">Keep it</Button>
@@ -137,7 +137,7 @@
 
     private static string Describe(OutboxEntry entry) =>
         entry.Failed ? $"Couldn't send: {entry.LastError}"
-        : entry.WaitsForUpload ? "Waiting for its file to be sent"
+        : entry.WaitsForUpload ? "Waiting for the file to send"
         : entry.Attempts == 0 ? "Sending" : $"Retrying ({entry.Attempts} tries; {entry.LastError})";
 
     private async Task QueueTestSendAsync() => await Outbox.EnqueueAsync("/gsbc.accounts.Session/GetCurrent", []);

@@ -4,7 +4,7 @@
 <LiveData TValue="ErrorKindDetail" Load="LoadAsync" FailedTitle="Can't load this error">
     @{ ErrorKindSummary kind = context.Value.Kind!; }
     <PaneHead Title="@HealthWords.ShortType(kind.ExceptionType)" Class="health-title" OnClose="OnClose"
-              Lead="@($"{HealthWords.Origin(kind.Origin)}{(kind.NativeCrash ? ": a native crash, so the app closed" : "")}. {HealthWords.Times(kind.Count)} in the last 30 days.")" />
+              Lead="@($"{HealthWords.Origin(kind.Origin)}{(kind.NativeCrash ? " (a native crash: the app closed)" : "")}. {HealthWords.Times(kind.Count)} in the last 30 days.")" />
 
     <dl class="facts">
         <dt>Type</dt>

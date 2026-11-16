@@ -83,14 +83,14 @@ internal sealed class PlacementRules(SurfaceCatalog surfaces, PermissionCatalog 
         else if (audience is { Node: { } node } && !permissions.ByNode.ContainsKey(node))
             problems.Add($"No permission '{node}' exists to choose an audience by.");
         if (state is { StartsAt: { } starts, EndsAt: { } ends } && ends <= starts)
-            problems.Add($"'{surface.Title}' has to end after it starts.");
+            problems.Add($"“{surface.Title}” has to stop showing later than it starts showing.");
         if (problems.Count == 0 && TabBarSurfaces.IsTab(surface) && TabProblem(surface, state, audience!) is { } tab)
             problems.Add(tab);
 
         return problems.Count == 0 ? state with { Audience = audience!.Text } : throw Invalid(string.Join(" ", problems));
     }
 
-    public const string HomeIsFixed = "Home is always the first tab, for everyone, so it can't be moved, changed or taken off the bar.";
+    public const string HomeIsFixed = "Home is always the first tab, for everyone, so it can't be moved, changed or taken off the tab bar.";
 
     private static bool IsHomeAsItAlwaysIs(PlacementState state, Audience audience) =>
         state is { Hidden: false, StartsAt: null, EndsAt: null }

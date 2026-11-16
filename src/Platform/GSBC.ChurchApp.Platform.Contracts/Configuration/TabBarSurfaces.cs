@@ -17,7 +17,7 @@ public static class TabBarSurfaces
     private const string PublishNode = "config.tabs.publish";
 
     public static readonly Permission Publish =
-        new(PublishNode, ScopeKind.Global, "Put changes to the app's tabs out to everyone, or on for an event", area: "App");
+        new(PublishNode, ScopeKind.Global, "Publish changes to the app's tabs for everyone, or turn them on for a few days", area: "App");
 
     public static readonly SurfaceArea Area = new("app.tabs", "Tab bar", "The tabs along the foot of the app. Home is always the first and More the last", ScopeKind.Global, Edit, Publish);
 
@@ -43,11 +43,11 @@ public sealed record TabDefaults(string Opens, string Word, string Icon);
 public static class TabSettings
 {
     public static readonly PlaceSetting Opens = new("opens", "Opens");
-    public static readonly TextSetting Word = new("word", "Word under the icon", required: true, maxLength: TabBarSurfaces.MostCharactersInAWord);
+    public static readonly TextSetting Word = new("word", "Label", required: true, maxLength: TabBarSurfaces.MostCharactersInAWord);
     public static readonly IconSetting Icon = new("icon", "Icon");
 
     public static Surface Declare(string key, TabDefaults defaults, int defaultOrder, bool repeatable = false) =>
-        new(key, TabBarSurfaces.Area, "Tab", "A place in the app, as a tab", [
+        new(key, TabBarSurfaces.Area, "Tab", "A tab that opens a page in the app", [
             new PlaceSetting(Opens.Key, Opens.Label, defaults.Opens),
             new TextSetting(Word.Key, Word.Label, defaults.Word, required: true, maxLength: TabBarSurfaces.MostCharactersInAWord),
             new IconSetting(Icon.Key, Icon.Label, defaults.Icon),
@@ -58,7 +58,7 @@ public static class TabSettings
         if (values.Get(Icon).Length == 0)
             yield return "A tab needs an icon.";
         if (IconSetting.IsCustom(values.Get(Icon)))
-            yield return "A tab's icon has to be one of the app's own.";
+            yield return "Choose one of the app's own icons for a tab.";
     }
 }
 
@@ -75,9 +75,9 @@ public sealed class PlaceSetting(string key, string label, string defaultValue =
 
     public override string? ProblemWith(string text) => text switch
     {
-        "" => $"Choose what the tab {Label.ToLowerInvariant()}.",
+        "" => "Choose the page this tab opens.",
         { Length: > LinkSetting.MostCharacters } => $"{Label} can be up to {LinkSetting.MostCharacters} characters.",
-        _ when LinkTargets.KindOf(text) != LinkKind.InApp => "A tab opens a place in the app, not a web page.",
+        _ when LinkTargets.KindOf(text) != LinkKind.InApp => "A tab opens a page in the app, not a web page.",
         _ when DestinationPaths.RouteOf(text) == ShellDestinations.More.Route => "More is always the last tab, so it can't be chosen again.",
         _ => null,
     };

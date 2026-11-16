@@ -119,41 +119,41 @@ else
             <ChildContent>
                 <TextField Label="Name" Value="@_rename" ValueChanged="value => _rename = value" MaxLength="80" />
                 <ListGroup>
-                    <ListRow Title="Undo" Subtitle="Take back your last change (⌘Z, or Ctrl+Z)" Icon="undo" Disabled="@(!_session.CanStepBack)" OnClick="() => StepFromMoreAsync(StepBackAsync)" />
-                    <ListRow Title="Redo" Subtitle="Bring back what you undid (⇧⌘Z, or Ctrl+Shift+Z)" Icon="redo" Disabled="@(!_session.CanStepForward)" OnClick="() => StepFromMoreAsync(StepForwardAsync)" />
-                    <ListRow Title="Open the preview in its own window" Subtitle="For a second screen; it follows this draft as you change it" Icon="external-link" OnClick="PopOutAsync" />
+                    <ListRow Title="Undo" Subtitle="Undo your last change (⌘Z or Ctrl+Z)." Icon="undo" Disabled="@(!_session.CanStepBack)" OnClick="() => StepFromMoreAsync(StepBackAsync)" />
+                    <ListRow Title="Redo" Subtitle="Redo the change you undid (⇧⌘Z or Ctrl+Shift+Z)." Icon="redo" Disabled="@(!_session.CanStepForward)" OnClick="() => StepFromMoreAsync(StepForwardAsync)" />
+                    <ListRow Title="Open the preview in a new window" Subtitle="Useful on a second screen. The preview updates as you change this draft." Icon="external-link" OnClick="PopOutAsync" />
                 </ListGroup>
                 <ListGroup>
                     @if (MayPublishDraft)
                     {
                         @if (_session.Draft.LayerOn)
                         {
-                            <ListRow Title="Turn off for the event" Subtitle="Everyone goes back to what's published" Icon="calendar" OnClick="() => TurnOffAsync(_session.Draft)" />
+                            <ListRow Title="Turn this draft off for everyone" Subtitle="Everyone sees the published app again." Icon="calendar" OnClick="() => TurnOffAsync(_session.Draft)" />
                         }
                         else
                         {
-                            <ListRow Title="Turn on for everyone, or publish on a date" Subtitle="Now or between two dates, then off again; or published for good at a time you choose" Icon="calendar" OnClick="() => ChooseForEveryone(ForEveryoneWay.TryNow)" />
+                            <ListRow Title="Show to everyone, or publish later" Subtitle="Turn this draft on for everyone now or between two dates, or choose a time to publish it for good." Icon="calendar" OnClick="() => ChooseForEveryone(ForEveryoneWay.TryNow)" />
                         }
                         @if (_session.Draft.PublishAt is not null)
                         {
-                            <ListRow Title="Don't publish it on a date" Subtitle="@($"Cancels publishing it on {DraftWords.Moment(_session.Draft.PublishAt.Value)}")" Icon="x" OnClick="CancelScheduledPublishAsync" />
+                            <ListRow Title="Cancel the scheduled publish" Subtitle="@($"The draft won't be published on {DraftWords.Moment(_session.Draft.PublishAt.Value)}")" Icon="x" OnClick="CancelScheduledPublishAsync" />
                         }
                     }
-                    <ListRow Title="Make a copy" Subtitle="Next year's version, starting from this one" Icon="plus" OnClick="CopyAsync" />
+                    <ListRow Title="Copy this draft" Subtitle="Start a new draft with the same changes, for example to use again next year." Icon="plus" OnClick="CopyAsync" />
                     @if (!_session.Draft.LayerOn)
                     {
-                        <ListRow Title="@(_confirmDelete ? "Delete it: nothing reached everyone" : "Delete this draft")" Icon="x" IconTone="RowTone.Warm" OnClick="DeleteAsync" />
+                        <ListRow Title="@(_confirmDelete ? "Delete the draft: nothing in it reached everyone" : "Delete this draft")" Icon="x" IconTone="RowTone.Warm" OnClick="DeleteAsync" />
                     }
                 </ListGroup>
             </ChildContent>
             <Actions>
-                <Button Block="true" Busy="_busy" Disabled="@(string.IsNullOrWhiteSpace(_rename) || _rename == _session.Draft.Name)" OnClick="RenameAsync">Save name</Button>
+                <Button Block="true" Busy="_busy" Disabled="@(string.IsNullOrWhiteSpace(_rename) || _rename == _session.Draft.Name)" OnClick="RenameAsync">Save the name</Button>
                 <Button Variant="ButtonVariant.Quiet" Block="true" OnClick="() => _more = false">Close</Button>
             </Actions>
         </Sheet>
     }
 
-    <Sheet Open="_choosing is not null" OpenChanged="open => { if (!open) _choosing = null; }" Title="Change it in which draft?" Lead="You have more than one draft open. Carry on in one of them, or start another.">
+    <Sheet Open="_choosing is not null" OpenChanged="open => { if (!open) _choosing = null; }" Title="Which draft should this change go in?" Lead="You have more than one draft open. Carry on in one of them, or start a new one.">
         <ChildContent>
             <ListGroup>
                 @foreach (Draft draft in MyOpenDrafts)
@@ -168,9 +168,9 @@ else
         </Actions>
     </Sheet>
 
-    <Sheet Open="_naming" OpenChanged="open => _naming = open" Title="New draft" Lead="Name it for what it's for, so you'll know it in a few weeks.">
+    <Sheet Open="_naming" OpenChanged="open => _naming = open" Title="New draft" Lead="A draft is a set of changes to the app that only you, and anyone you share it with, can see until it's published. Name it after what it's for.">
         <ChildContent>
-            <TextField Label="Name" Placeholder="Christmas 2026" Value="@_newName" ValueChanged="value => _newName = value" MaxLength="80" />
+            <TextField Label="Name" Value="@_newName" ValueChanged="value => _newName = value" MaxLength="80" />
             @if (_problem is not null && _naming)
             {
                 <Notice Tone="NoticeTone.Warning" Text="@_problem" />
@@ -329,29 +329,29 @@ else
         }
         foreach (string dropped in draft.LayerOn ? draft.DroppedFromLayer : [])
         {
-            <Notice Tone="NoticeTone.Warning" Text="@($"Dropped {dropped} from this event: it was removed for everyone.")" />
+            <Notice Tone="NoticeTone.Warning" Text="@($"Dropped {dropped} from this draft, because it was removed for everyone.")" />
         }
         if (draft is { LayerOn: true, LayerStartsAt: { } starts } && starts > Now)
         {
-            <Notice Text="@($"This draft is on for an event from {DraftWords.When(starts)}. What you save goes out to everyone then.")" />
+            <Notice Text="@($"This draft turns on for everyone from {DraftWords.When(starts)}. What you save shows to everyone from then.")" />
         }
         else if (draft.LayerOn)
         {
-            <Notice Text="This draft is on for an event, so everyone sees your changes as they save." />
+            <Notice Text="This draft is turned on for everyone, so they see each change as soon as it saves." />
         }
         else if (draft.Status == DraftStatus.WaitingToPublish)
         {
-            <Notice Text="Waiting for someone who can publish. If you change it, you'll need to ask again." />
+            <Notice Text="This draft is waiting for someone who can publish it. If you change the draft, you'll need to ask again." />
         }
         if (draft is { PublishAt: { } publishAt, NotPublished: null })
         {
             <Notice>
-                <span>Publishes on @DraftWords.Moment(publishAt), for good. What you save before then is published too.</span>
+                <span>This draft is published for good on @DraftWords.Moment(publishAt). Changes saved before then are published too.</span>
                 @if (MayPublishDraft)
                 {
                     <span class="ui-actions">
                         <Button Variant="ButtonVariant.Quiet" Small="true" OnClick="() => ChooseForEveryone(ForEveryoneWay.PublishOn)">Change the time</Button>
-                        <Button Variant="ButtonVariant.Quiet" Small="true" Busy="_busy" OnClick="CancelScheduledPublishAsync">Don't publish it then</Button>
+                        <Button Variant="ButtonVariant.Quiet" Small="true" Busy="_busy" OnClick="CancelScheduledPublishAsync">Cancel the scheduled publish</Button>
                     </span>
                 }
             </Notice>
@@ -359,7 +359,7 @@ else
         else if (draft is { PublishAt: { } missed, NotPublished: { } reason })
         {
             <Notice Tone="NoticeTone.Warning">
-                <span>It didn't publish on @DraftWords.Moment(missed). @reason</span>
+                <span>This draft wasn't published on @DraftWords.Moment(missed). @reason</span>
                 <span class="ui-actions">
                     @if (MayPublishDraft)
                     {
@@ -391,13 +391,13 @@ else
                         <ListRow Title="@part.Title" Subtitle="@(count == 0 ? "No changes yet" : count == 1 ? "1 change" : $"{count} changes")" Chevron="true" OnClick="() => OpenPartAsync(part.Key)" />
                     }
                 </ListGroup>
-                <p class="styling-overview__quiet">Click a part of the phone, or one of these, to change it. Changes save themselves, and phones previewing this draft follow along.</p>
+                <p class="styling-overview__quiet">Click a part of the phone, or a row below, to change it. Changes save automatically, and phones previewing this draft update straight away.</p>
             </section>
             return;
         }
         if (!session.Knows(_area))
         {
-            <Skeleton Count="3" Label="Loading what's there" />
+            <Skeleton Count="3" Label="Loading this draft" />
             return;
         }
         if (EditingTheme is not null)
@@ -488,7 +488,7 @@ else
                         @if (changed is not null)
                         {
                             <span class="changed-for-everyone">
-                                <b>Changed for everyone since you edited it:</b> @string.Join(", ", changed.Fields.Select(changedField => DraftWords.Field(changedField, entry.Surface))).
+                                <b>Changed for everyone since you last edited this:</b> @string.Join(", ", changed.Fields.Select(changedField => DraftWords.Field(changedField, entry.Surface))).
                                 <span class="ui-actions">
                                     <Button Small="true" OnClick="() => SettleAsync(entry, keepMine: true)">Keep mine</Button>
                                     <Button Variant="ButtonVariant.Quiet" Small="true" OnClick="() => SettleAsync(entry, keepMine: false)">Use everyone's</Button>
@@ -509,14 +509,14 @@ else
             @foreach (PlacementPatch removed in session.Patches.Where(patch => patch.Kind == PatchKind.Remove && patch.Touches(_area.Area, _area.ScopeId)))
             {
                 ChangedForEveryone? changed = session.ChangedFor(removed.PlacementId);
-                <ListRow Title="@RemovedTitle(removed)" Subtitle="Taken out in this draft" Icon="x" IconTone="RowTone.Quiet" Class="row--muted">
+                <ListRow Title="@RemovedTitle(removed)" Subtitle="Removed in this draft" Icon="x" IconTone="RowTone.Quiet" Class="row--muted">
                     <Below>
                         @if (changed is not null)
                         {
                             <span class="changed-for-everyone">
-                                <b>Changed for everyone since you took it out.</b>
+                                <b>Changed for everyone since you took this out of the draft.</b>
                                 <span class="ui-actions">
-                                    <Button Small="true" OnClick="() => SettleRemovedAsync(removed, keepMine: true)">Take it out anyway</Button>
+                                    <Button Small="true" OnClick="() => SettleRemovedAsync(removed, keepMine: true)">Remove it anyway</Button>
                                     <Button Variant="ButtonVariant.Quiet" Small="true" OnClick="() => SettleRemovedAsync(removed, keepMine: false)">Keep it</Button>
                                 </span>
                             </span>
@@ -577,8 +577,8 @@ else
         }
         else
         {
-            <PaneHead Title="The tab bar" Lead="Home first, up to three tabs you choose, then More. Click a tab on the phone to change what it opens, its word and its icon, or add one." />
-            <p class="detail-pane__hint">A place that isn't a tab is still in the app: it's listed in More, and reached from Home's tiles, links and notifications.</p>
+            <PaneHead Title="The tab bar" Lead="Home is always first and More always last, with up to three tabs of your choice between them. Click a tab on the phone to change what it opens, its label and its icon, or add a tab." />
+            <p class="detail-pane__hint">A page that isn't a tab is still in the app. People reach it from More, Home's tiles, links and notifications.</p>
         }
     };
 
@@ -586,7 +586,7 @@ else
         ? __builder =>
         {
             <div class="changed-for-everyone">
-                <span><b>Changed for everyone since you edited it:</b> @string.Join(", ", changed.Fields.Select(changedField => DraftWords.Field(changedField, _form.Surface))).</span>
+                <span><b>Changed for everyone since you last edited this:</b> @string.Join(", ", changed.Fields.Select(changedField => DraftWords.Field(changedField, _form.Surface))).</span>
                 <span class="ui-actions">
                     <Button Small="true" OnClick="() => SettleIdAsync(_formId, keepMine: true)">Keep mine</Button>
                     <Button Variant="ButtonVariant.Quiet" Small="true" OnClick="() => SettleIdAsync(_formId, keepMine: false)">Use everyone's</Button>
@@ -599,7 +599,7 @@ else
     {
         if (_changedWhileEditing)
         {
-            <Notice Tone="NoticeTone.Warning" Text="Someone else changed this while you were editing it. Keep yours, and it saves over their change; or use theirs, and yours is dropped.">
+            <Notice Tone="NoticeTone.Warning" Text="Someone else changed this while you were editing. Keep your version to replace their change, or use theirs to discard yours.">
                 <span class="ui-actions">
                     <Button Small="true" OnClick="KeepMineAsync">Keep mine</Button>
                     <Button Variant="ButtonVariant.Quiet" Small="true" OnClick="ShowTheirs">Use theirs</Button>
@@ -696,7 +696,7 @@ else
         _form!.Values[AppearanceSurfaces.CustomTheme.Name.Key] = CopyName(theme.Values.Get(AppearanceSurfaces.CustomTheme.Name),
             appearance.Where(entry => entry.Surface == AppearanceSurfaces.CustomTheme.Surface).Select(entry => entry.Values.Get(AppearanceSurfaces.CustomTheme.Name)).ToHashSet());
         await FormChangedAsync();
-        Tell($"Made “{_form.Values[AppearanceSurfaces.CustomTheme.Name.Key]}” to change.", offersRedo: false);
+        Tell($"Made a copy, “{_form.Values[AppearanceSurfaces.CustomTheme.Name.Key]}”, for you to change.", offersRedo: false);
     }
 
     private static string CopyName(string name, IReadOnlySet<string> taken)
@@ -804,7 +804,7 @@ else
         : [TabBar.Home.Route, .. _session.Arranged(TabBarSurfaces.Area, null).Where(entry => !entry.Hidden && KeyOf(entry) != _selectedKey).Select(entry => TabBar.Of(entry).Route)];
 
     private static string RemoveWords(PlacementDraft form) =>
-        TabBarSurfaces.IsTab(form.Surface) ? "Take it off the bar" : form.Surface.Repeatable ? "Take it out" : "Back to how the app starts";
+        TabBarSurfaces.IsTab(form.Surface) ? "Take off the tab bar" : form.Surface.Repeatable ? "Remove from this draft" : "Back to how the app starts";
 
     private HubTileKind? TileKind => _form is null ? null : TileKinds.FirstOrDefault(kind => kind.Surface == _form.Surface);
 
@@ -1011,7 +1011,7 @@ else
         ? []
         : _session.Arranged(AppearanceSurfaces.Area, null)
             .Where(entry => entry.Surface == AppearanceSurfaces.CustomTheme.Surface && entry.Placement is not null)
-            .Select(entry => new Choice(ThemeChoiceSetting.Custom(entry.Placement!.Id), $"{entry.Values.Get(AppearanceSurfaces.CustomTheme.Name)}: made here"))
+            .Select(entry => new Choice(ThemeChoiceSetting.Custom(entry.Placement!.Id), $"{entry.Values.Get(AppearanceSurfaces.CustomTheme.Name)} (made in this draft)"))
             .ToList();
 
     private string FormTitle => _form is null ? "" : TabBarSurfaces.IsTab(_form.Surface) ? _form.Values[TabSettings.Word.Key] is { Length: > 0 } word ? word : "New tab"
@@ -1147,7 +1147,7 @@ else
     {
         PublishedDraft? published = _list!.Published.FirstOrDefault(entry => entry.Name == name);
         string what = published is null ? $"“{name}” was deleted by someone else." : $"{published.By} published “{name}”, so it's live for everyone now.";
-        return hadUnsaved ? $"{what} Your last changes in it weren't saved." : what;
+        return hadUnsaved ? $"{what} Your last changes to the draft weren't saved." : what;
     }
 
     private async Task KeepMineAsync()
@@ -1243,7 +1243,7 @@ else
         catch (RpcException exception) when (exception.StatusCode == StatusCode.PermissionDenied)
         {
             _session.UseLive(area, []);
-            _problem = $"You can't arrange {known.Title}, so you can see but not change that part of this draft.";
+            _problem = $"Your role doesn't let you change {known.Title}, so that part of this draft is read-only for you.";
         }
     }
 
@@ -1329,12 +1329,12 @@ else
             _form.Hidden = true;
             _session.Set(_form.ToStored(_formId));
             Deselect();
-            Tell($"Took “{word}” off the bar. Its page is still in the app.", offersRedo: false);
+            Tell($"Took “{word}” off the tab bar. Its page is still in the app.", offersRedo: false);
             SaveSoon();
             return Task.CompletedTask;
         }
         StoredPlacement? live = _session.LiveOf(FormArea, _formId);
-        string note = _form!.Surface.Repeatable ? $"Took out “{FormTitle}”." : $"Put “{FormTitle}” back to how the app starts.";
+        string note = _form!.Surface.Repeatable ? $"Removed “{FormTitle}” from this draft." : $"Put “{FormTitle}” back to how the app starts.";
         if (live is null)
             _session.Discard(_formId);
         else
@@ -1350,8 +1350,8 @@ else
         if (_session is null)
             return Task.CompletedTask;
         string note = _session.PatchFor(placementId) is { } patch
-            ? patch.Kind == PatchKind.Add ? $"Took out “{AddedTitle(patch)}”." : $"Put “{RemovedTitle(patch)}” back as it was."
-            : "Put back as it was.";
+            ? patch.Kind == PatchKind.Add ? $"Removed “{AddedTitle(patch)}” from this draft." : $"Changed “{RemovedTitle(patch)}” back to how it was."
+            : "Changed back to how it was.";
         _session.Discard(placementId);
         Deselect();
         Tell(note, offersRedo: false);
@@ -1492,7 +1492,7 @@ else
             return;
         Draft publishing = _session.Draft;
         await Drafts.PublishAsync(publishing.Id);
-        _message = $"Published \"{publishing.Name}\". Phones show it within a few seconds.";
+        _message = $"Published \"{publishing.Name}\". Phones update within a few seconds.";
         _session = null;
         _list = await LoadListAsync();
         Navigation.NavigateTo(BasePath);
@@ -1613,10 +1613,10 @@ else
     });
 
     private Task UndoAsync(PublishedDraft published) => RollBackAsync(published.BatchId,
-        $"Undid “{published.Name}”. Phones show it within a few seconds; open it here to publish it again.");
+        $"Undid “{published.Name}”. Phones update within a few seconds. To publish it again, open it here.");
 
     private Task PublishAgainAsync(PublishedDraft published) => RollBackAsync(published.UndoneBatchId!,
-        $"Published “{published.Name}” again. Phones show it within a few seconds.");
+        $"Published “{published.Name}” again. Phones update within a few seconds.");
 
     private async Task RollBackAsync(string batchId, string done)
     {

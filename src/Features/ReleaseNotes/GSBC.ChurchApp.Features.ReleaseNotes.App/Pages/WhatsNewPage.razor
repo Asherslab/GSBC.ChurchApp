@@ -9,7 +9,7 @@
     @if (WhatsNew.Notes.Count == 0)
     {
         <Section First="true">
-            <EmptyState Title="Nothing new to tell yet" Body="Changes to the app will be listed here." />
+            <EmptyState Title="Nothing new yet" Body="Changes to the app will be listed here." />
         </Section>
     }
     @foreach ((IGrouping<string?, ReleaseNote> version, int index) in WhatsNew.Notes.GroupBy(note => note.Version).Select((group, index) => (group, index)))
@@ -36,7 +36,7 @@
                             }
                             @if (note.Link is { } link)
                             {
-                                <TextLink Href="@link">Show me</TextLink>
+                                <TextLink Href="@link">Show me where</TextLink>
                             }
                         </Below>
                     </ListRow>

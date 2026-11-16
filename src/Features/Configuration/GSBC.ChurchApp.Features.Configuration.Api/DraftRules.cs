@@ -65,7 +65,7 @@ internal sealed class DraftRules(SurfaceCatalog surfaces)
                 DraftNotifications.WaitingToPublish,
                 NotificationAudience.Holding(area.PublishPermission, first.ScopeId),
                 $"“{draft.Name}” is waiting to publish",
-                $"{askedBy} asked for it to be published. Publish it from the admin panel.",
+                $"{askedBy} asked for this draft to be published. You can publish it in the admin panel.",
                 Link: PreviewLink(draft),
                 Subject: Subject(draft),
                 Action: "Preview it") { Actor = askedById }
@@ -76,7 +76,7 @@ internal sealed class DraftRules(SurfaceCatalog surfaces)
         DraftNotifications.SharedWithYou,
         NotificationAudience.Person(person),
         $"{sharedBy} shared “{draft.Name}” with you",
-        "See it on your phone before anyone else does.",
+        "See the draft on your phone before anyone else does.",
         Link: PreviewLink(draft),
         Subject: Subject(draft),
         Action: "Preview it") { Actor = sharedById };
@@ -87,8 +87,8 @@ internal sealed class DraftRules(SurfaceCatalog surfaces)
     public static Notification DidNotPublish(DraftRecord draft, Guid scheduledBy) => new(
         DraftNotifications.NotPublished,
         NotificationAudience.Person(scheduledBy),
-        $"“{draft.Name}” didn't publish",
-        $"{draft.NotPublished} Open it in the admin panel's Drafts to settle it, then publish it or schedule it again.",
+        $"“{draft.Name}” wasn't published",
+        $"{draft.NotPublished} Open the draft in the admin panel's Drafts, fix what's needed, then publish or schedule it again.",
         Link: PreviewLink(draft),
         Subject: Subject(draft),
         Action: "Preview it") { Actor = null };

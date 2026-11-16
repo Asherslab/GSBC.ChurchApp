@@ -1,33 +1,33 @@
 @using System.Globalization
 
-<Sheet Open="Open" OpenChanged="OpenChanged" Title="@($"\"{Draft.Name}\" for everyone")" Lead="Choose how everyone gets this draft's changes.">
+<Sheet Open="Open" OpenChanged="OpenChanged" Title="@($"Show “{Draft.Name}” to everyone")" Lead="Choose how and when everyone sees this draft's changes.">
     <ChildContent>
-        <Segmented TValue="ForEveryoneWay" Label="How everyone gets it" Stacked="true" Options="Ways" Value="_way" ValueChanged="way => _way = way" />
+        <Segmented TValue="ForEveryoneWay" Label="How to show the draft" Stacked="true" Options="Ways" Value="_way" ValueChanged="way => _way = way" />
         @switch (_way)
         {
             case ForEveryoneWay.TryNow:
-                <DateTimeField Label="Turn it off by itself (optional)" Value="@_ends" ValueChanged="value => _ends = value"
-                           Hint="Leave it empty to keep it on until someone turns it off." />
+                <DateTimeField Label="Turn off at" Value="@_ends" ValueChanged="value => _ends = value"
+                           Hint="Optional. The draft turns off by itself at this time. Leave this empty to keep it on until someone turns it off." />
                 break;
             case ForEveryoneWay.BetweenDates:
                 <div class="ui-pair">
-                    <DateTimeField Label="Turns on" Value="@_starts" ValueChanged="value => _starts = value" />
-                    <DateTimeField Label="Turns off" Value="@_ends" ValueChanged="value => _ends = value" />
+                    <DateTimeField Label="Turn on at" Value="@_starts" ValueChanged="value => _starts = value" />
+                    <DateTimeField Label="Turn off at" Value="@_ends" ValueChanged="value => _ends = value" />
                 </div>
-                <p class="field__hint">Phones get it ahead of time and switch by themselves, even without signal.</p>
+                <p class="field__hint">Phones receive the draft ahead of time and switch by themselves, even without signal.</p>
                 break;
             default:
-                <DateTimeField Label="Publishes on" Value="@_publishAt" ValueChanged="value => _publishAt = value"
-                           Hint="The server publishes it at that moment, even if nobody has the admin panel open. Changes you save before then are published too." />
+                <DateTimeField Label="Publish at" Value="@_publishAt" ValueChanged="value => _publishAt = value"
+                           Hint="The draft is published at this time, even if nobody has the admin panel open. Changes saved before then are published too." />
                 @if (PublishAt is { } at)
                 {
-                    <p class="field__hint">Publishes on @DraftWords.Moment(at).</p>
+                    <p class="field__hint">The draft will be published on @DraftWords.Moment(at).</p>
                 }
                 break;
         }
         @if (Replacing is not null && _way != ForEveryoneWay.PublishOn)
         {
-            <Notice Tone="NoticeTone.Warning" Text="@($"\"{Replacing}\" is on for everyone now. This replaces it.")" />
+            <Notice Tone="NoticeTone.Warning" Text="@($"“{Replacing}” is turned on for everyone now. This draft will replace it.")" />
         }
         @if (Problem is not null)
         {
@@ -46,12 +46,12 @@
 
     private static readonly IReadOnlyList<SegmentOption<ForEveryoneWay>> Ways =
     [
-        new(ForEveryoneWay.TryNow, "Turn it on now", "sun",
-            Detail: "Everyone sees it from now until it's turned off. It isn't published, so turning it off puts the app back as it was."),
-        new(ForEveryoneWay.BetweenDates, "Turn it on between two dates", "calendar",
-            Detail: "Everyone sees it between the two times, then the app goes back by itself. It isn't published."),
-        new(ForEveryoneWay.PublishOn, "Publish it on a date", "send",
-            Detail: "At that moment it's published for good, just like Publish now. There's nothing to turn off afterwards."),
+        new(ForEveryoneWay.TryNow, "Turn on now", "sun",
+            Detail: "Everyone sees this draft from now until someone turns it off. The draft isn't published, so turning it off puts the app back as it was."),
+        new(ForEveryoneWay.BetweenDates, "Turn on between two dates", "calendar",
+            Detail: "Everyone sees this draft between the two times, then the app goes back by itself. The draft isn't published."),
+        new(ForEveryoneWay.PublishOn, "Publish on a date", "send",
+            Detail: "At the time you choose, the draft is published for good, just like Publish now. There's nothing to turn off afterwards."),
     ];
 
     [Parameter, EditorRequired] public required Draft Draft { get; set; }

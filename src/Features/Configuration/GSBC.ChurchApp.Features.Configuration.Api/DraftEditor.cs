@@ -52,7 +52,7 @@ internal sealed class DraftEditor(
         Guid author = CallerId(caller);
         GrantSet grants = await GrantsAsync(caller, cancellationToken);
         if (!surfaces.Areas.Values.Any(area => MayArrange(grants, area)))
-            throw new RpcException(new Status(StatusCode.PermissionDenied, "You can't arrange anything in the app, so you can't start a draft."));
+            throw new RpcException(new Status(StatusCode.PermissionDenied, "Your role doesn't let you change the app's styling, so you can't start a draft."));
 
         DateTime now = Now;
         DraftRecord draft = new()
@@ -235,7 +235,7 @@ internal sealed class DraftEditor(
         DraftRecord draft = await VisibleAsync(caller, request.DraftId, cancellationToken, tracked: true);
         DateTime at = DateTime.SpecifyKind(request.At, DateTimeKind.Utc);
         if (at <= Now)
-            throw Invalid("That time has already passed. Choose a later one, or publish it now.");
+            throw Invalid("That time has already passed. Choose a later time, or publish the draft now.");
 
         List<DraftChangeRecord> rows = await ChangesOfAsync(draft, cancellationToken);
         await CheckPublishableAsync(rows, (area, scopeId) => placements.AuthoriseAsync(caller, area, scopeId, cancellationToken, publishing: true), cancellationToken);
@@ -393,9 +393,9 @@ internal sealed class DraftEditor(
         if (rows.Count == 0)
             throw new RpcException(new Status(StatusCode.FailedPrecondition, "There's nothing in this draft to turn on yet."));
         if (request is { StartsAt: { } starts, EndsAt: { } ends } && ends <= starts)
-            throw Invalid("The event layer has to end after it starts.");
+            throw Invalid("The draft has to turn off after it turns on.");
         if (request.EndsAt is { } end && end <= Now)
-            throw Invalid("The event layer's end has already passed.");
+            throw Invalid("The time to turn the draft off has already passed.");
 
         foreach (IGrouping<(string Area, string? ScopeId), DraftChangeRecord> inArea in rows.GroupBy(row => (row.Area, row.ScopeId)))
         {
@@ -410,7 +410,7 @@ internal sealed class DraftEditor(
                     ? patch.ApplyTo(Stored(live))
                     : patch.Kind == PatchKind.Add
                         ? patch.Created()
-                        : throw new RpcException(new Status(StatusCode.FailedPrecondition, $"{draftRules.TitleOf(patch)} was removed for everyone. Take it out of this draft first."));
+                        : throw new RpcException(new Status(StatusCode.FailedPrecondition, $"{draftRules.TitleOf(patch)} was removed for everyone. Remove it from this draft first."));
                 await rules.ValidatedAsync(surface, PlacementState.Of(wanted), cancellationToken);
             }
         }
@@ -478,7 +478,7 @@ internal sealed class DraftEditor(
     {
         DraftRecord draft = await ManagedAsync(caller, query.DraftId, cancellationToken);
         if (draft.LayerOn)
-            throw new RpcException(new Status(StatusCode.FailedPrecondition, "This draft is on for an event. Turn it off before deleting it."));
+            throw new RpcException(new Status(StatusCode.FailedPrecondition, "This draft is turned on for everyone. Turn it off before deleting it."));
 
         Close(draft);
         await db.SaveChangesAsync(cancellationToken);
@@ -496,7 +496,7 @@ internal sealed class DraftEditor(
         if (kind == PatchKind.Add)
         {
             if (live is not null)
-                throw Invalid($"{surface.Title} is already placed; change it instead.");
+                throw Invalid($"{surface.Title} is already on the screen; change it instead.");
             PlacementRules.RefuseSecondCopy(surface, await placements.InArea(area, scopeId).Select(placement => placement.Surface).ToListAsync(cancellationToken));
         }
         else if (live is null)
@@ -612,7 +612,7 @@ internal sealed class DraftEditor(
         }
         catch (DbUpdateException exception) when (exception.InnerException is Npgsql.PostgresException { SqlState: Npgsql.PostgresErrorCodes.UniqueViolation })
         {
-            throw new RpcException(new Status(StatusCode.Aborted, "Another draft was turned on for an event at the same moment. Reload and try again."));
+            throw new RpcException(new Status(StatusCode.Aborted, "Another draft was turned on for everyone at the same moment. Reload and try again."));
         }
     }
 
@@ -786,7 +786,7 @@ internal sealed class DraftEditor(
         string trimmed = name.Trim();
         return trimmed.Length switch
         {
-            0 => throw Invalid("Give the draft a name."),
+            0 => throw Invalid("Enter a name for the draft."),
             > ConfigurationDbContext.MaximumDraftName => throw Invalid($"Keep the name under {ConfigurationDbContext.MaximumDraftName} characters."),
             _ => trimmed,
         };

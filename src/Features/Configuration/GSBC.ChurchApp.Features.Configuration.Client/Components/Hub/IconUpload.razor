@@ -2,7 +2,7 @@
 
 @if (_drawing is null)
 {
-    <DropBox Prompt="Upload your own icon" Hint="Drop an SVG here, or click to choose one">
+    <DropBox Prompt="Upload an icon" Hint="Drop an SVG file here, or click to choose one.">
         <input @ref="_input" type="file" accept=".svg,image/svg+xml" class="visually-hidden" @onchange="ReadAsync" />
     </DropBox>
     @if (_problem is not null)
@@ -13,7 +13,7 @@
 else
 {
     <div class="icon-upload__check">
-        <span class="tile-settings__note">Cleaned and ready. This is how it looks in the theme's colours, in light and dark:</span>
+        <span class="tile-settings__note">The icon is ready. This is how it looks in the theme's colours, in light and dark mode:</span>
         <div class="icon-upload__proofs">
             @foreach (string scheme in new[] { "light", "dark" })
             {

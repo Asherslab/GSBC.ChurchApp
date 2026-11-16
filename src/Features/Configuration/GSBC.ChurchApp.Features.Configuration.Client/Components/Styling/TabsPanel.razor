@@ -3,14 +3,14 @@
 <div class="tabs-panel">
     <div class="styling-panel__head">
         <h2>Tab bar</h2>
-        <p>Home first, up to three tabs you choose, then More. Click a tab on the phone, or here, to change what it opens, its word and its icon.</p>
+        <p>Home is always first and More always last, with up to three tabs of your choice between them. Click a tab on the phone, or below, to change what it opens, its label and its icon.</p>
     </div>
     @if (MayChange)
     {
         <div class="home-panel__controls"><Button Icon="plus" OnClick="OnAdd">Add a tab</Button></div>
     }
     <section class="tabs-canvas__order" aria-labelledby="tabs-order">
-        <h3 id="tabs-order">On the bar, in order</h3>
+        <h3 id="tabs-order">On the tab bar, in order</h3>
         <ol class="tabs-canvas__list">
             @FixedRow(TabBar.Home.Icon, TabBar.Home.Word, "Always first")
             @for (int index = 0; index < OnBar.Count; index++)
@@ -40,7 +40,7 @@
     @if (NotOnBar.Count > 0 || Removed.Count > 0)
     {
         <section class="hub-canvas__hidden" aria-labelledby="tabs-hidden">
-            <h3 id="tabs-hidden">Not on the bar for @Preview.Words(RoleNames)</h3>
+            <h3 id="tabs-hidden">Not on the tab bar for @Preview.Words(RoleNames)</h3>
             <ListGroup>
                 @foreach ((ArrangedSurface entry, string why) in NotOnBar)
                 {
@@ -48,14 +48,14 @@
                 }
                 @foreach (PlacementPatch removed in Removed)
                 {
-                    <ListRow Title="@(removed.Base?.Values.GetValueOrDefault(TabSettings.Word.Key) ?? "A tab")" Subtitle="Taken off in this draft" Icon="x" IconTone="RowTone.Quiet" Class="row--muted">
+                    <ListRow Title="@(removed.Base?.Values.GetValueOrDefault(TabSettings.Word.Key) ?? "A tab")" Subtitle="Removed in this draft" Icon="x" IconTone="RowTone.Quiet" Class="row--muted">
                         <TrailingContent><Button Variant="ButtonVariant.Quiet" Small="true" Icon="undo" OnClick="() => OnPutBack.InvokeAsync(removed.PlacementId)">Put back</Button></TrailingContent>
                     </ListRow>
                 }
             </ListGroup>
         </section>
     }
-    <p class="styling-panel__note">A place that isn't a tab is still in the app: it's listed in More, and reached from Home's tiles, links and notifications.</p>
+    <p class="styling-panel__note">A page that isn't a tab is still in the app. People reach it from More, Home's tiles, links and notifications.</p>
     <p class="visually-hidden" aria-live="polite">@_announced</p>
 </div>
 
@@ -103,21 +103,21 @@
     private string WhyNot(ArrangedSurface entry)
     {
         if (entry.Hidden)
-            return "Taken off the bar: On the bar is off";
+            return "Hidden: “Show on the tab bar” is off";
         if (entry.StartsAt is { } starts && At < starts)
-            return $"On the bar from {DraftWords.Day(starts)}";
+            return $"On the tab bar from {DraftWords.Day(starts)}";
         if (entry.EndsAt is { } ends && At >= ends)
             return $"Ended {DraftWords.Day(ends.AddTicks(-1))}";
         if (!Preview.Shows(entry, Now))
             return entry.Audience.IsForRoles ? $"Only for {RoleWords.List(entry.Audience.RoleIds, RoleNames)}" : "Only for people who are signed in";
         if (entry.Surface.ProblemsWith(entry.Values.Raw).Count > 0)
-            return "Not finished: it needs a place, a word and an icon";
+            return "Not finished: this tab needs a page to open, a label and an icon.";
         AppTab tab = TabBar.Of(entry);
         if (string.Equals(tab.Route, TabBar.Home.Route, StringComparison.OrdinalIgnoreCase))
             return "Home is already the first tab";
         return ShownToViewer.TakeWhile(other => other != entry).Any(other => string.Equals(TabBar.Of(other).Route, tab.Route, StringComparison.OrdinalIgnoreCase))
-            ? "Another tab already opens this place"
-            : "Past the third: only three tabs fit between Home and More";
+            ? "Another tab already opens this page."
+            : "Not shown: only three tabs fit between Home and More.";
     }
 
     private static RenderFragment FixedRow(string icon, string word, string where) => __builder =>

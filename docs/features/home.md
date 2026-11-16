@@ -95,8 +95,8 @@ proof uses the same theme, so the warning now measures a custom theme too. In da
 turn muddy. The text colour is the
 role the theme pairs with the background (`on-masthead`, `on-primary`, …), which the theme already
 keeps readable, so staff can't make unreadable text. The settings panel shows the tile in light and
-dark and reads the contrast off the render. Icon colours are *Goes with the tile*, Main colour, Links
-and live, Marker, Quiet, or (for uploaded icons) *Its own colours*.
+dark and reads the contrast off the render. Icon colours are *Matches the tile*, Main colour, Links
+and live, Marker, Quiet, or (for uploaded icons) *The icon's own colours*.
 
 ### The fade over a picture
 
@@ -111,7 +111,7 @@ picture, and the phone shows it live; it's a tile setting, so drafts, copies and
 The masthead's title and the line under it are a Hub surface of their own, **Top of Home** (`hub.top`, one per
 Home, an arrangement like the grid) (owner, 2026-11-09). The title is the staff's words (40 characters,
 "Good Shepherd" to start, also the top bar's title once Home scrolls); the line under it is *Today's date* (as
-before), *Your own words* (80 characters; left empty, nothing shows) or *Nothing*. `HubSurfaces.Top.In`
+before), *Your own line* (80 characters; left empty, nothing shows) or *Nothing*. `HubSurfaces.Top.In`
 reads it for `HomeScreen`, so the app, the canvas and every preview draw the same. A title longer than 16
 characters may wrap, balanced, instead of running off the phone. On the canvas, click the masthead to change it.
 
@@ -255,7 +255,7 @@ Drafts → a draft → **Home screen** (desktop; the narrow layout keeps the lis
   drafts list, the middle column and the settings each scroll on their own. Since App styling (2026-11-09,
   [drafts.md](../architecture/drafts.md)) the phone is a sticky column as tall as the window and the settings
   column scrolls with the page.
-- **Settings:** size steppers, its layout ("Best for this size (now …)" or one chosen; layouts that need
+- **Settings:** size steppers, its layout ("Automatic (currently …)" or one chosen; layouts that need
   a picture or a bigger tile are greyed out with the reason), colour swatches with their names, the chosen
   icon with **Change icon** opening the grid and upload, words, picture (the picture sheet, see [media.md](media.md)) and the part to keep in
   view, Opens (a place through the place picker, or a web page), who sees it, its dates and Shown. When the
