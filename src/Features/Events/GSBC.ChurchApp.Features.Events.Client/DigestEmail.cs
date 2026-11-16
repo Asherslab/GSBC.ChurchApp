@@ -42,7 +42,7 @@ public static class DigestEmail
     {
         StringBuilder html = new();
         html.Append($"""<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="{Behind}" style="width:100%;background:{Behind};border-collapse:collapse;color-scheme:light only">""");
-        html.Append($"""<tr><td align="center" style="padding:0 0 32px">""");
+        html.Append("""<tr><td align="center" style="padding:0 0 32px">""");
         html.Append($"""<!--[if mso]><table role="presentation" width="{Width}" align="center" cellpadding="0" cellspacing="0" border="0"><tr><td><![endif]-->""");
         html.Append($"""<table role="presentation" width="100%" align="center" cellpadding="0" cellspacing="0" border="0" bgcolor="#ffffff" style="width:100%;max-width:{Width}px;margin:0 auto;background:#ffffff;border-collapse:collapse">""");
         if (topPictureUrl is { } top && IsWeb(top))

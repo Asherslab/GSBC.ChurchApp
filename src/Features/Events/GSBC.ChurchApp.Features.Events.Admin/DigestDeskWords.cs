@@ -8,7 +8,7 @@ public sealed record DigestPickGroup(string Heading, IReadOnlyList<DigestItem> I
 
 internal static class DigestDeskWords
 {
-    public const string OwnIcon = "pencil";
+    private const string OwnIcon = "pencil";
 
     public static string? OnlyFor(DigestItem item) => item switch
     {

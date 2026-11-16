@@ -58,6 +58,7 @@ The palette is switched at the document root: `data-scheme` selects light or dar
 - **Selected Fill** (selected-fill): the chosen row in a list on the page, a tonal step (sand in light) rather than a shadow. Inside the workbench's sand list column the step goes the other way, to the segment colour (white in light), so the selected row still stands off its ground. On a selected row a sand leading tile takes the page colour so it still reads as a tile; an accent tile keeps its tint.
 - **Fill on Surface** (fill-on-surface): a shaded box inside a panel; sand in light, strong sand in dark, so it never vanishes into a raised navy panel. The quiet pill, the chosen place, the layout picker's choices, the icon picker's cells, the Add a tile cards, and avatars, row-icon tiles and fact icons. Fields and quiet buttons take Field instead.
 - **Device Bezel** (device-bezel): the black ring and cutout of the phone frame; device hardware, never a UI colour.
+- **Email Paper** (email-paper) and **Email Behind** (email-behind): the digest email's white column and the grey around it, where the admin panel shows the email. The email is always light, so these never change with the scheme or theme.
 
 ### Dark scheme
 - **Night** (night) is the page; **Night Surface** (night-surface) doubles as sand, so callouts and the player become raised navy panels, with **Night Surface Strong** (night-surface-strong) for tracks and placeholders.

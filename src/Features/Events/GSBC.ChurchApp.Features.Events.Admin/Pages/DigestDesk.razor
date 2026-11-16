@@ -222,7 +222,7 @@
     private static string TitleOf(DigestItem item) => item.Shown.Title.Trim().Length > 0 ? item.Shown.Title : "Untitled";
 
     private static string WhenOf(DigestItem item) =>
-        item.Kind == DigestItemKind.News && item.Shown.When.Length == 0 ? DigestDeskWords.Posted(item) : item.Shown.When;
+        item is { Kind: DigestItemKind.News, Shown.When.Length: 0 } ? DigestDeskWords.Posted(item) : item.Shown.When;
 
     private IReadOnlyList<MenuItem> MoreFor(DigestItem item) =>
     [
@@ -390,7 +390,7 @@
 
     private Task PickFromPreview(DigestShownItem shown)
     {
-        if (_draft?.Items.FirstOrDefault(item => item.Key == shown.Key) is { } item)
+        if (_draft?.Items.FirstOrDefault(each => each.Key == shown.Key) is { } item)
             Edit(item);
         return Task.CompletedTask;
     }

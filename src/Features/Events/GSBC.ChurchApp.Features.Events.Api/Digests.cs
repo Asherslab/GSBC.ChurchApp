@@ -16,9 +16,9 @@ internal static partial class Digests
     public const DigestRange DefaultRange = DigestRange.TwoWeeks;
     public const int LongestDays = 92;
     public const string OwnPrefix = "own:";
-    public const string NewsPrefix = "news:";
-    public const string NewsLabel = "Church news";
-    public const int LongestOpening = 600;
+    private const string NewsPrefix = "news:";
+    private const string NewsLabel = "Church news";
+    private const int LongestOpening = 600;
 
     private static readonly CultureInfo English = CultureInfo.InvariantCulture;
     private static readonly string[] Counted = ["", "one", "two", "three", "four", "five"];
@@ -72,7 +72,7 @@ internal static partial class Digests
         return merged;
     }
 
-    public static Guid? PostIdOf(string key) =>
+    private static Guid? PostIdOf(string key) =>
         key.StartsWith(NewsPrefix, StringComparison.Ordinal) && Guid.TryParse(key[NewsPrefix.Length..], out Guid id) ? id : null;
 
     public static IReadOnlyList<Guid> PostsIn(IEnumerable<string> keys) => keys.Select(PostIdOf).OfType<Guid>().Distinct().ToList();

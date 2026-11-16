@@ -1,6 +1,5 @@
 @using GSBC.ChurchApp.Platform.Ui.Content
 @using GSBC.ChurchApp.Platform.Contracts.Media
-@using GSBC.ChurchApp.Platform.Icons
 @inject IJSRuntime Js
 
 <UnsavedGuard Changed="() => Changed" What="your changes to this item" />
@@ -99,7 +98,7 @@
         _ => $"From the {Item.CalendarName} calendar{DatesOf(Item)}. What you change here is for the digest only; the calendar keeps its own words.",
     };
 
-    private string? PictureHint => Item.Kind switch
+    private string PictureHint => Item.Kind switch
     {
         DigestItemKind.Own => "From the media library. Shown in the app and the email.",
         DigestItemKind.News => "The post's own picture. Choose another from the media library for the digest only.",
