@@ -89,10 +89,17 @@ public static class MapAreaWords
     public static string? Estimate(AreaCell cell, RegionChangeCheck? check) =>
         check?.Added.FirstOrDefault(added => added.Row == cell.Cell.Row && added.Column == cell.Cell.Column) is { } found ? Estimate(found) : null;
 
-    public static string Estimate(CellEstimate estimate) => estimate.HasHomes
+    private static string Estimate(CellEstimate estimate) => estimate.HasHomes
         ? $"about {OutreachWords.Plural(Rounded(estimate.Addresses), "letterbox", "letterboxes")}, about {Megabytes(estimate.Bytes)}"
         : estimate.OutsideQueensland ? "outside Queensland, so it can't be added"
         : "no homes, so it isn't made";
+
+    public static string Letterboxes(CellEstimate estimate) => estimate.HasHomes
+        ? OutreachWords.Plural(Rounded(estimate.Addresses), "letterbox", "letterboxes")
+        : estimate.OutsideQueensland ? "Outside Queensland"
+        : "No homes";
+
+    public static string? Count(CellEstimate estimate) => estimate.HasHomes ? Rounded(estimate.Addresses).ToString("N0", Invariant) : null;
 
     public static string Unmade(IReadOnlyCollection<CellEstimate> estimates)
     {

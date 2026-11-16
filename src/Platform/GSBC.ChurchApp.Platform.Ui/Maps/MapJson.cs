@@ -98,6 +98,12 @@ public static class MapJson
             Optional(json, "id", marker.Id);
             if (marker.Chosen)
                 json.WriteBoolean("chosen", true);
+            if (marker.Corner)
+                json.WriteBoolean("corner", true);
+            if (marker.ShownFrom > 0)
+                json.WriteNumber("from", Math.Round(marker.ShownFrom, 2));
+            if (marker.ShownUntil > 0)
+                json.WriteNumber("until", Math.Round(marker.ShownUntil, 2));
             json.WritePropertyName("point");
             Point(json, marker.Point);
             json.WriteEndObject();
@@ -164,6 +170,7 @@ public static class MapJson
         json.WriteNumber("padding", frame.Padding);
         json.WriteNumber("maxZoom", frame.MaxZoom);
         json.WriteNumber("start", frame.StartPadding);
+        json.WriteNumber("below", frame.BottomPadding);
         json.WriteEndObject();
     });
 

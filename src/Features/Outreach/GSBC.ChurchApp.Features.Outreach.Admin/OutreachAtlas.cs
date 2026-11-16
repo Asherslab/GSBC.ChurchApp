@@ -22,7 +22,7 @@ public sealed class OutreachAtlas
             .Select(cell => cell with { Name = Note(area, cell) }))];
         List<MapFrame> covered = [.. Regions.Select(region => Box(region.Core))];
         MapReach built = new(covered, [], []);
-        List<MapMarker> notes = [.. unbuilt.Select(cell => built.FreeSpot(Box(cell.Core)) is { } spot ? new MapMarker(spot, MapMarkerKind.Note, cell.Name) : null).OfType<MapMarker>()];
+        List<MapMarker> notes = [.. unbuilt.Select(cell => built.FreeSpot(Box(cell.Core)) is { } spot ? MapAreaDrawing.Mark(cell.Core, spot, cell.Name) : null).OfType<MapMarker>()];
         IReadOnlyList<MapAreaShape> others = MapAreaDrawing.ShapesOutside(unbuilt, built);
         IReadOnlyList<MapPoint>? addable = Overview is { } shown ? [.. shown.Addable.Select(corner => new MapPoint(corner.Latitude, corner.Longitude))] : null;
         Reach = new MapReach(covered, others, notes, Addable: addable);

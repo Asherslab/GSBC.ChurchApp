@@ -68,7 +68,7 @@
 @code {
     private const string NewArea = "new";
     private const int PreviewZoom = 12;
-    private const int KeyRoom = 220;
+    private const int KeyRoom = 170;
     private const string Lead = "Where the app has maps and streets. Each area is cut into regions of about 10 km; phones download the map and streets of the region they walk in.";
 
     private static readonly IReadOnlyList<string> Feeds = [OutreachMapsFeeds.Builds, OutreachMapsFeeds.Regions];
@@ -105,7 +105,7 @@
 
     public override IReadOnlyList<MapMarker> Markers => !IsOpen ? []
         : _adding ? [.. _centre is { } centre ? [new MapMarker(centre, MapMarkerKind.Pin, Map.Atlas.Overview is null ? _place?.Name : null)] : Array.Empty<MapMarker>(), .. _previewNotes]
-        : _area is not null ? [.. _cells.Select(cell => new MapMarker(cell.Look == CellLook.Edge ? cell.Middle : MapAreaDrawing.Corner(cell.Core), MapMarkerKind.Note, MapAreaWords.Label(cell)))]
+        : _area is not null ? [.. _cells.Select(cell => cell.Look == CellLook.Edge ? MapAreaDrawing.Mark(cell.Core, cell.Middle, MapAreaWords.Label(cell)) : MapAreaDrawing.Note(cell.Core, MapAreaWords.Label(cell)))]
         : [];
 
     private bool Changed => _adding ? _centre is not null : _changed.Count > 0;
@@ -530,7 +530,7 @@
             _preview = preview;
             Draw(preview);
             if (frame)
-                Map.FlyTo(MapFrame.Around(_previewShapes.SelectMany(shape => shape.Points), padding: 48, maxZoom: PreviewZoom) with { StartPadding = KeyRoom });
+                Map.FlyTo(MapFrame.Around(_previewShapes.SelectMany(shape => shape.Points), padding: 48, maxZoom: PreviewZoom) with { BottomPadding = KeyRoom });
         }
         catch (RpcException exception)
         {
@@ -548,12 +548,7 @@
     {
         _previewShapes = preview.Cells.Select(cell => new MapShape(MapAreaDrawing.Ring(preview.Grid.Core(cell.Row, cell.Column)),
             cell.HasHomes ? "--live" : "--ink-3", $"{cell.Row}:{cell.Column}", Dashed: !cell.HasHomes)).ToList();
-        List<MapMarker> notes = preview.Cells.Select(cell =>
-        {
-            MapBounds core = preview.Grid.Core(cell.Row, cell.Column);
-            MapPoint corner = new(core.North - (core.North - core.South) * 0.12, core.West + (core.East - core.West) * 0.22);
-            return new MapMarker(corner, MapMarkerKind.Note, cell.HasHomes ? MapAreaWords.Estimate(cell) : cell.OutsideQueensland ? "Outside Queensland" : "No homes");
-        }).ToList();
+        List<MapMarker> notes = [.. preview.Cells.SelectMany(cell => MapAreaDrawing.Notes(preview.Grid.Core(cell.Row, cell.Column), MapAreaWords.Letterboxes(cell), MapAreaWords.Count(cell)))];
         if (!Mapped(preview) && Map.Atlas.Overview is null)
         {
             double apart = Math.Min(preview.Grid.CellLatitude, preview.Grid.CellLongitude) * 0.22;

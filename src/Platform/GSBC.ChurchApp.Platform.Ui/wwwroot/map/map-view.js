@@ -101,9 +101,7 @@ function overlayLayers(c) {
     { id: "report-marks", type: "symbol", source: "markers", filter: kindIs("report"),
       layout: { "text-field": "!", "text-font": ["montserrat-semibold"], "text-size": byZoom([[12, 11], [17, 15]]), "text-allow-overlap": true, "text-ignore-placement": true },
       paint: { "text-color": c.onMarker } },
-    { id: "marker-notes", type: "symbol", source: "markers", filter: kindIs("note"),
-      layout: { "text-field": ["get", "label"], "text-font": ["montserrat-semibold"], "text-size": 12, "text-max-width": 9 },
-      paint: { "text-color": c.ink, "text-halo-color": c.surface, "text-halo-width": 2 } },
+    { id: "marker-notes", type: "symbol", source: "markers", filter: ["all", kindIs("note"), shownNow], layout: noteLayout, paint: notePaint(c) },
     { id: "places", type: "circle", source: "markers", filter: kindIs("start", "pin", "meeting"),
       paint: {
         "circle-radius": 8,
@@ -119,6 +117,14 @@ function overlayLayers(c) {
       paint: { "circle-radius": 8, "circle-color": c.you, "circle-stroke-color": c.surface, "circle-stroke-width": 3 } },
   ];
 }
+
+const shownNow = ["all", [">=", ["zoom"], ["coalesce", ["get", "from"], 0]], ["<", ["zoom"], ["coalesce", ["get", "until"], 99]]];
+const inCorner = ["coalesce", ["get", "corner"], false];
+const noteLayout = {
+  "text-field": ["get", "label"], "text-font": ["montserrat-semibold"], "text-size": 11, "text-max-width": 7, "text-line-height": 1.15,
+  "text-anchor": ["case", inCorner, "top-left", "center"], "text-justify": ["case", inCorner, "left", "center"], "text-padding": 6,
+};
+const notePaint = (c) => ({ "text-color": c.ink, "text-halo-color": c.surface, "text-halo-width": 1.5 });
 
 const hatch = "reach-hatch";
 const closedHatch = "reach-closed-hatch";
@@ -164,9 +170,7 @@ function reachLayers(c, overview) {
     { id: "reach-others", type: "fill", source: "reach-others", paint: { "fill-color": ["coalesce", ["get", "colour"], c.walked], "fill-opacity": ["case", ["get", "outline"], 0, 0.1] } },
     { id: "reach-others-edge", type: "line", source: "reach-others", paint: { "line-color": ["coalesce", ["get", "colour"], c.walked], "line-width": 1.5, "line-dasharray": [3, 2] } },
     { id: "reach-edge", type: "line", source: "reach-edge", layout: { "line-cap": "round" }, paint: { "line-color": c.ink, "line-opacity": 0.55, "line-width": 1.5 } },
-    { id: "reach-notes", type: "symbol", source: "reach-notes",
-      layout: { "text-field": ["get", "label"], "text-font": ["montserrat-semibold"], "text-size": 12, "text-max-width": 9 },
-      paint: { "text-color": c.ink, "text-halo-color": c.surface, "text-halo-width": 2 } },
+    { id: "reach-notes", type: "symbol", source: "reach-notes", filter: shownNow, layout: noteLayout, paint: notePaint(c) },
   ];
 }
 
@@ -201,11 +205,11 @@ const colourOf = (value) => (value?.startsWith("--") ? token(value) : value);
 const line = (l) => ({ type: "Feature", properties: { style: l.style, ...(l.label ? { label: l.label } : {}), ...(l.colour ? { colour: colourOf(l.colour) } : {}), ...(l.age != null ? { age: l.age } : {}), id: l.id ?? "" },
   geometry: { type: "LineString", coordinates: l.points } });
 const area = (a) => ({ type: "Feature", properties: { ...(a.colour ? { colour: colourOf(a.colour) } : {}), dashed: !!a.dashed, outline: !!a.outline, id: a.id ?? "" }, geometry: { type: "Polygon", coordinates: [a.points, ...(a.holes ?? [])] } });
-const marker = (m) => ({ type: "Feature", properties: { kind: m.kind, ...(m.label ? { label: m.label } : {}), id: m.id ?? "", chosen: !!m.chosen }, geometry: { type: "Point", coordinates: m.point } });
+const marker = (m) => ({ type: "Feature", properties: { kind: m.kind, ...(m.label ? { label: m.label } : {}), id: m.id ?? "", chosen: !!m.chosen, corner: !!m.corner, from: m.from ?? 0, until: m.until ?? 99 }, geometry: { type: "Point", coordinates: m.point } });
 
 function framePadding(b) {
   const padding = b.padding ?? 40;
-  return { top: padding, right: padding, bottom: padding, left: padding + (b.start ?? 0) };
+  return { top: padding, right: padding, bottom: padding + (b.below ?? 0), left: padding + (b.start ?? 0) };
 }
 
 function metresToPixels(map, metres, lat) {

@@ -82,7 +82,27 @@ public static class MapAreaDrawing
         cells.Select((cell, index) => new MapLabel(Named(cell.Look) ? Corner(cell.Core) : cell.Middle, MapAreaWords.Label(cell), Colour(cell.Look), index,
             cell.Look == CellLook.Adding ? MapLabelStyle.Filled : MapLabelStyle.Ring, MapAreaWords.ShortLabel(cell), Quiet: Named(cell.Look))).ToList();
 
-    public static MapPoint Corner(MapBounds core) =>
+    private const double NoteInset = 0.05;
+    private const double NoteRoom = 100;
+    private const double MarkRoom = 28;
+
+    private const double CountRoom = 44;
+
+    public static MapMarker Note(MapBounds core, string label) =>
+        new(Box(core).InsideCorner(NoteInset), MapMarkerKind.Note, label, Corner: true, ShownFrom: Box(core).ZoomWhereItSpans(NoteRoom));
+
+    public static IEnumerable<MapMarker> Notes(MapBounds core, string label, string? count)
+    {
+        MapMarker full = Note(core, label);
+        yield return full;
+        if (count is not null)
+            yield return full with { Label = count, ShownFrom = Box(core).ZoomWhereItSpans(CountRoom), ShownUntil = full.ShownFrom };
+    }
+
+    public static MapMarker Mark(MapBounds core, MapPoint at, string label) =>
+        new(at, MapMarkerKind.Note, label, ShownFrom: Box(core).ZoomWhereItSpans(MarkRoom));
+
+    private static MapPoint Corner(MapBounds core) =>
         new(core.North - (core.North - core.South) * 0.14, core.West + (core.East - core.West) * 0.3);
 
     public static MapFrame Frame(IEnumerable<AreaCell> cells) =>
