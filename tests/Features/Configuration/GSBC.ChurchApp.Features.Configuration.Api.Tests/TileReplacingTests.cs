@@ -2,6 +2,7 @@ using System.Security.Claims;
 using GSBC.ChurchApp.Features.Configuration.Api.Data;
 using GSBC.ChurchApp.Features.Configuration.Contracts;
 using GSBC.ChurchApp.Platform.Contracts.Configuration;
+using GSBC.ChurchApp.Platform.Data;
 using GSBC.ChurchApp.Testing;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -23,12 +24,15 @@ public sealed class TileReplacingTests : ConfigurationHost
         Assert.Equal(2, await ReplaceAsync());
         Assert.Equal(0, await ReplaceAsync());
 
-        List<Placement> after = await LiveAsync(staff, HubSurfaces.Area);
-        Assert.Equal(before.Select(tile => (tile.Id, tile.Order, tile.Audience)), after.Select(tile => (tile.Id, tile.Order, tile.Audience)));
-        Assert.Equal([HubSurfaces.LinkTile.Surface.Key, TestSurfaces.WhatsNext.Surface.Key, TestSurfaces.WhatsNext.Surface.Key], after.Select(tile => tile.Surface));
-        Assert.Equal(["columns=2", "rows=2"],
-            after.Where(tile => tile.Surface == TestSurfaces.WhatsNext.Surface.Key).Select(tile => string.Join(",", tile.Values.Select(value => $"{value.Key}={value.Value}"))).Order());
-        Assert.Contains(await FeedAsync(ConfigurationFeeds.Placements), change => change.RecordId == after[1].Id && change.Version == after[1].Revision);
+        Dictionary<string, Placement> after = (await LiveAsync(staff, HubSurfaces.Area)).ToDictionary(tile => tile.Id);
+        Placement give = before.Single(tile => tile.Surface == HubSurfaces.LinkTile.Surface.Key);
+        Assert.Equal(before.Select(tile => (tile.Id, tile.Order, tile.Audience)).Order(), after.Values.Select(tile => (tile.Id, tile.Order, tile.Audience)).Order());
+        Assert.Equal(HubSurfaces.LinkTile.Surface.Key, after[give.Id].Surface);
+        List<Placement> replaced = after.Values.Where(tile => tile.Id != give.Id).ToList();
+        Assert.All(replaced, tile => Assert.Equal(TestSurfaces.WhatsNext.Surface.Key, tile.Surface));
+        Assert.Equal(["columns=2", "rows=2"], replaced.Select(tile => string.Join(",", tile.Values.Select(value => $"{value.Key}={value.Value}"))).Order());
+        List<FeedChangeRecord> feed = await FeedAsync(ConfigurationFeeds.Placements);
+        Assert.All(replaced, tile => Assert.Contains(feed, change => change.RecordId == tile.Id && change.Version == tile.Revision));
     }
 
     private Task<int> ReplaceAsync() =>

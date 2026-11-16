@@ -6,7 +6,7 @@ icon: newspaper
 area: Home
 highlight: true
 ---
-Home now shows What's next: the headline thing coming up at church and what follows, opening the church office's latest digest. Earlier digests are at the foot of the page.
+Home now shows What's next: what's coming up at church from the office's latest digest. Earlier digests are at the foot of its page.
 
 ## For staff
 Changed: The Sunday bulletin tile on Home became the What's next tile, in the same place and size, filled from the latest digest sent to the app. Copy for email now gives the digest as HTML for Elvanto: just the content, since Elvanto's own template adds the logo, footer and unsubscribe. The bulletin tile is no longer offered.
