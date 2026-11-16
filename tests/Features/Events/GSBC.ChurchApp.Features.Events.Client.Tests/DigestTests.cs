@@ -67,7 +67,7 @@ public sealed class DigestTests
         string html = DigestEmail.Html("Monday 14 – Sunday 27 December", [beside, across, post], "https://dev-app.example.org/open/week", "https://media.example.org/church.jpg");
 
         Assert.StartsWith("<table role=\"presentation\" width=\"100%\"", html);
-        Assert.Contains("width=\"600\" align=\"center\"", html);
+        Assert.Contains("width=\"100%\" align=\"center\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" bgcolor=\"#ffffff\" style=\"width:100%;max-width:600px", html);
         Assert.True(html.IndexOf("church.jpg", StringComparison.Ordinal) < html.IndexOf("What's Next at Good Shepherd", StringComparison.Ordinal));
         Assert.Matches("<td width=\"34%\"[^>]*><img src=\"https://media.example.org/baptisms.jpg\"", html);
         Assert.DoesNotMatch("<td width=\"34%\"[^>]*><img src=\"https://media.example.org/carols.jpg\"", html);

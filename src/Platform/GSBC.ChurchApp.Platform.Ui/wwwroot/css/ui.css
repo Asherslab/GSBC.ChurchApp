@@ -1010,6 +1010,8 @@ button.text-link:disabled { color: var(--ink-3); cursor: default; }
 .sheet--wide { padding-left: 28px; padding-right: 28px; }
 @media (min-width: 720px) {
   .sheet.sheet--wide { width: min(760px, 100% - 48px); }
+  .sheet.sheet--widest { width: min(1080px, 100% - 48px); padding-bottom: 0; }
+  .sheet--widest .sheet__actions { position: sticky; bottom: 0; z-index: 1; margin: var(--space-xl) -28px 0; padding: var(--space-md) 28px var(--space-xl); border-top: 1px solid var(--line); background: var(--page); }
 }
 
 .place-directory { display: grid; gap: 4px; align-content: start; min-width: 0; }

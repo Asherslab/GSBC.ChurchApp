@@ -28,7 +28,7 @@ public static class DigestEmail
     private const string Ink = "#1F2A3C";
     private const string Ink2 = "#4a5568";
     private const string Line = "#E7E2DA";
-    private const string Behind = "#E9EEF4";
+    public const string Behind = "#E9EEF4";
     private const string Font = "Montserrat,Arial,Helvetica,sans-serif";
 
     public static string? PictureUrl(MediaRef? picture) =>
@@ -43,7 +43,8 @@ public static class DigestEmail
         StringBuilder html = new();
         html.Append($"""<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="{Behind}" style="width:100%;background:{Behind};border-collapse:collapse;color-scheme:light only">""");
         html.Append($"""<tr><td align="center" style="padding:0 0 32px">""");
-        html.Append($"""<table role="presentation" width="{Width}" align="center" cellpadding="0" cellspacing="0" border="0" bgcolor="#ffffff" style="width:{Width}px;max-width:100%;margin:0 auto;background:#ffffff;border-collapse:collapse">""");
+        html.Append($"""<!--[if mso]><table role="presentation" width="{Width}" align="center" cellpadding="0" cellspacing="0" border="0"><tr><td><![endif]-->""");
+        html.Append($"""<table role="presentation" width="100%" align="center" cellpadding="0" cellspacing="0" border="0" bgcolor="#ffffff" style="width:100%;max-width:{Width}px;margin:0 auto;background:#ffffff;border-collapse:collapse">""");
         if (topPictureUrl is { } top && IsWeb(top))
             html.Append($"""<tr><td style="padding:0;line-height:0"><img src="{Encode(top)}" alt="" width="{Width}" border="0" style="display:block;width:100%;max-width:{Width}px;height:auto;border:0" /></td></tr>""");
         html.Append($"""<tr><td bgcolor="{Navy}" style="background:{Navy};padding:30px 32px 26px;font-family:{Font};color:#ffffff">""");
@@ -59,6 +60,7 @@ public static class DigestEmail
         html.Append($"""<p style="font-size:14px;line-height:1.5;color:{Ink2};margin:4px 0 14px">The calendar in the Good Shepherd app has every service, group and event, and updates when plans change.</p>""");
         html.Append(ButtonOf(allEventsLink, "See all events"));
         html.Append("</td></tr></table></td></tr></table>");
+        html.Append("<!--[if mso]></td></tr></table><![endif]-->");
         html.Append("</td></tr></table>");
         return html.ToString();
     }

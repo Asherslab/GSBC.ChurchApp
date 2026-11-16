@@ -32,7 +32,6 @@
     private static readonly TimeSpan SettleTime = TimeSpan.FromMilliseconds(700);
 
     private const int EmailWidth = DigestEmail.Width;
-    private const int EmailHeight = 1000;
 
     private DigestDraft? _draft;
     private ElementReference _emailFrame;
@@ -106,7 +105,7 @@
                             </span>
                             <span class="digest-row__body">
                                 <span class="digest-row__source"><Icon Name="@DigestDeskWords.SourceIcon(context)" Size="IconSize.Small" />@DigestDeskWords.Source(context)</span>
-                                @if (context.Shown.Label.Length > 0)
+                                @if (context.Shown.Label.Length > 0 && context.Shown.Label != DigestDeskWords.Source(context))
                                 {
                                     <span class="digest-row__label @(context.Kind == DigestItemKind.NotOn ? "digest-row__label--off" : "")">@context.Shown.Label</span>
                                 }
@@ -138,7 +137,7 @@
         <Detail>
             <div class="digest-desk__preview-head">
                 <Segmented TValue="bool" Label="Preview" Options="PreviewOptions" Value="_email" ValueChanged="value => _email = value" />
-                <span class="digest-desk__preview-hint">@(_email ? "Copy for email gives this as HTML. In Elvanto, switch the email to its HTML source and paste it in." : "Click a title in the app to change it.")</span>
+                <span class="digest-desk__preview-hint" aria-live="polite">@(_email ? "Copy for email gives this as HTML. In Elvanto, switch the email to its HTML source and paste it in." : "Click a title in the app to change it.")</span>
             </div>
             @if (_email)
             {
@@ -146,9 +145,9 @@
                     <PictureField Label="Photo across the top" Value="draft.TopPicture" ValueChanged="SetTopPictureAsync" Adding="Choose a photo"
                                   Hint="Optional. A wide photo shown above the heading, such as one of the church." />
                 </div>
-                <div class="digest-desk__canvas digest-desk__canvas--email" data-fit-height>
-                    <iframe @ref="_emailFrame" class="digest-email" title="The email, as Copy for email gives it" srcdoc="@EmailPage(draft)" sandbox=""
-                            width="@EmailWidth" height="@EmailHeight"></iframe>
+                <div class="digest-desk__canvas digest-desk__canvas--email">
+                    <iframe @ref="_emailFrame" class="digest-email" title="The email, as Copy for email gives it" srcdoc="@EmailPage(draft)" sandbox="allow-same-origin"
+                            width="@EmailWidth"></iframe>
                 </div>
             }
             else
@@ -347,7 +346,7 @@
     private string AllEventsLink => DestinationPaths.Shareable(new Uri(Navigation.BaseUri), EventsPlaces.Week);
 
     private string EmailPage(DigestDraft draft) =>
-        $"<!doctype html><html><head><meta charset=\"utf-8\"><base target=\"_blank\"></head><body style=\"margin:0\">{DigestEmail.Html(RangeOf(draft), EmailItems(draft), AllEventsLink, TopPictureUrl(draft))}</body></html>";
+        $"<!doctype html><html><head><meta charset=\"utf-8\"><base target=\"_blank\"></head><body style=\"margin:0;background:{DigestEmail.Behind}\">{DigestEmail.Html(RangeOf(draft), EmailItems(draft), AllEventsLink, TopPictureUrl(draft))}</body></html>";
 
     private Task ChooseRangeAsync(DigestRange range) => ChooseAsync(draft => draft.Range = range);
 
@@ -572,7 +571,7 @@
             return;
         _emailFitted = _email;
         if (_email)
-            await Shell.FitToSpaceAsync(_emailFrame, EmailWidth, EmailHeight);
+            await Js.InvokeVoidAsync("gsbcEvents.fitEmail", _emailFrame, EmailWidth);
     }
 
     public void Dispose() => _settling?.Cancel();

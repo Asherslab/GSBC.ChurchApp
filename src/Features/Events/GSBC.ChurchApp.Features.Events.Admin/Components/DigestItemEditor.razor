@@ -1,9 +1,10 @@
 @using GSBC.ChurchApp.Platform.Ui.Content
 @using GSBC.ChurchApp.Platform.Contracts.Media
 @using GSBC.ChurchApp.Platform.Icons
+@inject IJSRuntime Js
 
 <UnsavedGuard Changed="() => Changed" What="your changes to this item" />
-<Sheet Open="true" OpenChanged="_ => Cancel()" Wide="true" Title="@Heading" Lead="@Source" LayerClass="digest-editor-layer">
+<Sheet Open="true" OpenChanged="_ => Cancel()" Widest="true" Title="@Heading" Lead="@Source" LayerClass="digest-editor-layer">
     <Tools>
         @if (!IsNew)
         {
@@ -18,9 +19,9 @@
                                   Hint="@PictureHint" Unavailable="Pictures can only be chosen in the admin panel." />
                     @BackTo(DigestFields.Picture)
                 </div>
-                @if (Shown.Picture is not null && Item.Kind != DigestItemKind.NotOn)
+                @if (Shown.Picture is not null && _working.Kind != DigestItemKind.NotOn)
                 {
-                    <Segmented TValue="DigestPictureAt" Label="In the email" ShowLabel="true" Options="PictureAtOptions" Value="Item.PictureAt" ValueChanged="SetPictureAt"
+                    <Segmented TValue="DigestPictureAt" Label="In the email" ShowLabel="true" Options="PictureAtOptions" Value="_working.PictureAt" ValueChanged="SetPictureAt"
                                Hint="Where the picture sits in the email. The app always shows it across the top." />
                 }
                 @Field(DigestFields.Label, "Line above the title", null, false)
@@ -43,7 +44,7 @@
                 </div>
                 <h3 class="digest-editor__look-title">In the email</h3>
                 <div class="digest-editor__email">
-                    <iframe class="digest-editor__email-frame" title="This item in the email" srcdoc="@EmailHtml" sandbox="" width="@DigestEmail.Width" height="@EmailHeight"></iframe>
+                    <iframe @ref="_emailFrame" class="digest-editor__email-frame" title="This item in the email" srcdoc="@EmailHtml" sandbox="allow-same-origin" width="@DigestEmail.Width" height="@EmailHeight"></iframe>
                 </div>
             </aside>
         </div>
@@ -57,7 +58,10 @@
     private static readonly IReadOnlyList<SegmentOption<DigestPictureAt>> PictureAtOptions =
         [new(DigestPictureAt.Beside, "Beside the words"), new(DigestPictureAt.Across, "Across the top")];
 
-    private const int EmailHeight = 420;
+    private const int EmailHeight = 900;
+    private const double EmailScale = 0.54;
+
+    private ElementReference _emailFrame;
 
     private DigestItem _working = new();
     private string _started = "";
@@ -115,6 +119,12 @@
     {
         _working = Copy(Item);
         _started = Snapshot(_working);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+            await Js.InvokeVoidAsync("gsbcEvents.fitFrameHeight", _emailFrame, EmailScale);
     }
 
     private RenderFragment Field(string field, string label, string? hint, bool multiline) =>
