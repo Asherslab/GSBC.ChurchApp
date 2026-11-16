@@ -10,14 +10,14 @@ is the owner's is marked so.
 | Who | What |
 |---|---|
 | Anyone with the app, signed in or not | Ask for prayer, privately or also for the prayer wall; see the wall and tap *Pray*; see their own requests, say one was answered, take it off the wall, delete it |
-| Staff with *Pastoral team* (`prayer.*`) | Read every request; keep notes only the pastoral team sees; mark followed up, answered or new again; delete a request; everything *Prayer wall* does |
+| Staff with *Pastoral team* (`prayer.*`) | Read every request; keep notes only the pastoral team sees; mark answered or new again; delete a request; everything *Prayer wall* does |
 | Staff with *Prayer wall* (`prayer.wall.moderate`) | Read only the requests that ask for the wall, choose what the wall shows (words, name, until when), keep one private or take it down |
 
 - **Permissions** (Access, global): `prayer.requests.read` (*sensitive*, so its holders can't recover their account
   by email, identity.md) and `prayer.wall.moderate`. Both roles are listed under *Prayer* in Access. Nobody else,
   staff or Owner role aside, can read a request (the Owner role's `*` includes them, as it includes everything).
 - **The admin panel's Prayer page** (People → Prayer) shows to anyone holding `prayer.wall.moderate`; the pastoral
-  team's parts (notes, follow-up, getting in touch, requests that didn't ask for the wall) only with
+  team's parts (notes, the care steps, requests that didn't ask for the wall) only with
   `prayer.requests.read`, checked on the server for every call.
 
 ## Asking for prayer (the app)
@@ -28,7 +28,13 @@ is the owner's is marked so.
   sees it"). With the wall: *My name* (the default) or *No name*. **The wall shows a name as the first name and the
   first letter of the last, "Sam S."** (owner, 2026-11-11: "Default to show name (also, show name and First initial of
   last, we have a LOT of double up names in the church)"; the same default for under-18s, owner 2026-11-12). Not signed in: an
-  optional name. Anyone: *I'd like someone to get in touch*, with an optional phone or email.
+  optional name.
+- **No "get in touch"** (owner, 2026-11-16, UAT feedback #8: "We keep contact details of people in our congregation, and
+  don't want this abused. That also removes the 'followed up' portion of a prayer request."). The ask no longer offers
+  *I'd like someone to get in touch* or takes a phone or email; staff no longer see *Getting in touch* (#6), and the care
+  steps are *New* and *Answered*. Stored contacts were dropped and every *Followed up* request went back to *New*
+  (migration `ForgetGettingInTouch`); staff phones that had synced the pastoral team's feed start it over, so no copy of a
+  contact stays on them. A request stays *New* until it's answered or deleted.
 - **Through the outbox** (`IPrayerService.Send`, `[AppInstall]`): the phone gives the request its id, so a retried
   send is stored once. With no signal it waits on the phone, the page says so, and it goes by itself.
 - **Not signed in** (SPEC §6): the install proves it's the app (App Attest); the request is tied to that install
@@ -62,7 +68,7 @@ is the owner's is marked so.
   too much), the name (staff can hide one; they can never show one the person didn't allow), and the day it leaves
   (30 days to start, up to a year). A request that didn't ask for the wall can never be shown.
 - **The public feed** `prayer.wall` carries only the shown words, the short name ("Sam S.") if allowed, when it was shown, until
-  when, the prayer count and an answered line. No install, person or contact detail.
+  when, the prayer count and an answered line. No install or person.
 - **It leaves the wall** when its day passes (`PrayerSchedule`, every 15 minutes, one replica at a time), when the
   person takes it down, when staff take it down or keep it private, or when it's deleted.
 - **Pray** (*Claude's default*): one mark per phone per request; tapping again takes it back. The count is all anyone
@@ -71,16 +77,15 @@ is the owner's is marked so.
 ## The pastoral inbox (admin panel)
 
 - One page, `/prayer`, on the workbench (2026-11-12, DESIGN.md's pattern map): the title band; a rail with the search
-  and the filters *New*, *For the wall*, *On the wall*, *Followed up*, *Answered*, *Everything* and *Settings* (a
+  and the filters *New*, *For the wall*, *On the wall*, *Answered*, *Everything* and *Settings* (a
   wall-only holder sees the wall-related ones); the requests as a table (the request with its pills, who sent it,
   when); and the chosen request in the record pane: its head says who sent it and when, with Delete in its ⋯ menu; their
-  words; for the pastoral team the care steps (`CareSteps`: the shared stage pipeline, New, Followed up, Answered,
+  words; for the pastoral team the care steps (`CareSteps`: the shared stage pipeline, New and Answered,
   pressed to move, back too, *Answered* asking for words for the wall first); then grouped cards: *The prayer wall*,
-  *Getting in touch* (their contact, or a link to them in People), *Notes for the pastoral team* (each note's ⋯ menu
-  deletes it, asking once) and *What's happened*.
+  *Notes for the pastoral team* (each note's ⋯ menu deletes it, asking once) and *What's happened*.
 - **Live:** every change writes a marker to `prayer.inbox` (audience: `prayer.wall.moderate`, markers carry no words),
   so a new request appears without reloading.
-- **What's logged** (*Claude's default*): every change, with who and when (sent, followed up, answered, notes added or
+- **What's logged** (*Claude's default*): every change, with who and when (sent, answered, notes added or
   deleted, put on or taken off the wall, changed). **Reading isn't logged.**
 
 ## On the phone for staff
@@ -98,8 +103,7 @@ is the owner's is marked so.
   with the wall instead) and anything waiting to send; their words; then grouped sections: *The prayer wall* (the
   same form as the desk, `WallChoice`: the words, starting from theirs, which never change; the name, shown by
   default when they allowed it; the day it leaves; *Put it on the wall* or *Save the changes* bottom right, *Not for
-  the wall* or *Take it off the wall* beside Cancel), *Getting in touch* (their number or email, tapped to call or
-  write) and *Notes for the pastoral team* with *Add a note*; each note has its own ⋯ menu with *Delete this note…*,
+  the wall* or *Take it off the wall* beside Cancel) and *Notes for the pastoral team* with *Add a note*; each note has its own ⋯ menu with *Delete this note…*,
   asking once, as on the desk (2026-11-12, the Pattern map's Delete). The delete queues in the outbox and the note goes
   from the page at once.
 - **Pastoral team extras:** the steps move either way on the phone, so *Mark new again* is there too (2026-11-12). Not on
@@ -108,8 +112,8 @@ is the owner's is marked so.
 - **Data:** two feeds with a permission audience, so they're private, gone on sign-out and reset when the role
   changes. `prayer.approving` (`prayer.wall.moderate`) carries a request only while it waits for the wall or is on
   it: their words, *Under 18*, their short name ("Sam S.") only if they allowed it, and what the wall shows; never their full
-  name, contact or notes. `prayer.care` (`prayer.requests.read`) carries a request while it's new or waiting for or on
-  the wall, with their name, contact and the notes; once followed up and off the wall it leaves the phones (*Claude's
+  name or notes. `prayer.care` (`prayer.requests.read`) carries a request while it's new or waiting for or on
+  the wall, with their name and the notes; once answered and off the wall it leaves the phones (*Claude's
   default*: phones carry what needs doing, the admin panel keeps the rest).
 - **Writes** go through the outbox (`PrayerApprovals`), so the request shows *Waiting to send* or *Couldn't send* with
   *Try now*. The server applies each queued action once by its `gsbc-request-id` (`HandledRequests`, kept 7 days).
@@ -121,7 +125,7 @@ is the owner's is marked so.
 
 | Kind | Who | When |
 |---|---|---|
-| `prayer.new` *Someone sends a prayer request* | holders of `prayer.requests.read` | a request arrives; waits until it's marked followed up or answered |
+| `prayer.new` *Someone sends a prayer request* | holders of `prayer.requests.read` | a request arrives; waits until it's marked answered |
 | `prayer.wall.waiting` *A prayer request asks to be on the prayer wall* | holders of `prayer.wall.moderate` | a request asks for the wall; one notification per person with the one above (most specific first); waits until the wall is decided |
 | `prayer.prayed` *How many people have prayed for your prayer request* (renamed 2026-11-12 from "Someone prays…", which read as one notification per prayer) | the person | a digest (below); opens their request |
 | `prayer.answered` *The pastoral team marks your prayer request answered* | the person | staff mark it answered; opens their request |

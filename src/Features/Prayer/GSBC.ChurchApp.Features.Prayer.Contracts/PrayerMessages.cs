@@ -8,7 +8,6 @@ public sealed class Done;
 public enum CareState
 {
     New = 0,
-    FollowedUp = 1,
     Answered = 2,
 }
 
@@ -30,8 +29,6 @@ public sealed class PrayerRequestSend
     [ProtoMember(3)] public bool ForWall { get; set; }
     [ProtoMember(4)] public bool ShowName { get; set; }
     [ProtoMember(5)] public string Name { get; set; } = "";
-    [ProtoMember(6)] public bool WantsContact { get; set; }
-    [ProtoMember(7)] public string Contact { get; set; } = "";
 }
 
 [ProtoContract]
@@ -144,7 +141,6 @@ public sealed class InboxLine
     [ProtoMember(5)] public CareState Care { get; set; }
     [ProtoMember(6)] public WallState Wall { get; set; }
     [ProtoMember(7)] public bool Minor { get; set; }
-    [ProtoMember(8)] public bool WantsContact { get; set; }
     [ProtoMember(9)] public DateTime ChangedAt { get; set; }
 }
 
@@ -153,8 +149,6 @@ public sealed class RequestDetails
 {
     [ProtoMember(1, IsRequired = true)] public InboxLine Line { get; set; } = new();
     [ProtoMember(2)] public bool SignedIn { get; set; }
-    [ProtoMember(3)] public string PersonId { get; set; } = "";
-    [ProtoMember(4)] public string Contact { get; set; } = "";
     [ProtoMember(5)] public bool ShowName { get; set; }
     [ProtoMember(6)] public string WallText { get; set; } = "";
     [ProtoMember(7)] public string WallName { get; set; } = "";
@@ -242,8 +236,6 @@ public sealed class CareCase
     [ProtoMember(6)] public WallState Wall { get; set; }
     [ProtoMember(7)] public bool Minor { get; set; }
     [ProtoMember(8)] public bool SignedIn { get; set; }
-    [ProtoMember(9)] public bool WantsContact { get; set; }
-    [ProtoMember(10)] public string Contact { get; set; } = "";
     [ProtoMember(11)] public string AnsweredNote { get; set; } = "";
     [ProtoMember(12)] public List<CareNote> Notes { get; set; } = [];
     [ProtoMember(13)] public DateTime ChangedAt { get; set; }

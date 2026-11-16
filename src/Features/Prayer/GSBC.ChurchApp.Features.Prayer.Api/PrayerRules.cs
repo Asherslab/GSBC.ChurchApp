@@ -9,7 +9,6 @@ internal static class PrayerRules
     public const int LongestNote = 2000;
     public const int LongestAnsweredNote = 500;
     public const int LongestName = 60;
-    public const int LongestContact = 120;
     public const int RequestsPerDay = 5;
     public const int PrayersPerDay = 300;
 
@@ -114,8 +113,6 @@ internal static class PrayerRules
         Wall = request.Wall,
         Minor = request.Minor,
         SignedIn = request.UserId is not null,
-        WantsContact = request.WantsContact,
-        Contact = request.Contact,
         AnsweredNote = request.AnsweredNote,
         Notes = notes.Select(note => new CareNote { Id = note.Id.ToString(), Text = note.Text, Author = names.GetValueOrDefault(note.AuthorId, "Someone"), At = note.At })
             .ToList(),
@@ -133,7 +130,6 @@ internal static class PrayerRules
         Care = request.Care,
         Wall = request.Wall,
         Minor = request.Minor,
-        WantsContact = request.WantsContact,
         ChangedAt = request.ChangedAt,
     };
 }

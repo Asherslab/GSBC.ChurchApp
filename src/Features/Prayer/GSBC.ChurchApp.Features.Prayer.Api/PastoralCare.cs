@@ -44,13 +44,8 @@ internal sealed class PastoralCare(
             MayRead = mayRead,
         };
         if (!mayRead)
-        {
-            details.Line.WantsContact = false;
             return details;
-        }
 
-        details.PersonId = record.UserId?.ToString() ?? "";
-        details.Contact = record.Contact;
         HashSet<Guid> named = record.Notes.Select(note => note.AuthorId).Concat(record.Steps.Select(step => step.WhoId).OfType<Guid>()).ToHashSet();
         IReadOnlyDictionary<Guid, string> names = named.Count == 0 ? new Dictionary<Guid, string>() : await people.NamesAsync(named, cancellationToken);
         details.Notes = record.Notes.OrderBy(note => note.At)
@@ -79,12 +74,7 @@ internal sealed class PastoralCare(
         record.Care = change.Care;
         if (change.Care == CareState.Answered)
             record.AnsweredNote = PrayerRules.Clip(change.AnsweredNote, PrayerRules.LongestAnsweredNote);
-        Step(record, staff, now, change.Care switch
-        {
-            CareState.FollowedUp => "Marked followed up",
-            CareState.Answered => "Marked answered",
-            _ => "Marked new again",
-        });
+        Step(record, staff, now, change.Care == CareState.Answered ? "Marked answered" : "Marked new again");
         await publisher.ChangedAsync(record, now, cancellationToken);
         await db.SaveChangesAsync(cancellationToken);
         if (change.Care != CareState.New)

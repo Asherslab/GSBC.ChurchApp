@@ -36,7 +36,8 @@ internal sealed class PrayerKeeping(PrayerDbContext db, PrayerPublisher publishe
 
     private async Task FillStaffFeedsAsync(DateTime now, CancellationToken cancellationToken)
     {
-        if (await db.FeedChanges.AnyAsync(change => change.Feed == PrayerFeeds.Approving || change.Feed == PrayerFeeds.Care, cancellationToken))
+        if (await db.FeedChanges.AnyAsync(change => change.Feed == PrayerFeeds.Approving, cancellationToken)
+            && await db.FeedChanges.AnyAsync(change => change.Feed == PrayerFeeds.Care, cancellationToken))
             return;
         foreach (RequestRecord request in await db.Requests.Where(request => request.Care == CareState.New || request.Wall == WallState.Waiting || request.Wall == WallState.Shown)
                      .ToListAsync(cancellationToken))

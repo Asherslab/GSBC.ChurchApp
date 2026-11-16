@@ -44,8 +44,6 @@ internal sealed class PrayerRequests(
             InstallId = install,
             UserId = user,
             Name = await NameAsync(user, send.Name, cancellationToken),
-            WantsContact = send.WantsContact,
-            Contact = send.WantsContact ? PrayerRules.Clip(send.Contact, PrayerRules.LongestContact) : "",
             Minor = user is { } person && (await families.FactsAsync([person], cancellationToken)).TryGetValue(person, out FamilyFacts? facts) && facts.Minor,
             ShowName = send.ShowName,
             Wall = send.ForWall ? WallState.Waiting : WallState.NotAsked,

@@ -124,11 +124,6 @@ namespace GSBC.ChurchApp.Features.Prayer.Api.Data.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("changed_at");
 
-                    b.Property<string>("Contact")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("contact");
-
                     b.Property<Guid?>("InstallId")
                         .HasColumnType("uuid")
                         .HasColumnName("install_id");
@@ -183,10 +178,6 @@ namespace GSBC.ChurchApp.Features.Prayer.Api.Data.Migrations
                     b.Property<DateTime?>("WallUntil")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("wall_until");
-
-                    b.Property<bool>("WantsContact")
-                        .HasColumnType("boolean")
-                        .HasColumnName("wants_contact");
 
                     b.HasKey("Id")
                         .HasName("pk_requests");

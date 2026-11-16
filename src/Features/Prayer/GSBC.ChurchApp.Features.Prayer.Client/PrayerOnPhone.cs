@@ -52,8 +52,6 @@ public sealed class PrayerOnPhone(ILocalFeeds feeds, IOutbox outbox, ILocalPrefe
             ForWall = ask.ForWall,
             ShowName = ask.ForWall && ask.ShowName,
             Name = access.SignedIn ? "" : ask.Name.Trim(),
-            WantsContact = ask.WantsContact,
-            Contact = ask.WantsContact ? ask.Contact.Trim() : "",
         };
         string outboxId = await outbox.EnqueueAsync(Service + "Send", send, PrayerContractsModel.Instance);
         await KeepAsync(kept => kept.Sent.Add(new SentOnPhone

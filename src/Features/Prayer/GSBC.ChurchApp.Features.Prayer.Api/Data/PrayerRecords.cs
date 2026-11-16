@@ -11,8 +11,6 @@ public sealed class RequestRecord
     public Guid? InstallId { get; set; }
     public Guid? UserId { get; set; }
     public string Name { get; set; } = "";
-    public string Contact { get; set; } = "";
-    public bool WantsContact { get; set; }
     public bool Minor { get; set; }
     public bool ShowName { get; set; }
     public CareState Care { get; set; }

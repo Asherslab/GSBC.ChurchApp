@@ -36,22 +36,6 @@
 
         @if (request.MayRead)
         {
-            <Section Grouped="true" Title="Getting in touch" Lead="@(line.WantsContact ? "They'd like someone to get in touch." : null)">
-                <ChildContent>
-                    @if (request.Contact.Length > 0)
-                    {
-                        <p class="prayer-request__fact">@request.Contact</p>
-                    }
-                    @if (request.PersonId.Length > 0)
-                    {
-                        <p class="prayer-request__fact"><a class="text-link" href="people/@request.PersonId">@line.From in People</a></p>
-                    }
-                    else if (request.Contact.Length == 0)
-                    {
-                        <p class="prayer-request__fact">They didn't sign in or leave a way to reach them.</p>
-                    }
-                </ChildContent>
-            </Section>
             <Section Grouped="true" Title="Notes for the pastoral team" Lead="Only people who can read prayer requests see these. The person never does.">
                 <ChildContent>
                     @foreach (CareNote note in request.Notes)

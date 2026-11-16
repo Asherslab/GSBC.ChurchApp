@@ -10,7 +10,7 @@
         {
             <Section First="true">
                 <EmptyState Icon="check" Title="Nothing to do here now"
-                            Body="It's been decided and followed up, or deleted. The full inbox, with everything followed up, is in the admin panel under Prayer.">
+                            Body="It's been answered and is off the prayer wall, or it was deleted. The full inbox, with everything answered, is in the admin panel under Prayer.">
                     <Button Variant="ButtonVariant.Quiet" Href="prayer/approve">Back to To approve</Button>
                 </EmptyState>
             </Section>
@@ -53,21 +53,6 @@
             }
             @if (item.Care is { } pastoral)
             {
-                <Section Grouped="true" Title="Getting in touch">
-                    <ChildContent>
-                        @if (pastoral.Contact.Length > 0)
-                        {
-                            <ListGroup>
-                                <ListRow Title="@pastoral.Contact" Subtitle="@(pastoral.WantsContact ? "They'd like someone to get in touch" : null)"
-                                         Icon="@(pastoral.Contact.Contains('@') ? "mail" : "phone")" Href="@ContactLink(pastoral.Contact)" External="true" />
-                            </ListGroup>
-                        }
-                        else
-                        {
-                            <p class="prayer-request__fact">@(pastoral.WantsContact ? "They'd like someone to get in touch. " : "")@(pastoral.SignedIn ? "They're in People in the admin panel." : "They didn't sign in or leave a way to reach them.")</p>
-                        }
-                    </ChildContent>
-                </Section>
                 <Section Grouped="true" Title="Notes for the pastoral team" Lead="Only people who can read prayer requests see these. The person never does.">
                     <ChildContent>
                         @foreach (CareNote note in pastoral.Notes.Where(note => !_deleted.Contains(note.Id)))
@@ -112,9 +97,6 @@
     private static string From(StaffCase item) => item.Care is { } care
         ? care.SignedIn || care.From == PrayerWords.NoName ? care.From : $"{care.From}, not signed in"
         : item.Wall is { ShortName.Length: > 0 } wall ? $"{wall.ShortName}, who'd like their name shown" : "They asked for no name";
-
-    private static string ContactLink(string contact) =>
-        contact.Contains('@') ? $"mailto:{contact}" : $"tel:{new string(contact.Where(c => char.IsDigit(c) || c == '+').ToArray())}";
 
     private async Task<bool> ShowAsync(WallSave save, WallCase wall)
     {

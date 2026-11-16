@@ -45,7 +45,6 @@
         New,
         ForTheWall,
         OnTheWall,
-        FollowedUp,
         Answered,
         Everything,
         Settings,
@@ -86,10 +85,6 @@
                 {
                     <Pill Tone="PillTone.Marker">Under 18</Pill>
                 }
-                @if (line.WantsContact)
-                {
-                    <Pill Tone="PillTone.Quiet">Get in touch</Pill>
-                }
             </span>
         </div>),
         new("From", line => @<span>@line.From</span>, line => line.From, "quiet nowrap"),
@@ -125,10 +120,7 @@
         tabs.Add(new(Tab.ForTheWall, "For the wall", Count(inbox, Tab.ForTheWall)));
         tabs.Add(new(Tab.OnTheWall, "On the wall"));
         if (inbox.MayRead)
-        {
-            tabs.Add(new(Tab.FollowedUp, "Followed up"));
             tabs.Add(new(Tab.Answered, "Answered"));
-        }
         tabs.Add(new(Tab.Everything, "Everything"));
         if (inbox.MayRead || Access.Can(PrayerPermissions.Settings))
             tabs.Add(new(Tab.Settings, "Settings"));
@@ -142,7 +134,6 @@
         Tab.New => line.Care == CareState.New,
         Tab.ForTheWall => line.Wall == WallState.Waiting,
         Tab.OnTheWall => line.Wall == WallState.Shown,
-        Tab.FollowedUp => line.Care == CareState.FollowedUp,
         Tab.Answered => line.Care == CareState.Answered,
         _ => true,
     };
@@ -159,7 +150,7 @@
 
     private string EmptyBody(Inbox inbox) => _query.Length > 0
         ? "Try other words, or look under Everything."
-        : TabFor(inbox) == Tab.New ? "Every request has been read and followed up. New ones appear here as they arrive." : "Requests appear here as they arrive.";
+        : TabFor(inbox) == Tab.New ? "Every request has been answered. New ones appear here as they arrive." : "Requests appear here as they arrive.";
 
     private async Task ChooseTabAsync(Tab tab)
     {

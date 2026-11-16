@@ -12,7 +12,7 @@ public static class PrayerPermissions
     public const string WallRole = "prayer-wall";
 
     public static readonly Permission Read =
-        new(ReadNode, ScopeKind.Global, "Read every prayer request, keep notes on them, follow them up and delete them", isSensitive: true, area: "Prayer");
+        new(ReadNode, ScopeKind.Global, "Read every prayer request, keep notes on them, mark them answered and delete them", isSensitive: true, area: "Prayer");
 
     public static readonly Permission Wall =
         new(WallNode, ScopeKind.Global, "Read the prayer requests that ask for the prayer wall, and choose what the wall shows", area: "Prayer", opensAdminArea: true);

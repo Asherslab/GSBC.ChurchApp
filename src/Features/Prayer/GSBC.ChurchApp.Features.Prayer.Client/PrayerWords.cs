@@ -65,12 +65,7 @@ public static class PrayerWords
         return $"{from} · {ChurchDates.Ago(item.SentAt, now)}";
     }
 
-    public static string Care(CareState care) => care switch
-    {
-        CareState.FollowedUp => "Followed up",
-        CareState.Answered => "Answered",
-        _ => "New",
-    };
+    public static string Care(CareState care) => care == CareState.Answered ? "Answered" : "New";
 
     public static string WallLine(WallState wall) => wall switch
     {
