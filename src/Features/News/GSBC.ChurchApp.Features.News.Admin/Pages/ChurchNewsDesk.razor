@@ -3,8 +3,10 @@
 @using GSBC.ChurchApp.Platform.Contracts.Media
 @using GSBC.ChurchApp.Platform.Icons
 @using GSBC.ChurchApp.Platform.Permissions
+@using GSBC.ChurchApp.Platform.Client.News
 @using GSBC.ChurchApp.Platform.Ui.News
 @inject OnlineNews News
+@inject IEnumerable<IEveryMinistrysNews> EveryMinistry
 @inject NewsWrites Writes
 @inject IAccess Access
 @inject TimeProvider Clock
@@ -20,14 +22,22 @@
     </Actions>
 </TitleBand>
 
-<LiveData @ref="_live" TValue="IReadOnlyList<NewsPost>" Load="News.DeskAsync" Feeds="DeskFeeds" FailedTitle="Can't load church news right now">
-    <Workbench FoldAside="true" AsideLabel="Show" DetailLabel="The post" Detail="@(Chosen(context.Value) is not null ? DetailOf(context.Value) : null)"
-               Showing="@(Chosen(context.Value) is not null ? WorkbenchPane.Detail : WorkbenchPane.Main)">
+<LiveData @ref="_live" TValue="DeskView" Load="LoadAsync" Feeds="Feeds" FailedTitle="Can't load church news right now">
+    <Workbench FoldAside="true" AsideLabel="Show" DetailLabel="The post" Detail="@DetailOf(context.Value)"
+               Showing="@(IsOpen(context.Value) ? WorkbenchPane.Detail : WorkbenchPane.Main)">
         <Aside>
-            <FilterChips TValue="string" Label="Show" Rail="true" Options="Filters(context.Value)" Value="@Filter(context.Value)" ValueChanged="filter => _filter = filter" />
+            <FilterChips TValue="string" Label="Show" Rail="true" Options="Filters(context.Value.Posts)" Value="@Filter(context.Value.Posts)" ValueChanged="filter => _filter = filter" />
+            @if (SeesMinistries)
+            {
+                <FilterChips TValue="string" Label="Every ministry" Rail="true" Options="EveryFilter(context.Value)" Value="@Filter(context.Value.Posts)" ValueChanged="filter => _filter = filter" />
+            }
         </Aside>
         <ChildContent>
-            @if (Shown(context.Value) is { Count: > 0 } shown)
+            @if (Filter(context.Value.Posts) == Every)
+            {
+                @MinistriesList(context.Value.Every)
+            }
+            else if (Shown(context.Value.Posts) is { Count: > 0 } shown)
             {
                 <ListGroup>
                     @foreach (NewsPost post in shown)
@@ -49,7 +59,7 @@
             }
             else
             {
-                <EmptyState Icon="@AppIcons.News" Title="@EmptyTitle(context.Value)" Body="@EmptyBody(context.Value)" />
+                <EmptyState Icon="@AppIcons.News" Title="@EmptyTitle(context.Value.Posts)" Body="@EmptyBody(context.Value.Posts)" />
             }
         </ChildContent>
     </Workbench>
@@ -63,6 +73,18 @@
     </Actions>
 </Sheet>
 
+<Sheet Open="_sharing" OpenChanged="open => _sharing = open" Title="Put it in church news?"
+       Lead="Everyone sees it in the app's News, as it is in the ministry, and it follows the ministry's changes.">
+    <ChildContent>
+        <ToggleRow Title="Send a notification" Description="Tells everyone with the app, opening the post" @bind-Checked="_tell" />
+        <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+    </ChildContent>
+    <Actions>
+        <Button Icon="@AppIcons.News" Busy="_busy" OnClick="ShareChosenAsync">Put it in church news</Button>
+        <Button Variant="ButtonVariant.Quiet" OnClick="() => _sharing = false">Not now</Button>
+    </Actions>
+</Sheet>
+
 <Sheet Open="_archiving" OpenChanged="open => _archiving = open" Title="Archive this post?"
        Lead="It leaves everyone's News, and its notification is taken back from phones that haven't opened it. You can put it back from Archived.">
     <Actions>
@@ -72,6 +94,53 @@
 </Sheet>
 
 @code {
+    private sealed record DeskView(IReadOnlyList<NewsPost> Posts, IReadOnlyList<MinistryNewsItem> Every);
+
+    private RenderFragment MinistriesList(IReadOnlyList<MinistryNewsItem> every) => @<text>
+        @if (every.Count > 0)
+        {
+            <p class="news-desk__scope">Every ministry's posts for everyone, newest first. Posts for a team, leaders or parents, and hidden ministries' posts, stay in their ministry.</p>
+            <ListGroup>
+                @foreach (MinistryNewsItem post in every)
+                {
+                    <ListRow @key="post.Item.Id" Title="@post.Item.Title" Current="@(post.Item.Id == _chosenMinistryPost)" OnClick="() => OpenMinistryPost(post)">
+                        <Below>
+                            <span class="news-desk__from">@post.Item.From</span>
+                            <span class="row__subtitle">@MinistryLine(post)</span>
+                        </Below>
+                        <TrailingContent>
+                            @if (MinistryPill(post) is { } pill)
+                            {
+                                <Pill Tone="@pill.Tone">@pill.Words</Pill>
+                            }
+                            @if (post.Item.Picture is { } picture)
+                            {
+                                <MediaImage Media="picture" Size="MediaSizeName.Thumbnail" Alt="" Class="news-pick__thumb" />
+                            }
+                        </TrailingContent>
+                    </ListRow>
+                }
+            </ListGroup>
+        }
+        else
+        {
+            <EmptyState Icon="@AppIcons.News" Title="No ministry news yet" Body="Ministries' posts for everyone show here as they're posted." />
+        }
+    </text>;
+
+    private RenderFragment? DetailOf(DeskView view) =>
+        Filter(view.Posts) == Every ? MinistryDetailOf(view.Every) : Chosen(view.Posts) is not null ? DetailOf(view.Posts) : null;
+
+    private RenderFragment? MinistryDetailOf(IReadOnlyList<MinistryNewsItem> every) => ChosenMinistryPost(every) is { } post ? @<text>
+        <PaneHead Title="@post.Item.Title" Lead="@($"{post.Item.From} · for everyone · posted {NewsWords.InASentence(NewsWords.Posted(post.Item, Clock))}")" Actions="MinistryActions(post)"
+                  OnClose="() => _chosenMinistryPost = null" />
+        <div class="news-desk__preview">
+            <PostView Title="@post.Item.Title" Content="post.Item.Body" From="@post.Item.From" FromHref="@post.Item.Href" Author="@post.Item.Author"
+                      Posted="post.Item.PostedAt" Edited="post.Item.EditedAt is not null" For="Everyone" />
+        </div>
+        <Notice Tone="NoticeTone.Warning" Text="@(_sharing ? null : _problem)" />
+    </text> : null;
+
     private RenderFragment DetailOf(IReadOnlyList<NewsPost> posts) => @<text>
             @if (Chosen(posts) is { } post)
             {
@@ -99,16 +168,21 @@
             }
     </text>;
 
-    private const string Asked = "asked", Writing = "writing", Scheduled = "scheduled", Published = "published", Kept = "kept", Archived = "archived";
+    private const string Asked = "asked", Writing = "writing", Scheduled = "scheduled", Published = "published", Kept = "kept", Archived = "archived", Every = NewsWords.EveryTab;
 
-    private static readonly IReadOnlyList<string> DeskFeeds = [NewsFeeds.Desk];
+    private IEveryMinistrysNews? Ministries => EveryMinistry.FirstOrDefault();
+
+    private bool SeesMinistries => Ministries is not null && Access.Can(NewsPermissions.SeeMinistries);
+
+    private IReadOnlyList<string> Feeds => [NewsFeeds.Desk, .. SeesMinistries ? Ministries!.Feeds : []];
 
     private static readonly Permission EarlierAnnouncements = new(NewsPermissions.AnnouncementsWriteNode, ScopeKind.Global, "See earlier announcements");
 
-    private LiveData<IReadOnlyList<NewsPost>>? _live;
+    private LiveData<DeskView>? _live;
+    private DeskView? _view;
     private string? _filter;
-    private string? _chosen;
-    private bool _deleting, _deletingShared, _archiving, _busy, _tell = true;
+    private string? _chosen, _chosenMinistryPost;
+    private bool _deleting, _deletingShared, _archiving, _sharing, _busy, _tell = true;
     private string? _problem;
 
     [Parameter] public string? Id { get; set; }
@@ -131,6 +205,46 @@
     }
 
     private NewsPost? Chosen(IReadOnlyList<NewsPost> posts) => posts.FirstOrDefault(post => post.Id == _chosen);
+
+    private async Task<DeskView> LoadAsync() =>
+        _view = new DeskView(await News.DeskAsync(), SeesMinistries ? await Ministries!.LoadAsync() : []);
+
+    private bool IsOpen(DeskView view) => Filter(view.Posts) == Every ? ChosenMinistryPost(view.Every) is not null : Chosen(view.Posts) is not null;
+
+    private MinistryNewsItem? ChosenMinistryPost(IReadOnlyList<MinistryNewsItem> every) => every.FirstOrDefault(post => post.Item.Id == _chosenMinistryPost);
+
+    private void OpenMinistryPost(MinistryNewsItem post) => (_chosenMinistryPost, _problem, _tell) = (post.Item.Id, null, true);
+
+    private IReadOnlyList<FilterOption<string>> EveryFilter(DeskView view) => [new(Every, "All ministries", view.Every.Count)];
+
+    private string MinistryLine(MinistryNewsItem post) =>
+        string.Join(" · ", new[] { post.Item.Author.Length > 0 ? $"By {post.Item.Author}" : "", NewsWords.Posted(post.Item, Clock) }.Where(part => part.Length > 0));
+
+    private static (string Words, PillTone Tone)? MinistryPill(MinistryNewsItem post) => post.Standing switch
+    {
+        ChurchNewsStanding.InChurchNews => ("In church news", PillTone.Accent),
+        ChurchNewsStanding.Asked => ("Asking", PillTone.Marker),
+        _ => null,
+    };
+
+    private IReadOnlyList<MenuItem> MinistryActions(MinistryNewsItem post)
+    {
+        List<MenuItem> items = [];
+        if (Access.Can(NewsPermissions.Publish) && post.Standing != ChurchNewsStanding.InChurchNews)
+            items.Add(this.Item("Put it in church news…", () => (_sharing, _problem, _tell) = (true, null, true), AppIcons.News,
+                "Everyone sees it in News; you choose whether to send a notification"));
+        items.Add(this.Item($"Open it in {post.Item.From}", () => Navigation.NavigateTo(post.Item.Href), AppIcons.Ministries));
+        return items;
+    }
+
+    private async Task ShareChosenAsync()
+    {
+        if (Ministries is null || _view is null || ChosenMinistryPost(_view.Every) is not { } post)
+            return;
+        await RunAsync(() => Ministries.PutInChurchNewsAsync(post, _tell));
+        if (_problem is null)
+            _sharing = false;
+    }
 
     private static string Group(NewsPost post) => post.State switch
     {

@@ -73,3 +73,31 @@ directory line, and the crossed-out eye in ink-3 after the name in the admin tre
 - FORM: a surface-scope local extension of Settings (operate); seed: none (unavailable).
 
 FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, DESIGN.md, and every shipping raster carrying its provenance
+
+## A ministry's calendars (2026-11-16, UAT #14): `.impeccable/mocks/ministry-calendars/`
+
+Builds on the Pattern map; no new world. Owner: "Switch Calendar under ministries to be just two calendars, Public Calendar
+and Team Calendar. Ministry can enable either or both or none. Restricts them to not spam new calendars." Interview: extra
+calendars merge (attendee and parent ones into Public), names follow the ministry ("Discipleship", "The Discipleship
+Team"), linking a calendar for everyone stays. One decision round (key 6fbecc7d), three sketches; the owner picked
+**two switches, saved with Save** over one choice of four (THE ROLL) and a row per calendar opening its own sheet.
+
+## Direction contract
+
+THESIS: A ministry has two calendars at most, and Settings says so in one group: a Public and a Team switch, each saying who
+sees it and what it's called, saved with Save. Refuses named calendars added one by one.
+
+OWN-WORLD: `Section Grouped` *Calendars* (lead "Leaders add its events in Calendar."), two `ToggleRow`s, a sand foot with
+`SaveBar` (*Save the calendars*), its status line above Save saying what saving deletes ("Saving deletes the Team calendar
+and its 4 events.").
+
+STORY: A leader opens Settings, turns on Team calendar, saves; Calendar now shows it. Turning one off says which events go,
+and Save asks once before deleting them.
+
+FIRST VIEWPORT: Phone Settings tab: Its tabs, then Calendars with both switches and the save foot. Admin: the same group card
+in the Settings pane. The Calendar tab loses *Add a calendar*; *Link a calendar* stays; with neither on, its empty state
+points leaders to Settings.
+
+FORM: a surface-scope local extension of Settings (operate), card 3 of 3 dealt; seed:dc13085c021b94dc.
+
+FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, DESIGN.md, and every shipping raster carrying its provenance

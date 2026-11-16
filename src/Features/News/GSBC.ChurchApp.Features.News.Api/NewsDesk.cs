@@ -95,7 +95,7 @@ internal sealed class NewsDesk(
         (post.State, post.PublishedAt, post.PublishAt, post.ChangedAt) = (NewsState.Published, now, null, now);
         bool tell = post.Tell && post.ToldAt is null;
         if (tell)
-            post.ToldAt = now;
+            (post.ToldAt, post.TimesTold) = (now, 1);
         publisher.Changed(post, now);
         await db.SaveChangesAsync(cancellationToken);
         await telling.SettleAsync(post.Id, cancellationToken);
@@ -192,6 +192,26 @@ internal sealed class NewsDesk(
         await telling.RecallAsync(post.Id, cancellationToken);
         if (!NewsRules.IsShared(post))
             await media.UseAsync(MediaOwner(post.Id), [], cancellationToken);
+    }
+
+    public async Task<NewsPost> TellAgainAsync(Writer writer, Guid id, TellAgainRequest words, CancellationToken cancellationToken)
+    {
+        MustPublish(writer);
+        PostRecord post = await FindAsync(id, cancellationToken);
+        if (post.State != NewsState.Published)
+            throw Refused("Only a published post can tell people again.");
+        if (NewsRules.IsShared(post))
+            throw Refused($"It's {post.FromName}'s post: its notifications come from the ministry.");
+        if (NewsRules.WhyNotTell(words.Title, words.Body) is { } problem)
+            throw Invalid(problem);
+        DateTime now = Now;
+        (post.Tell, post.TellTitle, post.TellBody, post.Urgent) = (true, words.Title.Trim(), words.Body.Trim(), words.Urgent);
+        (post.ToldAt, post.TimesTold, post.ChangedAt) = (now, post.TimesTold + 1, now);
+        publisher.Changed(post, now);
+        await db.SaveChangesAsync(cancellationToken);
+        await telling.RecallAsync(post.Id, cancellationToken);
+        await telling.TellAsync(post, writer.Id, cancellationToken);
+        return NewsRules.View(post);
     }
 
     public async Task TryOnPhoneAsync(Writer writer, Guid id, CancellationToken cancellationToken) =>

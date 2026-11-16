@@ -12,7 +12,7 @@ public static class PrayerAppExtensions
     {
         modules.Add(new ClientModule("Prayer", typeof(PrayerAppExtensions).Assembly,
             [new NavEntry("Prayer", "prayer", AppIcons.Prayer)],
-            [PrayerFeeds.Wall], [PrayerFeeds.Mine, PrayerFeeds.Approving, PrayerFeeds.Care]));
+            [PrayerFeeds.Wall], [PrayerFeeds.Mine, PrayerFeeds.Approving, PrayerFeeds.Care, PrayerFeeds.Church]));
         return services.AddPrayerOnPhone();
     }
 }

@@ -42,6 +42,7 @@ public sealed class NewsPost
     [ProtoMember(22)] public DateTime CreatedAt { get; set; }
     [ProtoMember(23)] public bool Shared { get; set; }
     [ProtoMember(24)] public string AnsweredBy { get; set; } = "";
+    [ProtoMember(25)] public int TimesTold { get; set; }
 }
 
 [ProtoContract]
@@ -49,6 +50,15 @@ public sealed class NewsSave
 {
     [ProtoMember(1, IsRequired = true)] public NewsPost Post { get; set; } = new();
     [ProtoMember(2)] public List<string> Uploaded { get; set; } = [];
+}
+
+[ProtoContract]
+public sealed class TellAgainRequest
+{
+    [ProtoMember(1)] public string Id { get; set; } = "";
+    [ProtoMember(2)] public string Title { get; set; } = "";
+    [ProtoMember(3)] public string Body { get; set; } = "";
+    [ProtoMember(4)] public bool Urgent { get; set; }
 }
 
 [ProtoContract]

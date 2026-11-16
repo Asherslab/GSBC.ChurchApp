@@ -2,12 +2,13 @@ using System.Security.Claims;
 using Grpc.Core;
 using GSBC.ChurchApp.Features.Prayer.Contracts;
 using GSBC.ChurchApp.Platform.Api.Access;
+using GSBC.ChurchApp.Platform.Api.People;
 using GSBC.ChurchApp.Platform.Api.Sync;
 using ProtoBuf.Grpc;
 
 namespace GSBC.ChurchApp.Features.Prayer.Api;
 
-internal sealed class PastoralService(PastoralCare care, IAccessEvaluator access) : IPastoralService
+internal sealed class PastoralService(PastoralCare care, ChurchName church, IPeopleIndex people, IAccessEvaluator access) : IPastoralService
 {
     public async ValueTask<Inbox> InboxAsync(InboxRequest request, CallContext context = default) =>
         await care.InboxAsync(await MayReadAsync(context), request.Search, context.CancellationToken);
@@ -47,7 +48,29 @@ internal sealed class PastoralService(PastoralCare care, IAccessEvaluator access
 
     public async ValueTask<Done> DeleteAsync(RequestRef request, CallContext context = default)
     {
-        await care.DeleteAsync(request, context.CancellationToken);
+        await care.DeleteAsync(await MayReadAsync(context), request, context.CancellationToken);
+        return new Done();
+    }
+
+    public async ValueTask<Done> WriteAsync(PastoralWrite request, CallContext context = default)
+    {
+        await care.WriteAsync(Staff(context), request, context.CancellationToken);
+        return new Done();
+    }
+
+    public async ValueTask<WritingStart> StartWritingAsync(Nothing request, CallContext context = default)
+    {
+        Guid staff = Staff(context);
+        return new WritingStart
+        {
+            ChurchName = await church.CurrentAsync(context.CancellationToken),
+            YourName = PrayerNames.Short((await people.NamesAsync([staff], context.CancellationToken)).GetValueOrDefault(staff, "")),
+        };
+    }
+
+    public async ValueTask<Done> NameTheChurchAsync(PrayerChurch request, CallContext context = default)
+    {
+        await church.RenameAsync(request.Name, context.CancellationToken);
         return new Done();
     }
 

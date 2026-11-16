@@ -29,6 +29,9 @@ public interface INewsService
     ValueTask<Done> DeleteAsync(NewsRef request, CallContext context = default);
 
     [SignedIn]
+    ValueTask<NewsPost> TellAgainAsync(TellAgainRequest request, CallContext context = default);
+
+    [SignedIn]
     ValueTask<Done> TryOnMyPhoneAsync(NewsRef request, CallContext context = default);
 
     [SignedIn]

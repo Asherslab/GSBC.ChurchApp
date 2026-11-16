@@ -40,10 +40,12 @@
         new(ChatKinds.Channel, "Leaders post only", Detail: "Only the leaders write. Everyone can react."),
     ];
 
+    private DeskMinistry? Chosen => Desk.Ministries.FirstOrDefault(ministry => ministry.Id == _draft.MinistryId);
+
     private IReadOnlyList<SegmentOption<string>> Audiences =>
-        (Desk.Ministries.FirstOrDefault(ministry => ministry.Id == _draft.MinistryId)?.Audiences ?? [ChatAudiences.Team])
+        (Chosen?.Audiences ?? [ChatAudiences.Team])
         .Where(audience => audience != ChatAudiences.Chosen)
-        .Select(audience => new SegmentOption<string>(audience, ChatText.Audience(audience)))
+        .Select(audience => new SegmentOption<string>(audience, audience == ChatAudiences.Team && Chosen is { } ministry ? TeamNames.Of(ministry.Name) : ChatText.Audience(audience)))
         .ToList();
 
     private string? Blocked => _draft.MinistryId.Length == 0 ? "Choose the ministry to start it."

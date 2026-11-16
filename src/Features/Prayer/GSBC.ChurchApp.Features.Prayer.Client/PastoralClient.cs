@@ -27,4 +27,10 @@ public sealed class PastoralClient(ChannelBase channel)
     public async Task KeepPrivateAsync(string id) => await _pastoral.KeepPrivateAsync(new RequestRef { Id = id });
 
     public async Task DeleteAsync(string id) => await _pastoral.DeleteAsync(new RequestRef { Id = id });
+
+    public async Task WriteAsync(PastoralWrite write) => await _pastoral.WriteAsync(write);
+
+    public async Task<WritingStart> StartWritingAsync() => await _pastoral.StartWritingAsync(new Nothing());
+
+    public async Task NameTheChurchAsync(string name) => await _pastoral.NameTheChurchAsync(new PrayerChurch { Name = name });
 }

@@ -22,7 +22,6 @@
     private static readonly IReadOnlyList<SegmentOption<CareState>> Stages =
     [
         new(CareState.New, PrayerWords.Care(CareState.New)),
-        new(CareState.FollowedUp, PrayerWords.Care(CareState.FollowedUp)),
         new(CareState.Answered, PrayerWords.Care(CareState.Answered)),
     ];
 

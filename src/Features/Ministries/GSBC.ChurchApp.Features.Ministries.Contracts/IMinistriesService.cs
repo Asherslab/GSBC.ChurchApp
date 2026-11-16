@@ -30,4 +30,7 @@ public interface IMinistriesService
 
     [SignedIn]
     ValueTask<WaitingList> WaitingAsync(WaitingRequest request, CallContext context = default);
+
+    [SignedIn]
+    ValueTask<EveryMinistrysNews> EveryMinistrysNewsAsync(EveryMinistrysNewsRequest request, CallContext context = default);
 }

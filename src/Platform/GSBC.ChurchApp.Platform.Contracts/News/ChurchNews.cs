@@ -6,8 +6,11 @@ public static class ChurchNews
 {
     public const string WriteNode = "news.write";
     public const string PublishNode = "news.publish";
+    public const string SeeMinistriesNode = "news.ministries";
 
     public const string FromMinistries = "ministries";
 
     public static readonly Permission Publishing = new(PublishNode, ScopeKind.Global, "Publish church news");
+
+    public static readonly Permission SeeingMinistries = new(SeeMinistriesNode, ScopeKind.Global, "See every ministry's news");
 }

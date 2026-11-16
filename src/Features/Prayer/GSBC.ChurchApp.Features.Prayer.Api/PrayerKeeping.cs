@@ -4,12 +4,14 @@ using Microsoft.EntityFrameworkCore;
 
 namespace GSBC.ChurchApp.Features.Prayer.Api;
 
-internal sealed class PrayerKeeping(PrayerDbContext db, PrayerPublisher publisher, PrayerTelling telling, HandledRequests handled, TimeProvider time)
+internal sealed class PrayerKeeping(
+    PrayerDbContext db, PrayerPublisher publisher, PrayerTelling telling, HandledRequests handled, ChurchName church, TimeProvider time)
 {
     public async Task RunAsync(CancellationToken cancellationToken)
     {
         DateTime now = time.GetUtcNow().UtcDateTime;
         await FillStaffFeedsAsync(now, cancellationToken);
+        await church.FillFeedAsync(cancellationToken);
         List<RequestRecord> leaving = await db.Requests.Where(request => request.Wall == WallState.Shown && request.WallUntil <= now).ToListAsync(cancellationToken);
         foreach (RequestRecord request in leaving.Where(request => PrayerRules.HasLeftTheWall(request, now)))
         {
@@ -36,7 +38,8 @@ internal sealed class PrayerKeeping(PrayerDbContext db, PrayerPublisher publishe
 
     private async Task FillStaffFeedsAsync(DateTime now, CancellationToken cancellationToken)
     {
-        if (await db.FeedChanges.AnyAsync(change => change.Feed == PrayerFeeds.Approving || change.Feed == PrayerFeeds.Care, cancellationToken))
+        if (await db.FeedChanges.AnyAsync(change => change.Feed == PrayerFeeds.Approving, cancellationToken)
+            && await db.FeedChanges.AnyAsync(change => change.Feed == PrayerFeeds.Care, cancellationToken))
             return;
         foreach (RequestRecord request in await db.Requests.Where(request => request.Care == CareState.New || request.Wall == WallState.Waiting || request.Wall == WallState.Shown)
                      .ToListAsync(cancellationToken))

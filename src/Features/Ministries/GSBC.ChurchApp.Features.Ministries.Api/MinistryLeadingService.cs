@@ -30,6 +30,7 @@ internal sealed class MinistryLeadingService(
     IFamilies families,
     IPeopleIndex people,
     IMinistryCalendars calendars,
+    MinistryCalendarShaper shaper,
     IKeptRegularEvents keptEvents,
     INotifications notifications,
     MinistryFileMedia fileMedia,
@@ -353,6 +354,7 @@ internal sealed class MinistryLeadingService(
         await db.SaveChangesAsync(cancellationToken);
         MinistryTree after = await views.TreeAsync(cancellationToken);
         await AimCalendarsAsync(tree, after, tree.SeenFrom(id), cancellationToken);
+        await shaper.ShapeAsync(id, cancellationToken);
         return MinistryViews.Details(ministry, after);
     }
 
@@ -489,14 +491,13 @@ internal sealed class MinistryLeadingService(
         MinistryTree tree = await views.TreeAsync(cancellationToken);
         MinistryRecord ministry = Existing(tree, request.MinistryId);
         TurnedOn(ministry, MinistryParts.Calendar);
-        CalendarLine wanted = request.Calendar;
-        Audience audience = MinistryViews.CalendarAudience(wanted.Audience, ministry.Id, tree.IsHidden(ministry.Id));
-        if (!MinistryLogic.PostableAudiences(ministry.AttendJoin).Contains(wanted.Audience))
-            throw Invalid("Choose who the calendar is for.");
-        string name = wanted.Name.Trim().Length > 0 ? wanted.Name : CalendarName(ministry, wanted.Audience);
-        MinistryCalendar saved = wanted.Id.Length > 0
-            ? await calendars.ChangeAsync(ministry.Id, ParseId(wanted.Id), name, audience, cancellationToken)
-            : await calendars.CreateAsync(ministry.Id, name, audience, cancellationToken);
+        string kind = request.Calendar.Audience;
+        if (!MinistryCalendarKinds.All.Contains(kind))
+            throw Invalid("A ministry has a Public calendar and a Team calendar. Choose one of those.");
+        if ((await calendars.OfAsync(ministry.Id, cancellationToken)).FirstOrDefault(calendar => MinistryCalendarPlan.KindOf(calendar.Audience) == kind) is { } existing)
+            return MinistryViews.Calendar(existing);
+        MinistryCalendar saved = await calendars.CreateAsync(ministry.Id, MinistryCalendarKinds.NameOf(kind, ministry.Name),
+            MinistryCalendarPlan.AudienceOf(kind, ministry.Id, tree.IsHidden(ministry.Id)), cancellationToken);
         changes.Touch(ministry.Id);
         await db.SaveChangesAsync(cancellationToken);
         return MinistryViews.Calendar(saved);
@@ -755,14 +756,6 @@ internal sealed class MinistryLeadingService(
         Audiences.Team => MinistriesPermissions.TeamView,
         Audiences.Parents => MinistriesPermissions.ParentsView,
         _ => MinistriesPermissions.AttendeesView,
-    };
-
-    private static string CalendarName(MinistryRecord ministry, string audience) => audience switch
-    {
-        Audiences.Team => $"{ministry.Name} team",
-        Audiences.Parents => $"{ministry.Name} parents",
-        Audiences.Attendees => $"{ministry.Name} families",
-        _ => ministry.Name,
     };
 
     private static string Span(RoundRecord round) =>

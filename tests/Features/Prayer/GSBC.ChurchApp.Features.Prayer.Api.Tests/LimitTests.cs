@@ -28,8 +28,8 @@ public sealed class LimitTests : PrayerHost
     {
         PrayerRequestSend send = new() { Id = Guid.NewGuid().ToString(), Text = "For peace" };
 
-        await AppAsync(app => app.SendAsync(Phone, null, send, Cancel));
-        await AppAsync(app => app.SendAsync(Phone, null, send, Cancel));
+        await AppAsync(app => app.SendAsync(Phone, null, send, false, Cancel));
+        await AppAsync(app => app.SendAsync(Phone, null, send, false, Cancel));
 
         Assert.Single(Told.Raised);
         Assert.NotNull(await RecordAsync(send.Id));

@@ -30,8 +30,8 @@ public static class NewsApiExtensions
             [NewsPermissions.Write.Node, NewsPermissions.AnnouncementsWriteNode], Feature: RoleFeatures.News, Kits: [RoleKits.Pictures],
             Replaces: [NewsPermissions.AnnouncementsWriterRole]));
         services.AddSystemRole(new SystemRole(NewsPermissions.PublisherRole, "Church news Publisher",
-            "Write, publish, schedule and delete church news, send its notifications, and put ministries' posts into it", ScopeKind.Global,
-            [NewsPermissions.Write.Node, NewsPermissions.Publish.Node, NewsPermissions.AnnouncementsWriteNode, NewsPermissions.AnnouncementsSendNode],
+            "Write, publish, schedule and delete church news, send its notifications, see every ministry's news and put ministries' posts into it", ScopeKind.Global,
+            [NewsPermissions.Write.Node, NewsPermissions.Publish.Node, NewsPermissions.SeeMinistries.Node, NewsPermissions.AnnouncementsWriteNode, NewsPermissions.AnnouncementsSendNode],
             Feature: RoleFeatures.News, Kits: [RoleKits.Pictures], Replaces: [NewsPermissions.AnnouncementsSenderRole, "announcer"]));
 
         services.AddFeed(new FeedDefinition(NewsFeeds.Posts, FeedAudience.Public));
