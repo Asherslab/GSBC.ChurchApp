@@ -825,7 +825,7 @@ digests from the page's foot; Copy for email gives only the content block. Decis
   date next month.
 - **Storage:** a digest is a row of its own (`id`), with its `start`, `end` and `range`, instead of one per fortnight
   keyed by its Monday. Migration `DigestRanges` gives each existing digest an id and its end (start + weeks), one week as
-  *One week*, two as *Two weeks* and three as *Choose dates*; sent digests keep their snapshot, notification time and feed rows.
+  *1 week*, two as *2 weeks* and three as *Other*; sent digests keep their snapshot, notification time and feed rows.
   The contracts carry the id (`DigestQuery.Id`, `DigestSave.Id`, `DigestRef.Id`) with `Start`, `End` and `Range`.
 - **Which digest the desk opens:** the one last worked on since this Monday that hasn't ended (`Digests.Current`), so
   staff come back to the same digest all week and can still *Send again*; otherwise a new one from today, two weeks,
