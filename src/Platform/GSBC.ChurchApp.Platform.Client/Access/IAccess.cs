@@ -11,4 +11,6 @@ public interface IAccess
     bool Can(Permission permission, string? objectId = null);
 
     bool CanSomewhere(Permission permission);
+
+    bool CanHere(Permission permission, string objectId);
 }

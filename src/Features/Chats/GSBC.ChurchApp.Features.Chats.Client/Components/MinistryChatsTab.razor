@@ -1,23 +1,33 @@
+@inject IAccess Access
+
 <Section First="true">
-    @if (On.MayManage || On.MayStartChats)
+    @if (MayStart)
     {
         <div class="ui-tools">
             <Button Icon="plus" OnClick="() => _starting = true">New chat</Button>
         </div>
     }
     <ChatsList MinistryId="@On.Id" />
-    @if (On is { MayManage: false, MayStartChats: false })
+    @if (!MayStart)
     {
-        <p class="hint">@(On.TeamMayStartChats ? $"{On.Name}'s leaders and team start chats here." : $"{On.Name}'s leaders start chats here.") Ask one of them if you'd like a chat for something.</p>
+        <p class="hint">@WhoStarts</p>
     }
 </Section>
-@if (On.MayManage || On.MayStartChats)
+@if (MayStart)
 {
-    <NewChatSheet Open="_starting" OpenChanged="open => _starting = open" MinistryId="@On.Id" MinistryName="@On.Name" HasAttendees="On.HasAttendees" Leads="On.MayManage" />
+    <NewChatSheet Open="_starting" OpenChanged="open => _starting = open" MinistryId="@On.Id" MinistryName="@On.Name" HasAttendees="On.HasAttendees" Leads="Leads" />
 }
 
 @code {
     private bool _starting;
 
     [Parameter, EditorRequired] public required MinistryOnPage On { get; set; }
+
+    private bool Leads => Access.CanHere(ChatsPermissions.Manage, On.Id);
+
+    private bool MayStart => Leads || On.MayStartChats;
+
+    private string WhoStarts => On.MayManage
+        ? $"{On.Name}'s chats are for the people in it, and you don't have a role here. To start one, give yourself a role under People."
+        : $"{(On.TeamMayStartChats ? $"{On.Name}'s leaders and team start chats here." : $"{On.Name}'s leaders start chats here.")} Ask one of them if you'd like a chat for something.";
 }

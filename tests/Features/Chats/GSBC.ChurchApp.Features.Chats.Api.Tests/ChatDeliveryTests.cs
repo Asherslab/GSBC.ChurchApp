@@ -276,6 +276,27 @@ public sealed class ChatDeliveryTests : IAsyncLifetime
         await ActAsync(actions => actions.StartAsync(_helper, Chat(ChatKinds.Group), Cancel));
     }
 
+    [Fact]
+    public async Task AGrantHeldEverywhereDoesNotStartAChatItsHolderWouldNotBeIn()
+    {
+        Guid owner = _church.Person("Olive Owner");
+        _church.OwnsEverything(owner);
+        Guid chat = Guid.NewGuid();
+        StartChat request = new()
+        {
+            ChatId = chat.ToString(), MinistryId = _church.MinistryId.ToString(), Name = "Setup crew", Kind = ChatKinds.Group, Audience = ChatAudiences.Team, FirstMessage = "Who's in?",
+        };
+
+        RpcException refused = await Assert.ThrowsAsync<RpcException>(() => ActAsync(actions => actions.StartAsync(owner, request, Cancel)));
+
+        Assert.Equal(StatusCode.PermissionDenied, refused.StatusCode);
+        await using (AsyncServiceScope scope = _services.CreateAsyncScope())
+            Assert.False(await scope.ServiceProvider.GetRequiredService<ChatsDbContext>().Chats.AnyAsync(found => found.Id == chat, Cancel));
+        _church.Leads(owner);
+        await ActAsync(actions => actions.StartAsync(owner, request, Cancel));
+        Assert.Equal(["Who's in?"], await TextsAsync(owner, chat));
+    }
+
     private async Task<Guid> StartAsync(string name, string first)
     {
         Guid chat = Guid.NewGuid();

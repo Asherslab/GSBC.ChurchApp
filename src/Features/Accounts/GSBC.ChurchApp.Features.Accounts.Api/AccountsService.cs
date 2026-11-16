@@ -496,7 +496,7 @@ internal sealed class AccountsService(
             : throw new RpcException(new Status(StatusCode.Unauthenticated, "Sign in again."));
     }
 
-    private string Link(string code) => $"{options.Value.SiteUrl.TrimEnd('/')}/welcome?code={code}";
+    private string Link(string code) => AccountsDestinations.WelcomeLink(options.Value.SiteUrl, code);
 
     private static string? Address(CallContext context) =>
         context.ServerCallContext is { } call ? RateLimits.ClientAddress(call.GetHttpContext()) : null;

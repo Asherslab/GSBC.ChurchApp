@@ -1,5 +1,6 @@
 using GSBC.ChurchApp.Features.Accounts.Client;
 using GSBC.ChurchApp.Features.Accounts.Contracts;
+using GSBC.ChurchApp.Platform.Client.Destinations;
 using GSBC.ChurchApp.Platform.Client.Modules;
 using GSBC.ChurchApp.Platform.Icons;
 using Microsoft.Extensions.DependencyInjection;
@@ -12,6 +13,6 @@ public static class AccountsAppExtensions
     {
         modules.Add(new ClientModule("Accounts", typeof(AccountsAppExtensions).Assembly,
             [new NavEntry("Account", "account", AppIcons.Account)], PrivateFeeds: [AccountsFeeds.Mine]));
-        return services.AddAccountsClient().AddSingleton<IAccountReads, StoredAccount>().AddScoped<IPasskeyCeremonies, NativePasskeyCeremonies>().AddScoped<ISignInCodes, NativeSignInCodes>();
+        return services.AddAccountsClient().AddLinkIntoTheApp(AccountsDestinations.WelcomePath).AddSingleton<IAccountReads, StoredAccount>().AddScoped<IPasskeyCeremonies, NativePasskeyCeremonies>().AddScoped<ISignInCodes, NativeSignInCodes>();
     }
 }

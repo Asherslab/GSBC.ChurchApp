@@ -16,6 +16,9 @@ public static class DestinationServiceCollectionExtensions
         return services.AddSingleton(destinations);
     }
 
+    public static IServiceCollection AddLinkIntoTheApp(this IServiceCollection services, string path) =>
+        services.AddSingleton(new LinkIntoTheApp(path));
+
     public static IServiceCollection AddPlaceAction(this IServiceCollection services, PlaceAction action) =>
         services.AddSingleton(action);
 
