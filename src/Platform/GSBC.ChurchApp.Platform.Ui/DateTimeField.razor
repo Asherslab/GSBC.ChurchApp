@@ -8,14 +8,14 @@ else
 {
     <fieldset class="date-time-field">
         <legend class="field__label">@Label</legend>
-        <div class="ui-pair">
-            <DateField Label="Date" Value="@DayPart" ValueChanged="SetDayAsync" Min="@DayOf(Min)" Max="@DayOf(Max)" Disabled="Disabled" Problem="@Problem" />
-            <TimeField Label="Time" Value="@TimePart" ValueChanged="SetTimeAsync" Disabled="Disabled" />
-        </div>
         @if (Hint is not null)
         {
             <span class="field__hint">@Hint</span>
         }
+        <div class="ui-pair">
+            <DateField Label="Date" Value="@DayPart" ValueChanged="SetDayAsync" Min="@DayOf(Min)" Max="@DayOf(Max)" Disabled="Disabled" Problem="@Problem" />
+            <TimeField Label="Time" Value="@TimePart" ValueChanged="SetTimeAsync" Disabled="Disabled" />
+        </div>
     </fieldset>
 }
 

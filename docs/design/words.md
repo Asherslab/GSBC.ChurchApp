@@ -31,6 +31,9 @@ what it does and, when it changes what other people see, where they'll see it.
 > A word or two shown in small type above the event's title, in the calendar and on the event's page. Leave this
 > empty to show the calendar's name, Services.
 
+- It sits between the label and the field, in ink 2, so it's read before typing; a problem line stays under the field
+  (owner's pick on the decision page, 2026-11-16, `.impeccable/mocks/field-descriptions/`). Fields without a label
+  above their box (a colour, a font, a place) keep it after the control.
 - What an empty field means is said here ("Leave this empty if you're away until further notice."), never as a
   placeholder and never as "Empty: no end".
 - A description answers a question the label leaves open; it never repeats the label.

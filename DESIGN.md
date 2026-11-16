@@ -1227,7 +1227,8 @@ Proper, plain sentences on every label, description, button and message (owner, 
 grammar, proper sentences … 'in it': in what?"). Detail and examples: [words.md](docs/design/words.md).
 
 - **A label names the thing** ("Last day", "Short description"): never a fragment, a question or a bracket.
-- **A field whose purpose isn't obvious has a description** saying what it does and where people will see it.
+- **A field whose purpose isn't obvious has a description** saying what it does and where people will see it,
+  between the label and the field in ink 2 (the problem line stays under the field).
 - **No bare "it" or "in it":** name the thing ("this ministry"), headings included.
 - **No example placeholders.** A format, or what an empty field means, goes in the description ("Leave this empty
   to …").

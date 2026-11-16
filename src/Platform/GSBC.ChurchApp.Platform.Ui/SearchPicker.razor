@@ -2,6 +2,10 @@
 
 <div class="field search-picker @(Problem is null ? "" : "field--problem")">
     <label class="field__label" for="@_id">@Label</label>
+    @if (Hint is not null)
+    {
+        <span class="field__hint" id="@(_id)-hint">@Hint</span>
+    }
     <div class="chip-picker__search">
         <Icon Name="search" Size="IconSize.Small" />
         <input id="@_id" type="text" class="chip-picker__input" role="combobox" aria-expanded="@(_focused ? "true" : "false")" aria-controls="@ListId"
@@ -32,10 +36,6 @@
                 </li>
             }
         </ul>
-    }
-    @if (Hint is not null)
-    {
-        <span class="field__hint" id="@(_id)-hint">@Hint</span>
     }
     @if (Problem is not null)
     {

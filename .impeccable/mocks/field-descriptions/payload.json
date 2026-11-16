@@ -1,0 +1,43 @@
+{
+  "title": "Where a field's description sits",
+  "question": "Fields that aren't obvious now get a sentence saying what they do (UAT #18). Today that sentence sits under the field, small and faint. Three places for it, shown on the event form in the admin panel and on the phone. Whichever you lock applies to every field on both sides. Lock one, steer it, or ask for another hand.",
+  "options": [
+    {
+      "id": "above",
+      "kind": "assigned",
+      "kicker": "FIRST",
+      "label": "Between the label and the field",
+      "thesis": "The description sits under the label, before you reach the box, in the prose grey (ink 2) so it reads as part of the question. A problem with what you typed still shows under the field.",
+      "palette": ["#141d31", "#1d2840", "#2d374d", "#b2b8c5", "#2ec4b6"],
+      "materials": ["label", "description sentence", "field", "problem line below"],
+      "viewport": "The event form: Title, Line above the title with its description before the box, Date beside Last day with its description, Cancel and Add the event.",
+      "risk": "Fields in a pair no longer line up at the top when only one has a description.",
+      "html": ".impeccable/mocks/field-descriptions/above.html"
+    },
+    {
+      "id": "below",
+      "kind": "dealt",
+      "label": "Under the field, but readable",
+      "thesis": "Where it is today, under the box, but in the prose grey (ink 2) instead of the faint metadata grey, so it reads as a sentence rather than a footnote.",
+      "palette": ["#141d31", "#1d2840", "#2d374d", "#b2b8c5", "#2ec4b6"],
+      "materials": ["label", "field", "description sentence", "problem line below it"],
+      "viewport": "The same form: each description under its box; pairs line up at the top.",
+      "risk": "You meet the explanation after the box, so it's easy to type first and read second, which is how the Label field confused you.",
+      "html": ".impeccable/mocks/field-descriptions/below.html"
+    },
+    {
+      "id": "side",
+      "kind": "dealt",
+      "label": "Beside the field on the desk",
+      "thesis": "In the admin panel each setting is a row: label and description on the left, the field on the right, ruled off like a settings page. On the phone it falls back to between the label and the field.",
+      "palette": ["#141d31", "#1d2840", "#2d374d", "#b2b8c5", "#2ec4b6"],
+      "materials": ["settings rows", "hairlines", "label and description column", "field column"],
+      "viewport": "The admin form as rows with descriptions in a left column; the phone as the first option.",
+      "risk": "Takes more height on the desk, and pairs (Date and Last day) become one per row; short fields two to a line (#71) would go.",
+      "html": ".impeccable/mocks/field-descriptions/side.html"
+    }
+  ],
+  "reroll": true,
+  "steer": true,
+  "buildPath": { "value": "code" }
+}

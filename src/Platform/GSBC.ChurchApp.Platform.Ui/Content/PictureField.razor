@@ -4,6 +4,10 @@
 
 <div class="field @Class">
     <span class="field__label">@Label</span>
+    @if (Hint is not null)
+    {
+        <span class="field__hint">@Hint</span>
+    }
     @if (Value is { } chosen)
     {
         <div class="picture-field__chosen">
@@ -45,10 +49,6 @@
     else if (Unavailable is not null)
     {
         <span class="field__hint">@Unavailable</span>
-    }
-    @if (Hint is not null)
-    {
-        <span class="field__hint">@Hint</span>
     }
 </div>
 

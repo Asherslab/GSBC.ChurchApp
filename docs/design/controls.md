@@ -39,7 +39,7 @@ For a status moving forward through stages, where a segmented track read "like t
 The docked feedback ticket's status, and a prayer request's care steps (New, Followed up, Answered) on the phone and the Prayer desk; the requester sees it read only (Sent, On the wall, Answered). Pressing a stage moves to it, backwards too; leaving the sequence (*Mark not doing*) is a quiet action beside it, not a stage.
 
 ## Inputs / Fields
-- **Style:** field fill and edge at the 12px radius, an ink-2 label above, ink-2 placeholders (notes at 14px). Every field, the composer and the admin's plain inputs included.
+- **Style:** field fill and edge at the 12px radius, an ink-2 label above, then any description in ink 2 (the problem line goes under the field), ink-2 placeholders (notes at 14px). Every field, the composer and the admin's plain inputs included.
 - **Focus:** an inset deep-aqua ring replaces the edge; elsewhere focus-visible is a deep-aqua outline.
 - **Rich text** (`RichTextField`): see [posts.md](posts.md), *Formatted text*. The format bar sticks to the top of what scrolls, on the ground it sits in (`--rich-text-ground`, the writing page sets `--page`) so it never shows as a band; on the desk it stays one row, folding Code, Highlight, Strikethrough, Quote, the lists and Link into its ⋯ (in that order) when there isn't room, and on the phone it slides; its menus are the shared `Menu`, and on the phone Insert, the style and ⋯ open sheets. `RichTextEditor` (older ministry and settings fields) keeps its button row and "How it looks" preview until those move.
 - **Search field (admin):** a 40px field up to 420px wide with a leading search icon; it searches 250ms after typing stops.
