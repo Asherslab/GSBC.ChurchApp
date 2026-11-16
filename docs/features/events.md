@@ -813,6 +813,58 @@ digests from the page's foot; Copy for email gives only the content block. Decis
   into What's next on restart; a digest sent from the desk showed on Home and on What's next in the Simulator, light and
   dark; an earlier digest opened from *Earlier editions*; Copy for email's clipboard held the HTML source.
 
+## Weekly digest round 2: by hand, news posts, pictures, the email (UAT #22, #25, #26, #27, 2026-11-17)
+
+The owner: "the editing a item + preview/etc on right side is clunky. let's make editing an item a modal instead" (#22);
+"doesn't look like I can add an image to a 'Something not on the calendar' item" (#25); "Weekly digest should also
+include selecting news posts. it's essentially a combination of calendar events and news that we really want
+highlighted" (#26); the old What's Next email "is centred and fully fills the screen width. same on mobile (without the
+background needed)" (#27). Interview (2026-11-17): **"change the flow for both. all items are selected/added by hand.
+either added from a calendar, a news post, or a manually created item for the digest"**; the calendar picker lists
+everything in the dates, specials marked; the calendar choice moves into the picker; the item dialog saves with Cancel and
+Save. Decision page `.impeccable/mocks/digest-2/`: the desk A (*running order beside a big preview*), the dialog B
+(*fields beside how it will look*), a post in the app A (*the same card as an event*); the email (owner in chat): "let
+the admin decide on all. each item has variants if it has images. optional photo across the top". Surface brief:
+`.impeccable/surfaces/tures-events-admin-pages-digestdesk-razor-9230f653.md`. This replaces the pre-fill, the ticks and
+*New on the calendar* of *Decided while building (the weekly digest)* above.
+
+- **Everything by hand.** A digest starts empty. *From the calendar* opens a picker over the digest's dates: every shown
+  event by day, in every calendar, with *One-off*, *Special date*, *Not on* and *Needs details* marked and the calendar
+  chips as its filter (remembered on the digest, iCal copies off at first). Breaks and dates needing details stay grouped
+  as before; an ordinary regular date is one item per date. *A church news post* lists the 30 newest published posts.
+  *Something else* opens a blank item in the dialog; Cancel drops it. Added things keep their order; a calendar thing is
+  placed by its date, a post goes last, and dragging (`ReorderList`) or ⋯ moves them. Removing is in each row's ⋯ and the
+  dialog's ⋯. An entry saved before this (`Included`) shows only if it was ticked.
+- **The dialog** (`DigestItemEditor`, Platform.Ui `Sheet Widest`): the picture, *In the email* (beside the words or across
+  the top, when there's a picture), the words (When and Time on one line), and on the right the app's own card
+  (`WhatsNextCard`, shared with What's next) and the item as the email draws it, both live. Cancel bottom left, Save bottom
+  right (*Add to the digest* for something new), the foot stays in view. A reworded field keeps its aqua ring and *Use the
+  calendar's wording* (or the post's words).
+- **Pictures for everything** (#25): a picture from the media library (`PictureField`) on any item; for an event or a post
+  it replaces theirs in the digest only (`DigestFields.Picture`, *Use the event's picture* puts it back). The server checks
+  each picture with Media and records the digest as using it (`events/digest/{id}`); a moved or renamed picture is
+  refreshed (`EventPictures`).
+- **News posts** (#26): Events reads them through a Platform contract, `INewsHighlights` (Platform.Api/News, implemented by
+  News): recent published posts and the current state of chosen ones (title, opening words, first picture, posted date,
+  audience, link). The digest item `news:{id}` shows *Church news* above the title and the post's opening words, both
+  rewordable; the app shows "Church news · Monday 7 December" and *Read the post* (opening `/news/{id}`); the email has a
+  *Read the post* button to the shared link. **Who sees it is the post's audience**: the publisher writes a post item to
+  `events.digest.private` with the post's audience, recomputed on every publish; a post that's archived, deleted or
+  unpublished leaves the sent digest. News tells Events when posts change (`INewsWatcher`, called after News saves), and
+  Events republishes when a sent digest holds one. Notifications count a post for the people it's for, like a private
+  calendar's event. The email leaves out what isn't for everyone unless *Include what isn't for everyone in the email* is on.
+- **The email** (#27): a full-width soft background (`#e9eef4`) with the column centred, up to 600px, and filling a phone's
+  width (a fluid table with an Outlook-desktop 600px fallback in conditional comments; still no `<style>` or classes). An
+  optional *Photo across the top* (the digest's `TopPicture`, migration `DigestTopPicture`) sits above the navy heading.
+  Each item with a picture: beside the words (a 34% column, about 190px; the old email's layout) or across the top.
+  Every part has an explicit background (and `color-scheme: light only` on the outer table), the way the old email was built, which Mail showed as sent in dark mode; the new one hasn't been checked in Mail itself yet.
+- **The desk** (`Workbench WideDetail`): the dates and the running order on the left, the preview on the right, In the
+  app | Email, at a readable size (the email at its own width, scrolling); clicking a title in the app preview opens it.
+  Copy for email and Send stay at the foot with the reach line.
+- **Checked** on a backend at `Dev__PortOffset=1300` with main's database: added from the calendar and church news, wrote
+  an item with a picture, reworded in the dialog, the email rendered at 1280 and 390 in WebKit and Chromium, light and
+  dark. Gmail and Outlook on the web weren't available to test; Elvanto's paste wasn't tried against a live account.
+
 ## The owner's feedback (2026-11-09)
 
 - **Why the digest missed Anniversary Sunday** (owner: "why does this not show all the events i'd expect? no anniversary
