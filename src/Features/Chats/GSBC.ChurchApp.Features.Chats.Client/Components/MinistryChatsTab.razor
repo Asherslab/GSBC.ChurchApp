@@ -28,6 +28,6 @@
     private bool MayStart => Leads || On.MayStartChats;
 
     private string WhoStarts => On.MayManage
-        ? $"{On.Name}'s chats are for the people in it, and you don't have a role here. To start one, give yourself a role under People."
+        ? $"{On.Name}'s chats are for this ministry's people, and you don't have a role in {On.Name}. To start a chat, give yourself a role under People."
         : $"{(On.TeamMayStartChats ? $"{On.Name}'s leaders and team start chats here." : $"{On.Name}'s leaders start chats here.")} Ask one of them if you'd like a chat for something.";
 }

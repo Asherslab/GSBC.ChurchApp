@@ -5,23 +5,23 @@
 
 <Sheet Open="Open" OpenChanged="OpenChanged" Title="@($"New chat in {MinistryName}")">
     <ChildContent>
-        <TextField Label="Name" Value="@_draft.Name" ValueChanged="value => _draft.Name = value" MaxLength="ChatLimits.NameLength" Required="true" />
+        <TextField Label="Name of the chat" Hint="Everyone in the chat sees this name." Value="@_draft.Name" ValueChanged="value => _draft.Name = value" MaxLength="ChatLimits.NameLength" Required="true" />
         @if (Leads)
         {
-            <Segmented TValue="string" Label="Kind" ShowLabel="true" Stacked="true" Options="Kinds" Value="_draft.Kind" ValueChanged="value => _draft.Kind = value" />
-            <Segmented TValue="string" Label="Who it's for" ShowLabel="true" Stacked="true" Options="Audiences" Value="_draft.Audience" ValueChanged="value => _draft.Audience = value" />
+            <Segmented TValue="string" Label="Who can write" ShowLabel="true" Stacked="true" Options="Kinds" Value="_draft.Kind" ValueChanged="value => _draft.Kind = value" />
+            <Segmented TValue="string" Label="Who's in the chat" ShowLabel="true" Stacked="true" Options="Audiences" Value="_draft.Audience" ValueChanged="value => _draft.Audience = value" />
         }
         else
         {
-            <p class="hint">A group chat for the team. Leaders start channels and chats with attendees or parents.</p>
+            <p class="hint">You can start a group chat for the team. Only leaders can start a leaders-only chat, or a chat with attendees or parents.</p>
         }
         @if (_draft.Audience != ChatAudiences.Team)
         {
-            <Notice Tone="NoticeTone.Warning"><strong>Parents say yes first.</strong> Your first message goes to each young person's parents. Their child gets the chat once a parent approves; until then it's just the adults.</Notice>
+            <Notice Tone="NoticeTone.Warning"><strong>Parents say yes first.</strong> Your first message goes to each young person's parents. Their child joins the chat once a parent approves. Until then, only the adults are in the chat.</Notice>
         }
-        <TextField Label="First message: why you're starting this chat" Multiline="true" Value="@_draft.FirstMessage" ValueChanged="value => _draft.FirstMessage = value"
-                   MaxLength="ChatLimits.TextLength" Placeholder="Parents of any young people in it read this before they say yes." />
-        <p class="hint">@ChatCopy.StaffCanCheck A chat with young people needs two adults in it with a current blue card; the chat flags it if not.</p>
+        <TextField Label="First message" Hint="Say why you're starting the chat. Parents of any young people in the chat read this before they approve." Multiline="true" Value="@_draft.FirstMessage" ValueChanged="value => _draft.FirstMessage = value"
+                   MaxLength="ChatLimits.TextLength" />
+        <p class="hint">@ChatCopy.StaffCanCheck A chat with young people needs two adults in the chat who hold a current blue card. The chat shows a warning until it has them.</p>
         <Notice Tone="NoticeTone.Warning" Text="@_problem" />
     </ChildContent>
     <Actions>
@@ -45,21 +45,21 @@
 
     private static readonly IReadOnlyList<SegmentOption<string>> Kinds =
     [
-        new(ChatKinds.Group, "Group chat", Detail: "Everyone in it can write."),
-        new(ChatKinds.Channel, "Leaders post only", Detail: "Only the leaders write. Everyone can react."),
+        new(ChatKinds.Group, "Group chat", Detail: "Everyone in the chat can write."),
+        new(ChatKinds.Channel, "Leaders only", Detail: "Only the ministry's leaders can write. Everyone else can react."),
     ];
 
     private IReadOnlyList<SegmentOption<string>> Audiences => HasAttendees
         ?
         [
-            new(ChatAudiences.Team, "The team", Detail: "Leaders and helpers."),
-            new(ChatAudiences.Attendees, "Attendees and their parents", Detail: "Young people who come along, and their parents."),
-            new(ChatAudiences.Parents, "Parents only", Detail: "The parents of those who come along."),
+            new(ChatAudiences.Team, "The team", Detail: "The ministry's leaders and helpers."),
+            new(ChatAudiences.Attendees, "Attendees and their parents", Detail: "Young people who attend the ministry, and their parents."),
+            new(ChatAudiences.Parents, "Parents only", Detail: "Parents of the young people who attend the ministry."),
         ]
-        : [new(ChatAudiences.Team, "The team", Detail: "Leaders and helpers.")];
+        : [new(ChatAudiences.Team, "The team", Detail: "The ministry's leaders and helpers.")];
 
-    private string? Blocked => _draft.Name.Trim().Length == 0 ? "Give it a name to start it."
-        : _draft.FirstMessage.Trim().Length == 0 ? "Write the first message to start it."
+    private string? Blocked => _draft.Name.Trim().Length == 0 ? "Enter a name for the chat."
+        : _draft.FirstMessage.Trim().Length == 0 ? "Write the first message."
         : null;
 
     private static StartChat Fresh() => new() { Kind = ChatKinds.Group, Audience = ChatAudiences.Team };

@@ -14,7 +14,7 @@ else
        Lead="Everyone will see that it was deleted. The church keeps a copy, so staff checking the chat can still read it.">
     <Actions>
         <Button Block="true" Variant="ButtonVariant.Danger" OnClick="DeleteAsync">Delete the message</Button>
-        <Button Block="true" Variant="ButtonVariant.Quiet" OnClick="() => _step = Step.Actions">Keep it</Button>
+        <Button Block="true" Variant="ButtonVariant.Quiet" OnClick="() => _step = Step.Actions">Keep the message</Button>
     </Actions>
 </Sheet>
 
@@ -24,17 +24,17 @@ else
         {
             <blockquote class="chat-callout"><strong>@Line.Message.SenderName</strong> @Line.Message.Text</blockquote>
         }
-        <Segmented TValue="string" Label="Who should see it?" ShowLabel="true" Stacked="true" Options="Routes" Value="_to" ValueChanged="value => _to = value" />
-        <TextField Label="Anything to add? (optional)" Multiline="true" MaxLength="ChatLimits.NoteLength" Value="@_note" ValueChanged="value => _note = value" />
-        <p class="hint">@(Line is null ? "" : ChatText.First(Line.Message.SenderName)) isn't told who reported it. If anyone is in danger, call 000.</p>
+        <Segmented TValue="string" Label="Send the report to" ShowLabel="true" Stacked="true" Options="Routes" Value="_to" ValueChanged="value => _to = value" />
+        <TextField Label="Note" Hint="Optional. Anything that helps them understand what happened." Multiline="true" MaxLength="ChatLimits.NoteLength" Value="@_note" ValueChanged="value => _note = value" />
+        <p class="hint">@(Line is null ? "" : ChatText.First(Line.Message.SenderName)) isn't told who reported the message. If anyone is in danger, call 000.</p>
     </ChildContent>
     <Actions>
         <Button Block="true" OnClick="ReportAsync">Send the report</Button>
     </Actions>
 </Sheet>
 
-<Sheet Open="_reported" OpenChanged="open => _reported = open" Title="Thanks, it's reported"
-       Lead="@(_to == ReportRoutes.Auditors ? "The church's safety team is told straight away. Someone will look at it soon." : "The ministry's leaders are told. Someone will look at it soon.")">
+<Sheet Open="_reported" OpenChanged="open => _reported = open" Title="Message reported"
+       Lead="@(_to == ReportRoutes.Auditors ? "The church's safety team is told straight away. Someone will look at the message soon." : "The ministry's leaders are told. Someone will look at the message soon.")">
     <Actions>
         <Button Block="true" OnClick="() => _reported = false">Done</Button>
     </Actions>
@@ -130,7 +130,7 @@ else
 
     private IReadOnlyList<SegmentOption<string>> Routes =>
     [
-        new(ReportRoutes.Leaders, $"{Card.MinistryName}'s leaders", Detail: "For things the leaders can sort out."),
+        new(ReportRoutes.Leaders, $"{Card.MinistryName}'s leaders", Detail: "For something the ministry's leaders can deal with."),
         new(ReportRoutes.Auditors, "The church's safety team", Detail: "Staff and pastors who look after safety in chats. They're told straight away and can pause someone from chats."),
     ];
 

@@ -5,7 +5,7 @@
 
 <LiveData @ref="_live" TValue="PausedList" Load="Oversight.PausedAsync" Feeds="[ChatsFeeds.Oversight]" FailedTitle="Can't load paused people right now">
     <Section First="true" Lead="People who can't read or send in any chat, in every ministry, until someone lets them back in. Pausing and letting back in are both logged, with who and why.">
-        <TextField Label="Why (kept in the log)" Value="@_reason" ValueChanged="value => _reason = value" MaxLength="ChatLimits.NoteLength" />
+        <TextField Label="Reason" Hint="Kept in the log with your name and the time." Value="@_reason" ValueChanged="value => _reason = value" MaxLength="ChatLimits.NoteLength" />
         <div class="ui-after">
             <PersonFinder Find="FindAsync" ActionText="Pause from chats" Label="Find someone to pause" Busy="@_busyId" OnChosen="PauseAsync" />
         </div>
@@ -14,7 +14,7 @@
     <Section Title="Paused now">
         @if (context.Value.People.Count == 0)
         {
-            <EmptyState Icon="pause" Title="Nobody is paused" Body="When a chat auditor pauses someone, they show here." />
+            <EmptyState Icon="pause" Title="Nobody is paused" Body="People a chat auditor pauses are listed here." />
         }
         else
         {

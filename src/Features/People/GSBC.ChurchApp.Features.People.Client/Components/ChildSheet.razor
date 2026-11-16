@@ -128,7 +128,7 @@
         : $"{child.Name} keeps their account, and you stop seeing their details. A parent or the church office can link you again.";
 
     private static string CodeHint(SignInCodeReply code) =>
-        $"Works once, until {code.ExpiresAt.ToLocalTime():h:mm tt d MMM}. On their phone: open the app, go to Account, then “Got a code from your parent?”.";
+        $"Works once, until {code.ExpiresAt.ToLocalTime():h:mm tt d MMM}. On their phone: open the app, go to Account, then “Have a code from your parent?”.";
 
     private Task OpenChanged(bool open) => open ? Task.CompletedTask : CloseAsync();
 

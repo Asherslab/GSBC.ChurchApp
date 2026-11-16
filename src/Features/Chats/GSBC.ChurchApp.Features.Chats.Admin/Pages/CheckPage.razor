@@ -30,7 +30,7 @@
         {
             <div class="chat-review__why">
                 <LoggedNotice>Reading @chat.Name is logged with your name, the time and why. The leaders of @chat.MinistryName and the church's chat auditors can see the log.</LoggedNotice>
-                <TextField Label="Why are you reading this chat?" Hint="Kept in the log with your name and the time." Value="@_reason" ValueChanged="value => _reason = value" MaxLength="ChatLimits.NoteLength" />
+                <TextField Label="Reason for reading this chat" Hint="Kept in the log with your name and the time." Value="@_reason" ValueChanged="value => _reason = value" MaxLength="ChatLimits.NoteLength" />
                 <Notice Tone="NoticeTone.Warning" Text="@_problem" />
                 <div class="ui-actions">
                     <Button Icon="eye" Busy="_busy" Disabled="@(_reason.Trim().Length == 0)" OnClick="ReadAsync">Read this chat</Button>
@@ -102,7 +102,7 @@
                     </div>
                 </ChildContent>
                 <Detail>
-                    <PaneHead Title="Reports" Lead="@(mine.Count == 0 ? "None about this chat." : $"{mine.Count(report => report.HandledAt is null)} waiting · {mine.Count(report => report.HandledAt is not null)} handled")" />
+                    <PaneHead Title="Reports" Lead="@(mine.Count == 0 ? "This chat has no reports." : $"{mine.Count(report => report.HandledAt is null)} waiting · {mine.Count(report => report.HandledAt is not null)} handled")" />
                     @foreach (ReportLine report in mine)
                     {
                         <ReportPanel @key="report.Id" Report="report" ShowHref="@ChatChecks.PageOf(ChatId, report.MessageId)" OnHandled="ReloadReportsAsync" />
@@ -122,18 +122,18 @@
 </LiveData>
 
 <Sheet Open="_deleting is not null" OpenChanged="open => { if (!open) _deleting = null; }" Title="@($"Delete {_deleting?.Name}?")"
-       Lead="Everyone in it loses the chat. The church keeps its messages and the log, so auditors can still check it.">
+       Lead="The chat is deleted for everyone in it. The church keeps its messages and the log, so auditors can still check it.">
     <ChildContent>
         <Notice Tone="NoticeTone.Warning" Text="@_problem" />
     </ChildContent>
     <Actions>
         <Button Variant="ButtonVariant.Danger" Busy="_busy" OnClick="DeleteAsync">Delete the chat</Button>
-        <Button Variant="ButtonVariant.Quiet" OnClick="() => _deleting = null">Keep it</Button>
+        <Button Variant="ButtonVariant.Quiet" OnClick="() => _deleting = null">Keep the chat</Button>
     </Actions>
 </Sheet>
 
 <Sheet Open="_pausing is not null" OpenChanged="open => { if (!open) _pausing = null; }" Title="@($"Pause {_pausing?.Message.SenderName} from chats?")"
-       Lead="They lose every chat until someone lets them back in under Chat safety. They aren't told who asked. It's logged.">
+       Lead="They lose every chat until someone lets them back in under Chat safety. They aren't told who paused them. The pause is logged.">
     <ChildContent>
         <TextField Label="Why" Hint="Kept in the log." Value="@_pauseReason" ValueChanged="value => _pauseReason = value" MaxLength="ChatLimits.NoteLength" />
         <Notice Tone="NoticeTone.Warning" Text="@_pauseProblem" />
@@ -263,7 +263,7 @@
         check.Chat.Messages.Where(found => found.Message.SenderId.Length > 0 && found.Message.Kind != MessageKinds.Event).Select(found => found.Message.SenderId).Distinct().Count();
 
     private IReadOnlyList<MenuItem> ChatActions(DeskChat chat) =>
-        [this.Item("Delete the chat…", () => (_deleting, _problem) = (chat, null), "trash-2", "For everyone in it. The church keeps its messages.", danger: true)];
+        [this.Item("Delete the chat…", () => (_deleting, _problem) = (chat, null), "trash-2", "The chat is deleted for everyone in it. The church keeps its messages.", danger: true)];
 
     private async Task DeleteAsync()
     {
@@ -302,7 +302,7 @@
 
     private IReadOnlyList<MenuItem> MessageActions(Desk desk, CheckedMessage found) =>
         desk.Auditor && found.Message.SenderId.Length > 0
-            ? [this.Item($"Pause {ChatText.First(found.Message.SenderName)} from chats…", () => StartPause(found), "pause", "They lose their chats until you let them back in.", danger: true)]
+            ? [this.Item($"Pause {ChatText.First(found.Message.SenderName)} from chats…", () => StartPause(found), "pause", "They can't read or write in any chat until someone lets them back in.", danger: true)]
             : [];
 
     private void StartPause(CheckedMessage found) => (_pausing, _pauseReason, _pauseProblem) = (found, "", null);

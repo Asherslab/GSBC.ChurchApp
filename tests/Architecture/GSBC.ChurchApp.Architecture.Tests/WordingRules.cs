@@ -6,14 +6,6 @@ public sealed partial class WordingRules
 {
     private static readonly Dictionary<string, string> WaitingForTheirStation = new()
     {
-        ["src/Features/Accounts/GSBC.ChurchApp.Features.Accounts.Admin/Components/MakeDemoAccount.razor"] = "Accounts welcome",
-        ["src/Features/Accounts/GSBC.ChurchApp.Features.Accounts.Admin/Components/MakeReviewCode.razor"] = "Accounts welcome",
-        ["src/Features/Chats/GSBC.ChurchApp.Features.Chats.Admin/Pages/ChatsTabView.razor"] = "Chats",
-        ["src/Features/Chats/GSBC.ChurchApp.Features.Chats.Admin/Pages/CheckPage.razor"] = "Chats",
-        ["src/Features/Chats/GSBC.ChurchApp.Features.Chats.Admin/Pages/PausedTab.razor"] = "Chats",
-        ["src/Features/Chats/GSBC.ChurchApp.Features.Chats.Admin/Pages/StartChatSheet.razor"] = "Chats",
-        ["src/Features/Chats/GSBC.ChurchApp.Features.Chats.Client/Components/MessageActions.razor"] = "Chats",
-        ["src/Features/Chats/GSBC.ChurchApp.Features.Chats.Client/Components/NewChatSheet.razor"] = "Chats",
         ["src/Features/Ministries/GSBC.ChurchApp.Features.Ministries.Api/MinistryLeadingService.cs"] = "Ministries",
         ["src/Features/Ministries/GSBC.ChurchApp.Features.Ministries.Api/MinistryRules.cs"] = "Ministries",
         ["src/Features/Ministries/GSBC.ChurchApp.Features.Ministries.Client/Components/FileSheet.razor"] = "Ministries",

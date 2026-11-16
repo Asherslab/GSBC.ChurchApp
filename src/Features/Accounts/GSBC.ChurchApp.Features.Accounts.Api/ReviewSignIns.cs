@@ -81,7 +81,7 @@ internal sealed class ReviewSignIns(AccountsDbContext db, UserManager<AccountUse
     public async Task<CodeReply> CreateCodeAsync(Guid actorId, string userId, string label, int days, CancellationToken cancellationToken)
     {
         AccountUser user = (Guid.TryParse(userId, out Guid id) ? await users.FindByIdAsync(id.ToString()) : null)
-            ?? throw new RpcException(new Status(StatusCode.NotFound, "No such account."));
+            ?? throw new RpcException(new Status(StatusCode.NotFound, "That account isn't here any more."));
         if (await demo.WhyCodesCannotSignInAsync(user, cancellationToken) is { } problem)
             throw new RpcException(new Status(StatusCode.FailedPrecondition, problem));
 
@@ -90,7 +90,7 @@ internal sealed class ReviewSignIns(AccountsDbContext db, UserManager<AccountUse
             throw new RpcException(new Status(StatusCode.InvalidArgument, $"A code can last from 1 to {ReviewCodes.LongestLifetime.Days} days."));
         string trimmed = label.Trim();
         if (trimmed.Length > ReviewCodes.LabelLength)
-            throw new RpcException(new Status(StatusCode.InvalidArgument, $"Keep the label under {ReviewCodes.LabelLength} characters."));
+            throw new RpcException(new Status(StatusCode.InvalidArgument, $"Keep the code's name to {ReviewCodes.LabelLength} characters or fewer."));
 
         string code = ReviewCodes.NewCode();
         DateTime expiresAt = Now + lifetime;
@@ -112,7 +112,7 @@ internal sealed class ReviewSignIns(AccountsDbContext db, UserManager<AccountUse
     public async Task TurnOffAsync(Guid actorId, string codeId, CancellationToken cancellationToken)
     {
         ReviewCode code = (Guid.TryParse(codeId, out Guid id) ? await db.ReviewCodes.FindAsync([id], cancellationToken) : null)
-            ?? throw new RpcException(new Status(StatusCode.NotFound, "No such sign-in code."));
+            ?? throw new RpcException(new Status(StatusCode.NotFound, "That sign-in code isn't here any more."));
         if (code.TurnedOffAt is not null)
             return;
 

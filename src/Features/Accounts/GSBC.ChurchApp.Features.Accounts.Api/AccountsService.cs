@@ -234,7 +234,7 @@ internal sealed class AccountsService(
         (Guid userId, Guid? current) = Caller(context);
         Guid id = request.Id.Length == 0 && current is { } mine ? mine
             : Guid.TryParse(request.Id, out Guid parsed) ? parsed
-            : throw new RpcException(new Status(StatusCode.InvalidArgument, "That isn't a session."));
+            : throw new RpcException(new Status(StatusCode.InvalidArgument, "That sign-in isn't here any more."));
 
         await db.Sessions.Where(session => session.Id == id && session.UserId == userId).ExecuteDeleteAsync(context.CancellationToken);
         audit.Record(AuditActions.SessionEnded, userId);
@@ -247,7 +247,7 @@ internal sealed class AccountsService(
         (Guid userId, _) = Caller(context);
         string name = request.Name.Trim();
         if (name.Length is 0 or > AppSessions.MaximumToolNameLength)
-            throw new RpcException(new Status(StatusCode.InvalidArgument, $"Name the tool, in up to {AppSessions.MaximumToolNameLength} characters, such as Claude on your Mac."));
+            throw new RpcException(new Status(StatusCode.InvalidArgument, $"Enter a name for the tool, up to {AppSessions.MaximumToolNameLength} characters."));
 
         string session = AppSessions.StartTool(db, userId, name, time.GetUtcNow().UtcDateTime);
         audit.Record(AuditActions.ToolConnected, userId, detail: name, remoteAddress: Address(context));
@@ -307,7 +307,7 @@ internal sealed class AccountsService(
     public async ValueTask<CodeReply> IssueRecoveryCodeAsync(IssueRecoveryCodeRequest request, CallContext context = default)
     {
         AccountUser user = (Guid.TryParse(request.UserId, out Guid id) ? await users.FindByIdAsync(id.ToString()) : null)
-            ?? throw new RpcException(new Status(StatusCode.NotFound, "No such account."));
+            ?? throw new RpcException(new Status(StatusCode.NotFound, "That account isn't here any more."));
         if (await demo.IsDemoAsync(user.Id, context.CancellationToken))
             throw new RpcException(new Status(StatusCode.FailedPrecondition, DemoAccountsUseCodes));
 
@@ -340,7 +340,7 @@ internal sealed class AccountsService(
     {
         Guid actorId = Caller(context).UserId;
         AccountUser user = (Guid.TryParse(request.UserId, out Guid id) ? await users.FindByIdAsync(id.ToString()) : null)
-            ?? throw new RpcException(new Status(StatusCode.NotFound, "No such account."));
+            ?? throw new RpcException(new Status(StatusCode.NotFound, "That account isn't here any more."));
         if (user.Id == actorId && request.Disabled)
             throw new RpcException(new Status(StatusCode.FailedPrecondition, "You can't disable your own account."));
 
@@ -355,7 +355,7 @@ internal sealed class AccountsService(
     public async ValueTask<Done> DeleteAccountAsync(InvitationRequest request, CallContext context = default)
     {
         Guid actorId = Caller(context).UserId;
-        Guid userId = Guid.TryParse(request.UserId, out Guid id) ? id : throw new RpcException(new Status(StatusCode.NotFound, "No such account."));
+        Guid userId = Guid.TryParse(request.UserId, out Guid id) ? id : throw new RpcException(new Status(StatusCode.NotFound, "That account isn't here any more."));
         if (userId == actorId)
             throw new RpcException(new Status(StatusCode.FailedPrecondition, "Delete your own account from your Account page."));
         await deletion.DeleteAsync(userId, actorId, context.CancellationToken);

@@ -13,7 +13,7 @@ internal sealed class AccountDeletion(AccountsDbContext db, IEnumerable<IPersonD
     public async Task DeleteAsync(Guid userId, Guid actorId, CancellationToken cancellationToken)
     {
         AccountUser user = await db.Users.SingleOrDefaultAsync(user => user.Id == userId && user.DeletedAt == null, cancellationToken)
-            ?? throw new RpcException(new Status(StatusCode.NotFound, "No such account."));
+            ?? throw new RpcException(new Status(StatusCode.NotFound, "That account isn't here any more."));
         foreach (IPersonData feature in features)
             if (await feature.WhyKeepAsync(userId, cancellationToken) is { } reason)
                 throw new RpcException(new Status(StatusCode.FailedPrecondition, reason));

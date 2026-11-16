@@ -120,7 +120,7 @@ reloads them; `AccountPinnedPages` is the admin panel's `IPinnedPages`. Deleting
 and no passkey (`added_by_family`), made and removed by People through `IPeopleAccounts` (Platform.Api). The
 abandoned-sign-up clean-up skips them, People lists them as *Looked after by a parent*, and their passkey is named
 after them. A parent makes a **family sign-in code** (`FamilySignIn`: 8 letters and digits, one use, 24 hours, a new one
-replaces the last), which `Accounts.Redeem` accepts however it's typed; signing in has *Got a code from your parent?*.
+replaces the last), which `Accounts.Redeem` accepts however it's typed; signing in has *Have a code from your parent?*.
 Deleting a parent's account also deletes a child who can't sign in and has no other parent (People's `IPersonData`),
 and the deletion sheet says so. Tests: `FamilySignInTests`.
 

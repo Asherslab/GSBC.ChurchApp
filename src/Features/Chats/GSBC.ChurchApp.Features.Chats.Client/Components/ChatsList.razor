@@ -85,8 +85,8 @@
     private string Remembered => MinistryId is null ? ChatsStore.Remembered : $"{ChatsStore.Remembered}.{MinistryId}";
 
     private string EmptyBody => MinistryId is null
-        ? "When a ministry you're in starts a chat, it shows up here."
-        : "When the leaders start a chat for you, it shows up here.";
+        ? "When a ministry you're in starts a chat, the chat shows here."
+        : "When the leaders start a chat for you, the chat shows here.";
 
     private string Hint => MinistryId is null
         ? "Chats from every ministry you're in, newest first. Church staff can check messages in chats."
@@ -100,7 +100,7 @@
         if (ByMinistry)
             return $"{ChatText.Kind(card)} · {preview}";
         if (MinistryId is not null)
-            return card.Kind == ChatKinds.Channel ? $"Leaders post · {preview}" : $"{ChatText.Audience(card.Audience)} · {preview}";
+            return card.Kind == ChatKinds.Channel ? $"Leaders only · {preview}" : $"{ChatText.Audience(card.Audience)} · {preview}";
         return card.MinistryName.Length > 0 && card.Kind != ChatKinds.Ask ? $"{card.MinistryName} · {preview}" : preview;
     }
 

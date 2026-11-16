@@ -35,7 +35,7 @@ else if (!Card.YouMaySend && WritableChildren.Count == 0)
         }
         else if (Card.YourRole == ChatRoles.ParentReader)
         {
-            <span><strong>You can read this chat.</strong> Once your child is in it, you can write for them here.</span>
+            <span><strong>You can read this chat.</strong> Once your child is in the chat, you can write for them here.</span>
         }
         else
         {
@@ -66,7 +66,7 @@ else
         @if (WritableChildren.Count > 0 && !Card.YouMaySend)
         {
             <div class="chat-composer__context">
-                <FilterChips TValue="string" Label="Writing for" Options="@WritingFor" Value="_forChild" ValueChanged="value => _forChild = value" />
+                <FilterChips TValue="string" Label="Writing on behalf of" Options="@WritingFor" Value="_forChild" ValueChanged="value => _forChild = value" />
                 <span class="chat-composer__note">Others see it as written by you, for your child.</span>
             </div>
         }

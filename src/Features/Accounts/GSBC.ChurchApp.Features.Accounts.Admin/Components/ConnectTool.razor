@@ -5,10 +5,10 @@
 
 <UnsavedGuard Changed="() => _secret is null && _name.Trim().Length > 0" What="the tool you were connecting" />
 
-<Section Title="Connect a tool" Lead="A tool, such as Claude on your computer, can then read what you can see here, like App health. It can't use anything sensitive: roles, people's details, accounts or the pastoral inbox.">
+<Section Title="Connect a tool" Lead="A connected tool, such as an assistant on your computer, can read what you can see here, such as App health. It can't see anything sensitive: roles, people's details, accounts or the pastoral inbox.">
     @if (_secret is not null)
     {
-        <CopyField Label="@($"Session secret for {_connectedName}")" Value="@_secret" Hint="Copy it now: it's shown only this once." />
+        <CopyField Label="@($"Session secret for {_connectedName}")" Value="@_secret" Hint="Copy the secret now. It's shown only once." />
         <p class="ui-after">In a terminal in the app's repository, run <code>tools/health/connect.sh @EnvironmentName</code> and paste it. It stops working after 30 days unused, or when you sign it out above.</p>
         <div class="ui-actions ui-after">
             <Button Variant="ButtonVariant.Quiet" OnClick="Done">Done</Button>
@@ -17,7 +17,7 @@
     else
     {
         <form @onsubmit="ConnectAsync">
-            <TextField Label="Name" @bind-Value="_name" AutoComplete="off" MaxLength="80" Hint="So you know it in the list above, such as Claude on my Mac" />
+            <TextField Label="Name" @bind-Value="_name" AutoComplete="off" MaxLength="80" Hint="Shown in the list above, so you can tell your tools apart." />
             <Notice Tone="NoticeTone.Warning" Text="@_problem" />
             <div class="ui-actions ui-after">
                 <Button Type="submit" Icon="terminal" Busy="_busy" Disabled="@(_name.Trim().Length == 0)">Connect</Button>
