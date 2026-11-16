@@ -1,0 +1,46 @@
+{
+  "title": "A ministry's calendars: Public and Team",
+  "question": "#14: \"Switch Calendar under ministries to be just two calendars, Public Calendar and Team Calendar. Ministry can enable either or both or none.\" Add a calendar goes. Each ministry gets a Public calendar (everyone) and a Team calendar (The Discipleship Team), each on or off in its Settings, named for the ministry. Existing extra calendars merge into them (attendee and parent calendars into Public, as you chose). Turning one off deletes it and its events after saying which go. How should a leader turn them on and off? Same on the phone and in the admin panel.",
+  "options": [
+    {
+      "id": "one-choice",
+      "kind": "assigned",
+      "kicker": "THE ROLL",
+      "label": "One choice of four, changes straight away",
+      "thesis": "A Calendars group with four radio rows: No calendar of its own, Public calendar, Team calendar, Both. Each says who sees what, and a sand sentence names how they show in people's calendars. Choosing one that drops a calendar asks first, saying which events go.",
+      "palette": ["#2a3d5e", "#f4efe7", "#008176", "#ffffff"],
+      "materials": ["Segmented Rows", "sand note", "\"These change straight away\" foot", "what-goes sheet"],
+      "viewport": "Settings tab: Its tabs, then Calendars with Both chosen and the note on how they're named.",
+      "risk": "Four options for two on/off facts is more to read than two switches.",
+      "html": ".impeccable/mocks/ministry-calendars/a-one-choice.html",
+      "htmlFrame": "390x844"
+    },
+    {
+      "id": "row-sheet",
+      "kind": "dealt",
+      "label": "Each calendar a row, with its own sheet",
+      "thesis": "Calendars lists Public calendar and Team calendar as rows saying On or Off and how many events are coming up. A row opens a sheet with its switch, who sees it and what it's called. Turning it off asks there, saying which events go.",
+      "palette": ["#2a3d5e", "#f4efe7", "#008176", "#ffffff"],
+      "materials": ["list rows", "sheet", "switch", "fact rows"],
+      "viewport": "The Team calendar sheet open over Settings: Use a Team calendar (off), Who sees it, Called \"The Discipleship Team\", Done.",
+      "risk": "One more tap to turn a calendar on, and whether it's on is only in the row's subtitle.",
+      "html": ".impeccable/mocks/ministry-calendars/b-row-and-sheet.html",
+      "htmlFrame": "390x844"
+    },
+    {
+      "id": "switches-save",
+      "kind": "dealt",
+      "label": "Two switches, saved with Save",
+      "thesis": "Calendars has two switches, Public calendar and Team calendar, each saying who sees it and what it's called. Nothing happens until Save the calendars; what saving deletes is written above the button.",
+      "palette": ["#2a3d5e", "#f4efe7", "#008176", "#ffffff"],
+      "materials": ["toggle rows", "save bar", "status line above Save"],
+      "viewport": "Settings tab: Calendars with Public on and Team just turned off, \"Saving deletes the Team calendar and its 4 events.\" above Cancel and Save the calendars.",
+      "risk": "A switch that waits for Save can be missed; a leader may leave thinking it's done (the unsaved-changes guard asks).",
+      "html": ".impeccable/mocks/ministry-calendars/c-switches-and-save.html",
+      "htmlFrame": "390x844"
+    }
+  ],
+  "reroll": true,
+  "steer": true,
+  "buildPath": { "value": "code", "toggle": true }
+}

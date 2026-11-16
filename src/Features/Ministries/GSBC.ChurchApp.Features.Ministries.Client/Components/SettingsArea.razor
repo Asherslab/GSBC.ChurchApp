@@ -30,6 +30,11 @@
 
 <PartsSection Page="Page" OnChanged="OnChanged" />
 
+@if (MinistryParts.IsOn(Page.Ministry.PartsOff, MinistryParts.Calendar))
+{
+    <CalendarsSection Page="Page" OnChanged="OnChanged" />
+}
+
 <MoveSection Page="Page" OnChanged="OnChanged" />
 
 <Section Title="Ministries under it" Lead="@($"{MinistryWords.Possessive(Page.Ministry.Name)} leaders lead these too.")" Grouped="true">

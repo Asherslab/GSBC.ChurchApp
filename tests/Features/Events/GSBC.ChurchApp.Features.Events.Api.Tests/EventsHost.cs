@@ -1,3 +1,4 @@
+using GSBC.ChurchApp.Platform.Api.Calendars;
 using System.Security.Claims;
 using Grpc.Core;
 using GSBC.ChurchApp.Features.Events.Api.Data;
@@ -28,6 +29,8 @@ public abstract class EventsHost : IAsyncLifetime
     internal RecordedNotifications Notifications { get; } = new();
     internal RecordedRoles Roles { get; } = new();
 
+    internal RecordedMerges Merges { get; } = new();
+
     protected static CancellationToken Cancel => TestContext.Current.CancellationToken;
 
     protected static DateOnly Today => new(2026, 11, 8);
@@ -50,6 +53,8 @@ public abstract class EventsHost : IAsyncLifetime
         services.AddScoped<CalendarSetupService>();
         services.AddScoped<CalendarFollowing>();
         services.AddScoped<CalendarRemover>();
+        services.AddScoped<IMinistryCalendars, MinistryCalendars>();
+        services.AddSingleton<ICalendarMerges>(Merges);
         services.AddSingleton<IRoleAssignments>(Roles);
         services.AddSingleton<IPhoneRoles>(Roles);
         services.AddScoped<CalendarLinkSecrets>();

@@ -1,5 +1,6 @@
 using GSBC.ChurchApp.Features.Rosters.Api.Data;
 using GSBC.ChurchApp.Features.Rosters.Contracts;
+using GSBC.ChurchApp.Platform.Api.Calendars;
 using GSBC.ChurchApp.Platform.Api.Hosting;
 using GSBC.ChurchApp.Platform.Api.Ministries;
 using GSBC.ChurchApp.Platform.Api.People;
@@ -21,6 +22,7 @@ public static class RostersApiExtensions
         services.AddRostersData();
         services.AddScoped<RosterViews>().AddScoped<RosterPublisher>().AddScoped<RosterMessenger>().AddScoped<RosterReminders>().AddScoped<RosterRefresh>();
         services.AddScoped<IPersonData, RostersPersonData>();
+        services.AddScoped<ICalendarMerges, RosterCalendarMerges>();
         services.AddMinistryPeopleHandler<RostersMinistryPeople>();
         services.AddHostedService<RostersSchedule>();
         services.AddPermissions(RostersPermissions.All);

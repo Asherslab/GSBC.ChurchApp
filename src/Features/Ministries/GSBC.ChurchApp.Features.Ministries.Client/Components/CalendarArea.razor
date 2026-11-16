@@ -1,7 +1,6 @@
 @using GSBC.ChurchApp.Platform.Client.Modules
 @inject MinistryLinks Links
 @inject IMinistryWrites Ministries
-@inject MinistryLookups Lookups
 @inject IServiceProvider Services
 @inject TimeProvider Clock
 @inject NavigationManager Navigation
@@ -12,7 +11,6 @@
         @if (Page.You.MayEditSettings)
         {
             <div class="ministry-tools">
-                <Button Icon="calendar-plus" OnClick="() => Open(null)">Add a calendar</Button>
                 @if (Services.GetService(typeof(ILinkableCalendars)) is ILinkableCalendars linkable)
                 {
                     <Button Icon="link" Variant="ButtonVariant.Quiet" OnClick="() => OpenLinking(linkable)">Link a calendar</Button>
@@ -21,7 +19,7 @@
         }
         @if (Page.Calendars.Count == 0)
         {
-            <EmptyState Icon="calendar" Title="No calendars yet" Body="@(Page.Ministry.ShowsInLifeGroups ? "Link the calendar its Sundays are in, and its events show here while it runs. Or add a calendar of its own." : "Add a calendar for everyone, or one only the team sees. Its events show in people's week and their calendar links.")" />
+            <EmptyState Icon="calendar" Title="No calendars yet" Body="@(!Page.You.MayEditSettings ? "Its events will show here." : Page.Ministry.ShowsInLifeGroups ? "Link the calendar its Sundays are in, and its events show here while it runs. Or turn on its own Public or Team calendar in Settings." : "Turn on its Public calendar, its Team calendar or both in Settings. Their events show in people's week and their calendar links.")" />
         }
     </Section>
 }
@@ -51,8 +49,7 @@
             <ListGroup>
                 @foreach (CalendarLine calendar in Own.Where(calendar => calendar.Audience == audience))
                 {
-                    <ListRow @key="calendar.Id" Title="@calendar.Name" Subtitle="@Links.CalendarNote" Icon="calendar" IconTone="RowTone.Accent" Chevron="true" Href="@Links.Calendar(calendar)"
-                             Actions="@(Page.You.MayEditSettings ? OwnActions(calendar) : null)" />
+                    <ListRow @key="calendar.Id" Title="@calendar.Name" Subtitle="@Links.CalendarNote" Icon="calendar" IconTone="RowTone.Accent" Chevron="true" Href="@Links.Calendar(calendar)" />
                 }
             </ListGroup>
         </MinistryBox>
@@ -111,29 +108,13 @@
     </Actions>
 </Sheet>
 
-<Sheet Open="_removal is not null" OpenChanged="open => { if (!open) _removal = null; }" Title="@($"Remove {_removal?.Name}?")"
-       Lead="@(_removal is { } removal ? $"This also deletes its {(removal.Events == 1 ? "event" : $"{removal.Events} events")}. This can't be undone." : null)">
-    <ChildContent>
-        <Notice Tone="NoticeTone.Warning" Text="@_problem" />
-    </ChildContent>
-    <Actions>
-        <Button Block="true" Variant="ButtonVariant.Danger" Busy="_busy" OnClick="RemoveAsync">Remove it and its events</Button>
-        <Button Block="true" Variant="ButtonVariant.Quiet" Disabled="_busy" OnClick="() => _removal = null">Keep it</Button>
-    </Actions>
-</Sheet>
-
-<CalendarSheet @key="_draft" Open="_open" OpenChanged="open => _open = open" Page="Page" Draft="_draft" OnSaved="OnChanged" />
 <PostSheet Open="_telling" OpenChanged="open => _telling = open" Page="Page" Draft="_post" OnSaved="OnChanged" />
 
 @code {
-    private bool _open;
     private bool _telling;
-    private CalendarLine _draft = new();
     private Post _post = new();
     private IReadOnlyList<Contracts.Crumb>? _choices;
     private CalendarLine? _unlinking;
-    private CalendarRemoval? _removal;
-    private string _removing = "";
     private bool _busy;
     private string? _problem;
 
@@ -165,12 +146,6 @@
     private string LinkLead => Page.Ministry.ShowsInLifeGroups
         ? "Its events show here while the group runs. Only calendars for everyone can be linked."
         : "Its events show here. Only calendars for everyone can be linked.";
-
-    private IReadOnlyList<MenuItem> OwnActions(CalendarLine calendar) =>
-    [
-        this.Item($"Change {calendar.Name}", () => Open(calendar), "pencil", "Its name and who it's for"),
-        this.Item($"Remove {calendar.Name}…", () => AskRemoveAsync(calendar), "trash", "Shows how many events go with it first", danger: true, startsGroup: true),
-    ];
 
     private IReadOnlyList<MenuItem> LinkedActions(CalendarLine calendar) =>
     [
@@ -206,16 +181,6 @@
             _unlinking = null;
         });
 
-    private Task AskRemoveAsync(CalendarLine calendar) =>
-        RunAsync(async () => (_removing, _removal) = (calendar.Id, await Lookups.CalendarRemovalAsync(Page.Ministry.Id, calendar.Id)), reload: false);
-
-    private Task RemoveAsync() =>
-        RunAsync(async () =>
-        {
-            await Ministries.RemoveCalendarAsync(Page.Ministry.Id, _removing);
-            _removal = null;
-        });
-
     private async Task RunAsync(Func<Task> work, bool reload = true)
     {
         (_busy, _problem) = (true, null);
@@ -234,6 +199,4 @@
             _busy = false;
         }
     }
-
-    private void Open(CalendarLine? calendar) => (_draft, _open) = (CalendarSheet.DraftOf(calendar, Page), true);
 }

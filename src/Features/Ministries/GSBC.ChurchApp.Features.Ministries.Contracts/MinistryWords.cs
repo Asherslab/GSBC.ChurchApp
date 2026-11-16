@@ -1,3 +1,5 @@
+using GSBC.ChurchApp.Platform.Contracts.Content;
+
 namespace GSBC.ChurchApp.Features.Ministries.Contracts;
 
 public static class MinistryNames
@@ -132,4 +134,17 @@ public static class FileKinds
 {
     public const string Document = "document";
     public const string Link = "link";
+}
+
+public static class MinistryCalendarKinds
+{
+    public static readonly IReadOnlyList<string> All = [Audiences.Everyone, Audiences.Team];
+
+    private const int LongestName = 60;
+
+    public static string NameOf(string kind, string ministryName)
+    {
+        string name = kind == Audiences.Team ? TeamNames.Of(ministryName) : ministryName.Trim();
+        return name.Length <= LongestName ? name : name[..LongestName].TrimEnd();
+    }
 }
