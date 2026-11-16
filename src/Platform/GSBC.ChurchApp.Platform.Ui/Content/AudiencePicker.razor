@@ -11,12 +11,12 @@
     @if (Current == Reach.Roles)
     {
         <ChipPicker TItem="RoleSummary" Label="Roles" Items="Roles" Chosen="ChosenRoles" ChosenChanged="RolesChangedAsync"
-                    Text="role => role.Name" Detail="role => role.Description" Placeholder="Find a role" Empty="Every role is chosen" />
+                    Text="role => role.Name" Detail="role => role.Description" Placeholder="Find a role" Empty="Every role is already chosen." />
         <span class="field__hint">@RolesHint</span>
     }
     else if (Current == Reach.Permission)
     {
-        <span class="field__hint">Set up specially. Choose another option to change who sees it.</span>
+        <span class="field__hint">Only people with a particular permission can see this. Choose another option to change who can see it.</span>
     }
 </div>
 
@@ -26,16 +26,16 @@
     private static IReadOnlyList<RoleSummary>? _roles;
     private bool _choosingRoles;
 
-    [Parameter] public string Label { get; set; } = "Who sees it";
+    [Parameter] public string Label { get; set; } = "Who can see this";
     [Parameter] public bool ShowLabel { get; set; } = true;
     [Parameter, EditorRequired] public required string Value { get; set; }
     [Parameter] public EventCallback<string> ValueChanged { get; set; }
 
     private static readonly IReadOnlyList<SegmentOption<Reach>> ThreeReaches =
-        [new(Reach.Everyone, "Everyone"), new(Reach.SignedIn, "Signed in"), new(Reach.Roles, "Roles")];
+        [new(Reach.Everyone, "Everyone"), new(Reach.SignedIn, "Signed-in people"), new(Reach.Roles, "Certain roles")];
 
     private IReadOnlyList<SegmentOption<Reach>> Reaches => Parsed is { Node: not null }
-        ? [.. ThreeReaches, new(Reach.Permission, "Set up specially")]
+        ? [.. ThreeReaches, new(Reach.Permission, "Custom")]
         : ThreeReaches;
 
     private Audience? Parsed => Audience.TryParse(Value, out Audience? audience) ? audience : null;
@@ -52,12 +52,12 @@
     private IReadOnlyList<RoleSummary> Roles => _roles ?? [];
 
     private IReadOnlyList<RoleSummary> ChosenRoles => (Parsed?.RoleIds ?? [])
-        .Select(id => Roles.FirstOrDefault(role => role.Id == id) ?? new RoleSummary(id, "A role that's since been removed", ""))
+        .Select(id => Roles.FirstOrDefault(role => role.Id == id) ?? new RoleSummary(id, "A deleted role", ""))
         .ToList();
 
     private string RolesHint => ChosenRoles.Count == 0
-        ? "Until a role is chosen, everyone signed in sees it."
-        : "Anyone with one of these roles. Give people roles under Roles.";
+        ? "Until you choose a role, everyone who is signed in can see this."
+        : "Only people with one of these roles can see this. People are given roles on the Roles page.";
 
     protected override async Task OnInitializedAsync()
     {

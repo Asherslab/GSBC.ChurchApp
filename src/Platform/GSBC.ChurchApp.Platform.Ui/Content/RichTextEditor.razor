@@ -27,11 +27,11 @@
                 Link to
                 <input type="text" inputmode="url" @bind="_href" @bind:event="oninput" placeholder="https://…, /events, mailto:… or tel:…" />
             </label>
-            <button type="button" data-action="add-link" @onclick="AddLinkAsync" disabled="@(!LinkTargets.IsSafe(_href.Trim()))">Add link</button>
+            <button type="button" data-action="add-link" @onclick="AddLinkAsync" disabled="@(!LinkTargets.IsSafe(_href.Trim()))">Add the link</button>
             <button type="button" class="link" @onclick="() => _linking = false">Cancel</button>
             @if (_href.Trim().Length > 0 && !LinkTargets.IsSafe(_href.Trim()))
             {
-                <small class="message">Use a link starting with https://, mailto: or tel:, or a page in the app such as /events.</small>
+                <small class="message">This link can't be used. Start it with https://, mailto: or tel:, or use a page in the app such as /events.</small>
             }
         </div>
     }
@@ -52,7 +52,7 @@
         <span class="rich-text-preview-label">How it looks</span>
         @if (_draft.IsEmpty)
         {
-            <p class="rich-text-preview-empty">Nothing yet.</p>
+            <p class="rich-text-preview-empty">Nothing written yet.</p>
         }
         else
         {

@@ -61,8 +61,9 @@
     @if (_panel == Panel.Link)
     {
         <div class="rich-text-panel">
-            <TextField Label="Link to" Value="@_href" ValueChanged="href => _href = href" Type="url" Placeholder="https://…, /events, mailto:… or tel:…"
-                       Problem="@(_href.Trim().Length > 0 && !LinkTargets.IsSafe(_href.Trim()) ? "Use a link starting with https://, mailto: or tel:, or a page in the app such as /events." : null)" />
+            <TextField Label="Link address" Value="@_href" ValueChanged="href => _href = href" Type="url"
+                       Hint="A web address starting with https://, an email address starting with mailto:, a phone number starting with tel:, or a page in the app such as /events."
+                       Problem="@(_href.Trim().Length > 0 && !LinkTargets.IsSafe(_href.Trim()) ? "This link can't be used. Start it with https://, mailto: or tel:, or use a page in the app such as /events." : null)" />
             <div class="rich-text-panel__actions">
                 <Button Variant="ButtonVariant.Quiet" Small="true" OnClick="ClosePanel">Cancel</Button>
                 <Button Small="true" Disabled="@(!LinkTargets.IsSafe(_href.Trim()))" OnClick="AddLinkAsync">Add the link</Button>
@@ -72,9 +73,9 @@
     else if (_panel == Panel.VideoLink)
     {
         <div class="rich-text-panel">
-            <TextField Label="YouTube or Vimeo link" Value="@_href" ValueChanged="href => _href = href" Type="url" Placeholder="https://www.youtube.com/watch?v=…"
-                       Problem="@(_href.Trim().Length > 0 && VideoLink.Of(_href) is null ? "That isn't a YouTube or Vimeo video's address." : null)"
-                       Hint="It plays in the post when the phone is online." />
+            <TextField Label="YouTube or Vimeo link" Value="@_href" ValueChanged="href => _href = href" Type="url"
+                       Problem="@(_href.Trim().Length > 0 && VideoLink.Of(_href) is null ? "This isn't the address of a YouTube or Vimeo video." : null)"
+                       Hint="Paste the address of a YouTube or Vimeo video. The video plays in the post when the phone is online." />
             <div class="rich-text-panel__actions">
                 <Button Variant="ButtonVariant.Quiet" Small="true" OnClick="ClosePanel">Cancel</Button>
                 <Button Small="true" Disabled="@(VideoLink.Of(_href) is null)" OnClick="AddVideoLinkAsync">Add the video</Button>
@@ -110,7 +111,7 @@
                             <td class="rich-text-table-editor__tool">
                                 @if (r > 0 && table.Rows.Count > 2)
                                 {
-                                    <Button Variant="ButtonVariant.Quiet" Small="true" Icon="x" AriaLabel="@($"Take out row {r}")" Tooltip="Take out this row" OnClick="() => table.RemoveRow(r)" />
+                                    <Button Variant="ButtonVariant.Quiet" Small="true" Icon="x" AriaLabel="@($"Remove row {r}")" Tooltip="Remove this row" OnClick="() => table.RemoveRow(r)" />
                                 }
                             </td>
                         </tr>
@@ -122,7 +123,7 @@
                             {
                                 int c = column;
                                 <td class="rich-text-table-editor__tool">
-                                    <Button Variant="ButtonVariant.Quiet" Small="true" Icon="x" AriaLabel="@($"Take out column {c + 1}")" Tooltip="Take out this column" OnClick="() => table.RemoveColumn(c)" />
+                                    <Button Variant="ButtonVariant.Quiet" Small="true" Icon="x" AriaLabel="@($"Remove column {c + 1}")" Tooltip="Remove this column" OnClick="() => table.RemoveColumn(c)" />
                                 </td>
                             }
                         </tr>
@@ -134,7 +135,7 @@
                 <Button Variant="ButtonVariant.Tinted" Small="true" Icon="plus" OnClick="table.AddColumn">Add a column</Button>
                 <span class="rich-text-panel__gap"></span>
                 <Button Variant="ButtonVariant.Quiet" Small="true" OnClick="ClosePanel">Cancel</Button>
-                <Button Small="true" OnClick="TableDoneAsync">@(_tableAt is null ? "Put it in" : "Done")</Button>
+                <Button Small="true" OnClick="TableDoneAsync">@(_tableAt is null ? "Insert the table" : "Done")</Button>
             </div>
         </div>
     }
@@ -262,7 +263,12 @@
     [Parameter] public EventCallback<RichText> ContentChanged { get; set; }
     [Parameter] public RichTextMedia Allowed { get; set; }
     [Parameter] public string Label { get; set; } = "Text";
-    [Parameter] public string Placeholder { get; set; } = "Write here. Formatting is in the bar, and pictures, video and files are under Insert.";
+    [Parameter] public string? Placeholder { get; set; }
+
+    private string ShownPlaceholder => Placeholder
+        ?? ((Allowed & (RichTextMedia.Pictures | RichTextMedia.Video | RichTextMedia.Files)) != 0
+            ? "Start writing here. Use the bar for formatting, and Insert for pictures, video and files."
+            : "Start writing here.");
     [Parameter] public bool Headings { get; set; }
     [Parameter] public string? Class { get; set; }
     [Parameter] public UploadTarget? UploadTo { get; set; }
@@ -299,9 +305,9 @@
 
     private static readonly IReadOnlyList<SegmentOption<AppCardLook>> Looks =
     [
-        new(AppCardLook.Rule, "Side rule", Detail: "Quiet, part of the text, its actions as words"),
-        new(AppCardLook.Line, "Timetable line", Detail: "The date or picture at the left, with buttons"),
-        new(AppCardLook.Box, "Box", Detail: "Its picture across the top and a wide main button"),
+        new(AppCardLook.Rule, "Side rule", Detail: "Sits in the text, with its actions as links."),
+        new(AppCardLook.Line, "Timetable line", Detail: "One line with the date or picture on the left and buttons on the right."),
+        new(AppCardLook.Box, "Box", Detail: "A box with the picture across the top and one wide button."),
     ];
 
     private sealed record InsertChoice(string Group, string Label, string Icon, string? Detail, Func<Task> Action);
@@ -374,14 +380,14 @@
 
     private IReadOnlyList<InsertChoice> Inserts =>
     [
-        .. Allowed.HasFlag(RichTextMedia.Pictures) ? [new InsertChoice("Pictures and media", "Picture", AppIcons.Picture, "From the library or upload", () => Choose(PickableFiles.Pictures))] : Array.Empty<InsertChoice>(),
-        .. Allowed.HasFlag(RichTextMedia.Video) ? [new InsertChoice("Pictures and media", "Video", AppIcons.Video, "Uploaded", () => Choose(PickableFiles.Videos))] : Array.Empty<InsertChoice>(),
-        .. Allowed.HasFlag(RichTextMedia.VideoLinks) ? [new InsertChoice("Pictures and media", "Video link", AppIcons.VideoLink, "YouTube, Vimeo", () => OpenPanel(Panel.VideoLink))] : Array.Empty<InsertChoice>(),
+        .. Allowed.HasFlag(RichTextMedia.Pictures) ? [new InsertChoice("Pictures and media", "Picture", AppIcons.Picture, "From the media library or this device", () => Choose(PickableFiles.Pictures))] : Array.Empty<InsertChoice>(),
+        .. Allowed.HasFlag(RichTextMedia.Video) ? [new InsertChoice("Pictures and media", "Video", AppIcons.Video, "A video file from the media library or this device", () => Choose(PickableFiles.Videos))] : Array.Empty<InsertChoice>(),
+        .. Allowed.HasFlag(RichTextMedia.VideoLinks) ? [new InsertChoice("Pictures and media", "Video link", AppIcons.VideoLink, "A link to a YouTube or Vimeo video", () => OpenPanel(Panel.VideoLink))] : Array.Empty<InsertChoice>(),
         .. Allowed.HasFlag(RichTextMedia.Files) ? [new InsertChoice("Pictures and media", "File", AppIcons.File, null, () => Choose(PickableFiles.Documents))] : Array.Empty<InsertChoice>(),
         .. Allowed.HasFlag(RichTextMedia.Layout)
             ? [
                 new InsertChoice("Layout", "Split into cards", AppIcons.CardSplit, null, () => BlockAsync(RichTextParser.CardSplit)),
-                new InsertChoice("Layout", "Line across", AppIcons.LineAcross, null, () => BlockAsync("---")),
+                new InsertChoice("Layout", "Dividing line", AppIcons.LineAcross, null, () => BlockAsync("---")),
                 new InsertChoice("Layout", "Table", AppIcons.Table, null, NewTableAsync),
                 new InsertChoice("Layout", "Code block", AppIcons.CodeBlock, null, () => BlockAsync("```\n\n```", 4)),
                 new InsertChoice("In the text", "Footnote", AppIcons.Footnote, null, FootnoteAsync),
@@ -430,7 +436,7 @@
         this.Item("Move earlier", () => PictureAsync("earlier", picture), AppIcons.MoveEarlier, disabled: picture.Index == 0),
         this.Item("Move later", () => PictureAsync("later", picture), AppIcons.MoveLater, disabled: picture.Index == picture.Count - 1),
         this.Item("Replace", () => _choosing = new Choosing(PickableFiles.Pictures, "replace", picture.At, picture.Index), AppIcons.ReplaceIt),
-        this.Item("Take this picture out", () => PictureAsync("remove", picture), AppIcons.TakeOut, danger: true, startsGroup: true),
+        this.Item("Remove this picture", () => PictureAsync("remove", picture), AppIcons.TakeOut, danger: true, startsGroup: true),
     ];
 
     private async Task PictureAsync(string action, PictureAt picture)
@@ -502,7 +508,7 @@
             foreach ((string code, string character) in Emoji.Common)
                 writer.WriteString(code, character);
         });
-        _editor = await _module.InvokeAsync<IJSObjectReference>("attach", _host, _self, _markdown, Label, Placeholder, emoji);
+        _editor = await _module.InvokeAsync<IJSObjectReference>("attach", _host, _self, _markdown, Label, ShownPlaceholder, emoji);
         if (Host.Desktop)
             await _editor.InvokeVoidAsync("foldBar", _bar);
         _sentMedia = "";

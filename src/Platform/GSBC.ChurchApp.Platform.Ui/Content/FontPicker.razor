@@ -34,8 +34,8 @@
 
         @if (Library is { MayChooseFromGoogle: true } library)
         {
-            <TextField Label="Search Google Fonts" Placeholder="Playfair Display, Lora, Nunito…" Value="@_query" ValueChanged="SearchSoon"
-                       Hint="Free to use in the app. Media keeps a copy under Made by the app." />
+            <TextField Label="Search Google Fonts" Value="@_query" ValueChanged="SearchSoon"
+                       Hint="Google Fonts are free to use in the app. A copy is kept in Media, under Made by the app." />
             @if (_results.Count > 0)
             {
                 <div class="font-picker__results" role="list" aria-label="Google Fonts">
@@ -50,7 +50,7 @@
             }
             else if (_query.Trim().Length > 0 && !_searching)
             {
-                <p class="font-picker__note">Nothing on Google Fonts is called that.</p>
+                <p class="font-picker__note">No Google Font has that name.</p>
             }
 
         }
@@ -59,7 +59,7 @@
             <div class="font-picker__upload">
                 <span class="field__label">Or the church's own font</span>
                 <Button Variant="ButtonVariant.Quiet" Small="true" Icon="folder" OnClick="() => _choosingFile = true">Choose a font file from Media</Button>
-                <span class="field__hint">Upload it to Media first, or from here. Only a font the church is licensed to use in an app (an "app" or "embedding" licence; a desktop licence isn't enough).</span>
+                <span class="field__hint">Choose a font file from Media, or upload one here. Use only a font the church is licensed to use in an app, with an “app” or “embedding” licence. A desktop licence isn't enough.</span>
             </div>
         }
         @if (_problem is not null)

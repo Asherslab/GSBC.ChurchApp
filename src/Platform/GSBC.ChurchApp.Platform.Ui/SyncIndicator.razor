@@ -28,9 +28,9 @@
     private string Text => Shown switch
     {
         SyncState.Live => "Up to date",
-        SyncState.Connecting => "Catching up…",
-        SyncState.Offline => "Offline · showing what's on this phone",
-        _ => "Not syncing",
+        SyncState.Connecting => "Updating…",
+        SyncState.Offline => "Offline. Showing what's saved on this phone.",
+        _ => "Offline",
     };
 
     protected override void OnInitialized() => Feeds.StateChanged += OnStateChanged;

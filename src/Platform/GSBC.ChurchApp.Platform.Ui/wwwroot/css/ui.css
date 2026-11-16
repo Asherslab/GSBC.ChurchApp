@@ -733,6 +733,7 @@ button.text-link:disabled { color: var(--ink-3); cursor: default; }
   cursor: pointer;
 }
 .colour-field__reset:hover { background: var(--sand); color: var(--ink); }
+.colour-field__hint { grid-column: 2 / -1; margin-top: -6px; }
 .colour-field__problem { grid-column: 2 / -1; margin-top: -6px; font-size: var(--text-caption); line-height: 1.4; color: var(--danger); }
 .colour-field--problem .colour-field__hex { box-shadow: inset 0 0 0 2px var(--danger); }
 

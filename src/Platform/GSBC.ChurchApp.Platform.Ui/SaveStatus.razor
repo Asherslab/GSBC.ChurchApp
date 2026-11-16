@@ -28,9 +28,9 @@
 @code {
     [Parameter] public SaveState State { get; set; }
     [Parameter] public string SavedText { get; set; } = "Saved";
-    [Parameter] public string UnsavedText { get; set; } = "You have changes that aren't saved";
+    [Parameter] public string UnsavedText { get; set; } = "You have unsaved changes.";
     [Parameter] public string WaitingText { get; set; } = "Saving…";
-    [Parameter] public string FailedText { get; set; } = "Couldn't save. Trying again by itself.";
+    [Parameter] public string FailedText { get; set; } = "Couldn't save. The app will try again by itself.";
     [Parameter] public string? Detail { get; set; }
     [Parameter] public EventCallback Retry { get; set; }
 }

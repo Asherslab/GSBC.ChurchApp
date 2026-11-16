@@ -22,7 +22,7 @@
             <div class="picture-field__about">
                 @if (FileUploads.IsWaiting(chosen))
                 {
-                    <span class="picture-field__waiting">On this phone. It's sent when you save, as soon as the phone is online.</span>
+                    <span class="picture-field__waiting">This picture is only on this phone so far. It will be sent when you save and the phone is online.</span>
                 }
                 else if (chosen.IsImage)
                 {
@@ -31,9 +31,9 @@
                 <div class="picture-field__actions">
                     @if (Choosable)
                     {
-                        <Button Variant="ButtonVariant.Quiet" Small="true" Icon="image" OnClick="() => _choosing = true">Change</Button>
+                        <Button Variant="ButtonVariant.Quiet" Small="true" Icon="image" OnClick="() => _choosing = true">Change the picture</Button>
                     }
-                    <Button Variant="ButtonVariant.Quiet" Small="true" Icon="x" OnClick="() => ValueChanged.InvokeAsync(null)">Remove</Button>
+                    <Button Variant="ButtonVariant.Quiet" Small="true" Icon="x" OnClick="() => ValueChanged.InvokeAsync(null)">Remove the picture</Button>
                 </div>
             </div>
         </div>
@@ -45,6 +45,10 @@
     else if (Unavailable is not null)
     {
         <span class="field__hint">@Unavailable</span>
+    }
+    @if (Hint is not null)
+    {
+        <span class="field__hint">@Hint</span>
     }
 </div>
 
@@ -58,6 +62,7 @@
 
     [Parameter, EditorRequired] public required string Label { get; set; }
     [Parameter] public MediaRef? Value { get; set; }
+    [Parameter] public string? Hint { get; set; }
     [Parameter] public EventCallback<MediaRef?> ValueChanged { get; set; }
     [Parameter] public MediaSizeName Size { get; set; } = MediaSizeName.ForPhones;
     [Parameter] public bool ImagesOnly { get; set; } = true;

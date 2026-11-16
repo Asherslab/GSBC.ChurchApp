@@ -23,6 +23,6 @@
     [Parameter, EditorRequired] public required string Title { get; set; }
     [Parameter, EditorRequired] public required IReadOnlyList<RankedItem> Items { get; set; }
     [Parameter] public string? Explanation { get; set; }
-    [Parameter] public string Empty { get; set; } = "Nothing yet.";
+    [Parameter] public string Empty { get; set; } = "Nothing to show yet.";
     [Parameter] public bool Numbered { get; set; } = true;
 }

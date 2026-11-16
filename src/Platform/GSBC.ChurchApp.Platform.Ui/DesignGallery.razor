@@ -117,7 +117,7 @@
                 <Menu Label="More for Jordan Example" Items="RecordActions" AlignStart="true" />
                 <Menu Label="New" Text="New" Icon="plus" Variant="ButtonVariant.Primary" Items="NewItems" AlignStart="true" Chevron="true" />
             </div>)
-        @Item("A small panel anchored to a control: Popover with MenuButton", "Like the Account menu: a few choices and a line about who you are.",
+        @Item("A small panel anchored to a control: Popover with MenuButton", "The Account menu is one: a few choices and a line saying who you are.",
             @<div class="gallery__anchor">
                 <Button Variant="ButtonVariant.Quiet" Icon="user" OnClick="() => _popover = !_popover">Alex Sample</Button>
                 <Popover Label="Alex's menu" @bind-Open="_popover" Class="gallery__popover">

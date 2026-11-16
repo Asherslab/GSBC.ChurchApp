@@ -24,7 +24,7 @@
             <div class="writing-desk__side-head">
                 <h2 class="writing-desk__side-title">@SettingsTitle</h2>
                 <Button Variant="ButtonVariant.Quiet" Icon="@(_folded ? AppIcons.ShowSidePane : AppIcons.HideSidePane)" Class="writing-desk__fold"
-                        AriaLabel="@($"{(_folded ? "Show" : "Hide")} {SettingsTitle.ToLowerInvariant()}")" Tooltip="@(_folded ? $"Show {SettingsTitle.ToLowerInvariant()}" : "Hide these to give the writing more room")"
+                        AriaLabel="@($"{(_folded ? "Show" : "Hide")} {SettingsTitle.ToLowerInvariant()}")" Tooltip="@(_folded ? $"Show {SettingsTitle.ToLowerInvariant()}" : "Hide the settings to give the writing more room")"
                         Expanded="!_folded" OnClick="() => _folded = !_folded" />
             </div>
             <div class="writing-desk__settings">@Settings</div>

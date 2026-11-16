@@ -2,10 +2,10 @@
 
 <div class="month-days @Class">
     <div class="month-days__bar">
-        <Button Small="true" Variant="ButtonVariant.Quiet" Icon="chevron-left" AriaLabel="The month before" Disabled="@(Earliest is { } earliest && First <= earliest)"
+        <Button Small="true" Variant="ButtonVariant.Quiet" Icon="chevron-left" AriaLabel="Previous month" Disabled="@(Earliest is { } earliest && First <= earliest)"
                 OnClick="() => MonthChanged.InvokeAsync(First.AddMonths(-1))" />
         <h3 class="month-days__title" aria-live="polite">@First.ToString("MMMM yyyy", English)</h3>
-        <Button Small="true" Variant="ButtonVariant.Quiet" Icon="chevron-right" AriaLabel="The month after" OnClick="() => MonthChanged.InvokeAsync(First.AddMonths(1))" />
+        <Button Small="true" Variant="ButtonVariant.Quiet" Icon="chevron-right" AriaLabel="Next month" OnClick="() => MonthChanged.InvokeAsync(First.AddMonths(1))" />
     </div>
     <div class="month-days__grid" role="grid" aria-label="@Label">
         <div class="month-days__week" role="row">

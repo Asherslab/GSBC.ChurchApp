@@ -15,7 +15,7 @@
         <ul class="chip-picker__options" id="@ListId" role="listbox" aria-label="@Label">
             @if (Choices.Count == 0)
             {
-                <li class="chip-picker__none" role="presentation">@($"Nothing called “{_query}”")</li>
+                <li class="chip-picker__none" role="presentation">@($"Nothing matches “{_query}”.")</li>
             }
             @for (int index = 0; index < Choices.Count; index++)
             {

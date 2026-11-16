@@ -23,7 +23,7 @@
             <div class="picture-viewer__stage">
                 @if (Several)
                 {
-                    <button type="button" class="picture-viewer__button picture-viewer__step" aria-label="The one before" disabled="@(Index == 0)" @onclick="() => GoAsync(Index - 1)">
+                    <button type="button" class="picture-viewer__button picture-viewer__step" aria-label="Previous picture" disabled="@(Index == 0)" @onclick="() => GoAsync(Index - 1)">
                         <Icon Name="chevron-left" />
                     </button>
                 }
@@ -32,14 +32,14 @@
                 </div>
                 @if (Several)
                 {
-                    <button type="button" class="picture-viewer__button picture-viewer__step" aria-label="The next one" disabled="@(Index == Pictures.Count - 1)" @onclick="() => GoAsync(Index + 1)">
+                    <button type="button" class="picture-viewer__button picture-viewer__step" aria-label="Next picture" disabled="@(Index == Pictures.Count - 1)" @onclick="() => GoAsync(Index + 1)">
                         <Icon Name="chevron-right" />
                     </button>
                 }
             </div>
             @if (Several)
             {
-                <div class="picture-viewer__strip" role="group" aria-label="All of them">
+                <div class="picture-viewer__strip" role="group" aria-label="All pictures">
                     @for (int at = 0; at < Pictures.Count; at++)
                     {
                         int choice = at;

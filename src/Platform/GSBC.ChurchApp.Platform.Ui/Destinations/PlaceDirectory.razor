@@ -7,7 +7,7 @@
 
 <div class="place-directory">
     <div class="place-directory__tools">
-        <SearchField Label="Search every place" Placeholder="Search every place" Value="@_text" ValueChanged="SearchAsync" />
+        <SearchField Label="Search places" Value="@_text" ValueChanged="SearchAsync" />
         <FilterChips TValue="string" Label="Area" Options="Areas" Value="@_area" ValueChanged="ChooseAreaAsync" />
     </div>
     @if (Hint is not null)
@@ -17,7 +17,7 @@
     <LiveData @ref="_live" TValue="DestinationResults" Load="LoadAsync" Feeds="Destinations.Feeds">
         @if (context.Value.Groups.All(group => !group.Destinations.Any(Offered)))
         {
-            <EmptyState Icon="search" Title="@(_text.Trim().Length > 0 ? $"Nothing called “{_text.Trim()}”" : "Nothing here yet")"
+            <EmptyState Icon="search" Title="@(_text.Trim().Length > 0 ? $"Nothing matches “{_text.Trim()}”" : "Nothing here yet")"
                         Body="@(_text.Trim().Length > 0 ? "Try fewer letters, or look under another area." : "Places show here as they're added to the app.")" />
         }
         @foreach (DestinationGroup group in context.Value.Groups.Where(group => group.Destinations.Any(Offered)))

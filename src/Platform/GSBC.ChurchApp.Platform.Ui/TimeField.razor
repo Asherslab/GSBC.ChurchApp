@@ -9,7 +9,7 @@ else
     <div class="field date-field @(ShownProblem is null ? "" : "field--problem")" @onkeydown="OnKeyAsync">
         <label class="field__label" for="@_id">@Label</label>
         <div class="date-field__box">
-            <input id="@_id" class="field__input date-field__input" type="text" value="@_text" placeholder="@(Placeholder ?? "Like 7:30pm")"
+            <input id="@_id" class="field__input date-field__input" type="text" value="@_text" placeholder="@Placeholder"
                    required="@Required" disabled="@Disabled" autocomplete="off" aria-describedby="@DescribedBy" aria-invalid="@(ShownProblem is null ? null : "true")"
                    @oninput="Typed" @onchange="CommitAsync" />
             <button type="button" class="date-field__open" aria-label="Choose a time" aria-haspopup="listbox" aria-expanded="@(_open ? "true" : "false")" disabled="@Disabled"
@@ -119,7 +119,7 @@ else
         }
         if (!TypedDates.TryParseTime(_text, out TimeOnly time))
         {
-            _typingProblem = "Type a time like 7:30pm or 19:30.";
+            _typingProblem = "Type a time such as 7:30pm or 19:30, or choose one from the list.";
             return;
         }
         if (OutOfRange(time) is { } problem)
@@ -141,8 +141,8 @@ else
     }
 
     private string? OutOfRange(TimeOnly time) =>
-        TypedDates.Time(Min) is { } min && time < min ? $"That's before {TypedDates.Show(min)}."
-        : TypedDates.Time(Max) is { } max && time > max ? $"That's after {TypedDates.Show(max)}."
+        TypedDates.Time(Min) is { } min && time < min ? $"Choose a time at or after {TypedDates.Show(min)}."
+        : TypedDates.Time(Max) is { } max && time > max ? $"Choose a time at or before {TypedDates.Show(max)}."
         : null;
 
     private bool Allowed(TimeOnly time) => OutOfRange(time) is null;

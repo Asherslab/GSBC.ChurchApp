@@ -13,8 +13,8 @@
             }
             <span class="lock-proof__when">now</span>
         </span>
-        <span class="lock-proof__title @(Title.Length == 0 ? "lock-proof__empty" : "")">@(Title.Length > 0 ? Title : "The title goes here")</span>
-        <span class="lock-proof__body @(Body.Length == 0 ? "lock-proof__empty" : "")">@(Body.Length > 0 ? Body : "Then the first few lines of the message.")</span>
+        <span class="lock-proof__title @(Title.Length == 0 ? "lock-proof__empty" : "")">@(Title.Length > 0 ? Title : "The notification's title")</span>
+        <span class="lock-proof__body @(Body.Length == 0 ? "lock-proof__empty" : "")">@(Body.Length > 0 ? Body : "The first lines of the message show here.")</span>
     </div>
     @if (ChildContent is not null)
     {
