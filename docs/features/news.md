@@ -274,6 +274,39 @@ instead of deleting them".
   back would leave it out until it's shared again. A ministry's post has no drafts of its own yet; it reaches church
   news only once it's published in the ministry.
 
+## Every ministry's news, and telling people again (UAT, 2026-11-16)
+
+Feedback #11 (a staff member, admin panel): "Add an 'All Ministries' filter to show all ministry's news posts for staff
+to go through and look at if desired. Also add that as a tab option in the app under the news page, only for staff with
+permission to view all news in admin center." The owner said yes to the app tab. #12 (the owner, app): "Add optional
+ability to renotify people when a news post is edited or updated."
+
+- **Interview (owner, 2026-11-16):** a new permission, *See every ministry's posts for everyone* (`news.ministries`),
+  given to Church news Publishers; anyone can be given it under Roles. Only posts for everyone (never a team's,
+  leaders' or parents' posts, nor a hidden ministry's). Staff read them and open the ministry; publishers can also put
+  one in church news. Telling people again starts from the post's notification words, which can be changed.
+- **All ministries** (the owner's pick on the decision page, *Rows like the rest of the desk*,
+  `.impeccable/mocks/news-all/b-rows.html`): on the Church news desk, a second rail heading *Every ministry* with *All
+  ministries* and its count; rows like the desk's (title, the ministry in accent, by and when, *In church news* or
+  *Asking*, the picture); the post opens in the pane with ⋯ *Put it in church news…* (publishers, confirmed with *Send a
+  notification*) and *Open it in …*. The newest 200 posts.
+- **The app's third tab, All ministries** (`/news/every`), for the same permission. The phone already syncs every
+  ministry's posts for everyone (`ministries.posts`), so the tab reads its store; no new feed, no direct call. Its rows
+  open the ministry's post page, where publishers already have *Put it in church news…*. The tabs show when there are
+  two or more (The church, Your ministries if you're in one, All ministries).
+- **Telling people again** (the owner re-rolled a switch in the settings with "it should be a popup like changing a
+  calendar event does", then picked *Tell people again, saying what changed*, `.impeccable/mocks/news-all/t-a-what-changed.html`):
+  saving a change to a published post opens "Tell people again?" (or "Tell people?" if it went without one): it went to
+  whom (and, at the desk, about how many phones) and when; *Notification* starts as "Updated: …", *More* says what
+  changed (empty uses the post's opening); *Urgent*; *Tell people again* or *Not now*. The new notification replaces the
+  earlier one in everyone's notifications (the earlier one is recalled first). Built as the shared `TellSheet`
+  (Platform.Ui), which the calendar's *Tell people?* now uses too.
+- **Each send is counted** (`times_told`): the settings say "Its notification was sent again …", and the desk's state
+  line "Published …, with a notification, sent again today at 3:58pm". Only publishers can tell again
+  (`News.TellAgain`), only on a published church news post, never on a ministry's post shown in church news.
+- **The admin desk needs `news.write` as before:** someone given only *See every ministry's news* sees the app's tab but
+  not the admin panel's Church news (*default*).
+
 ## How it's built
 
 - **News feature** (schema `news`): `posts` holds church news and ministries' posts in it (`source`, `source_id`).

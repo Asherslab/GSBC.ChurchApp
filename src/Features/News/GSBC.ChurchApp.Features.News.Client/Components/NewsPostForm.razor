@@ -137,11 +137,11 @@ else
     private string? _reach;
 
     private string ToldLine(DateTime told) =>
-        $"Its notification {(Post.TimesTold > 1 ? "was sent again" : "went")} {ChurchDates.Describe(told, DateLineStyle.Relative, withTime: true, Clock.GetUtcNow().UtcDateTime)}.";
+        $"Its notification {(Post.TimesTold > 1 ? "was sent again" : "went")} {NewsWords.SentAt(told, Clock)}.";
 
     private string TellAgainLead =>
         Post.ToldAt is { } told
-            ? $"Saved. It went to {NewsWords.AudienceWords(_audience).ToLowerInvariant()}{_reach} {ChurchDates.Describe(told, DateLineStyle.Relative, withTime: true, Clock.GetUtcNow().UtcDateTime)}. Send it again, saying what changed? It replaces the earlier one in their notifications."
+            ? $"Saved. It went to {NewsWords.AudienceWords(_audience).ToLowerInvariant()}{_reach} {NewsWords.SentAt(told, Clock)}. Send it again, saying what changed? It replaces the earlier one in their notifications."
             : $"Saved. It was published without a notification. Send one to {NewsWords.AudienceWords(_audience).ToLowerInvariant()}{_reach}, saying what changed?";
 
     private string TellAgainTitle
