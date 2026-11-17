@@ -49,9 +49,10 @@ public static class DigestEmail
         html.Append($"""<!--[if mso]><table role="presentation" width="{Width}" align="center" cellpadding="0" cellspacing="0" border="0"><tr><td><![endif]-->""");
         html.Append($"""<table role="presentation" width="100%" align="center" cellpadding="0" cellspacing="0" border="0" bgcolor="#ffffff" style="width:100%;max-width:{Width}px;margin:0 auto;background:#ffffff;border-collapse:collapse">""");
         string? top = topPictureUrl is { } url && IsWeb(url) ? url : null;
-        if (top is not null)
-            html.Append($"""<tr><td style="padding:0;line-height:0"><img src="{Encode(top)}" alt="" width="{Width}" border="0" style="display:block;width:100%;max-width:{Width}px;height:auto;border:0" /></td></tr>""");
         DigestHeading under = HeadingUnder(top is not null, heading);
+        string alt = under == DigestHeading.TitleAndDates ? "" : under == DigestHeading.DatesOnly ? Heading : $"{Heading}, {range}";
+        if (top is not null)
+            html.Append($"""<tr><td style="padding:0;line-height:0"><img src="{Encode(top)}" alt="{Encode(alt)}" width="{Width}" border="0" style="display:block;width:100%;max-width:{Width}px;height:auto;border:0" /></td></tr>""");
         switch (under)
         {
             case DigestHeading.TitleAndDates:

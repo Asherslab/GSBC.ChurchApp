@@ -35,8 +35,8 @@ the email: staff choose per item (picture beside or across) and an optional phot
 
 The email's top under a photo that already says What's Next. Decision page `.impeccable/mocks/digest-banner/`: the
 dates alone as a dateline (A, `a-dateline.html`); the choice in a *Top of the email* box with the photo (H,
-`h-top-group.html`). Built with the admin panel's `Segmented` for the one small choice in place of the sketch's inline
-radios (the pattern map's control for it), stacked when the box is narrow. Only shown once there's a photo.
+`h-top-group.html`). Built with the admin panel's `Segmented` (docs/design/controls.md, *Segmented control*, labelled)
+in place of the sketch's inline radios, stacked when the box is narrow. Only shown once there's a photo.
 
 ## Direction contract
 

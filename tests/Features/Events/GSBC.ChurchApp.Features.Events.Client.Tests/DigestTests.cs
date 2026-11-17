@@ -86,8 +86,18 @@ public sealed class DigestTests
 
         string html = DigestEmail.Html("Monday 14 – Sunday 27 December", [baptisms], "https://dev-app.example.org/open/week", topPicture, heading);
 
-        Assert.Equal(title, html.Contains("What's Next at Good Shepherd"));
-        Assert.Equal(dates, html.Contains("Monday 14 – Sunday 27 December"));
+        Assert.Equal(title, html.Contains(">What's Next at Good Shepherd<"));
+        Assert.Equal(dates, html.Contains(">Monday 14 – Sunday 27 December<"));
+    }
+
+    [Fact]
+    public void ABannerStandingInForTheTitleNamesTheEmailForAnyoneWhoCantSeeIt()
+    {
+        EmailItem baptisms = new(DigestItemKind.Event, new DigestWords { Title = "Baptisms" }, null, "", "");
+
+        string html = DigestEmail.Html("Monday 14 – Sunday 27 December", [baptisms], "https://dev-app.example.org/open/week", "https://media.example.org/banner.jpg", DigestHeading.Nothing);
+
+        Assert.Contains("alt=\"What&#39;s Next at Good Shepherd, Monday 14 – Sunday 27 December\"", html);
     }
 
     [Fact]

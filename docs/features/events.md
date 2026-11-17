@@ -880,8 +880,11 @@ radio rows under the photo or two switches.
   the choice only shows once a photo is chosen. Removing the photo keeps the choice for when one is chosen again.
 - **The dateline:** the range in navy capitals (13px, spaced .14em) over a 2px navy rule, on white at the column's
   32px sides, like the date on a printed newsletter; the first item follows a little closer than under the band.
+- **The photo names the email** when the title is left out: its alt text is "What's Next at Good Shepherd" (with the
+  dates too under *Nothing*), for mail that blocks pictures and for screen readers.
 - **The desk:** the Email preview's *Top of the email* (`Section Grouped`) holds *Photo* and *Under the photo*, the
-  three in a `Segmented` (stacked one above the other when the box is narrower than 26rem).
+  three in a `Segmented` as wide as its labels (stacked one above the other when the box is narrower than 26rem). The email
+  preview under it fills the room left above the foot (at least 14rem); on a short window the pane scrolls to it.
 - **The app isn't affected:** What's next has its own masthead with the dates and no top photo, so nothing new syncs.
 
 ## The owner's feedback (2026-11-09)
