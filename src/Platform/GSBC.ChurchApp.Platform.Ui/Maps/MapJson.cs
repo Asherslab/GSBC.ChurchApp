@@ -23,6 +23,8 @@ public static class MapJson
         }
         else
             json.WriteString(source.Kind == MapSource.FromKeptFile ? "id" : "url", source.Location);
+        if (source.Fallback is not null)
+            json.WriteString("url", source.Fallback);
         json.WriteString("attribution", source.Attribution);
         json.WriteEndObject();
         if (backdrop is not null)

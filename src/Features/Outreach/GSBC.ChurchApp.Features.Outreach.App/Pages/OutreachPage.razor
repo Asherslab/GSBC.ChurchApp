@@ -1,6 +1,5 @@
 @page "/outreach"
 @inject OutreachNearby Nearby
-@inject WalkChoices Choices
 @inject TimeProvider Clock
 
 <Page Title="Outreach" Place="outreach">
@@ -38,20 +37,9 @@
                 {
                     <Segmented TValue="string" Label="How far" Options="DistanceOptions" Value="@_length.Label" ValueChanged="ChooseDistance" />
                 }
-                <ListGroup>
-                    <ListRow Title="@OutreachPhoneWords.Carrying(near.Carried)" Subtitle="@CarryingDetail(near)" Icon="mail" Chevron="true" OnClick="() => OpenCarrying(near)" />
-                </ListGroup>
                 <Button Block="true" Icon="footprints" Href="@($"{OutreachLinks.PlanWalk}?{_length.Query}")">Plan my walk</Button>
             </div>
         </Section>
-        @if (near.Source is not null)
-        {
-            <Section Title="Around you" Lead="@AroundLead(near)">
-                <MapView Class="outreach-around" Source="near.Source" Label="Streets near you, with those walked lately in grey" Lines="near.Walked"
-                         Centre="near.Centre" Zoom="15" Interactive="false"
-                         You="@(near.Here.Point is { } you ? new MapYou(new MapPoint(you.Lat, you.Lon), near.Here.Accuracy) : null)" />
-            </Section>
-        }
         @if (coming.Count > 0)
         {
             <Section Title="Outreach days">
@@ -72,16 +60,6 @@
     </LiveData>
 </Page>
 
-<Sheet @bind-Open="_carrying" Title="What you're carrying" Lead="A walk counts for each campaign you carry, so streets get done for each one.">
-    <ChildContent>
-        @foreach (Campaign campaign in _active)
-        {
-            <ToggleRow @key="campaign.Id" Title="@campaign.Name" Description="@(campaign.HandedOut.Trim() is { Length: > 0 } what ? what : null)"
-                       Checked="_chosen.Contains(campaign.Id)" CheckedChanged="on => ToggleAsync(campaign.Id, on)" />
-        }
-    </ChildContent>
-</Sheet>
-
 @code {
     private const ChangeKind Reload = ChangeKind.Reconnected | ChangeKind.Session | ChangeKind.Access | ChangeKind.Outbox;
     private const string DistanceKey = "distance";
@@ -91,9 +69,6 @@
         [.. WalkLength.Distances.Select(length => new SegmentOption<string>(length.Label, length.Label))];
 
     private WalkLength _length = WalkLength.Default;
-    private bool _carrying;
-    private List<Campaign> _active = [];
-    private HashSet<string> _chosen = [];
 
     private string LengthKey => _length.ByTime ? _length.Label : DistanceKey;
 
@@ -102,31 +77,5 @@
 
     private void ChooseDistance(string label) => _length = WalkLength.Distances.First(length => length.Label == label);
 
-    private void OpenCarrying(Nearby near)
-    {
-        DateOnly today = ChurchTime.Today(Clock);
-        _active = [.. near.Now.Campaigns.Where(campaign => OutreachRules.IsActive(campaign, today)).OrderByDescending(campaign => !campaign.General).ThenBy(campaign => campaign.Name)];
-        _chosen = [.. near.Carried.Select(campaign => campaign.Id)];
-        _carrying = true;
-    }
-
-    private async Task ToggleAsync(string campaign, bool on)
-    {
-        if (on)
-            _chosen.Add(campaign);
-        else if (_chosen.Count > 1)
-            _chosen.Remove(campaign);
-        await Choices.CarryAsync(_chosen);
-    }
-
     private static string CampaignName(Nearby near, OutreachDay day) => near.Now.CampaignOf(day.Campaign)?.Name ?? "Outreach";
-
-    private static string CarryingDetail(Nearby near) => $"{OutreachPhoneWords.HandedOut(near.Carried)} · change";
-
-    private static string AroundLead(Nearby near) => near.Here.State switch
-    {
-        HereState.Found => "Streets in grey were walked lately, so the app leaves them for now.",
-        HereState.Denied => "Location is off for this app, so this is the church's area. Streets in grey were walked lately.",
-        _ => "Streets in grey were walked lately. Plan a walk to see the streets near you.",
-    };
 }

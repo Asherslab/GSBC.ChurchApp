@@ -1,5 +1,5 @@
 import * as maplibregl from "./vendor/maplibre-gl.mjs";
-import { PMTiles, Protocol } from "./vendor/pmtiles.mjs";
+import { FetchSource, PMTiles, Protocol } from "./vendor/pmtiles.mjs";
 import { mapStyle } from "./map-style.js";
 import maplibreCss from "./vendor/maplibre-gl.css.mjs";
 
@@ -41,18 +41,35 @@ function colours() {
   };
 }
 
+const keptCheckEvery = 2000;
+
+function keptOrRemote(source, kept) {
+  const remote = source.url ? new FetchSource(source.url) : null;
+  let whole = false;
+  let checkedAt = 0;
+  const keptIsWhole = async () => {
+    if (whole || Date.now() - checkedAt < keptCheckEvery) return whole;
+    checkedAt = Date.now();
+    const files = JSON.parse(await kept.list());
+    whole = files.some((file) => file.id === source.id && file.url === source.url && file.state === "done");
+    return whole;
+  };
+  return async (offset, length, signal) =>
+    remote && !(await keptIsWhole())
+      ? remote.getBytes(offset, length, signal)
+      : { data: (await kept.readKept(source.id, offset, length)).buffer };
+}
+
 async function tilesFor(source) {
   if (source.kind === "urls") return source.urls.map((url) => "pmtiles://" + url);
   if (source.kind !== "kept") return "pmtiles://" + source.url;
-  if (!keptSources.has(source.id)) {
-    const { readKept } = await import("../../GSBC.ChurchApp.Platform.Client/kept-files.js");
-    keptSources.set(source.id, true);
-    protocol.add(new PMTiles({
-      getKey: () => source.id,
-      getBytes: async (offset, length) => ({ data: (await readKept(source.id, offset, length)).buffer }),
-    }));
+  const key = source.url ? `${source.id}/${source.url.split("/").pop()}` : source.id;
+  if (!keptSources.has(key)) {
+    const kept = await import("../../GSBC.ChurchApp.Platform.Client/kept-files.js");
+    keptSources.set(key, true);
+    protocol.add(new PMTiles({ getKey: () => key, getBytes: keptOrRemote(source, kept) }));
   }
-  return "pmtiles://" + source.id;
+  return "pmtiles://" + key;
 }
 
 function overlayLayers(c) {

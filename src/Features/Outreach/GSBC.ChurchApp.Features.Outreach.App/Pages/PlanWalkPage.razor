@@ -4,6 +4,7 @@
 @inject WalkPlans Plans
 @inject WalkSession Walk
 @inject RegionMaps Regions
+@inject WalkChoices Choices
 @inject NavigationManager Nav
 @inject TimeProvider Clock
 
@@ -69,6 +70,25 @@
     </ChildContent>
 </Sheet>
 
+<Sheet @bind-Open="_carrying" Title="@(_mode == WalkMode.Doorknock ? "What you're knocking for" : "What you're carrying")"
+       Lead="@(_mode == WalkMode.Doorknock ? "A doorknock counts for one campaign, so choose which." : "A walk counts for each campaign you carry, so streets get done for each one.")">
+    <ChildContent>
+        @if (_mode == WalkMode.Doorknock)
+        {
+            <Segmented TValue="string" Label="Campaign" Rows="true" Options="CampaignOptions()" Value="@_chosen.FirstOrDefault()" ValueChanged="KnockForAsync" />
+        }
+        else
+        {
+            @foreach (Campaign campaign in _active)
+            {
+                bool on = _chosen.Contains(campaign.Id);
+                <ToggleRow @key="campaign.Id" Title="@campaign.Name" Description="@(on && _chosen.Count == 1 ? "You carry at least one" : HandedOut(campaign))"
+                           Checked="on" Disabled="@(on && _chosen.Count == 1)" CheckedChanged="carry => CarryAsync(campaign.Id, carry)" />
+            }
+        }
+    </ChildContent>
+</Sheet>
+
 @code {
     private const ChangeKind Reload = ChangeKind.Reconnected | ChangeKind.Session;
     private const int MostMatches = 12;
@@ -87,6 +107,9 @@
     private WalkMode _mode;
     private bool _takeHop;
     private bool _finding;
+    private bool _carrying;
+    private List<Campaign> _active = [];
+    private List<string> _chosen = [];
     private bool _withPartner;
     private bool _starting;
     private string _query = "";
@@ -211,7 +234,8 @@
             <ListGroup>
                 <ListRow Title="@(_start is null ? "Starting from here" : "Starting from the pin")" Subtitle="Tap the map to start somewhere else" Icon="map-pin"
                          Chevron="true" OnClick="() => _finding = true" />
-                <ListRow Title="@OutreachPhoneWords.Carrying(plan.Carried)" Subtitle="@(doorknock ? "A doorknock counts for one campaign" : "Change it on the Outreach page")" Icon="mail" />
+                <ListRow Title="@OutreachPhoneWords.Carrying(plan.Carried)" Subtitle="@(doorknock ? "A doorknock counts for one campaign" : OutreachPhoneWords.HandedOut(plan.Carried))"
+                         Icon="mail" Chevron="true" OnClick="() => OpenCarryingAsync(plan)" />
             </ListGroup>
         </Section>
         @if (!walk.IsEmpty)
@@ -252,6 +276,41 @@
             _starting = false;
         }
     }
+
+    private async Task OpenCarryingAsync(PlanView plan)
+    {
+        DateOnly today = ChurchTime.Today(Clock);
+        _active = [.. plan.Now.Campaigns.Where(campaign => OutreachRules.IsActive(campaign, today)).OrderByDescending(campaign => !campaign.General).ThenBy(campaign => campaign.Name)];
+        _chosen = [.. WalkPlanning.Carried(plan.Now, await Choices.CarryingAsync(), today)];
+        _carrying = true;
+    }
+
+    private Task CarryAsync(string campaign, bool carry)
+    {
+        if (carry && !_chosen.Contains(campaign))
+            _chosen.Add(campaign);
+        else if (!carry && _chosen.Count > 1)
+            _chosen.Remove(campaign);
+        return SaveCarryingAsync();
+    }
+
+    private Task KnockForAsync(string campaign)
+    {
+        _chosen = [campaign, .. _chosen.Where(id => id != campaign)];
+        return SaveCarryingAsync();
+    }
+
+    private async Task SaveCarryingAsync()
+    {
+        await Choices.CarryAsync(_chosen);
+        _takeHop = false;
+        await ReloadAsync();
+    }
+
+    private IReadOnlyList<SegmentOption<string>> CampaignOptions() =>
+        [.. _active.Select(campaign => new SegmentOption<string>(campaign.Id, campaign.Name, Detail: HandedOut(campaign)))];
+
+    private static string? HandedOut(Campaign campaign) => campaign.HandedOut.Trim() is { Length: > 0 } what ? what : null;
 
     private Task ChangeLengthAsync(string label)
     {
