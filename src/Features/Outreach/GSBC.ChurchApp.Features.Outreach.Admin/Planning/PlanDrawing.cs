@@ -17,9 +17,9 @@ public static class PlanDrawing
 
     public static MapPoint Point(GeoPoint point) => new(point.Lat, point.Lon);
 
-    public static GeoPoint Point(MapPoint point) => new(point.Lat, point.Lon);
+    private static GeoPoint Point(MapPoint point) => new(point.Lat, point.Lon);
 
-    public static IReadOnlyList<MapPoint> Points(IEnumerable<GeoPoint> points) => points.Select(Point).ToList();
+    private static IReadOnlyList<MapPoint> Points(IEnumerable<GeoPoint> points) => points.Select(Point).ToList();
 
     public static IReadOnlyList<GeoPoint> Points(IEnumerable<MapPoint> points) => points.Select(Point).ToList();
 

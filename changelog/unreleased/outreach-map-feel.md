@@ -5,7 +5,7 @@ added: 2026-11-17
 icon: map
 area: Outreach
 ---
-Planning a day, each route now shows the stretches it walks between streets, its number stays readable however far you zoom out, and pinching over anything on the map zooms the map.
+Each route on the planning map shows the stretches it walks between streets, its number stays clear when zoomed out, and pinching anywhere zooms the map.
 
 ## For staff
 Changed: A route's line no longer breaks where it walks a stretch with no letterboxes: those stretches are round dots in the route's colour, on the planner, the printed maps and the walkers' phones. Each route is a numbered disc in its colour, with its letterboxes and time beside it once you zoom in; zoomed out, just the numbers, so they no longer pile up. The chips for each area now line up along the top of the map; point at one to light its routes. Pinching or scrolling over a chip, a number, a card or a menu zooms and moves the map instead of the page, dragging the map no longer selects text, and a route's facts no longer hide under *Leave full map*. In the place picker, the chosen address now has an even margin round it.

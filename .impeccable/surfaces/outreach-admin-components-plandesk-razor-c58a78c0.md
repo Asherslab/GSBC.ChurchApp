@@ -75,6 +75,12 @@ FIRST VIEWPORT: Full map, panel on the left; rail top left; the chip strip top, 
 full map button; the hover card below the button; each route's disc with figures beside it from zoom 15, the disc
 alone below; the key bottom left with "Walked, nothing to deliver".
 
+Build notes (finish review, 2026-11-17): figures from zoom 14, not 15, so the day as framed shows them; the figures
+sit on a quiet surface plate as in the sketch (`.fig`), to stay legible over street lines and names; the key reads
+"Walked through, no letterboxes" with a "Delivers letterboxes" row, the same words as the printed map's key; a route
+drawn by hand's chip shows its coloured number disc instead of "Route 4" on a map under 1100px wide, and the strip
+wraps rather than scrolls (a scrolling strip clips the chips' menus).
+
 FORM: structure 7 of 7 on my ordered list, dealt as the lead. seed:03ae8a0465d9fc03
 
 FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, DESIGN.md, and every shipping raster carrying its provenance

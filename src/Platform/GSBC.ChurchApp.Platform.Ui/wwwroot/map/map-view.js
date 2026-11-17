@@ -13,7 +13,7 @@ const empty = { type: "FeatureCollection", features: [] };
 const byZoom = (stops) => ["interpolate", ["exponential", 1.6], ["zoom"], ...stops.flat()];
 const styleIs = (...styles) => ["in", ["get", "style"], ["literal", styles]];
 const kindIs = (...kinds) => ["in", ["get", "kind"], ["literal", kinds]];
-const walkedThroughWidth = byZoom([[13, 2.5], [16, 5], [18, 10]]);
+const walkedThroughWidth = byZoom([[13, 3.5], [16, 5], [18, 10]]);
 const walkedThroughDots = [0.01, 2];
 const keptSources = new Map();
 function loadStylesheet() {

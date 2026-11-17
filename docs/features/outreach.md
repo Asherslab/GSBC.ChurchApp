@@ -940,8 +940,8 @@ step aside to the edge* stay on the page.
   ("Meet here").
 - **Chips in one strip** along the top of the map, from the tool rail to the top-right button, wrapping onto a second
   line when there are many (`MapChipStrip`). A route drawn by hand's chip says "Route 4", ringed in its colour; a split
-  area's says "Faheys Rd · split into 6". Pointing at a chip lights its routes (the rest fade) and shows the route's
-  facts top right.
+  area's says "Faheys Rd · split into 6". Pointing at a chip lights its routes (the rest fade); its facts stay in the
+  table and its menu, so no card opens beside the menu.
 - **Pinch and scroll over anything on the map move the map** (chips, discs, pins, cards, menus, the key, the full map
   button), as over the map itself: Safari's pinch (`gesturestart`/`gesturechange`) and ctrl+wheel are passed to the
   map, so the page never zooms; a menu or card that can scroll still scrolls. Shared in `MapView`, so every map has it.
