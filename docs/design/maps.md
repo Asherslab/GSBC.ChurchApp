@@ -58,6 +58,10 @@ The base map leaves the colour to the overlays. Each screen draws them the same 
 - **The walk:** deep aqua (`#00776d`) by day, bright aqua (`#2ec4b6`) at night, with a white edge.
 - **Streets walked recently:** ink-3 (`#626a79`) at 45%.
 - **You:** the orange marker (`#e7ae74`).
+- **Walked through, no letterboxes:** a stretch a walk or route only passes through, to get between its parts, is a
+  row of round dots in the walk's or route's colour, under its solid lines, so a whole route never reads as broken
+  (owner's pick, 2026-11-17, #125, `.impeccable/mocks/route-map-feel/`). Printed maps draw the same dots in black; the
+  planner's key and the printed key call them "Walked through, no letterboxes".
 - **Attribution under every map:** the region's sources (© OpenStreetMap contributors, and the address sources it
   used), passed as `attribution`, on one line, cut short with an ellipsis, with an ⓘ that shows them all
   (2026-11-17).
@@ -87,8 +91,10 @@ the admin panel; `MapSource.Urls(urls, attribution)` draws several map files as 
 in order, so the 2 km overlaps meet without a seam). It follows light and dark by itself.
 
 - **Lines** (`MapLine`, by `MapLineStyle`): `Walk` (deep aqua, white edge, arrows along it from zoom 15), `WalkDone` (a walk's
-  part already covered, ink-3), `Walked` (streets walked recently, ink-3 at 45%), `Connector` (dashed), `LongWalk` (dotted, with
-  its label, such as "290 m, no letterboxes"), `Route` (a planned route in its own `Colour`, with a label).
+  part already covered, ink-3), `Walked` (streets walked recently, ink-3 at 45%), `Connector` (the walk's stretches with no letterboxes: round
+  dots in the walk colour, 3.5px at zoom 13 to 10px at 18, two widths apart, under the walk), `LongWalk` (dotted, with
+  its label, such as "290 m, no letterboxes"), `Route` (a planned route in its own `Colour`), `RouteWalkedThrough`
+  (a route's stretches with no letterboxes, the same round dots in the route's `Colour`, under its `Route` lines).
   Thousands of lines that change a block at a time (the admin coverage map, one block per region) go in `LineSets`
   (`MapLineSet`, by key): the map sends a set only when its list changes and adds or removes just that set, so a
   redraw never sends every line again.
@@ -123,6 +129,15 @@ in order, so the 2 km overlaps meet without a seam). It follows light and dark b
   without street names. See *Past the edge of our maps*.
 - `OnTap` gives the point tapped (dropping a pin); `Overlay` holds a control over the map (*Follow me*). Its
   attribution sits under it.
+- **Gestures** (2026-11-17, #126): pinch (Safari's `gesturestart`/`gesturechange`), ctrl+wheel and scroll over
+  anything laid on a map (chips, discs, pins, cards, menus, the key, the full map button) move the map as over the map
+  itself, so the page never zooms; something that scrolls itself (a card's body, a menu) still scrolls until it reaches
+  its end. Every interactive `MapView` does it, over its map desk or workspace.
+- **No text selection:** the map, its overlay and the full map button don't select as text when dragged (#127); a
+  `MapCard`'s text, the outside note and fields stay selectable.
+- **The top-right corner:** a `MapWorkspace` sets `--map-corner-top` and `--map-corner-right` so a card or hover facts
+  sit clear of the full map button (beside it, below *Leave full map* once full), and `--map-top-end` where a strip
+  along the top must stop.
 
 The libraries are vendored in `wwwroot/map/vendor` by `tools/outreach/map/vendor.mjs` (`npm install`, then
 `node vendor.mjs`), so the app never fetches them.
@@ -159,16 +174,31 @@ planner draws, on its own layers over the overlays:
   `None` gives the map back its panning and reports the pointer (`OnHover`, `OnHoverEnded`). A drag tool holds the map
   still while drawing; scroll and the zoom buttons still zoom.
 - **`OnDrawn`** gives the finished stroke's points (`MapSketchStroke`); what they select is the screen's business.
-- **`Labels`** (`MapLabel`): a capsule at a point, such as a route's "4 · 137 · 74 min": `Ring` (the page colour, ringed in
+- **`Labels`** (`MapLabel`): a capsule at a point, such as "Route 8 keeps these": `Ring` (the page colour, ringed in
   the label's colour, ink text) or `Filled` (the colour with white text, for the chosen one). Below zoom 15 a label shows
-  its `Short` text, from 15 its full text; every label draws and no two
+  its `Short` text, from 15 its full text. A label with a `Badge` is a disc instead (2026-11-17, owner's pick on
+  `.impeccable/mocks/route-map-feel/`): a 24px circle in the label's colour with a 2px surface edge and the badge (a
+  route's number) in white Montserrat 600 at 12px, its text to the right on a quiet plate (the surface with a hairline;
+  `Filled`, the colour with white text): its `Short` text below zoom 14, its full text from 14, and nothing when the text
+  is empty. Every label draws and no two
   ever overlap: highest `Order` first, each takes the first of its `Places` (spots on its own route, nearest the
   middle first), then a spot nudged a little way off, that touches no other label, stays on the map and stays clear of
-  anything marked `data-map-cover` (the planner's rail and chosen-route bar). Labels are placed again as the map zooms.
+  anything marked `data-map-cover` (the planner's rail, chips and chosen-route bar) and the base map's place labels ("Meet here"). Labels are placed again as the map zooms.
   `Quiet` labels aren't moved: they stay on their point on a layer of their own beneath, and one that would overlap
   another is hidden rather than drawn over it (a map area's square names, place names), so a screen can name many
   things where they fit (2026-11-15). Every colour a label uses holds 4.5:1 against white.
 - **`Preview`**: lines drawn over everything while a gesture is under way (a cut's pieces, a brush's stretch).
+
+## Chips on the map
+
+A chip is a control on the map: a `map-chip` `Menu` (a pill on the page colour, on the map's float shadow;
+icon, name, chevron). One tied to a single point of the map rides on it in a `MapPin`. Chips for whole areas line up in
+one `MapChipStrip` (Platform.Ui `Maps/`, a labelled toolbar) along the top of the map, from the tool rail
+(`--map-pin-start`) to the top-right button (`--map-top-end`), wrapping onto a second line rather than scrolling (a
+scrolling strip clips the chips' menus); an open menu lifts the strip above the map's other controls (owner's pick, 2026-11-17,
+`.impeccable/mocks/route-map-feel/`). A chip for one route (`map-chip--route`, with `--route` and `--number`) is ringed
+in the route's colour; on a map under 1100px wide it shows the route's numbered disc instead of its icon and name.
+Mark each chip `data-map-cover` so labels keep off it.
 
 ## Coverage and dashed areas (reports station, 2026-11-15)
 

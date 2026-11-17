@@ -106,28 +106,34 @@ the dock stays, *Plan a day* is open, and the drawer (440px, 380px at 1360px and
 it folds away like any job's) heads with the day ("Outreach Saturday 6 December" over the
 times, meeting place, campaign and totals) and *Leave this day's routes*. `SaveStatus` ("Saves as you go", "Draft saved")
 and *Print the maps* sit in the title band's actions. *Plan a day* without a day lists the days to come, with *New day, under Days* in its foot.
-- **The map:** the brand base map; each route in its colour with a ring label (a page-coloured capsule ringed in the
-  route's colour): the number when zoomed out ("8 · review" when flagged), "4 · 137 · 74 min" from zoom 15 ("· needs
-  review" after it when flagged). Every route keeps its label and no two labels overlap (`MapSketch`, [maps.md](maps.md)). Choosing a route fills its label in its colour, on top, and keeps the others to
-  their number; their lines fade toward grey. Streets left out or done recently in ink-3; the
+- **The map:** the brand base map; each route in its colour, solid where it delivers and round dots where its walk
+  only passes through to join its parts (owner's pick, 2026-11-17, #125, `.impeccable/mocks/route-map-feel/`: *numbers
+  on the map, chips in a strip*). One mark per route: a disc in its colour with its number (`MapLabel.Badge`); from
+  zoom 14 its figures sit beside it on a quiet plate ("546 · 2 h 48 min · needs review"), zoomed out the disc alone.
+  Every route keeps its disc and no two overlap; they keep clear of the chips, the rail and "Meet here" (`MapSketch`,
+  [maps.md](maps.md)). Choosing a route fills its figures' plate in its colour at every zoom, on top, and keeps the
+  others to their disc; their lines fade toward grey, as do all but an area's routes while the pointer is on its chip. Streets left out or done recently in ink-3; the
   area at 12%; the meeting point (the map's navy place marker, *Claude's adaptation*: orange means "you" on the phone)
   and the chosen route's start.
 - **Areas** (2026-11-17, #124, the owner's pick on `.impeccable/mocks/route-areas/`): a split area is a dashed outline
-  with a faint fill (see below); a route drawn by hand is outlined in its route colour, no fill. Each area carries a chip on the
-  top of its outline (`MapPin` with a `Menu`, `map-chip`: white pill on the map shadow, icon, "Faheys Rd · split into
-  6" or "Route 7 · as drawn", chevron); its menu: Split it into routes / Make it one route (the current one ticked, with
+  with a faint fill (see below); a route drawn by hand is outlined in its route colour, no fill. Each area has a chip in one strip
+  along the top of the map, from the rail to the top-right button, wrapping onto a second line when there are many
+  (`MapChipStrip`, 2026-11-17; a `map-chip` `Menu`: white pill on the map shadow, icon, "Faheys Rd · split into 6" or,
+  for a route drawn by hand, "Route 7" ringed in its colour and, on a map under 1100px wide, its numbered disc alone;
+  chevron). The chip is a control: its facts stay in the table and its menu, and no hover card opens beside it. Its menu: Split it into routes / Make it one route (the current one ticked, with
   how many routes or letterboxes), Redraw the outline, Save for next time…, and Take it off the day or Delete this route
   (red, last). Where areas overlap the overlap is hatched in marker ink (warm brown, its own hatch, apart from the grey one for
   closed or rested ground) with "Route 8 keeps these" in an ink ring, placed clear of the chips. Split areas are
   dashed in primary (navy; aqua at night); a route drawn by hand is a 2.5px solid in its colour, the strongest outline.
   An area not saved is named after its main streets ("Kingfisher St & Wren Ct · split into 6"). A key bottom
-  left names what's on the map (dashed: an area the app splits; solid: a route drawn as one; hatched: overlap), hidden
+  left names what's on the map (dashed: an area the app splits; solid: a route drawn as one; hatched: overlap; and,
+  when a route walks through, "Delivers letterboxes" and "Walked through, no letterboxes"), hidden
   on a map under 640px. Chips and key hide while drawing. The nine route colours
   (`RouteColours`) each hold 4.5:1 with white text and 3:1 against the dark map and pane.
 - **The rail** (top left, a white panel on the Pop shadow): select, draw a route (pencil), draw an area to split
   (pentagon), scissors, brush, lasso, eraser, start pin, meeting point, a rule, undo, redo; the tool in use is navy. Tools that need a chosen route are disabled until
   there is one. Each tool's one-line instruction shows as a navy capsule top centre; drawing the area shows the `MapDrawBar` instead, beside the rail, with *Undo last point*, *Cancel* and *Finish*.
-- **Hover** (top right): the route's number, name, letterboxes, km, time, bundles, its claims on the day, and why it
+- **Hover** (top right, below *Leave full map* on the full map): the route's number, name, letterboxes, km, time, bundles, its claims on the day, and why it
   needs review in marker ink.
 - **The chosen route** (bottom centre, above the map's credits): its dot, number, letterboxes and time; Lock, Split in
   two, and a ⋯ with Rename, Merge with route N and Leave its streets out (red, last). On a map narrower than 640px the
@@ -157,8 +163,9 @@ draw dashed in deep aqua under the Saved areas layer; a click inside one, or its
 
 ## Printed route maps
 One A4 page a route, black on white: the route number at 26pt and its name, the day's line, the facts in bold, the QR
-code top right with "Scan to open it in the app" and the code; the map in a ruled frame (route 3.4pt black, connectors
-dashed and drawn once where a walk-through goes out and back (two passes with offset dashes read as a solid line),
+code top right with "Scan to open it in the app" and the code; the map in a ruled frame (route 3.4pt black, stretches
+walked through as round 2.4pt dots, drawn once where a walk-through goes out and back, and keyed "Walked through, no
+letterboxes" (2026-11-17),
 streets 1pt grey, main roads 2.4pt grey, arrows, Start and Meet here, street names with a white halo (the
 route's own in bold beside the line, or level beside a short street; every other named street in view along its
 straightest stretch, never over the route or another name), scale,
@@ -269,7 +276,7 @@ masthead's navy at display size and the map supports it. Maps are `MapView` ([ma
   works, a `Segmented` length (30 min, 1 hr, 2 hr, Distance, then 1 to 8 km) and the block *Plan my walk*. Then the next
   outreach days and the rows My outreach and Offline maps. No map here (owner, 2026-11-17, #110: *Around you* is gone).
 - **Your walk** (`/outreach/walk`, solid top bar): the map full width (38% of the screen, at least 14rem), framed on
-  the walk, connectors, a long walk dotted and labelled, recent coverage and the start; then the figures (distance and time at headline size,
+  the walk, connectors as round dots, a long walk dotted and labelled, recent coverage and the start; then the figures (distance and time at headline size,
   letterboxes, bundles and *back by* in a caption), the reach note in a sand box with its two ways to get more as link
   buttons, warnings as `Notice`s, and *Start the walk*. *Change the walk* holds the length, letterboxes or doorknocking,
   *I'm walking with someone*, where you start (tap the map, or find a street in a `Sheet` with a `SearchField`), and what
