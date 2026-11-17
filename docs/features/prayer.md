@@ -122,7 +122,9 @@ else. The page is the owner's pick on the decision page, "A page to write on" (`
 
 - **To approve** (`/prayer/approve`, from a row at the top of Prayer that shows how many are waiting), for holders of
   `prayer.wall.moderate`: *Asking for the prayer wall*, *On the prayer wall now*, and for the pastoral team *New for
-  the pastoral team*. Each opens `/prayer/requests/{id}`.
+  the pastoral team* (requests only for the pastoral team). Each opens `/prayer/requests/{id}`. The row's count is only
+  what asks for the wall: with no follow-up step, *New* isn't something waiting, so a request on the wall is listed
+  there, not as new (owner, 2026-11-17).
 - **A request's page** (owner's pick on the decision page, 2026-11-12, "Status band, then cards", after feedback #43
   "Take the same progression UI from the feedback tickets" and #44 "This part being in the middle and not
   differentiated feels weird"; `.impeccable/mocks/prayer-request/`): a sand band under the top bar with when it was sent,
