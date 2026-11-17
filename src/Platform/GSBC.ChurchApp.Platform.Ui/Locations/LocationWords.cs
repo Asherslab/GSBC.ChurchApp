@@ -56,12 +56,6 @@ public static class LocationWords
         ? $"geo:{Point(location)}?q={Point(location)}({Uri.EscapeDataString(Headline(location))})"
         : $"geo:0,0?q={Uri.EscapeDataString(Words(location))}";
 
-    public static string AppleDirections(Location location) =>
-        $"https://maps.apple.com/?daddr={(location.HasPin ? Point(location) : Uri.EscapeDataString(Words(location)))}";
-
-    public static string GoogleDirections(Location location) =>
-        $"https://www.google.com/maps/dir/?api=1&destination={(location.HasPin ? Point(location) : Uri.EscapeDataString(Words(location)))}";
-
     public static bool Opens(Location location) =>
         location is { Kind: LocationKind.OffSite, AddressHidden: false } && (location.HasPin || location.Address.Length > 0);
 

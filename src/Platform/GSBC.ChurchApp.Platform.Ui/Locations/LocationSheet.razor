@@ -25,8 +25,8 @@
         }
         else
         {
-            <Menu Label="Directions" Text="Directions" Icon="@AppIcons.Directions" Variant="ButtonVariant.Primary" Block="true" Items="Directions" />
-            <Menu Label="Open in Maps" Text="Open in Maps" Icon="external-link" Variant="ButtonVariant.Quiet" Block="true" Items="Opens" />
+            <Button Block="true" Icon="@AppIcons.Directions" OnClick="() => OpenAsync(LocationWords.AppleMaps(Location))">Open in Apple Maps</Button>
+            <Button Block="true" Variant="ButtonVariant.Quiet" Icon="external-link" OnClick="() => OpenAsync(LocationWords.GoogleMaps(Location))">Open in Google Maps</Button>
         }
     </Actions>
 </Sheet>
@@ -37,18 +37,6 @@
     [Parameter] public EventCallback<bool> OpenChanged { get; set; }
 
     private bool OnAndroid => Services.GetService<NativeBridge>() is { IsNative: true, Platform: "android" };
-
-    private IReadOnlyList<MenuItem> Directions =>
-    [
-        this.Item("Apple Maps", () => OpenAsync(LocationWords.AppleDirections(Location))),
-        this.Item("Google Maps", () => OpenAsync(LocationWords.GoogleDirections(Location))),
-    ];
-
-    private IReadOnlyList<MenuItem> Opens =>
-    [
-        this.Item("Apple Maps", () => OpenAsync(LocationWords.AppleMaps(Location))),
-        this.Item("Google Maps", () => OpenAsync(LocationWords.GoogleMaps(Location))),
-    ];
 
     private Task OpenAsync(string url) => Shell.OpenExternalAsync(url).AsTask();
 }

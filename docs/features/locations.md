@@ -90,16 +90,18 @@ app-wide gRPC contract `ILocationsService` in Platform.Contracts, and the Maps m
 ### A place's map
 
 `PlaceMaps` cuts a map file for the 2 × 2 block of zoom-15 tiles nearest the place (about 2.2 km a side; the place is
-at least 550 m from its edge), with every lower zoom, from the newest Protomaps build, by the same `PmtilesExtract` as the
-regions. Places in the same block share one file (`outreach_maps.place_maps`, one row a block), stored by content in the
+at least 550 m from its edge), from the newest Protomaps build, by the same `PmtilesExtract` as the
+regions, from zoom 12 (the place's map can't zoom out further): 164 KB for a block of Brendale, where the first cut
+with every lower zoom was 918 KB. Places in the same block share one file (`outreach_maps.place_maps`, one row a block), stored by content in the
 public bucket (`immutable`). Australia only. Each feature says which map files it uses (`ILocationUses`: outreach days,
 events, ministries), and once a day a map nothing has used for two days is removed, its file too unless a region uses it.
 
 ### On the phone
 
 - **Showing:** `LocationRow` (a `ListRow`: the pin icon, the name, the address, the note, and a 64 px map square) opens
-  `LocationSheet`: the map, the note, *Directions* and *Open in Maps* (Apple Maps or Google Maps; on Android one
-  *Open in Maps* through `geo:`, which offers the phone's own choice). The pin is the shared `MapPin`, as a navy pin.
+  `LocationSheet`: the map, the note, *Open in Apple Maps* and *Open in Google Maps* (each shows the place with its own
+  Directions one tap away; on Android one *Open in Maps* through `geo:`, which offers the phone's own choice). The pin is
+  the shared `MapPin`, as a navy pin.
 - **Kept for offline** (`LocationMaps`, a startup task): each feature lists the places on the phone
   (`ILocationSource`); a place inside a region map the phone keeps whole is shown from that region
   (`IKeptMapCover`, Outreach's `OutreachLocations`), and only the others keep their own file (`places/<key>`) in the

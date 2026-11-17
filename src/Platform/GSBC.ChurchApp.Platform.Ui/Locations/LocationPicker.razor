@@ -28,7 +28,7 @@
                             <div class="list location-picker__results" role="list">
                                 @foreach (FoundLocation found in _found)
                                 {
-                                    <ListRow @key="found" Icon="@(found.Kind == FoundLocationKind.Suburb ? AppIcons.Directions : AppIcons.PlaceOffSite)" Title="@LocationWords.FoundTitle(found)"
+                                    <ListRow @key="found" Icon="@AppIcons.PlaceOffSite" Title="@LocationWords.FoundTitle(found)"
                                              Subtitle="@LocationWords.Found(found)"
                                              Current="@(_chosen == found)" OnClick="() => ChooseAsync(found)" />
                                 }
@@ -69,7 +69,7 @@
                             <p class="field__hint" role="status">Getting the map…</p>
                         }
                         <TextField Label="Address" @bind-Value="_address" MaxLength="160" Hint="Filled in from the search or the pin. Change it if it reads better another way." />
-                        <TextField Label="Name" @bind-Value="_name" MaxLength="80" Hint="Leave this empty to show the address. People see the name above the address." />
+                        <TextField Label="Name" Value="@_name" ValueChanged="NameTyped" MaxLength="80" Hint="Leave this empty to show the address. People see the name above the address." />
                         <TextField Label="Note" @bind-Value="_note" MaxLength="160" Hint="Anything that helps people find it, such as where to park." />
                         @if (AllowHome)
                         {
@@ -110,6 +110,7 @@
     private bool _offline;
     private bool _preparing;
     private bool _pinned;
+    private bool _nameTyped;
     private int _centred;
     private bool _wasOpen;
     private CancellationTokenSource? _searchRun;
@@ -148,8 +149,11 @@
         (_name, _address, _suburb, _note, _home) = (start.Name, start.Kind == LocationKind.None ? start.Text : start.Address, start.Suburb, start.Note, start.Home);
         (_latitude, _longitude, _map) = (start.Latitude, start.Longitude, start.Map);
         _pinned = start.HasPin;
+        _nameTyped = false;
         (_search, _found, _chosen, _offline) = ("", [], null, false);
     }
+
+    private void NameTyped(string name) => (_name, _nameTyped) = (name, true);
 
     private void UseRecent(Location used)
     {
@@ -199,8 +203,10 @@
     private async Task ChooseAsync(FoundLocation found)
     {
         _chosen = found;
-        if (found.Kind == FoundLocationKind.Named && _name.Length == 0)
+        if (found.Kind == FoundLocationKind.Named && !_nameTyped)
             _name = found.Name;
+        else if (!_nameTyped)
+            _name = "";
         _address = found.Kind == FoundLocationKind.Suburb ? "" : found.Address;
         _suburb = found.Suburb;
         await PlaceAsync(found.Latitude, found.Longitude, true);
