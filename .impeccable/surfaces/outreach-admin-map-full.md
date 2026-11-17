@@ -37,7 +37,12 @@ FIRST VIEWPORT: full: map to every edge; the panel 440px (320 for other jobs) fl
 top to the attribution; Leave full map · Esc top right of the map (beside the panel when it's on the right); tools and
 cards keep clear of the panel. Skip card: Find the address (hint: or click its letterbox on the map) above the form.
 
-FORM: structure 2 of 7 on my re-rolled list (drag by the head, snap to a side), owner-steered. seed:none (unavailable)
+FORM: structure 2 of 7 on my re-rolled list (drag by the head, snap to a side), owner-steered. seed:e8ebed83ad6c3767
 Signature move: lift the panel by its head and set it down on the other side; the map underneath never reloads.
+
+ADAPTATIONS (recorded at the finish review): *Move the panel right/left* in the job menu, the keyboard way to do
+what the drag does; the skip card's foot says "Choose the address first." rather than repeating the field's hint; up
+to three matches within 15 km of the view are numbered and framed, the rest named by suburb as off the map, and when
+none are near, the three nearest are shown and framed instead.
 
 FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, DESIGN.md, and every shipping raster carrying its provenance

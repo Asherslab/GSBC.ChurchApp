@@ -227,6 +227,7 @@ const pinGutter = 16;
 const closedHatch = "reach-closed-hatch";
 const placeRoom = "place-room";
 const placeRoomSize = 22;
+const tallCover = 0.4;
 const overlapHatch = "areas-overlap-hatch";
 const deepestZoom = 19;
 const overviewMinZoom = 3;
@@ -454,7 +455,27 @@ export async function create(element, optionsJson, receiver) {
     if (!overlay) return { left: 0, right: 0 };
     const canvas = element.getBoundingClientRect();
     const room = overlay.getBoundingClientRect();
-    return { left: Math.max(0, room.left - canvas.left), right: Math.max(0, canvas.right - room.right) };
+    const covered = { left: Math.max(0, room.left - canvas.left), right: Math.max(0, canvas.right - room.right) };
+    for (const cover of overlay.querySelectorAll("[data-map-cover]")) {
+      const box = cover.getBoundingClientRect();
+      if (box.height < canvas.height * tallCover) continue;
+      if (box.left + box.width / 2 < canvas.left + canvas.width / 2) covered.left = Math.max(covered.left, box.right - canvas.left);
+      else covered.right = Math.max(covered.right, canvas.right - box.left);
+    }
+    return covered;
+  };
+  let roomBefore = null;
+  const followRoom = () => {
+    const overlay = element.parentElement.querySelector(".map-view__overlay");
+    if (!overlay) return;
+    const canvas = element.getBoundingClientRect();
+    const room = overlay.getBoundingClientRect();
+    const now = { left: room.left - canvas.left, right: canvas.right - room.right };
+    if (roomBefore && map.loaded()) {
+      const shift = (now.left - roomBefore.left - (now.right - roomBefore.right)) / 2;
+      if (Math.abs(shift) >= 1) map.panBy([-shift, 0], { duration: 0 });
+    }
+    roomBefore = now;
   };
   const fit = (b, animate = false) => {
     freeZoom();
@@ -536,9 +557,15 @@ export async function create(element, optionsJson, receiver) {
   map.once("load", pinsChanged);
   const pins = new MutationObserver(pinsChanged);
   pins.observe(figure, { childList: true, subtree: true, attributes: true, attributeFilter: ["data-map-pin"] });
-  const overlayResized = new ResizeObserver(placePins);
+  const overlayResized = new ResizeObserver(() => {
+    followRoom();
+    placePins();
+  });
   figure.querySelectorAll(".map-view__overlay").forEach((overlay) => overlayResized.observe(overlay));
-  const roomMoved = new MutationObserver(() => requestAnimationFrame(placePins));
+  const roomMoved = new MutationObserver(() => requestAnimationFrame(() => {
+    followRoom();
+    placePins();
+  }));
   const workspace = figure.closest(".map-workspace");
   if (workspace) roomMoved.observe(workspace, { attributes: true, attributeFilter: ["class"] });
 

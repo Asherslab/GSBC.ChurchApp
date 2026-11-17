@@ -87,14 +87,16 @@
     private Lists? _lists;
     private PlaceKind? _filter;
     private PlaceLine? _open;
-    private const int MatchesShown = 5;
+    private const int MatchesShown = 3;
+    private const double NearbyMetres = 15_000;
+    private const int SuburbsNamed = 3;
 
     private string _name = "", _reason = "", _note = "", _caller = "", _search = "", _find = "";
     private bool _marker, _busy, _saved, _deleting;
     private string? _problem;
     private IReadOnlyList<MapPoint>? _area;
     private AddressPoint? _address;
-    private IReadOnlyList<AddressMatch>? _found;
+    private Matches? _found;
 
     public override OutreachMapJob Job => OutreachMapJob.Places;
 
@@ -140,8 +142,8 @@
             if (IsNew && _address is { } picked && PointOf(picked) is { } point)
                 markers.Add(new MapMarker(point, MapMarkerKind.Pin));
             if (IsNew && _address is null && _found is { } found)
-                markers.AddRange(Nearest(found).Select((match, index) =>
-                    new MapMarker(new MapPoint(match.Point.Lat, match.Point.Lng), MapMarkerKind.Match, (index + 1).ToString(System.Globalization.CultureInfo.InvariantCulture))));
+                markers.AddRange(found.Shown.Select((match, index) =>
+                    new MapMarker(PointOf(match), MapMarkerKind.Match, (index + 1).ToString(System.Globalization.CultureInfo.InvariantCulture))));
             return markers;
         }
     }
@@ -197,21 +199,21 @@
                     <SearchField Label="Find the address" Placeholder="Number and street…" Value="@_search" ValueChanged="SearchAsync" AutoFocus="true" />
                     @if (_found is { } found)
                     {
-                        @if (Nearest(found) is { Count: > 0 } nearest)
+                        @if (found.Shown is { Count: > 0 } shown)
                         {
                             <div class="outreach-map__matches" role="list" aria-label="Addresses found">
-                                @for (int index = 0; index < nearest.Count; index++)
+                                @for (int index = 0; index < shown.Count; index++)
                                 {
-                                    AddressMatch match = nearest[index];
+                                    AddressMatch match = shown[index];
                                     int number = index + 1;
                                     <ListRow Title="@Street(match)" Trailing="@Suburb(match)" OnClick="() => TakeMatchAsync(match)">
                                         <Leading><span class="outreach-map__match-number" aria-label="@($"Number {number} on the map")">@number</span></Leading>
                                     </ListRow>
                                 }
                             </div>
-                            @if (found.Count > nearest.Count)
+                            @if (found.Further.Count > 0)
                             {
-                                <p class="field__hint">@OutreachWords.Plural(found.Count - nearest.Count, "more match", "more matches") further away. Type more of the address to narrow it.</p>
+                                <p class="field__hint">@FurtherLine(found.Further) Type more of the address to narrow it.</p>
                             }
                         }
                         else
@@ -274,17 +276,31 @@
         _ => "Hostile",
     };
 
-    private IEnumerable<PlaceLine> Shown(Lists lists) => lists.Places.Where(line => (_filter is null || line.Kind == _filter) && Matches(line));
+    private IEnumerable<PlaceLine> Shown(Lists lists) => lists.Places.Where(line => (_filter is null || line.Kind == _filter) && Found(line));
 
-    private bool Matches(PlaceLine line) =>
+    private bool Found(PlaceLine line) =>
         _find.Trim() is not { Length: > 0 } text
         || line.Title.Contains(text, StringComparison.OrdinalIgnoreCase)
         || line.Caption.Contains(text, StringComparison.OrdinalIgnoreCase);
 
-    private List<AddressMatch> Nearest(IReadOnlyList<AddressMatch> found)
+    private sealed record Matches(IReadOnlyList<AddressMatch> Shown, IReadOnlyList<AddressMatch> Further);
+
+    private Matches Sort(IReadOnlyList<AddressMatch> found)
     {
         MapPoint centre = (Map.View ?? Map.Frame) is { } view ? new MapPoint((view.North + view.South) / 2, (view.East + view.West) / 2) : default;
-        return [.. found.OrderBy(match => MetresBetween(centre, new MapPoint(match.Point.Lat, match.Point.Lng))).Take(MatchesShown)];
+        List<(AddressMatch Match, double Metres)> nearest = [.. found.Select(match => (match, MetresBetween(centre, PointOf(match)))).OrderBy(pair => pair.Item2)];
+        List<AddressMatch> nearby = [.. nearest.Where(pair => pair.Metres <= NearbyMetres).Take(MatchesShown).Select(pair => pair.Match)];
+        List<AddressMatch> shown = nearby.Count > 0 ? nearby : [.. nearest.Take(MatchesShown).Select(pair => pair.Match)];
+        return new Matches(shown, [.. nearest.Select(pair => pair.Match).Where(match => !shown.Contains(match))]);
+    }
+
+    private static MapPoint PointOf(AddressMatch match) => new(match.Point.Lat, match.Point.Lng);
+
+    private static string FurtherLine(IReadOnlyList<AddressMatch> further)
+    {
+        List<string> suburbs = [.. further.Select(Suburb).OfType<string>().Distinct().Take(SuburbsNamed)];
+        string more = OutreachWords.Plural(further.Count, "more is", "more are");
+        return suburbs.Count == 0 ? $"{more} off the map." : $"{more} off the map ({string.Join(", ", suburbs)}{(further.Select(Suburb).Distinct().Count() > suburbs.Count ? "…" : "")}).";
     }
 
     private static string Street(AddressMatch match) => match.Label.LastIndexOf(", ", StringComparison.Ordinal) is var at and > 0 ? match.Label[..at] : match.Label;
@@ -304,7 +320,7 @@
         _search = text;
         if (text.Trim().Length < 3)
         {
-            _found = text.Trim().Length == 0 ? null : [];
+            _found = text.Trim().Length == 0 ? null : new Matches([], []);
             Map.Redraw();
             return;
         }
@@ -313,13 +329,15 @@
             IReadOnlyList<AddressMatch> found = await Outreach.FindAddressesAsync(Map.Scope, text);
             if (_search == text)
             {
-                _found = found;
+                _found = Sort(found);
+                if (_found.Shown.Count > 0)
+                    Map.FlyBesideCard([.. _found.Shown.Select(PointOf)]);
                 Map.Redraw();
             }
         }
         catch (RpcException exception)
         {
-            (_found, _problem) = ([], exception.Status.Detail);
+            (_found, _problem) = (new Matches([], []), exception.Status.Detail);
         }
     }
 
