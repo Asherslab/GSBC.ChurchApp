@@ -29,7 +29,7 @@
                                 @foreach (FoundLocation found in _found)
                                 {
                                     <ListRow @key="found" Icon="@(found.Kind == FoundLocationKind.Suburb ? AppIcons.Directions : AppIcons.PlaceOffSite)" Title="@LocationWords.FoundTitle(found)"
-                                             Subtitle="@(found.Kind == FoundLocationKind.Named ? $"{found.Address} · {LocationWords.FromChurch(found)}" : LocationWords.Found(found))"
+                                             Subtitle="@LocationWords.Found(found)"
                                              Current="@(_chosen == found)" OnClick="() => ChooseAsync(found)" />
                                 }
                             </div>

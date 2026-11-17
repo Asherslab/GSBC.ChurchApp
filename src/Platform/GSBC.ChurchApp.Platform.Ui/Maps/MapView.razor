@@ -55,6 +55,7 @@
     [Parameter] public MapFrame? Frame { get; set; }
     [Parameter] public MapPoint? Centre { get; set; }
     [Parameter] public double Zoom { get; set; } = 15;
+    [Parameter] public double? MinZoom { get; set; }
     [Parameter] public bool Interactive { get; set; } = true;
     [Parameter] public EventCallback<MapPoint> OnTap { get; set; }
     [Parameter] public EventCallback OnStoppedFollowing { get; set; }
@@ -147,7 +148,7 @@
         if (_disposed)
             return;
         _receiver ??= DotNetObjectReference.Create(this);
-        _map = await _module.InvokeAsync<IJSObjectReference>("create", _element, MapJson.Options(Source, Centre, Zoom, Interactive, Follow, Backdrop, ShowsHeading), _receiver);
+        _map = await _module.InvokeAsync<IJSObjectReference>("create", _element, MapJson.Options(Source, Centre, Zoom, Interactive, Follow, Backdrop, ShowsHeading, MinZoom), _receiver);
         if (_disposed)
         {
             await DropMapAsync();

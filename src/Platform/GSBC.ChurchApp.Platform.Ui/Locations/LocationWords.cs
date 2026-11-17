@@ -27,11 +27,19 @@ public static class LocationWords
 
     public static string Found(FoundLocation found) => found.Kind switch
     {
-        FoundLocationKind.Suburb => $"A suburb · {FromChurch(found)}",
-        _ => found.Suburb.Length > 0 ? $"{found.Suburb} · {FromChurch(found)}" : FromChurch(found),
+        FoundLocationKind.Suburb => $"A suburb or town · {FromChurch(found)}",
+        FoundLocationKind.Named => $"{found.Address} · {FromChurch(found)}",
+        _ => string.Join(" · ", new[] { AfterStreet(found.Address), FromChurch(found) }.Where(part => part.Length > 0)),
     };
 
-    public static string FoundTitle(FoundLocation found) => found.Kind == FoundLocationKind.Named ? found.Name : found.Address;
+    public static string FoundTitle(FoundLocation found) => found.Kind switch
+    {
+        FoundLocationKind.Named => found.Name,
+        FoundLocationKind.Suburb => found.Address,
+        _ => found.Address.Split(", ", 2)[0],
+    };
+
+    private static string AfterStreet(string address) => address.Split(", ", 2) is [_, var rest] ? rest : "";
 
     public static string FromChurch(FoundLocation found) => found.FromChurchKm < 0.5
         ? "near the church"

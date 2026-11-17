@@ -60,11 +60,12 @@ public sealed class LocationMap
     [ProtoMember(7)] public int MaxZoom { get; set; }
     [ProtoMember(8)] public string Attribution { get; set; } = "";
     [ProtoMember(9)] public string Key { get; set; } = "";
+    [ProtoMember(10)] public int MinZoom { get; set; }
 
     public bool Contains(double latitude, double longitude) => latitude >= South && latitude <= North && longitude >= West && longitude <= East;
 
     public LocationMap Copy() => new()
     {
-        Url = Url, South = South, West = West, North = North, East = East, Bytes = Bytes, MaxZoom = MaxZoom, Attribution = Attribution, Key = Key,
+        Url = Url, South = South, West = West, North = North, East = East, Bytes = Bytes, MaxZoom = MaxZoom, Attribution = Attribution, Key = Key, MinZoom = MinZoom,
     };
 }

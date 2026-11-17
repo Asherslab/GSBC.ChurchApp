@@ -15,6 +15,7 @@ internal sealed class PlaceMaps(OutreachMapsDbContext db, IMapSources sources, I
     IEnumerable<ILocationUses> uses)
 {
     public const int Zoom = 15;
+    public const int LowestZoom = 12;
     private const int Tiles = 2;
     private const double Inside = 1e-7;
     private const string MapContentType = "application/vnd.pmtiles";
@@ -50,7 +51,7 @@ internal sealed class PlaceMaps(OutreachMapsDbContext db, IMapSources sources, I
             ExtractedTiles extracted;
             GeoBounds cut = new(bounds.South + Inside, bounds.West + Inside, bounds.North - Inside, bounds.East - Inside);
             await using (FileStream output = File.Create(file))
-                extracted = await PmtilesExtract.ExtractAsync(tiles, cut, Math.Min(Zoom, options.Value.MaxZoom), output, cancellationToken);
+                extracted = await PmtilesExtract.ExtractAsync(tiles, cut, Math.Min(Zoom, options.Value.MaxZoom), output, cancellationToken, LowestZoom);
             string key = ContentAddress.KeyFor(await OverviewMap.Sha256Async(file, cancellationToken), MapExtension);
             if (await blobs.FindAsync(BlobBucket.Public, key, cancellationToken) is null)
             {
@@ -94,6 +95,7 @@ internal sealed class PlaceMaps(OutreachMapsDbContext db, IMapSources sources, I
         South = map.South, West = map.West, North = map.North, East = map.East,
         Bytes = map.MapBytes,
         MaxZoom = map.MaxZoom,
+        MinZoom = LowestZoom,
         Attribution = OverviewMap.Attribution,
     };
 

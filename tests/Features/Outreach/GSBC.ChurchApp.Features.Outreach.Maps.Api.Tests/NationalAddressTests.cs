@@ -57,6 +57,13 @@ public sealed class NationalAddressTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task UnitsShowOnlyWhenAskedFor()
+    {
+        Assert.Equal("14 Kenrick Street, Albany Creek QLD 4035", Assert.Single(await FindAsync("14 kenrick")).Address);
+        Assert.Equal("2/14 Kenrick Street, Albany Creek QLD 4035", Assert.Single(await FindAsync("2/14 kenrick")).Address);
+    }
+
+    [Fact]
     public async Task ABuildingIsFoundByItsName()
     {
         FoundLocation found = Assert.Single(await FindAsync("eatons hill shop"), place => place.Kind == FoundLocationKind.Named);

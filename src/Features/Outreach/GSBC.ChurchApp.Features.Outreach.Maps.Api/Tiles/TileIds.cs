@@ -25,9 +25,9 @@ internal static class TileIds
         return id;
     }
 
-    public static IEnumerable<ulong> Covering(GeoBounds bounds, int maxZoom)
+    public static IEnumerable<ulong> Covering(GeoBounds bounds, int maxZoom, int minZoom = 0)
     {
-        for (int zoom = 0; zoom <= maxZoom; zoom++)
+        for (int zoom = minZoom; zoom <= maxZoom; zoom++)
         {
             (uint minX, uint maxY) = TileOf(bounds.West, bounds.South, zoom);
             (uint maxX, uint minY) = TileOf(bounds.East, bounds.North, zoom);

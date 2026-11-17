@@ -37,7 +37,7 @@ internal sealed class NationalAddresses(OutreachMapsDbContext db, IOptions<MapSo
             found.AddRange((await BuildingsAsync(current.Id, query, cancellationToken)).Select(Named));
         }
         List<NationalAddressRecord> addresses = await AddressesAsync(current.Id, query, cancellationToken);
-        found.AddRange(query.Number is null ? Streets(addresses) : addresses.Take(Found).Select(Address));
+        found.AddRange(query.Number is null ? Streets(addresses) : WithoutUnitsUnlessAsked(query, addresses).Take(Found).Select(Address));
         return new FoundLocations { Indexed = true, Found = [.. found.DistinctBy(place => (place.Name, place.Address, place.Suburb)).Take(Found)] };
     }
 
@@ -94,6 +94,14 @@ internal sealed class NationalAddresses(OutreachMapsDbContext db, IOptions<MapSo
             .DistinctBy(address => address.Id)
             .OrderBy(address => AddressSearchText.Rank(query, address))
             .ThenBy(address => PlaceWords.KmBetween(Church, new GeoPoint(address.Latitude, address.Longitude)))];
+    }
+
+    private static IEnumerable<NationalAddressRecord> WithoutUnitsUnlessAsked(AddressQuery query, List<NationalAddressRecord> addresses)
+    {
+        if (query.Unit is not null)
+            return addresses;
+        HashSet<(string, string)> whole = [.. addresses.Where(address => address.Unit.Length == 0).Select(address => (address.Number, address.Key))];
+        return addresses.Where(address => address.Unit.Length == 0 || !whole.Contains((address.Number, address.Key)));
     }
 
     private IEnumerable<FoundLocation> Streets(List<NationalAddressRecord> addresses) =>

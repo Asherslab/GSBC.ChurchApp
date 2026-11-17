@@ -4,7 +4,7 @@
 
 @if (_source is not null && Location.HasPin)
 {
-    <MapView @ref="_view" Source="_source" Label="@($"Map of {LocationWords.Headline(Location)}")" Centre="Point" Zoom="Zoom" Interactive="Interactive"
+    <MapView @ref="_view" Source="_source" Label="@($"Map of {LocationWords.Headline(Location)}")" Centre="Point" Zoom="Zoom" MinZoom="@(Location.Map is { MinZoom: > 0 } map ? map.MinZoom : null)" Interactive="Interactive"
              OnTap="OnTap" Class="@Class">
         <Overlay>
             <MapPin Point="Point" Class="map-pin--tip">

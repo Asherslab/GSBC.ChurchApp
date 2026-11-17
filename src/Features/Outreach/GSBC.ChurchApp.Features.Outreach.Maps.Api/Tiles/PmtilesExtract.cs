@@ -16,12 +16,13 @@ internal static class PmtilesExtract
     private const long ReadGap = 512 * 1024;
     private const long ReadLimit = 16 * 1024 * 1024;
 
-    public static async Task<ExtractedTiles> ExtractAsync(IRangeReader source, GeoBounds bounds, int maxZoom, Stream output, CancellationToken cancellationToken)
+    public static async Task<ExtractedTiles> ExtractAsync(IRangeReader source, GeoBounds bounds, int maxZoom, Stream output, CancellationToken cancellationToken, int minZoom = 0)
     {
         byte[] start = await source.ReadAsync(0, FirstRead, cancellationToken);
         PmtilesHeader header = PmtilesHeader.Read(start);
         int zoom = Math.Min(maxZoom, header.MaxZoom);
-        ulong[] wanted = TileIds.Covering(bounds, zoom).Order().ToArray();
+        int lowest = Math.Min(zoom, Math.Max(minZoom, header.MinZoom));
+        ulong[] wanted = TileIds.Covering(bounds, zoom, lowest).Order().ToArray();
         List<(ulong Id, long Offset, int Length)> found = [];
         List<PmtilesEntry> root = PmtilesDirectory.Decode(start[(int)header.RootOffset..(int)(header.RootOffset + header.RootLength)], header.InternalCompression);
         await FindAsync(source, header, root, wanted, found, cancellationToken);
@@ -65,7 +66,7 @@ internal static class PmtilesExtract
             TileContents = contents.Count,
             Clustered = true,
             InternalCompression = PmtilesCompression.Gzip,
-            MinZoom = 0,
+            MinZoom = (byte)lowest,
             MaxZoom = (byte)zoom,
             MinLongitudeE7 = E7(bounds.West),
             MinLatitudeE7 = E7(bounds.South),

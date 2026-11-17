@@ -33,6 +33,20 @@ public sealed class PmtilesExtractTests
         Assert.All(tiles, tile => Assert.Equal(TileArchives.ContentOf(tile.Key), tile.Value));
     }
 
+    [Fact]
+    public async Task APlacesMapLeavesOutTheZoomsBelowItsLowest()
+    {
+        GeoBounds bounds = new(-27.36, 152.95, -27.33, 152.98);
+        MemoryStream output = new();
+
+        await PmtilesExtract.ExtractAsync(new BytesReader(TileArchives.World(SourceMaxZoom)), bounds, 15, output, TestContext.Current.CancellationToken, minZoom: 4);
+
+        byte[] archive = output.ToArray();
+        PmtilesHeader header = PmtilesHeader.Read(archive);
+        Assert.Equal(4, header.MinZoom);
+        Assert.Equal(TileIds.Covering(bounds, SourceMaxZoom, 4).Order(), Tiles(archive, header).Keys.Order());
+    }
+
     private static Dictionary<ulong, byte[]> Tiles(byte[] archive, PmtilesHeader header)
     {
         Dictionary<ulong, byte[]> tiles = [];
