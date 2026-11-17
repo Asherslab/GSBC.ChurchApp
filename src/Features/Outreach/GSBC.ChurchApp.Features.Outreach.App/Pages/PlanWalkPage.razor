@@ -81,7 +81,7 @@
         {
             @foreach (Campaign campaign in _active)
             {
-                <ToggleRow @key="@($"{campaign.Id}/{_kept}")" Title="@campaign.Name" Description="@(campaign.Id == _keptOn ? "You carry at least one" : HandedOut(campaign))"
+                <ToggleRow @key="@($"{campaign.Id}/{_kept}")" Title="@campaign.Name" Description="@(campaign.Id == _keptOn ? "Keep at least one on" : HandedOut(campaign))"
                            Checked="_chosen.Contains(campaign.Id)" CheckedChanged="carry => CarryAsync(campaign.Id, carry)" />
             }
         }

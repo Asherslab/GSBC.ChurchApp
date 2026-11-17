@@ -242,7 +242,7 @@ masthead's navy at display size and the map supports it. Maps are `MapView` ([ma
   buttons, warnings as `Notice`s, and *Start the walk*. *Change the walk* holds the length, letterboxes or doorknocking,
   *I'm walking with someone*, where you start (tap the map, or find a street in a `Sheet` with a `SearchField`), and what
   you carry: a row (the campaigns, what's handed out) opening *What you're carrying*, a `Sheet` of `ToggleRow`s (turning off the last one
-  leaves it on and says "You carry at least one"); doorknocking opens *What you're knocking for*, one campaign in
+  leaves it on and says "Keep at least one on"); doorknocking opens *What you're knocking for*, one campaign in
   `Segmented Rows`. Either redraws the plan at once (owner, 2026-11-17, #113). Empty
   states say why there's no plan (no location, no maps yet, outside the area, getting the map, no street near).
 - **Walking** (`/outreach/walking`, a full-screen task: `Page Focused`, so the tab bar steps aside while a walk is on and
