@@ -9,7 +9,7 @@ public static class MapJson
 {
     private const int LineHead = 3;
 
-    public static string Options(MapSource source, MapPoint? centre, double zoom, bool interactive, bool follow, MapBackdrop? backdrop = null) => Write(json =>
+    public static string Options(MapSource source, MapPoint? centre, double zoom, bool interactive, bool follow, MapBackdrop? backdrop = null, bool heading = false) => Write(json =>
     {
         json.WriteStartObject();
         json.WriteStartObject("source");
@@ -44,6 +44,7 @@ public static class MapJson
         json.WriteNumber("zoom", zoom);
         json.WriteBoolean("interactive", interactive);
         json.WriteBoolean("follow", follow);
+        json.WriteBoolean("heading", heading);
         json.WriteEndObject();
     });
 

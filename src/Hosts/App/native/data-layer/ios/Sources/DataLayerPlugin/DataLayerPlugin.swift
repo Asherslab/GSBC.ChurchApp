@@ -7,7 +7,7 @@ public class DataLayerPlugin: CAPPlugin, CAPBridgedPlugin {
     public let identifier = "DataLayerPlugin"
     public let jsName = "DataLayer"
     public let pluginMethods: [CAPPluginMethod] = DataLayerPlugin.dataMethods + DataLayerPlugin.audioMethods + DataLayerPlugin.keyboardMethods
-        + DataLayerPlugin.locationMethods + DataLayerPlugin.fileMethods
+        + DataLayerPlugin.locationMethods + DataLayerPlugin.fileMethods + DataLayerPlugin.compassMethods
 
     private static let dataMethods: [CAPPluginMethod] = [
         "unary",

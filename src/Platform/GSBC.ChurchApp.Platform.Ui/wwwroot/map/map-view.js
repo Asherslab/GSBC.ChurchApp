@@ -54,10 +54,16 @@ function keptOrRemote(source, kept) {
     whole = files.some((file) => file.id === source.id && file.url === source.url && file.state === "done");
     return whole;
   };
-  return async (offset, length, signal) =>
-    remote && !(await keptIsWhole())
-      ? remote.getBytes(offset, length, signal)
-      : { data: (await kept.readKept(source.id, offset, length)).buffer };
+  return async (offset, length, signal) => {
+    if (remote && !(await keptIsWhole())) return remote.getBytes(offset, length, signal);
+    try {
+      return { data: (await kept.readKept(source.id, offset, length)).buffer };
+    } catch (error) {
+      if (!remote) throw error;
+      whole = false;
+      return remote.getBytes(offset, length, signal);
+    }
+  };
 }
 
 async function tilesFor(source) {
@@ -72,8 +78,63 @@ async function tilesFor(source) {
   return "pmtiles://" + key;
 }
 
+const coneRadius = 84;
+const coneSpread = { sure: 50, unsure: 110 };
+const sureWithin = 20;
+const unsureBeyond = 60;
+const movingMetres = 6;
+const movingFor = 10000;
+
+function headingFrom(compass, course, now) {
+  if (course && now - course.at < movingFor) return { heading: course.heading, spread: coneSpread.sure, sureness: 1 };
+  if (!compass || compass.accuracy < 0 || compass.accuracy > unsureBeyond) return null;
+  const doubt = Math.min(1, Math.max(0, (compass.accuracy - sureWithin) / (unsureBeyond - sureWithin)));
+  const step = 10;
+  const spread = Math.round((coneSpread.sure + doubt * (coneSpread.unsure - coneSpread.sure)) / step) * step;
+  return { heading: compass.heading, spread, sureness: 1 - doubt * 0.45 };
+}
+
+function coneImage(colour, spread) {
+  const ratio = 2;
+  const size = coneRadius * 2 * ratio;
+  const canvas = document.createElement("canvas");
+  canvas.width = canvas.height = size;
+  const g = canvas.getContext("2d");
+  const centre = size / 2;
+  const fade = g.createRadialGradient(centre, centre, 0, centre, centre, centre);
+  fade.addColorStop(0, colour);
+  fade.addColorStop(1, "transparent");
+  const half = (spread / 2) * (Math.PI / 180);
+  g.globalAlpha = 0.9;
+  g.fillStyle = fade;
+  g.beginPath();
+  g.moveTo(centre, centre);
+  g.arc(centre, centre, centre, -Math.PI / 2 - half, -Math.PI / 2 + half);
+  g.closePath();
+  g.fill();
+  return { image: g.getImageData(0, 0, size, size), ratio };
+}
+
+function bearing(from, to) {
+  const rad = Math.PI / 180;
+  const [lon1, lat1, lon2, lat2] = [from[0] * rad, from[1] * rad, to[0] * rad, to[1] * rad];
+  const y = Math.sin(lon2 - lon1) * Math.cos(lat2);
+  const x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(lon2 - lon1);
+  return ((Math.atan2(y, x) / rad) + 360) % 360;
+}
+
+function metresBetween(a, b) {
+  const rad = Math.PI / 180;
+  const x = (b[0] - a[0]) * rad * Math.cos(((a[1] + b[1]) / 2) * rad);
+  const y = (b[1] - a[1]) * rad;
+  return Math.sqrt(x * x + y * y) * 6371008.8;
+}
+
 function overlayLayers(c) {
   return [
+    { id: "you-heading", type: "symbol", source: "you", filter: ["has", "cone"],
+      layout: { "icon-image": ["get", "cone"], "icon-rotate": ["get", "heading"], "icon-rotation-alignment": "map", "icon-allow-overlap": true, "icon-ignore-placement": true },
+      paint: { "icon-opacity": ["get", "sureness"] } },
     { id: "areas-fill", type: "fill", source: "areas", paint: { "fill-color": ["coalesce", ["get", "colour"], c.walk], "fill-opacity": ["case", ["get", "outline"], 0, 0.12] } },
     { id: "areas-edge", type: "line", source: "areas", filter: ["!", ["get", "dashed"]], paint: { "line-color": ["coalesce", ["get", "colour"], c.walk], "line-width": 1.5 } },
     { id: "areas-edge-dashed", type: "line", source: "areas", filter: ["get", "dashed"], paint: { "line-color": ["coalesce", ["get", "colour"], c.walk], "line-width": 2, "line-dasharray": [3, 2] } },
@@ -320,11 +381,40 @@ export async function create(element, optionsJson, receiver) {
     data.lines = { type: "FeatureCollection", features: [...lineSets.values()].flat() };
     map.getSource("lines")?.updateData({ remove: gone.map((feature) => feature.id), add: features ?? [] });
   };
+  let compass = null;
+  let course = null;
+  let courseFrom = null;
+  const coneName = (spread) => `you-cone-${spread}`;
+  const addCone = (name) => {
+    if (map.hasImage(name)) return;
+    const { image, ratio } = coneImage(colours().you, +name.slice(coneName("").length));
+    map.addImage(name, image, { pixelRatio: ratio });
+  };
+  map.on("styleimagemissing", (e) => e.id.startsWith(coneName("")) && addCone(e.id));
   const drawYou = () => {
     if (!you) return set("you", empty);
     const radius = Math.max(0, metresToPixels(map, you.accuracy ?? 0, you.point[1]));
-    set("you", { type: "FeatureCollection", features: [{ type: "Feature", properties: { radius }, geometry: { type: "Point", coordinates: you.point } }] });
+    const facing = options.heading ? headingFrom(compass, course, Date.now()) : null;
+    const cone = facing ? { cone: coneName(facing.spread), heading: facing.heading, sureness: facing.sureness } : {};
+    if (facing && map.isStyleLoaded()) addCone(cone.cone);
+    set("you", { type: "FeatureCollection", features: [{ type: "Feature", properties: { radius, ...cone }, geometry: { type: "Point", coordinates: you.point } }] });
   };
+  const followCourse = () => {
+    if (!you) return (courseFrom = null);
+    if (!courseFrom) return (courseFrom = you.point);
+    if (metresBetween(courseFrom, you.point) < movingMetres) return;
+    course = { heading: bearing(courseFrom, you.point), at: Date.now() };
+    courseFrom = you.point;
+  };
+  let stopCompass = null;
+  if (options.heading)
+    import("../../GSBC.ChurchApp.Platform.Client/compass.js").then(({ watch }) => {
+      if (handle.gone) return;
+      stopCompass = watch((reading) => {
+        compass = reading;
+        drawYou();
+      });
+    });
 
   let framed = null;
   const fit = (b, animate = false) => {
@@ -399,6 +489,7 @@ export async function create(element, optionsJson, receiver) {
     setMarkers: (json) => set("markers", { type: "FeatureCollection", features: JSON.parse(json).map(marker) }),
     setYou: (json) => {
       you = json ? JSON.parse(json) : null;
+      followCourse();
       drawYou();
       if (following && you && !framed) showYou(true);
     },
@@ -420,6 +511,7 @@ export async function create(element, optionsJson, receiver) {
     ready: () => ready,
     dispose: () => {
       handle.gone = true;
+      stopCompass?.();
       watcher.disconnect();
       map.remove();
     },

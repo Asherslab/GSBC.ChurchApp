@@ -10,14 +10,24 @@ public sealed class OutreachNearby(OutreachStore store, WhereYouAre where, Regio
 {
     public static readonly IReadOnlyList<string> Feeds = OutreachStore.Feeds;
 
+    private Task<bool>? _keeping;
+
     public async Task<Nearby> LoadAsync()
     {
         WalkState? walking = await walk.LoadAsync();
         OutreachNow now = await store.LoadAsync();
-        if (await where.FindAsync(mayAsk: false) is { Point: { } here } && RegionMaps.RegionAt(now.Regions, here) is { } region
-            && !(await regions.OnPhoneAsync(region)).Kept)
-            await regions.KeepAsync(region, false);
+        if (_keeping is null || _keeping is { IsCompletedSuccessfully: true, Result: false })
+            _keeping = KeepTheMapHereAsync(now);
         return new Nearby(now, walking);
+    }
+
+    private async Task<bool> KeepTheMapHereAsync(OutreachNow now)
+    {
+        if (await where.FindAsync(mayAsk: false) is not { Point: { } here } || RegionMaps.RegionAt(now.Regions, here) is not { } region)
+            return false;
+        if (!(await regions.OnPhoneAsync(region)).Kept)
+            await regions.KeepAsync(region, false);
+        return true;
     }
 
     public static IReadOnlyList<MapLine> WalkedLines(OutreachNow now, StreetGraph graph, IReadOnlyList<string> campaigns)

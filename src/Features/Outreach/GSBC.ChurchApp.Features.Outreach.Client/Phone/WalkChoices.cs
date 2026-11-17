@@ -28,11 +28,16 @@ public sealed class WalkChoices(ILocalPreferences preferences)
 {
     private const string CarryingKey = "outreach.carrying";
     private const string FirstNameKey = "outreach.first-name";
+    private const string KnockingForKey = "outreach.knocking-for";
 
     public async Task<IReadOnlyList<string>> CarryingAsync() =>
         (await preferences.GetAsync(CarryingKey) ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries);
 
     public Task CarryAsync(IEnumerable<string> campaigns) => preferences.SetAsync(CarryingKey, string.Join(',', campaigns)).AsTask();
+
+    public async Task<string?> KnockingForAsync() => await preferences.GetAsync(KnockingForKey);
+
+    public Task KnockForAsync(string campaign) => preferences.SetAsync(KnockingForKey, campaign).AsTask();
 
     public async Task<string> FirstNameAsync() => await preferences.GetAsync(FirstNameKey) ?? "";
 
