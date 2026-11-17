@@ -266,9 +266,9 @@ masthead's navy at display size and the map supports it. Maps are `MapView` ([ma
   A mark (No junk mail or Spoke) replaces the top line with its line and an underlined *Undo*, the whole line the
   button, for 12 seconds; text is capped at xLarge; in Always-On the sign and Finish turn to outlines; three minutes without an update reads *Open the app to keep marking streets*.
   **Dynamic Island** (on black): held open, a 48pt sign in bright aqua (white at 16% when paused), street and side
-  (*Paused · …*), the count at the right on the street's line, and the buttons with Finish in bright aqua; a mark's line
-  (bright aqua at 16%, Undo in bright aqua, the whole line the button) takes the buttons' place for its 12 seconds,
-  because the island is capped at 160pt; compact, the arrow and
+  (*Paused · …*), the count at the right on the street's line, and the buttons with Finish in bright aqua, which never
+  move; for a mark's 12 seconds its line (in bright aqua) stands in for the side line and a 44pt bright aqua *Undo*
+  stands in for the count, away from the marks, so a second tap on Spoke never lands on Undo; compact, the arrow and
   count in bright aqua and the street; minimal, the arrow. The whole card opens the walking screen. Fonts ship in the
   extension (TTF from the app's subset) and icons are generated from `IconPaths.cs` (`tools/ios/walk-activity-icons.py`).
 - **The end** (on the walking page once finished): a masthead (*Well walked*, or *Thanks for knocking*), the figures, and

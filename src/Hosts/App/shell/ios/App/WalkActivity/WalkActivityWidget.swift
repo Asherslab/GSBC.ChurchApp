@@ -26,7 +26,21 @@ struct WalkActivityWidget: Widget {
                         .padding(.top, 4)
                 }
                 DynamicIslandExpandedRegion(.trailing) {
-                    if state.phase == .walking || state.phase == .paused {
+                    if state.canUndo {
+                        Button(intent: WalkTapIntent(.undo)) {
+                            Text("Undo")
+                                .font(.montserrat(.bold, 13))
+                                .lineLimit(1)
+                                .fixedSize()
+                                .foregroundStyle(Palette.onBrightAqua)
+                                .padding(.horizontal, 14)
+                                .frame(minHeight: 44)
+                                .background(Palette.brightAqua, in: Capsule())
+                        }
+                        .buttonStyle(.plain)
+                        .padding(.trailing, 6)
+                        .padding(.top, 10)
+                    } else if state.phase == .walking || state.phase == .paused {
                         VStack(alignment: .trailing, spacing: 2) {
                             Text("\(state.toGo)").font(.montserrat(.bold, 19)).monospacedDigit().contentTransition(.numericText())
                             Text("to go").font(.montserrat(.semibold, 13)).foregroundStyle(Palette.onMastheadQuiet)
@@ -39,20 +53,18 @@ struct WalkActivityWidget: Widget {
                 DynamicIslandExpandedRegion(.center) {
                     VStack(alignment: .leading, spacing: 2) {
                         Text(state.street).font(.montserrat(.bold, 19)).lineLimit(1).minimumScaleFactor(0.7)
-                        Text(state.phase == .paused ? "Paused · \(state.side)" : state.side).font(.montserrat(.semibold, 13)).lineLimit(1).minimumScaleFactor(0.85)
+                        if state.said.isEmpty {
+                            Text(state.phase == .paused ? "Paused · \(state.side)" : state.side).font(.montserrat(.semibold, 13)).lineLimit(1).minimumScaleFactor(0.85)
+                        } else {
+                            Text(state.said).font(.montserrat(.semibold, 12.5)).foregroundStyle(Palette.brightAqua).lineLimit(2).minimumScaleFactor(0.8)
+                        }
                     }
                     .foregroundStyle(.white)
                     .frame(maxWidth: .infinity, alignment: .leading)
                 }
                 DynamicIslandExpandedRegion(.bottom) {
-                    Group {
-                        if state.said.isEmpty {
-                            WalkButtons(state: state, tone: .island)
-                        } else {
-                            SaidLine(state: state, tone: .island)
-                        }
-                    }
-                    .dynamicTypeSize(...DynamicTypeSize.xLarge)
+                    WalkButtons(state: state, tone: .island)
+                        .dynamicTypeSize(...DynamicTypeSize.xLarge)
                 }
             } compactLeading: {
                 HStack(spacing: 4) {
@@ -96,7 +108,7 @@ struct LockScreenWalk: View {
                 .foregroundStyle(Palette.onMastheadQuiet)
                 .lineLimit(1)
             } else {
-                SaidLine(state: state, tone: .lockScreen)
+                SaidLine(state: state)
             }
             HStack(spacing: 12) {
                 TurnSign(state: state, size: 58, tone: .lockScreen)
@@ -119,7 +131,7 @@ struct LockScreenWalk: View {
     private var sideLine: String {
         switch state.phase {
         case .walking: return "\(state.side) · \(state.toGo) to go"
-        case .paused: return "Paused · \(state.side) · \(state.toGo) to go"
+        case .paused: return state.said.isEmpty ? "\(state.side) · \(state.toGo) to go" : "Paused · \(state.side) · \(state.toGo) to go"
         case .finding, .done: return state.side
         }
     }
@@ -193,7 +205,6 @@ struct TurnGlyph: View {
 
 struct SaidLine: View {
     let state: WalkActivityState
-    let tone: Tone
 
     var body: some View {
         if state.canUndo {
@@ -212,13 +223,13 @@ struct SaidLine: View {
             if state.canUndo {
                 Text("Undo")
                     .font(.montserrat(.bold, 12.5))
-                    .foregroundStyle(tone == .island ? Palette.brightAqua : .white)
-                    .underline(tone == .lockScreen)
+                    .foregroundStyle(.white)
+                    .underline()
             }
         }
         .padding(.horizontal, 12)
-        .frame(height: tone == .island ? 44 : 26)
-        .background(tone == .island ? Palette.brightAqua.opacity(0.16) : Color.white.opacity(0.14), in: RoundedRectangle(cornerRadius: tone == .island ? 22 : 11, style: .continuous))
+        .frame(height: 26)
+        .background(Color.white.opacity(0.14), in: RoundedRectangle(cornerRadius: 11, style: .continuous))
         .contentShape(Rectangle())
     }
 }
