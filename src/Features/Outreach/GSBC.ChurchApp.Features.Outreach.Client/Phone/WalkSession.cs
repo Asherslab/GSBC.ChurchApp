@@ -204,6 +204,16 @@ public sealed class WalkSession(
         Changed?.Invoke();
     }
 
+    public async Task<bool> UnspokeAsync()
+    {
+        if (_state is null || _state.Conversations <= _state.SentConversations)
+            return false;
+        _state.Conversations--;
+        await SaveStateAsync();
+        Changed?.Invoke();
+        return true;
+    }
+
     public async Task DoorAsync(DoorOutcomeKind outcome, string firstName, string contact, string note, bool consent)
     {
         if (_state is null || _graph is null || _region is null)

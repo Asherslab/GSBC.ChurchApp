@@ -25,7 +25,7 @@ public static class WalkActivityWords
             Side = OutreachPhoneWords.Side(step.Step.Delivers),
             ToGo = Math.Max(0, step.Step.Letterboxes - step.Done),
             Turn = next is null ? WalkTurn.None : OutreachPhoneWords.TurnFor(step.Step, next.Step),
-            Next = next is null ? "" : $"{OutreachPhoneWords.Turn(step.Step, next.Step)} · {next.Step.Letterboxes}",
+            Next = next is null ? OutreachPhoneWords.LastStreet : $"{OutreachPhoneWords.Turn(step.Step, next.Step)} · {next.Step.Letterboxes}",
         };
     }
 

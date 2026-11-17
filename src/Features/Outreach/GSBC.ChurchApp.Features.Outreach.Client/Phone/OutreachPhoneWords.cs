@@ -91,6 +91,7 @@ public static class OutreachPhoneWords
     public const string FindingYou = "Finding you";
     public const string FindingYouNote = "Walk to the start. The app follows you once it has your location.";
     public const string RouteDone = "That's the route";
+    public const string LastStreet = "That's the last street. Finish when you're done.";
     public const string RouteDoneNote = "Every street on the plan is done. Finish when you're ready.";
 
     public static string Side(bool houses) => houses ? "Houses on your left" : "Nothing to deliver here";

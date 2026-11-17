@@ -44,6 +44,26 @@ public sealed class WalkCompanionTests
     }
 
     [Fact]
+    public async Task AConversationCanBeTakenBackUntilItHasBeenSent()
+    {
+        Phone phone = new();
+        await StartAsync(phone);
+
+        phone.LockScreen.Tap(WalkTapKind.Spoke, phone.Clock.GetUtcNow());
+        phone.LockScreen.Tap(WalkTapKind.Undo, phone.Clock.GetUtcNow());
+        await phone.Companion.CatchUpAsync();
+        Assert.Equal(0, phone.Walk.Current!.Conversations);
+        Assert.Equal("Taken back.", phone.LockScreen.Shown[^1].State.Said);
+
+        await phone.Actions.SpokeAsync();
+        ((StoppedClock)phone.Clock).Now += TimeSpan.FromMinutes(2);
+        await phone.Walk.DrainAsync();
+        await phone.Actions.UndoAsync();
+        Assert.Equal(1, phone.Walk.Current.Conversations);
+        Assert.Equal(1, phone.Outbox.Pieces().Sum(piece => piece.Conversations));
+    }
+
+    [Fact]
     public async Task NoJunkMailFromTheLockScreenMarksTheLetterboxWhereTheWalkerTapped()
     {
         Phone phone = new();

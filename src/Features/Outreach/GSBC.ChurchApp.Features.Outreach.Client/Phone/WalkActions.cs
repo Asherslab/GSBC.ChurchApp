@@ -5,8 +5,9 @@ namespace GSBC.ChurchApp.Features.Outreach.Client.Phone;
 public sealed class WalkActions(WalkSession walk, TimeProvider time)
 {
     public static readonly TimeSpan SaidFor = TimeSpan.FromSeconds(12);
+    private const string TakenBack = "Taken back.";
 
-    private string? _marked;
+    private Func<Task<string>>? _undo;
     private DateTimeOffset _saidAt;
 
     public event Action? Changed;
@@ -15,7 +16,7 @@ public sealed class WalkActions(WalkSession walk, TimeProvider time)
 
     public string? Brief { get; private set; }
 
-    public bool CanUndo => _marked is not null;
+    public bool CanUndo => _undo is not null;
 
     public async Task NoJunkMailAsync()
     {
@@ -26,21 +27,25 @@ public sealed class WalkActions(WalkSession walk, TimeProvider time)
             return;
         }
         string done = $"Marked No junk mail{(walk.NearestAddress(out _) is { Label.Length: > 0 } address ? $" ({address.Label})" : "")}.";
-        Say($"{done} It's skipped from now on.", marked, done);
+        Say($"{done} It's skipped from now on.", async () =>
+        {
+            await walk.UndoNoJunkMailAsync(marked);
+            return TakenBack;
+        }, done);
     }
 
     public async Task UndoAsync()
     {
-        if (_marked is null)
+        if (_undo is null)
             return;
-        await walk.UndoNoJunkMailAsync(_marked);
-        Say("Taken back.", null);
+        Say(await _undo(), null);
     }
 
     public async Task SpokeAsync()
     {
         await walk.SpokeAsync();
-        Say($"Counted. {OutreachWords.Plural(walk.Current?.Conversations ?? 0, "conversation", "conversations")} on this walk.", null);
+        Say($"Counted. {OutreachWords.Plural(walk.Current?.Conversations ?? 0, "conversation", "conversations")} on this walk.",
+            async () => await walk.UnspokeAsync() ? TakenBack : "That conversation was already sent, so it stays counted.");
     }
 
     public async Task SkipAsync()
@@ -74,15 +79,15 @@ public sealed class WalkActions(WalkSession walk, TimeProvider time)
             return;
         Said = null;
         Brief = null;
-        _marked = null;
+        _undo = null;
         Changed?.Invoke();
     }
 
-    private void Say(string said, string? marked, string? brief = null)
+    private void Say(string said, Func<Task<string>>? undo, string? brief = null)
     {
         Said = said;
         Brief = brief ?? said;
-        _marked = marked;
+        _undo = undo;
         _saidAt = time.GetUtcNow();
         Changed?.Invoke();
     }

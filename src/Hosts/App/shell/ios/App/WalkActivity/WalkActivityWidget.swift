@@ -22,34 +22,37 @@ struct WalkActivityWidget: Widget {
             return DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {
                     TurnSign(state: state, size: 48, tone: .island)
-                        .padding(.leading, 4)
+                        .padding(.leading, 6)
+                        .padding(.top, 4)
+                }
+                DynamicIslandExpandedRegion(.trailing) {
+                    if state.phase == .walking || state.phase == .paused {
+                        VStack(alignment: .trailing, spacing: 2) {
+                            Text("\(state.toGo)").font(.montserrat(.bold, 19)).monospacedDigit().contentTransition(.numericText())
+                            Text("to go").font(.montserrat(.semibold, 13)).foregroundStyle(Palette.onMastheadQuiet)
+                        }
+                        .foregroundStyle(.white)
+                        .padding(.trailing, 6)
+                        .padding(.top, 18)
+                    }
                 }
                 DynamicIslandExpandedRegion(.center) {
                     VStack(alignment: .leading, spacing: 2) {
                         Text(state.street).font(.montserrat(.bold, 19)).lineLimit(1).minimumScaleFactor(0.7)
-                        Text(state.side).font(.montserrat(.semibold, 13)).lineLimit(1)
+                        Text(state.phase == .paused ? "Paused · \(state.side)" : state.side).font(.montserrat(.semibold, 13)).lineLimit(1).minimumScaleFactor(0.85)
                     }
                     .foregroundStyle(.white)
                     .frame(maxWidth: .infinity, alignment: .leading)
                 }
-                DynamicIslandExpandedRegion(.trailing) {
-                    if state.phase == .walking || state.phase == .paused {
-                        VStack(alignment: .trailing, spacing: 0) {
-                            Text("\(state.toGo)").font(.montserrat(.bold, 22)).monospacedDigit()
-                            Text("to go").font(.montserrat(.semibold, 11.5)).foregroundStyle(Palette.onMastheadQuiet)
-                        }
-                        .foregroundStyle(.white)
-                        .padding(.trailing, 4)
-                    }
-                }
                 DynamicIslandExpandedRegion(.bottom) {
-                    VStack(spacing: 10) {
+                    VStack(spacing: 8) {
                         if !state.said.isEmpty {
                             SaidLine(state: state, tone: .island)
                         }
                         WalkButtons(state: state, tone: .island)
                     }
                     .padding(.top, 6)
+                    .dynamicTypeSize(...DynamicTypeSize.xLarge)
                 }
             } compactLeading: {
                 HStack(spacing: 4) {
@@ -63,7 +66,8 @@ struct WalkActivityWidget: Widget {
                 Text(state.phase == .paused ? "Paused" : state.street)
                     .font(.montserrat(.semibold, 13))
                     .lineLimit(1)
-                    .frame(maxWidth: 88)
+                    .minimumScaleFactor(0.75)
+                    .frame(maxWidth: 96)
                     .foregroundStyle(.white)
             } minimal: {
                 TurnGlyph(state: state)
@@ -81,12 +85,12 @@ struct LockScreenWalk: View {
     let stale: Bool
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            if state.said.isEmpty {
+        VStack(alignment: .leading, spacing: 6) {
+            if state.said.isEmpty || state.phase == .paused {
                 HStack {
                     Text(stale ? "Open the app to keep marking streets" : state.status)
                     Spacer(minLength: 8)
-                    Text(state.totals).monospacedDigit()
+                    Text(state.totals).monospacedDigit().contentTransition(.numericText())
                 }
                 .font(.montserrat(.semibold, 11.5))
                 .foregroundStyle(Palette.onMastheadQuiet)
@@ -108,11 +112,16 @@ struct LockScreenWalk: View {
             WalkButtons(state: state, tone: .lockScreen)
         }
         .padding(.horizontal, 14)
-        .padding(.vertical, 12)
+        .padding(.vertical, 10)
+        .dynamicTypeSize(...DynamicTypeSize.xLarge)
     }
 
     private var sideLine: String {
-        state.phase == .walking || state.phase == .paused ? "\(state.side) · \(state.toGo) to go" : state.side
+        switch state.phase {
+        case .walking: return "\(state.side) · \(state.toGo) to go"
+        case .paused: return "Paused · \(state.side) · \(state.toGo) to go"
+        case .finding, .done: return state.side
+        }
     }
 }
 
@@ -124,19 +133,38 @@ struct TurnSign: View {
     let state: WalkActivityState
     let size: CGFloat
     let tone: Tone
+    @Environment(\.isLuminanceReduced) private var dimmed
 
     var body: some View {
         VStack(spacing: 1) {
             TurnGlyph(state: state).frame(width: size * 0.42, height: size * 0.42)
             if tone == .lockScreen && (state.phase == .walking || state.phase == .paused) {
-                Text("\(state.toGo)").font(.montserrat(.bold, 11)).monospacedDigit()
+                Text("\(state.toGo)").font(.montserrat(.bold, 11)).monospacedDigit().contentTransition(.numericText())
             }
         }
-        .foregroundStyle(tone == .lockScreen ? Palette.navy : Palette.onBrightAqua)
+        .foregroundStyle(ink)
         .frame(width: size, height: size)
-        .background(tone == .lockScreen ? Color.white : Palette.brightAqua, in: RoundedRectangle(cornerRadius: size * 0.24, style: .continuous))
+        .background(ground, in: shape)
+        .overlay { if dimmed { shape.stroke(.white, lineWidth: 1.5) } }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(state.next.isEmpty ? state.street : "\(state.toGo) to go. \(state.next)")
+    }
+
+    private var shape: RoundedRectangle { RoundedRectangle(cornerRadius: size * 0.24, style: .continuous) }
+
+    private var paused: Bool { state.phase == .paused }
+
+    private var ink: Color {
+        if dimmed || (paused && tone == .island) { return .white }
+        return tone == .lockScreen ? Palette.navy : Palette.onBrightAqua
+    }
+
+    private var ground: Color {
+        if dimmed { return .clear }
+        switch tone {
+        case .lockScreen: return paused ? Palette.beige : .white
+        case .island: return paused ? Color.white.opacity(0.16) : Palette.brightAqua
+        }
     }
 }
 
@@ -157,7 +185,7 @@ struct TurnGlyph: View {
             case .right: return "arrow-right"
             case .back: return "rotate-ccw"
             case .straight: return "arrow-up"
-            case .none: return "check"
+            case .none: return "flag"
             }
         }
     }
@@ -168,25 +196,30 @@ struct SaidLine: View {
     let tone: Tone
 
     var body: some View {
+        if state.canUndo {
+            Button(intent: WalkTapIntent(.undo)) { line }
+                .buttonStyle(.plain)
+                .accessibilityLabel("\(state.said) Undo")
+        } else {
+            line
+        }
+    }
+
+    private var line: some View {
         HStack(spacing: 10) {
             Text(state.said).font(.montserrat(.semibold, 12.5)).foregroundStyle(.white).lineLimit(1).minimumScaleFactor(0.8)
             Spacer(minLength: 0)
             if state.canUndo {
-                Button(intent: WalkTapIntent(.undo)) {
-                    Text("Undo")
-                        .font(.montserrat(.bold, 12.5))
-                        .foregroundStyle(tone == .island ? Palette.brightAqua : .white)
-                        .underline(tone == .lockScreen)
-                        .padding(.horizontal, 12)
-                        .frame(maxHeight: .infinity)
-                        .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
+                Text("Undo")
+                    .font(.montserrat(.bold, 12.5))
+                    .foregroundStyle(tone == .island ? Palette.brightAqua : .white)
+                    .underline(tone == .lockScreen)
             }
         }
-        .padding(.leading, 12)
+        .padding(.horizontal, 12)
         .frame(height: tone == .island ? 34 : 26)
         .background(tone == .island ? Palette.brightAqua.opacity(0.16) : Color.white.opacity(0.14), in: RoundedRectangle(cornerRadius: 11, style: .continuous))
+        .contentShape(Rectangle())
     }
 }
 
@@ -228,11 +261,11 @@ struct WideLabel: View {
     var body: some View {
         HStack(spacing: 5) {
             Image(icon).resizable().scaledToFit().frame(width: 15, height: 15)
-            Text(text).font(.montserrat(.semibold, 12.5)).lineLimit(1)
+            Text(text).font(.montserrat(.semibold, 12.5)).lineLimit(1).minimumScaleFactor(0.8)
         }
         .foregroundStyle(.white)
         .padding(.horizontal, 8)
-        .frame(maxWidth: .infinity, minHeight: 36)
+        .frame(maxWidth: .infinity, minHeight: 44)
         .background(Color.white.opacity(tone == .island ? 0.16 : 0.14), in: Capsule())
     }
 }
@@ -241,12 +274,19 @@ struct RoundLabel: View {
     let icon: String
     let finish: Bool
     let tone: Tone
+    @Environment(\.isLuminanceReduced) private var dimmed
 
     var body: some View {
-        Image(icon).resizable().scaledToFit().frame(width: 15, height: 15)
-            .foregroundStyle(finish ? (tone == .island ? Palette.onBrightAqua : Palette.navy) : .white)
-            .frame(width: 36, height: 36)
-            .background(finish ? (tone == .island ? Palette.brightAqua : .white) : Color.white.opacity(tone == .island ? 0.16 : 0.14), in: Circle())
+        Image(icon).resizable().scaledToFit().frame(width: 16, height: 16)
+            .foregroundStyle(finish && !dimmed ? (tone == .island ? Palette.onBrightAqua : Palette.navy) : .white)
+            .frame(width: 44, height: 44)
+            .background(ground, in: Circle())
+            .overlay { if finish && dimmed { Circle().stroke(.white, lineWidth: 1.5) } }
+    }
+
+    private var ground: Color {
+        if finish { return dimmed ? .clear : tone == .island ? Palette.brightAqua : .white }
+        return Color.white.opacity(tone == .island ? 0.16 : 0.14)
     }
 }
 

@@ -9,7 +9,7 @@ Writes the Live Activity's icons into the widget extension's asset catalog from 
 (src/Platform/GSBC.ChurchApp.Platform.Ui/IconPaths.cs), so both draw the same glyph for each meaning."""
 
 ICONS = ["arrow-left", "arrow-right", "arrow-up", "rotate-ccw", "circle-off", "message-square", "pause", "play", "check",
-         "door-open", "footprints"]
+         "door-open", "footprints", "flag"]
 
 ROOT = Path(__file__).resolve().parents[2]
 SOURCE = ROOT / "src/Platform/GSBC.ChurchApp.Platform.Ui/IconPaths.cs"
