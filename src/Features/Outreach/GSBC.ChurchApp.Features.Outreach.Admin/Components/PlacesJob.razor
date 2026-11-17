@@ -15,7 +15,7 @@
         @{ Lists lists = context.Value; }
         @if (IsOpen)
         {
-            <SectionContent SectionName="@OutreachMap.DrawerSection">
+            <StableSection SectionName="@OutreachMap.DrawerSection">
                 <PaneHead Title="Places outreach skips" Lead="Walkers never get these on a route." />
                 <div class="outreach-map__stack">
                     @if (CanChangeExclusions)
@@ -56,25 +56,25 @@
                                     Body="Walkers mark No junk mail and doors that want nothing to do with outreach; areas and addresses are added here, or from a walker's report." />
                     }
                 </div>
-            </SectionContent>
+            </StableSection>
             @if (CanChangeExclusions)
             {
-                <SectionContent SectionName="@OutreachMap.FootSection">
+                <StableSection SectionName="@OutreachMap.FootSection">
                     <div class="outreach-map__foot-actions">
                         <Button Variant="ButtonVariant.Quiet" Icon="@AppIcons.DrawArea" OnClick="DrawZoneAsync">Draw an area</Button>
                         <Button Variant="ButtonVariant.Quiet" Icon="map-pin" OnClick="PickAddressAsync">Pick a letterbox</Button>
                     </div>
-                </SectionContent>
+                </StableSection>
             }
         }
         @if (HasCard && Chosen(lists) is { } chosen)
         {
-            <SectionContent SectionName="@OutreachMap.CardSection">
+            <StableSection SectionName="@OutreachMap.CardSection">
                 <MapCard Label="@chosen.Title">
                     <ChildContent>@Record(chosen)</ChildContent>
                     <Foot>@Foot(chosen)</Foot>
                 </MapCard>
-            </SectionContent>
+            </StableSection>
         }
         <Sheet Open="_deleting" OpenChanged="open => _deleting = open" Title="@DeleteTitle(Chosen(lists))"
                Lead="Walks deliver there again from now. A walker or staff can mark it again later.">
@@ -87,10 +87,10 @@
     <Loading>
         @if (IsOpen)
         {
-            <SectionContent SectionName="@OutreachMap.DrawerSection">
+            <StableSection SectionName="@OutreachMap.DrawerSection">
                 <PaneHead Title="Places outreach skips" Lead="Walkers never get these on a route." />
                 <Skeleton />
-            </SectionContent>
+            </StableSection>
         }
     </Loading>
 </LiveData>

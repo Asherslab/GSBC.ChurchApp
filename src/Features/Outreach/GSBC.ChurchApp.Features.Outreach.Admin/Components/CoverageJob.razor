@@ -17,7 +17,7 @@
         @{ Shown shown = context.Value; }
         @if (IsOpen)
         {
-            <SectionContent SectionName="@OutreachMap.DrawerSection">
+            <StableSection SectionName="@OutreachMap.DrawerSection">
                 <PaneHead Title="Coverage" Lead="Where a campaign has been lately. Streets open up again as its rest period ends." />
                 <div class="outreach-map__stack">
                     <SelectField Label="Campaign" Options="CampaignOptions(shown.Desk)" Value="@shown.Campaign" ValueChanged="ChooseCampaignAsync" />
@@ -28,25 +28,25 @@
                         <Notice Tone="NoticeTone.Info" Text="Coverage is switched off under Layers on the map." />
                     }
                 </div>
-            </SectionContent>
-            <SectionContent SectionName="@OutreachMap.FootSection">
+            </StableSection>
+            <StableSection SectionName="@OutreachMap.FootSection">
                 <p class="field__hint">Click a street on the map, or draw round several, to mark them not done.</p>
                 <Button Variant="ButtonVariant.Quiet" Icon="@AppIcons.LassoStreets" Block="true" Disabled="@(!Map.Shows(OutreachLayer.Coverage))" OnClick="DrawRound">Draw round streets</Button>
-            </SectionContent>
+            </StableSection>
         }
         else if (Map.Shows(OutreachLayer.Coverage) && Map.Job != OutreachMapJob.MapAreas)
         {
-            <SectionContent SectionName="@OutreachMap.LegendSection">
+            <StableSection SectionName="@OutreachMap.LegendSection">
                 <div class="outreach-map__legend">
                     <p class="outreach-map__legend-title"><span>@CampaignName(shown)</span><span>@FiguresLine()</span></p>
                     <div class="outreach-coverage__ramp" aria-hidden="true"></div>
                     <p class="outreach-coverage__ramp-key"><span>This week</span><span>@Weeks(RestDays(shown)): open again</span></p>
                 </div>
-            </SectionContent>
+            </StableSection>
         }
         @if (HasCard && (_choice is not null || _undo is not null))
         {
-            <SectionContent SectionName="@OutreachMap.CardSection">
+            <StableSection SectionName="@OutreachMap.CardSection">
                 <MapCard Label="The chosen streets">
                     <ChildContent>
                         @if (_choice is { } chosen)
@@ -76,16 +76,16 @@
                         }
                     </Foot>
                 </MapCard>
-            </SectionContent>
+            </StableSection>
         }
     </ChildContent>
     <Loading>
         @if (IsOpen)
         {
-            <SectionContent SectionName="@OutreachMap.DrawerSection">
+            <StableSection SectionName="@OutreachMap.DrawerSection">
                 <PaneHead Title="Coverage" Lead="Where a campaign has been lately." />
                 <Skeleton />
-            </SectionContent>
+            </StableSection>
         }
     </Loading>
 </LiveData>

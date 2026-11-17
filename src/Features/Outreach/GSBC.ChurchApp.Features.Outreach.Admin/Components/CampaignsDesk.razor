@@ -6,12 +6,12 @@
 <UnsavedGuard Changed="() => Changed" What="this campaign" Save="SaveBeforeLeavingAsync" />
 
 <LiveData @ref="_live" TValue="OutreachDesk" Feeds="Feeds" Load="() => Outreach.DeskAsync(Scope)" Remember="@($"outreach.campaigns.{Scope}")" FailedTitle="Can't load the campaigns right now">
-    <SectionContent SectionName="@OutreachHead.ActionsSection">
+    <StableSection SectionName="@OutreachHead.ActionsSection">
         @if (MayPlan)
         {
             <Button Icon="plus" OnClick="() => OpenAsync(() => Edit(NewCampaign(context.Value)))">New campaign</Button>
         }
-    </SectionContent>
+    </StableSection>
     @{
         OutreachDesk desk = context.Value;
         _settings = desk.Settings;
