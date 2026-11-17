@@ -31,6 +31,13 @@ picker; the item editor saves with Cancel and Save. Decision page `.impeccable/m
 order beside a big preview), dialog B (fields beside how it will look, `e-with-look.html`), app A (a post is the same card as an event);
 the email: staff choose per item (picture beside or across) and an optional photo across the top (owner in chat).
 
+## Round 3 (UAT #29, 2026-11-17)
+
+The email's top under a photo that already says What's Next. Decision page `.impeccable/mocks/digest-banner/`: the
+dates alone as a dateline (A, `a-dateline.html`); the choice in a *Top of the email* box with the photo (H,
+`h-top-group.html`). Built with the admin panel's `Segmented` for the one small choice in place of the sketch's inline
+radios (the pattern map's control for it), stacked when the box is narrow. Only shown once there's a photo.
+
 ## Direction contract
 
 THESIS: The digest is a short running order the office builds by hand from the calendar, church news and its own

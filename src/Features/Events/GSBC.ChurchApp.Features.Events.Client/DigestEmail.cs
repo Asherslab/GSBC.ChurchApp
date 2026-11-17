@@ -39,7 +39,8 @@ public static class DigestEmail
     private const int Inner = Width - 64;
     private const string PictureShare = "34%";
 
-    public static string Html(string range, IReadOnlyList<EmailItem> items, string allEventsLink, string? topPictureUrl = null)
+    public static string Html(string range, IReadOnlyList<EmailItem> items, string allEventsLink, string? topPictureUrl = null,
+        DigestHeading heading = DigestHeading.TitleAndDates)
     {
         StringBuilder html = new();
         html.Append(LightOnly);
@@ -47,14 +48,25 @@ public static class DigestEmail
         html.Append("""<tr><td align="center" style="padding:0 0 32px">""");
         html.Append($"""<!--[if mso]><table role="presentation" width="{Width}" align="center" cellpadding="0" cellspacing="0" border="0"><tr><td><![endif]-->""");
         html.Append($"""<table role="presentation" width="100%" align="center" cellpadding="0" cellspacing="0" border="0" bgcolor="#ffffff" style="width:100%;max-width:{Width}px;margin:0 auto;background:#ffffff;border-collapse:collapse">""");
-        if (topPictureUrl is { } top && IsWeb(top))
+        string? top = topPictureUrl is { } url && IsWeb(url) ? url : null;
+        if (top is not null)
             html.Append($"""<tr><td style="padding:0;line-height:0"><img src="{Encode(top)}" alt="" width="{Width}" border="0" style="display:block;width:100%;max-width:{Width}px;height:auto;border:0" /></td></tr>""");
-        html.Append($"""<tr><td bgcolor="{Navy}" style="background:{Navy};padding:30px 32px 26px;font-family:{Font};color:#ffffff">""");
-        html.Append($"""<div style="font-size:32px;font-weight:700;letter-spacing:-.02em;line-height:1.1;color:#ffffff">{Heading}</div>""");
-        html.Append($"""<div style="font-size:15px;font-weight:600;color:{Beige};margin-top:8px">{Encode(range)}</div></td></tr>""");
+        DigestHeading under = HeadingUnder(top is not null, heading);
+        switch (under)
+        {
+            case DigestHeading.TitleAndDates:
+                html.Append($"""<tr><td bgcolor="{Navy}" style="background:{Navy};padding:30px 32px 26px;font-family:{Font};color:#ffffff">""");
+                html.Append($"""<div style="font-size:32px;font-weight:700;letter-spacing:-.02em;line-height:1.1;color:#ffffff">{Heading}</div>""");
+                html.Append($"""<div style="font-size:15px;font-weight:600;color:{Beige};margin-top:8px">{Encode(range)}</div></td></tr>""");
+                break;
+            case DigestHeading.DatesOnly:
+                AppendDatesAlone(html, range);
+                break;
+        }
 
+        string firstTop = under == DigestHeading.DatesOnly ? "20px" : "26px";
         for (int index = 0; index < items.Count; index++)
-            AppendItem(html, items[index], first: index == 0);
+            AppendItem(html, items[index], index == 0 ? firstTop : null);
 
         html.Append($"""<tr><td style="padding:30px 32px 32px;font-family:{Font};color:{Ink}">""");
         html.Append($"""<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td bgcolor="{Sand}" style="background:{Sand};border-radius:14px;padding:18px 20px;font-family:{Font};color:{Ink}">""");
@@ -67,19 +79,28 @@ public static class DigestEmail
         return html.ToString();
     }
 
+    private static DigestHeading HeadingUnder(bool hasTopPicture, DigestHeading chosen) =>
+        hasTopPicture && Enum.IsDefined(chosen) ? chosen : DigestHeading.TitleAndDates;
+
+    private static void AppendDatesAlone(StringBuilder html, string range)
+    {
+        html.Append($"""<tr><td style="padding:24px 32px 0;font-family:{Font}">""");
+        html.Append($"""<div style="font-size:13px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;line-height:1.4;color:{Navy};padding-bottom:12px;border-bottom:2px solid {Navy}">{Encode(range)}</div></td></tr>""");
+    }
+
     public static string ItemHtml(EmailItem item)
     {
         StringBuilder html = new();
         html.Append($"""<table role="presentation" width="{Width}" cellpadding="0" cellspacing="0" border="0" bgcolor="#ffffff" style="width:{Width}px;background:#ffffff;border-collapse:collapse">""");
-        AppendItem(html, item, first: true);
+        AppendItem(html, item, "26px");
         html.Append("""<tr><td style="padding:0 0 22px"></td></tr></table>""");
         return html.ToString();
     }
 
-    private static void AppendItem(StringBuilder html, EmailItem item, bool first)
+    private static void AppendItem(StringBuilder html, EmailItem item, string? firstTop)
     {
-        html.Append($"""<tr><td style="padding:{(first ? "26px" : "22px")} 32px 4px;font-family:{Font};color:{Ink}">""");
-        html.Append(first ? "<div>" : $"""<div style="border-top:1px solid {Line};padding-top:22px">""");
+        html.Append($"""<tr><td style="padding:{firstTop ?? "22px"} 32px 4px;font-family:{Font};color:{Ink}">""");
+        html.Append(firstTop is not null ? "<div>" : $"""<div style="border-top:1px solid {Line};padding-top:22px">""");
         string? picture = item.Kind == DigestItemKind.NotOn ? null : item.PictureUrl;
         if (picture is not null && item.PictureAt == DigestPictureAt.Beside)
         {

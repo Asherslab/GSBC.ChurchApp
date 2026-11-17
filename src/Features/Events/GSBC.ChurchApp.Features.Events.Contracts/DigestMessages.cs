@@ -25,6 +25,13 @@ public enum DigestPictureAt
     Across = 1,
 }
 
+public enum DigestHeading
+{
+    TitleAndDates = 0,
+    DatesOnly = 1,
+    Nothing = 2,
+}
+
 public static class DigestFields
 {
     public const string Label = "label";
@@ -148,6 +155,7 @@ public sealed class DigestDraft
     [ProtoMember(14)] public List<DigestItem> Calendar { get; set; } = [];
     [ProtoMember(15)] public List<DigestItem> Posts { get; set; } = [];
     [ProtoMember(16)] public MediaRef? TopPicture { get; set; }
+    [ProtoMember(17)] public DigestHeading Heading { get; set; }
 }
 
 [ProtoContract]
@@ -177,6 +185,7 @@ public sealed class DigestSave
     [ProtoMember(6)] public DigestRange Range { get; set; }
     [ProtoMember(7)] public string End { get; set; } = "";
     [ProtoMember(8)] public MediaRef? TopPicture { get; set; }
+    [ProtoMember(9)] public DigestHeading Heading { get; set; }
 }
 
 [ProtoContract]
