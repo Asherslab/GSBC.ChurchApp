@@ -81,7 +81,7 @@
         @Item("Something that belongs to a place on the map: MapPin", "Keeps a control (a chip with its Menu, a small card) on a point of the map as it pans and zooms, above the point. Outreach's planner puts each area's chip on the top of its outline: what it is, and its Menu to change or remove it.",
             @<div class="gallery__frame gallery__frame--short">
                 <div class="gallery__map-stand-in" role="img" aria-label="Where the map goes">
-                    <MapPin Point="new GSBC.ChurchApp.Platform.Ui.Maps.MapPoint(-27.3433, 152.9646)">
+                    <MapPin Point="new MapPoint(-27.3433, 152.9646)">
                         <Menu Label="Faheys Rd" Text="Faheys Rd · split into 6" Icon="pentagon" Chevron="true" Small="true" AlignStart="true" Class="map-chip" Items="AreaChoices" />
                     </MapPin>
                 </div>
@@ -548,7 +548,7 @@
 
     private static readonly IReadOnlyList<TabOption<string>> Tabs = [new("about", "About"), new("news", "News", 2), new("people", "People"), new("settings", "Settings")];
     private static readonly IReadOnlyList<Crumb> Trail = [new("Library", "library", "folder"), new("Events", "events"), new("2026", "2026")];
-    private static readonly IReadOnlyList<GSBC.ChurchApp.Platform.Ui.Maps.MapWorkspaceJob> SampleJobs =
+    private static readonly IReadOnlyList<MapWorkspaceJob> SampleJobs =
     [
         new("coverage", "Coverage", AppIcons.Coverage), new("places", "Places", AppIcons.PlacesSkipped), new("reports", "Reports", AppIcons.WalkersReports, 3),
         new("plan", "Plan a day", AppIcons.PlanADay, StartsGroup: true),

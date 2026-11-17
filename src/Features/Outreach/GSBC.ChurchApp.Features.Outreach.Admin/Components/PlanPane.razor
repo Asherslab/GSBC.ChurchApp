@@ -101,15 +101,18 @@ else
 
     private PlannedSection? Chosen => Selected is { } id ? Planner.Section(id) : null;
 
-    private string Filter => Filters?.Any(option => option.Value == _filter) == true ? _filter : Everything;
+    private string Filter => Filters.Any(option => option.Value == _filter) ? _filter : Everything;
 
-    private IReadOnlyList<FilterOption<string>>? Filters
+    private IReadOnlyList<FilterOption<string>> Filters
     {
         get
         {
-            List<FilterOption<string>> options = [new(Everything, "All", Planner.Sections.Count)];
-            options.AddRange(Planner.Areas.Where(area => !area.OneRoute && Planner.RoutesIn(area) > 0)
-                .Select(area => new FilterOption<string>(area.Id.ToString(), AreaName(area), Planner.RoutesIn(area))));
+            List<FilterOption<string>> options =
+            [
+                new(Everything, "All", Planner.Sections.Count),
+                .. Planner.Areas.Where(area => !area.OneRoute && Planner.RoutesIn(area) > 0)
+                    .Select(area => new FilterOption<string>(area.Id.ToString(), AreaName(area), Planner.RoutesIn(area))),
+            ];
             int byHand = Planner.Sections.Count(Planner.MadeByHand);
             if (byHand > 0)
                 options.Add(new FilterOption<string>(ByHand, "Drawn by hand", byHand, AppIcons.DrawRoute));
@@ -164,7 +167,7 @@ else
     private Task UseAreaAsync()
     {
         _adding = false;
-        return Areas.FirstOrDefault(area => area.Id == _area) is { } area ? OnUseArea.InvokeAsync(area) : Task.CompletedTask;
+        return Areas.FirstOrDefault(saved => saved.Id == _area) is { } chosen ? OnUseArea.InvokeAsync(chosen) : Task.CompletedTask;
     }
 
     private async Task SizeAsync((PlanTarget Target, double PerRoute) size)

@@ -13,7 +13,7 @@ public sealed class DayPlannerTests
     {
         DayPlanner planner = Planned();
         planner.Apply(planner.Draft.Rename(planner.Sections[0].Id, "Kingfisher"));
-        planner.Published(planner.ToRoutes().Select((route, i) => new DayRoute { Id = $"route-{i}" }).ToList());
+        planner.Published(planner.ToRoutes().Select((_, i) => new DayRoute { Id = $"route-{i}" }).ToList());
 
         DayPlanner again = Planner();
         again.Restore(Wire(planner.Save()));
