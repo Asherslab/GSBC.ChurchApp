@@ -182,6 +182,7 @@ public sealed class SplitterTests
         Assert.Equal(inside.Order(), route.Pieces.Order());
         Assert.All(drawn.Sections.Where(s => s.Id != route.Id), s => Assert.DoesNotContain(s.Pieces, inside.Contains));
         Assert.Equal(route.Pieces.Order(), reworked.Section(route.Id)!.Pieces.Order());
+        Assert.Equal(reworked.Sections.Count, reworked.Number(route.Id));
         Assert.Equal(draft.Streets.Where(s => splitter.Planner.Open.Open(s) > 0).Order(), reworked.Sections.SelectMany(s => s.Pieces).Order());
     }
 

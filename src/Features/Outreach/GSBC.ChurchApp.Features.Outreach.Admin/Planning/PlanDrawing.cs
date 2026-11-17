@@ -61,18 +61,19 @@ public static class PlanDrawing
         foreach (DraftArea area in planner.Areas)
         {
             if (!area.OneRoute)
-                areas.Add(new MapArea(Points(area.Outline), Dashed: true, Id: Key(area)));
+                areas.Add(new MapArea(Points(area.Outline), "--primary", Key(area), Dashed: true));
             else if (planner.Sections.FirstOrDefault(section => section.Area == area.Id) is { } route)
                 areas.Add(new MapArea(Points(area.Outline), RouteColours.Of(route.Colour), Key(area), Outline: true));
             else
-                areas.Add(new MapArea(Points(area.Outline), Id: Key(area), Dashed: true, Outline: true));
+                areas.Add(new MapArea(Points(area.Outline), "--primary", Key(area), Dashed: true, Outline: true));
         }
         areas.AddRange(OverlapShapes(planner).Select(overlap => new MapArea(Points(overlap.Shape), Hatched: true)));
         return areas;
     }
 
     public static IReadOnlyList<MapLabel> OverlapLabels(DayPlanner planner) =>
-        OverlapShapes(planner).Select(overlap => new MapLabel(Point(Middle(planner, overlap.Shape)), $"Route {overlap.KeptBy.Number} keeps these", "--ink", Order: -1, Quiet: true)).ToList();
+        OverlapShapes(planner).Select(overlap => new MapLabel(Point(Middle(planner, overlap.Shape)), $"Route {overlap.KeptBy.Number} keeps these", "--ink-2", Order: -1,
+            Short: $"Route {overlap.KeptBy.Number} keeps these", Places: Points(InsideCorners(planner, overlap.Shape)))).ToList();
 
     public static GeoPoint Top(DraftArea area) => area.Outline.MaxBy(point => point.Lat)!;
 
@@ -89,6 +90,13 @@ public static class PlanDrawing
             if (shape.Count >= 3)
                 yield return (overlap.KeptBy, shape.Select(projection.ToGeo).ToList());
         }
+    }
+
+    private static IEnumerable<GeoPoint> InsideCorners(DayPlanner planner, IReadOnlyList<GeoPoint> shape)
+    {
+        LocalProjection projection = planner.Network.Graph.Projection;
+        Flat middle = projection.ToFlat(Middle(planner, shape));
+        return shape.Select(projection.ToFlat).Select(corner => projection.ToGeo(new Flat((corner.X + middle.X) / 2, (corner.Y + middle.Y) / 2)));
     }
 
     private static GeoPoint Middle(DayPlanner planner, IReadOnlyList<GeoPoint> shape)

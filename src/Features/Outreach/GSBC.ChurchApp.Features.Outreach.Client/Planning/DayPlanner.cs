@@ -29,6 +29,7 @@ public sealed class DayPlanner
 {
     private const int Colours = 9;
     private const double DefaultPerRoute = 100;
+    private const double TooBig = 2;
 
     private readonly AreaSplitter _splitter;
     private readonly string _region;
@@ -105,6 +106,8 @@ public sealed class DayPlanner
     public bool SavedAs(int id, string savedId) => Apply(Draft.SavedAs(id, savedId));
 
     public bool MadeByHand(PlannedSection section) => Draft.MadeByHand(section.Section);
+
+    public string StreetsOf(DraftArea area) => _splitter.Name(area.Streets);
 
     public int RoutesIn(DraftArea area) => Sections.Count(s => s.Area == area.Id);
 
@@ -281,6 +284,14 @@ public sealed class DayPlanner
         summary.InPieces ? "In pieces: its streets don't join up"
         : summary.Plan.LongestConnectorMetres > Open.Settings.MaxConnectorLegMetres ? $"{summary.Plan.LongestConnectorMetres:0} m between streets with letterboxes"
         : summary.Plan.ConnectorMetres > Open.Settings.MaxConnectorTotalMetres ? $"{summary.Plan.ConnectorMetres:0} m in all between streets"
+        : Draft.MadeByHand(summary.Section) && Size(summary) > TooBig * PerRoute ? "More than twice the size you chose for routes"
         : summary.NeedsReview ? "Needs a look"
         : null;
+
+    private double Size(SectionSummary summary) => Target switch
+    {
+        PlanTarget.Minutes => summary.Time.TotalMinutes,
+        PlanTarget.Bundles => summary.Bundles,
+        _ => summary.Letterboxes,
+    };
 }

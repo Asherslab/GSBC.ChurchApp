@@ -39,7 +39,7 @@ else
                         <div class="plan-rail" role="toolbar" aria-label="Map tools" data-map-cover>
                             @foreach (ToolChoice choice in Tools)
                             {
-                                <Button Variant="ButtonVariant.Quiet" Icon="@choice.Icon" AriaLabel="@choice.Name" Tooltip="@choice.Tip" Pressed="@(_tool == choice.Tool)"
+                                <Button Variant="ButtonVariant.Quiet" Icon="@choice.Icon" AriaLabel="@choice.Name" Tooltip="@choice.Tip" Pressed="@(_tool == choice.Tool || _tool == PlanTool.Redraw && choice.Tool == RedrawingWith)"
                                         Disabled="@(choice.NeedsRoute && _selected is null || choice.NeedsRoutes && _planner.Sections.Count == 0)"
                                         Class="plan-rail__tool" OnClick="() => ChooseTool(choice.Tool)" />
                             }
@@ -56,7 +56,7 @@ else
                         {
                             @foreach (DraftArea area in _planner.Areas)
                             {
-                                <MapPin Point="PlanDrawing.Point(PlanDrawing.Top(area))">
+                                <MapPin @key="area.Id" Point="PlanDrawing.Point(PlanDrawing.Top(area))">
                                     <Menu Label="@AreaName(area)" Text="@ChipText(area)" Icon="@(area.OneRoute ? AppIcons.DrawRoute : AppIcons.DrawArea)" Chevron="true" Small="true" AlignStart="true"
                                           Class="map-chip" Items="AreaItems(area)" />
                                 </MapPin>
@@ -67,7 +67,7 @@ else
                             }
                         }
                     }
-                    @if (_view == PlanView.Plan && _planner.Areas.Count > 0 && !Outlining)
+                    @if (_view == PlanView.Plan && _planner.Areas.Count > 0 && !Outlining && Selected is null)
                     {
                         <div class="plan-key" aria-label="What the outlines mean">
                             @if (_planner.HasSplitArea) { <span class="plan-key__row"><span class="plan-key__swatch plan-key__swatch--split"></span>An area the app splits</span> }
@@ -246,6 +246,8 @@ else
 
     private IReadOnlyList<SavedArea> SavedAreas => [.. Setup.Areas.Where(area => _savedHere.All(here => here.Id != area.Id)), .. _savedHere];
 
+    private PlanTool RedrawingWith => _planner?.Draft.Area(_redrawing ?? 0) is { OneRoute: true } ? PlanTool.Route : PlanTool.Area;
+
     private bool Outlining => _tool is PlanTool.Route or PlanTool.Area or PlanTool.Redraw;
 
     private string OutlineText => _tool switch
@@ -261,7 +263,7 @@ else
             return _planner?.Sections.FirstOrDefault(section => section.Area == area.Id) is { } route ? $"Route {route.Number}" : "A route drawn by hand";
         if (SavedAreas.FirstOrDefault(saved => saved.Id == area.SavedId) is { } named)
             return named.Name;
-        return $"Area {_planner!.Areas.Where(other => !other.OneRoute).ToList().IndexOf(area) + 1}";
+        return _planner!.StreetsOf(area);
     }
 
     private string ChipText(DraftArea area)
@@ -269,7 +271,12 @@ else
         if (area.OneRoute)
             return $"{AreaName(area)} · as drawn";
         int routes = _planner!.RoutesIn(area);
-        return routes == 0 ? $"{AreaName(area)} · no routes" : $"{AreaName(area)} · split into {routes}";
+        return routes switch
+        {
+            0 => $"{AreaName(area)} · no routes",
+            1 => $"{AreaName(area)} · 1 route",
+            _ => $"{AreaName(area)} · split into {routes}",
+        };
     }
 
     private IReadOnlyList<MenuItem> AreaItems(DraftArea area) =>
@@ -278,7 +285,7 @@ else
             area.OneRoute ? null : OutreachWords.Plural(_planner!.RoutesIn(area), "route", "routes") + " now", @checked: !area.OneRoute),
         this.Item("Make it one route", () => EditAsync(planner => planner.SetOneRoute(area.Id, true)), AppIcons.DrawRoute,
             OutreachWords.Plural(_planner!.LetterboxesIn(area), "letterbox", "letterboxes"), @checked: area.OneRoute),
-        this.Item("Redraw the outline", () => StartRedraw(area.Id), AppIcons.DrawArea, startsGroup: true),
+        this.Item("Redraw the outline", () => StartRedraw(area.Id), AppIcons.ReplaceIt, startsGroup: true),
         .. area.SavedId.Length == 0 ? [this.Item("Save for next time…", () => { _namingArea = area.Id; _open = true; }, AppIcons.SavedAreas)] : Array.Empty<MenuItem>(),
         this.Item(area.OneRoute ? "Delete this route" : "Take it off the day", () => EditAsync(planner => planner.RemoveArea(area.Id)), AppIcons.TakeOut,
             area.OneRoute ? "Undo brings it back" : "Its routes go too", danger: true, startsGroup: true),
@@ -405,7 +412,7 @@ else
         this.Item("Rename…", () => { _name = chosen.Name; _renaming = true; }, AppIcons.Heading),
         .. _planner!.Sections.Where(other => other.Id != chosen.Id).Select(other => this.Item($"Merge with route {other.Number}", () => EditAsync(planner => planner.Apply(planner.Draft.Merge([chosen.Id, other.Id]))), AppIcons.Merge, other.Name, startsGroup: other == _planner.Sections.First(s => s.Id != chosen.Id))),
         .. _planner.Draft.Area(chosen.Area) is { OneRoute: true } drawn
-            ? [this.Item("Redraw its outline", () => StartRedraw(drawn.Id), AppIcons.DrawRoute, startsGroup: true),
+            ? [this.Item("Redraw its outline", () => StartRedraw(drawn.Id), AppIcons.ReplaceIt, startsGroup: true),
                this.Item("Delete this route", () => EditAsync(planner => planner.RemoveArea(drawn.Id)), AppIcons.TakeOut, "Undo brings it back", danger: true, startsGroup: true)]
             : new[] { this.Item("Leave its streets out", () => EditAsync(planner => planner.Apply(planner.Draft.Unassign([chosen.Id]))), AppIcons.LeaveOut, "They stay on the map, in no route", danger: true, startsGroup: true) },
     ];

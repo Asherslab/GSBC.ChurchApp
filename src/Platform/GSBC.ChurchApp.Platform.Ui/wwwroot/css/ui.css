@@ -1839,4 +1839,4 @@ span.stage-pipeline__stage { pointer-events: none; }
 }
 .gallery__map-desk { height: 26rem; }
 .gallery__map-stand-in { position: absolute; inset: 0; background: var(--sand); }
-.gallery__map-stand-in .map-pin { transform: translate(50%, 70%); }
+.gallery__map-stand-in .map-pin { transform: translate(16rem, 8rem); }

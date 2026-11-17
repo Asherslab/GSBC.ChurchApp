@@ -125,9 +125,17 @@ public sealed class RouteDraft
         List<DraftArea> split = Areas.Where(a => !a.OneRoute).ToList();
         if (split.Count == 0)
             return (false, "There's no area for the app to split. Draw one, or use a saved area.", Graph);
+        Dictionary<int, int> at = split.ToDictionary(a => a.Id, a => state.FindIndex(s => s.Area == a.Id && !Kept(s, Areas)) is var first and >= 0
+            ? state.Take(first).Count(s => Kept(s, Areas))
+            : state.Count);
         state.RemoveAll(s => !Kept(s, Areas));
-        foreach (DraftArea area in split)
-            SplitInto(state, area, target, perRoute);
+        int added = 0;
+        foreach (DraftArea area in split.OrderBy(a => at[a.Id]))
+        {
+            int before = state.Count;
+            SplitInto(state, area, target, perRoute, Math.Min(at[area.Id] + added, state.Count));
+            added += state.Count - before;
+        }
         return (true, null, GraphOf(_splitter, Areas, Streets));
     });
 

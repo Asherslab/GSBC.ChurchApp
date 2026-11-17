@@ -100,7 +100,7 @@ function layers(map) {
     paint: { "circle-radius": 5, "circle-color": surface, "circle-stroke-color": accent, "circle-stroke-width": 2 } });
   const labelLayout = (overlap) => ({
     "icon-image": ["get", "image"], "icon-text-fit": "both", "icon-text-fit-padding": [3, 9, 3, 9], "icon-allow-overlap": overlap, "text-allow-overlap": overlap, "symbol-z-order": "source",
-    "text-field": ["step", ["zoom"], ["get", "short"], fullLabelsFrom, ["get", "text"]], "text-font": ["montserrat-semibold"], "text-size": 12, "symbol-sort-key": ["get", "order"],
+    "text-field": ["step", ["zoom"], ["get", "short"], fullLabelsFrom, ["get", "text"]], "text-font": ["montserrat-semibold"], "text-size": 12, "text-max-width": 24, "symbol-sort-key": ["get", "order"],
   });
   addLayer(map, { id: "tools-labels-quiet", type: "symbol", source: "tools-labels", filter: ["==", ["get", "quiet"], true], layout: labelLayout(false), paint: { "text-color": ["get", "ink"] } });
   addLayer(map, { id: "tools-labels", type: "symbol", source: "tools-labels", filter: ["!=", ["get", "quiet"], true], layout: labelLayout(true), paint: { "text-color": ["get", "ink"] } });
@@ -138,6 +138,7 @@ export function attach(handle, receiver) {
   const relabelSoon = () => { if (!relabelling) relabelling = requestAnimationFrame(relabel); };
   map.on("zoom", relabelSoon);
   map.on("zoomend", relabel);
+  map.on("pinschanged", relabelSoon);
 
   const sketch = (features) => map.getSource("tools-sketch")?.setData({ type: "FeatureCollection", features });
   const ensure = () => {
