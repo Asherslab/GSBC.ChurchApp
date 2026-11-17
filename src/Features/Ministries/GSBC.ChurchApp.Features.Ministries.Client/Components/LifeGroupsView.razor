@@ -1,3 +1,4 @@
+@using GSBC.ChurchApp.Platform.Ui.Locations
 @inject IMinistryReads Reads
 @inject TimeProvider Clock
 @inject NavigationManager Navigation
@@ -57,9 +58,13 @@
                     {
                         <ListRow Title="@MinistryWords.Span(set)" Subtitle="@($"Sundays, {MinistryWords.Time(set.Starts)} to {MinistryWords.Time(set.Ends)}")" Icon="clock" IconTone="RowTone.Quiet" />
                     }
+                    @if (_choosing[index].Where is { IsSet: true } where)
+                    {
+                        <LocationRow Location="where" />
+                    }
                     @if (_choosing[index].Meets.Length > 0)
                     {
-                        <ListRow Title="@_choosing[index].Meets" Subtitle="Where it meets" Icon="map-pin" IconTone="RowTone.Quiet" />
+                        <ListRow Title="@_choosing[index].Meets" Subtitle="@MinistryWords.MeetsLabel(_choosing[index].Where)" Icon="clock" IconTone="RowTone.Quiet" />
                     }
                     <ListRow Title="More about this group" Subtitle="The group's leaders, news and files" Icon="book-open" IconTone="RowTone.Quiet" Chevron="true" Href="@MinistriesPlaces.Of(_choosing[index].Id)" />
                 </ListGroup>
@@ -116,7 +121,7 @@
     private RenderFragment Rows(IReadOnlyList<MinistrySummary> groups, string until) => @<text>
         @foreach (MinistrySummary group in groups)
         {
-            string line = string.Join(" · ", new[] { group.Meets, group.Yours.Length > 0 ? group.Yours : group.Summary, until }.Where(part => part.Length > 0));
+            string line = string.Join(" · ", new[] { group.Meets, group.Where is { IsSet: true } where ? LocationWords.Headline(where) : "", group.Yours.Length > 0 ? group.Yours : group.Summary, until }.Where(part => part.Length > 0));
             SittingOut? off = _sets?.Off(group);
             <ListRow @key="group.Id" Title="@group.Name" Subtitle="@line" Icon="@AboutArea.IconOf(group.Icon)" IconTone="@(off is null ? RowTone.Accent : RowTone.Quiet)" Chevron="true" Href="@MinistriesPlaces.Of(group.Id)">
                 <Below>

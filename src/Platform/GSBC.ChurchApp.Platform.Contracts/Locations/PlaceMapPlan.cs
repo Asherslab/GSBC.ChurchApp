@@ -1,6 +1,4 @@
-using GSBC.ChurchApp.Platform.Contracts.Locations;
-
-namespace GSBC.ChurchApp.Platform.Ui.Locations;
+namespace GSBC.ChurchApp.Platform.Contracts.Locations;
 
 public sealed record PlaceMapFile(string Id, string Url, string Title);
 
@@ -16,7 +14,7 @@ public static class PlaceMapPlan
     {
         List<PlaceMapFile> wanted = [.. locations
             .Where(location => location is { HasPin: true, AddressHidden: false, Map.Key.Length: > 0 } && !coveredByAKeptRegion(location))
-            .Select(location => new PlaceMapFile(FileId(location.Map!), location.Map!.Url, $"{LocationWords.Headline(location)} map"))
+            .Select(location => new PlaceMapFile(FileId(location.Map!), location.Map!.Url, $"{(location.Name.Length > 0 ? location.Name : location.Address)} map"))
             .DistinctBy(file => file.Id)];
         HashSet<string> kept = [.. keptIds.Where(id => id.StartsWith(Prefix, StringComparison.Ordinal))];
         HashSet<string> wantedIds = [.. wanted.Select(file => file.Id)];

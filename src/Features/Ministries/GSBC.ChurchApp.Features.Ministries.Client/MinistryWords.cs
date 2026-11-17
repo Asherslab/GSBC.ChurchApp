@@ -2,6 +2,7 @@ using System.Globalization;
 using GSBC.ChurchApp.Features.Ministries.Contracts;
 using GSBC.ChurchApp.Platform.Client.Modules;
 using GSBC.ChurchApp.Platform.Contracts.Content;
+using GSBC.ChurchApp.Platform.Contracts.Locations;
 
 namespace GSBC.ChurchApp.Features.Ministries.Client;
 
@@ -87,6 +88,8 @@ public static class MinistryWords
         Roles.Team => "Sees what's shared with the team: its news, files, chats and roster.",
         _ => "Attends, and sees what's shared with attendees and their families.",
     };
+
+    public static string MeetsLabel(Location? where) => where is { IsSet: true } ? "When it meets" : "When and where it meets";
 
     public static string HeroNote(MinistryDetails ministry) => ministry.Summary.Length > 0 ? ministry.Summary : ministry.Meets;
 

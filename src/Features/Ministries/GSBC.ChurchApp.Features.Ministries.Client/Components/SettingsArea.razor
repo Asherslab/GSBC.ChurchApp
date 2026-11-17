@@ -1,3 +1,4 @@
+@using GSBC.ChurchApp.Platform.Ui.Locations
 @inject IMinistryWrites Ministries
 @inject NavigationManager Navigation
 
@@ -11,8 +12,9 @@
                 <TextField Label="Short description" @bind-Value="Details.Summary" MaxLength="140" Hint="One sentence shown under the ministry's name in the Ministries list and at the top of its page." />
             </div>
             <TextField Label="About" @bind-Value="Details.About" Multiline="true" MaxLength="4000" Hint="Shown on the ministry's About tab. Describe what the ministry is and what happens there, for someone who has never been." />
+            <LocationField Label="Where it meets" Description="Shown on the ministry's About tab. For a home, only the ministry's own people see the street address." @bind-Value="Details.Where" AllowHome="true" Optional="true" />
             <div class="ui-pair ui-pair--wide">
-                <TextField Label="When and where it meets" @bind-Value="Details.Meets" MaxLength="140" Hint="Shown on the ministry's About tab." />
+                <TextField Label="When it meets" @bind-Value="Details.Meets" MaxLength="140" Hint="Shown on the ministry's About tab, such as the day and time." />
                 <TextField Label="Who it's for" @bind-Value="Details.WhoFor" MaxLength="140" Hint="Shown on the ministry's About tab. Say who the ministry is for, such as an age group." />
             </div>
             <JoiningFields TeamJoin="@Details.TeamJoin" TeamJoinChanged="value => Details.TeamJoin = value"
@@ -87,11 +89,12 @@
 
     private static bool Same(MinistryDetails one, MinistryDetails other) =>
         (one.Name, one.Summary, one.About, one.Meets, one.WhoFor, one.TeamJoin, one.AttendJoin, one.ShowsInLifeGroups, one.RoundId, one.Hidden)
-        == (other.Name, other.Summary, other.About, other.Meets, other.WhoFor, other.TeamJoin, other.AttendJoin, other.ShowsInLifeGroups, other.RoundId, other.Hidden);
+        == (other.Name, other.Summary, other.About, other.Meets, other.WhoFor, other.TeamJoin, other.AttendJoin, other.ShowsInLifeGroups, other.RoundId, other.Hidden)
+        && (one.Where is null ? other.Where is null : one.Where.SameAs(other.Where));
 
     private static MinistryDetails Copy(MinistryDetails from) => new()
     {
-        Id = from.Id, ParentId = from.ParentId, Name = from.Name, Summary = from.Summary, About = from.About, Meets = from.Meets,
+        Id = from.Id, ParentId = from.ParentId, Name = from.Name, Summary = from.Summary, About = from.About, Meets = from.Meets, Where = from.Where?.Copy(),
         WhoFor = from.WhoFor, Colour = from.Colour, Icon = from.Icon, TeamJoin = from.TeamJoin, AttendJoin = from.AttendJoin, RoundId = from.RoundId,
         ShowsInLifeGroups = from.ShowsInLifeGroups, Order = from.Order, Hidden = from.Hidden, HiddenBy = from.HiddenBy,
     };

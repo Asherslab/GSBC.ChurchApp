@@ -25,6 +25,7 @@ public sealed class MinistriesDbContext(DbContextOptions<MinistriesDbContext> op
             entity.HasKey(ministry => ministry.Id);
             entity.Property(ministry => ministry.Id).ValueGeneratedNever();
             entity.HasIndex(ministry => ministry.ParentId);
+            entity.Property(ministry => ministry.Where).AsJson();
         });
         modelBuilder.Entity<AskRecord>(entity =>
         {
