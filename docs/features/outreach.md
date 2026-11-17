@@ -894,10 +894,22 @@ stops for the end of a walk; B and C stay on the page for the owner). Detail: [d
 - **Where it lives.** Outreach (`/outreach`) is a page any tab or Home tile can open: the Home tile `hub.outreach` (it
   replaces the coming-soon tile with the same key, so placed tiles keep working, and goes live while an outreach day is on)
   and a nav entry staff can put in the tab bar. It leads with your walk if one is on, then the outreach day if one is on,
-  then *Got an hour? Walk from your door* (30 min, 1 hr, 2 hr, or a distance), what you're carrying, a map of the streets
-  around you with those walked lately in grey, the next outreach days, My outreach and Offline maps.
-- **Carrying campaigns:** the active campaigns you choose are remembered on the phone; none chosen means General outreach.
-  A doorknock counts for one campaign (*Claude's default*).
+  then *Got an hour? Walk from your door* (30 min, 1 hr, 2 hr, or a distance), the next outreach days, My outreach and
+  Offline maps.
+- **No *Around you* map** (owner, 2026-11-17, #110: "I'm not sure how it's useful anyway"). It drew the first region in
+  the feed whenever location hadn't been asked yet, so it showed somewhere else. The page still keeps the map of the
+  region you're in, in the background, once the phone already knows where you are.
+- **Carrying campaigns** are chosen on Your walk, not the Outreach page (owner, 2026-11-17, #113: "Why do I need to
+  change what I'm doing on the outreach page?"), and the plan redraws at once. The active campaigns you choose are
+  remembered on the phone; none chosen means General outreach. A doorknock counts for one campaign (*Claude's
+  default*), chosen in its own sheet and remembered separately, so it doesn't change what you carry for letterboxes.
+  Before, the Outreach page never reloaded after the choice was saved: closing and reopening its sheet showed the old
+  choice while the walk used the new one (#111).
+- **Which way you face** (owner, 2026-11-17, #115): a fan from your dot on the walk and Your walk; detail in
+  [design/maps.md](../design/maps.md), *You*.
+- **The map while a region downloads** (#112): the map read only the kept copy, which reads nothing until the download
+  finishes, so the first walk in a new region showed just the route on a blank ground. It now reads the region's
+  PMTiles file by range from the media host until the kept copy is whole (the approved path; nothing new on the server).
 - **Planning** runs the engine on the phone from the region's street file kept on the phone: from here (location asked
   only when you plan), a street you find by name (searched in the region's own street names, offline, no geocoder), or a
   pin dropped on the map. The plan shows distance and time, letterboxes and bundles, when you'll be back, the reach note

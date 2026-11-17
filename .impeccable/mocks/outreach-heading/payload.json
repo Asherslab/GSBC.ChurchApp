@@ -1,0 +1,22 @@
+{
+  "title": "Which way you're facing, on the walk's map",
+  "question": "#115: the dot on the walking screen and Your walk gets a cone showing which way the phone faces, from the compass (and the direction you're moving while you walk). As you chose, it widens and fades when the compass isn't sure. Which look?",
+  "options": [
+    { "id": "fan", "kind": "grounded", "label": "A: A soft orange fan, like Apple Maps",
+      "thesis": "A wide orange fan from the dot, fading out as it goes, in the colour that already means you.",
+      "palette": ["#e7ae74", "#00776d", "#f7f4ee", "#141d31"], "materials": ["the marker colour", "a fading fan"],
+      "viewport": "The walking screen: the navy panel with the street, then the map with you and the fan pointing up the street.",
+      "risk": "Pale orange on the sandy map is gentle in bright sun.", "html": ".impeccable/mocks/outreach-heading/heading-fan.html" },
+    { "id": "beam", "kind": "grounded", "label": "B: A short, stronger orange beam",
+      "thesis": "The same fan, shorter and more solid, so it reads in bright sun.",
+      "palette": ["#e7ae74", "#00776d", "#f7f4ee", "#141d31"], "materials": ["the marker colour", "a short solid fan"],
+      "viewport": "The walking screen with a short solid orange beam from the dot.",
+      "risk": "Covers the street right in front of you more strongly.", "html": ".impeccable/mocks/outreach-heading/heading-beam.html" },
+    { "id": "ink", "kind": "grounded", "label": "C: A soft fan in ink",
+      "thesis": "A soft fan in ink (navy by day, light ink at night); the dot stays orange.",
+      "palette": ["#18233a", "#e7ae74", "#f7f4ee", "#f2ede4"], "materials": ["ink", "a fading fan"],
+      "viewport": "The walking screen with a grey-navy fan from the orange dot.",
+      "risk": "Orange is no longer the only colour that means you; it reads like a shadow.", "html": ".impeccable/mocks/outreach-heading/heading-ink.html" }
+  ],
+  "steer": true
+}

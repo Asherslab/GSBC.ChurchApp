@@ -124,7 +124,6 @@
 .outreach-ask .list { border-top: 0; }
 .outreach-ask .row { border-bottom: 0; }
 
-.outreach-around .map-view__map { min-height: 0; height: 13.5rem; border-radius: var(--radius); overflow: hidden; }
 .outreach-plan-map .map-view__map { min-height: 0; height: max(14rem, 38dvh); }
 .outreach-plan-map .map-view__attribution { padding: var(--space-2xs) var(--gutter) 0; }
 
@@ -164,10 +163,10 @@
 .outreach-walk-map .map-view__attribution { padding: var(--space-2xs) var(--gutter) 0; }
 .outreach-walk-map__follow { position: absolute; right: var(--space-md); bottom: var(--space-md); box-shadow: var(--lift); }
 
-.outreach-walk-foot { display: grid; gap: var(--space-md); padding: var(--space-md) var(--gutter) 0; }
+.outreach-walk-foot { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-md); padding: var(--space-md) var(--gutter) 0; }
 .outreach-walk-foot__progress p { display: flex; justify-content: space-between; gap: var(--space-md); margin: 0 0 var(--space-xs); color: var(--ink-2); font-size: var(--text-caption); font-variant-numeric: tabular-nums; }
 .outreach-walk-foot__said { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--space-xs); margin: 0; color: var(--ink); font-size: var(--text-caption); line-height: 1.4; }
-.outreach-walk-foot__marks { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-sm); }
+.outreach-walk-foot__marks { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-sm); }
 .outreach-walk-foot__marks .btn { min-height: 3.5rem; border-radius: var(--radius); }
 .outreach-walk-foot__bar { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; }
 .outreach-walk-foot__bar > :first-child { justify-self: start; }

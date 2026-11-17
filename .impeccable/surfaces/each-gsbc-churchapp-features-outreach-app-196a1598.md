@@ -33,3 +33,12 @@ FORM: Words first, first of three dealt (structure 3 on the ordered list); raise
 and day routes as a line of stops). seed:8513cbb11e29b7c1
 
 FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, DESIGN.md, and every shipping raster carrying its provenance
+
+## Decided 2026-11-17 (owner, #110–#115)
+
+- No *Around you* map on the Outreach page: the first map you see is Your walk's, which knows where you are.
+- What you carry is chosen on Your walk only (its *Change the walk* row opens the sheet; a doorknock picks one campaign
+  in `Segmented Rows`), and the plan redraws at once.
+- Your dot carries a soft orange fan for the way you face (`.impeccable/mocks/outreach-heading/`, A): from the course
+  while you walk, otherwise the compass; it widens and fades as the compass gets less sure and goes when it has no idea.
+  It sits under the drawn walk, the dot on top.

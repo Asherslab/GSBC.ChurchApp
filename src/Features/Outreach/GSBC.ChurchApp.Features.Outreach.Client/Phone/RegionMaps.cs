@@ -46,8 +46,8 @@ public sealed class RegionMaps(IKeptFiles kept, ILocalPreferences preferences)
     public static GeoBounds Bounds(MapBounds bounds) => new(bounds.South, bounds.West, bounds.North, bounds.East);
 
     public MapSource SourceFor(RegionOnPhone region) =>
-        region.Map?.State == KeptFileState.Done || (kept.IsAvailable && region.Map is not null)
-            ? MapSource.KeptFile(MapId(region.Region), region.Region.Attribution)
+        kept.IsAvailable && region.Map is not null
+            ? MapSource.KeptFile(MapId(region.Region), region.Region.Attribution, region.Region.Map.Url)
             : MapSource.Url(region.Region.Map.Url, region.Region.Attribution);
 
     public async Task<IReadOnlyList<RegionOnPhone>> ListAsync(IReadOnlyList<OutreachRegion> regions)
