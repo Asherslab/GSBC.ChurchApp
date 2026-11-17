@@ -1,5 +1,6 @@
 using GSBC.ChurchApp.Features.Outreach.Maps.Api.Addresses;
 using GSBC.ChurchApp.Features.Outreach.Maps.Api.Data;
+using GSBC.ChurchApp.Features.Outreach.Maps.Api.National;
 using GSBC.ChurchApp.Features.Outreach.Maps.Api.Places;
 using GSBC.ChurchApp.Features.Outreach.Maps.Api.Regions;
 using GSBC.ChurchApp.Features.Outreach.Maps.Api.Sources;
@@ -26,6 +27,15 @@ public static class OutreachMapsApiExtensions
             client.Timeout = Timeout.InfiniteTimeSpan;
             client.DefaultRequestHeaders.UserAgent.ParseAdd(UserAgent);
         });
+        services.AddHttpClient<IGnafSource, GnafSource>(client =>
+        {
+            client.Timeout = Timeout.InfiniteTimeSpan;
+            client.DefaultRequestHeaders.UserAgent.ParseAdd(UserAgent);
+        });
+        services.AddScoped<NationalAddresses>();
+        services.AddScoped<GnafImport>();
+        services.AddScoped<PlaceMaps>();
+        services.AddHostedService<NationalAddressRunner>();
         services.AddMemoryCache();
         services.AddScoped<AreaBuilder>();
         services.AddScoped<MapSquares>();
@@ -45,6 +55,7 @@ public static class OutreachMapsApiExtensions
     public static IEndpointRouteBuilder MapOutreachMapsApi(this IEndpointRouteBuilder endpoints)
     {
         endpoints.MapGrpcService<OutreachMapsService>();
+        endpoints.MapGrpcService<LocationsService>();
         return endpoints;
     }
 }

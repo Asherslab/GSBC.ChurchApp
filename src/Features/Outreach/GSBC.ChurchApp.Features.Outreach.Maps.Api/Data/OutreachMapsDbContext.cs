@@ -15,6 +15,10 @@ public sealed class OutreachMapsDbContext(DbContextOptions<OutreachMapsDbContext
     public DbSet<PlaceRecord> Places => Set<PlaceRecord>();
     public DbSet<AddressRecord> Addresses => Set<AddressRecord>();
     public DbSet<OverviewRecord> Overviews => Set<OverviewRecord>();
+    public DbSet<NationalAddressRecord> NationalAddresses => Set<NationalAddressRecord>();
+    public DbSet<NationalLocalityRecord> NationalLocalities => Set<NationalLocalityRecord>();
+    public DbSet<NationalReleaseRecord> NationalReleases => Set<NationalReleaseRecord>();
+    public DbSet<PlaceMapRecord> PlaceMaps => Set<PlaceMapRecord>();
 
     protected override string Schema => SchemaName;
 
@@ -70,6 +74,33 @@ public sealed class OutreachMapsDbContext(DbContextOptions<OutreachMapsDbContext
         {
             entity.ToTable("overviews");
             entity.HasKey(overview => overview.Id);
+        });
+        modelBuilder.Entity<NationalAddressRecord>(entity =>
+        {
+            entity.ToTable("national_addresses");
+            entity.HasKey(address => new { address.Id, address.Release });
+            entity.HasIndex(address => address.Key).HasOperators("text_pattern_ops");
+            entity.HasIndex(address => new { address.Number, address.Key }).HasOperators("text_ops", "text_pattern_ops");
+            entity.HasIndex(address => address.BuildingKey).HasOperators("text_pattern_ops").HasFilter("building_key <> ''");
+            entity.HasIndex(address => new { address.Latitude, address.Longitude });
+            entity.HasIndex(address => address.Release);
+        });
+        modelBuilder.Entity<NationalLocalityRecord>(entity =>
+        {
+            entity.ToTable("national_localities");
+            entity.HasKey(locality => new { locality.Id, locality.Release });
+            entity.HasIndex(locality => locality.Key).HasOperators("text_pattern_ops");
+        });
+        modelBuilder.Entity<NationalReleaseRecord>(entity =>
+        {
+            entity.ToTable("national_releases");
+            entity.HasKey(release => release.Id);
+        });
+        modelBuilder.Entity<PlaceMapRecord>(entity =>
+        {
+            entity.ToTable("place_maps");
+            entity.HasKey(map => map.Id);
+            entity.HasIndex(map => map.MapKey);
         });
     }
 }

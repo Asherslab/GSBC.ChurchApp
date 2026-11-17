@@ -1,10 +1,12 @@
 using Amazon.S3;
 using GSBC.ChurchApp.Features.Outreach.Maps.Api.Addresses;
 using GSBC.ChurchApp.Features.Outreach.Maps.Api.Data;
+using GSBC.ChurchApp.Features.Outreach.Maps.Api.National;
 using GSBC.ChurchApp.Features.Outreach.Maps.Api.Places;
 using GSBC.ChurchApp.Features.Outreach.Maps.Api.Regions;
 using GSBC.ChurchApp.Features.Outreach.Maps.Api.Sources;
 using GSBC.ChurchApp.Features.Outreach.Maps.Contracts;
+using GSBC.ChurchApp.Platform.Api.Locations;
 using GSBC.ChurchApp.Platform.Data;
 using GSBC.ChurchApp.Platform.Storage;
 using GSBC.ChurchApp.Testing;
@@ -19,8 +21,9 @@ internal sealed class MapsHost : IAsyncDisposable
     private readonly TestDatabase _database;
     private readonly ServiceProvider _services;
 
-    private MapsHost(TestDatabase database, ServiceProvider services, TestClock clock, FakeSources sources, FakeUses uses)
+    private MapsHost(TestDatabase database, ServiceProvider services, TestClock clock, FakeSources sources, FakeUses uses, FakeLocationUses locationUses)
     {
+        LocationUses = locationUses;
         _database = database;
         _services = services;
         Clock = clock;
@@ -31,6 +34,7 @@ internal sealed class MapsHost : IAsyncDisposable
     public TestClock Clock { get; }
     public FakeSources Sources { get; }
     public FakeUses Uses { get; }
+    public FakeLocationUses LocationUses { get; }
 
     public static async Task<MapsHost> StartAsync()
     {
@@ -49,6 +53,7 @@ internal sealed class MapsHost : IAsyncDisposable
         TestClock clock = new();
         FakeSources sources = new();
         FakeUses uses = new();
+        FakeLocationUses locationUses = new();
         ServiceProvider services = new ServiceCollection()
             .AddSingleton(configuration)
             .AddLogging()
@@ -68,12 +73,18 @@ internal sealed class MapsHost : IAsyncDisposable
             .AddScoped<OverviewMap>()
             .AddSingleton<AreaBuildRunner>()
             .AddScoped<OutreachMapsService>()
+            .AddSingleton<ILocationUses>(locationUses)
+            .AddSingleton<IGnafSource, NoGnafSource>()
+            .AddScoped<NationalAddresses>()
+            .AddScoped<GnafImport>()
+            .AddScoped<PlaceMaps>()
+            .AddScoped<LocationsService>()
             .BuildServiceProvider();
         await services.GetRequiredService<IAmazonS3>().PutBucketAsync(buckets.Public);
         await using AsyncServiceScope scope = services.CreateAsyncScope();
         await scope.ServiceProvider.GetRequiredService<SyncDbContext>().Database.MigrateAsync();
         await scope.ServiceProvider.GetRequiredService<OutreachMapsDbContext>().Database.MigrateAsync();
-        return new MapsHost(database, services, clock, sources, uses);
+        return new MapsHost(database, services, clock, sources, uses, locationUses);
     }
 
     public async Task<T> WithServiceAsync<T>(Func<IOutreachMapsService, ValueTask<T>> call)
@@ -92,6 +103,12 @@ internal sealed class MapsHost : IAsyncDisposable
     {
         await using AsyncServiceScope scope = _services.CreateAsyncScope();
         return await call(scope.ServiceProvider.GetRequiredService<OverviewMap>());
+    }
+
+    public async Task<T> WithScopeAsync<T>(Func<IServiceProvider, Task<T>> call)
+    {
+        await using AsyncServiceScope scope = _services.CreateAsyncScope();
+        return await call(scope.ServiceProvider);
     }
 
     public async Task<T> WithDbAsync<T>(Func<OutreachMapsDbContext, Task<T>> read)
@@ -155,3 +172,18 @@ internal sealed class FakeUses : IRegionUses
     public Task<IReadOnlyList<RegionUse>> UsesAsync(IReadOnlyCollection<string> regionIds, CancellationToken cancellationToken) =>
         Task.FromResult<IReadOnlyList<RegionUse>>([.. Uses.Where(use => regionIds.Contains(use.RegionId))]);
 }
+
+internal sealed class FakeLocationUses : ILocationUses
+{
+    public HashSet<string> Keys { get; } = [];
+
+    public Task<IReadOnlyCollection<string>> MapKeysAsync(CancellationToken cancellationToken) => Task.FromResult<IReadOnlyCollection<string>>(Keys);
+}
+
+internal sealed class NoGnafSource : IGnafSource
+{
+    public Task<GnafFile> LatestAsync(CancellationToken cancellationToken) => throw new InvalidOperationException("Tests import G-NAF files they write");
+
+    public Task DownloadAsync(GnafFile file, string path, CancellationToken cancellationToken) => throw new InvalidOperationException("Tests import G-NAF files they write");
+}
+

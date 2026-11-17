@@ -70,7 +70,7 @@ internal static partial class AddressSearchText
         [var first, ..] => [.. Spellings(first).Select(spelling => $"{spelling} %")],
     };
 
-    public static bool Matches(AddressQuery query, AddressRecord address)
+    public static bool Matches(AddressQuery query, IAddressRow address)
     {
         if (query.Number is { } number && !NumberMatches(number, address.Number))
             return false;
@@ -88,7 +88,7 @@ internal static partial class AddressSearchText
         return true;
     }
 
-    public static (int, int, int, int, string) Rank(AddressQuery query, AddressRecord address) =>
+    public static (int, int, int, int, string) Rank(AddressQuery query, IAddressRow address) =>
         (address.Number == query.Number ? 0 : 1,
             query.Unit is null && address.Unit.Length > 0 ? 1 : 0,
             Whole(address.Number),
@@ -98,7 +98,7 @@ internal static partial class AddressSearchText
     public static bool NumberMatches(string wanted, string number) =>
         number == wanted || number.StartsWith($"{wanted}-", StringComparison.Ordinal);
 
-    public static string Label(AddressRecord address)
+    public static string Label(IAddressRow address)
     {
         string number = address.Unit.Length > 0 ? $"{address.Unit}/{address.Number}" : address.Number;
         string street = number.Length > 0 ? $"{number} {address.Street}" : address.Street;
@@ -111,7 +111,12 @@ internal static partial class AddressSearchText
     private static bool WordMatches(string wanted, string word) =>
         word.StartsWith(wanted, StringComparison.Ordinal) || (StreetTypes.TryGetValue(wanted, out string? full) && word == full);
 
-    private static List<string> Words(string text) => [.. text.Split(' ', StringSplitOptions.RemoveEmptyEntries).Where(word => word != "-" && word != "qld")];
+    private static readonly HashSet<string> States = ["qld", "nsw", "vic", "tas", "sa", "wa", "nt", "act"];
+
+    private static List<string> Words(string text) =>
+        [.. text.Split(' ', StringSplitOptions.RemoveEmptyEntries).Where(word => word != "-" && !States.Contains(word) && !IsPostcode(word))];
+
+    private static bool IsPostcode(string word) => word.Length == 4 && word.All(char.IsAsciiDigit);
 
     private static int Whole(string number)
     {

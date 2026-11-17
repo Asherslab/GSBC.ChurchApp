@@ -58,7 +58,7 @@ public sealed class PlaceRecord
     public DateTime IndexedAt { get; set; }
 }
 
-public sealed class AddressRecord
+public sealed class AddressRecord : IAddressRow
 {
     public long Id { get; set; }
     public required string RegionId { get; set; }
@@ -110,3 +110,56 @@ public sealed class OverviewRecord
     public int MaxZoom { get; set; }
     public DateTime BuiltAt { get; set; }
 }
+
+public sealed class NationalAddressRecord : IAddressRow
+{
+    public required string Id { get; set; }
+    public int Release { get; set; }
+    public required string Number { get; set; }
+    public required string Unit { get; set; }
+    public required string Street { get; set; }
+    public required string Locality { get; set; }
+    public required string State { get; set; }
+    public required string Postcode { get; set; }
+    public required string Building { get; set; }
+    public required string BuildingKey { get; set; }
+    public required string Key { get; set; }
+    public double Latitude { get; set; }
+    public double Longitude { get; set; }
+}
+
+public sealed class NationalLocalityRecord
+{
+    public required string Id { get; set; }
+    public int Release { get; set; }
+    public required string Name { get; set; }
+    public required string State { get; set; }
+    public required string Key { get; set; }
+    public double Latitude { get; set; }
+    public double Longitude { get; set; }
+}
+
+public sealed class NationalReleaseRecord
+{
+    public int Id { get; set; }
+    public required string Name { get; set; }
+    public required string Source { get; set; }
+    public DateTime StartedAt { get; set; }
+    public DateTime? FinishedAt { get; set; }
+    public long Addresses { get; set; }
+    public long Localities { get; set; }
+}
+
+public sealed class PlaceMapRecord
+{
+    public required string Id { get; set; }
+    public required string MapKey { get; set; }
+    public long MapBytes { get; set; }
+    public int MaxZoom { get; set; }
+    public double South { get; set; }
+    public double West { get; set; }
+    public double North { get; set; }
+    public double East { get; set; }
+    public DateTime BuiltAt { get; set; }
+}
+

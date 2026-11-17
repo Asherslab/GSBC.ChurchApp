@@ -1,5 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using GSBC.ChurchApp.Platform.Contracts.Destinations;
+using GSBC.ChurchApp.Platform.Contracts.Locations;
 using GSBC.ChurchApp.Platform.Contracts.Notifications;
 using GSBC.ChurchApp.Platform.Contracts.Sync;
 using ProtoBuf;
@@ -21,4 +22,10 @@ namespace GSBC.ChurchApp.Platform.Contracts;
 [ProtoSerializable(typeof(DigestScheduleRequest))]
 [ProtoSerializable(typeof(DigestScheduleChange))]
 [ProtoSerializable(typeof(DigestScheduleMessage))]
+[ProtoSerializable(typeof(Location))]
+[ProtoSerializable(typeof(LocationMap))]
+[ProtoSerializable(typeof(LocationSearch))]
+[ProtoSerializable(typeof(LocationPoint))]
+[ProtoSerializable(typeof(FoundLocations))]
+[ProtoSerializable(typeof(FoundLocation))]
 public partial class PlatformContractsModel : TypeModel;
