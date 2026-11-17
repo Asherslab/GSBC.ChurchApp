@@ -55,12 +55,17 @@ else
                         }
                         else
                         {
-                            @foreach (DraftArea area in _planner.Areas)
+                            @if (_planner.Areas.Count > 0)
                             {
-                                <MapPin @key="area.Id" Point="PlanDrawing.Point(PlanDrawing.Top(area))">
-                                    <Menu Label="@AreaName(area)" Text="@ChipText(area)" Icon="@(area.OneRoute ? AppIcons.DrawRoute : AppIcons.DrawArea)" Chevron="true" Small="true" AlignStart="true"
-                                          Class="map-chip" Items="AreaItems(area)" />
-                                </MapPin>
+                                <MapChipStrip Label="The day's areas and routes drawn by hand">
+                                    @foreach (DraftArea area in _planner.Areas)
+                                    {
+                                        <span @key="area.Id" class="@ChipClass(area)" style="@ChipColour(area)" data-map-cover @onmouseenter="() => Light(area.Id)" @onmouseleave="() => Light(null)">
+                                            <Menu Label="@AreaName(area)" Text="@ChipText(area)" Icon="@(area.OneRoute ? AppIcons.DrawRoute : AppIcons.DrawArea)" Chevron="true" Small="true" AlignStart="true"
+                                                  Items="AreaItems(area)" />
+                                        </span>
+                                    }
+                                </MapChipStrip>
                             }
                             @if (ToolHint is { } hint)
                             {
@@ -74,6 +79,7 @@ else
                             @if (_planner.HasSplitArea) { <span class="plan-key__row"><span class="plan-key__swatch plan-key__swatch--split"></span>An area the app splits</span> }
                             @if (_planner.Areas.Any(area => area.OneRoute)) { <span class="plan-key__row"><span class="plan-key__swatch plan-key__swatch--drawn"></span>A route drawn as one</span> }
                             @if (_planner.Overlaps.Count > 0) { <span class="plan-key__row"><span class="plan-key__swatch plan-key__swatch--overlap"></span>Overlap: counted once, in the route named</span> }
+                            @if (_planner.Sections.Any(section => section.WalkedThrough.Count > 0)) { <span class="plan-key__row"><span class="plan-key__swatch plan-key__swatch--through"></span>Walked through, no letterboxes</span> }
                         </div>
                     }
                     @if (_hovered is { } hovered && Board(hovered) is var progress)
@@ -208,6 +214,7 @@ else
     private PlanView _view;
     private int? _selected;
     private PlannedSection? _hovered;
+    private int? _lit;
     private DateTime _drawnAt;
     private DayBoard? _board;
     private IReadOnlyList<MapLine> _lines = [];
@@ -238,6 +245,8 @@ else
 
     private PlannedSection? Selected => _selected is { } id ? _planner?.Section(id) : null;
 
+    private Func<PlannedSection, bool>? StandsOut => _selected is { } id ? section => section.Id == id : _lit is { } area ? section => section.Area == area : null;
+
     private bool Unpublished => _changedSincePublished || _published.Count == 0;
 
     private string Lead =>
@@ -266,10 +275,25 @@ else
         return _planner!.StreetsOf(area);
     }
 
+    private PlannedSection? RouteOf(DraftArea area) => area.OneRoute ? _planner?.Sections.FirstOrDefault(section => section.Area == area.Id) : null;
+
+    private string ChipClass(DraftArea area) => RouteOf(area) is null ? "map-chip" : "map-chip map-chip--route";
+
+    private string? ChipColour(DraftArea area) => RouteOf(area) is { } route ? $"--route: {RouteColours.Of(route.Colour)}" : null;
+
+    private void Light(int? area)
+    {
+        if (_lit == area)
+            return;
+        _lit = area;
+        _hovered = area is { } id && _planner?.Draft.Area(id) is { } lit ? RouteOf(lit) : null;
+        Redraw();
+    }
+
     private string ChipText(DraftArea area)
     {
         if (area.OneRoute)
-            return $"{AreaName(area)} · as drawn";
+            return AreaName(area);
         int routes = _planner!.RoutesIn(area);
         return routes switch
         {
@@ -381,7 +405,7 @@ else
     {
         if (_planner is not { } planner)
             return;
-        _lines = PlanDrawing.Lines(planner, _selected, _view == PlanView.OnTheDay ? _board?.Progress.SelectMany(progress => progress.Done).ToList() : null);
+        _lines = PlanDrawing.Lines(planner, StandsOut, _view == PlanView.OnTheDay ? _board?.Progress.SelectMany(progress => progress.Done).ToList() : null);
         _labels = PlanDrawing.Labels(planner, _selected);
         _areas = PlanDrawing.Areas(planner);
         _labels = [.. _labels, .. PlanDrawing.OverlapLabels(planner)];

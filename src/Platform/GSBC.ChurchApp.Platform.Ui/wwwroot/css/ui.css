@@ -1800,7 +1800,8 @@ span.stage-pipeline__stage { pointer-events: none; }
 .location-picker__split { display: grid; gap: var(--space-md); }
 .location-picker-layer .sheet__actions { position: sticky; bottom: 0; z-index: 1; padding-block: var(--space-md); border-top: 1px solid var(--line); background: var(--page); }
 .location-picker__search, .location-picker__place { display: grid; gap: var(--space-md); align-content: start; min-width: 0; }
-.location-picker__results { max-height: 22rem; overflow: auto; }
+.location-picker__results { max-height: 22rem; overflow: auto; margin-inline: calc(-1 * var(--space-md)); padding-inline: var(--space-md); }
+.location-picker__results .row--current { width: calc(100% + 2 * var(--space-md)); margin-inline: calc(-1 * var(--space-md)); padding-inline: var(--space-md); border-radius: var(--radius-field); border-bottom-color: transparent; }
 .location-picker__map { overflow: hidden; border-radius: var(--radius-field); background: var(--sand); box-shadow: 0 0 0 1px var(--line); }
 .location-picker__map .map-view__map { height: 220px; }
 .location-picker__map .map-view__attribution { padding-inline: var(--space-2xs); }
@@ -1828,7 +1829,7 @@ span.stage-pipeline__stage { pointer-events: none; }
   .map-desk__body { overflow: visible; padding: var(--space-lg) var(--gutter); }
   .map-desk__foot { position: sticky; bottom: 0; padding-inline: var(--gutter); }
 }
-.map-workspace { --map-float: 0 0 0 1px var(--line), 0 18px 36px -16px var(--scrim); --drawer: 320px; --map-corner-top: var(--space-md); --map-corner-right: calc(var(--space-md) + var(--space-4xl)); display: grid; grid-template-columns: 80px auto minmax(0, 1fr); min-height: 0; }
+.map-workspace { --map-float: 0 0 0 1px var(--line), 0 18px 36px -16px var(--scrim); --drawer: 320px; --map-corner-top: var(--space-md); --map-corner-right: calc(var(--space-md) + var(--space-4xl)); --map-top-end: var(--map-corner-right); display: grid; grid-template-columns: 80px auto minmax(0, 1fr); min-height: 0; }
 .map-workspace--wide { --drawer: 440px; }
 @media (max-width: 1360px) { .map-workspace--wide { --drawer: 380px; } }
 @media (max-width: 1200px) { .map-workspace { --drawer: 280px; } .map-workspace--wide { --drawer: 340px; } .map-workspace__foot { padding-inline: var(--space-md); } }
@@ -1858,7 +1859,7 @@ span.stage-pipeline__stage { pointer-events: none; }
 .map-workspace__full.btn { position: absolute; top: var(--space-lg); right: var(--space-lg); z-index: 3; gap: var(--space-xs); min-height: 40px; min-width: 40px; background: var(--page); box-shadow: var(--map-float); }
 .map-workspace:not(.map-workspace--full) .map-workspace__full.btn { width: 36px; min-width: 36px; min-height: 36px; padding: 0; }
 .map-workspace__key { padding: 0 var(--space-2xs); border-radius: var(--radius-tile); background: var(--fill-on-surface); color: var(--ink-2); font: inherit; font-size: var(--text-micro); font-weight: 700; }
-.map-workspace--full { --panel-room: calc(var(--drawer) + 2 * var(--space-lg)); --map-corner-top: calc(2 * var(--space-lg) + 40px); --map-corner-right: var(--space-lg); position: relative; grid-template-columns: minmax(0, 1fr); }
+.map-workspace--full { --panel-room: calc(var(--drawer) + 2 * var(--space-lg)); --map-corner-top: calc(2 * var(--space-lg) + 40px); --map-corner-right: var(--space-lg); --map-top-end: calc(2 * var(--space-lg) + 12rem); position: relative; grid-template-columns: minmax(0, 1fr); }
 .map-workspace--full.map-workspace--wide { --drawer: 440px; }
 .map-workspace--full .map-workspace__map { grid-column: 1 / -1; }
 .map-workspace--full .map-workspace__drawer { position: absolute; z-index: 4; top: var(--space-lg); bottom: calc(var(--space-lg) + 1.5rem); left: var(--space-lg); border-right: 0; border-radius: var(--radius); box-shadow: var(--map-float); overflow: hidden; }
@@ -1874,7 +1875,7 @@ span.stage-pipeline__stage { pointer-events: none; }
 .map-workspace--full.map-workspace--panel-right .map-view__overlay { margin-left: 0; margin-right: var(--panel-room); }
 .map-workspace--full.map-workspace--panel-right .map-workspace__full.btn { right: var(--panel-room); }
 .map-workspace--full .map-card { max-height: calc(100% - var(--map-corner-top) - var(--space-lg)); }
-.map-workspace--full.map-workspace--panel-right { --map-corner-right: 0px; }
+.map-workspace--full.map-workspace--panel-right { --map-corner-right: 0px; --map-top-end: calc(var(--space-lg) + 12rem); }
 .map-workspace--dragging .map-workspace__drawer { z-index: 6; cursor: grabbing; box-shadow: 0 0 0 1px var(--accent), 0 30px 60px -20px var(--scrim); }
 .map-workspace--dragging .map-workspace__head { cursor: grabbing; }
 .map-workspace__drop { position: absolute; z-index: 3; top: var(--space-lg); bottom: calc(var(--space-lg) + 1.5rem); right: var(--space-lg); display: none; place-items: center; width: var(--drawer); border: 2px dashed color-mix(in srgb, var(--accent) 70%, transparent); border-radius: var(--radius); background: color-mix(in srgb, var(--accent) 10%, transparent); pointer-events: none; }
@@ -1897,6 +1898,10 @@ span.stage-pipeline__stage { pointer-events: none; }
 .map-pin:has(.menu__panel) { z-index: 4; }
 .map-chip .btn { border-radius: var(--radius-full); background: var(--page); color: var(--ink); box-shadow: var(--map-float); font-size: var(--text-caption); font-weight: 700; }
 .map-chip .btn:hover { background: var(--fill-on-surface); }
+.map-chip-strip { position: absolute; top: var(--space-md); left: var(--map-pin-start, var(--space-md)); right: var(--map-top-end, var(--space-md)); z-index: 3; display: flex; flex-wrap: wrap; align-items: flex-start; gap: var(--space-xs); pointer-events: none; }
+.map-chip-strip > * { pointer-events: auto; }
+.map-chip-strip:has(.menu__panel) { z-index: 5; }
+.map-chip--route .btn { box-shadow: inset 0 0 0 2px var(--route), var(--map-float); }
 @container map-overlay (max-width: 640px) { .map-card { top: auto; bottom: var(--space-md); left: var(--space-md); right: var(--space-md); width: auto; max-height: 55%; } }
 .map-card__body { min-height: 0; overflow-y: auto; scrollbar-width: thin; padding: var(--space-md) var(--space-lg) var(--space-lg); }
 .map-card__foot { flex: none; padding: var(--space-sm) var(--space-lg); border-top: 1px solid var(--line); border-radius: 0 0 var(--radius) var(--radius); background: var(--page); }

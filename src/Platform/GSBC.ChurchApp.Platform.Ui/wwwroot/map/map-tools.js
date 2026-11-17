@@ -1,5 +1,6 @@
 const empty = { type: "FeatureCollection", features: [] };
 const fullLabelsFrom = 15;
+const figuresFromZoom = 14;
 const token = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
 const colourOf = (value) => (value?.startsWith("--") ? token(value) : value);
 const closeEnoughPixels = 12;
@@ -9,6 +10,12 @@ const hoverEveryMs = 60;
 const labelHeight = 24;
 const labelSides = 18;
 const labelGap = 8;
+const discRadius = 12;
+const placeRoom = 12;
+const figuresFrom = 1.6;
+const plateFor = (text) => ["case", ["==", ["get", text], ""], "", ["get", "image"]];
+const figuresPlate = ["step", ["zoom"], plateFor("short"), figuresFromZoom, plateFor("text")];
+const figuresText = ["step", ["zoom"], ["get", "short"], figuresFromZoom, ["get", "text"]];
 const labelShifts = [[0, 0], ...[16, 30, 46, 64, 84].flatMap((r) =>
   Array.from({ length: 8 }, (_, a) => [Math.round(Math.cos((a * Math.PI) / 4) * r), Math.round(Math.sin((a * Math.PI) / 4) * r * 0.7)]))];
 let measurer;
@@ -19,11 +26,20 @@ function labelWidth(text) {
   return measurer.measureText(text).width + labelSides + labelGap;
 }
 
+function labelBox(label, full) {
+  const text = full ? label.text : label.short ?? label.text;
+  if (label.badge == null) {
+    const w = labelWidth(text);
+    return { w, lead: w / 2 };
+  }
+  return { w: 2 * discRadius + labelGap + (text ? labelWidth(text) : 0), lead: discRadius };
+}
+
 const overlap = (a, b) =>
   Math.max(0, Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x)) * Math.max(0, Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y));
 
 function placeLabels(map, labels) {
-  const full = map.getZoom() >= fullLabelsFrom;
+  const zoom = map.getZoom();
   const canvas = map.getCanvas();
   const shown = { x: 0, y: 0, w: canvas.clientWidth, h: canvas.clientHeight };
   const outside = (box) => box.w * box.h - overlap(box, shown);
@@ -32,22 +48,27 @@ function placeLabels(map, labels) {
     const at = cover.getBoundingClientRect();
     return { x: at.left - from.left, y: at.top - from.top, w: at.width, h: at.height };
   });
+  const places = map.getLayer("place-labels") ? map.queryRenderedFeatures({ layers: ["place-labels"] }) : [];
+  for (const place of places) {
+    const at = map.project(place.geometry.coordinates), w = labelWidth(place.properties.label ?? "");
+    taken.push({ x: at.x - w / 2, y: at.y - placeRoom, w, h: 2 * placeRoom + labelHeight });
+  }
   const placed = new Array(labels.length);
   const topFirst = labels.map((label, i) => ({ label, i, order: label.order ?? i })).sort((a, b) => b.order - a.order);
   for (const { label, i } of topFirst) {
-    const w = labelWidth(full ? label.text : label.short ?? label.text), h = labelHeight + labelGap;
+    const { w, lead } = labelBox(label, zoom >= (label.badge == null ? fullLabelsFrom : figuresFromZoom)), h = labelHeight + labelGap;
     const spots = [label.point, ...(label.places ?? [])].map((point) => map.project(point));
     let best = null, least = Infinity;
     search: for (const [dx, dy] of labelShifts) {
       for (const spot of spots) {
-        const box = { x: spot.x + dx - w / 2, y: spot.y + dy - h / 2, w, h };
+        const box = { x: spot.x + dx - lead, y: spot.y + dy - h / 2, w, h };
         const clash = taken.reduce((sum, other) => sum + overlap(box, other), outside(box));
         if (clash < least) [best, least] = [box, clash];
         if (clash === 0) break search;
       }
     }
     taken.push(best);
-    placed[i] = map.unproject([best.x + w / 2, best.y + h / 2]).toArray();
+    placed[i] = map.unproject([best.x + lead, best.y + h / 2]).toArray();
   }
   return placed;
 }
@@ -73,6 +94,29 @@ function capsule(map, colour, filled) {
   return id;
 }
 
+function plate(map, colour, filled) {
+  const id = `tools-plate-${filled ? colour : "plain"}`;
+  if (map.hasImage(id)) return id;
+  const size = 40, scale = 2;
+  const canvas = document.createElement("canvas");
+  canvas.width = canvas.height = size * scale;
+  const g = canvas.getContext("2d");
+  g.scale(scale, scale);
+  g.beginPath();
+  g.roundRect(5.5, 8.5, size - 11, 23, 8);
+  g.fillStyle = filled ? colour : token("--surface");
+  g.fill();
+  if (!filled) {
+    g.lineWidth = 1;
+    g.strokeStyle = token("--line");
+    g.stroke();
+  }
+  map.addImage(id, g.getImageData(0, 0, size * scale, size * scale), {
+    pixelRatio: scale, stretchX: [[18 * scale, 22 * scale]], stretchY: [[18 * scale, 22 * scale]], content: [12 * scale, 10 * scale, 28 * scale, 30 * scale],
+  });
+  return id;
+}
+
 const addLayer = (map, layer) => {
   if (map.getLayer(layer.id)) return;
   try {
@@ -82,7 +126,7 @@ const addLayer = (map, layer) => {
 };
 
 function layers(map) {
-  if (map.getLayer("tools-labels")) return;
+  if (map.getLayer("tools-disc-numbers")) return;
   const accent = token("--accent"), surface = token("--surface");
   for (const id of ["tools-sketch", "tools-labels"]) {
     if (!map.getSource(id)) map.addSource(id, { type: "geojson", data: empty });
@@ -102,8 +146,17 @@ function layers(map) {
     "icon-image": ["get", "image"], "icon-text-fit": "both", "icon-text-fit-padding": [3, 9, 3, 9], "icon-allow-overlap": overlap, "text-allow-overlap": overlap, "symbol-z-order": "source",
     "text-field": ["step", ["zoom"], ["get", "short"], fullLabelsFrom, ["get", "text"]], "text-font": ["montserrat-semibold"], "text-size": 12, "text-max-width": 24, "symbol-sort-key": ["get", "order"],
   });
-  addLayer(map, { id: "tools-labels-quiet", type: "symbol", source: "tools-labels", filter: ["==", ["get", "quiet"], true], layout: labelLayout(false), paint: { "text-color": ["get", "ink"] } });
-  addLayer(map, { id: "tools-labels", type: "symbol", source: "tools-labels", filter: ["!=", ["get", "quiet"], true], layout: labelLayout(true), paint: { "text-color": ["get", "ink"] } });
+  const capsules = ["!", ["has", "badge"]], discs = ["has", "badge"];
+  addLayer(map, { id: "tools-labels-quiet", type: "symbol", source: "tools-labels", filter: ["all", capsules, ["==", ["get", "quiet"], true]], layout: labelLayout(false), paint: { "text-color": ["get", "ink"] } });
+  addLayer(map, { id: "tools-labels", type: "symbol", source: "tools-labels", filter: ["all", capsules, ["!=", ["get", "quiet"], true]], layout: labelLayout(true), paint: { "text-color": ["get", "ink"] } });
+  addLayer(map, { id: "tools-disc-figures", type: "symbol", source: "tools-labels", filter: discs,
+    layout: { ...labelLayout(true), "icon-image": figuresPlate, "text-field": figuresText, "icon-text-fit-padding": [3, 8, 3, 8], "text-anchor": "left", "text-offset": [figuresFrom, 0] },
+    paint: { "text-color": ["get", "ink"] } });
+  addLayer(map, { id: "tools-discs", type: "circle", source: "tools-labels", filter: discs,
+    paint: { "circle-radius": discRadius - 1, "circle-color": ["get", "disc"], "circle-stroke-color": surface, "circle-stroke-width": 2 } });
+  addLayer(map, { id: "tools-disc-numbers", type: "symbol", source: "tools-labels", filter: discs,
+    layout: { "text-field": ["get", "badge"], "text-font": ["montserrat-semibold"], "text-size": 12, "text-allow-overlap": true, "text-ignore-placement": true },
+    paint: { "text-color": "#ffffff" } });
 }
 
 const pointOf = (e) => [e.lngLat.lng, e.lngLat.lat];
@@ -125,7 +178,9 @@ export function attach(handle, receiver) {
     const placed = shownLabels.map((l) => (l.quiet ? l.point : moved[loud.indexOf(l)]));
     return { type: "FeatureCollection", features: shownLabels.map((l, i) => ({
       type: "Feature",
-      properties: { text: l.text, short: l.short ?? l.text, quiet: !!l.quiet, image: capsule(map, colourOf(l.colour), l.filled), ink: l.filled ? "#ffffff" : token("--ink"), order: l.order ?? i },
+      properties: { text: l.text, short: l.short ?? l.text, quiet: !!l.quiet, order: l.order ?? i,
+        image: l.badge == null ? capsule(map, colourOf(l.colour), l.filled) : plate(map, colourOf(l.colour), l.filled), ink: l.filled ? "#ffffff" : token("--ink"),
+        ...(l.badge == null ? {} : { badge: l.badge, disc: colourOf(l.colour) }) },
       geometry: { type: "Point", coordinates: placed[i] } })) };
   };
   let relabelling = 0;

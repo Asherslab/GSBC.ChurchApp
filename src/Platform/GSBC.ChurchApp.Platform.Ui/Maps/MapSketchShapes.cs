@@ -23,7 +23,7 @@ public enum MapLabelStyle
 }
 
 public sealed record MapLabel(MapPoint Point, string Text, string Colour, int Order = 0, MapLabelStyle Style = MapLabelStyle.Ring, string? Short = null,
-    IReadOnlyList<MapPoint>? Places = null, bool Quiet = false);
+    IReadOnlyList<MapPoint>? Places = null, bool Quiet = false, string? Badge = null);
 
 public static class MapSketchTools
 {
@@ -69,6 +69,8 @@ public static class MapSketchJson
             json.WriteString("short", label.Short ?? label.Text);
             if (label.Quiet)
                 json.WriteBoolean("quiet", true);
+            if (label.Badge is not null)
+                json.WriteString("badge", label.Badge);
             json.WritePropertyName("point");
             Point(json, label.Point);
             json.WritePropertyName("places");

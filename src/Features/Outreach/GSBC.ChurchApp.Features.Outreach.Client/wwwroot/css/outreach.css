@@ -62,11 +62,12 @@
 .plan-key__swatch { flex: none; width: 22px; height: 12px; border-radius: calc(var(--radius-inner) / 3); }
 .plan-key__swatch--split { border: 2px dashed var(--primary); }
 .plan-key__swatch--drawn { border: 2.5px solid var(--ink-2); }
+.plan-key__swatch--through { height: 6px; background: radial-gradient(circle closest-side, var(--ink-2) 96%, transparent) 0 50% / 8px 6px repeat-x; }
 .plan-key__swatch--overlap { background: repeating-linear-gradient(45deg, var(--marker-ink) 0 1.5px, transparent 1.5px 5px); box-shadow: inset 0 0 0 1px var(--line); }
 @container plan-map (max-width: 640px) { .plan-key { display: none; } }
 .plan-chosen__actions { display: inline-flex; flex-wrap: nowrap; align-items: center; gap: var(--space-2xs); }
 .plan-desk__map { container: plan-map / inline-size; }
-.plan-desk__map .map-pin { --map-pin-start: 76px; }
+.plan-desk__map { --map-pin-start: 76px; }
 @container plan-map (max-width: 640px) {
   .plan-chosen { left: calc(40px + 2 * var(--space-md) + var(--space-2xs) * 2); right: var(--space-md); width: auto; transform: none; justify-content: flex-start; }
   .plan-hint { left: calc(40px + 2 * var(--space-md) + var(--space-2xs) * 2); right: var(--space-md); width: auto; max-width: none; transform: none; }
