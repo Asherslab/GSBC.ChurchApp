@@ -1,5 +1,6 @@
 ---
 title: What's next no longer says it only comes before Sunday
+audience: everyone
 added: 2026-11-17
 icon: calendar
 area: What's next

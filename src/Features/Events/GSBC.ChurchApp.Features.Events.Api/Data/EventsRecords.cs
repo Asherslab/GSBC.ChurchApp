@@ -176,6 +176,7 @@ public sealed class DigestRecord
     public Guid? SentBy { get; set; }
     public DateTime? NotifiedAt { get; set; }
     public MediaRef? TopPicture { get; set; }
+    public DigestHeading Heading { get; set; }
 }
 
 public sealed class SentDigest
