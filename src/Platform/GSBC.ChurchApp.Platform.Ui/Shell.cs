@@ -83,6 +83,8 @@ public sealed class Shell(IJSRuntime js) : IDisposable
 
     public ValueTask BackAsync(string fallback) => js.InvokeVoidAsync("gsbcShell.back", fallback);
 
+    public ValueTask ReturnToAsync(string href) => js.InvokeVoidAsync("gsbcShell.returnTo", href);
+
     public ValueTask ScrollToTopAsync() => js.InvokeVoidAsync("gsbcShell.scrollToTop");
 
     public ValueTask OpenExternalAsync(string url) => js.InvokeVoidAsync("gsbcShell.openExternal", url);
