@@ -55,6 +55,7 @@ internal sealed class DigestService(
             .Select(item => item.Key).ToHashSet();
         record.Entries = Digests.Kept(record.Entries, entries, showing);
         record.TopPicture = topPicture is null ? null : (await media.VerifyAsync([topPicture], cancellationToken))[0];
+        record.Heading = Enum.IsDefined(request.Heading) ? request.Heading : DigestHeading.TitleAndDates;
         await media.UseAsync(EventPictures.DigestOwner(record.Id), PicturesOf(record), cancellationToken);
         record.UpdatedAt = time.GetUtcNow().UtcDateTime;
         record.UpdatedBy = Caller.UserId(UserOf(context));
@@ -125,6 +126,7 @@ internal sealed class DigestService(
             Calendar = Digests.Candidates(book, record.Start, record.End, time.GetUtcNow().UtcDateTime),
             Posts = recent.Select(Digests.NewsItem).ToList(),
             TopPicture = record.TopPicture,
+            Heading = record.Heading,
             SavedAt = record.UpdatedAt != default ? record.UpdatedAt : null,
             SentAt = record.SentAt,
             NotifiedAt = record.NotifiedAt,

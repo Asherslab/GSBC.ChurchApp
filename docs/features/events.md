@@ -866,6 +866,27 @@ the admin decide on all. each item has variants if it has images. optional photo
   an item with a picture, reworded in the dialog, the email rendered at 1280 and 390 in WebKit and Chromium, light and
   dark. Gmail and Outlook on the web weren't available to test; Elvanto's paste wasn't tried against a live account.
 
+### The top of the email (UAT #29, 2026-11-17)
+
+The owner: "enable disabling the banner text, incase we want to use the previous banner image we were before. have an
+option to include the date time frame below that banner in some fashion that looks decent still. also optional though."
+Decision page `.impeccable/mocks/digest-banner/`: the dates on their own as **A, a dateline** (`a-dateline.html`) over a
+slim navy strip or a sand strip; the choice in the desk as **H, a *Top of the email* box** (`h-top-group.html`) over three
+radio rows under the photo or two switches.
+
+- **Under the photo** (the digest's `Heading`, `DigestHeading`, migration `DigestHeading`): *Title and dates* (the navy
+  band, as before, the default), *Just the dates* or *Nothing*. It applies only with a top photo: with none, the email
+  always starts with the title and the dates, so it never starts with nothing naming it (`DigestEmail`), and
+  the choice only shows once a photo is chosen. Removing the photo keeps the choice for when one is chosen again.
+- **The dateline:** the range in navy capitals (13px, spaced .14em) over a 2px navy rule, on white at the column's
+  32px sides, like the date on a printed newsletter; the first item follows a little closer than under the band.
+- **The photo names the email** when the title is left out: its alt text is "What's Next at Good Shepherd" (with the
+  dates too under *Nothing*), for mail that blocks pictures and for screen readers.
+- **The desk:** the Email preview's *Top of the email* (`Section Grouped`) holds *Photo* and *Under the photo*, the
+  three in a `Segmented` as wide as its labels (stacked one above the other when the box is narrower than 26rem). The email
+  preview under it fills the room left above the foot (at least 14rem); on a short window the pane scrolls to it.
+- **The app isn't affected:** What's next has its own masthead with the dates and no top photo, so nothing new syncs.
+
 ## The owner's feedback (2026-11-09)
 
 - **Why the digest missed Anniversary Sunday** (owner: "why does this not show all the events i'd expect? no anniversary

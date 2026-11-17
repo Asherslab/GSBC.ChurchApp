@@ -1,0 +1,67 @@
+{
+  "title": "Weekly digest email (2 of 2): where you choose what goes under the photo",
+  "question": "Thanks: the dates will show as the dateline (A). Now, where you choose it in the digest. In every sketch the choice appears only once a photo is chosen; with no photo, the email always starts with the title and dates, so it never starts with nothing naming it. Pick a layout. My recommendation: F. One choice of three, each saying when you'd want it, right under the photo it depends on, using the same radio rows as other settings in the admin panel.",
+  "options": [
+    {
+      "id": "under-photo-rows",
+      "kind": "grounded",
+      "label": "F: Three choices under the photo",
+      "thesis": "'Under the photo' straight after the photo, as three radio rows: The title and the dates, Just the dates, Nothing, each with a line saying when to use it.",
+      "palette": [
+        "#ffffff",
+        "#00776d",
+        "#18233a",
+        "#7189be"
+      ],
+      "materials": [
+        "radio rows",
+        "detail lines"
+      ],
+      "viewport": "Email tab: the photo, Under the photo with three rows, then the email preview.",
+      "risk": "Takes about 180px, pushing the preview down a little.",
+      "html": ".impeccable/mocks/digest-banner/f-under-photo-rows.html",
+      "htmlFrame": "1440x900"
+    },
+    {
+      "id": "two-switches",
+      "kind": "grounded",
+      "label": "G: Two switches",
+      "thesis": "Show the title and Show the dates, as two switches under the photo, as your ticket put it.",
+      "palette": [
+        "#ffffff",
+        "#00776d",
+        "#18233a",
+        "#7189be"
+      ],
+      "materials": [
+        "switches",
+        "detail lines"
+      ],
+      "viewport": "Email tab: the photo, two switches, then the email preview.",
+      "risk": "Title on with dates off isn't a real choice (the title band always has the dates), so the dates switch has to grey out or hide while the title is on.",
+      "html": ".impeccable/mocks/digest-banner/g-two-switches.html",
+      "htmlFrame": "1440x900"
+    },
+    {
+      "id": "top-group",
+      "kind": "grounded",
+      "label": "H: A 'Top of the email' box",
+      "thesis": "The photo and the choice together in one ruled box, the choice as three radio buttons on one line.",
+      "palette": [
+        "#ffffff",
+        "#00776d",
+        "#18233a",
+        "#7189be"
+      ],
+      "materials": [
+        "settings group",
+        "inline radios"
+      ],
+      "viewport": "Email tab: a Top of the email box with the photo and Under the photo, then the email preview.",
+      "risk": "A box around two things is more frame than the page needs; the short labels say less.",
+      "html": ".impeccable/mocks/digest-banner/h-top-group.html",
+      "htmlFrame": "1440x900"
+    }
+  ],
+  "steer": true
+}

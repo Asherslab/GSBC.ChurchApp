@@ -13,7 +13,12 @@
     }
     @if (!string.IsNullOrEmpty(Source.Attribution))
     {
-        <figcaption class="map-view__attribution">@Source.Attribution</figcaption>
+        <figcaption class="map-view__attribution @(_creditsOpen ? "map-view__attribution--open" : null)">
+            <span class="map-view__credits">@Source.Attribution</span>
+            <button type="button" class="map-view__credits-toggle" aria-expanded="@(_creditsOpen ? "true" : "false")"
+                    aria-label="@(_creditsOpen ? "Show the map credits on one line" : "Show all the map credits")" title="@(_creditsOpen ? "Fold the map credits" : "All the map credits")"
+                    @onclick="() => _creditsOpen = !_creditsOpen"><Icon Name="info" Size="IconSize.Small" /></button>
+        </figcaption>
     }
 </figure>
 
@@ -40,6 +45,7 @@
     private MapFrame? _shownFrame;
     private MapReach? _shownReach;
     private bool _outside;
+    private bool _creditsOpen;
     private bool _disposed;
     private Task? _creating;
 

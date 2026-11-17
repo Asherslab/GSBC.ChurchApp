@@ -142,9 +142,14 @@
             </div>
             @if (_email)
             {
-                <div class="digest-desk__top-picture">
-                    <PictureField Label="Photo across the top" Value="draft.TopPicture" ValueChanged="SetTopPictureAsync" Adding="Choose a photo"
-                                  Hint="Optional. A wide photo shown above the heading, such as one of the church." />
+                <div class="digest-desk__top">
+                <Section Grouped="true" Title="Top of the email" Lead="An optional photo across the top, and what goes under it.">
+                    <PictureField Label="Photo" Value="draft.TopPicture" ValueChanged="SetTopPictureAsync" Adding="Choose a photo" />
+                    @if (draft.TopPicture is not null)
+                    {
+                        <Segmented TValue="DigestHeading" Label="Under the photo" ShowLabel="true" Options="HeadingOptions" Value="draft.Heading" ValueChanged="SetHeadingAsync" />
+                    }
+                </Section>
                 </div>
                 <div class="digest-desk__canvas digest-desk__canvas--email">
                     <iframe @ref="_emailFrame" class="digest-email" title="The email, as Copy for email gives it" srcdoc="@EmailPage(draft)" sandbox="allow-same-origin"
@@ -347,7 +352,7 @@
     private string AllEventsLink => DestinationPaths.Shareable(new Uri(Navigation.BaseUri), EventsPlaces.Week);
 
     private string EmailPage(DigestDraft draft) =>
-        $"<!doctype html><html><head><meta charset=\"utf-8\"><base target=\"_blank\"></head><body style=\"margin:0;background:{DigestEmail.Behind}\">{DigestEmail.Html(RangeOf(draft), EmailItems(draft), AllEventsLink, TopPictureUrl(draft))}</body></html>";
+        $"<!doctype html><html><head><meta charset=\"utf-8\"><base target=\"_blank\"></head><body style=\"margin:0;background:{DigestEmail.Behind}\">{DigestEmail.Html(RangeOf(draft), EmailItems(draft), AllEventsLink, TopPictureUrl(draft), draft.Heading)}</body></html>";
 
     private Task ChooseRangeAsync(DigestRange range) => ChooseAsync(draft => draft.Range = range);
 
@@ -449,6 +454,15 @@
 
     private Task SetTopPictureAsync(MediaRef? picture) => ChooseAsync(draft => draft.TopPicture = picture);
 
+    private Task SetHeadingAsync(DigestHeading heading) => ChooseAsync(draft => draft.Heading = heading);
+
+    private static readonly IReadOnlyList<SegmentOption<DigestHeading>> HeadingOptions =
+    [
+        new(DigestHeading.TitleAndDates, "Title and dates"),
+        new(DigestHeading.DatesOnly, "Just the dates"),
+        new(DigestHeading.Nothing, "Nothing"),
+    ];
+
     private const string OwnPrefix = "own:";
 
     private void Change(Action change)
@@ -481,7 +495,7 @@
         {
             DigestDraft saved = await Editing.Digest.SaveAsync(new DigestSave
             {
-                Id = draft.Id, Start = draft.Start, End = draft.End, Range = draft.Range, CalendarIds = draft.CalendarIds, TopPicture = draft.TopPicture,
+                Id = draft.Id, Start = draft.Start, End = draft.End, Range = draft.Range, CalendarIds = draft.CalendarIds, TopPicture = draft.TopPicture, Heading = draft.Heading,
                 Entries = draft.Items.Select(item => new DigestEntry
                 {
                     Key = item.Key, Included = true, Changed = item.Changed, Words = item.Words, Own = item.Kind == DigestItemKind.Own, PictureAt = item.PictureAt,
@@ -510,7 +524,7 @@
         bool copied;
         try
         {
-            string html = DigestEmail.Html(range, EmailItems(draft), AllEventsLink, TopPictureUrl(draft));
+            string html = DigestEmail.Html(range, EmailItems(draft), AllEventsLink, TopPictureUrl(draft), draft.Heading);
             copied = await Js.InvokeAsync<bool>("gsbcEvents.copyHtml", html, html);
         }
         catch (JSException)

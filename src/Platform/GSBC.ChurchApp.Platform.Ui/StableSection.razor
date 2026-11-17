@@ -1,0 +1,13 @@
+@using Microsoft.AspNetCore.Components.Sections
+
+@* SectionOutlet keys its content on the RenderFragment instance, so a fresh ChildContent each render would rebuild every element in the outlet and drop focus mid-typing; one fragment for the component's life keeps the elements. *@
+<SectionContent SectionName="@SectionName" ChildContent="_content" />
+
+@code {
+    private readonly RenderFragment _content;
+
+    public StableSection() => _content = builder => builder.AddContent(0, ChildContent);
+
+    [Parameter, EditorRequired] public required string SectionName { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}

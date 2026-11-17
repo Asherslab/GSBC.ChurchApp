@@ -75,6 +75,31 @@ public sealed class DigestTests
         Assert.Contains(">Read the post</a>", html);
     }
 
+    [Theory]
+    [InlineData(null, DigestHeading.Nothing, true, true)]
+    [InlineData("https://media.example.org/banner.jpg", DigestHeading.TitleAndDates, true, true)]
+    [InlineData("https://media.example.org/banner.jpg", DigestHeading.DatesOnly, false, true)]
+    [InlineData("https://media.example.org/banner.jpg", DigestHeading.Nothing, false, false)]
+    public void TheTitleCanBeLeftOutOnlyUnderATopPhotoSoTheEmailNeverStartsWithNothingNamingIt(string? topPicture, DigestHeading heading, bool title, bool dates)
+    {
+        EmailItem baptisms = new(DigestItemKind.Event, new DigestWords { Title = "Baptisms" }, null, "", "");
+
+        string html = DigestEmail.Html("Monday 14 – Sunday 27 December", [baptisms], "https://dev-app.example.org/open/week", topPicture, heading);
+
+        Assert.Equal(title, html.Contains(">What's Next at Good Shepherd<"));
+        Assert.Equal(dates, html.Contains(">Monday 14 – Sunday 27 December<"));
+    }
+
+    [Fact]
+    public void ABannerStandingInForTheTitleNamesTheEmailForAnyoneWhoCantSeeIt()
+    {
+        EmailItem baptisms = new(DigestItemKind.Event, new DigestWords { Title = "Baptisms" }, null, "", "");
+
+        string html = DigestEmail.Html("Monday 14 – Sunday 27 December", [baptisms], "https://dev-app.example.org/open/week", "https://media.example.org/banner.jpg", DigestHeading.Nothing);
+
+        Assert.Contains("alt=\"What&#39;s Next at Good Shepherd, Monday 14 – Sunday 27 December\"", html);
+    }
+
     [Fact]
     public void AnEarlierDigestReadsAsItWasSentWithNothingDroppedItsWeeksNamedByDateAndEachDayNamedOutright()
     {

@@ -97,4 +97,10 @@ public static class AppIcons
     public const string PlaceOffSite = "map-pin";
     public const string AtChurch = "church";
     public const string Directions = "navigation";
+    public const string FullMap = "maximize-2";
+    public const string LeaveFullMap = "minimize-2";
+    public const string MovePanel = "arrow-left-right";
+    public const string DragPanel = "grip";
+    public const string FoldPanel = "chevron-up";
+    public const string UnfoldPanel = "chevron-down";
 }
