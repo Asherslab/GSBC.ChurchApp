@@ -1794,9 +1794,9 @@ span.stage-pipeline__stage { pointer-events: none; }
 .location-picker__search, .location-picker__place { display: grid; gap: var(--space-md); align-content: start; min-width: 0; }
 .location-picker__results { max-height: 22rem; overflow: auto; }
 .location-picker__map { overflow: hidden; border-radius: var(--radius-field); background: var(--sand); box-shadow: 0 0 0 1px var(--line); }
-.location-picker__map .map-view__map { height: 260px; }
+.location-picker__map .map-view__map { height: 220px; }
 .location-picker__map .map-view__attribution { padding-inline: var(--space-2xs); }
-.location-picker__empty { display: grid; place-items: center; align-content: center; gap: var(--space-sm); height: 260px; padding: var(--space-xl); text-align: center; font-size: var(--text-caption); line-height: 1.45; color: var(--ink-2); }
+.location-picker__empty { display: grid; place-items: center; align-content: center; gap: var(--space-sm); height: 220px; padding: var(--space-xl); text-align: center; font-size: var(--text-caption); line-height: 1.45; color: var(--ink-2); }
 .location-picker__empty .icon { color: var(--accent); }
 @media (min-width: 720px) {
   .location-picker__split { grid-template-columns: minmax(15rem, 17rem) minmax(0, 1fr); gap: var(--space-xl); }

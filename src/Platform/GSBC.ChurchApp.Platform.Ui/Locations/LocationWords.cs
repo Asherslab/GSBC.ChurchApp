@@ -18,8 +18,9 @@ public static class LocationWords
         _ => location.Text,
     };
 
-    public static string? Address(Location location) =>
-        location is { Kind: LocationKind.OffSite, AddressHidden: false } && location.Name.Length > 0 && location.Address.Length > 0 ? location.Address : null;
+    public static string? Address(Location location) => location is { Kind: LocationKind.OffSite, AddressHidden: false, Name.Length: > 0 }
+        ? location.Address.Length > 0 ? location.Address : location.Suburb.Length > 0 ? location.Suburb : null
+        : null;
 
     public static string? Note(Location location) => location.AddressHidden || location.Note.Length == 0 ? null : location.Note;
 

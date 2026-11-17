@@ -22,7 +22,7 @@
         ? @<span class="location-row__note">@note</span>
         : Location.AddressHidden ? @<span class="location-row__note">@LocationWords.HiddenHome</span> : null;
 
-    private RenderFragment Square => @<span class="location-row__map" aria-hidden="true"><LocationMapView Location="Location" Zoom="14" /></span>;
+    private RenderFragment Square => @<span class="location-row__map" aria-hidden="true"><LocationMapView Location="Location" Zoom="13" /></span>;
 
     private EventCallback Tap => LocationWords.Opens(Location) ? EventCallback.Factory.Create(this, () => _open = true) : EventCallback.Empty;
 }

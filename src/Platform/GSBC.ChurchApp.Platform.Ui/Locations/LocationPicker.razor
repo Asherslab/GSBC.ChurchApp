@@ -23,6 +23,13 @@
                         {
                             <p class="field__hint" role="status">Searching needs a connection. Type the address below, and choose it on the map later.</p>
                         }
+                        else if (_nearest is { } nearest)
+                        {
+                            <p class="field__hint">Nearest address to the pin</p>
+                            <div class="list location-picker__results" role="list">
+                                <ListRow Icon="@AppIcons.PlaceOffSite" Title="@LocationWords.FoundTitle(nearest)" Subtitle="@LocationWords.Found(nearest)" Current="true" />
+                            </div>
+                        }
                         else if (_found.Count > 0)
                         {
                             <div class="list location-picker__results" role="list">
@@ -68,9 +75,9 @@
                         {
                             <p class="field__hint" role="status">Getting the map…</p>
                         }
-                        <TextField Label="Address" @bind-Value="_address" MaxLength="160" Hint="Filled in from the search or the pin. Change it if it reads better another way." />
-                        <TextField Label="Name" Value="@_name" ValueChanged="NameTyped" MaxLength="80" Hint="Leave this empty to show the address. People see the name above the address." />
-                        <TextField Label="Note" @bind-Value="_note" MaxLength="160" Hint="Anything that helps people find it, such as where to park." />
+                        <TextField Label="Address" @bind-Value="_address" MaxLength="160" />
+                        <TextField Label="Name" Value="@_name" ValueChanged="NameTyped" MaxLength="80" Hint="Shown above the address. Leave it empty to show only the address." />
+                        <TextField Label="Note" @bind-Value="_note" MaxLength="160" Hint="Say where to park or which door to use." />
                         @if (AllowHome)
                         {
                             <ToggleRow Title="This is someone's home" Description="@HomeDescription" @bind-Checked="_home" />
@@ -106,6 +113,7 @@
     private LocationMap? _map;
     private List<FoundLocation> _found = [];
     private FoundLocation? _chosen;
+    private FoundLocation? _nearest;
     private bool _searching;
     private bool _offline;
     private bool _preparing;
@@ -154,6 +162,7 @@
         (_latitude, _longitude, _map) = (start.Latitude, start.Longitude, start.Map);
         _pinned = start.HasPin;
         _nameTyped = false;
+        _nearest = null;
         (_search, _found, _chosen, _offline) = (start.Kind == LocationKind.None ? start.Text : "", [], null, false);
     }
 
@@ -175,6 +184,7 @@
     private async Task SearchAsync(string text)
     {
         _search = text;
+        _nearest = null;
         _searchRun?.Cancel();
         if (text.Trim().Length < 3)
         {
@@ -207,6 +217,7 @@
     private async Task ChooseAsync(FoundLocation found)
     {
         _chosen = found;
+        _nearest = null;
         if (found.Kind == FoundLocationKind.Named && !_nameTyped)
             _name = found.Name;
         else if (!_nameTyped)
@@ -223,7 +234,7 @@
         try
         {
             if (await Finder.NearestAsync(point.Lat, point.Lon) is { } nearest)
-                (_address, _suburb) = (nearest.Address, nearest.Suburb);
+                (_address, _suburb, _nearest) = (nearest.Address, nearest.Suburb, nearest);
         }
         catch (RpcException)
         {
