@@ -1,5 +1,7 @@
 using GSBC.ChurchApp.Features.News.Api.Data;
 using GSBC.ChurchApp.Features.News.Contracts;
+using GSBC.ChurchApp.Platform.Api.Access;
+using GSBC.ChurchApp.Platform.Api.Destinations;
 using GSBC.ChurchApp.Platform.Api.Media;
 using GSBC.ChurchApp.Platform.Api.News;
 using GSBC.ChurchApp.Platform.Api.Notifications;
@@ -24,6 +26,7 @@ public abstract class NewsHost : IAsyncLifetime
     internal RecordedNotifications Told { get; } = new();
     internal KnownPeople People { get; } = new();
     internal LibraryMedia Media { get; } = new();
+    internal HeldRoles Grants { get; } = new();
 
     protected static CancellationToken Cancel => TestContext.Current.CancellationToken;
 
@@ -50,6 +53,7 @@ public abstract class NewsHost : IAsyncLifetime
         services.AddSingleton<IMediaReferences>(Media);
         services.AddSingleton<IMediaSystemFolders>(Media);
         services.AddScoped<NewsPublisher>().AddScoped<NewsTelling>().AddScoped<NewsDesk>().AddScoped<IChurchNews, ChurchNewsShares>().AddScoped<NewsPersonData>();
+        services.AddSingleton<IAccessEvaluator>(Grants).AddScoped<PlaceAccess>().AddScoped<NewsReader>();
         services.AddSyncData();
         services.AddNewsData();
         _services = services.BuildServiceProvider();

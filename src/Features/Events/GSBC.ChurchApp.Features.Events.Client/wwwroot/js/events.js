@@ -94,9 +94,35 @@ window.gsbcEvents = (() => {
     }
   }
 
-  function focus(id) {
-    document.getElementById(id)?.focus();
+  function fitFrameHeight(frame, scale) {
+    const fit = () => {
+      const body = frame.contentDocument?.body;
+      if (body) frame.parentElement.style.height = `${Math.ceil(body.scrollHeight * scale)}px`;
+    };
+    frame.addEventListener('load', fit);
+    fit();
   }
 
-  return { follow, unfollow, scrollToDay, saveCalendarFile, share, copyHtml, focus };
+  function fitEmail(frame, width) {
+    const fit = () => {
+      const holder = frame.parentElement;
+      const body = frame.contentDocument?.body;
+      if (!holder || !body) return;
+      const tall = body.scrollHeight;
+      const scale = Math.min(1, holder.clientWidth / width);
+      frame.style.height = `${tall}px`;
+      frame.style.transform = `scale(${scale.toFixed(3)})`;
+      frame.style.transformOrigin = 'top center';
+      frame.style.marginBottom = `${-tall * (1 - scale)}px`;
+      frame.style.marginInline = `${(-width * (1 - scale)) / 2}px`;
+    };
+    if (!frame.gsbcEmailFit) {
+      frame.gsbcEmailFit = new ResizeObserver(fit);
+      frame.gsbcEmailFit.observe(frame.parentElement);
+      frame.addEventListener('load', fit);
+    }
+    fit();
+  }
+
+  return { follow, unfollow, scrollToDay, saveCalendarFile, share, copyHtml, fitFrameHeight, fitEmail };
 })();

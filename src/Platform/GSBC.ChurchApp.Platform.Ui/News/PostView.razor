@@ -1,6 +1,8 @@
 @using GSBC.ChurchApp.Platform.Contracts.Content
+@using GSBC.ChurchApp.Platform.Contracts.Destinations
 @using GSBC.ChurchApp.Platform.Icons
 @using GSBC.ChurchApp.Platform.Ui.Content
+@using GSBC.ChurchApp.Platform.Ui.Destinations
 @inject Shell Shell
 @inject TimeProvider Clock
 
@@ -12,7 +14,7 @@
             <p class="post-view__meta">
                 @if (From.Length > 0)
                 {
-                    @if (FromHref.Length > 0)
+                    @if (FromHref.Length > 0 && Web is null)
                     {
                         <a class="post-view__from" href="@FromHref"><Icon Name="@AppIcons.Ministries" Size="IconSize.Small" />@From</a>
                     }
@@ -43,7 +45,7 @@
         <div class="post-view__link">
             @if (LinkTargets.KindOf(LinkPath) == LinkKind.InApp)
             {
-                <Button Block="true" Icon="@AppIcons.PlacesInTheApp" Href="@LinkTargets.InAppRoute(LinkPath)">@LinkLabel</Button>
+                <Button Block="true" Icon="@AppIcons.PlacesInTheApp" Href="@InAppHref">@LinkLabel</Button>
             }
             else
             {
@@ -61,6 +63,7 @@
         {
             <p>Posted <b>@Day.Phrase</b>@if (By.Length > 0) { <text> by <b>@By</b></text> }@if (For.Length > 0) { <text> for @ForWords</text> }.</p>
         }
+        @EndNote
     </footer>
 </article>
 
@@ -79,6 +82,8 @@
     [Parameter] public string? NotPosted { get; set; }
     [Parameter] public RenderFragment? Status { get; set; }
     [Parameter] public RenderFragment? ChildContent { get; set; }
+    [Parameter] public RenderFragment? EndNote { get; set; }
+    [CascadingParameter] public OnTheWeb? Web { get; set; }
 
     private DateTime Now => Clock.GetUtcNow().UtcDateTime;
 
@@ -89,6 +94,10 @@
     private string ForWords => For.Length == 0 ? "" : char.ToLowerInvariant(For[0]) + For[1..];
 
     private string By => Author.Length > 0 ? Author : From;
+
+    private string? InAppHref => LinkTargets.InAppRoute(LinkPath) is not { } route || Web is null
+        ? LinkTargets.InAppRoute(LinkPath)
+        : Web.AddressOf(route) ?? $"{DestinationPaths.SharedPrefix}/{route}";
 
     private int Leading => MediaStrip.Leads(Content) ? PostOpening.Of(Content).Blocks : 0;
 }

@@ -61,7 +61,7 @@ internal sealed class NewsDesk(
             (post.Tell, post.TellTitle, post.TellBody, post.Urgent) = (wanted.Tell, wanted.TellTitle.Trim(), wanted.TellBody.Trim(), wanted.Tell && wanted.Urgent);
         post.ChangedAt = now;
         publisher.Changed(post, now);
-        await db.SaveChangesAsync(cancellationToken);
+        await publisher.SaveAsync(cancellationToken);
         await UseMediaAsync(post, body, cancellationToken);
         return NewsRules.View(post);
     }
@@ -81,7 +81,7 @@ internal sealed class NewsDesk(
         {
             (post.State, post.PublishAt, post.ChangedAt) = (NewsState.Scheduled, when, now);
             publisher.Changed(post, now);
-            await db.SaveChangesAsync(cancellationToken);
+            await publisher.SaveAsync(cancellationToken);
             await telling.SettleAsync(post.Id, cancellationToken);
             return NewsRules.View(post);
         }
@@ -97,7 +97,7 @@ internal sealed class NewsDesk(
         if (tell)
             (post.ToldAt, post.TimesTold) = (now, 1);
         publisher.Changed(post, now);
-        await db.SaveChangesAsync(cancellationToken);
+        await publisher.SaveAsync(cancellationToken);
         await telling.SettleAsync(post.Id, cancellationToken);
         if (tell)
             await telling.TellAsync(post, actor, cancellationToken);
@@ -111,7 +111,7 @@ internal sealed class NewsDesk(
         DateTime now = Now;
         (post.State, post.ChangedAt) = (NewsState.WaitingToPublish, now);
         publisher.Changed(post, now);
-        await db.SaveChangesAsync(cancellationToken);
+        await publisher.SaveAsync(cancellationToken);
         await telling.WaitingAsync(post, writer.Id, cancellationToken);
         return NewsRules.View(post);
     }
@@ -126,7 +126,7 @@ internal sealed class NewsDesk(
         DateTime now = Now;
         (post.State, post.PublishAt, post.ChangedAt) = (NewsState.Draft, null, now);
         publisher.Changed(post, now);
-        await db.SaveChangesAsync(cancellationToken);
+        await publisher.SaveAsync(cancellationToken);
         await telling.SettleAsync(post.Id, cancellationToken);
         return NewsRules.View(post);
     }
@@ -143,7 +143,7 @@ internal sealed class NewsDesk(
         DateTime now = Now;
         (post.State, post.PublishAt, post.ChangedAt) = (NewsState.Archived, null, now);
         publisher.Changed(post, now);
-        await db.SaveChangesAsync(cancellationToken);
+        await publisher.SaveAsync(cancellationToken);
         await telling.SettleAsync(post.Id, cancellationToken);
         await telling.RecallAsync(post.Id, cancellationToken);
         return NewsRules.View(post);
@@ -159,7 +159,7 @@ internal sealed class NewsDesk(
         DateTime now = Now;
         (post.State, post.ChangedAt) = (NewsState.Draft, now);
         publisher.Changed(post, now);
-        await db.SaveChangesAsync(cancellationToken);
+        await publisher.SaveAsync(cancellationToken);
         return NewsRules.View(post);
     }
 
@@ -187,7 +187,7 @@ internal sealed class NewsDesk(
     {
         db.Posts.Remove(post);
         publisher.Deleted(post.Id, Now);
-        await db.SaveChangesAsync(cancellationToken);
+        await publisher.SaveAsync(cancellationToken);
         await telling.SettleAsync(post.Id, cancellationToken);
         await telling.RecallAsync(post.Id, cancellationToken);
         if (!NewsRules.IsShared(post))
@@ -208,7 +208,7 @@ internal sealed class NewsDesk(
         (post.Tell, post.TellTitle, post.TellBody, post.Urgent) = (true, words.Title.Trim(), words.Body.Trim(), words.Urgent);
         (post.ToldAt, post.TimesTold, post.ChangedAt) = (now, post.TimesTold + 1, now);
         publisher.Changed(post, now);
-        await db.SaveChangesAsync(cancellationToken);
+        await publisher.SaveAsync(cancellationToken);
         await telling.RecallAsync(post.Id, cancellationToken);
         await telling.TellAsync(post, writer.Id, cancellationToken);
         return NewsRules.View(post);
@@ -234,7 +234,7 @@ internal sealed class NewsDesk(
             DateTime now = Now;
             (post.State, post.ChangedAt) = (NewsState.Declined, now);
             publisher.Changed(post, now);
-            await db.SaveChangesAsync(cancellationToken);
+            await publisher.SaveAsync(cancellationToken);
             await telling.SettleAsync(post.Id, cancellationToken);
         }
         await TellSourceAsync(post, yes ? SharedState.Shared : SharedState.Declined, cancellationToken);
@@ -257,7 +257,7 @@ internal sealed class NewsDesk(
         {
             (post.State, post.AskedById, post.AskedByName, post.ChangedAt) = (NewsState.Asked, by, await NameAsync(by, cancellationToken), now);
             publisher.Changed(post, now);
-            await db.SaveChangesAsync(cancellationToken);
+            await publisher.SaveAsync(cancellationToken);
             await telling.AskedAsync(post, by, cancellationToken);
             return;
         }
@@ -273,7 +273,7 @@ internal sealed class NewsDesk(
         Copy(shared, post);
         post.ChangedAt = now;
         publisher.Changed(post, now);
-        await db.SaveChangesAsync(cancellationToken);
+        await publisher.SaveAsync(cancellationToken);
     }
 
     public async Task WithdrawAsync(string source, Guid sourceId, CancellationToken cancellationToken)

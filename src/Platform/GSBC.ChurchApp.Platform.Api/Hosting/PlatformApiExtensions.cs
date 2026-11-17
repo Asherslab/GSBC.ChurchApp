@@ -67,6 +67,7 @@ public static class PlatformApiExtensions
         services.TryAddScoped<ISafeguardingStandings, NoSafeguardingStandings>();
         services.TryAddScoped<IMinistryFacts, NoMinistryFacts>();
         services.TryAddScoped<IChurchNews, NoChurchNews>();
+        services.TryAddScoped<INewsHighlights, NoNewsHighlights>();
         services.TryAddScoped<IRosterableEvents, NoRosterableEvents>();
         services.TryAddScoped<IPermissionHolders, NoPermissionHolders>();
         services.TryAddScoped<IChatPlaces, NoChatPlaces>();

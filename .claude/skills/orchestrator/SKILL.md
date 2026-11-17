@@ -110,8 +110,10 @@ dotnet run --no-build --project src/Hosts/GSBC.ChurchApp.Hosts.AppHost --launch-
 - **Before you report:** check the release note exists in `changelog/unreleased/` with `added:` and the
   Changed/Where/Try parts; `git grep` the merge for real names or emails that crept into docs or fixtures (the repo is
   public); for anything web-facing, check it through Cloudflare (below).
-- **Then clean up:** shut down any Simulator still booted for it (`xcrun simctl list devices booted`; a booted one holds
-  about 8 GB of memory, owner 2026-11-10), close the station's node and group (`close --node a,b,c`, one confirmation for the owner), run
+- **Then clean up:** delete the station's Simulator with its data (`xcrun simctl delete <id>`; shutting it down frees its
+  ~8 GB of memory, owner 2026-11-10, but leaves 1.5–3.5 GB on disk: 35 finished stations' devices held 70 GB, owner
+  2026-11-17). Check `xcrun simctl list devices` for any `… station` device whose station is closed and delete those too;
+  leave live stations' devices and Xcode's own (`iPhone 17`, iPads), which `xcrun simctl erase` empties if they grow. Then close the station's node and group (`close --node a,b,c`, one confirmation for the owner), run
   `tools/dev/prune-worktrees.sh` (Docker needs the sandbox off), and delete the station's temp folder
   (`/private/tmp/claude-*/…-worktrees-<name>`). Do this at the end of every merge round, not when the disk fills.
 - If a later station needs the merged work, message it: "merged into skeleton/backbone (<sha>); merge it, then …".

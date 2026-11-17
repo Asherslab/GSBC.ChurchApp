@@ -5,6 +5,7 @@ using GSBC.ChurchApp.Features.Events.Api.Data;
 using GSBC.ChurchApp.Features.Events.Contracts;
 using GSBC.ChurchApp.Platform.Api.Access;
 using GSBC.ChurchApp.Platform.Api.Media;
+using GSBC.ChurchApp.Platform.Api.News;
 using GSBC.ChurchApp.Platform.Api.Notifications;
 using GSBC.ChurchApp.Platform.Api.Sync;
 using GSBC.ChurchApp.Platform.Common;
@@ -46,6 +47,7 @@ public abstract class EventsHost : IAsyncLifetime
         services.AddSingleton<IAccessEvaluator>(Access);
         services.AddSingleton<INotifications>(Notifications);
         services.AddSingleton<IMediaReferences, AnyMedia>();
+        services.AddSingleton<INewsHighlights, NoNews>();
         services.AddScoped<EventsPublisher>();
         services.AddScoped<EventWriter>();
         services.AddScoped<HandledRequests>();
@@ -147,5 +149,13 @@ public abstract class EventsHost : IAsyncLifetime
         protected override ContextPropagationToken CreatePropagationTokenCore(ContextPropagationOptions? options) => throw new NotSupportedException();
 
         protected override Task WriteResponseHeadersAsyncCore(Metadata responseHeaders) => Task.CompletedTask;
+    }
+
+    private sealed class NoNews : INewsHighlights
+    {
+        public Task<IReadOnlyList<HighlightedPost>> RecentAsync(int take, CancellationToken cancellationToken) => Task.FromResult<IReadOnlyList<HighlightedPost>>([]);
+
+        public Task<IReadOnlyDictionary<Guid, HighlightedPost>> PublishedAsync(IReadOnlyCollection<Guid> ids, CancellationToken cancellationToken) =>
+            Task.FromResult<IReadOnlyDictionary<Guid, HighlightedPost>>(new Dictionary<Guid, HighlightedPost>());
     }
 }

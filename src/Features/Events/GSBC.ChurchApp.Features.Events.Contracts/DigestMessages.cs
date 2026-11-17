@@ -16,6 +16,13 @@ public enum DigestItemKind
     Event = 0,
     NotOn = 1,
     Own = 2,
+    News = 3,
+}
+
+public enum DigestPictureAt
+{
+    Beside = 0,
+    Across = 1,
 }
 
 public static class DigestFields
@@ -26,8 +33,9 @@ public static class DigestFields
     public const string Time = "time";
     public const string Description = "description";
     public const string Register = "register";
+    public const string Picture = "picture";
 
-    public static readonly IReadOnlyList<string> All = [Label, Title, When, Time, Description, Register];
+    public static readonly IReadOnlyList<string> All = [Label, Title, When, Time, Description, Register, Picture];
 }
 
 [ProtoContract]
@@ -39,6 +47,7 @@ public sealed class DigestWords
     [ProtoMember(4)] public string Time { get; set; } = "";
     [ProtoMember(5)] public string Description { get; set; } = "";
     [ProtoMember(6)] public string RegisterLink { get; set; } = "";
+    [ProtoMember(7)] public MediaRef? Picture { get; set; }
 
     public string this[string field] => field switch
     {
@@ -66,10 +75,20 @@ public sealed class DigestWords
         return copy;
     }
 
-    public DigestWords Copy() => new() { Label = Label, Title = Title, When = When, Time = Time, Description = Description, RegisterLink = RegisterLink };
+    public DigestWords WithPicture(MediaRef? picture)
+    {
+        DigestWords copy = Copy();
+        copy.Picture = picture;
+        return copy;
+    }
 
-    public static DigestWords Overlay(DigestWords calendar, DigestWords own, IEnumerable<string> changed) =>
-        changed.Aggregate(calendar.Copy(), (words, field) => words.With(field, own[field]));
+    public DigestWords Copy() => new() { Label = Label, Title = Title, When = When, Time = Time, Description = Description, RegisterLink = RegisterLink, Picture = Picture };
+
+    public static DigestWords Overlay(DigestWords calendar, DigestWords own, IReadOnlyCollection<string> changed)
+    {
+        DigestWords words = changed.Aggregate(calendar.Copy(), (overlaid, field) => overlaid.With(field, own[field]));
+        return changed.Contains(DigestFields.Picture) ? words.WithPicture(own.Picture) : words;
+    }
 }
 
 [ProtoContract]
@@ -93,6 +112,11 @@ public sealed class DigestItem
     [ProtoMember(16)] public bool ForEveryone { get; set; }
     [ProtoMember(17)] public List<string> Missing { get; set; } = [];
     [ProtoMember(18)] public List<string> CalendarIds { get; set; } = [];
+    [ProtoMember(19)] public bool Special { get; set; }
+    [ProtoMember(20)] public string Link { get; set; } = "";
+    [ProtoMember(21)] public string Posted { get; set; } = "";
+    [ProtoMember(22)] public string OnlyFor { get; set; } = "";
+    [ProtoMember(23)] public DigestPictureAt PictureAt { get; set; }
 
     public DigestWords Shown => DigestWords.Overlay(CalendarWords, Words, Changed);
 
@@ -121,6 +145,9 @@ public sealed class DigestDraft
     [ProtoMember(11)] public DateTime? NotifiedAt { get; set; }
     [ProtoMember(12)] public string Id { get; set; } = "";
     [ProtoMember(13)] public DigestRange Range { get; set; }
+    [ProtoMember(14)] public List<DigestItem> Calendar { get; set; } = [];
+    [ProtoMember(15)] public List<DigestItem> Posts { get; set; } = [];
+    [ProtoMember(16)] public MediaRef? TopPicture { get; set; }
 }
 
 [ProtoContract]
@@ -137,6 +164,7 @@ public sealed class DigestEntry
     [ProtoMember(3)] public List<string> Changed { get; set; } = [];
     [ProtoMember(4, IsRequired = true)] public DigestWords Words { get; set; } = new();
     [ProtoMember(5)] public bool Own { get; set; }
+    [ProtoMember(6)] public DigestPictureAt PictureAt { get; set; }
 }
 
 [ProtoContract]
@@ -148,6 +176,7 @@ public sealed class DigestSave
     [ProtoMember(5)] public string Id { get; set; } = "";
     [ProtoMember(6)] public DigestRange Range { get; set; }
     [ProtoMember(7)] public string End { get; set; } = "";
+    [ProtoMember(8)] public MediaRef? TopPicture { get; set; }
 }
 
 [ProtoContract]
@@ -178,4 +207,6 @@ public sealed class DigestShownItem
     [ProtoMember(8)] public string OccurrenceId { get; set; } = "";
     [ProtoMember(9)] public string FirstDate { get; set; } = "";
     [ProtoMember(10)] public string LastDate { get; set; } = "";
+    [ProtoMember(11)] public string Link { get; set; } = "";
+    [ProtoMember(12)] public string Posted { get; set; } = "";
 }

@@ -3,6 +3,7 @@ using System.Linq.Expressions;
 using System.Text.RegularExpressions;
 using GSBC.ChurchApp.Features.Events.Api.Data;
 using GSBC.ChurchApp.Features.Events.Contracts;
+using GSBC.ChurchApp.Platform.Api.News;
 using GSBC.ChurchApp.Platform.Api.Notifications;
 using GSBC.ChurchApp.Platform.Common;
 using GSBC.ChurchApp.Platform.Contracts.Configuration;
@@ -15,6 +16,9 @@ internal static partial class Digests
     public const DigestRange DefaultRange = DigestRange.TwoWeeks;
     public const int LongestDays = 92;
     public const string OwnPrefix = "own:";
+    private const string NewsPrefix = "news:";
+    private const string NewsLabel = "Church news";
+    private const int LongestOpening = 600;
 
     private static readonly CultureInfo English = CultureInfo.InvariantCulture;
     private static readonly string[] Counted = ["", "one", "two", "three", "four", "five"];
@@ -39,44 +43,64 @@ internal static partial class Digests
     private static bool Worth(EventOccurrence occurrence) =>
         OccurrenceListing.IsOneOffOrSpecial(occurrence) || occurrence.NotOn || occurrence.Missing.Count > 0;
 
-    public static List<DigestItem> Candidates(EventsBook book, DateOnly start, DateOnly end, IReadOnlySet<Guid> calendars, DateTime now)
-    {
-        List<EventOccurrence> occurrences = book
-            .Occurrences(start, end, item => EventsBook.IsShown(item, now) && (calendars.Contains(item.CalendarId) || book.AlsoOn(item.Id).Any(calendars.Contains)))
-            .Where(Worth)
+    public static List<DigestItem> Candidates(EventsBook book, DateOnly start, DateOnly end, DateTime now) =>
+        book.Occurrences(start, end, item => EventsBook.IsShown(item, now))
             .OrderBy(occurrence => occurrence.StartsAt).ThenBy(occurrence => occurrence.Fields.Title)
-            .ToList();
-
-        return occurrences
             .GroupBy(GroupOf)
             .Select(group => ItemOf(book, group.ToList(), start))
             .ToList();
-    }
 
-    public static List<DigestItem> Merge(IReadOnlyList<DigestItem> candidates, IReadOnlyList<DigestEntry> entries)
+    public static List<DigestItem> Merge(IReadOnlyList<DigestItem> calendar, IReadOnlyDictionary<Guid, HighlightedPost> posts, IReadOnlyList<DigestEntry> entries)
     {
-        Dictionary<string, DigestItem> waiting = candidates.ToDictionary(candidate => candidate.Key);
+        Dictionary<string, DigestItem> available = calendar.ToDictionary(candidate => candidate.Key);
         List<DigestItem> merged = [];
-        foreach (DigestEntry entry in entries)
+        foreach (DigestEntry entry in entries.Where(entry => entry.Included))
         {
-            if (entry.Own)
-                merged.Add(OwnItem(entry));
-            else if (waiting.Remove(entry.Key, out DigestItem? item))
+            DigestItem? item = entry.Own ? OwnItem(entry)
+                : PostIdOf(entry.Key) is { } postId ? posts.TryGetValue(postId, out HighlightedPost? post) ? NewsItem(post) : null
+                : available.GetValueOrDefault(entry.Key);
+            if (item is null)
+                continue;
+            if (!entry.Own)
             {
-                item.Included = entry.Included;
                 item.Changed = entry.Changed.Where(DigestFields.All.Contains).Distinct().ToList();
                 item.Words = entry.Words;
-                merged.Add(item);
             }
-        }
-
-        foreach (DigestItem fresh in candidates.Where(candidate => waiting.ContainsKey(candidate.Key)))
-        {
-            fresh.IsNew = entries.Count > 0;
-            int before = merged.FindLastIndex(item => item.Kind != DigestItemKind.Own && string.CompareOrdinal(item.FirstDate, fresh.FirstDate) <= 0);
-            merged.Insert(before + 1, fresh);
+            item.PictureAt = entry.PictureAt;
+            merged.Add(item);
         }
         return merged;
+    }
+
+    private static Guid? PostIdOf(string key) =>
+        key.StartsWith(NewsPrefix, StringComparison.Ordinal) && Guid.TryParse(key[NewsPrefix.Length..], out Guid id) ? id : null;
+
+    public static IReadOnlyList<Guid> PostsIn(IEnumerable<string> keys) => keys.Select(PostIdOf).OfType<Guid>().Distinct().ToList();
+
+    public static DigestItem NewsItem(HighlightedPost post) => new()
+    {
+        Key = $"{NewsPrefix}{post.Id:D}",
+        Kind = DigestItemKind.News,
+        Included = true,
+        Picture = post.Picture,
+        Link = post.Path,
+        Posted = EventDates.Format(ChurchTime.DayOf(post.PublishedAt)),
+        ForEveryone = post.Audience == Audience.Everyone,
+        OnlyFor = post.Audience == Audience.Everyone ? "" : OnlyFor(post.Audience),
+        CalendarWords = new DigestWords { Label = NewsLabel, Title = post.Title, Description = Shortened(post.Opening), Picture = post.Picture },
+    };
+
+    private static string OnlyFor(Audience audience) =>
+        audience == Audience.SignedIn ? "Only for people signed in"
+        : audience.IsForRoles ? audience.RoleIds.Count == 1 ? "Only for people in a role" : $"Only for people in {audience.RoleIds.Count} roles"
+        : "Only for some people";
+
+    private static string Shortened(string text)
+    {
+        if (text.Length <= LongestOpening)
+            return text;
+        int lastSpace = text[..LongestOpening].LastIndexOf(' ');
+        return text[..(lastSpace > 0 ? lastSpace : LongestOpening)].TrimEnd(',', ';', ':') + "…";
     }
 
     public static bool Notifies(DigestRecord digest, bool again) => digest.NotifiedAt is null || again;
@@ -84,7 +108,7 @@ internal static partial class Digests
     public static List<DigestEntry> Kept(IReadOnlyList<DigestEntry> before, IReadOnlyList<DigestEntry> saved, IReadOnlySet<string> showing)
     {
         HashSet<string> savedKeys = saved.Select(entry => entry.Key).ToHashSet();
-        return [.. saved, .. before.Where(entry => !entry.Own && !savedKeys.Contains(entry.Key) && !showing.Contains(entry.Key))];
+        return [.. saved, .. before.Where(entry => entry is { Own: false, Included: true } && PostIdOf(entry.Key) is null && !savedKeys.Contains(entry.Key) && !showing.Contains(entry.Key))];
     }
 
     public static SentDigest ForApp(IReadOnlyList<DigestItem> items, DateOnly end) => new()
@@ -98,7 +122,9 @@ internal static partial class Digests
                 Order = order,
                 Kind = item.Kind,
                 Words = item.Shown,
-                Picture = item.Picture,
+                Picture = item.Shown.Picture,
+                Link = item.Link,
+                Posted = item.Posted,
                 Place = item.Place,
                 Contacts = item.Contacts,
                 OccurrenceId = item.OccurrenceIds.FirstOrDefault() ?? "",
@@ -106,23 +132,24 @@ internal static partial class Digests
                 LastDate = item.LastDate,
             },
             CalendarIds = item.CalendarIds.Select(id => Guid.TryParse(id, out Guid calendarId) ? calendarId : Guid.Empty).Where(id => id != Guid.Empty).ToList(),
+            PostId = PostIdOf(item.Key),
         }).ToList(),
     };
 
-    public static IEnumerable<SentDigestItem> Standing(EventsBook book, SentDigest sent) =>
-        sent.Items.Where(item => item.CalendarIds.Count == 0 || book.Calendars.ContainsKey(item.CalendarIds[0]));
+    public static IEnumerable<SentDigestItem> Standing(EventsBook book, IReadOnlyDictionary<Guid, HighlightedPost> posts, SentDigest sent) =>
+        sent.Items.Where(item => item.PostId is { } postId ? posts.ContainsKey(postId) : item.CalendarIds.Count == 0 || book.Calendars.ContainsKey(item.CalendarIds[0]));
 
-    public static Audience AudienceOf(EventsBook book, SentDigestItem sent) =>
-        sent.CalendarIds.Count == 0
-            ? Audience.Everyone
-            : CalendarAudiences.Union(sent.CalendarIds.Select(id => book.Calendars.GetValueOrDefault(id)).OfType<CalendarRecord>().Select(calendar => CalendarAudiences.Of(calendar.Audience)));
+    public static Audience AudienceOf(EventsBook book, IReadOnlyDictionary<Guid, HighlightedPost> posts, SentDigestItem sent) =>
+        sent.PostId is { } postId ? posts[postId].Audience
+        : sent.CalendarIds.Count == 0 ? Audience.Everyone
+        : CalendarAudiences.Union(sent.CalendarIds.Select(id => book.Calendars.GetValueOrDefault(id)).OfType<CalendarRecord>().Select(calendar => CalendarAudiences.Of(calendar.Audience)));
 
-    public static Notification Notification(EventsBook book, SentDigest sent, NotificationAudience audience) =>
-        Worded(Standing(book, sent).Where(item => AudienceOf(book, item) == Audience.Everyone).Select(item => item.Item.Words.Title), audience, null);
+    public static Notification Notification(EventsBook book, IReadOnlyDictionary<Guid, HighlightedPost> posts, SentDigest sent, NotificationAudience audience) =>
+        Worded(Standing(book, posts, sent).Where(item => AudienceOf(book, posts, item) == Audience.Everyone).Select(item => item.Item.Words.Title), audience, null);
 
-    public static List<Notification> ForEveryoneWhoSeesIt(EventsBook book, SentDigest sent, DateOnly start)
+    public static List<Notification> ForEveryoneWhoSeesIt(EventsBook book, IReadOnlyDictionary<Guid, HighlightedPost> posts, SentDigest sent, DateOnly start)
     {
-        List<(string Title, Audience Audience)> items = Standing(book, sent).Select(item => (item.Item.Words.Title, AudienceOf(book, item))).ToList();
+        List<(string Title, Audience Audience)> items = Standing(book, posts, sent).Select(item => (item.Item.Words.Title, AudienceOf(book, posts, item))).ToList();
         List<(NotificationAudience Reader, Func<Audience, bool> Sees)> readers = [];
         foreach (Guid role in items.Where(item => item.Audience.IsForRoles).SelectMany(item => item.Audience.RoleIds).Distinct())
             readers.Add((NotificationAudience.Holding(RoleMembership.Of(role)), audience => !audience.IsForSomeone || audience.RoleIds.Contains(role)));
@@ -188,6 +215,7 @@ internal static partial class Digests
     {
         { Kind: OccurrenceKind.OneOff, NotOn: false } => $"event:{occurrence.ItemId}",
         { NotOn: true } => $"off:{occurrence.ItemId}:{occurrence.NotOnReason}",
+        _ when !Worth(occurrence) => $"day:{occurrence.ItemId}:{occurrence.Date}",
         _ => $"date:{occurrence.ItemId}:{occurrence.Fields.Title}:{PlaceOf(occurrence)}:{TimeOf(occurrence)}:{string.Join(',', occurrence.Missing)}",
     };
 
@@ -209,6 +237,7 @@ internal static partial class Digests
             CalendarName = calendar?.Name ?? "",
             CalendarIds = [first.CalendarId, .. first.AlsoOn],
             ForEveryone = book.AudienceOf(first) == Audience.Everyone,
+            Special = Worth(first),
         };
 
         if (first.NotOn)
@@ -240,6 +269,7 @@ internal static partial class Digests
             Description = string.Join(" ", new[] { PlainText(first.Fields.Description?.Markdown) }.Concat(first.Missing.Select(need => $"{EventFieldKeys.Missing(need)}."))
                 .Where(part => part.Length > 0)),
             RegisterLink = first.Fields.RegisterLink,
+            Picture = first.Fields.Picture,
         };
         return item;
     }

@@ -5,8 +5,9 @@ usage="Usage: tools/design/look-check.sh [--base http://localhost:5400] [--out D
                                     [--schemes light,dark] [--only REGEX] [--extra path,path] [--jobs 6]
 Signs in to this worktree's admin panel with a test Owner (e2e+look@example.com, made in this worktree's database
 only), visits every page in the sidebar with its tabs and a record open, and flags content too close to an edge,
-spilling or cut off, overlapping, sideways overflow and bars that aren't flush. Writes a report with screenshots to
---out and exits 1 if anything was flagged. Run it from a worktree whose AppHost runs beside main's (AGENTS.md)."
+spilling or cut off, overlapping, sideways overflow, bars that aren't flush, and fields sharing a row whose boxes don't
+line up. Writes a report with screenshots to --out and exits 1 if anything was flagged. Run it from a worktree whose
+AppHost runs beside main's (AGENTS.md)."
 
 case "${1:-}" in -h|--help) echo "$usage"; exit 0 ;; esac
 

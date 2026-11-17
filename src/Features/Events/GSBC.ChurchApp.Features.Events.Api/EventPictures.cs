@@ -12,10 +12,17 @@ namespace GSBC.ChurchApp.Features.Events.Api;
 
 internal sealed partial class EventPictures(EventsDbContext db, IMediaReferences references, EventsPublisher publisher, ILogger<EventPictures> logger) : IMediaHolder
 {
-    public bool Holds(string owner) => OwnerPattern().IsMatch(owner);
+    public static string DigestOwner(Guid id) => $"events/digest/{id}";
+
+    public bool Holds(string owner) => OwnerPattern().IsMatch(owner) || DigestPattern().IsMatch(owner);
 
     public async Task RefreshAsync(string owner, CancellationToken cancellationToken)
     {
+        if (DigestPattern().Match(owner) is { Success: true } digest)
+        {
+            await RefreshDigestAsync(Guid.Parse(digest.Groups["id"].Value), cancellationToken);
+            return;
+        }
         if (OwnerPattern().Match(owner) is not { Success: true } match)
             return;
         Guid id = Guid.Parse(match.Groups["id"].Value);
@@ -32,6 +39,31 @@ internal sealed partial class EventPictures(EventsDbContext db, IMediaReferences
             return;
         await db.SaveChangesAsync(cancellationToken);
         await publisher.PublishAsync(cancellationToken);
+    }
+
+    private async Task RefreshDigestAsync(Guid id, CancellationToken cancellationToken)
+    {
+        if (await db.Digests.FindAsync([id], cancellationToken) is not { } digest)
+            return;
+        try
+        {
+            if (digest.TopPicture is { } top)
+                digest.TopPicture = (await references.VerifyAsync([top], cancellationToken))[0];
+            List<DigestEntry> pictured = digest.Entries.Where(entry => entry.Changed.Contains(DigestFields.Picture) && entry.Words.Picture is not null).ToList();
+            if (pictured.Count > 0)
+            {
+                IReadOnlyList<MediaRef> current = await references.VerifyAsync(pictured.Select(entry => entry.Words.Picture!).ToList(), cancellationToken);
+                for (int index = 0; index < pictured.Count; index++)
+                    pictured[index].Words = pictured[index].Words.WithPicture(current[index]);
+                digest.Entries = [.. digest.Entries];
+            }
+        }
+        catch (RpcException exception)
+        {
+            logger.LogWarning(exception, "Media no longer has a digest's picture; keeping what was saved");
+            return;
+        }
+        await db.SaveChangesAsync(cancellationToken);
     }
 
     private async Task<EventFields> CurrentAsync(EventFields fields, CancellationToken cancellationToken)
@@ -59,4 +91,7 @@ internal sealed partial class EventPictures(EventsDbContext db, IMediaReferences
 
     [GeneratedRegex("^events/(?<kind>event|regular)/(?<id>[0-9a-f-]{36})(/(?<date>\\d{4}-\\d{2}-\\d{2}))?$")]
     private static partial Regex OwnerPattern();
+
+    [GeneratedRegex("^events/digest/(?<id>[0-9a-f-]{36})$")]
+    private static partial Regex DigestPattern();
 }

@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Security.Cryptography;
 using GSBC.ChurchApp.Features.Events.Api.Data;
 using GSBC.ChurchApp.Features.Events.Contracts;
+using GSBC.ChurchApp.Platform.Api.News;
 using GSBC.ChurchApp.Platform.Common;
 using GSBC.ChurchApp.Platform.Contracts.Configuration;
 using GSBC.ChurchApp.Platform.Data;
@@ -9,7 +10,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace GSBC.ChurchApp.Features.Events.Api;
 
-internal sealed class EventsPublisher(EventsDbContext db, TimeProvider time)
+internal sealed class EventsPublisher(EventsDbContext db, INewsHighlights news, TimeProvider time)
 {
     private const long AdvisoryLockKey = 0x6576_656e_7473_7075;
 
@@ -30,7 +31,8 @@ internal sealed class EventsPublisher(EventsDbContext db, TimeProvider time)
         EventsBook book = await EventsBook.LoadAsync(db, cancellationToken);
         List<DigestRecord> digests = await db.Digests.AsNoTracking().Where(sent => sent.SentAt != null).OrderByDescending(sent => sent.SentAt)
             .Take(DigestsLooked).ToListAsync(cancellationToken);
-        Dictionary<(string, string), Row> wanted = Rows(book, now).Concat(DigestRows(book, digests)).Concat(EditingRows(book, now)).ToDictionary(row => (row.Feed, row.RecordId));
+        IReadOnlyDictionary<Guid, HighlightedPost> posts = await news.PublishedAsync(SentPosts(digests), cancellationToken);
+        Dictionary<(string, string), Row> wanted = Rows(book, now).Concat(DigestRows(book, posts, digests)).Concat(EditingRows(book, now)).ToDictionary(row => (row.Feed, row.RecordId));
         Dictionary<(string, string), PublishedRow> published = await db.PublishedRows
             .Where(row => Published.Contains(row.Feed)).ToDictionaryAsync(row => (row.Feed, row.RecordId), cancellationToken);
 
@@ -157,22 +159,32 @@ internal sealed class EventsPublisher(EventsDbContext db, TimeProvider time)
             .ToList();
     }
 
-    public static IEnumerable<Row> DigestRows(EventsBook book, IReadOnlyList<DigestRecord> newestFirst)
+    public static IReadOnlyCollection<Guid> SentPosts(IEnumerable<DigestRecord> digests) =>
+        digests.SelectMany(digest => digest.Sent.Items).Select(item => item.PostId).OfType<Guid>().ToHashSet();
+
+    public async Task<bool> SentAnyAsync(IReadOnlyCollection<Guid> postIds, CancellationToken cancellationToken)
+    {
+        List<DigestRecord> digests = await db.Digests.AsNoTracking().Where(sent => sent.SentAt != null).OrderByDescending(sent => sent.SentAt)
+            .Take(DigestsLooked).ToListAsync(cancellationToken);
+        return SentPosts(digests).Any(postIds.Contains);
+    }
+
+    public static IEnumerable<Row> DigestRows(EventsBook book, IReadOnlyDictionary<Guid, HighlightedPost> posts, IReadOnlyList<DigestRecord> newestFirst)
     {
         List<DigestRecord> shown = newestFirst.Where(digest => digest.SentAt is not null).DistinctBy(digest => digest.Start).Take(EarlierDigests + 1).ToList();
-        return shown.SelectMany((digest, index) => DigestRows(book, digest, index == 0 ? DigestHeader : EarlierHeader(digest.Start)));
+        return shown.SelectMany((digest, index) => DigestRows(book, posts, digest, index == 0 ? DigestHeader : EarlierHeader(digest.Start)));
     }
 
     public static string EarlierHeader(DateOnly start) => $"{DigestHeader}:{EventDates.Format(start)}";
 
-    private static IEnumerable<Row> DigestRows(EventsBook book, DigestRecord digest, string headerId)
+    private static IEnumerable<Row> DigestRows(EventsBook book, IReadOnlyDictionary<Guid, HighlightedPost> posts, DigestRecord digest, string headerId)
     {
         string start = EventDates.Format(digest.Start);
         yield return new Row(EventsFeeds.Digest, headerId,
             EventsPayloads.Encode(new DigestShown { Start = start, End = EventDates.Format(digest.Sent.End), SentAt = digest.SentAt!.Value }), null);
-        foreach (SentDigestItem sent in Digests.Standing(book, digest.Sent))
+        foreach (SentDigestItem sent in Digests.Standing(book, posts, digest.Sent))
         {
-            Audience audience = Digests.AudienceOf(book, sent);
+            Audience audience = Digests.AudienceOf(book, posts, sent);
             string recordId = $"{start}/{sent.Item.Key}";
             byte[] payload = EventsPayloads.Encode(sent.Item);
             string sortKey = sent.Item.Order.ToString("D4", CultureInfo.InvariantCulture);

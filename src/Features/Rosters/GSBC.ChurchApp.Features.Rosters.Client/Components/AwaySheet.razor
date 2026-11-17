@@ -37,7 +37,7 @@
         <Segmented TValue="string" Label="Away for" ShowLabel="true" Value="@Part" ValueChanged="SetPart" Options="Parts" />
         @if (Part == Times)
         {
-            <div class="away-times">
+            <div class="ui-pair">
                 <TimeField Label="From" @bind-Value="_draft.StartTime" Hint="Leave this empty to start at the beginning of the day." />
                 <TimeField Label="Until" @bind-Value="_draft.EndTime" Hint="Leave this empty to run to the end of the day." />
             </div>

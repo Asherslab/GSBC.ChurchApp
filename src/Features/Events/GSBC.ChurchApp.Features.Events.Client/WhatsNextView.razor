@@ -1,4 +1,3 @@
-@using GSBC.ChurchApp.Platform.Contracts.Media
 
 <Masthead Title="What's next" Note="@(Digest.Header is null ? null : Digest.Range)">
     @if (Digest.Header is not null && Weeks.Count > 0)
@@ -22,50 +21,7 @@
             <div class="whats-next__items">
                 @foreach (DigestShownItem item in week.Items)
                 {
-                    @if (item.Kind == DigestItemKind.NotOn)
-                    {
-                        <Card Tone="CardTone.Callout" Class="whats-next-off">
-                            <span class="whats-next-off__head"><Icon Name="circle-off" Size="IconSize.Small" /><strong>@item.Words.Title</strong></span>
-                            <span class="whats-next-off__when">@WhenOf(item)</span>
-                            @if (item.Words.Description.Length > 0)
-                            {
-                                <span class="whats-next-off__about">@item.Words.Description</span>
-                            }
-                        </Card>
-                    }
-                    else
-                    {
-                        <Card Tone="CardTone.Raised" Class="whats-next-card" Media="@CoverOf(item.Picture)" Footer="@ActionsOf(item)">
-                            @if (item.Words.Label.Length > 0)
-                            {
-                                <span class="whats-next-card__label">@item.Words.Label</span>
-                            }
-                            @if (!Preview && HasEvent?.Invoke(item) == true)
-                            {
-                                <a class="whats-next-card__title" href="@EventsPlaces.EventPath(item.OccurrenceId)">@item.Words.Title</a>
-                            }
-                            else
-                            {
-                                <strong class="whats-next-card__title">@item.Words.Title</strong>
-                            }
-                            @if (WhenOf(item) is { Length: > 0 } when)
-                            {
-                                <span class="whats-next-card__when">@when</span>
-                            }
-                            @foreach (string paragraph in Paragraphs(item.Words.Description))
-                            {
-                                <span class="whats-next-card__about">@paragraph</span>
-                            }
-                            @if (item.Place.Length > 0)
-                            {
-                                <span class="whats-next-card__fact"><Icon Name="map-pin" Size="IconSize.Small" />@item.Place</span>
-                            }
-                            @if (item.Contacts.Length > 0)
-                            {
-                                <span class="whats-next-card__fact"><Icon Name="user" Size="IconSize.Small" />@item.Contacts</span>
-                            }
-                        </Card>
-                    }
+                    <WhatsNextCard Item="item" When="@WhenOf(item)" Preview="Preview" HasEvent="HasEvent" OnAdd="OnAdd" OnRegister="OnRegister" OnPick="OnPick" />
                 }
             </div>
         </ChildContent>
@@ -92,32 +48,9 @@
     [Parameter] public EventCallback<string> OnRegister { get; set; }
     [Parameter] public bool Preview { get; set; }
     [Parameter] public bool AsSent { get; set; }
+    [Parameter] public EventCallback<DigestShownItem> OnPick { get; set; }
 
     private IReadOnlyList<WhatsNextWeek> Weeks => AsSent ? Digest.WeeksAsSent() : Digest.Weeks(Today);
 
     private string WhenOf(DigestShownItem item) => AsSent ? WhatsNextDigest.WhenAsSent(item) : WhatsNextDigest.WhenLine(item.Words);
-
-    private static IEnumerable<string> Paragraphs(string text) =>
-        text.Split("\n\n", StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-
-    private static RenderFragment? CoverOf(MediaRef? picture) =>
-        picture is null ? null : @<MediaCover Media="picture" Alt="" />;
-
-    private RenderFragment? ActionsOf(DigestShownItem item)
-    {
-        bool register = item.Words.RegisterLink.Length > 0;
-        bool add = Preview ? item.OccurrenceId.Length > 0 : HasEvent?.Invoke(item) == true;
-        if (!register && !add)
-            return null;
-        return @<text>
-            @if (register)
-            {
-                <Button Small="true" Icon="external-link" OnClick="() => Preview ? Task.CompletedTask : OnRegister.InvokeAsync(item.Words.RegisterLink)">Register</Button>
-            }
-            @if (add)
-            {
-                <Button Small="true" Variant="ButtonVariant.Quiet" Icon="calendar-plus" OnClick="() => Preview ? Task.CompletedTask : OnAdd.InvokeAsync(item)">Add to calendar</Button>
-            }
-        </text>;
-    }
 }

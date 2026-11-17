@@ -56,7 +56,7 @@ const settle = page => page.evaluate(async limit => {
 }, settleLimit);
 
 const waitForApp = async page => {
-  await page.waitForFunction(() => document.querySelector('.admin-shell') || document.querySelector('.sign-in-stage, .signin'), null, { timeout: 60000 });
+  await page.waitForFunction(() => document.querySelector('.admin-shell') || document.querySelector('.sign-in-stage, .signin, .opened-page'), null, { timeout: 60000 });
   await settle(page);
 };
 
@@ -264,6 +264,7 @@ const checks = {
   overlap: 'Overlapping',
   overflow: 'Wider than its space',
   bar: 'Bar not flush',
+  misaligned: 'Fields in a row out of line',
   broken: 'Page broken',
 };
 

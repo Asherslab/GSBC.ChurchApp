@@ -21,6 +21,6 @@ internal sealed class NewsPersonData(NewsDbContext db, NewsPublisher publisher, 
                 (post.AnsweredById, post.AnsweredByName) = (null, "");
             publisher.Changed(post, now);
         }
-        await db.SaveChangesAsync(cancellationToken);
+        await publisher.SaveAsync(cancellationToken);
     }
 }

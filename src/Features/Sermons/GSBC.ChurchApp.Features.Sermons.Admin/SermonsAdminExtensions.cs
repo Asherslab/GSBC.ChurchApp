@@ -1,5 +1,6 @@
 using GSBC.ChurchApp.Features.Sermons.Client;
 using GSBC.ChurchApp.Features.Sermons.Contracts;
+using GSBC.ChurchApp.Platform.Client.Destinations;
 using GSBC.ChurchApp.Platform.Client.Modules;
 using GSBC.ChurchApp.Platform.Icons;
 using Microsoft.Extensions.DependencyInjection;
@@ -13,6 +14,7 @@ public static class SermonsAdminExtensions
         modules.Add(new ClientModule("Sermons", typeof(SermonsAdminExtensions).Assembly,
             [new NavEntry("Sermons", "sermons", AppIcons.Sermons, SermonsPermissions.Upload, Area: NavAreas.SundaysAndSermons,
                 Summary: "Check new sermons, fix their details, and upload them")]));
-        return services.AddSermonsClient().AddSingleton<SermonsAdminClient>().AddSingleton<ILatestSermonsOnline, LatestSermonsOnline>().AddSingleton<ISermonCards, OnlineSermonCards>();
+        return services.AddSermonsClient().AddSingleton<SermonsAdminClient>().AddSingleton<ILatestSermonsOnline, LatestSermonsOnline>().AddSingleton<ISermonCards, OnlineSermonCards>()
+            .AddWebsitePlace(new WebsitePlace($"/{SermonsDestinations.Sermon.PathPrefix}/", "/sermons/"));
     }
 }

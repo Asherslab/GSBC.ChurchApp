@@ -1,8 +1,10 @@
 using GSBC.ChurchApp.Features.Events.Api.Data;
 using GSBC.ChurchApp.Features.Events.Contracts;
+using GSBC.ChurchApp.Platform.Api.News;
 using GSBC.ChurchApp.Platform.Api.Notifications;
 using GSBC.ChurchApp.Platform.Common;
 using GSBC.ChurchApp.Platform.Contracts.Configuration;
+using GSBC.ChurchApp.Platform.Contracts.Media;
 using GSBC.ChurchApp.Platform.Permissions;
 
 namespace GSBC.ChurchApp.Features.Events.Api.Tests;
@@ -11,13 +13,14 @@ public sealed class DigestTests
 {
     private static readonly DateOnly Start = new(2026, 11, 9);
     private static readonly DateTime Now = ChurchTime.ToUtc(new DateTime(2026, 11, 8, 12, 0, 0));
+    private static readonly IReadOnlyDictionary<Guid, HighlightedPost> NoPosts = new Dictionary<Guid, HighlightedPost>();
 
     private readonly CalendarRecord _services = Calendar("Sunday services", Audience.Everyone);
     private readonly CalendarRecord _kids = Calendar("Kids", Audience.Everyone);
     private readonly CalendarRecord _members = Calendar("Church members", Audience.HoldingRole(Guid.CreateVersion7()));
 
     [Fact]
-    public void ADigestMadeOnAMondayFromTodayHasThisWeeksThingsAndAMonthReachesFurther()
+    public void TheCalendarPickerListsEverythingInTheDatesMarksTheSpecialThingsAndAMonthReachesFurther()
     {
         DateOnly monday = new(2026, 11, 9);
         RegularEventRecord morning = Regular(_services, "Morning service", DayOfWeek.Sunday);
@@ -29,14 +32,14 @@ public sealed class DigestTests
         EventRecord agm = OneOff(_members, "Annual general meeting", new DateOnly(2026, 11, 12), 19 * 60 + 30);
         EventRecord outreach = OneOff(_kids, "Outreach Saturday", new DateOnly(2026, 11, 28), 9 * 60);
         EventsBook book = new([_services, _kids, _members], [agm, outreach], [morning], [anniversary], [], [], []);
-        IReadOnlySet<Guid> calendars = book.Calendars.Keys.ToHashSet();
 
-        List<DigestItem> twoWeeks = Digests.Candidates(book, monday, Digests.EndOf(monday, DigestRange.TwoWeeks), calendars, Now);
-        List<DigestItem> month = Digests.Candidates(book, monday, Digests.EndOf(monday, DigestRange.Month), calendars, Now);
+        List<DigestItem> twoWeeks = Digests.Candidates(book, monday, Digests.EndOf(monday, DigestRange.TwoWeeks), Now);
+        List<DigestItem> month = Digests.Candidates(book, monday, Digests.EndOf(monday, DigestRange.Month), Now);
 
-        Assert.Equal(["Annual general meeting", "Anniversary Sunday Service"], twoWeeks.Select(item => item.CalendarWords.Title));
+        Assert.Equal(["Annual general meeting", "Anniversary Sunday Service", "Morning service"], twoWeeks.Select(item => item.CalendarWords.Title));
+        Assert.Equal([true, true, false], twoWeeks.Select(item => item.Special));
         Assert.Equal("This Sunday 15 November", twoWeeks[1].CalendarWords.When);
-        Assert.Equal(["Annual general meeting", "Anniversary Sunday Service", "Outreach Saturday"], month.Select(item => item.CalendarWords.Title));
+        Assert.Contains("Outreach Saturday", month.Select(item => item.CalendarWords.Title));
     }
 
     [Fact]
@@ -66,7 +69,7 @@ public sealed class DigestTests
     }
 
     [Fact]
-    public void ItIsMadeOfOneOffEventsSpecialsBreaksAndDatesStillNeedingDetailsNeverOrdinaryRegularDates()
+    public void ThePickerGroupsBreaksAndDatesNeedingDetailsAndListsEachOrdinaryDateOnItsOwn()
     {
         RegularEventRecord morning = Regular(_services, "Morning service", DayOfWeek.Sunday);
         RegularEventRecord evening = Regular(_services, "Evening service", DayOfWeek.Sunday);
@@ -83,7 +86,8 @@ public sealed class DigestTests
         EventRecord notYet = OneOff(_kids, "Break-up night", new DateOnly(2026, 11, 20), 18 * 60);
         notYet.Showing = Showing.SavedForLater;
 
-        List<DigestItem> items = Candidates(new EventsBook([_services, _kids, _members], [agm, notYet], [morning, evening, impactKids, outreach], [anniversary], [camp], [], []));
+        List<DigestItem> listed = Candidates(new EventsBook([_services, _kids, _members], [agm, notYet], [morning, evening, impactKids, outreach], [anniversary], [camp], [], []));
+        List<DigestItem> items = listed.Where(item => item.Special).ToList();
 
         Assert.Equal(
             ["Annual general meeting", "No Impact Kids", "Outreach Saturday", "Anniversary Sunday Service"],
@@ -94,6 +98,9 @@ public sealed class DigestTests
         Assert.Equal("Impact Kids is off for the Kids camp weekend, and back on Friday 20 November.", items[1].CalendarWords.Description);
         Assert.Equal(("The next two Saturdays", "Place to be announced."), (items[2].CalendarWords.When, items[2].CalendarWords.Description));
         Assert.False(items[0].ForEveryone);
+        Assert.Equal(2, listed.Count(item => item.CalendarWords.Title == "Evening service"));
+        Assert.All(listed.Where(item => !item.Special), item => Assert.Single(item.OccurrenceIds));
+        Assert.DoesNotContain("Break-up night", listed.Select(item => item.CalendarWords.Title));
     }
 
     [Fact]
@@ -110,7 +117,7 @@ public sealed class DigestTests
     }
 
     [Fact]
-    public void StaffChoicesOutliveTheCalendarAndSomethingNewSlotsInByDate()
+    public void OnlyWhatStaffAddedIsInTheDigestInTheirOrderWithTheirWords()
     {
         DigestItem agm = Item("event:agm", "2026-11-12");
         DigestItem outreach = Item("date:outreach", "2026-11-14");
@@ -125,15 +132,12 @@ public sealed class DigestTests
             new() { Key = "own:notice", Own = true, Included = true, Words = new DigestWords { Title = "Church cleaning bee" } },
         ];
 
-        List<DigestItem> merged = Digests.Merge([agm, outreach, games, highTea], entries);
+        List<DigestItem> merged = Digests.Merge([agm, outreach, games, highTea], NoPosts, entries);
 
-        Assert.Equal(["event:high-tea", "date:outreach", "event:agm", "event:games", "own:notice"], merged.Select(item => item.Key));
+        Assert.Equal(["event:high-tea", "date:outreach", "own:notice"], merged.Select(item => item.Key));
         Assert.Equal("Fernleigh Park this time.", merged[1].Shown.Description);
         Assert.Equal("Calendar words", merged[1].Shown.Title);
-        Assert.False(merged[2].Included);
-        Assert.True(merged[3].IsNew);
-        Assert.Equal("Church cleaning bee", merged[4].Shown.Title);
-        Assert.False(merged[0].IsNew);
+        Assert.Equal("Church cleaning bee", merged[2].Shown.Title);
     }
 
     [Fact]
@@ -155,17 +159,17 @@ public sealed class DigestTests
         agm.CalendarIds = [_members.Id.ToString()];
         DigestItem anniversary = Item("date:anniversary", "2026-11-15");
         anniversary.CalendarIds = [_services.Id.ToString()];
-        DigestItem own = Digests.Merge([], [new DigestEntry { Key = "own:bee", Own = true, Included = true, Words = new DigestWords { Title = "Cleaning bee" } }])[0];
+        DigestItem own = Digests.Merge([], NoPosts, [new DigestEntry { Key = "own:bee", Own = true, Included = true, Words = new DigestWords { Title = "Cleaning bee" } }])[0];
         DigestRecord digest = new() { Start = Start, End = Digests.EndOf(Start, DigestRange.TwoWeeks), SentAt = Now, Sent = Digests.ForApp([agm, anniversary, own], Digests.EndOf(Start, DigestRange.TwoWeeks)) };
 
-        List<EventsPublisher.Row> rows = EventsPublisher.DigestRows(new EventsBook([_services, _members], [], [], [], [], [], []), [digest]).ToList();
+        List<EventsPublisher.Row> rows = EventsPublisher.DigestRows(new EventsBook([_services, _members], [], [], [], [], [], []), NoPosts, [digest]).ToList();
 
         EventsPublisher.Row membersOnly = Assert.Single(rows, row => row.Feed == EventsFeeds.PrivateDigest);
         Assert.Equal(_members.Audience, membersOnly.Audience);
         Assert.Equal("event:agm", EventsPayloads.Decode<DigestShownItem>(membersOnly.Payload).Key);
         Assert.Equal(3, rows.Count(row => row.Feed == EventsFeeds.Digest));
         Assert.Equal("2 things coming up: Calendar words and Cleaning bee.",
-            Digests.Notification(new EventsBook([_services, _members], [], [], [], [], [], []), digest.Sent, NotificationAudience.SignedIn).Body);
+            Digests.Notification(new EventsBook([_services, _members], [], [], [], [], [], []), NoPosts, digest.Sent, NotificationAudience.SignedIn).Body);
     }
 
     [Fact]
@@ -181,8 +185,8 @@ public sealed class DigestTests
         camp.CalendarIds = [_kids.Id.ToString()];
         EventsBook book = new([_kids, _members, kidsTeam], [], [], [], [], [], []);
 
-        List<Notification> everyone = Digests.ForEveryoneWhoSeesIt(book, Digests.ForApp([agm, helpers, camp], Digests.EndOf(Start, DigestRange.TwoWeeks)), Start);
-        List<Notification> membersOnly = Digests.ForEveryoneWhoSeesIt(book, Digests.ForApp([agm], Digests.EndOf(Start, DigestRange.TwoWeeks)), Start);
+        List<Notification> everyone = Digests.ForEveryoneWhoSeesIt(book, NoPosts, Digests.ForApp([agm, helpers, camp], Digests.EndOf(Start, DigestRange.TwoWeeks)), Start);
+        List<Notification> membersOnly = Digests.ForEveryoneWhoSeesIt(book, NoPosts, Digests.ForApp([agm], Digests.EndOf(Start, DigestRange.TwoWeeks)), Start);
 
         Assert.Equal([NotificationAudience.Holding(RoleMembership.Of(membersRole)), NotificationAudience.SignedIn, NotificationAudience.Everyone], everyone.Select(notification => notification.Audience));
         Assert.Equal(["3 things coming up: Calendar words, Calendar words and more.", "2 things coming up: Calendar words and Calendar words.", "One thing coming up: Calendar words."],
@@ -214,11 +218,11 @@ public sealed class DigestTests
         DigestRecord digest = new() { Start = Start, End = Digests.EndOf(Start, DigestRange.TwoWeeks), SentAt = Now, Sent = Digests.ForApp([rosterNight, anniversary], Digests.EndOf(Start, DigestRange.TwoWeeks)) };
         EventsBook afterRemoving = new([_services], [], [], [], [], [], []);
 
-        List<EventsPublisher.Row> rows = EventsPublisher.DigestRows(afterRemoving, [digest]).ToList();
+        List<EventsPublisher.Row> rows = EventsPublisher.DigestRows(afterRemoving, NoPosts, [digest]).ToList();
 
         Assert.DoesNotContain(rows, row => row.Feed == EventsFeeds.PrivateDigest);
         Assert.Equal(["digest", "2026-11-09/date:anniversary"], rows.Select(row => row.RecordId));
-        Assert.Equal("One thing coming up: Calendar words.", Digests.Notification(afterRemoving, digest.Sent, NotificationAudience.SignedIn).Body);
+        Assert.Equal("One thing coming up: Calendar words.", Digests.Notification(afterRemoving, NoPosts, digest.Sent, NotificationAudience.SignedIn).Body);
     }
 
     [Fact]
@@ -236,11 +240,53 @@ public sealed class DigestTests
             SentFor(Start.AddDays(-56), "event:too-old", Now.AddDays(-56)),
         ];
 
-        List<EventsPublisher.Row> rows = EventsPublisher.DigestRows(book, newestFirst).ToList();
+        List<EventsPublisher.Row> rows = EventsPublisher.DigestRows(book, NoPosts, newestFirst).ToList();
 
         Assert.Equal(["digest", "2026-11-09/event:latest", "digest:2026-10-26", "2026-10-26/event:changed", "digest:2026-10-12", "2026-10-12/event:a",
             "digest:2026-09-28", "2026-09-28/event:b"], rows.Select(row => row.RecordId));
     }
+
+    [Fact]
+    public void ANewsPostReachesOnlyThePeopleItIsForAndLeavesTheAppOnceItIsNoLongerPublished()
+    {
+        Guid membersRole = Guid.CreateVersion7();
+        HighlightedPost offering = new(Guid.CreateVersion7(), "Christmas offering", "This year's offering goes to the food pantry.", null,
+            Now.AddDays(-1), Audience.HoldingRole(membersRole), "/news/offering");
+        Dictionary<Guid, HighlightedPost> published = new() { [offering.Id] = offering };
+        DigestItem baptisms = Item("event:baptisms", "2026-11-15");
+        baptisms.CalendarIds = [_services.Id.ToString()];
+        List<DigestItem> items = Digests.Merge([baptisms], published,
+            [new DigestEntry { Key = $"news:{offering.Id:D}", Included = true }, new DigestEntry { Key = "event:baptisms", Included = true }]);
+        DigestRecord digest = new() { Start = Start, End = Digests.EndOf(Start, DigestRange.TwoWeeks), SentAt = Now, Sent = Digests.ForApp(items, Digests.EndOf(Start, DigestRange.TwoWeeks)) };
+        EventsBook book = new([_services], [], [], [], [], [], []);
+
+        List<EventsPublisher.Row> rows = EventsPublisher.DigestRows(book, published, [digest]).ToList();
+        List<EventsPublisher.Row> archived = EventsPublisher.DigestRows(book, NoPosts, [digest]).ToList();
+
+        EventsPublisher.Row post = Assert.Single(rows, row => row.Feed == EventsFeeds.PrivateDigest);
+        Assert.Equal(offering.Audience.Text, post.Audience);
+        Assert.Equal(("/news/offering", "Church news"), (EventsPayloads.Decode<DigestShownItem>(post.Payload).Link, EventsPayloads.Decode<DigestShownItem>(post.Payload).Words.Label));
+        Assert.DoesNotContain(archived, row => row.RecordId.Contains("news:", StringComparison.Ordinal));
+        Assert.Equal([NotificationAudience.Holding(RoleMembership.Of(membersRole)), NotificationAudience.Everyone],
+            Digests.ForEveryoneWhoSeesIt(book, published, digest.Sent, Start).Select(notification => notification.Audience));
+    }
+
+    [Fact]
+    public void APictureChosenForTheDigestReplacesTheEventsOwnAndGoesWithItToTheApp()
+    {
+        DigestItem baptisms = Item("event:baptisms", "2026-11-15");
+        baptisms.CalendarWords.Picture = Picture("event's");
+        DigestEntry entry = new() { Key = "event:baptisms", Included = true, Changed = [DigestFields.Picture], Words = new DigestWords { Picture = Picture("chosen") }, PictureAt = DigestPictureAt.Across };
+
+        DigestItem merged = Assert.Single(Digests.Merge([baptisms], NoPosts, [entry]));
+        SentDigest sent = Digests.ForApp([merged], Digests.EndOf(Start, DigestRange.TwoWeeks));
+
+        Assert.Equal("chosen", merged.Shown.Picture?.Id);
+        Assert.Equal(DigestPictureAt.Across, merged.PictureAt);
+        Assert.Equal("chosen", sent.Items[0].Item.Picture?.Id);
+    }
+
+    private static MediaRef Picture(string id) => new() { Id = id };
 
     private DigestRecord SentFor(DateOnly start, string key, DateTime sentAt)
     {
@@ -251,7 +297,7 @@ public sealed class DigestTests
     }
 
     private static List<DigestItem> Candidates(EventsBook book) =>
-        Digests.Candidates(book, Start, Digests.EndOf(Start, DigestRange.TwoWeeks), book.Calendars.Keys.ToHashSet(), Now);
+        Digests.Candidates(book, Start, Digests.EndOf(Start, DigestRange.TwoWeeks), Now);
 
     private static DigestItem Item(string key, string firstDate) => new()
     {

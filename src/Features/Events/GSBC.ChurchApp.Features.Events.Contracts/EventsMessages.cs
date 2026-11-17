@@ -547,6 +547,13 @@ public sealed class Agenda
 }
 
 [ProtoContract]
+public sealed class PublicEvents
+{
+    [ProtoMember(1)] public List<CalendarInfo> Calendars { get; set; } = [];
+    [ProtoMember(2)] public List<EventOccurrence> Occurrences { get; set; } = [];
+}
+
+[ProtoContract]
 public sealed class NeedsDetailsItem
 {
     [ProtoMember(1, IsRequired = true)] public EventOccurrence Occurrence { get; set; } = new();

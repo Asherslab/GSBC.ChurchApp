@@ -11,6 +11,8 @@
   --tile-soft-ink: 78%;
   --tile-warm-go: var(--marker-ink);
   --device-bezel: #000000;
+  --email-paper: #ffffff;
+  --email-behind: #e9eef4;
   --group-ground: var(--sand);
   --group: var(--page);
   --selected-fill: var(--sand);

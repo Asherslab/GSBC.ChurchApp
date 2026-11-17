@@ -1,0 +1,74 @@
+<!doctype html><html lang="en-AU"><head><meta charset="utf-8"><link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet"><title>h-email-on-top.html</title><style>:root{--page:#ffffff;--surface:#ffffff;--surface2:#f4efe7;--field:#f4efe7;--edge:rgba(98,106,121,.7);--ink:#18233a;--ink2:#545e70;--ink3:#626a79;
+--line:rgba(42,61,94,.12);--accent:#00776d;--on-accent:#fff;--marker:#8a5422;--sel:#fff;--side:#2a3d5e;--navy:#2a3d5e;--beige:#d5c9b7}*{box-sizing:border-box;margin:0;padding:0}
+body{width:1440px;height:900px;overflow:hidden;background:var(--page);color:var(--ink);font-family:Montserrat,-apple-system,sans-serif;font-size:15px;display:grid;grid-template-columns:248px 1fr;position:relative}
+.side{background:var(--side);padding:22px 14px;display:flex;flex-direction:column;gap:4px;font-size:14px;font-weight:600;color:rgba(255,255,255,.76)}
+.side .brand{font-size:19px;font-weight:700;color:#fff;padding:0 10px 18px;display:flex;gap:10px;align-items:center}.side .brand i{width:28px;height:28px;border-radius:50%;border:3px solid #fff;display:block}
+.side .jump{height:38px;border-radius:9px;background:rgba(255,255,255,.12);display:flex;align-items:center;padding:0 10px;margin-bottom:14px;font-weight:600}
+.side span{height:38px;display:flex;align-items:center;padding:0 10px;border-radius:9px}.side span.on{background:rgba(255,255,255,.12);color:#fff}
+.side small{font-size:11px;letter-spacing:.06em;color:var(--beige);padding:12px 10px 4px;font-weight:600}
+.main{display:flex;flex-direction:column;min-width:0;height:900px;overflow:hidden}
+.band{padding:24px 40px 18px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:flex-start;gap:20px}
+.band h1{font-size:27px;font-weight:700;letter-spacing:-.02em}.band p{font-size:14px;color:var(--ink2);margin-top:6px;max-width:640px;line-height:1.45}
+.btn{height:40px;border-radius:22px;padding:0 16px;display:inline-flex;align-items:center;gap:7px;font-size:14px;font-weight:600;background:var(--field);color:var(--ink);white-space:nowrap}
+.btn.p{background:var(--accent);color:var(--on-accent)}.btn.s{height:34px;font-size:13px;padding:0 13px}
+.btn.dash{background:transparent;box-shadow:inset 0 0 0 1.5px var(--edge);border-radius:12px}
+.status{font-size:13.5px;color:var(--ink2)}.status b{color:var(--ink);font-weight:600}
+.choices{display:flex;gap:16px;align-items:flex-end;margin-top:14px}
+.f{display:flex;flex-direction:column;gap:7px}.l{font-size:14px;font-weight:600;color:var(--ink2)}.h{font-size:13px;color:var(--ink3);line-height:1.4}
+.i{min-height:44px;padding:11px 14px;border-radius:12px;background:var(--field);box-shadow:inset 0 0 0 1px var(--edge);font-size:15px;display:flex;align-items:center}
+.i.area{min-height:110px;align-items:flex-start;line-height:1.5}
+.seg{display:flex;background:var(--field);border-radius:12px;padding:3px;gap:2px;height:44px}.seg span{white-space:nowrap;padding:0 12px;display:flex;align-items:center;border-radius:9px;font-size:14px;font-weight:600;color:var(--ink2)}.seg span.on{background:var(--sel);color:var(--ink)}
+.range{font-size:15px;font-weight:600;color:var(--accent);margin-top:8px}
+.row{display:flex;gap:12px;align-items:center;padding:12px 10px;border-top:1px solid var(--line)}
+.grip{width:10px;height:18px;flex:none;background:radial-gradient(circle,var(--ink3) 1.4px,transparent 1.6px) 0 0/5px 6px;opacity:.8}
+.th{width:64px;height:48px;border-radius:9px;flex:none;background:linear-gradient(135deg,#2a3d5e,#009c8f)}.th.b{background:linear-gradient(135deg,#4a7355,#84a87d)}.th.c{background:linear-gradient(135deg,#e7ae74,#b9895a)}.th.off{background:var(--surface2);display:grid;place-items:center;font-size:11px;color:var(--ink2);font-weight:600}
+.th.none{background:var(--surface2);display:grid;place-items:center;font-size:11px;color:var(--ink3)}
+.tx{flex:1;min-width:0}.lab{font-size:12px;font-weight:700;color:var(--accent)}.lab.off{color:var(--marker)}.tt{font-size:15px;font-weight:600;display:flex;gap:8px;align-items:center;margin-top:1px}.dt{font-size:13px;color:var(--ink2);margin-top:2px}
+.when{text-align:right;font-size:14px;font-weight:600;color:var(--accent);white-space:nowrap}.when small{display:block;font-size:13px;color:var(--ink2);font-weight:400}
+.pill{font-size:11.5px;font-weight:700;border-radius:999px;padding:2px 9px;background:var(--surface2);color:var(--ink2);white-space:nowrap}.pill.n{background:rgba(46,196,182,.16);color:var(--accent)}.pill.m{background:rgba(240,196,147,.18);color:var(--marker)}
+.kind{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;color:var(--ink3)}
+.dots{width:34px;height:34px;border-radius:17px;display:grid;place-items:center;color:var(--ink2);font-weight:700;letter-spacing:1px;flex:none}
+.phone{width:330px;height:714px;border-radius:40px;background:var(--page);box-shadow:0 0 0 9px #000;overflow:hidden;flex:none;display:flex;flex-direction:column}
+.phone>*{flex:none}
+.mast{background:var(--navy);color:#fff;padding:46px 18px 16px}.mast h2{font-size:30px;font-weight:700;letter-spacing:-.03em}.mast p{font-size:13px;color:var(--beige);margin-top:4px}.mast em{display:block;font-style:normal;font-size:13px;color:rgba(255,255,255,.8);margin-top:8px;line-height:1.4}
+.sec{padding:16px 16px 0;display:flex;justify-content:space-between;font-size:15px;font-weight:700}.sec small{font-weight:400;color:var(--ink3);font-size:12.5px}
+.card{margin:10px 16px 0;background:var(--surface);border-radius:14px;overflow:hidden}.card .pic{height:118px;background:linear-gradient(135deg,#2a3d5e,#009c8f)}.card .pic.b{background:linear-gradient(135deg,#4a7355,#84a87d)}.card .pic.c{background:linear-gradient(135deg,#e7ae74,#b9895a)}
+.card .w{padding:11px 13px 13px}.card .lab{font-size:11.5px}.card b{display:block;font-size:16px;margin-top:2px}.card .wh{font-size:12.5px;font-weight:600;color:var(--ink2);margin-top:3px}.card p{font-size:12.5px;line-height:1.45;color:var(--ink2);margin-top:6px}
+.card .go{border-top:1px solid var(--line);padding:9px 13px;font-size:13px;font-weight:600;color:var(--accent)}
+.offc{margin:10px 16px 0;background:#3a3326;border-radius:14px;padding:12px 13px;font-size:12.5px;color:var(--ink2)}.offc b{color:var(--ink);font-size:14px;display:block}
+.tabs{display:flex;gap:22px;border-bottom:1px solid var(--line);font-size:14px;font-weight:600;color:var(--ink3)}.tabs span{padding:10px 0}.tabs span.on{color:var(--ink);box-shadow:inset 0 -3px 0 var(--marker)}
+.scrim{position:absolute;inset:0;background:rgba(5,9,18,.62)}
+.dlg{position:absolute;background:var(--surface);border-radius:22px;box-shadow:0 30px 80px rgba(0,0,0,.5);display:flex;flex-direction:column;overflow:hidden}
+.dlg .hd{padding:22px 26px 6px;display:flex;justify-content:space-between;align-items:flex-start;gap:12px}.dlg .hd h2{font-size:21px;font-weight:700;letter-spacing:-.015em}.dlg .hd p{font-size:13.5px;color:var(--ink2);margin-top:4px}
+.dlg .bd{padding:14px 26px;display:flex;flex-direction:column;gap:16px;overflow:hidden;flex:1}
+.dlg .ft{padding:14px 26px 18px;border-top:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;background:var(--surface)}
+.pair{display:grid;grid-template-columns:1fr 160px;gap:14px;align-items:start}
+.back{font-size:13px;font-weight:600;color:var(--accent)}
+.rw{box-shadow:inset 0 0 0 2px var(--accent)}
+.cover{height:150px;border-radius:12px;background:linear-gradient(135deg,#2a3d5e,#009c8f);position:relative}.cover span{position:absolute;right:10px;bottom:10px;background:rgba(0,0,0,.55);color:#fff;border-radius:16px;font-size:12.5px;font-weight:600;padding:6px 11px}
+.drop{border:1.5px dashed var(--edge);border-radius:12px;padding:18px;text-align:center;font-size:13.5px;color:var(--ink2)}.drop b{display:block;color:var(--ink);font-size:14px;margin-bottom:3px}
+body{display:flex;gap:28px;padding:24px;background:#d9dde3;grid-template-columns:none}
+.mail{width:980px;height:852px;background:#fff;border-radius:12px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 8px 30px rgba(0,0,0,.15)}
+.mh{padding:14px 20px;border-bottom:1px solid #e5e5ea;color:#1c1c1e;font-size:13px}.mh b{display:block;font-size:14px}
+.mb{flex:1;overflow:hidden}
+.mob{width:372px;height:852px;border-radius:44px;background:#fff;box-shadow:0 0 0 9px #000;overflow:hidden;flex:none;display:flex;flex-direction:column}
+.mob .mh{padding:54px 16px 10px}
+.cap{position:absolute;font-size:12px;font-weight:700;color:#3b4558;letter-spacing:.02em}
+.bg{background:#e9eef4;padding:28px 0}.col{width:600px;margin:0 auto;background:#fff}
+.mob .bg{padding:0}.mob .col{width:auto}
+.hd{background:#2a3d5e;color:#fff;padding:26px 30px 22px}.hd b{display:block;font-size:28px;letter-spacing:-.02em;line-height:1.1}.hd small{display:block;color:#d5c9b7;font-size:14px;font-weight:600;margin-top:6px}
+.mob .hd{padding:20px 18px 16px}.mob .hd b{font-size:22px}.mob .hd small{font-size:12.5px}
+.banner{height:210px;background:linear-gradient(160deg,#9cc3e6 0%,#cfe3f1 45%,#e9e4d6 46%,#7a9a5b 70%,#58753e 100%);position:relative}
+.banner:after{content:"The church's photo, set once in the admin panel";position:absolute;left:16px;bottom:12px;background:rgba(0,0,0,.45);color:#fff;font-size:12px;font-weight:600;padding:5px 10px;border-radius:12px}
+.mob .banner{height:150px}
+.it{display:flex;gap:18px;padding:20px 30px;border-top:1px solid #e7e2da;color:#1f2a3c}.it:first-of-type{border-top:0}
+.mob .it{padding:16px 18px;gap:12px}
+.p{display:block;width:190px;height:126px;border-radius:8px;flex:none;background:linear-gradient(135deg,#2a3d5e,#009c8f)}.p.b{background:linear-gradient(135deg,#4a7355,#84a87d)}.p.c{background:linear-gradient(135deg,#e7ae74,#b9895a)}
+.mob .p{width:110px;height:74px}
+.l{font-size:12px;font-weight:700;color:#007a70}.l.r{color:#9a5a1c}.t{font-size:19px;font-weight:700;margin-top:1px;line-height:1.2}.w{font-size:13.5px;font-weight:700;color:#2a3d5e;margin-top:3px}
+.it p{font-size:13.5px;line-height:1.5;margin-top:6px;color:#333}.mob .t{font-size:16px}.mob .it p{font-size:13px}
+.btn2{display:inline-block;margin-top:10px;background:#2a3d5e;color:#fff;border-radius:18px;padding:8px 15px;font-size:12.5px;font-weight:600}
+.p.wide{width:100%;height:230px;margin-bottom:12px;border-radius:10px}.mob .p.wide{height:150px}
+.stack .it{display:block}.stack .p{width:100%;height:220px;margin-bottom:12px;border-radius:10px}.mob .stack .p{height:150px}
+.end{margin:6px 30px 26px;background:#f3efe8;border-radius:12px;padding:16px 18px;color:#1f2a3c;font-size:13px}.end b{display:block;font-size:14.5px}.mob .end{margin:6px 18px 20px}
+</style></head><body><div class="mail"><div class="mh"><b>Good Shepherd Baptist Church</b>What's Next @ Good Shepherd · Monday 14 December</div><div class="mb"><div class="bg"><div class="col"><div class="hd"><b>What's Next at Good Shepherd</b><small>Monday 14 – Sunday 27 December</small></div><div class="it" style="display:block"><div><div class="l r">Services on break</div><div class="t">No Bible Study &amp; Prayer</div><div class="w">The next two Wednesdays</div><p>Bible Study &amp; Prayer is off for the Christmas break, and back on Wednesday 13 January.</p></div></div><div class="it" style="display:block"><span class="p wide "></span><div><div class="l ">Baptisms this Sunday</div><div class="t">Baptisms</div><div class="w">This Sunday @ 10:30am</div><p>Five people from our church family are being baptised. Bring a friend and stay for morning tea.</p></div></div><div class="it" style="display:block"><span class="p wide c"></span><div><div class="l ">Food pantry</div><div class="t">Christmas offering for the food pantry</div><p>This year's Christmas offering goes to the food pantry's holiday hampers. Read how to give.</p><span class="btn2">Read the post</span></div></div><div class="it" style="display:block"><span class="p wide b"></span><div><div class="l ">Christmas</div><div class="t">Christmas Day service</div><div class="w">Friday 25 December @ 9am</div><p>One service at 9am, with carols for all ages.</p></div></div><div class="end"><b>Everything else is in the app</b>The calendar in the Good Shepherd app has every service, group and event.<br><span class="btn2">See all events</span></div></div></div></div></div><div class="mob"><div class="mh"><b>Good Shepherd Baptist Church</b>What's Next @ Good Shepherd · Monday 14 December</div><div class="mb"><div class="bg"><div class="col"><div class="hd"><b>What's Next at Good Shepherd</b><small>Monday 14 – Sunday 27 December</small></div><div class="it" style="display:block"><div><div class="l r">Services on break</div><div class="t">No Bible Study &amp; Prayer</div><div class="w">The next two Wednesdays</div><p>Bible Study &amp; Prayer is off for the Christmas break, and back on Wednesday 13 January.</p></div></div><div class="it" style="display:block"><span class="p wide "></span><div><div class="l ">Baptisms this Sunday</div><div class="t">Baptisms</div><div class="w">This Sunday @ 10:30am</div><p>Five people from our church family are being baptised. Bring a friend and stay for morning tea.</p></div></div><div class="it" style="display:block"><span class="p wide c"></span><div><div class="l ">Food pantry</div><div class="t">Christmas offering for the food pantry</div><p>This year's Christmas offering goes to the food pantry's holiday hampers. Read how to give.</p><span class="btn2">Read the post</span></div></div><div class="it" style="display:block"><span class="p wide b"></span><div><div class="l ">Christmas</div><div class="t">Christmas Day service</div><div class="w">Friday 25 December @ 9am</div><p>One service at 9am, with carols for all ages.</p></div></div><div class="end"><b>Everything else is in the app</b>The calendar in the Good Shepherd app has every service, group and event.<br><span class="btn2">See all events</span></div></div></div></div></div></body></html>

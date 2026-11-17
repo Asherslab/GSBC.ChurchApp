@@ -209,7 +209,8 @@ looked like every other one; and a post opening with several pictures showed the
   opening pictures and the text with its first paragraph a little larger, and a sand foot that ends it: "Posted today by
   … for everyone." On the phone's post pages the foot fills the rest of the screen, so a short notice ends rather than
   trailing into white. The band is gone; every post looks the same at the top.
-- **Decided while building:** the date block says Today, Yesterday, the weekday, or the year for an older year, and the
+- **Decided while building:** the date block says Today, the weekday, or the year for an older year (Yesterday is too wide
+  for it; the foot says "Posted yesterday"), and the
   long date is read out to screen readers from it, so it isn't repeated under the title ("Edited" is). Who it's for in
   the foot is the post's audience (church news: everyone, everyone signed in, people in a role; a ministry's post:
   everyone, the team, parents …).
@@ -343,3 +344,38 @@ ability to renotify people when a news post is edited or updated."
 - **Offline:** the newest 30 posts' pictures, video and audio are fetched to the phone in the background, within the
   phone cache's limits: a file over 5 MB is fetched when it's first played or shown, not before (stricter than the 25 MB
   the owner allowed; raising it means changing the native cache's limit for every feature).
+
+## In the weekly digest (2026-11-17, UAT #26)
+
+Staff can put a published post in the weekly digest (Events, *Weekly digest*). News serves Events through
+`INewsHighlights` (Platform.Api/News, `NewsHighlights`): the newest published posts and the current title, opening words,
+first picture, posted date, audience and link of chosen ones. After every save that changes a post, `NewsPublisher.SaveAsync`
+tells each `INewsWatcher` which posts changed, so a digest holding one is republished with its current audience, or
+without it once it's archived, deleted or unpublished. See [events.md](events.md), *Weekly digest round 2*.
+
+
+## Posts opened on a computer (UAT, 2026-11-17)
+
+The owner: "if we're including post links in the email going out -> posts need to open on desktop properly", then
+"should also be usable on mobile, for a person that does not have the app on mobile, but opens the link on their mobile
+email client". Before this, *Read the post* (`/open/news/{id}`) in a browser reached a card that only said to open the
+app, and as news posts had no destination source it even said "This isn't in the app any more".
+
+- **Show it on that page** (owner, asked in chat): `/open/news/{id}` shows the post to anyone allowed to see it. A post
+  for everyone opens signed out; one for signed-in people or a role shows only to someone signed in to the admin panel
+  whom its audience includes, and otherwise keeps the open card's words. Other `/open` links keep the card.
+- **The look** (owner's pick on the decision page, `.impeccable/mocks/open-post/c-navy-band.html`): a navy band with the
+  mark, Good Shepherd and "Church news", then the post as the app sets it; see [posts.md](../design/posts.md).
+- **Interview (owner, 2026-11-17):** the line at the end keeps "Ask the church office how to get it" until the app is in
+  the stores; event and sermon cards in the post show and open the website's page for them; anything else shows nothing.
+- **gRPC only:** `News.Read` (`[Public]`) returns a published post only to someone its audience includes, through Access
+  (`PlaceAccess`); `NewsDestinationSource` describes posts for `/open` (it adds nothing to Places' search). Signed out,
+  event cards read `Events.ForEveryone` (`[Public]`), exactly the public feeds' rows. No new HTTP path.
+- **Places for chosen roles** (*fixed*): `PlaceAccess` let anyone signed in open a place meant for chosen roles, as a role
+  audience names no permission; it now checks the person's roles.
+- **See all events** stays `/open/week`, so a phone with the app still opens the calendar; in a browser the open page
+  goes on to the website's Events page on the embed host (`ChurchWebsite`). The admin panel has no setting holding the
+  website's address, so it comes from its own host by name: `app` → `embed`, `uat-app` → `uat-embed`, `dev-app` →
+  `dev-embed` (`WebsiteHosts`). Anywhere else (localhost) there is no website: cards in a post don't show and
+  `/open/week` keeps the card.
+- **Tests:** `OpeningAPostTests` (News.Api.Tests), `WebsiteHostsTests` (Platform.Contracts.Tests).

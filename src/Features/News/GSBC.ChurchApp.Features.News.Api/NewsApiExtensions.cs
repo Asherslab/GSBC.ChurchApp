@@ -17,8 +17,9 @@ public static class NewsApiExtensions
     public static IServiceCollection AddNewsApi(this IServiceCollection services)
     {
         services.AddNewsData();
-        services.AddScoped<NewsPublisher>().AddScoped<NewsTelling>().AddScoped<NewsDesk>();
+        services.AddScoped<NewsPublisher>().AddScoped<NewsTelling>().AddScoped<NewsDesk>().AddScoped<NewsReader>();
         services.AddScoped<IChurchNews, ChurchNewsShares>();
+        services.AddScoped<INewsHighlights, NewsHighlights>();
         services.AddScoped<IPersonData, NewsPersonData>();
         services.AddHostedService<NewsSchedule>();
         services.AddPermissions(NewsPermissions.All);
@@ -37,7 +38,7 @@ public static class NewsApiExtensions
         services.AddFeed(new FeedDefinition(NewsFeeds.Posts, FeedAudience.Public));
         services.AddFeed(new FeedDefinition(NewsFeeds.PrivatePosts, FeedAudience.EachRow));
         services.AddFeed(new FeedDefinition(NewsFeeds.Desk, FeedAudience.Holding(NewsPermissions.Write)));
-        services.AddDestinations(NewsDestinations.All);
+        services.AddDestinations(NewsDestinations.All).AddDestinationSource<NewsDestinationSource>();
         services.AddSurfaces(NewsTiles.Surfaces);
         return services;
     }

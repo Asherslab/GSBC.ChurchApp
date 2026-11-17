@@ -11,8 +11,10 @@ agents were "taking more and more time for simple things and fixes").
   the server** (then as AGENTS.md says: `Dev__PortOffset`, `tools/dev/copy-main-db-live.sh`, Development environment,
   stop it by its process id). Use the offset in your brief. Never print user secrets.
 - **Use your own Simulator only if the fix reaches the phone,** and the real on-screen keyboard only if it touches a
-  text field (`idb ui tap`, hardware keyboard off; see testing.md). Shut the Simulator down as soon as you're done
-  looking. Stop that device's `idb_companion` by its pid too (it holds your worktree open, so it can't be cleaned up). Don't deploy to the owner's phone. Don't notify real people.
+  text field (`idb ui tap`, hardware keyboard off; see testing.md). Name it after the station, shut it down as soon as you're
+  done looking, and stop that device's `idb_companion` by its pid too (it holds your worktree open, so it can't be cleaned
+  up). **Before your final report, delete the device and its data (`xcrun simctl delete <id>`), not just shut it down**: each
+  keeps 1.5–3.5 GB on disk, and finished stations' leftovers once held 70 GB (owner, 2026-11-17). Don't deploy to the owner's phone. Don't notify real people.
 - UI: invoke `impeccable:impeccable` and use the matching command (`polish`, `layout`, `clarify` …) with
   `craft-floor.md` before editing, then `impeccable detect`. A decision page only when a fix has more than one
   reasonable look (then every sketch is one plain HTML file, no iframes, checked with `tools/dev/check-sketches.sh`).

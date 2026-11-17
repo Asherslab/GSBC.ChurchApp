@@ -1,0 +1,43 @@
+{
+  "title": "Weekly digest (4 of 4): a news post in What's next in the app",
+  "question": "A church news post in the digest shows on What's next only to people who can see the post, and tapping it opens the post. Each sketch is What's next on a phone, light and dark, with the food pantry post added. Pick how a post shows. My recommendation: A. It keeps one kind of card for everything you highlight, as the email does, with 'Church news · Monday 7 December' saying what it is and 'Read the post' saying where it goes.",
+  "options": [
+    {
+      "id": "as-card",
+      "kind": "grounded",
+      "label": "A: The same card as events",
+      "thesis": "In the week it was added to, in your order: the post's picture, 'Church news · Monday 7 December', its title (or your rewording), the words, and Read the post.",
+      "palette": ["#ffffff", "#141d31", "#00776d", "#2ec4b6"],
+      "materials": ["raised card", "posted date in place of a when line", "Read the post foot"],
+      "viewport": "This week: Not on callout, the food pantry card, then Baptisms.",
+      "risk": "A post and an event look alike apart from the small line above the title.",
+      "html": ".impeccable/mocks/digest-2/j-news-as-card.html",
+      "htmlFrame": "1440x900"
+    },
+    {
+      "id": "own-section",
+      "kind": "grounded",
+      "label": "B: Its own section after the weeks",
+      "thesis": "Posts gather under 'From church news' after the dated things, as rows with the picture at the side (as Church news lists them), whatever order you gave them.",
+      "palette": ["#ffffff", "#141d31", "#18233a", "#545e70"],
+      "materials": ["news rows", "section after the weeks"],
+      "viewport": "This week's events first; From church news at the end with two rows.",
+      "risk": "Ignores the order you set: a post you want first can't be first.",
+      "html": ".impeccable/mocks/digest-2/k-news-section.html",
+      "htmlFrame": "1440x900"
+    },
+    {
+      "id": "as-post",
+      "kind": "grounded",
+      "label": "C: A bulletin item, as posts look",
+      "thesis": "In your order, drawn like the start of a post: a navy rule, the date block (7 DEC) beside the title, the first words and Read the post; no picture.",
+      "palette": ["#ffffff", "#2a3d5e", "#00776d", "#141d31"],
+      "materials": ["navy rule", "date block", "text first"],
+      "viewport": "This week: Not on callout, the food pantry as a bulletin item, then Baptisms.",
+      "risk": "No picture, so a post looks quieter than the events around it.",
+      "html": ".impeccable/mocks/digest-2/l-news-as-post.html",
+      "htmlFrame": "1440x900"
+    }
+  ],
+  "steer": true
+}

@@ -1,0 +1,43 @@
+@using GSBC.ChurchApp.Platform.Client.Destinations
+@using GSBC.ChurchApp.Platform.Contracts.Destinations
+@using GSBC.ChurchApp.Platform.Icons
+@using GSBC.ChurchApp.Platform.Ui.Destinations
+@using GSBC.ChurchApp.Platform.Ui.News
+@inject OnlineNews News
+@inject ChurchWebsite Website
+@inject TimeProvider Clock
+
+<LiveData @key="Place.Path" TValue="Opened" Load="LoadAsync" Feeds="NoFeeds">
+    @if (context.Value.Post is { } post)
+    {
+        <PageTitle>@post.Title · Good Shepherd</PageTitle>
+        <CascadingValue Value="_web" IsFixed="true">
+            <PostView FillsPage="true" Title="@post.Title" Content="post.Body" From="@post.From" FromHref="@post.FromLink" Author="@post.Author"
+                      Posted="NewsWords.PostedAt(post)" Edited="post.EditedAt is not null" For="@NewsWords.AudienceWords(post.Audience)"
+                      LinkPath="@post.LinkPath" LinkLabel="@post.LinkLabel" NotPosted="@NewsWords.NotPosted(post, Clock)">
+                <EndNote>
+                    <p>This post is also in the Good Shepherd app. On a phone with the app, the link opens it there. Don't have the app yet? Ask the church office how to get it.</p>
+                </EndNote>
+            </PostView>
+        </CascadingValue>
+    }
+    else
+    {
+        <EmptyState Icon="@AppIcons.News" Title="This post isn't here any more" Body="It may have been taken down. If someone sent you this link, ask them for a new one." />
+    }
+</LiveData>
+
+@code {
+    private static readonly IReadOnlyCollection<string> NoFeeds = [];
+
+    private OnTheWeb _web = null!;
+
+    [Parameter, EditorRequired] public required Destination Place { get; set; }
+
+    private sealed record Opened(NewsPost? Post);
+
+    protected override void OnInitialized() => _web = new OnTheWeb(Website);
+
+    private async Task<Opened> LoadAsync() =>
+        new(NewsDestinations.Post.IdIn(Place.Path.TrimStart('/')) is { } id ? await News.ReadAsync(id) : null);
+}

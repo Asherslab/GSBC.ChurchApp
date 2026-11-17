@@ -10,6 +10,7 @@ public static class DestinationServiceCollectionExtensions
     public static IServiceCollection AddDestinations(this IServiceCollection services, DestinationSet destinations)
     {
         services.TryAddSingleton<DestinationCatalog>();
+        services.TryAddScoped<ChurchWebsite>();
         services.TryAddSingleton(provider => new DestinationsClient(provider.GetRequiredService<Grpc.Core.ChannelBase>(), provider.GetRequiredService<DestinationCatalog>()));
         if (services.Any(service => ReferenceEquals(service.ImplementationInstance, destinations)))
             return services;

@@ -1,4 +1,5 @@
 using GSBC.ChurchApp.Features.Events.Contracts;
+using GSBC.ChurchApp.Platform.Contracts.Media;
 
 namespace GSBC.ChurchApp.Features.Events.Api.Data;
 
@@ -174,6 +175,7 @@ public sealed class DigestRecord
     public DateTime? SentAt { get; set; }
     public Guid? SentBy { get; set; }
     public DateTime? NotifiedAt { get; set; }
+    public MediaRef? TopPicture { get; set; }
 }
 
 public sealed class SentDigest
@@ -186,4 +188,5 @@ public sealed class SentDigestItem
 {
     public DigestShownItem Item { get; init; } = new();
     public List<Guid> CalendarIds { get; init; } = [];
+    public Guid? PostId { get; init; }
 }
