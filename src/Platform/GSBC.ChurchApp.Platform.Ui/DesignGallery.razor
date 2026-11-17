@@ -80,11 +80,20 @@
                     </Map>
                 </MapWorkspace>
             </div>)
-        @Item("Something that belongs to a place on the map: MapPin", "Keeps a control (a chip with its Menu, a small card) on a point of the map as it pans and zooms, above the point. Outreach's planner puts each area's chip on the top of its outline: what it is, and its Menu to change or remove it.",
+        @Item("The map's chips in one strip: MapChipStrip", "A row of chips along the top of the map, from the tool rail to the top-right button, wrapping to a second line when there are many. Each chip is a Menu: what the thing is and what you can do with it. Outreach's planner puts each area's chip here, a route drawn by hand ringed in its colour, and pointing at one lights its routes.",
+            @<div class="gallery__frame gallery__frame--short">
+                <div class="gallery__map-stand-in" role="img" aria-label="Where the map goes">
+                    <MapChipStrip Label="The day's areas">
+                        <span class="map-chip map-chip--route" style="--route: var(--accent)"><Menu Label="Route 4" Text="Route 4" Icon="@AppIcons.DrawRoute" Chevron="true" Small="true" AlignStart="true" Items="AreaChoices" /></span>
+                        <span class="map-chip"><Menu Label="Faheys Rd" Text="Faheys Rd · split into 6" Icon="@AppIcons.DrawArea" Chevron="true" Small="true" AlignStart="true" Items="AreaChoices" /></span>
+                    </MapChipStrip>
+                </div>
+            </div>)
+        @Item("Something that belongs to a place on the map: MapPin", "Keeps a control (a chip with its Menu, a small card) on a point of the map as it pans and zooms, above the point. A chip with its Menu tied to one point, such as a place's pin.",
             @<div class="gallery__frame gallery__frame--short">
                 <div class="gallery__map-stand-in" role="img" aria-label="Where the map goes">
                     <MapPin Point="new MapPoint(-27.3433, 152.9646)">
-                        <Menu Label="Faheys Rd" Text="Faheys Rd · split into 6" Icon="pentagon" Chevron="true" Small="true" AlignStart="true" Class="map-chip" Items="AreaChoices" />
+                        <Menu Label="Meet here" Text="Meet here" Icon="@AppIcons.PlaceOffSite" Chevron="true" Small="true" AlignStart="true" Class="map-chip" Items="AreaChoices" />
                     </MapPin>
                 </div>
             </div>)

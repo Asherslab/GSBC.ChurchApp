@@ -27,6 +27,7 @@ public enum MapLineStyle
     Connector,
     LongWalk,
     Route,
+    RouteWalkedThrough,
     Covered,
     Chosen,
 }

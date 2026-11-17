@@ -21,6 +21,10 @@ public sealed record PlannedSection(DraftSection Section, int Number, string Nam
     public double Kilometres => Summary.Plan.Metres / 1000;
 
     public int Area => Section.Area;
+
+    public IReadOnlySet<int> Delivered => Summary.Plan.Deliveries.SelectMany(leg => leg.Arcs).Select(arc => arc.Piece).ToHashSet();
+
+    public IReadOnlySet<int> WalkedThrough => Summary.Plan.Arcs.Select(arc => arc.Piece).Except(Delivered).ToHashSet();
 }
 
 public sealed record AreaOverlap(DraftArea Area, PlannedSection KeptBy, IReadOnlyList<int> Pieces);

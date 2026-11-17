@@ -13,6 +13,8 @@ const empty = { type: "FeatureCollection", features: [] };
 const byZoom = (stops) => ["interpolate", ["exponential", 1.6], ["zoom"], ...stops.flat()];
 const styleIs = (...styles) => ["in", ["get", "style"], ["literal", styles]];
 const kindIs = (...kinds) => ["in", ["get", "kind"], ["literal", kinds]];
+const walkedThroughWidth = byZoom([[13, 3.5], [16, 5], [18, 10]]);
+const walkedThroughDots = [0.01, 2];
 const keptSources = new Map();
 function loadStylesheet() {
   if (document.getElementById("maplibre-gl-css")) return;
@@ -153,6 +155,10 @@ function overlayLayers(c) {
       paint: { "line-color": ["interpolate-hcl", ["linear"], ["get", "age"], 0, c.walk, 1, c.land], "line-width": byZoom([[12, 1.5], [15, 3.5], [18, 9]]) } },
     { id: "walked", type: "line", source: "lines", filter: styleIs("walked"), layout: { "line-cap": "round", "line-join": "round" },
       paint: { "line-color": c.walked, "line-opacity": 0.45, "line-width": byZoom([[13, 2], [16, 5], [18, 12]]) } },
+    { id: "route-through", type: "line", source: "lines", filter: styleIs("route-through"), layout: { "line-cap": "round", "line-join": "round" },
+      paint: { "line-color": ["coalesce", ["get", "colour"], c.walk], "line-width": walkedThroughWidth, "line-dasharray": walkedThroughDots } },
+    { id: "connector", type: "line", source: "lines", filter: styleIs("connector"), layout: { "line-cap": "round", "line-join": "round" },
+      paint: { "line-color": c.walk, "line-width": walkedThroughWidth, "line-dasharray": walkedThroughDots } },
     { id: "walk-edge", type: "line", source: "lines", filter: styleIs("walk", "walk-done", "route"), layout: { "line-cap": "round", "line-join": "round" },
       paint: { "line-color": c.surface, "line-width": byZoom([[13, 4], [16, 9], [18, 18]]) } },
     { id: "walk-done", type: "line", source: "lines", filter: styleIs("walk-done"), layout: { "line-cap": "round", "line-join": "round" },
@@ -161,8 +167,6 @@ function overlayLayers(c) {
       paint: { "line-color": c.walk, "line-width": byZoom([[13, 2.5], [16, 6], [18, 13]]) } },
     { id: "route", type: "line", source: "lines", filter: styleIs("route"), layout: { "line-cap": "round", "line-join": "round" },
       paint: { "line-color": ["coalesce", ["get", "colour"], c.walk], "line-width": byZoom([[13, 2.5], [16, 6], [18, 13]]) } },
-    { id: "connector", type: "line", source: "lines", filter: styleIs("connector"), layout: { "line-cap": "butt", "line-join": "round" },
-      paint: { "line-color": c.walk, "line-width": byZoom([[13, 1.5], [16, 3], [18, 6]]), "line-dasharray": [2, 1.6] } },
     { id: "long-walk", type: "line", source: "lines", filter: styleIs("long"), layout: { "line-cap": "round", "line-join": "round" },
       paint: { "line-color": c.walk, "line-width": byZoom([[13, 2], [16, 4], [18, 7]]), "line-dasharray": [0.1, 2] } },
     { id: "walk-arrows", type: "symbol", source: "lines", filter: styleIs("walk"), minzoom: 15,
@@ -327,6 +331,52 @@ const marker = (m) => ({ type: "Feature", properties: { kind: m.kind, ...(m.labe
 function framePadding(b) {
   const padding = b.padding ?? 40;
   return { top: padding, right: padding, bottom: padding + (b.below ?? 0), left: padding + (b.start ?? 0) };
+}
+
+function scrollsItself(target, room, dx, dy) {
+  for (let at = target; at && at !== room; at = at.parentElement) {
+    const style = getComputedStyle(at);
+    const down = dy !== 0 && /auto|scroll/.test(style.overflowY) && (dy < 0 ? at.scrollTop > 0 : at.scrollTop + at.clientHeight < at.scrollHeight - 1);
+    const across = dx !== 0 && /auto|scroll/.test(style.overflowX) && (dx < 0 ? at.scrollLeft > 0 : at.scrollLeft + at.clientWidth < at.scrollWidth - 1);
+    if (down || across) return true;
+  }
+  return false;
+}
+
+function passGesturesToMap(map, room) {
+  const canvas = map.getCanvasContainer();
+  const onMap = (target) => canvas.contains(target);
+  let pinch = null;
+  const wheel = (e) => {
+    if (onMap(e.target)) return;
+    if (pinch && e.ctrlKey) pinch.byWheel = true;
+    if (!e.ctrlKey && scrollsItself(e.target, room, e.deltaX, e.deltaY)) return;
+    e.preventDefault();
+    canvas.dispatchEvent(new WheelEvent("wheel", {
+      deltaX: e.deltaX, deltaY: e.deltaY, deltaZ: e.deltaZ, deltaMode: e.deltaMode, clientX: e.clientX, clientY: e.clientY, screenX: e.screenX, screenY: e.screenY,
+      ctrlKey: e.ctrlKey, shiftKey: e.shiftKey, altKey: e.altKey, metaKey: e.metaKey, bubbles: true, cancelable: true,
+    }));
+  };
+  const gestureStart = (e) => {
+    if (onMap(e.target)) return;
+    e.preventDefault();
+    pinch = { zoom: map.getZoom(), byWheel: false };
+  };
+  const gestureChange = (e) => {
+    if (!pinch) return;
+    e.preventDefault();
+    if (pinch.byWheel || !e.scale) return;
+    const box = canvas.getBoundingClientRect();
+    map.zoomTo(pinch.zoom + Math.log2(e.scale), { duration: 0, around: map.unproject([e.clientX - box.left, e.clientY - box.top]) });
+  };
+  const gestureEnd = (e) => {
+    if (!pinch) return;
+    e.preventDefault();
+    pinch = null;
+  };
+  const listeners = [["wheel", wheel], ["gesturestart", gestureStart], ["gesturechange", gestureChange], ["gestureend", gestureEnd]];
+  listeners.forEach(([name, fn]) => room.addEventListener(name, fn, { passive: false }));
+  return () => listeners.forEach(([name, fn]) => room.removeEventListener(name, fn));
 }
 
 function metresToPixels(map, metres, lat) {
@@ -568,6 +618,7 @@ export async function create(element, optionsJson, receiver) {
   }));
   const workspace = figure.closest(".map-workspace");
   if (workspace) roomMoved.observe(workspace, { attributes: true, attributeFilter: ["class"] });
+  const stopPassingGestures = options.interactive === false ? null : passGesturesToMap(map, figure.closest(".map-workspace__map, .map-desk__map") ?? figure);
 
   let limit = null;
   const showReach = () => {
@@ -627,6 +678,7 @@ export async function create(element, optionsJson, receiver) {
       pins.disconnect();
       overlayResized.disconnect();
       roomMoved.disconnect();
+      stopPassingGestures?.();
       map.remove();
     },
   };

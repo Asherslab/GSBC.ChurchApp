@@ -62,7 +62,8 @@ public static class RouteSheets
     private const double PlaceStep = 12;
     private const int MostPlacesARun = 40;
     private const double SampleEvery = 4;
-    private static readonly double[] WalkThroughDash = [3, 2.5];
+    private static readonly double[] WalkThroughDots = [0.01, 4.2];
+    private const double WalkThroughWidth = 2.4;
     private const double ArrowEveryMetres = 140;
 
     private static readonly PdfColour Ink = PdfColour.Black;
@@ -144,7 +145,7 @@ public static class RouteSheets
         }
         List<List<PdfPoint>> delivered = summary.Steps.Where(step => step.Delivers).Select(step => step.Line.Select(p => At(graph.Projection.ToFlat(p))).ToList()).ToList();
         foreach (List<PdfPoint> run in WalkedThrough(summary.Steps.Where(step => !step.Delivers).Select(step => step.Line.Select(p => At(graph.Projection.ToFlat(p))).ToList()), delivered))
-            page.Line(run, Ink, 1.3, WalkThroughDash, round: false);
+            page.Line(run, Ink, WalkThroughWidth, WalkThroughDots);
         foreach (List<PdfPoint> line in delivered)
             page.Line(line, Ink, 3.4);
         Arrows(page, routeFlats, At);
@@ -366,8 +367,8 @@ public static class RouteSheets
     {
         page.Line([new(x, y), new(x + 22, y)], Ink, 3.4);
         page.Text(x + 28, y + 2.6, "Letterbox both sides", PdfFont.Regular, 7.5, Ink2);
-        page.Line([new(x + 118, y), new(x + 140, y)], Ink, 1.3, WalkThroughDash, round: false);
-        page.Text(x + 146, y + 2.6, "Walk through, no letterboxes", PdfFont.Regular, 7.5, Ink2);
+        page.Line([new(x + 119, y), new(x + 140, y)], Ink, WalkThroughWidth, WalkThroughDots);
+        page.Text(x + 146, y + 2.6, "Walked through, no letterboxes", PdfFont.Regular, 7.5, Ink2);
         page.Circle(x + 266, y, 2.6, PdfColour.White, Ink, 0.9);
         page.Line([new(x + 264.2, y - 1.8), new(x + 267.8, y + 1.8)], Ink, 0.8, round: false);
         page.Text(x + 273, y + 2.6, "Skip this letterbox", PdfFont.Regular, 7.5, Ink2);

@@ -1,0 +1,100 @@
+{
+  "title": "Plan a day: walked-only stretches, and labels that give way",
+  "question": "Feedback #125 and the screenshots. Two things to settle on the full map: how a stretch a route walks without delivering looks (a street with no letterboxes, a path between streets), so it reads as part of the route and not a glitch; and how each route's chip and label behave, so zoomed out they don't pile up. Your answers (2026-11-17): zoomed out, a route shows only its number and colour; the chip is mostly a control (its menu). Each sketch shows the close view big and the zoomed-out view in the inset at the bottom right. The walked-only look goes on printed maps and the walkers' phones too. Pick the one to build.",
+  "options": [
+    {
+      "id": "strip",
+      "kind": "assigned",
+      "kicker": "THE ROLL",
+      "label": "Numbers on the map, chips in a strip",
+      "thesis": "On the map each route carries one thing: a disc in its colour with its number, and beside it, close in, its figures ('546 · 2 h 48 min · needs review'). The chips with their menus leave the map and line up in a strip along its top: Route 1 ⌄ … Route 5 ⌄; pointing at one lights its route. Walked-only stretches are round dots in the route's colour. Zoomed out, the figures go and the discs stay; the strip doesn't change.",
+      "palette": ["#141d31", "#1d2840", "#f2ede4", "#5275b2", "#8466b5"],
+      "materials": ["numbered disc per route", "chip strip along the top of the map", "dotted walked-only stretches"],
+      "viewport": "Outreach Saturday 21 November in the full map, panel on the left: routes 1–5 drawn by hand; route 4 (purple) walks two dotted stretches between its streets; a strip of five chips across the top, Route 4's menu open; the inset shows the suburb view with five numbered discs.",
+      "risk": "The menu sits away from its route, so you match them by number; with 20+ routes the strip scrolls.",
+      "html": ".impeccable/mocks/route-map-feel/strip.html",
+      "comp": ".impeccable/mocks/decision/strip.webp"
+    },
+    {
+      "id": "one-label",
+      "kind": "dealt",
+      "label": "One label per route, and it's the chip",
+      "thesis": "A hand-drawn route has one label on the map: '✎ 4 · 546 · 2 h 48 min · needs review ⌄', ringed in its colour. Click it for the menu (one route or split, redraw, take it off the day). A route the app split keeps today's label. Walked-only stretches are dashed in the route's colour, a little thinner. Zoomed out, each label shrinks to a disc with its number; discs that would touch nudge apart; pointing at one shows the full label.",
+      "palette": ["#141d31", "#1d2840", "#f2ede4", "#5275b2", "#8466b5"],
+      "materials": ["the chip carries the figures", "dashed walked-only stretches", "labels shrink to numbered discs"],
+      "viewport": "Same day, close in: five labels, one per route, Route 4's menu open under its label; route 4's dashed stretches join its parts. The inset: the suburb view, five discs nudged clear of each other.",
+      "risk": "At middle zooms the long labels can still crowd before they shrink; the review reason ('more than twice the size…') stays in the popover and the table.",
+      "html": ".impeccable/mocks/route-map-feel/one-label.html",
+      "comp": ".impeccable/mocks/decision/one-label.webp"
+    },
+    {
+      "id": "aside",
+      "kind": "dealt",
+      "label": "Labels step aside to the edge",
+      "thesis": "Close in, each route has one card on its outline's top edge: chip and figures together, menu on the ⌄. Walked-only stretches are a thin line in the route's colour with small arrows (›) along it, reading as 'walk through here'. Zoomed out, the cards leave the routes and stack down the map's right edge, each tied by a hairline to a numbered disc on its route.",
+      "palette": ["#141d31", "#1d2840", "#f2ede4", "#5275b2", "#8466b5"],
+      "materials": ["card on the outline's edge", "thin arrowed walked-only line", "cards stack at the edge with leader lines"],
+      "viewport": "Same day, close in: five cards on their outlines' top edges; route 4's thin arrowed stretches. The inset: the suburb view with five discs and the cards stacked at the right edge, hairlines to their discs.",
+      "risk": "Leader lines add lines to a map already full of them; the arrows suggest a direction a hand-drawn route may not walk.",
+      "html": ".impeccable/mocks/route-map-feel/aside.html",
+      "comp": ".impeccable/mocks/decision/aside.webp"
+    },
+    {
+      "id": "challenger-orienteering",
+      "kind": "challenger",
+      "catalogId": "notation-diagram-systems-orienteering-map",
+      "label": "Orienteering map",
+      "verdict": "declined",
+      "case": "Its purple course over a fixed terrain is close to a route over the base map, but its palette would replace the brand's.",
+      "kept": "Numbered discs ride each route like control circles beside the course."
+    },
+    {
+      "id": "challenger-transit",
+      "kind": "challenger",
+      "catalogId": "wayfinding-cartography-signage-midnight-transit-diagram",
+      "label": "Midnight transit diagram",
+      "verdict": "declined",
+      "case": "A diagram bends streets at 45°, and walkers need the real streets.",
+      "kept": "The chosen route burns brightest while the others step back (already how choosing a route works)."
+    },
+    {
+      "id": "challenger-gate-board",
+      "kind": "challenger",
+      "catalogId": "vernacular-ephemera-boarding-pass-and-gate-board",
+      "label": "Boarding pass and gate board",
+      "verdict": "declined",
+      "case": "A ranked board fits a timetable, not routes placed on a map.",
+      "kept": "A changed label moves rather than vanishing and reappearing."
+    },
+    {
+      "id": "challenger-split-flap",
+      "kind": "challenger",
+      "catalogId": "signals-instruments-split-flap-concourse",
+      "label": "Split-flap concourse",
+      "verdict": "declined",
+      "case": "A board of rows is the routes table the panel already has.",
+      "kept": "Fixed cells: a disc's number never changes size as you zoom."
+    },
+    {
+      "id": "challenger-title-wall",
+      "kind": "challenger",
+      "catalogId": "pop-culture-shelf-streaming-title-card-wall",
+      "label": "Streaming title wall",
+      "verdict": "declined",
+      "case": "Tiles that grow on focus would cover the streets they label.",
+      "kept": "The one you point at grows and tells you what it is."
+    },
+    {
+      "id": "challenger-plate",
+      "kind": "challenger",
+      "catalogId": "design-annual-s-plate-section",
+      "label": "Design annual plates",
+      "verdict": "declined",
+      "case": "A print layout has nothing to say about a working map.",
+      "kept": "Hairline leaders, no heavier than the streets."
+    }
+  ],
+  "reroll": {"registers": ["safer", "bolder"]},
+  "steer": true,
+  "buildPath": {"value": "code", "toggle": true}
+}

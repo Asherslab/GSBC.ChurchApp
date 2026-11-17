@@ -65,6 +65,21 @@ public sealed class DayPlannerTests
     }
 
     [Fact]
+    public void ARouteNotInPiecesIsDrawnAsOneWalkableWholeWithTheStretchesItOnlyWalksThrough()
+    {
+        DayPlanner planner = Planner();
+        Assert.True(planner.AddArea(Square(planner, Fixture.Church, 350), oneRoute: true));
+        Assert.True(planner.AddArea(Square(planner, Fixture.Church, 900), oneRoute: false));
+
+        List<PlannedSection> whole = planner.Sections.Where(s => !s.Summary.InPieces).ToList();
+
+        Assert.NotEmpty(whole);
+        Assert.Contains(whole, s => s.WalkedThrough.Count > 0);
+        Assert.All(whole, s => Assert.Equal(1, Parts(planner.Network, [.. s.Delivered, .. s.WalkedThrough])));
+        Assert.All(whole, s => Assert.Empty(s.Delivered.Intersect(s.WalkedThrough)));
+    }
+
+    [Fact]
     public void PublishedRoutesDeliverEachLetterboxInTheAreaOnce()
     {
         DayPlanner planner = Planned();
@@ -109,6 +124,20 @@ public sealed class DayPlannerTests
         Assert.True(planner.AddArea(Square(planner, Fixture.Church, 500), oneRoute: false));
         Assert.InRange(planner.Sections.Count, 3, 40);
         return planner;
+    }
+
+    private static int Parts(WalkNetwork network, IReadOnlyCollection<int> pieces)
+    {
+        Dictionary<int, int> joined = [];
+        int Root(int node)
+        {
+            while (joined.TryGetValue(node, out int up) && up != node)
+                node = up;
+            return node;
+        }
+        foreach (int piece in pieces)
+            joined[Root(network[piece].U)] = Root(network[piece].V);
+        return pieces.Select(piece => Root(network[piece].U)).Distinct().Count();
     }
 
     private static List<GeoPoint> Square(DayPlanner planner, GeoPoint around, double half)

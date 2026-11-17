@@ -1,3 +1,4 @@
+using System.Globalization;
 using GSBC.ChurchApp.Features.Outreach.Client;
 using GSBC.ChurchApp.Features.Outreach.Client.Planning;
 using GSBC.ChurchApp.Features.Outreach.Routing;
@@ -16,13 +17,13 @@ public static class PlanDrawing
 
     public static MapPoint Point(GeoPoint point) => new(point.Lat, point.Lon);
 
-    public static GeoPoint Point(MapPoint point) => new(point.Lat, point.Lon);
+    private static GeoPoint Point(MapPoint point) => new(point.Lat, point.Lon);
 
-    public static IReadOnlyList<MapPoint> Points(IEnumerable<GeoPoint> points) => points.Select(Point).ToList();
+    private static IReadOnlyList<MapPoint> Points(IEnumerable<GeoPoint> points) => points.Select(Point).ToList();
 
     public static IReadOnlyList<GeoPoint> Points(IEnumerable<MapPoint> points) => points.Select(Point).ToList();
 
-    public static IReadOnlyList<MapLine> Lines(DayPlanner planner, int? selected, IReadOnlyList<Contracts.Stretch>? done = null)
+    public static IReadOnlyList<MapLine> Lines(DayPlanner planner, Func<PlannedSection, bool>? standsOut, IReadOnlyList<Contracts.Stretch>? done = null)
     {
         WalkNetwork network = planner.Network;
         List<MapLine> lines = [];
@@ -30,10 +31,12 @@ public static class PlanDrawing
         IEnumerable<int> left = planner.Draft.Streets.Where(street => !owned.Contains(street));
         foreach (int street in left.Concat(planner.LeftOutAsRested).Distinct())
             lines.Add(new MapLine(Points(network.Graph.ShapePoints(street)), MapLineStyle.Walked));
-        foreach (PlannedSection section in planner.Sections.OrderBy(section => section.Id == selected))
+        foreach (PlannedSection section in planner.Sections.OrderBy(section => standsOut?.Invoke(section) == true))
         {
-            string colour = selected is null || selected == section.Id ? RouteColours.Of(section.Colour) : RouteColours.Faded(section.Colour);
-            foreach (int piece in section.Section.Pieces)
+            string colour = standsOut is null || standsOut(section) ? RouteColours.Of(section.Colour) : RouteColours.Faded(section.Colour);
+            foreach (int piece in section.WalkedThrough)
+                lines.Add(new MapLine(Points(network.Line(piece)), MapLineStyle.RouteWalkedThrough, Colour: colour, Id: section.Id.ToString()));
+            foreach (int piece in section.Delivered)
                 lines.Add(new MapLine(Points(network.Line(piece)), MapLineStyle.Route, Colour: colour, Id: section.Id.ToString()));
         }
         foreach (Contracts.Stretch stretch in done ?? [])
@@ -48,11 +51,11 @@ public static class PlanDrawing
             IReadOnlyList<GeoPoint> places = Places(planner, section);
             GeoPoint middle = places[0];
             bool chosen = section.Id == selected;
-            string full = $"{section.Number} · {section.Letterboxes} · {OutreachWords.Minutes(section.Minutes)}{(section.Review is null ? "" : " · needs review")}";
-            string brief = section.Review is null ? $"{section.Number}" : $"{section.Number} · review";
+            string figures = $"{section.Letterboxes} · {OutreachWords.Minutes(section.Minutes)}{(section.Review is null ? "" : " · needs review")}";
+            string number = section.Number.ToString(CultureInfo.InvariantCulture);
             return chosen
-                ? new MapLabel(Point(middle), full, RouteColours.Of(section.Colour), ChosenOnTop, MapLabelStyle.Filled, Places: Points(places))
-                : new MapLabel(Point(middle), selected is null ? full : brief, RouteColours.Of(section.Colour), section.Number, MapLabelStyle.Ring, brief, Points(places));
+                ? new MapLabel(Point(middle), figures, RouteColours.Of(section.Colour), ChosenOnTop, MapLabelStyle.Filled, figures, Points(places), Badge: number)
+                : new MapLabel(Point(middle), selected is null ? figures : "", RouteColours.Of(section.Colour), section.Number, MapLabelStyle.Ring, "", Points(places), Badge: number);
         }).ToList();
 
     public static IReadOnlyList<MapArea> Areas(DayPlanner planner)
@@ -74,8 +77,6 @@ public static class PlanDrawing
     public static IReadOnlyList<MapLabel> OverlapLabels(DayPlanner planner) =>
         OverlapShapes(planner).Select(overlap => new MapLabel(Point(Middle(planner, overlap.Shape)), $"Route {overlap.KeptBy.Number} keeps these", "--ink-2", Order: -1,
             Short: $"Route {overlap.KeptBy.Number} keeps these", Places: Points(InsideCorners(planner, overlap.Shape)))).ToList();
-
-    public static GeoPoint Top(DraftArea area) => area.Outline.MaxBy(point => point.Lat)!;
 
     private static string Key(DraftArea area) => $"area-{area.Id}";
 

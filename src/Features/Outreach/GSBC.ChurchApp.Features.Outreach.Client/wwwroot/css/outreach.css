@@ -50,10 +50,10 @@
 .plan-rail__tool.btn[aria-pressed="true"] { background: var(--primary); color: var(--on-primary); }
 .plan-rail__rule { display: block; height: 1px; margin: var(--space-3xs) var(--space-2xs); background: var(--line); }
 .plan-hint { position: absolute; top: var(--space-md); left: 50%; z-index: 2; width: max-content; max-width: min(34rem, calc(100% - 9rem)); margin: 0; padding: var(--space-xs) var(--space-md); transform: translateX(-50%); border-radius: var(--radius-full); background: var(--primary); color: var(--on-primary); font-size: var(--text-caption); font-weight: 600; text-align: center; box-shadow: var(--map-float); }
-.plan-card { position: absolute; top: var(--space-md); right: var(--space-md); z-index: 2; display: grid; gap: var(--space-3xs); width: min(20rem, calc(100% - 7rem)); padding: var(--space-sm) var(--space-md); border-radius: var(--radius-field); background: var(--surface); box-shadow: var(--map-float); pointer-events: none; }
+.plan-card { position: absolute; top: var(--map-corner-top, var(--space-md)); right: var(--map-corner-right, var(--space-md)); z-index: 2; display: grid; gap: var(--space-3xs); width: min(20rem, calc(100% - 7rem)); padding: var(--space-sm) var(--space-md); border-radius: var(--radius-field); background: var(--surface); box-shadow: var(--map-float); pointer-events: none; }
 .plan-card p { margin: 0; }
 .plan-card__title { display: flex; align-items: center; gap: var(--space-xs); font-size: var(--text-label); font-weight: 600; }
-.plan-card__facts { color: var(--ink-2); font-size: var(--text-caption); font-variant-numeric: tabular-nums; }
+.plan-card__facts { color: var(--ink-2); font-size: var(--text-caption); font-variant-numeric: tabular-nums; text-wrap: pretty; }
 .plan-card__review { color: var(--marker-ink); font-size: var(--text-caption); font-weight: 600; }
 .plan-dot { flex: none; width: 12px; height: 12px; border-radius: var(--radius-full); background: var(--route, var(--accent)); box-shadow: 0 0 0 2px var(--surface); }
 .plan-chosen { position: absolute; bottom: var(--space-lg); left: 50%; z-index: 2; display: flex; flex-wrap: wrap; width: max-content; align-items: center; justify-content: center; gap: var(--space-2xs); max-width: calc(100% - 7rem); padding: var(--space-2xs) var(--space-xs) var(--space-2xs) var(--space-md); transform: translateX(-50%); border-radius: var(--radius-field); background: var(--surface); box-shadow: var(--map-float); }
@@ -62,11 +62,13 @@
 .plan-key__swatch { flex: none; width: 22px; height: 12px; border-radius: calc(var(--radius-inner) / 3); }
 .plan-key__swatch--split { border: 2px dashed var(--primary); }
 .plan-key__swatch--drawn { border: 2.5px solid var(--ink-2); }
+.plan-key__swatch--route { height: 4px; border-radius: var(--radius-full); background: var(--ink-2); }
+.plan-key__swatch--through { height: 6px; background: radial-gradient(circle closest-side, var(--ink-2) 96%, transparent) 0 50% / 8px 6px repeat-x; }
 .plan-key__swatch--overlap { background: repeating-linear-gradient(45deg, var(--marker-ink) 0 1.5px, transparent 1.5px 5px); box-shadow: inset 0 0 0 1px var(--line); }
 @container plan-map (max-width: 640px) { .plan-key { display: none; } }
 .plan-chosen__actions { display: inline-flex; flex-wrap: nowrap; align-items: center; gap: var(--space-2xs); }
 .plan-desk__map { container: plan-map / inline-size; }
-.plan-desk__map .map-pin { --map-pin-start: 76px; }
+.plan-desk__map { --map-pin-start: 76px; }
 @container plan-map (max-width: 640px) {
   .plan-chosen { left: calc(40px + 2 * var(--space-md) + var(--space-2xs) * 2); right: var(--space-md); width: auto; transform: none; justify-content: flex-start; }
   .plan-hint { left: calc(40px + 2 * var(--space-md) + var(--space-2xs) * 2); right: var(--space-md); width: auto; max-width: none; transform: none; }
