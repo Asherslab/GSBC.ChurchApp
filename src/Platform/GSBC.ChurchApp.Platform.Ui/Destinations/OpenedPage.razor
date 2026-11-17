@@ -1,0 +1,18 @@
+<div class="opened-page">
+    <header class="opened-page__band">
+        <BrandMark Decorative="true" Class="opened-page__mark" />
+        <span class="opened-page__name">Good Shepherd</span>
+        @if (Note.Length > 0)
+        {
+            <span class="opened-page__note">@Note</span>
+        }
+    </header>
+    <div class="opened-page__body">
+        @ChildContent
+    </div>
+</div>
+
+@code {
+    [Parameter] public string Note { get; set; } = "";
+    [Parameter, EditorRequired] public required RenderFragment ChildContent { get; set; }
+}

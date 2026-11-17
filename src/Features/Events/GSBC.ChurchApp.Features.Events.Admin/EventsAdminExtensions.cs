@@ -1,5 +1,6 @@
 using GSBC.ChurchApp.Features.Events.Client;
 using GSBC.ChurchApp.Features.Events.Contracts;
+using GSBC.ChurchApp.Platform.Client.Destinations;
 using GSBC.ChurchApp.Platform.Client.Modules;
 using GSBC.ChurchApp.Platform.Client.Scopes;
 using GSBC.ChurchApp.Platform.Icons;
@@ -17,6 +18,8 @@ public static class EventsAdminExtensions
              new NavEntry("Weekly digest", DigestPlaces.Desk, AppIcons.WeeklyDigest, EventsPermissions.Digest, Area: NavAreas.ThisWeek,
                 Summary: "What's next at Good Shepherd, made from the calendar, for email and the app")]));
         return services.AddEventsClient().AddSingleton<CalendarEditing>().AddSingleton<IEventEditing, OnlineEventEditing>().AddSingleton<IOnlineAgenda, OnlineAgenda>().AddSingleton<IEventCards, OnlineEventCards>().AddSingleton<IYourCalendarLink, PersonCalendarLink>().AddSingleton<IOfficeWeekSource, EventsOfficeWeek>()
-            .AddSingleton<IScopeNamer, CalendarScopeNames>();
+            .AddSingleton<IScopeNamer, CalendarScopeNames>()
+            .AddWebsitePlace(new WebsitePlace(EventsDestinations.Week.Path, "/events", LinksGoThere: true))
+            .AddWebsitePlace(new WebsitePlace($"/{EventsDestinations.Event.PathPrefix}/", "/events/"));
     }
 }

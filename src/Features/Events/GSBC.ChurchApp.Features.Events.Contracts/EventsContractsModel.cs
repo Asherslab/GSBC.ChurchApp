@@ -38,6 +38,7 @@ namespace GSBC.ChurchApp.Features.Events.Contracts;
 [ProtoSerializable(typeof(TellPeople))]
 [ProtoSerializable(typeof(AgendaQuery))]
 [ProtoSerializable(typeof(Agenda))]
+[ProtoSerializable(typeof(PublicEvents))]
 [ProtoSerializable(typeof(NeedsDetailsList))]
 [ProtoSerializable(typeof(AskedList))]
 [ProtoSerializable(typeof(PlacesUsed))]

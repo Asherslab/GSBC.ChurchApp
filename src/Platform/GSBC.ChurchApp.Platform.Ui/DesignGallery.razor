@@ -4,6 +4,7 @@
 @using GSBC.ChurchApp.Platform.Client.News
 @using GSBC.ChurchApp.Platform.Contracts.Content
 @using GSBC.ChurchApp.Platform.Ui.News
+@using GSBC.ChurchApp.Platform.Ui.Destinations
 @inject TimeProvider Clock
 @inject UiHost Host
 
@@ -283,6 +284,8 @@
             @<MediaStrip Content="SamplePost" About="Carols on the lawn" />)
         @Item("Reading one post: PostView", "An item in the bulletin: a navy rule, the day beside the title with who and when, the opening pictures, the text with its first paragraph larger, its link, and a sand foot saying who posted it and for whom.",
             @<PostView Title="Carols on the lawn" Content="SamplePost" From="Music" FromHref="gallery" Author="Church office" Posted="Clock.GetUtcNow().UtcDateTime.AddDays(-1)" For="Everyone" LinkPath="/events" LinkLabel="See it in the calendar" />)
+        @Item("A link opened in a browser: OpenedPage", "What someone without the app sees when a link from an email or a message opens on a computer or a phone's browser: a navy band naming Good Shepherd and what it is, then the thing itself. The open page uses it for a church news post.",
+            @<OpenedPage Note="Church news"><PostView FillsPage="true" Title="Carols on the lawn" Content="SamplePost" Author="Church office" Posted="Clock.GetUtcNow().UtcDateTime.AddDays(-1)" For="Everyone" /></OpenedPage>)
         @Item("Writing a post: PostEditor", "A title and one editor: formatting in the bar, pictures, video, files, cards and tables under Insert, each shown in place with its caption; and one row for who it's for and telling them.",
             @<PostEditor Title="@_postTitle" TitleChanged="title => _postTitle = title" @bind-Body="_postBody" SettingsSummary="Everyone · Notification on · Now">
                 <Settings><p class="gallery__note">The feature's own settings go here.</p></Settings>
