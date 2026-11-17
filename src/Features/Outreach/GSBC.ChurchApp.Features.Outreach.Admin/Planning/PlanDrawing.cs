@@ -78,8 +78,6 @@ public static class PlanDrawing
         OverlapShapes(planner).Select(overlap => new MapLabel(Point(Middle(planner, overlap.Shape)), $"Route {overlap.KeptBy.Number} keeps these", "--ink-2", Order: -1,
             Short: $"Route {overlap.KeptBy.Number} keeps these", Places: Points(InsideCorners(planner, overlap.Shape)))).ToList();
 
-    public static GeoPoint Top(DraftArea area) => area.Outline.MaxBy(point => point.Lat)!;
-
     private static string Key(DraftArea area) => $"area-{area.Id}";
 
     private static IEnumerable<(PlannedSection KeptBy, IReadOnlyList<GeoPoint> Shape)> OverlapShapes(DayPlanner planner)

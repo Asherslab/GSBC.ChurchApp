@@ -897,7 +897,8 @@ stay on the page.
   routes; between two routes drawn by hand, or two split areas, the one drawn first keeps them; locked routes keep
   theirs. On the map the overlap is hatched with "Route 8 keeps these" in it, split areas are dashed and routes drawn
   by hand are outlined in their colour.
-- **The chip** on the top of each outline names it ("Faheys Rd · split into 6", "Route 7 · as drawn") and its menu
+- **The chip** of each area (in the strip along the top of the map since 2026-11-17, below) names it ("Faheys Rd ·
+  split into 6", "Route 7") and its menu
   switches it between one route and split, redraws its outline, saves it for next time, or takes it off the day
   (a route drawn by hand: *Delete this route*). Redrawing a route drawn by hand keeps its number, name, colour and, once
   published, its printed code. Undo covers all of it.
@@ -911,8 +912,46 @@ stay on the page.
 - **Stored** in the day's draft: each area's outline, saved area, and kind, and each route's area. A draft saved before
   this change (one outline) reads as one area split by the app, with every route in it (`DayDraft.Upgraded`, on the
   server when a plan is read and in the planner); no table changed, so there's no schema migration.
-- **Shared:** `MapPin` (Platform.Ui) keeps a control on a point of the map as it pans; map areas can be hatched
-  (`MapArea.Hatched`).
+- **Shared:** `MapChipStrip` (Platform.Ui) holds the chips; map areas can be hatched (`MapArea.Hatched`).
+
+### The map's feel (2026-11-17, feedback #125, #126, #127)
+
+The owner, on the full map in Safari with a trackpad: "there's gaps in some of these routes … there needs to be some
+indication there that it's still part of the route and not a glitch … want to avoid gaps where we can"; pinching over a
+chip or popover zoomed the whole page; dragging the map sometimes selected a chip's text. Interview (owner,
+2026-11-17): zoomed out, a route shows only its number and colour; a chip is mostly a control. Chosen on the decision
+page (`.impeccable/mocks/route-map-feel/`): *numbers on the map, chips in a strip*; *one label per route* and *labels
+step aside to the edge* stay on the page.
+
+- **Why there were gaps:** the map drew only the stretches a route delivers to. The walk the app plans for a route
+  (`WalkPlanner.Circuit`) also walks stretches with no letterboxes (a street with no homes, a path, a street left out)
+  to get between the route's parts, and those weren't drawn. The side-of-street offset and the outline weren't the
+  cause.
+- **Walked through, no letterboxes:** each route now draws the stretches its walk passes through as round dots in its
+  colour, under the solid stretches it delivers to (`PlannedSection.Delivered` and `WalkedThrough`), so a route that
+  isn't in pieces reads as one whole. The same dots are on the printed maps (black) and the walkers' phones (the walk's
+  colour); the planner's key and the printed key say "Walked through, no letterboxes" (the phone has no key).
+- **A route really in pieces** still says "In pieces: its streets don't join up": the check counts a route's parts
+  joined through the area's streets and the short links between them, for routes drawn by hand as for the app's, and it
+  comes before every other review reason.
+- **One mark per route:** a disc in the route's colour with its number. From zoom 14 its figures sit beside it
+  ("546 · 2 h 48 min · needs review"); zoomed out, the disc alone. A chosen route keeps its figures at every zoom and
+  the others show the disc. Discs keep clear of each other, the chips, the rail and the map's own place labels
+  ("Meet here").
+- **Chips in one strip** along the top of the map, from the tool rail to the top-right button, wrapping onto a second
+  line when there are many (`MapChipStrip`). A route drawn by hand's chip says "Route 4", ringed in its colour; a split
+  area's says "Faheys Rd · split into 6". Pointing at a chip lights its routes (the rest fade) and shows the route's
+  facts top right.
+- **Pinch and scroll over anything on the map move the map** (chips, discs, pins, cards, menus, the key, the full map
+  button), as over the map itself: Safari's pinch (`gesturestart`/`gesturechange`) and ctrl+wheel are passed to the
+  map, so the page never zooms; a menu or card that can scroll still scrolls. Shared in `MapView`, so every map has it.
+- **Nothing on a map selects as text when dragging.** A card's text and fields stay selectable.
+- **Hover facts** sit below *Leave full map* (they ran under it), as a chosen thing's card does.
+- **"More than twice the size you chose for routes"** works as designed: routes drawn by hand are checked against the
+  size chosen for routes (about 100 letterboxes here), and these are 209–546. *Claude's note for the owner, unchanged:*
+  when a planner draws big routes on purpose, every route says *Needs review* and the day says "5 need a look", which
+  reads as a problem with the plan. Asking the owner whether a route drawn by hand should be held to its own size (or
+  say "Bigger than the size you chose" without *Needs review*).
 
 ### Printed route maps
 
