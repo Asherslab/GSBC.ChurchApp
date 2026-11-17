@@ -1,5 +1,6 @@
 @using GSBC.ChurchApp.Platform.Contracts.Content
 @using GSBC.ChurchApp.Platform.Ui.Content
+@using GSBC.ChurchApp.Platform.Ui.Destinations
 @inject IEventCards Cards
 @inject TimeProvider Clock
 @inject Shell Shell
@@ -36,6 +37,10 @@
     [Parameter, EditorRequired] public required AppCard Card { get; set; }
     [Parameter] public bool Editing { get; set; }
 
+    [CascadingParameter] public OnTheWeb? Web { get; set; }
+
+    private string OpenLabel => Web is null ? "Open" : "See the event";
+
     private DateTime Now => Clock.GetUtcNow().UtcDateTime;
 
     private static string Meta(EventCardShown shown) => shown.AsPattern ? "Regular event" : "Event";
@@ -50,10 +55,10 @@
 
     private IReadOnlyList<AppCardAction> ActionsFor(EventCardShown shown) =>
         shown.Occurrence.NotOn && !shown.AsPattern
-            ? [new AppCardAction("Open", Href: EventsPlaces.Open(shown.Occurrence))]
+            ? [new AppCardAction(OpenLabel, Href: EventsPlaces.Open(shown.Occurrence))]
             : [
                 new AppCardAction("Add to calendar", "calendar-plus", OnClick: EventCallback.Factory.Create(this, () => AddToCalendarAsync(shown.Occurrence)), Main: true),
-                new AppCardAction("Open", Href: EventsPlaces.Open(shown.Occurrence)),
+                new AppCardAction(OpenLabel, Href: EventsPlaces.Open(shown.Occurrence)),
             ];
 
     private async Task AddToCalendarAsync(EventOccurrence occurrence)

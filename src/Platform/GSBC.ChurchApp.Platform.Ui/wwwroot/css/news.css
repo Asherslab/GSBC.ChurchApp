@@ -332,6 +332,10 @@
 
 .opened-page__body .post-view__end p + p { margin-top: var(--space-sm); }
 
-@media (max-width: 760px) {
-    .opened-page__band { padding: var(--space-md) var(--gutter); }
+@media (max-width: 600px) {
+    .opened-page__band { padding: var(--stack) var(--gutter); }
+}
+
+@media print {
+    .opened-page__band { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 }
