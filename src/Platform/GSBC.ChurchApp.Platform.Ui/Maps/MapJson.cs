@@ -119,6 +119,8 @@ public static class MapJson
                 json.WriteBoolean("dashed", true);
             if (area.Outline)
                 json.WriteBoolean("outline", true);
+            if (area.Hatched)
+                json.WriteBoolean("hatched", true);
             json.WritePropertyName("points");
             Points(json, [.. area.Points, area.Points[0]]);
             if (area.Holes is { Count: > 0 } holes)

@@ -100,10 +100,21 @@ and *Print the maps* sit in the title band's actions. *Plan a day* without a day
   review" after it when flagged). Every route keeps its label and no two labels overlap (`MapSketch`, [maps.md](maps.md)). Choosing a route fills its label in its colour, on top, and keeps the others to
   their number; their lines fade toward grey. Streets left out or done recently in ink-3; the
   area at 12%; the meeting point (the map's navy place marker, *Claude's adaptation*: orange means "you" on the phone)
-  and the chosen route's start. The nine route colours
+  and the chosen route's start.
+- **Areas** (2026-11-17, #124, the owner's pick on `.impeccable/mocks/route-areas/`): a split area is a dashed outline
+  with a faint fill (see below); a route drawn by hand is outlined in its route colour, no fill. Each area carries a chip on the
+  top of its outline (`MapPin` with a `Menu`, `map-chip`: white pill on the map shadow, icon, "Faheys Rd · split into
+  6" or "Route 7 · as drawn", chevron); its menu: Split it into routes / Make it one route (the current one ticked, with
+  how many routes or letterboxes), Redraw the outline, Save for next time…, and Take it off the day or Delete this route
+  (red, last). Where areas overlap the overlap is hatched in marker ink (warm brown, its own hatch, apart from the grey one for
+  closed or rested ground) with "Route 8 keeps these" in an ink ring, placed clear of the chips. Split areas are
+  dashed in primary (navy; aqua at night); a route drawn by hand is a 2.5px solid in its colour, the strongest outline.
+  An area not saved is named after its main streets ("Kingfisher St & Wren Ct · split into 6"). A key bottom
+  left names what's on the map (dashed: an area the app splits; solid: a route drawn as one; hatched: overlap), hidden
+  on a map under 640px. Chips and key hide while drawing. The nine route colours
   (`RouteColours`) each hold 4.5:1 with white text and 3:1 against the dark map and pane.
-- **The rail** (top left, a white panel on the Pop shadow): select, draw the area, scissors, brush, lasso, eraser, start
-  pin, meeting point, a rule, undo, redo; the tool in use is navy. Tools that need a chosen route are disabled until
+- **The rail** (top left, a white panel on the Pop shadow): select, draw a route (pencil), draw an area to split
+  (pentagon), scissors, brush, lasso, eraser, start pin, meeting point, a rule, undo, redo; the tool in use is navy. Tools that need a chosen route are disabled until
   there is one. Each tool's one-line instruction shows as a navy capsule top centre; drawing the area shows the `MapDrawBar` instead, beside the rail, with *Undo last point*, *Cancel* and *Finish*.
 - **Hover** (top right): the route's number, name, letterboxes, km, time, bundles, its claims on the day, and why it
   needs review in marker ink.

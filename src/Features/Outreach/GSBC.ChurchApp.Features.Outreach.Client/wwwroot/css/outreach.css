@@ -57,8 +57,16 @@
 .plan-card__review { color: var(--marker-ink); font-size: var(--text-caption); font-weight: 600; }
 .plan-dot { flex: none; width: 12px; height: 12px; border-radius: var(--radius-full); background: var(--route, var(--accent)); box-shadow: 0 0 0 2px var(--surface); }
 .plan-chosen { position: absolute; bottom: var(--space-lg); left: 50%; z-index: 2; display: flex; flex-wrap: wrap; width: max-content; align-items: center; justify-content: center; gap: var(--space-2xs); max-width: calc(100% - 7rem); padding: var(--space-2xs) var(--space-xs) var(--space-2xs) var(--space-md); transform: translateX(-50%); border-radius: var(--radius-field); background: var(--surface); box-shadow: var(--map-float); }
+.plan-key { position: absolute; left: var(--space-md); bottom: calc(var(--space-2xl) + var(--space-xs)); z-index: 1; display: grid; gap: var(--space-2xs); padding: var(--space-xs) var(--space-md); border-radius: var(--radius-field); background: var(--surface); box-shadow: var(--map-float); color: var(--ink-2); font-size: var(--text-caption); pointer-events: none; }
+.plan-key__row { display: flex; align-items: center; gap: var(--space-xs); }
+.plan-key__swatch { flex: none; width: 22px; height: 12px; border-radius: calc(var(--radius-inner) / 3); }
+.plan-key__swatch--split { border: 2px dashed var(--primary); }
+.plan-key__swatch--drawn { border: 2.5px solid var(--ink-2); }
+.plan-key__swatch--overlap { background: repeating-linear-gradient(45deg, var(--marker-ink) 0 1.5px, transparent 1.5px 5px); box-shadow: inset 0 0 0 1px var(--line); }
+@container plan-map (max-width: 640px) { .plan-key { display: none; } }
 .plan-chosen__actions { display: inline-flex; flex-wrap: nowrap; align-items: center; gap: var(--space-2xs); }
 .plan-desk__map { container: plan-map / inline-size; }
+.plan-desk__map .map-pin { --map-pin-start: 76px; }
 @container plan-map (max-width: 640px) {
   .plan-chosen { left: calc(40px + 2 * var(--space-md) + var(--space-2xs) * 2); right: var(--space-md); width: auto; transform: none; justify-content: flex-start; }
   .plan-hint { left: calc(40px + 2 * var(--space-md) + var(--space-2xs) * 2); right: var(--space-md); width: auto; max-width: none; transform: none; }
@@ -67,9 +75,9 @@
 .plan-chosen__name { min-width: 14rem; }
 .plan-review { display: grid; gap: var(--space-2xs); margin: var(--space-sm) 0 0; padding-left: var(--space-lg); color: var(--ink-2); font-size: var(--text-caption); }
 .plan-pane__start { display: grid; justify-items: start; gap: var(--space-lg); margin: var(--space-lg) 0 var(--space-2xl); }
-.plan-pane__area { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: var(--space-sm); width: 100%; }
+.plan-pane__area { display: grid; grid-template-columns: minmax(0, 1fr); grid-auto-columns: auto; grid-auto-flow: column; align-items: end; gap: var(--space-sm); width: 100%; margin-bottom: var(--space-md); }
+.plan-pane__routes { margin-top: var(--space-xs); }
 .plan-pane__from { margin: 0 0 var(--space-md); color: var(--ink-2); font-size: var(--text-caption); }
-.plan-pane__routes { margin-top: var(--space-sm); }
 @media (max-width: 1360px) { .plan-pane__routes .plan-pane__time { display: none; } }
 .plan-pane__route { display: flex; align-items: flex-start; gap: var(--space-sm); }
 .plan-pane__route .plan-dot { margin-top: var(--space-3xs); }
