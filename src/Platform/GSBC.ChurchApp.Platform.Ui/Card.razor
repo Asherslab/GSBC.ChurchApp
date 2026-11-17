@@ -26,14 +26,14 @@ else
 
     private bool Interactive => Href is not null || OnClick.HasDelegate;
 
-    private string Classes => $"card card--{Tone.ToString().ToLowerInvariant()} {(Interactive ? "pressable" : "")} {(Icon is null ? "" : "card--with-icon")} {Class}";
+    private string Classes => $"card card--{Tone.ToString().ToLowerInvariant()} {(Interactive ? "pressable" : "")} {(Icon is null || Media is not null ? "" : "card--with-icon")} {Class}";
 
     private RenderFragment Body => @<text>
         @if (Media is not null)
         {
             <span class="card__media">@Media</span>
         }
-        @if (Icon is not null)
+        @if (Icon is not null && Media is null)
         {
             <span class="card__icon"><Icon Name="@Icon" /></span>
         }

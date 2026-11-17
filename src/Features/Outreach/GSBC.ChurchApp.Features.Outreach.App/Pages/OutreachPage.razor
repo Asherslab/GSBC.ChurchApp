@@ -88,8 +88,12 @@
         Walk.ForgetJustSaved();
     }
 
-    private static string Saved(WalkHistoryEntry walk) =>
-        $"{OutreachPhoneWords.Distance(walk.Metres)} and {(walk.Mode == WalkMode.Doorknock ? OutreachPhoneWords.Doors(walk.Doors) : OutreachPhoneWords.Letterboxes(walk.Letterboxes))}. Thank you for walking.";
+    private static string Saved(WalkHistoryEntry walk)
+    {
+        string done = walk.Mode == WalkMode.Doorknock ? OutreachPhoneWords.Doors(walk.Doors) : OutreachPhoneWords.Letterboxes(walk.Letterboxes);
+        string distance = OutreachPhoneWords.Distance(walk.Metres);
+        return distance == OutreachPhoneWords.Distance(0) ? $"{done}. Thank you for walking." : $"{distance} and {done}. Thank you for walking.";
+    }
 
     private string LengthKey => _length.ByTime ? _length.Label : DistanceKey;
 
