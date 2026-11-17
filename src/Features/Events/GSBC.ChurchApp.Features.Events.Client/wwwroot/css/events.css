@@ -254,17 +254,16 @@ a.whats-next-card__title:active { opacity: 0.7; }
 .whats-next-off__when { padding-left: 24px; color: var(--ink-2); font-size: var(--text-caption); font-weight: 600; }
 .whats-next-off__about { padding-left: 24px; color: var(--ink-2); font-size: var(--text-caption); line-height: 1.45; }
 
-.digest-desk__choices { display: grid; grid-template-columns: 11rem max-content 11rem; align-items: start; gap: var(--space-sm) var(--space-lg); margin: var(--space-lg) 0 var(--space-xl); }
+.digest-desk__choices { display: flex; flex-wrap: wrap; align-items: flex-start; gap: var(--space-sm) var(--space-lg); margin: var(--space-lg) 0 var(--space-xl); }
 .digest-desk__choices .field { margin: 0; }
+.digest-desk__choices .field:not(.digest-desk__length) { width: 11rem; }
 .digest-desk__choices .field .field__input { height: 42px; min-height: 0; padding-block: 0; font-size: var(--text-row); }
-.digest-desk__length + .field { width: 11rem; }
 .digest-desk__length { display: grid; gap: var(--space-xs); }
 .digest-desk__length .segmented__option { white-space: nowrap; }
 @container list (max-width: 28rem) {
-  .digest-desk__choices { grid-template-columns: minmax(0, 1fr); }
-  .digest-desk__choices .field { width: 100%; }
+  .digest-desk__choices .field, .digest-desk__choices .field:not(.digest-desk__length) { width: 100%; }
 }
-.digest-desk__range { grid-column: 1 / -1; margin: 0; color: var(--primary); font-size: var(--text-row); font-weight: 600; font-variant-numeric: tabular-nums; }
+.digest-desk__range { flex-basis: 100%; margin: 0; color: var(--primary); font-size: var(--text-row); font-weight: 600; font-variant-numeric: tabular-nums; }
 
 .digest-order { border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
 .digest-order .reorder__row { gap: var(--space-xs); padding-right: var(--space-2xs); background: var(--page); }
