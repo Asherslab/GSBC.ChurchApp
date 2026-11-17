@@ -50,3 +50,80 @@ screen "where it is" or "a place off site".
    decides who's in.
 8. **Tapping a place on the phone** opens a full-screen map in the app (from the kept map, so it works offline) with
    the address, the note, and *Open in Maps* and *Directions*, which hand over to Apple Maps, Google Maps and the like.
+
+## Built (2026-11-17)
+
+### The data
+
+- **`Location`** (Platform.Contracts): `Kind` (at church or off site), `Name`, `Address`, `Suburb`, `Note`, the pin
+  (`Latitude`, `Longitude`), `Home`, its `Map` (a `LocationMap`: the file's URL and key, its bounds and zoom), and
+  `Text` for a location typed before places had a map, shown as it is. `SeenFromOutside()` is what someone outside a
+  home's group gets: the suburb and nothing else (no name, address, note, pin or map).
+- **Saving** goes through `LocationRules.Cleaned` (Platform.Api): trimmed and clipped, a pin only when it's on Earth.
+  `LocationRules.Text` is the one line for places that only take words (the printed route maps, iCal, the website).
+- **Where it's stored:** an outreach day's `Meeting` and a ministry's `Where` are jsonb columns; an event's place keeps
+  its `Name` and `Address` (the website, iCal, the digest and change notes read those) and adds its `Location`.
+  `EventPlaces.LocationOf` reads an old event place as a place without a pin.
+
+### Finding a place: our own geocoder
+
+In the Maps module (`Outreach.Maps.Api`, *Claude's decision*: it already holds the address search's logic, the map
+sources, the tile cutter and the media bucket; features still never reference each other, because the service is the
+app-wide gRPC contract `ILocationsService` in Platform.Contracts, and the Maps module is what serves it).
+
+- **G-NAF** (`GnafImport`): data.gov.au's package lists each release; the newest GDA2020 zip (about 1.7 GB) is
+  downloaded to a temporary file and each state's tables are copied into temporary Postgres tables (`COPY`), joined in
+  SQL into `outreach_maps.national_addresses` (principal, unretired addresses with their default geocode; about 15.9
+  million) and `national_localities` (suburbs and towns with their points). Each import is a numbered release: searches
+  use the newest finished one, and older ones are deleted only once a new one has finished, so a search never sees a
+  half-imported release. An interrupted import is forgotten and starts again. The runner (`NationalAddressRunner`,
+  its own advisory lock) checks for a new release once a day and imports when the name changes (quarterly). Settings:
+  `Outreach:Maps:NationalAddresses`, `ImportNationalAddresses`. The key column is built in SQL to match
+  `AddressSearchText.Key`, so the outreach address search's parsing, street-type spellings and ranking are shared.
+- **Searching** (`NationalAddresses.FindAsync`): an address with a number; a street without one (one result per
+  street); suburbs; buildings by their G-NAF building name. Each result says how far and which way it is from the
+  church. **Nearest** gives a dropped pin the closest address within 200 m, then 1 km, then 5 km.
+- **Not yet:** parks, camps and halls without a G-NAF building name aren't found by name; the pin and a name cover
+  them. OpenStreetMap's named places (the owner's choice included them) need a read of the whole Australian extract
+  for the centres of parks drawn as areas; left for a follow-up.
+
+### A place's map
+
+`PlaceMaps` cuts a map file for the 2 × 2 block of zoom-15 tiles nearest the place (about 2.2 km a side; the place is
+at least 550 m from its edge), with every lower zoom, from the newest Protomaps build, by the same `PmtilesExtract` as the
+regions. Places in the same block share one file (`outreach_maps.place_maps`, one row a block), stored by content in the
+public bucket (`immutable`). Australia only. Each feature says which map files it uses (`ILocationUses`: outreach days,
+events, ministries), and once a day a map nothing has used for two days is removed, its file too unless a region uses it.
+
+### On the phone
+
+- **Showing:** `LocationRow` (a `ListRow`: the pin icon, the name, the address, the note, and a 64 px map square) opens
+  `LocationSheet`: the map, the note, *Directions* and *Open in Maps* (Apple Maps or Google Maps; on Android one
+  *Open in Maps* through `geo:`, which offers the phone's own choice). The pin is the shared `MapPin`, as a navy pin.
+- **Kept for offline** (`LocationMaps`, a startup task): each feature lists the places on the phone
+  (`ILocationSource`); a place inside a region map the phone keeps whole is shown from that region
+  (`IKeptMapCover`, Outreach's `OutreachLocations`), and only the others keep their own file (`places/<key>`) in the
+  kept files. `PlaceMapPlan` works out what to keep and remove, so a place file and a region are never both kept (the
+  owner's condition), and a place no longer on the phone loses its file.
+- **Choosing** (`LocationField` opening `LocationPicker`, a wide sheet): At church (with an optional note) or Somewhere
+  else: the search and its results (or places used before) beside the map, then Address, Name, Note and, where the
+  record allows it, *This is someone's home*. Tapping the map moves the pin and fills in the nearest address; a pin
+  near the map's edge gets the next block's map. Offline, the search says so and the address and note are typed.
+
+### Who sees a home
+
+A ministry's directory row (synced to everyone) carries its place as seen from outside. When it's a home, the whole
+place goes in `ministries.places`, one row per audience (attendees, parents and team) with the ministry's own
+audience, so Access decides who gets it; the phone lays it over the directory. Online, the server gives the whole place
+only to someone who may see one of those audiences (`MinistryViews.SeesHome`). *Claude's default:* events have no
+"home" choice, because an event is only shown to its calendar's audience; a private calendar already keeps an event
+and its place to its people.
+
+### What changed where
+
+- Outreach: the day's *Where people meet* is a place; the day page on the phone shows it as a row; the printed route
+  maps print `LocationRules.Text`; the planner's meeting-point pin tool is gone (the pin is the place), and a day at
+  church plans from the church's point.
+- Events: the place picker is the place field, with places used before; the event page shows the row.
+- Ministries: *When it meets* (text) and *Where it meets* (a place, may be a home) are separate; the About tab and Life
+  Groups show both. Old "when and where" text stays as it was, labelled *When and where it meets* until a place is set.
