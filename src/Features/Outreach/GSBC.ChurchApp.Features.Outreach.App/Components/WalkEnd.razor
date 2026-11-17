@@ -22,12 +22,13 @@
     }
     else
     {
+        IReadOnlyList<string> sides = OutreachPhoneWords.SidesOf([.. Delivering.Select(step => step.Step)]);
         <ol class="outreach-order">
-            @foreach (StepProgress step in Delivering)
+            @foreach ((StepProgress step, string side) in Delivering.Zip(sides))
             {
                 bool on = _walked.Contains(step.Index);
                 <li @key="step.Index" class="outreach-order__stop @(on ? "outreach-order__stop--done" : "")">
-                    <ToggleRow Title="@OutreachPhoneWords.SideOf(step.Step)" Description="@StepLine(step, on)" Checked="on" CheckedChanged="value => Toggle(step.Index, value)" />
+                    <ToggleRow Title="@side" Description="@StepLine(step, on)" Checked="on" CheckedChanged="value => Toggle(step.Index, value)" />
                 </li>
             }
         </ol>

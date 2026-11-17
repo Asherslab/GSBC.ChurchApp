@@ -8,7 +8,7 @@
 @inject NavigationManager Nav
 @inject TimeProvider Clock
 
-<Page Title="Walking" BackHref="@OutreachLinks.Home" BackLabel="Outreach" OnBack="() => Nav.NavigateTo(OutreachLinks.Home)" Focused="@(Walk.Current is not null)">
+<Page Title="Walking" BackHref="@OutreachLinks.Home" BackLabel="Outreach" OnBack="ToOutreachAsync" Focused="@(Walk.Current is not null)">
     <LiveData @ref="_live" TValue="WalkView" Load="Screen.LoadAsync" Feeds="WalkScreen.Feeds" ReloadOn="Reload">
         @{
             WalkView view = context.Value;
@@ -17,12 +17,12 @@
         {
             <Masthead Title="No walk on" Note="Plan one from the Outreach page." />
             <Section>
-                <Button Block="true" Icon="footprints" Href="@OutreachLinks.Home">Go to Outreach</Button>
+                <Button Block="true" Icon="footprints" OnClick="ToOutreachAsync">Go to Outreach</Button>
             </Section>
         }
         else if (state.Finished)
         {
-            <WalkEnd View="view" OnSaved="SavedAsync" />
+            <WalkEnd View="view" OnSaved="ToOutreachAsync" />
         }
         else
         {
@@ -174,11 +174,7 @@
         await Shell.ScrollToTopAsync();
     }
 
-    private Task SavedAsync()
-    {
-        Nav.NavigateTo(OutreachLinks.Mine);
-        return Task.CompletedTask;
-    }
+    private async Task ToOutreachAsync() => await Shell.ReturnToAsync(OutreachLinks.Home);
 
     private void OnWalkChanged() => InvokeAsync(() => _live?.ReloadAsync() ?? Task.CompletedTask);
 
