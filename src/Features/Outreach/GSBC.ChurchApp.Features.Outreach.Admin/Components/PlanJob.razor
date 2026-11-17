@@ -9,7 +9,7 @@
         @if (IsOpen)
         {
             OutreachDesk desk = context.Value;
-            <SectionContent SectionName="@OutreachMap.DrawerSection">
+            <StableSection SectionName="@OutreachMap.DrawerSection">
                 <PaneHead Title="Plan an outreach day" Lead="Choose a day to split its area into routes on this map. The map shows its routes until you leave the day." />
                 @if (Coming(desk) is { Count: > 0 } days)
                 {
@@ -25,19 +25,19 @@
                 {
                     <EmptyState Icon="@AppIcons.PlanADay" Title="No outreach days to come" Body="Set up the next outreach day under Days, then plan its routes here." />
                 }
-            </SectionContent>
-            <SectionContent SectionName="@OutreachMap.FootSection">
+            </StableSection>
+            <StableSection SectionName="@OutreachMap.FootSection">
                 <Button Variant="ButtonVariant.Quiet" Icon="plus" Block="true" Href="@OutreachTabs.Href(OutreachTab.Days)">New day, under Days</Button>
-            </SectionContent>
+            </StableSection>
         }
     </ChildContent>
     <Loading>
         @if (IsOpen)
         {
-            <SectionContent SectionName="@OutreachMap.DrawerSection">
+            <StableSection SectionName="@OutreachMap.DrawerSection">
                 <PaneHead Title="Plan an outreach day" Lead="Choose a day to split its area into routes." />
                 <Skeleton />
-            </SectionContent>
+            </StableSection>
         }
     </Loading>
 </LiveData>

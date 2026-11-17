@@ -13,13 +13,13 @@
 
 <UnsavedGuard What="the routes" Autosave="() => _save" Save="SaveBeforeLeavingAsync" />
 
-<SectionContent SectionName="@OutreachHead.ActionsSection">
+<StableSection SectionName="@OutreachHead.ActionsSection">
     @if (CanPlan && _view == PlanView.Plan)
     {
         <SaveStatus State="_save" SavedText="@(_draftChangedAt is null ? "Saves as you go" : "Draft saved")" Retry="SaveNowAsync" Detail="@_saveProblem" />
     }
     <RouteMapsButton Setup="Setup" Planner="_planner" Routes="_published" Changed="_changedSincePublished" />
-</SectionContent>
+</StableSection>
 
 @if (Setup.Region is null || Setup.Graph is null || _planner is null)
 {

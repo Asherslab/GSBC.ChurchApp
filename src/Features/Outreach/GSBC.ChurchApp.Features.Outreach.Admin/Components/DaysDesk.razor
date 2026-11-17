@@ -5,11 +5,11 @@
 <UnsavedGuard Changed="() => Changed" What="this outreach day" Save="SaveBeforeLeavingAsync" />
 
 <LiveData @ref="_live" TValue="OutreachDesk" Feeds="Feeds" Load="LoadAsync" Remember="@($"outreach.days.{Scope}")" FailedTitle="Can't load the outreach days right now">
-    <SectionContent SectionName="@OutreachHead.ActionsSection">
+    <StableSection SectionName="@OutreachHead.ActionsSection">
         <Can Permission="OutreachPermissions.Plan" ObjectId="@Scope">
             <Button Icon="plus" OnClick="() => OpenAsync(() => Edit(NewDay(context.Value)))">New outreach day</Button>
         </Can>
-    </SectionContent>
+    </StableSection>
     <Workbench DetailLabel="The outreach day" Showing="@(_editing is null ? WorkbenchPane.Main : WorkbenchPane.Detail)">
         <ChildContent>
             <DataTable TItem="OutreachDay" Label="Outreach days" Items="Ordered(context.Value)" Columns="Columns(context.Value)" Key="day => day.Id"

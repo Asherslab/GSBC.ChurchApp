@@ -16,22 +16,22 @@
         {
             @if (_adding)
             {
-                <SectionContent SectionName="@OutreachMap.DrawerSection">@Adding</SectionContent>
-                <SectionContent SectionName="@OutreachMap.FootSection">
+                <StableSection SectionName="@OutreachMap.DrawerSection">@Adding</StableSection>
+                <StableSection SectionName="@OutreachMap.FootSection">
                     <SaveBar Label="@(_preview is { } shared && MapAreaWords.AllShared(shared.Cells) ? "Add it" : "Add and build it")" New="true" Busy="_busy" Blocked="@AddBlocked" OnSave="AddAsync" OnCancel="BackAsync" />
-                </SectionContent>
+                </StableSection>
             }
             else if (_areaId is not null)
             {
-                <SectionContent SectionName="@OutreachMap.DrawerSection">@Chosen</SectionContent>
-                <SectionContent SectionName="@OutreachMap.FootSection">@ChosenFoot</SectionContent>
+                <StableSection SectionName="@OutreachMap.DrawerSection">@Chosen</StableSection>
+                <StableSection SectionName="@OutreachMap.FootSection">@ChosenFoot</StableSection>
             }
             else
             {
-                <SectionContent SectionName="@OutreachMap.DrawerSection">@All(context.Value)</SectionContent>
-                <SectionContent SectionName="@OutreachMap.FootSection">
+                <StableSection SectionName="@OutreachMap.DrawerSection">@All(context.Value)</StableSection>
+                <StableSection SectionName="@OutreachMap.FootSection">
                     <Button Variant="ButtonVariant.Quiet" Icon="plus" Block="true" OnClick="StartAddingAsync">Add a map area</Button>
-                </SectionContent>
+                </StableSection>
             }
         }
         <Sheet Open="_confirming" OpenChanged="open => _confirming = open" Title="@MapAreaWords.ChangeLabel(Off.Count, On.Count)">
@@ -57,10 +57,10 @@
     <Loading>
         @if (IsOpen)
         {
-            <SectionContent SectionName="@OutreachMap.DrawerSection">
+            <StableSection SectionName="@OutreachMap.DrawerSection">
                 <PaneHead Title="Map areas" Lead="@Lead" />
                 <Skeleton />
-            </SectionContent>
+            </StableSection>
         }
     </Loading>
 </LiveData>

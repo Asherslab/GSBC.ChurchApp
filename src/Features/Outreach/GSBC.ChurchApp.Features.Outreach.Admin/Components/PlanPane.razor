@@ -154,7 +154,7 @@ else
         new("Route", section => @<span class="plan-pane__route">
             <span class="plan-dot" style="--route: @RouteColours.Of(section.Colour)"></span>
             <span class="outreach-desk__cell">
-                <span class="outreach-desk__name">@section.Number · @section.Name</span>
+                <span class="outreach-desk__name"><span class="plan-pane__number">@section.Number ·</span> @section.Name</span>
                 @if (Planner.MadeByHand(section)) { <span class="outreach-desk__sub plan-pane__locked"><Icon Name="@AppIcons.DrawRoute" Size="IconSize.Small" />Drawn by hand</span> }
                 @if (section.Locked) { <span class="outreach-desk__sub plan-pane__locked"><Icon Name="@AppIcons.Lock" Size="IconSize.Small" />Locked</span> }
                 @if (section.Review is { } review) { <span class="plan-pane__review"><Pill Tone="PillTone.Marker">Needs review</Pill> @review</span> }

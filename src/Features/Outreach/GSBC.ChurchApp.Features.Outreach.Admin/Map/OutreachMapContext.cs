@@ -103,7 +103,8 @@ public sealed class OutreachMapContext(string scope, OutreachAtlas atlas, Outrea
         double across = Math.Max(around.East - around.West, MinimumSpan);
         double up = Math.Max(around.North - around.South, MinimumSpan);
         double middle = (around.South + around.North) / 2;
-        FlyTo(new MapFrame(middle - up / 2, around.West, middle + up / 2, around.West + across * CardRoom, 60, 17));
+        double west = around.West - across / 4;
+        FlyTo(new MapFrame(middle - up / 2, west, middle + up / 2, west + across * CardRoom, 60));
     }
 
     public IReadOnlyList<MapFrame> Clearing { get; private set; } = [];

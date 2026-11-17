@@ -12,7 +12,7 @@
         @{ Reports reports = context.Value; }
         @if (IsOpen)
         {
-            <SectionContent SectionName="@OutreachMap.DrawerSection">
+            <StableSection SectionName="@OutreachMap.DrawerSection">
                 <PaneHead Title="Walkers' reports" Lead="Places walkers sent in. Each is on the map where it happened." />
                 <div class="outreach-map__stack">
                     <Segmented TValue="bool" Label="Show" Options="Views" Value="_done" ValueChanged="done => _done = done" />
@@ -43,11 +43,11 @@
                                     Body="When a walker reports a place (not a home, unsafe, a complaint, wrong on the map) it comes here, and on the map, to be looked at." />
                     }
                 </div>
-            </SectionContent>
+            </StableSection>
         }
         @if (HasCard && Chosen(reports) is { } chosen)
         {
-            <SectionContent SectionName="@OutreachMap.CardSection">
+            <StableSection SectionName="@OutreachMap.CardSection">
                 <MapCard Label="The report">
                     <ChildContent>
                         <PaneHead Title="@OutreachWords.Reason(chosen.Reason)" Lead="@($"{OutreachWords.Place(chosen.Place)} · sent {OutreachWords.At(chosen.At)}{(chosen.From.Length > 0 ? $" by {chosen.From}" : "")}")"
@@ -104,7 +104,7 @@
                         }
                     </Foot>
                 </MapCard>
-            </SectionContent>
+            </StableSection>
         }
         <Sheet Open="_deleting" OpenChanged="open => _deleting = open" Title="Delete this report?" Lead="Its note and any photo go for good. This can't be undone.">
             <Actions>
@@ -116,10 +116,10 @@
     <Loading>
         @if (IsOpen)
         {
-            <SectionContent SectionName="@OutreachMap.DrawerSection">
+            <StableSection SectionName="@OutreachMap.DrawerSection">
                 <PaneHead Title="Walkers' reports" Lead="Places walkers sent in." />
                 <Skeleton />
-            </SectionContent>
+            </StableSection>
         }
     </Loading>
 </LiveData>

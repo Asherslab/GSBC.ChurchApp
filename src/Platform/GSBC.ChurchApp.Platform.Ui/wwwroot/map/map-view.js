@@ -28,6 +28,8 @@ const token = (name) => getComputedStyle(document.documentElement).getPropertyVa
 function colours() {
   return {
     walk: token("--accent"),
+    accent: token("--accent"),
+    onAccent: token("--on-primary"),
     walked: token("--ink-3"),
     you: token("--marker"),
     marker: token("--marker"),
@@ -191,13 +193,24 @@ function overlayLayers(c) {
         "circle-color": ["match", ["get", "kind"], "start", c.walk, c.primary],
         "circle-stroke-color": c.surface, "circle-stroke-width": 3,
       } },
-    { id: "place-labels", type: "symbol", source: "markers", filter: ["all", kindIs("start", "pin", "meeting"), ["has", "label"]],
-      layout: { "text-field": ["get", "label"], "text-font": ["montserrat-semibold"], "text-size": 12, "text-offset": [0, 1.3], "text-anchor": "top" },
+    { id: "place-labels", type: "symbol", source: "markers", filter: kindIs("start", "pin", "meeting"),
+      layout: { "icon-image": placeRoom, "icon-allow-overlap": true, "text-field": ["coalesce", ["get", "label"], ""], "text-font": ["montserrat-semibold"], "text-size": 12,
+        "text-offset": [0, 1.3], "text-anchor": "top", "text-allow-overlap": true },
       paint: { "text-color": c.ink, "text-halo-color": c.surface, "text-halo-width": 2 } },
+    { id: "matches", type: "circle", source: "markers", filter: kindIs("match"),
+      paint: { "circle-radius": 12, "circle-color": c.accent, "circle-stroke-color": c.surface, "circle-stroke-width": 3 } },
+    { id: "match-numbers", type: "symbol", source: "markers", filter: kindIs("match"),
+      layout: { "text-field": ["coalesce", ["get", "label"], ""], "text-font": ["montserrat-semibold"], "text-size": 12, "text-allow-overlap": true,
+        "icon-image": placeRoom, "icon-allow-overlap": true },
+      paint: { "text-color": c.onAccent } },
     { id: "you-accuracy", type: "circle", source: "you",
       paint: { "circle-radius": ["get", "radius"], "circle-color": c.you, "circle-opacity": 0.16, "circle-pitch-alignment": "map" } },
     { id: "you", type: "circle", source: "you",
       paint: { "circle-radius": 8, "circle-color": c.you, "circle-stroke-color": c.surface, "circle-stroke-width": 3 } },
+    { id: "pin-room", type: "symbol", source: "pin-room",
+      layout: { "text-field": ["get", "label"], "text-font": ["montserrat-semibold"], "text-size": 14, "text-max-width": 100, "text-anchor": "bottom", "text-offset": [0, -0.5],
+        "text-padding": 14, "text-allow-overlap": true },
+      paint: { "text-opacity": 0 } },
   ];
 }
 
@@ -212,6 +225,9 @@ const notePaint = (c) => ({ "text-color": c.ink, "text-halo-color": c.surface, "
 const hatch = "reach-hatch";
 const pinGutter = 16;
 const closedHatch = "reach-closed-hatch";
+const placeRoom = "place-room";
+const placeRoomSize = 22;
+const tallCover = 0.4;
 const overlapHatch = "areas-overlap-hatch";
 const deepestZoom = 19;
 const overviewMinZoom = 3;
@@ -282,6 +298,7 @@ function withOverlays(base, data, overview) {
   base.sources.areas = { type: "geojson", data: data.areas };
   base.sources.markers = { type: "geojson", data: data.markers };
   base.sources.you = { type: "geojson", data: data.you };
+  base.sources["pin-room"] = { type: "geojson", data: data.pinRoom };
   base.layers.push(...overlayLayers(c));
   return base;
 }
@@ -323,7 +340,7 @@ export async function create(element, optionsJson, receiver) {
   const tiles = await tilesFor(options.source);
   const backdrop = options.backdrop ?? null;
   const backdropLimit = backdrop && [[backdrop.bounds.west, backdrop.bounds.south], [backdrop.bounds.east, backdrop.bounds.north]];
-  const data = { lines: empty, areas: empty, markers: empty, you: empty, reach: null };
+  const data = { lines: empty, areas: empty, markers: empty, you: empty, pinRoom: empty, reach: null };
   let you = null;
   let following = !!options.follow;
   let dragged = false;
@@ -365,6 +382,10 @@ export async function create(element, optionsJson, receiver) {
   };
   map.on("style.load", addHatch);
   map.on("styleimagemissing", (e) => [hatch, closedHatch, overlapHatch].includes(e.id) && addHatch());
+  const addPlaceRoom = () => map.hasImage(placeRoom)
+    || map.addImage(placeRoom, { width: placeRoomSize, height: placeRoomSize, data: new Uint8Array(placeRoomSize * placeRoomSize * 4) });
+  map.on("style.load", addPlaceRoom);
+  map.on("styleimagemissing", (e) => e.id === placeRoom && addPlaceRoom());
 
   let covered = [];
   const insideCovered = ({ lng, lat }) => covered.some((box) => lat >= box.south && lat <= box.north && lng >= box.west && lng <= box.east);
@@ -429,9 +450,41 @@ export async function create(element, optionsJson, receiver) {
     });
 
   let framed = null;
+  const coveredSides = () => {
+    const overlay = element.parentElement.querySelector(".map-view__overlay");
+    if (!overlay) return { left: 0, right: 0 };
+    const canvas = element.getBoundingClientRect();
+    const room = overlay.getBoundingClientRect();
+    const covered = { left: Math.max(0, room.left - canvas.left), right: Math.max(0, canvas.right - room.right) };
+    for (const cover of overlay.querySelectorAll("[data-map-cover]")) {
+      const box = cover.getBoundingClientRect();
+      if (box.height < canvas.height * tallCover) continue;
+      if (box.left + box.width / 2 < canvas.left + canvas.width / 2) covered.left = Math.max(covered.left, box.right - canvas.left);
+      else covered.right = Math.max(covered.right, canvas.right - box.left);
+    }
+    return covered;
+  };
+  let roomBefore = null;
+  const followRoom = () => {
+    const overlay = element.parentElement.querySelector(".map-view__overlay");
+    if (!overlay) return;
+    const canvas = element.getBoundingClientRect();
+    const room = overlay.getBoundingClientRect();
+    const now = { left: room.left - canvas.left, right: canvas.right - room.right };
+    if (roomBefore && map.loaded()) {
+      const shift = (now.left - roomBefore.left - (now.right - roomBefore.right)) / 2;
+      if (Math.abs(shift) >= 1) map.panBy([-shift, 0], { duration: 0 });
+    }
+    roomBefore = now;
+  };
   const fit = (b, animate = false) => {
     freeZoom();
-    map.fitBounds([[b.west, b.south], [b.east, b.north]], { padding: framePadding(b), duration: animate ? 600 : 0, maxZoom: b.maxZoom ?? 17 });
+    const padding = framePadding(b);
+    const covered = coveredSides();
+    map.fitBounds([[b.west, b.south], [b.east, b.north]], {
+      padding: { ...padding, left: padding.left + covered.left, right: padding.right + covered.right },
+      duration: animate ? 600 : 0, maxZoom: b.maxZoom ?? 17,
+    });
   };
   const showYou = (animate = false) => {
     freeZoom();
@@ -474,25 +527,47 @@ export async function create(element, optionsJson, receiver) {
 
   const figure = element.parentElement;
   const placePins = () => {
-    const width = figure.clientWidth;
+    const canvas = element.getBoundingClientRect();
     for (const pin of figure.querySelectorAll("[data-map-pin]")) {
       const [lat, lon] = pin.dataset.mapPin.split(",").map(Number);
       const at = map.project([lon, lat]);
+      const room = (pin.offsetParent ?? figure).getBoundingClientRect();
       const half = (pin.firstElementChild?.offsetWidth ?? 0) / 2;
       const start = parseFloat(getComputedStyle(pin).getPropertyValue("--map-pin-start")) || pinGutter;
-      const x = Math.max(start + half, Math.min(width - pinGutter - half, at.x));
-      pin.style.transform = `translate(${Math.round(x)}px, ${Math.round(at.y)}px)`;
+      const x = Math.max(start + half, Math.min(room.width - pinGutter - half, at.x - (room.left - canvas.left)));
+      pin.style.transform = `translate(${Math.round(x)}px, ${Math.round(at.y - (room.top - canvas.top))}px)`;
     }
   };
   map.on("move", placePins);
   map.on("resize", placePins);
+  const holdPinRoom = () => {
+    const features = [...figure.querySelectorAll("[data-map-pin]")].map((pin) => ({
+      type: "Feature",
+      properties: { label: pin.textContent.trim() || "·" },
+      geometry: { type: "Point", coordinates: pin.dataset.mapPin.split(",").map(Number).reverse() },
+    }));
+    data.pinRoom = { type: "FeatureCollection", features };
+    map.getSource("pin-room")?.setData(data.pinRoom);
+  };
   const pinsChanged = () => {
     placePins();
+    holdPinRoom();
     map.fire("pinschanged");
   };
   map.once("load", pinsChanged);
   const pins = new MutationObserver(pinsChanged);
   pins.observe(figure, { childList: true, subtree: true, attributes: true, attributeFilter: ["data-map-pin"] });
+  const overlayResized = new ResizeObserver(() => {
+    followRoom();
+    placePins();
+  });
+  figure.querySelectorAll(".map-view__overlay").forEach((overlay) => overlayResized.observe(overlay));
+  const roomMoved = new MutationObserver(() => requestAnimationFrame(() => {
+    followRoom();
+    placePins();
+  }));
+  const workspace = figure.closest(".map-workspace");
+  if (workspace) roomMoved.observe(workspace, { attributes: true, attributeFilter: ["class"] });
 
   let limit = null;
   const showReach = () => {
@@ -550,6 +625,8 @@ export async function create(element, optionsJson, receiver) {
       stopCompass?.();
       watcher.disconnect();
       pins.disconnect();
+      overlayResized.disconnect();
+      roomMoved.disconnect();
       map.remove();
     },
   };

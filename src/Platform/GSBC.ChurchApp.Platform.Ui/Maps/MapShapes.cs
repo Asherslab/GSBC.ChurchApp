@@ -49,6 +49,7 @@ public enum MapMarkerKind
     Check,
     Note,
     Report,
+    Match,
 }
 
 public sealed record MapMarker(MapPoint Point, MapMarkerKind Kind, string? Label = null, string? Id = null, bool Chosen = false, bool Corner = false, double ShownFrom = 0, double ShownUntil = 0);

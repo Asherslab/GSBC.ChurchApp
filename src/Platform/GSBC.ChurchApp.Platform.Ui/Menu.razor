@@ -147,7 +147,8 @@
             return;
         _focusPending = false;
         await PlaceAsync();
-        await FocusAsync(item);
+        if (_open)
+            await FocusAsync(item);
     }
 
     private static async Task FocusAsync(ElementReference element)

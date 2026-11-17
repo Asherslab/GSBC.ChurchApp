@@ -78,6 +78,17 @@ replaced the Coverage, Places, Areas and Reports tabs, the Map areas pages under
   previews and hover facts belong to its map, so choosing a day swaps in the planner's map inside the same dock and
   drawer; Layers and the coverage legend aren't shown there (streets done recently show grey on the planner's map).
   Folding the planner into the one map is open.
+- **Full map** (owner's pick, 2026-11-17, #123; `.impeccable/mocks/outreach-map-max/drag.html`): an icon-only button top
+  right of the map; once full it reads *Leave full map · Esc*. Full (`:root[data-full-map]`) hides the admin sidebar,
+  the title band, the tabs and the dock, so the map reaches every edge. The drawer becomes a panel floating 16px in
+  (its usual width, 440px for planning a day; on the map's Pop shadow), top to just above the attribution. Its head is
+  one row: the job as a `Menu` (icon, name, chevron; every job, then *Move the panel right* or *left* last, the
+  keyboard way to move it), a grip, and the fold chevron; folded, only the head shows. Dragging the head carries the
+  panel to either side: it lifts with an accent edge and a dashed accent drop place shows on the far side; the map
+  never reloads. Esc leaves full unless a menu, sheet or drawing is open (Esc is theirs then). Full lasts the browser
+  tab (session storage); the panel's side is kept on the computer (local storage). Tools, cards, legends and pins keep
+  clear of the panel, the card sits below *Leave full map*, and the button moves beside the panel when it's on the
+  right. Framing leaves room for the panel (see *Where it looks* in [maps.md](maps.md)).
 
 ## Days
 The same `Workbench` as Campaigns. *New outreach day* in the title band.
@@ -203,6 +214,14 @@ Addresses, No junk mail, Hostile, with counts), then the places as `ListRow`s (t
 as the map's markers; a click on one, or inside an area, opens its card: an area's Name, why and Note (*Draw it again*
 and *Delete this area…* in its ⋯), an address's why, Who asked, Note and *Show walkers a Don't letterbox marker*, or a
 mark's facts with *Clear* in its ⋯; the `SaveBar` in the card's foot. A new address takes a click on its letterbox too.
+
+**Adding an address** (owner's pick, 2026-11-17, #118; `.impeccable/mocks/outreach-skip-address/pins.html`): the new
+address's card has its own *Find the address* search above the form (hint: or click its letterbox on the map), so
+the drawer's search is only for places already skipped. Up to three matches within 15 km of the view are listed in the
+card as `ListRow`s with their number as the `Leading`, and shown as the same numbers on accent pins with a page ring
+(`MapMarkerKind.Match`), the map framed on them; the rest are named by suburb as off the map, and when none are near,
+the three nearest are shown and framed instead. Choosing one fills the address; until then the card's foot says
+"Choose the address first."
 
 ## Reports (Map tab)
 New reports are orange markers with "!" (the Marker Rule: new) under the Walkers' reports layer; the chosen one is

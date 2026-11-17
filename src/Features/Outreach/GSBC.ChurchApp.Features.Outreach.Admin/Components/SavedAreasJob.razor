@@ -13,7 +13,7 @@
         @{ OutreachDesk desk = context.Value; }
         @if (IsOpen)
         {
-            <SectionContent SectionName="@OutreachMap.DrawerSection">
+            <StableSection SectionName="@OutreachMap.DrawerSection">
                 <PaneHead Title="Saved areas" Lead="Parts of the suburbs by the names everyone uses. A day's routes can start from one." />
                 @if (desk.Areas.Count > 0)
                 {
@@ -29,14 +29,14 @@
                     <EmptyState Icon="@AppIcons.SavedAreas" Title="No saved areas yet"
                                 Body="Save the parts of the suburb the church covers, by the names everyone uses, and start an outreach day's routes from one." />
                 }
-            </SectionContent>
-            <SectionContent SectionName="@OutreachMap.FootSection">
+            </StableSection>
+            <StableSection SectionName="@OutreachMap.FootSection">
                 <Button Variant="ButtonVariant.Quiet" Icon="@AppIcons.DrawArea" Block="true" OnClick="NewAsync">Draw a new area</Button>
-            </SectionContent>
+            </StableSection>
         }
         @if (HasCard && _editing is { } editing)
         {
-            <SectionContent SectionName="@OutreachMap.CardSection">
+            <StableSection SectionName="@OutreachMap.CardSection">
                 <MapCard Label="@(IsNew ? "A new area" : editing.Name)">
                     <ChildContent>
                         <PaneHead Title="@(IsNew ? "A new area" : editing.Name)" Lead="Planners can start a day's routes from it. Changing it doesn't change days already planned."
@@ -53,7 +53,7 @@
                                  State="SaveBar.For(Changed, _saved)" Blocked="@WhyNotSave" />
                     </Foot>
                 </MapCard>
-            </SectionContent>
+            </StableSection>
         }
         <Sheet Open="_deleting" OpenChanged="open => _deleting = open" Title="@($"Delete {_editing?.Name}?")">
             <ChildContent>
@@ -69,10 +69,10 @@
     <Loading>
         @if (IsOpen)
         {
-            <SectionContent SectionName="@OutreachMap.DrawerSection">
+            <StableSection SectionName="@OutreachMap.DrawerSection">
                 <PaneHead Title="Saved areas" Lead="Parts of the suburbs by the names everyone uses." />
                 <Skeleton />
-            </SectionContent>
+            </StableSection>
         }
     </Loading>
 </LiveData>
