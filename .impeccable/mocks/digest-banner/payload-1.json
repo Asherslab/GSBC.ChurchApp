@@ -1,0 +1,67 @@
+{
+  "title": "Weekly digest email: the top, under your own banner photo",
+  "question": "With a top photo that already says What's Next (your old banner, drawn here as a stand-in), you'll be able to leave out our navy title. Then the dates can show on their own under the photo, or not at all. Each sketch is the email at 600px in Mail on a computer, and on a phone. Pick how the dates look when they're on their own. My recommendation: A. A small, spaced dateline with a navy rule reads like the date on a newsletter: clearly meant, and it doesn't compete with your banner's colours.",
+  "options": [
+    {
+      "id": "dateline",
+      "kind": "grounded",
+      "label": "A: A dateline above the items",
+      "thesis": "The dates in small spaced capitals on white, with a navy rule under them, like the date on a printed newsletter.",
+      "palette": ["#7189be", "#ffffff", "#2a3d5e"],
+      "materials": ["spaced capitals", "2px navy rule", "white"],
+      "viewport": "Photo, then MONDAY 14 – SUNDAY 27 DECEMBER over a rule, then the first item.",
+      "risk": "Quiet: someone skimming may not notice the dates.",
+      "html": ".impeccable/mocks/digest-banner/a-dateline.html",
+      "htmlFrame": "1440x900"
+    },
+    {
+      "id": "navy-strip",
+      "kind": "grounded",
+      "label": "B: A slim navy strip",
+      "thesis": "Our navy band, cut down to one line: the dates in beige, centred, right under the photo.",
+      "palette": ["#7189be", "#2a3d5e", "#d5c9b7"],
+      "materials": ["navy strip", "beige dates", "centred"],
+      "viewport": "Photo, a slim navy strip with the dates, then the first item.",
+      "risk": "Navy against a coloured photo can clash, depending on the photo.",
+      "html": ".impeccable/mocks/digest-banner/b-navy-strip.html",
+      "htmlFrame": "1440x900"
+    },
+    {
+      "id": "sand-strip",
+      "kind": "grounded",
+      "label": "C: A sand strip",
+      "thesis": "The dates in navy on the sand colour the email's closing box uses, centred under the photo.",
+      "palette": ["#7189be", "#f3efe8", "#2a3d5e"],
+      "materials": ["sand strip", "navy dates", "centred"],
+      "viewport": "Photo, a light sand strip with the dates, then the first item.",
+      "risk": "Soft: it can look like a bit of the photo's edge rather than part of the email.",
+      "html": ".impeccable/mocks/digest-banner/c-sand-strip.html",
+      "htmlFrame": "1440x900"
+    },
+    {
+      "id": "photo-only",
+      "kind": "grounded",
+      "label": "D: No dates (shown for comparison)",
+      "thesis": "Dates turned off: the photo, then straight to the first item. This is what leaving both out looks like.",
+      "palette": ["#7189be", "#ffffff"],
+      "materials": ["photo", "items"],
+      "viewport": "Photo, then the first item.",
+      "risk": "Nothing says which weeks the email covers except the subject line.",
+      "html": ".impeccable/mocks/digest-banner/d-photo-only.html",
+      "htmlFrame": "1440x900"
+    },
+    {
+      "id": "default",
+      "kind": "grounded",
+      "label": "E: Today's email (stays the default)",
+      "thesis": "The navy title band with the dates, as now. Every digest without a top photo always starts this way.",
+      "palette": ["#7189be", "#2a3d5e", "#d5c9b7"],
+      "materials": ["navy band", "title", "beige dates"],
+      "viewport": "Photo, the navy band with What's Next at Good Shepherd and the dates, then the first item.",
+      "risk": "With your banner, the title says the same thing twice.",
+      "html": ".impeccable/mocks/digest-banner/e-default.html",
+      "htmlFrame": "1440x900"
+    }
+  ],
+  "steer": true
+}
