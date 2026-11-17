@@ -1,0 +1,13 @@
+@using System.Globalization
+
+<div class="map-pin @Class" data-map-pin="@Where" data-map-cover>
+    <div class="map-pin__body">@ChildContent</div>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public required MapPoint Point { get; set; }
+    [Parameter, EditorRequired] public required RenderFragment ChildContent { get; set; }
+    [Parameter] public string? Class { get; set; }
+
+    private string Where => string.Create(CultureInfo.InvariantCulture, $"{Point.Lat},{Point.Lon}");
+}

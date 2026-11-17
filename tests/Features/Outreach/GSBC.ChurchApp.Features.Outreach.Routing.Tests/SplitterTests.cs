@@ -67,13 +67,13 @@ public sealed class SplitterTests
     [Fact]
     public void ALockedRouteKeepsItsStreetsThroughPaintingAndRegenerating()
     {
-        (_, AreaSelection selection, RouteDraft draft) = Drafted();
+        (_, _, RouteDraft draft) = Drafted();
         DraftSection locked = draft.Sections[0];
         RouteDraft held = draft.SetLocked([locked.Id], true).Draft;
 
         DraftEdit paint = held.Paint(locked.Id, [Stretch.Whole(draft.Sections[1].Pieces.First())]);
         DraftEdit steal = held.Paint(draft.Sections[1].Id, [Stretch.Whole(locked.Pieces.First())]);
-        RouteDraft regenerated = held.Regenerate(SplitTarget.Letterboxes, PerRoute * 2, selection.Connectors(false)).Draft;
+        RouteDraft regenerated = held.Regenerate(SplitTarget.Letterboxes, PerRoute * 2).Draft;
 
         Assert.False(paint.Changed);
         Assert.Contains("locked", paint.Note);
@@ -156,18 +156,122 @@ public sealed class SplitterTests
     [Fact]
     public void ADraftSavedAsStretchesRestoresToTheSameRoutesWithTheirNamesLocksAndStarts()
     {
-        (AreaSplitter splitter, AreaSelection selection, RouteDraft draft) = Drafted();
+        (AreaSplitter splitter, _, RouteDraft draft) = Drafted();
         WalkNetwork network = splitter.Planner.Network;
         draft = draft.Paint(draft.Sections[1].Id, [new Stretch(draft.Sections[0].Pieces.First(p => network.Graph.Homes(p) >= 6), 0, 0.5)]).Draft;
         draft = draft.Rename(draft.Sections[0].Id, "Kingfisher").Draft.SetLocked([draft.Sections[1].Id], true).Draft;
-        List<SavedSection> saved = draft.Sections.Select(s => new SavedSection(s.Id, [.. s.Stretches(network)], s.Name, s.Colour, s.Locked,
-            s.Start is { } node ? network.Graph.Projection.ToGeo(network.Node(node)) : null)).ToList();
-
-        RouteDraft restored = RouteDraft.Restore(splitter, selection.Fresh, Colours, selection.Connectors(false), saved);
+        RouteDraft restored = RouteDraft.Restore(splitter, Colours, draft.Areas, Saved(draft, network));
 
         Assert.Equal(draft.Sections.Select(s => (s.Id, s.Name, s.Colour, s.Locked)), restored.Sections.Select(s => (s.Id, s.Name, s.Colour, s.Locked)));
         Assert.Equal(draft.Summaries(Fixture.Church).Select(s => s.Letterboxes), restored.Summaries(Fixture.Church).Select(s => s.Letterboxes));
         Assert.True(restored.Merge([restored.Sections[2].Id, restored.Sections[3].Id]).Changed);
+    }
+
+    [Fact]
+    public void AHandDrawnRouteTakesItsStreetsFromASplitAreaAndKeepsThemThroughRegenerateAndRebalance()
+    {
+        (AreaSplitter splitter, _, RouteDraft draft) = Drafted();
+        DraftArea outline = Area(splitter, 2, oneRoute: true, Fixture.Church, 150);
+        HashSet<int> inside = outline.Streets.Where(s => splitter.Planner.Open.Open(s) > 0).ToHashSet();
+
+        RouteDraft drawn = draft.AddArea(outline, SplitTarget.Letterboxes, PerRoute).Draft;
+        DraftSection route = drawn.Sections.Single(s => s.Area == outline.Id);
+        RouteDraft reworked = drawn.Regenerate(SplitTarget.Letterboxes, PerRoute / 2).Draft.Rebalance(SplitTarget.Letterboxes).Draft;
+
+        Assert.True(drawn.MadeByHand(route));
+        Assert.Equal(inside.Order(), route.Pieces.Order());
+        Assert.All(drawn.Sections.Where(s => s.Id != route.Id), s => Assert.DoesNotContain(s.Pieces, inside.Contains));
+        Assert.Equal(route.Pieces.Order(), reworked.Section(route.Id)!.Pieces.Order());
+        Assert.Equal(draft.Streets.Where(s => splitter.Planner.Open.Open(s) > 0).Order(), reworked.Sections.SelectMany(s => s.Pieces).Order());
+    }
+
+    [Fact]
+    public void WhereTwoAreasOverlapEachStreetIsInOneRouteAndAnEarlierHandDrawnRouteKeepsItsOwn()
+    {
+        (AreaSplitter splitter, _, RouteDraft draft) = Drafted();
+        DraftArea first = Area(splitter, 2, oneRoute: true, Fixture.Church, 150);
+        DraftArea second = Area(splitter, 3, oneRoute: true, Offset(splitter, Fixture.Church, 120), 150);
+        DraftArea split = Area(splitter, 4, oneRoute: false, Offset(splitter, Fixture.Church, 400), 500);
+
+        RouteDraft drafted = draft.AddArea(first, SplitTarget.Letterboxes, PerRoute).Draft
+            .AddArea(second, SplitTarget.Letterboxes, PerRoute).Draft
+            .AddArea(split, SplitTarget.Letterboxes, PerRoute).Draft;
+
+        List<int> pieces = drafted.Sections.SelectMany(s => s.Pieces).ToList();
+        Assert.Equal(pieces.Count, pieces.Distinct().Count());
+        HashSet<int> shared = first.Streets.Intersect(second.Streets).Where(s => splitter.Planner.Open.Open(s) > 0).ToHashSet();
+        Assert.NotEmpty(shared);
+        Assert.Superset(shared, drafted.Sections.Single(s => s.Area == first.Id).Pieces.ToHashSet());
+        Assert.DoesNotContain(drafted.Sections.Single(s => s.Area == second.Id).Pieces, shared.Contains);
+    }
+
+    [Fact]
+    public void TakingAnAreaOffTheDayTakesItsRoutesAndUndoBringsThemBack()
+    {
+        (AreaSplitter splitter, _, RouteDraft draft) = Drafted();
+        DraftArea outline = Area(splitter, 2, oneRoute: true, Offset(splitter, Fixture.Church, 1400), 150);
+        RouteDraft drawn = draft.AddArea(outline, SplitTarget.Letterboxes, PerRoute).Draft;
+
+        RouteDraft removed = drawn.RemoveArea(outline.Id).Draft;
+
+        Assert.Null(removed.Area(outline.Id));
+        Assert.DoesNotContain(removed.Sections, s => s.Area == outline.Id);
+        Assert.Equal(Shape(draft), Shape(removed));
+        Assert.Equal(Shape(drawn), Shape(removed.Undo()));
+        Assert.Equal(drawn.Areas, removed.Undo().Areas);
+    }
+
+    [Fact]
+    public void RedrawingAHandDrawnRouteKeepsItsNumberAndNameSoItsPrintedCodeStillOpensIt()
+    {
+        (AreaSplitter splitter, _, RouteDraft draft) = Drafted();
+        DraftArea outline = Area(splitter, 2, oneRoute: true, Fixture.Church, 150);
+        RouteDraft drawn = draft.AddArea(outline, SplitTarget.Letterboxes, PerRoute).Draft;
+        DraftSection route = drawn.Sections.Single(s => s.Area == outline.Id);
+        drawn = drawn.Rename(route.Id, "Church block").Draft;
+
+        RouteDraft redrawn = drawn.ReplaceArea(Area(splitter, 2, oneRoute: true, Fixture.Church, 220), SplitTarget.Letterboxes, PerRoute).Draft;
+        DraftSection again = redrawn.Sections.Single(s => s.Area == outline.Id);
+
+        Assert.Equal((route.Id, route.Colour, "Church block"), (again.Id, again.Colour, again.Name));
+        Assert.True(again.Pieces.Count > route.Pieces.Count);
+    }
+
+    [Fact]
+    public void SwitchingAnAreaToOneRouteAndBackOnlyChangesThatArea()
+    {
+        (AreaSplitter splitter, _, RouteDraft draft) = Drafted();
+        DraftArea near = Area(splitter, 2, oneRoute: false, Offset(splitter, Fixture.Church, 1500), 300);
+        RouteDraft both = draft.AddArea(near, SplitTarget.Letterboxes, PerRoute).Draft;
+
+        RouteDraft one = both.ReplaceArea(near with { OneRoute = true }, SplitTarget.Letterboxes, PerRoute).Draft;
+
+        Assert.Single(one.Sections, s => s.Area == near.Id);
+        Assert.Equal(both.Sections.Where(s => s.Area == near.Id).SelectMany(s => s.Pieces).Order(), one.Sections.Single(s => s.Area == near.Id).Pieces.Order());
+        Assert.Equal(Shape(both).Where(s => s.Area == 1), Shape(one).Where(s => s.Area == 1));
+    }
+
+    private static List<(int Id, int Area, string Pieces)> Shape(RouteDraft draft) =>
+        draft.Sections.Select(s => (s.Id, s.Area, string.Join(",", s.Pieces.Order()))).ToList();
+
+    private static List<SavedSection> Saved(RouteDraft draft, WalkNetwork network) =>
+        draft.Sections.Select(s => new SavedSection(s.Id, [.. s.Stretches(network)], s.Name, s.Colour, s.Locked,
+            s.Start is { } node ? network.Graph.Projection.ToGeo(network.Node(node)) : null, s.Area)).ToList();
+
+    private static GeoPoint Offset(AreaSplitter splitter, GeoPoint from, double east)
+    {
+        LocalProjection projection = splitter.Planner.Network.Graph.Projection;
+        return projection.ToGeo(projection.ToFlat(from) + new Flat(east, 0));
+    }
+
+    private static DraftArea Area(AreaSplitter splitter, int id, bool oneRoute, GeoPoint around, double half)
+    {
+        LocalProjection projection = splitter.Planner.Network.Graph.Projection;
+        Flat centre = projection.ToFlat(around);
+        GeoPoint[] polygon = new[] { new Flat(-half, -half), new Flat(half, -half), new Flat(half, half), new Flat(-half, half) }
+            .Select(f => projection.ToGeo(centre + f)).ToArray();
+        AreaSelection selection = splitter.Select(polygon);
+        return new DraftArea(id, oneRoute, selection.Fresh, [.. selection.Connectors(false)], polygon);
     }
 
     private static GeoPoint[] Across(WalkNetwork network, int piece, double metres)
@@ -186,7 +290,8 @@ public sealed class SplitterTests
         GeoPoint[] polygon = new[] { new Flat(-half, -half), new Flat(half, -half), new Flat(half, half), new Flat(-half, half) }
             .Select(f => planner.Network.Graph.Projection.ToGeo(centre + f)).ToArray();
         AreaSelection selection = splitter.Select(polygon);
-        RouteDraft draft = RouteDraft.Empty(splitter, selection.Fresh, Colours).Regenerate(SplitTarget.Letterboxes, PerRoute, selection.Connectors(false)).Draft;
+        DraftArea area = new(1, false, selection.Fresh, [.. selection.Connectors(false)], polygon);
+        RouteDraft draft = RouteDraft.Empty(splitter, Colours).AddArea(area, SplitTarget.Letterboxes, PerRoute).Draft;
         return (splitter, selection, draft);
     }
 }

@@ -139,8 +139,9 @@ function overlayLayers(c) {
     { id: "you-heading", type: "symbol", source: "you", filter: ["has", "cone"],
       layout: { "icon-image": ["get", "cone"], "icon-rotate": ["get", "heading"], "icon-rotation-alignment": "map", "icon-allow-overlap": true, "icon-ignore-placement": true },
       paint: { "icon-opacity": ["get", "sureness"] } },
-    { id: "areas-fill", type: "fill", source: "areas", paint: { "fill-color": ["coalesce", ["get", "colour"], c.walk], "fill-opacity": ["case", ["get", "outline"], 0, 0.12] } },
-    { id: "areas-edge", type: "line", source: "areas", filter: ["!", ["get", "dashed"]], paint: { "line-color": ["coalesce", ["get", "colour"], c.walk], "line-width": 1.5 } },
+    { id: "areas-fill", type: "fill", source: "areas", filter: ["!", ["get", "hatched"]], paint: { "fill-color": ["coalesce", ["get", "colour"], c.walk], "fill-opacity": ["case", ["get", "outline"], 0, 0.12] } },
+    { id: "areas-hatch", type: "fill", source: "areas", filter: ["get", "hatched"], paint: { "fill-pattern": closedHatch } },
+    { id: "areas-edge", type: "line", source: "areas", filter: ["all", ["!", ["get", "dashed"]], ["!", ["get", "hatched"]]], paint: { "line-color": ["coalesce", ["get", "colour"], c.walk], "line-width": 1.5 } },
     { id: "areas-edge-dashed", type: "line", source: "areas", filter: ["get", "dashed"], paint: { "line-color": ["coalesce", ["get", "colour"], c.walk], "line-width": 2, "line-dasharray": [3, 2] } },
     { id: "chosen-edge", type: "line", source: "lines", filter: styleIs("chosen"), layout: { "line-cap": "round", "line-join": "round" },
       paint: { "line-color": c.ink, "line-width": byZoom([[12, 8], [15, 15], [18, 36]]) } },
@@ -301,7 +302,7 @@ const lineSet = (kindsJson, bytes) => {
   }
   return lines;
 };
-const area = (a) => ({ type: "Feature", properties: { ...(a.colour ? { colour: colourOf(a.colour) } : {}), dashed: !!a.dashed, outline: !!a.outline, id: a.id ?? "" }, geometry: { type: "Polygon", coordinates: [a.points, ...(a.holes ?? [])] } });
+const area = (a) => ({ type: "Feature", properties: { ...(a.colour ? { colour: colourOf(a.colour) } : {}), dashed: !!a.dashed, outline: !!a.outline, hatched: !!a.hatched, id: a.id ?? "" }, geometry: { type: "Polygon", coordinates: [a.points, ...(a.holes ?? [])] } });
 const marker = (m) => ({ type: "Feature", properties: { kind: m.kind, ...(m.label ? { label: m.label } : {}), id: m.id ?? "", chosen: !!m.chosen, corner: !!m.corner, from: m.from ?? 0, until: m.until ?? 99 }, geometry: { type: "Point", coordinates: m.point } });
 
 function framePadding(b) {
@@ -466,6 +467,20 @@ export async function create(element, optionsJson, receiver) {
 
   const ready = new Promise((resolve) => map.once("load", resolve));
 
+  const figure = element.parentElement;
+  const placePins = () => {
+    for (const pin of figure.querySelectorAll("[data-map-pin]")) {
+      const [lat, lon] = pin.dataset.mapPin.split(",").map(Number);
+      const at = map.project([lon, lat]);
+      pin.style.transform = `translate(${Math.round(at.x)}px, ${Math.round(at.y)}px)`;
+    }
+  };
+  map.on("move", placePins);
+  map.on("resize", placePins);
+  map.once("load", placePins);
+  const pins = new MutationObserver(placePins);
+  pins.observe(figure, { childList: true, subtree: true, attributes: true, attributeFilter: ["data-map-pin"] });
+
   let limit = null;
   const showReach = () => {
     ["beyond", "closed", "others", "edge", "notes"].forEach((name) => map.getSource("reach-" + name)?.setData(data.reach?.[name] ?? empty));
@@ -521,6 +536,7 @@ export async function create(element, optionsJson, receiver) {
       clearTimeout(courseEnds);
       stopCompass?.();
       watcher.disconnect();
+      pins.disconnect();
       map.remove();
     },
   };

@@ -76,6 +76,7 @@ public static class AppIcons
     public const string LassoStreets = "lasso";
     public const string LeaveOut = "eraser";
     public const string DrawArea = "pentagon";
+    public const string DrawRoute = "pencil";
     public const string RouteStart = "flag-triangle-right";
     public const string MeetingPoint = "map-pin";
     public const string PrintMaps = "printer";

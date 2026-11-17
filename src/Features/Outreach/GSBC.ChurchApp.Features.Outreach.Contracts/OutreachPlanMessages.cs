@@ -20,6 +20,16 @@ public sealed class PlannedRoute
     [ProtoMember(5)] public GeoPoint? Start { get; set; }
     [ProtoMember(6)] public List<Stretch> Stretches { get; set; } = [];
     [ProtoMember(7)] public string RouteId { get; set; } = "";
+    [ProtoMember(8)] public int Area { get; set; }
+}
+
+[ProtoContract]
+public sealed class PlanArea
+{
+    [ProtoMember(1)] public int Id { get; set; }
+    [ProtoMember(2)] public List<GeoPoint> Outline { get; set; } = [];
+    [ProtoMember(3)] public string SavedAreaId { get; set; } = "";
+    [ProtoMember(4)] public bool OneRoute { get; set; }
 }
 
 [ProtoContract]
@@ -33,6 +43,19 @@ public sealed class DayDraft
     [ProtoMember(6)] public List<PlannedRoute> Routes { get; set; } = [];
     [ProtoMember(7)] public string Region { get; set; } = "";
     [ProtoMember(8)] public DateTime ChangedAt { get; set; }
+    [ProtoMember(9)] public List<PlanArea> Areas { get; set; } = [];
+
+    public DayDraft Upgraded()
+    {
+        if (Areas.Count > 0 || Area.Count == 0)
+            return this;
+        Areas = [new PlanArea { Id = 1, Outline = Area, SavedAreaId = AreaId }];
+        Area = [];
+        AreaId = "";
+        foreach (PlannedRoute route in Routes.Where(route => route.Area == 0))
+            route.Area = 1;
+        return this;
+    }
 }
 
 [ProtoContract]
