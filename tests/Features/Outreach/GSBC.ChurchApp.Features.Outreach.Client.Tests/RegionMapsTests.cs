@@ -1,4 +1,3 @@
-using GSBC.ChurchApp.Features.Outreach.Client.Phone;
 using GSBC.ChurchApp.Features.Outreach.Maps.Contracts;
 using GSBC.ChurchApp.Platform.Ui.Maps;
 

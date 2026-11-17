@@ -52,8 +52,8 @@ public sealed class WalkPlans(OutreachStore store, WhereYouAre where, RegionMaps
             : carrying;
         List<Campaign> campaigns = [.. carried.Select(now.CampaignOf).OfType<Campaign>()];
         Here here = request.Start is null ? await where.FindAsync(mayAsk: true) : new Here(HereState.Found, request.Start);
-        PlanView Empty(PlanState state, RegionOnPhone? region = null, MapSource? source = null) =>
-            new(state, request, now, here, campaigns, region, source, null, [], [], null, []);
+        PlanView Empty(PlanState state, RegionOnPhone? kept = null, MapSource? source = null) =>
+            new(state, request, now, here, campaigns, kept, source, null, [], [], null, []);
 
         if (here.Point is not { } start)
             return Empty(PlanState.NeedsLocation);

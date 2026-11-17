@@ -78,7 +78,7 @@ async function tilesFor(source) {
   return "pmtiles://" + key;
 }
 
-const coneRadius = 84;
+const coneRadius = { sure: 104, unsure: 86 };
 const coneSpread = { sure: 50, unsure: 110 };
 const sureWithin = 20;
 const unsureBeyond = 60;
@@ -96,20 +96,24 @@ function headingFrom(compass, course, now) {
 
 function coneImage(colour, spread) {
   const ratio = 2;
-  const size = coneRadius * 2 * ratio;
+  const doubt = (spread - coneSpread.sure) / (coneSpread.unsure - coneSpread.sure);
+  const radius = coneRadius.sure + doubt * (coneRadius.unsure - coneRadius.sure);
+  const size = Math.round(coneRadius.sure * 2 * ratio);
   const canvas = document.createElement("canvas");
   canvas.width = canvas.height = size;
   const g = canvas.getContext("2d");
   const centre = size / 2;
-  const fade = g.createRadialGradient(centre, centre, 0, centre, centre, centre);
+  g.fillStyle = colour;
+  const [r, gr, b] = g.fillStyle.match(/[0-9a-f]{2}/gi).map((hex) => parseInt(hex, 16));
+  const fade = g.createRadialGradient(centre, centre, 0, centre, centre, radius * ratio);
   fade.addColorStop(0, colour);
-  fade.addColorStop(1, "transparent");
+  fade.addColorStop(1, `rgba(${r}, ${gr}, ${b}, 0)`);
   const half = (spread / 2) * (Math.PI / 180);
   g.globalAlpha = 0.9;
   g.fillStyle = fade;
   g.beginPath();
   g.moveTo(centre, centre);
-  g.arc(centre, centre, centre, -Math.PI / 2 - half, -Math.PI / 2 + half);
+  g.arc(centre, centre, radius * ratio, -Math.PI / 2 - half, -Math.PI / 2 + half);
   g.closePath();
   g.fill();
   return { image: g.getImageData(0, 0, size, size), ratio };
@@ -399,12 +403,15 @@ export async function create(element, optionsJson, receiver) {
     if (facing && map.isStyleLoaded()) addCone(cone.cone);
     set("you", { type: "FeatureCollection", features: [{ type: "Feature", properties: { radius, ...cone }, geometry: { type: "Point", coordinates: you.point } }] });
   };
+  let courseEnds = null;
   const followCourse = () => {
     if (!you) return (courseFrom = null);
     if (!courseFrom) return (courseFrom = you.point);
-    if (metresBetween(courseFrom, you.point) < movingMetres) return;
+    if (metresBetween(courseFrom, you.point) < Math.max(movingMetres, you.accuracy ?? 0)) return;
     course = { heading: bearing(courseFrom, you.point), at: Date.now() };
     courseFrom = you.point;
+    clearTimeout(courseEnds);
+    courseEnds = setTimeout(() => !handle.gone && drawYou(), movingFor + 50);
   };
   let stopCompass = null;
   if (options.heading)
@@ -511,6 +518,7 @@ export async function create(element, optionsJson, receiver) {
     ready: () => ready,
     dispose: () => {
       handle.gone = true;
+      clearTimeout(courseEnds);
       stopCompass?.();
       watcher.disconnect();
       map.remove();

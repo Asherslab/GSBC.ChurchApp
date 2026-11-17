@@ -97,9 +97,11 @@ in order, so the 2 km overlaps meet without a seam). It follows light and dark b
   `Check` (small dots; the first two labelled from zoom 17).
 - **You** (`MapYou`): the orange dot with its accuracy ring. With `ShowsHeading` (the walk and Your walk), a soft orange
   fan from the dot shows which way you face (owner's pick, 2026-11-17, #115, `.impeccable/mocks/outreach-heading/`): the
-  direction you're moving once you've gone 6 m (for 10 s after), otherwise the phone's compass, 50° wide when it's
-  within 20°, widening to 110° and fading as it gets less sure, gone past 60°. It sits under the drawn lines, the dot on
-  top. The compass is read natively and needs no permission; iOS's calibration prompt is turned off.
+  direction you're moving once you've gone 6 m or further than the fix's accuracy (for 10 s after), otherwise the
+  phone's compass, 50° wide and 104px long when it's within 20°, widening to 110° and shortening to 86px as it gets
+  less sure, fading in orange to nothing, gone past 60°. It sits under the drawn lines, the dot on top. The compass is
+  read natively on iOS and needs no permission; iOS's calibration prompt is turned off. Android has no compass yet, so
+  it shows the fan only while you move.
 - **Where it looks:** `Frame` fits the map to a box (`StartPadding` keeps room on the left for a tool rail), and again whenever the box changes, unless someone has dragged the
   map. With `Follow`, a screen gives a `Frame` around you and what's next to you (the walk: you, the street you're on and
   the next one, at street level), so the map moves with you; with no `Frame`, it centres on you at zoom 17. The first drag
