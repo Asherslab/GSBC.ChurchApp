@@ -47,13 +47,6 @@ public static class OutreachPhoneWords
     public static string Carrying(IReadOnlyList<Campaign> carried) =>
         carried.Count == 0 ? OutreachCampaigns.GeneralName : string.Join(" and ", carried.Select(campaign => campaign.Name));
 
-    public static string HandedOut(IReadOnlyList<Campaign> carried) =>
-        carried.Any(campaign => campaign.HandedOut.Trim().Length > 0)
-            ? $"Carrying {string.Join(" and ", carried.Select(HandedOut))}"
-            : "What you're walking for";
-
-    private static string HandedOut(Campaign campaign) => campaign.HandedOut.Trim() is { Length: > 0 } what ? what : campaign.Name;
-
     public static string Reach(ReachReason reason) => reason.Kind switch
     {
         ReachReasonKind.AllDoneNearby => reason.Names.Count > 0

@@ -82,8 +82,6 @@ public sealed class WalkSession(
 
     public StreetGraph? Graph => _graph;
 
-    public bool CanTrack => location.IsAvailable;
-
     public async Task<WalkState?> LoadAsync()
     {
         if (_loaded)
@@ -117,7 +115,7 @@ public sealed class WalkSession(
         return _state;
     }
 
-    public async Task<LocationStart> StartAsync(WalkStart start)
+    public async Task StartAsync(WalkStart start)
     {
         await LoadAsync();
         if (_state is { Finished: false })
@@ -162,7 +160,6 @@ public sealed class WalkSession(
             _working.Release();
         }
         Changed?.Invoke();
-        return started;
     }
 
     public async Task<bool> DrainAsync(DateTimeOffset? until = null)
