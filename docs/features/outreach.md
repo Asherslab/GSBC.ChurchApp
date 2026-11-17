@@ -928,6 +928,23 @@ stops for the end of a walk; B and C stay on the page for the owner). Detail: [d
   phone, so it carries on after the app is closed, numbering included.
 - **The end** shows what you walked and the planned streets as a line of stops, each ticked where the app saw you walk;
   untick what it got wrong (taken back), tick what it missed (added), save. *Keep walking* goes back to the walk.
+- **After saving** (owner, 2026-11-17, #116: "should be just Save the walk, then straight to Outreach. Not My Outreach
+  or the No walk on page"): Save the walk goes back to the Outreach page you planned from, which says *Your walk is
+  saved* with its distance and letterboxes and a link to My outreach until you leave it (owner's pick A on the decision
+  page). Before, Save opened My outreach; its Back went through history to the walking page, by then *No walk on*, and
+  *Go to Outreach* added a fourth page. Now Save, the walking page's Back and *Go to Outreach* all return to the earlier
+  Outreach in the history (`Shell.ReturnToAsync`), or replace the walking page with Outreach when there is none (the app
+  was opened on the walk from the Live Activity), so Back from Outreach goes where you were before the walk. A Finish
+  from the Live Activity opens the end screen and saving it does the same. There is no way to discard a walk; a walk you
+  don't want is saved with everything unticked.
+- **Two stretches of one side** of a street on the end list (#116: "Whimbrel St, east side" twice): the route leaves
+  a street for a side street and comes back to the same side further along, so they are two stretches. They now say
+  which end ("…, east side, north end" and "…, south end"; "middle" for a third). House numbers aren't in the phone's
+  street file, so ends rather than numbers (*Claude's default*).
+- **Ticked stretches count** in the saved walk's letterboxes (#116): a stretch ticked at the end because the app missed
+  it was sent as covered but counted 0 letterboxes in My outreach.
+- **The four short walks in #116** (10 m, 10 m, 50 m, 0 m) were four separate walks, each started and saved on its own
+  (different walks, started 2:57am, 2:36pm, 5:04pm and 5:04pm, 8 seconds to 2 minutes each); one Finish saves one walk.
 - **Doorknocking:** at a door, *Knocked, no answer*, *Spoke with them*, *Spoke, and they'd like a follow-up* (first name,
   phone or email and a note kept only when *They agreed to be contacted* is on; otherwise just a conversation), or *They
   want nothing to do with it* (explained, then confirmed). Check-in at start and finish is the walk's first and last piece

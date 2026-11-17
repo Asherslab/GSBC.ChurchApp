@@ -232,7 +232,9 @@ The walker's side of Outreach (`Features.Outreach.App`), built on the decision p
 (`.impeccable/mocks/outreach-walking/`, 2026-11-15): a walk is read at a glance, so the street you're on leads in the
 masthead's navy at display size and the map supports it. Maps are `MapView` ([maps.md](maps.md)).
 
-- **Outreach** (`/outreach`): the masthead, then your walk if one is on (a navy `Card`), the outreach day if one is on
+- **Outreach** (`/outreach`): the masthead, then your walk if one is on (a navy `Card`), or, just after saving one, *Your
+  walk is saved* (a sand `Card` with a deep-aqua tick, the distance and letterboxes, *Thank you for walking* and *See it in
+  My outreach*; shown until you leave the page; owner's pick A, `.impeccable/mocks/outreach-walk-saved/`, #116), the outreach day if one is on
   (a section with *Pick a route*), then the ask: a sand box with *Got an hour? Walk from your door*, a line on how it
   works, a `Segmented` length (30 min, 1 hr, 2 hr, Distance, then 1 to 8 km) and the block *Plan my walk*. Then the next
   outreach days and the rows My outreach and Offline maps. No map here (owner, 2026-11-17, #110: *Around you* is gone).
@@ -277,7 +279,9 @@ masthead's navy at display size and the map supports it. Maps are `MapView` ([ma
   extension (TTF from the app's subset) and icons are generated from `IconPaths.cs` (`tools/ios/walk-activity-icons.py`).
 - **The end** (on the walking page once finished): a masthead (*Well walked*, or *Thanks for knocking*), the figures, and
   *Check what you covered*: the planned streets as a line of stops (a 3px rule with a dot per stop, deep aqua once
-  walked), each a `ToggleRow` saying walked, partly walked or not; the `SaveBar` with *Keep walking* and *Save the walk*.
+  walked), each a `ToggleRow` saying walked, partly walked or not; two stretches of one side of a street add which end
+  ("north side, south end"; a middle one "middle"); the `SaveBar` with *Keep walking* and *Save the walk*, which goes
+  back to Outreach (`Shell.ReturnToAsync`).
 - **Sheets:** *Tell staff about this place* (a stacked `Segmented` reason, a required note, an optional photo in a
   `FilePick` box, *Send for review*); *At this door* (four block buttons, then the follow-up with its consent
   `ToggleRow` and fields, or the hostile explanation and *Don't come back here*). Both ask before losing what was typed.
