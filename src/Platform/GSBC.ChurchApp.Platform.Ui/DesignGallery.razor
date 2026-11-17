@@ -80,6 +80,14 @@
                     </Map>
                 </MapWorkspace>
             </div>)
+        @Item("Something that belongs to a place on the map: MapPin", "Keeps a control (a chip with its Menu, a small card) on a point of the map as it pans and zooms, above the point. Outreach's planner puts each area's chip on the top of its outline: what it is, and its Menu to change or remove it.",
+            @<div class="gallery__frame gallery__frame--short">
+                <div class="gallery__map-stand-in" role="img" aria-label="Where the map goes">
+                    <MapPin Point="new MapPoint(-27.3433, 152.9646)">
+                        <Menu Label="Faheys Rd" Text="Faheys Rd · split into 6" Icon="pentagon" Chevron="true" Small="true" AlignStart="true" Class="map-chip" Items="AreaChoices" />
+                    </MapPin>
+                </div>
+            </div>)
         @Item("The heading of a record: PaneHead", "Title, one line under it, and the record's own actions in its More menu (Delete is always there, last and red).",
             @<PaneHead Title="Jordan Example" Lead="jordan@example.com · joined Sun 1 Nov" Actions="RecordActions" OnClose="() => { }" OnOpen="() => { }" />)
         @Item("Settings in groups: Section, Grouped", "A card on the admin panel, an inset group on the phone. A Foot says what the group does or holds its Save.",
@@ -102,6 +110,7 @@
         @Item("Something to read or open on the phone: Card", "One card, never cards inside cards.",
             @<div class="gallery__stack">
                 <Card Title="Your challenge this week">Read Job 33 and pray for one person by name each morning.</Card>
+                <Card Title="Your walk is saved" Icon="check"><span>1.4 km and 62 letterboxes. Thank you for walking.</span></Card>
                 <Card Tone="CardTone.Masthead" Title="Almighty God" Href="gallery"><span>Job 33:4 · the 2026 theme</span></Card>
                 <Card Tone="CardTone.Raised" Title="Family games night" Href="gallery">
                     <Media><span class="gallery__cover"><BrandMark Decorative="true" /></span></Media>
@@ -561,7 +570,7 @@
 
     private static readonly IReadOnlyList<TabOption<string>> Tabs = [new("about", "About"), new("news", "News", 2), new("people", "People"), new("settings", "Settings")];
     private static readonly IReadOnlyList<Crumb> Trail = [new("Library", "library", "folder"), new("Events", "events"), new("2026", "2026")];
-    private static readonly IReadOnlyList<GSBC.ChurchApp.Platform.Ui.Maps.MapWorkspaceJob> SampleJobs =
+    private static readonly IReadOnlyList<MapWorkspaceJob> SampleJobs =
     [
         new("coverage", "Coverage", AppIcons.Coverage), new("places", "Places", AppIcons.PlacesSkipped), new("reports", "Reports", AppIcons.WalkersReports, 3),
         new("plan", "Plan a day", AppIcons.PlanADay, StartsGroup: true),
@@ -691,6 +700,13 @@
         this.Item("Send a recovery link", () => Task.CompletedTask, "send"),
         this.Item("Open as a page", () => Task.CompletedTask, "maximize-2"),
         this.Item("Delete Jordan…", () => { _deleting = true; return Task.CompletedTask; }, "trash-2", danger: true, startsGroup: true),
+    ];
+
+    private IReadOnlyList<MenuItem> AreaChoices =>
+    [
+        this.Item("Split it into routes", () => { }, "pentagon", "6 routes now", @checked: true),
+        this.Item("Make it one route", () => { }, "pencil", "706 letterboxes"),
+        this.Item("Take it off the day", () => { }, "trash", "Its routes go too", danger: true, startsGroup: true),
     ];
 
     private IReadOnlyList<MenuItem> RowActions =>

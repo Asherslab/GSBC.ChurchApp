@@ -139,8 +139,9 @@ function overlayLayers(c) {
     { id: "you-heading", type: "symbol", source: "you", filter: ["has", "cone"],
       layout: { "icon-image": ["get", "cone"], "icon-rotate": ["get", "heading"], "icon-rotation-alignment": "map", "icon-allow-overlap": true, "icon-ignore-placement": true },
       paint: { "icon-opacity": ["get", "sureness"] } },
-    { id: "areas-fill", type: "fill", source: "areas", paint: { "fill-color": ["coalesce", ["get", "colour"], c.walk], "fill-opacity": ["case", ["get", "outline"], 0, 0.12] } },
-    { id: "areas-edge", type: "line", source: "areas", filter: ["!", ["get", "dashed"]], paint: { "line-color": ["coalesce", ["get", "colour"], c.walk], "line-width": 1.5 } },
+    { id: "areas-fill", type: "fill", source: "areas", filter: ["!", ["get", "hatched"]], paint: { "fill-color": ["coalesce", ["get", "colour"], c.walk], "fill-opacity": ["case", ["get", "outline"], 0, 0.12] } },
+    { id: "areas-hatch", type: "fill", source: "areas", filter: ["get", "hatched"], paint: { "fill-pattern": overlapHatch } },
+    { id: "areas-edge", type: "line", source: "areas", filter: ["all", ["!", ["get", "dashed"]], ["!", ["get", "hatched"]]], paint: { "line-color": ["coalesce", ["get", "colour"], c.walk], "line-width": ["case", ["get", "outline"], 2.5, 1.5] } },
     { id: "areas-edge-dashed", type: "line", source: "areas", filter: ["get", "dashed"], paint: { "line-color": ["coalesce", ["get", "colour"], c.walk], "line-width": 2, "line-dasharray": [3, 2] } },
     { id: "chosen-edge", type: "line", source: "lines", filter: styleIs("chosen"), layout: { "line-cap": "round", "line-join": "round" },
       paint: { "line-color": c.ink, "line-width": byZoom([[12, 8], [15, 15], [18, 36]]) } },
@@ -209,7 +210,9 @@ const noteLayout = {
 const notePaint = (c) => ({ "text-color": c.ink, "text-halo-color": c.surface, "text-halo-width": 1.5 });
 
 const hatch = "reach-hatch";
+const pinGutter = 16;
 const closedHatch = "reach-closed-hatch";
+const overlapHatch = "areas-overlap-hatch";
 const deepestZoom = 19;
 const overviewMinZoom = 3;
 const regionsMinZoom = 9;
@@ -301,7 +304,7 @@ const lineSet = (kindsJson, bytes) => {
   }
   return lines;
 };
-const area = (a) => ({ type: "Feature", properties: { ...(a.colour ? { colour: colourOf(a.colour) } : {}), dashed: !!a.dashed, outline: !!a.outline, id: a.id ?? "" }, geometry: { type: "Polygon", coordinates: [a.points, ...(a.holes ?? [])] } });
+const area = (a) => ({ type: "Feature", properties: { ...(a.colour ? { colour: colourOf(a.colour) } : {}), dashed: !!a.dashed, outline: !!a.outline, hatched: !!a.hatched, id: a.id ?? "" }, geometry: { type: "Polygon", coordinates: [a.points, ...(a.holes ?? [])] } });
 const marker = (m) => ({ type: "Feature", properties: { kind: m.kind, ...(m.label ? { label: m.label } : {}), id: m.id ?? "", chosen: !!m.chosen, corner: !!m.corner, from: m.from ?? 0, until: m.until ?? 99 }, geometry: { type: "Point", coordinates: m.point } });
 
 function framePadding(b) {
@@ -357,9 +360,11 @@ export async function create(element, optionsJson, receiver) {
     map.addImage(hatch, image, { pixelRatio: ratio });
     const closed = hatchImage(null, hatchColours.stripe, shownScheme === "dark" ? 0.22 : 0.4);
     map.addImage(closedHatch, closed.image, { pixelRatio: closed.ratio });
+    const overlap = hatchImage(null, token("--marker-ink"), 0.7);
+    map.addImage(overlapHatch, overlap.image, { pixelRatio: overlap.ratio });
   };
   map.on("style.load", addHatch);
-  map.on("styleimagemissing", (e) => (e.id === hatch || e.id === closedHatch) && addHatch());
+  map.on("styleimagemissing", (e) => [hatch, closedHatch, overlapHatch].includes(e.id) && addHatch());
 
   let covered = [];
   const insideCovered = ({ lng, lat }) => covered.some((box) => lat >= box.south && lat <= box.north && lng >= box.west && lng <= box.east);
@@ -460,11 +465,34 @@ export async function create(element, optionsJson, receiver) {
     shownScheme = scheme();
     if (map.hasImage(hatch)) map.removeImage(hatch);
     if (map.hasImage(closedHatch)) map.removeImage(closedHatch);
+    if (map.hasImage(overlapHatch)) map.removeImage(overlapHatch);
     map.setStyle(styleNow());
   });
   watcher.observe(document.documentElement, { attributes: true, attributeFilter: ["data-scheme", "data-theme"] });
 
   const ready = new Promise((resolve) => map.once("load", resolve));
+
+  const figure = element.parentElement;
+  const placePins = () => {
+    const width = figure.clientWidth;
+    for (const pin of figure.querySelectorAll("[data-map-pin]")) {
+      const [lat, lon] = pin.dataset.mapPin.split(",").map(Number);
+      const at = map.project([lon, lat]);
+      const half = (pin.firstElementChild?.offsetWidth ?? 0) / 2;
+      const start = parseFloat(getComputedStyle(pin).getPropertyValue("--map-pin-start")) || pinGutter;
+      const x = Math.max(start + half, Math.min(width - pinGutter - half, at.x));
+      pin.style.transform = `translate(${Math.round(x)}px, ${Math.round(at.y)}px)`;
+    }
+  };
+  map.on("move", placePins);
+  map.on("resize", placePins);
+  const pinsChanged = () => {
+    placePins();
+    map.fire("pinschanged");
+  };
+  map.once("load", pinsChanged);
+  const pins = new MutationObserver(pinsChanged);
+  pins.observe(figure, { childList: true, subtree: true, attributes: true, attributeFilter: ["data-map-pin"] });
 
   let limit = null;
   const showReach = () => {
@@ -521,6 +549,7 @@ export async function create(element, optionsJson, receiver) {
       clearTimeout(courseEnds);
       stopCompass?.();
       watcher.disconnect();
+      pins.disconnect();
       map.remove();
     },
   };

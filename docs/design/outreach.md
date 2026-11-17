@@ -100,10 +100,21 @@ and *Print the maps* sit in the title band's actions. *Plan a day* without a day
   review" after it when flagged). Every route keeps its label and no two labels overlap (`MapSketch`, [maps.md](maps.md)). Choosing a route fills its label in its colour, on top, and keeps the others to
   their number; their lines fade toward grey. Streets left out or done recently in ink-3; the
   area at 12%; the meeting point (the map's navy place marker, *Claude's adaptation*: orange means "you" on the phone)
-  and the chosen route's start. The nine route colours
+  and the chosen route's start.
+- **Areas** (2026-11-17, #124, the owner's pick on `.impeccable/mocks/route-areas/`): a split area is a dashed outline
+  with a faint fill (see below); a route drawn by hand is outlined in its route colour, no fill. Each area carries a chip on the
+  top of its outline (`MapPin` with a `Menu`, `map-chip`: white pill on the map shadow, icon, "Faheys Rd · split into
+  6" or "Route 7 · as drawn", chevron); its menu: Split it into routes / Make it one route (the current one ticked, with
+  how many routes or letterboxes), Redraw the outline, Save for next time…, and Take it off the day or Delete this route
+  (red, last). Where areas overlap the overlap is hatched in marker ink (warm brown, its own hatch, apart from the grey one for
+  closed or rested ground) with "Route 8 keeps these" in an ink ring, placed clear of the chips. Split areas are
+  dashed in primary (navy; aqua at night); a route drawn by hand is a 2.5px solid in its colour, the strongest outline.
+  An area not saved is named after its main streets ("Kingfisher St & Wren Ct · split into 6"). A key bottom
+  left names what's on the map (dashed: an area the app splits; solid: a route drawn as one; hatched: overlap), hidden
+  on a map under 640px. Chips and key hide while drawing. The nine route colours
   (`RouteColours`) each hold 4.5:1 with white text and 3:1 against the dark map and pane.
-- **The rail** (top left, a white panel on the Pop shadow): select, draw the area, scissors, brush, lasso, eraser, start
-  pin, meeting point, a rule, undo, redo; the tool in use is navy. Tools that need a chosen route are disabled until
+- **The rail** (top left, a white panel on the Pop shadow): select, draw a route (pencil), draw an area to split
+  (pentagon), scissors, brush, lasso, eraser, start pin, meeting point, a rule, undo, redo; the tool in use is navy. Tools that need a chosen route are disabled until
   there is one. Each tool's one-line instruction shows as a navy capsule top centre; drawing the area shows the `MapDrawBar` instead, beside the rail, with *Undo last point*, *Cancel* and *Finish*.
 - **Hover** (top right): the route's number, name, letterboxes, km, time, bundles, its claims on the day, and why it
   needs review in marker ink.
@@ -232,7 +243,9 @@ The walker's side of Outreach (`Features.Outreach.App`), built on the decision p
 (`.impeccable/mocks/outreach-walking/`, 2026-11-15): a walk is read at a glance, so the street you're on leads in the
 masthead's navy at display size and the map supports it. Maps are `MapView` ([maps.md](maps.md)).
 
-- **Outreach** (`/outreach`): the masthead, then your walk if one is on (a navy `Card`), the outreach day if one is on
+- **Outreach** (`/outreach`): the masthead, then your walk if one is on (a navy `Card`), or, just after saving one, *Your
+  walk is saved* (a sand `Card` with a deep-aqua tick, the distance and letterboxes, *Thank you for walking* and *See it in
+  My outreach*; shown until you leave the page; owner's pick A, `.impeccable/mocks/outreach-walk-saved/`, #116), the outreach day if one is on
   (a section with *Pick a route*), then the ask: a sand box with *Got an hour? Walk from your door*, a line on how it
   works, a `Segmented` length (30 min, 1 hr, 2 hr, Distance, then 1 to 8 km) and the block *Plan my walk*. Then the next
   outreach days and the rows My outreach and Offline maps. No map here (owner, 2026-11-17, #110: *Around you* is gone).
@@ -277,7 +290,9 @@ masthead's navy at display size and the map supports it. Maps are `MapView` ([ma
   extension (TTF from the app's subset) and icons are generated from `IconPaths.cs` (`tools/ios/walk-activity-icons.py`).
 - **The end** (on the walking page once finished): a masthead (*Well walked*, or *Thanks for knocking*), the figures, and
   *Check what you covered*: the planned streets as a line of stops (a 3px rule with a dot per stop, deep aqua once
-  walked), each a `ToggleRow` saying walked, partly walked or not; the `SaveBar` with *Keep walking* and *Save the walk*.
+  walked), each a `ToggleRow` saying walked, partly walked or not; two stretches of one side of a street add which end
+  ("north side, south end"; a middle one "middle"); the `SaveBar` with *Keep walking* and *Save the walk*, which goes
+  back to Outreach (`Shell.ReturnToAsync`).
 - **Sheets:** *Tell staff about this place* (a stacked `Segmented` reason, a required note, an optional photo in a
   `FilePick` box, *Send for review*); *At this door* (four block buttons, then the follow-up with its consent
   `ToggleRow` and fields, or the hostile explanation and *Don't come back here*). Both ask before losing what was typed.

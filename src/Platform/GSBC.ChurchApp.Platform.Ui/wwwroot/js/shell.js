@@ -12,6 +12,31 @@ window.gsbcShell = (() => {
     else window.Blazor.navigateTo(fallback);
   };
 
+  const entryIndex = () => history.state?._index ?? 0;
+  const visited = [];
+  const noteVisit = () => { visited[entryIndex()] = location.pathname; };
+  for (const method of ['pushState', 'replaceState']) {
+    const original = history[method].bind(history);
+    history[method] = (...args) => {
+      original(...args);
+      noteVisit();
+    };
+  }
+  addEventListener('popstate', noteVisit);
+  noteVisit();
+
+  const returnTo = (href) => {
+    const target = new URL(href, document.baseURI).pathname;
+    const here = entryIndex();
+    for (let earlier = here - 1; earlier >= 0; earlier--) {
+      if (visited[earlier] === target) {
+        history.go(earlier - here);
+        return;
+      }
+    }
+    window.Blazor.navigateTo(href, { replaceHistoryEntry: true });
+  };
+
   document.addEventListener('scroll', (event) => {
     const page = event.target;
     if (!(page instanceof Element) || !page.matches('.page-scroll, .phone-frame__screen')) return;
@@ -319,6 +344,8 @@ window.gsbcShell = (() => {
     },
 
     back,
+
+    returnTo,
 
     scrollToTop() {
       scroller()?.scrollTo({ top: 0, behavior: reducedMotion.matches ? 'auto' : 'smooth' });

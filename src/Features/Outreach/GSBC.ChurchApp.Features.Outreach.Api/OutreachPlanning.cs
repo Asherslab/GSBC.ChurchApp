@@ -331,7 +331,7 @@ internal sealed class OutreachPlanning(
             Day = OutreachViews.Day(day),
             Routes = (await db.Routes.AsNoTracking().Where(route => route.DayId == day.Id).OrderBy(route => route.Number).ToListAsync(cancellationToken))
                 .Select(route => OutreachPayloads.Decode<DayRoute>(route.Payload)).ToList(),
-            Draft = day.Draft is { Length: > 0 } draft ? OutreachPayloads.Decode<DayDraft>(draft) : null,
+            Draft = day.Draft is { Length: > 0 } draft ? OutreachPayloads.Decode<DayDraft>(draft).Upgraded() : null,
             PublishedAt = day.RoutesPublishedAt,
         };
     }

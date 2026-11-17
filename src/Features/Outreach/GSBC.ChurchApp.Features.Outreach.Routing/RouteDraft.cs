@@ -2,12 +2,14 @@ using System.Collections.Immutable;
 
 namespace GSBC.ChurchApp.Features.Outreach.Routing;
 
-public sealed record DraftSection(int Id, ImmutableHashSet<int> Pieces, string? Name, int Colour, bool Locked, int? Start)
+public sealed record DraftArea(int Id, bool OneRoute, IReadOnlyList<int> Streets, IReadOnlyList<int> Connectors, IReadOnlyList<GeoPoint> Outline, string SavedId = "");
+
+public sealed record DraftSection(int Id, ImmutableHashSet<int> Pieces, string? Name, int Colour, bool Locked, int? Start, int Area = 0)
 {
     public IEnumerable<Stretch> Stretches(WalkNetwork network) => Pieces.Select(p => network[p].Stretch).OrderBy(s => s.Street).ThenBy(s => s.From);
 }
 
-public sealed record SavedSection(int Id, IReadOnlyList<Stretch> Pieces, string? Name, int Colour, bool Locked, GeoPoint? Start);
+public sealed record SavedSection(int Id, IReadOnlyList<Stretch> Pieces, string? Name, int Colour, bool Locked, GeoPoint? Start, int Area = 0);
 
 public sealed record DraftEdit(RouteDraft Draft, bool Changed, string? Note = null);
 
@@ -21,7 +23,7 @@ public sealed class RouteDraft
     private const double MinStretchMetres = 1;
     private const string LockedNote = "is locked. Unlock it to change its streets.";
 
-    private sealed record Snapshot(ImmutableList<DraftSection> Sections, SplitGraph? Graph, int NextId);
+    private sealed record Snapshot(ImmutableList<DraftSection> Sections, SplitGraph? Graph, int NextId, ImmutableList<DraftArea> Areas, IReadOnlySet<int> Streets);
 
     private sealed class Working(DraftSection section)
     {
@@ -37,7 +39,9 @@ public sealed class RouteDraft
 
         public int? Start { get; set; } = section.Start;
 
-        public DraftSection Freeze() => new(Id, [.. Pieces], Name, Colour, Locked, Start);
+        public int Area { get; set; } = section.Area;
+
+        public DraftSection Freeze() => new(Id, [.. Pieces], Name, Colour, Locked, Start, Area);
     }
 
     private sealed record Segment(double From, double To, Working? Owner);
@@ -49,12 +53,13 @@ public sealed class RouteDraft
     private readonly ImmutableStack<Snapshot> _redo;
     private readonly int _nextId;
 
-    private RouteDraft(AreaSplitter splitter, int colours, IReadOnlySet<int> streets, Snapshot now, ImmutableStack<Snapshot> undo, ImmutableStack<Snapshot> redo)
+    private RouteDraft(AreaSplitter splitter, int colours, Snapshot now, ImmutableStack<Snapshot> undo, ImmutableStack<Snapshot> redo)
     {
         _splitter = splitter;
         _network = splitter.Planner.Network;
         _colours = colours;
-        Streets = streets;
+        Streets = now.Streets;
+        Areas = now.Areas;
         Sections = now.Sections;
         Graph = now.Graph;
         _nextId = now.NextId;
@@ -62,29 +67,37 @@ public sealed class RouteDraft
         _redo = redo;
     }
 
-    public static RouteDraft Empty(AreaSplitter splitter, IEnumerable<int> streets, int colours) =>
-        new(splitter, colours, streets.ToHashSet(), new Snapshot([], null, 1), [], []);
+    public static RouteDraft Empty(AreaSplitter splitter, int colours) =>
+        new(splitter, colours, new Snapshot([], null, 1, [], new HashSet<int>()), [], []);
 
-    public static RouteDraft Restore(AreaSplitter splitter, IEnumerable<int> streets, int colours, IEnumerable<int> connectors, IReadOnlyList<SavedSection> sections)
+    public static RouteDraft Restore(AreaSplitter splitter, int colours, IReadOnlyList<DraftArea> areas, IReadOnlyList<SavedSection> sections)
     {
-        HashSet<int> area = streets.ToHashSet();
         WalkNetwork network = splitter.Planner.Network;
         HashSet<int> taken = [];
         List<DraftSection> restored = [];
         foreach (SavedSection saved in sections)
         {
-            ImmutableHashSet<int> pieces = saved.Pieces.Where(p => area.Contains(p.Street) && p.From < p.To).Select(network.PieceOf).Where(taken.Add).ToImmutableHashSet();
+            ImmutableHashSet<int> pieces = saved.Pieces.Where(p => p.From < p.To).Select(network.PieceOf).Where(taken.Add).ToImmutableHashSet();
             if (pieces.IsEmpty)
                 continue;
             int? start = saved.Start is { } point ? splitter.Planner.NearestEnd(pieces, network.Graph.Projection.ToFlat(point)) : null;
-            restored.Add(new DraftSection(saved.Id, pieces, saved.Name, Math.Abs(saved.Colour) % Math.Max(1, colours), saved.Locked, start));
+            restored.Add(new DraftSection(saved.Id, pieces, saved.Name, Math.Abs(saved.Colour) % Math.Max(1, colours), saved.Locked, start, saved.Area));
         }
-        SplitGraph? graph = restored.Count == 0 ? null : splitter.Graph(area, connectors);
+        HashSet<int> streets = [.. areas.SelectMany(a => a.Streets), .. restored.SelectMany(s => s.Pieces).Select(p => network[p].Street)];
+        SplitGraph? graph = restored.Count == 0 ? null : GraphOf(splitter, areas, streets);
         int next = restored.Count == 0 ? 1 : restored.Max(s => s.Id) + 1;
-        return new RouteDraft(splitter, colours, area, new Snapshot([.. restored], graph, next), [], []);
+        return new RouteDraft(splitter, colours, new Snapshot([.. restored], graph, next, [.. areas], streets), [], []);
     }
 
     public ImmutableList<DraftSection> Sections { get; }
+
+    public ImmutableList<DraftArea> Areas { get; }
+
+    public int NextAreaId => Areas.Count == 0 ? 1 : Areas.Max(a => a.Id) + 1;
+
+    public DraftArea? Area(int id) => Areas.Find(a => a.Id == id);
+
+    public bool MadeByHand(DraftSection section) => Area(section.Area) is not { OneRoute: false };
 
     public SplitGraph? Graph { get; }
 
@@ -100,24 +113,72 @@ public sealed class RouteDraft
 
     public DraftSection? OwnerOf(int piece) => Sections.Find(s => s.Pieces.Contains(piece));
 
-    public RouteDraft Undo() => _undo.IsEmpty ? this : new RouteDraft(_splitter, _colours, Streets, _undo.Peek(), _undo.Pop(), _redo.Push(Now));
+    public RouteDraft Undo() => _undo.IsEmpty ? this : new RouteDraft(_splitter, _colours, _undo.Peek(), _undo.Pop(), _redo.Push(Now));
 
-    public RouteDraft Redo() => _redo.IsEmpty ? this : new RouteDraft(_splitter, _colours, Streets, _redo.Peek(), _undo.Push(Now), _redo.Pop());
+    public RouteDraft Redo() => _redo.IsEmpty ? this : new RouteDraft(_splitter, _colours, _redo.Peek(), _undo.Push(Now), _redo.Pop());
 
     public IEnumerable<SectionSummary> Summaries(GeoPoint meeting) =>
         Graph is null ? [] : Sections.Select(s => _splitter.Summarise(s, meeting, Graph));
 
-    public DraftEdit Regenerate(SplitTarget target, double perRoute, IEnumerable<int> connectors) => Edit(state =>
+    public DraftEdit Regenerate(SplitTarget target, double perRoute) => Edit(state =>
     {
-        List<Working> locked = state.Where(s => s.Locked).ToList();
-        HashSet<int> lockedStreets = locked.SelectMany(s => s.Pieces).Select(p => _network[p].Street).ToHashSet();
-        List<int> free = Streets.SelectMany(s => lockedStreets.Contains(s) ? Unlocked(state, s) : [s]).ToList();
-        (List<HashSet<int>> fresh, SplitGraph graph) = _splitter.Split(free, target, perRoute, connectors);
-        state.RemoveAll(s => !s.Locked);
-        foreach (HashSet<int> pieces in fresh)
-            state.Add(New(state, pieces));
-        return (true, null, graph);
+        List<DraftArea> split = Areas.Where(a => !a.OneRoute).ToList();
+        if (split.Count == 0)
+            return (false, "There's no area for the app to split. Draw one, or use a saved area.", Graph);
+        Dictionary<int, int> at = split.ToDictionary(a => a.Id, a => state.FindIndex(s => s.Area == a.Id && !Kept(s, Areas)) is var first and >= 0
+            ? state.Take(first).Count(s => Kept(s, Areas))
+            : state.Count);
+        state.RemoveAll(s => !Kept(s, Areas));
+        int added = 0;
+        foreach (DraftArea area in split.OrderBy(a => at[a.Id]))
+        {
+            int before = state.Count;
+            SplitInto(state, area, target, perRoute, Math.Min(at[area.Id] + added, state.Count));
+            added += state.Count - before;
+        }
+        return (true, null, GraphOf(_splitter, Areas, Streets));
     });
+
+    public DraftEdit AddArea(DraftArea area, SplitTarget target, double perRoute)
+    {
+        if (Area(area.Id) is not null)
+            return new DraftEdit(this, false);
+        ImmutableList<DraftArea> areas = Areas.Add(area);
+        return Edit(state => Fill(state, area, areas, target, perRoute, state.Count), areas);
+    }
+
+    public DraftEdit ReplaceArea(DraftArea area, SplitTarget target, double perRoute)
+    {
+        if (Area(area.Id) is not { } old)
+            return new DraftEdit(this, false);
+        ImmutableList<DraftArea> areas = Areas.Replace(old, area);
+        return Edit(state =>
+        {
+            List<Working> previous = state.Where(s => s.Area == area.Id).ToList();
+            int at = previous.Count > 0 ? state.IndexOf(previous[0]) : state.Count;
+            state.RemoveAll(previous.Contains);
+            (bool changed, string? note, SplitGraph graph) = Fill(state, area, areas, target, perRoute, at, area.OneRoute && previous is [var only] ? only.Freeze() : null);
+            return (changed || previous.Count > 0, note, graph);
+        }, areas);
+    }
+
+    public DraftEdit SavedAs(int id, string savedId) =>
+        Area(id) is { } area && area.SavedId != savedId ? Edit(_ => (true, null, Graph), Areas.Replace(area, area with { SavedId = savedId })) : new DraftEdit(this, false);
+
+    public DraftEdit RemoveArea(int id)
+    {
+        if (Area(id) is not { } area)
+            return new DraftEdit(this, false);
+        ImmutableList<DraftArea> areas = Areas.Remove(area);
+        return Edit(state =>
+        {
+            HashSet<int> freed = state.Where(s => s.Area == id).SelectMany(s => s.Pieces).Select(p => _network[p].Street).ToHashSet();
+            state.RemoveAll(s => s.Area == id);
+            bool shared = areas.Any(a => !a.OneRoute && a.Streets.Any(freed.Contains));
+            return (true, shared ? "Its streets in other areas are left out of the day. Regenerate gives them to routes again." : null,
+                GraphOf(_splitter, areas, StreetsOf(areas, state)));
+        }, areas);
+    }
 
     public int Moving(int? into, IReadOnlyList<Stretch> stretches)
     {
@@ -215,7 +276,7 @@ public sealed class RouteDraft
             int at = state.IndexOf(section);
             for (int i = 0; i < preview.Pieces.Count; i++)
             {
-                Working piece = New(state, preview.Pieces[i].Pieces, preview.Pieces[i].Colour);
+                Working piece = New(state, preview.Pieces[i].Pieces, preview.Pieces[i].Colour, section.Area);
                 piece.Name = $"Route {number}{(char)('b' + i)}";
                 state.Insert(at + 1 + i, piece);
             }
@@ -234,7 +295,7 @@ public sealed class RouteDraft
         section.Start = null;
         section.Name = null;
         DraftSection frozen = section.Freeze();
-        Working other = New(state, halves[1], NextColour(state.Select(s => s.Colour).ToList(), [section.Colour, .. Neighbours(frozen).Select(n => n.Colour)]));
+        Working other = New(state, halves[1], NextColour(state.Select(s => s.Colour).ToList(), [section.Colour, .. Neighbours(frozen).Select(n => n.Colour)]), section.Area);
         state.Insert(state.IndexOf(section) + 1, other);
         return (true, null, Graph);
     });
@@ -294,17 +355,20 @@ public sealed class RouteDraft
     {
         if (Graph is null)
             return (false, null, Graph);
-        List<Working> free = state.Where(s => !s.Locked).ToList();
-        List<HashSet<int>> sections = free.Select(s => new HashSet<int>(s.Pieces)).ToList();
-        _splitter.Rebalance(Graph, sections, target);
         bool changed = false;
-        for (int i = 0; i < free.Count; i++)
+        foreach (IGrouping<int, Working> area in state.Where(s => !Kept(s, Areas)).GroupBy(s => s.Area))
         {
-            changed |= !free[i].Pieces.SetEquals(sections[i]);
-            free[i].Pieces.Clear();
-            free[i].Pieces.UnionWith(sections[i]);
+            List<Working> free = area.ToList();
+            List<HashSet<int>> sections = free.Select(s => new HashSet<int>(s.Pieces)).ToList();
+            _splitter.Rebalance(Graph, sections, target);
+            for (int i = 0; i < free.Count; i++)
+            {
+                changed |= !free[i].Pieces.SetEquals(sections[i]);
+                free[i].Pieces.Clear();
+                free[i].Pieces.UnionWith(sections[i]);
+            }
         }
-        return (changed, changed ? null : "Routes are as even as they can get without breaking them up.", Graph);
+        return (changed, changed ? null : "The app's routes are as even as they can get without breaking them up.", Graph);
     });
 
     public IReadOnlyList<Stretch> Brush(IReadOnlyList<GeoPoint> stroke)
@@ -338,11 +402,11 @@ public sealed class RouteDraft
         return stretch with { From = from, To = to };
     }
 
-    private Snapshot Now => new(Sections, Graph, _nextId);
+    private Snapshot Now => new(Sections, Graph, _nextId, Areas, Streets);
 
     private List<Working> Thaw() => Sections.Select(s => new Working(s)).ToList();
 
-    private DraftEdit Edit(Func<List<Working>, (bool Changed, string? Note, SplitGraph? Graph)> change)
+    private DraftEdit Edit(Func<List<Working>, (bool Changed, string? Note, SplitGraph? Graph)> change, ImmutableList<DraftArea>? areas = null)
     {
         List<Working> state = Thaw();
         (bool changed, string? note, SplitGraph? graph) = change(state);
@@ -354,16 +418,55 @@ public sealed class RouteDraft
         ImmutableStack<Snapshot> history = _undo.Push(Now);
         if (history.Count() > MaxHistory)
             history = ImmutableStack.CreateRange(history.Take(MaxHistory).Reverse());
-        Snapshot next = new([.. state.Select(s => s.Freeze())], graph, NextId(state));
-        return new DraftEdit(new RouteDraft(_splitter, _colours, Streets, next, history, []), true);
+        IReadOnlySet<int> streets = areas is null ? Streets : StreetsOf(areas, state);
+        Snapshot next = new([.. state.Select(s => s.Freeze())], graph, NextId(state), areas ?? Areas, streets);
+        return new DraftEdit(new RouteDraft(_splitter, _colours, next, history, []), true, note);
     }
 
     private int NextId(List<Working> state) => Math.Max(_nextId, state.Count == 0 ? 0 : state.Max(s => s.Id) + 1);
 
-    private Working New(List<Working> state, IEnumerable<int> pieces, int? colour = null)
+    private Working New(List<Working> state, IEnumerable<int> pieces, int? colour = null, int area = 0)
     {
-        return new Working(new DraftSection(NextId(state), [.. pieces], null, colour ?? NextColour(state.Select(s => s.Colour).ToList()), false, null));
+        return new Working(new DraftSection(NextId(state), [.. pieces], null, colour ?? NextColour(state.Select(s => s.Colour).ToList()), false, null, area));
     }
+
+    private static bool Kept(Working section, IReadOnlyList<DraftArea> areas) => section.Locked || areas.FirstOrDefault(a => a.Id == section.Area) is not { OneRoute: false };
+
+    private (bool, string?, SplitGraph) Fill(List<Working> state, DraftArea area, ImmutableList<DraftArea> areas, SplitTarget target, double perRoute, int at, DraftSection? replacing = null)
+    {
+        if (area.OneRoute)
+            Claim(state, area, areas, at, replacing);
+        else
+            SplitInto(state, area, target, perRoute, at);
+        bool made = state.Any(s => s.Area == area.Id && s.Pieces.Count > 0);
+        string? note = made ? null
+            : area.OneRoute ? "Every letterbox inside that outline is already in another route, so it didn't make a route."
+            : "Every letterbox inside that area is already in a route, so the app had nothing to split.";
+        return (made, note, GraphOf(_splitter, areas, StreetsOf(areas, state)));
+    }
+
+    private void Claim(List<Working> state, DraftArea area, ImmutableList<DraftArea> areas, int at, DraftSection? replacing)
+    {
+        Working route = replacing is null ? New(state, [], area: area.Id) : new Working(replacing with { Pieces = [], Start = null, Area = area.Id });
+        state.Insert(at, route);
+        foreach (int street in area.Streets)
+            Write(state, street, Timeline(state, street).Select(s => s.Owner is null || !Kept(s.Owner, areas) ? s with { Owner = route } : s).ToList());
+    }
+
+    private void SplitInto(List<Working> state, DraftArea area, SplitTarget target, double perRoute, int? at = null)
+    {
+        List<int> free = area.Streets.SelectMany(street => Joined(Timeline(state, street)).Where(s => s.Owner is null).Select(s => _network.PieceOf(street, s.From, s.To))).ToList();
+        (List<HashSet<int>> fresh, _) = _splitter.Split(free, target, perRoute, area.Connectors);
+        int index = at ?? state.Count;
+        foreach (HashSet<int> pieces in fresh)
+            state.Insert(index++, New(state, pieces, area: area.Id));
+    }
+
+    private IReadOnlySet<int> StreetsOf(IReadOnlyList<DraftArea> areas, List<Working> state) =>
+        new HashSet<int>([.. areas.SelectMany(a => a.Streets), .. state.SelectMany(s => s.Pieces).Select(p => _network[p].Street)]);
+
+    private static SplitGraph GraphOf(AreaSplitter splitter, IReadOnlyList<DraftArea> areas, IReadOnlySet<int> streets) =>
+        splitter.Graph(streets, areas.SelectMany(a => a.Connectors).Distinct());
 
     private int Letterboxes(int piece) => _splitter.Planner.Open.Open(piece);
 
@@ -469,11 +572,6 @@ public sealed class RouteDraft
         foreach (Segment segment in kept.Where(s => s.Owner is not null))
             segment.Owner!.Pieces.Add(_network.PieceOf(street, segment.From, segment.To));
     }
-
-    private IEnumerable<int> Unlocked(List<Working> state, int street) =>
-        Joined(Timeline(state, street).Select(s => s.Owner is { Locked: true } ? s : s with { Owner = null }))
-            .Where(s => s.Owner is null)
-            .Select(s => _network.PieceOf(street, s.From, s.To));
 
     private int NextColour(List<int> used, IReadOnlyCollection<int>? avoid = null)
     {

@@ -16,6 +16,7 @@ else
 @code {
     [Parameter] public CardTone Tone { get; set; } = CardTone.Callout;
     [Parameter] public string? Title { get; set; }
+    [Parameter] public string? Icon { get; set; }
     [Parameter] public string? Href { get; set; }
     [Parameter] public EventCallback OnClick { get; set; }
     [Parameter] public RenderFragment? Media { get; set; }
@@ -25,12 +26,16 @@ else
 
     private bool Interactive => Href is not null || OnClick.HasDelegate;
 
-    private string Classes => $"card card--{Tone.ToString().ToLowerInvariant()} {(Interactive ? "pressable" : "")} {Class}";
+    private string Classes => $"card card--{Tone.ToString().ToLowerInvariant()} {(Interactive ? "pressable" : "")} {(Icon is null || Media is not null ? "" : "card--with-icon")} {Class}";
 
     private RenderFragment Body => @<text>
         @if (Media is not null)
         {
             <span class="card__media">@Media</span>
+        }
+        @if (Icon is not null && Media is null)
+        {
+            <span class="card__icon"><Icon Name="@Icon" /></span>
         }
         @if (Tone == CardTone.Masthead)
         {

@@ -18,7 +18,7 @@ The system ships in `src/Platform/GSBC.ChurchApp.Platform.Ui`; the app links all
 | Screen frame, top bar, back | `Page` | `BackHref` makes a pushed page (back, edge swipe); `OnBack`; `Actions` |
 | Masthead | `Masthead` | Title, note, live-element slot; `Beside` for a control on the title's row |
 | Section and section head | `Section` | Title, lead, "see all" link; `Grouped` is a settings group (a card on the admin panel, an inset group on the phone), `Foot` |
-| Callout, picture card, navy card | `Card` | `CardTone.Callout`, `Raised` (only where a picture leads), `Masthead` |
+| Callout, picture card, navy card | `Card` | `CardTone.Callout`, `Raised` (only where a picture leads), `Masthead`; `Icon` (an `AppIcons` name) beside the words, deep aqua (a confirmation: *Your walk is saved*) |
 | Rows and boxed lists | `ListGroup`, `ListRow` | Tile tones, chevron or external-link icon; `Reading`, `TitleExtra`, `Below`; `Unread` sets the dot and weight; `Current` marks the open or chosen one with the selected fill (`aria-current`), on a link row or a clickable (`OnClick`) row |
 | Pull to refresh | `PullToRefresh` | Wraps the whole page body, masthead included. Touch only, so offer a button too |
 | Sheet | `Sheet` | Escape and the scrim close it; centred on wide screens; `Cover` adds the navy band (name it with `Label`); `Wide` (760px); `Widest` (1080px, for one item's fields beside its live look; its actions held in view); `ActionsInView` (the actions held at its foot while a long list scrolls); `LayerClass`. A native `<dialog>` via `showModal()` so no ancestor clips it; opening moves focus in without scrolling the page, to an `autofocus` child if there is one, and closing returns it |

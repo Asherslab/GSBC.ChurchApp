@@ -1,6 +1,7 @@
 @page "/outreach"
 @inject OutreachNearby Nearby
 @inject TimeProvider Clock
+@inject WalkSession Walk
 
 <Page Title="Outreach" Place="outreach">
     <Masthead Title="Outreach" Note="@OutreachPhoneWords.Note" />
@@ -11,6 +12,16 @@
             OutreachDay? on = OutreachDays.On(near.Now, utc);
             List<OutreachDay> coming = [.. OutreachDays.Coming(near.Now, utc).Take(3)];
             bool first = true;
+        }
+        @if (near.Walk is null && _saved is { } saved)
+        {
+            first = false;
+            <Section First="true">
+                <Card Title="Your walk is saved" Icon="check">
+                    <ChildContent><span>@Saved(saved)</span></ChildContent>
+                    <Footer><Button Variant="ButtonVariant.Link" Href="@OutreachLinks.Mine">See it in My outreach</Button></Footer>
+                </Card>
+            </Section>
         }
         @if (near.Walk is { } walking)
         {
@@ -69,6 +80,20 @@
         [.. WalkLength.Distances.Select(length => new SegmentOption<string>(length.Label, length.Label))];
 
     private WalkLength _length = WalkLength.Default;
+    private WalkHistoryEntry? _saved;
+
+    protected override void OnInitialized()
+    {
+        _saved = Walk.JustSaved;
+        Walk.ForgetJustSaved();
+    }
+
+    private static string Saved(WalkHistoryEntry walk)
+    {
+        string done = walk.Mode == WalkMode.Doorknock ? OutreachPhoneWords.Doors(walk.Doors) : OutreachPhoneWords.Letterboxes(walk.Letterboxes);
+        string distance = OutreachPhoneWords.Distance(walk.Metres);
+        return distance == OutreachPhoneWords.Distance(0) ? $"{done}. Thank you for walking." : $"{distance} and {done}. Thank you for walking.";
+    }
 
     private string LengthKey => _length.ByTime ? _length.Label : DistanceKey;
 

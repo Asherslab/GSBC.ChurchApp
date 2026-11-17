@@ -78,9 +78,9 @@ public sealed class WalkSession(
 
     public WalkProgress? Progress => _progress;
 
-    public StreetGraph? Graph => _graph;
+    public WalkHistoryEntry? JustSaved { get; private set; }
 
-    public bool CanTrack => location.IsAvailable;
+    public StreetGraph? Graph => _graph;
 
     public async Task<WalkState?> LoadAsync()
     {
@@ -115,7 +115,7 @@ public sealed class WalkSession(
         return _state;
     }
 
-    public async Task<LocationStart> StartAsync(WalkStart start)
+    public async Task StartAsync(WalkStart start)
     {
         await LoadAsync();
         if (_state is { Finished: false })
@@ -143,6 +143,7 @@ public sealed class WalkSession(
             WithPartner = start.WithPartner,
             LastSentAt = time.GetUtcNow().UtcDateTime,
         };
+        JustSaved = null;
         LocationStart started = await location.StartAsync(Purpose);
         state.Tracking = started == LocationStart.Running;
         await _working.WaitAsync();
@@ -159,7 +160,6 @@ public sealed class WalkSession(
             _working.Release();
         }
         Changed?.Invoke();
-        return started;
     }
 
     public async Task<bool> DrainAsync(DateTimeOffset? until = null)
@@ -344,7 +344,7 @@ public sealed class WalkSession(
                     takenBack.AddRange(step.Step.Sides.Select(side => side.ToStretch()));
             }
             await SendPieceAsync(state, ended: true, force: true, extra, takenBack);
-            await RememberAsync(state, progress, walkedSteps);
+            JustSaved = await RememberAsync(state, progress, walkedSteps);
             await location.ClearAsync(state.FixLatest);
             _state = null;
             _follower = null;
@@ -365,7 +365,7 @@ public sealed class WalkSession(
     }
 
     public int LetterboxesOf(IReadOnlySet<int> walkedSteps) =>
-        _progress?.Steps.Where(step => walkedSteps.Contains(step.Index)).Sum(step => Math.Max(step.Done, step.Share >= StepDoneShare ? step.Step.Letterboxes : 0)) ?? 0;
+        _progress?.Steps.Where(step => walkedSteps.Contains(step.Index)).Sum(step => step.Step.Letterboxes) ?? 0;
 
     private async Task<DateTimeOffset> LastActiveAsync(WalkState state)
     {
@@ -554,10 +554,12 @@ public sealed class WalkSession(
         return true;
     }
 
-    private async Task RememberAsync(WalkState state, WalkProgress? progress, IReadOnlySet<int> walkedSteps)
+    public void ForgetJustSaved() => JustSaved = null;
+
+    private async Task<WalkHistoryEntry> RememberAsync(WalkState state, WalkProgress? progress, IReadOnlySet<int> walkedSteps)
     {
         List<WalkHistoryEntry> history = [.. await HistoryAsync()];
-        history.Insert(0, new WalkHistoryEntry
+        WalkHistoryEntry saved = new()
         {
             WalkId = state.WalkId,
             StartedAt = state.StartedAt,
@@ -569,8 +571,10 @@ public sealed class WalkSession(
             Mode = state.Mode,
             Campaigns = [.. state.Campaigns],
             Name = state.Name,
-        });
+        };
+        history.Insert(0, saved);
         await preferences.SetAsync(HistoryKey, JsonSerializer.Serialize(history.Take(HistoryKept).ToList(), WalkJson.Default.ListWalkHistoryEntry));
+        return saved;
     }
 
     private async Task<WalkState?> ReadStateAsync()
