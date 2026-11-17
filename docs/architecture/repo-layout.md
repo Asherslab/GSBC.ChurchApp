@@ -573,7 +573,7 @@ flowchart LR
 
 Not .NET projects: `src/Hosts/App/shell` (the Capacitor iOS project) and `src/Hosts/App/native/data-layer`
 (the Capacitor plugin: `DataLayerCore` holds the gRPC-Web transport, GRDB store, sync engine and outbox,
-the media file cache, with its own tests (`xcodebuild test -scheme GsbcDataLayer`); `DataLayerPlugin` is the thin Capacitor
+the media file cache, with its own tests (`xcodebuild test -scheme GsbcDataLayer-Package`); `DataLayerPlugin` is the thin Capacitor
 bridge over it; Kotlin is stubbed until Android).
 
 ## Naming

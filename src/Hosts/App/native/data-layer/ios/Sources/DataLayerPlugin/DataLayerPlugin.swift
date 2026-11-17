@@ -8,6 +8,7 @@ public class DataLayerPlugin: CAPPlugin, CAPBridgedPlugin {
     public let jsName = "DataLayer"
     public let pluginMethods: [CAPPluginMethod] = DataLayerPlugin.dataMethods + DataLayerPlugin.audioMethods + DataLayerPlugin.keyboardMethods
         + DataLayerPlugin.locationMethods + DataLayerPlugin.fileMethods + DataLayerPlugin.compassMethods
+        + DataLayerPlugin.walkActivityMethods
 
     private static let dataMethods: [CAPPluginMethod] = [
         "unary",
@@ -57,6 +58,7 @@ public class DataLayerPlugin: CAPPlugin, CAPBridgedPlugin {
     override public func load() {
         listenToAudio()
         listenToLocation()
+        listenToWalkTaps()
         listenToKeptFiles()
         runtime.feedsChanged = { [weak self] feeds in
             self?.notifyListeners("feedsChanged", data: ["feeds": Array(feeds).sorted()])

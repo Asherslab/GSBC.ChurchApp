@@ -255,6 +255,26 @@ masthead's navy at display size and the map supports it. Maps are `MapView` ([ma
   (for 12 seconds), a warning `Notice` if location is off, two 3.5rem quiet buttons side by side (No junk mail or At a
   door; Spoke to someone), and a bar: Pause (Carry on when paused) at the left, the walk's ⋯ `Menu` in the middle (Not a
   home or wrong on the map, Skipped this bit, Follow me on the map or Stop following me), Finish at the right.
+- **The Live Activity** (iOS, the `WalkActivity` widget extension, SwiftUI; owner's pick *Turn sign*,
+  `.impeccable/mocks/outreach-live-activity/`, 2026-11-17): a walk on the Lock Screen and in the Dynamic Island, built
+  from the walking screen's own words (`WalkActivityWords`). **Lock Screen** (the masthead's navy, at most 160pt): a top
+  line in white at 76% (*Walking · 38 min* left; letterboxes or doors done of those planned and the distance so far right, tabular); a 58pt white
+  sign at 24% radius holding the next turn's arrow in navy (the walking screen's `arrow-left`, `arrow-right`, `arrow-up`
+  or `rotate-ccw`; footprints while finding you, a tick at the route's end) over the houses left before it; beside it the
+  street in Montserrat Bold 22, *Houses on your left · 13 to go* in SemiBold 14 and the next turn in beige Regular 12.5;
+  then one row of 44pt buttons: No junk mail (At a door when doorknocking) and Spoke as capsules in white at 14%, Pause
+  (Carry on) a circle in the same, Finish a white circle with a navy tick. Every button runs the walking screen's own action (`WalkActions`); Finish
+  and At a door also open the app on the walking screen. Paused, the top line says *Paused · 38 min* and the sign turns
+  beige; only while a mark's line covers the top line does the side line start *Paused ·*, so it is said once. On the
+  last street the sign holds a flag and the next line reads *That's the last street. Finish when you're done.*
+  A mark (No junk mail or Spoke) replaces the top line with its line and an underlined *Undo*, the whole line the
+  button, for 12 seconds; text is capped at xLarge; in Always-On the sign and Finish turn to outlines; three minutes without an update reads *Open the app to keep marking streets*.
+  **Dynamic Island** (on black): held open, a 48pt sign in bright aqua (white at 16% when paused), street and side
+  (*Paused · …*), the count at the right on the street's line, and the buttons (capsules in white at 16%, Finish in bright aqua), which never
+  move; for a mark's 12 seconds its line (in bright aqua) stands in for the side line and a 44pt bright aqua *Undo*
+  stands in for the count, away from the marks, so a second tap on Spoke never lands on Undo; compact, the arrow and
+  count in bright aqua and the street (*Paused* while paused); minimal, the arrow. The whole card opens the walking screen. Fonts ship in the
+  extension (TTF from the app's subset) and icons are generated from `IconPaths.cs` (`tools/ios/walk-activity-icons.py`).
 - **The end** (on the walking page once finished): a masthead (*Well walked*, or *Thanks for knocking*), the figures, and
   *Check what you covered*: the planned streets as a line of stops (a 3px rule with a dot per stop, deep aqua once
   walked), each a `ToggleRow` saying walked, partly walked or not; the `SaveBar` with *Keep walking* and *Save the walk*.

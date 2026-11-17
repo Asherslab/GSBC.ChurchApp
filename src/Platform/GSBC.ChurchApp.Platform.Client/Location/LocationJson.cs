@@ -8,7 +8,11 @@ internal sealed record LocationFixesJson(LocationFixJson[]? Fixes, long Latest, 
 
 internal sealed record LocationStateJson(bool Running, string? Authorization);
 
+internal sealed record WalkTapJson(long Seq, WalkTapKind Kind, long At);
+
 [JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase)]
 [JsonSerializable(typeof(LocationFixesJson))]
 [JsonSerializable(typeof(LocationStateJson))]
+[JsonSerializable(typeof(WalkActivityState))]
+[JsonSerializable(typeof(WalkTapJson[]))]
 internal sealed partial class LocationJson : JsonSerializerContext;

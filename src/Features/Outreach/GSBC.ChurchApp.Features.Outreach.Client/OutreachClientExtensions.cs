@@ -2,6 +2,7 @@ using GSBC.ChurchApp.Features.Outreach.Client.Components;
 using GSBC.ChurchApp.Features.Outreach.Client.Phone;
 using GSBC.ChurchApp.Features.Outreach.Contracts;
 using GSBC.ChurchApp.Platform.Client.Destinations;
+using GSBC.ChurchApp.Platform.Client.Modules;
 using GSBC.ChurchApp.Platform.Ui.Surfaces;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -14,6 +15,9 @@ public static class OutreachClientExtensions
             .AddSingleton<OutreachStore>()
             .AddSingleton<RegionMaps>()
             .AddSingleton<WalkSession>()
+            .AddSingleton<WalkActions>()
+            .AddSingleton<WalkCompanion>()
+            .AddSingleton<IClientStartupTask>(provider => provider.GetRequiredService<WalkCompanion>())
             .AddSingleton<WhereYouAre>()
             .AddSingleton<WalkChoices>()
             .AddSingleton<OutreachNearby>()
