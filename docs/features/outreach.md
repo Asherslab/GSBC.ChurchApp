@@ -810,11 +810,14 @@ The owner's feedback from dev (#117–#123, admin panel in Safari on a Mac):
   right side", then *Drag it by its head*). Full map, top right of any `MapWorkspace`, hides the admin sidebar, the
   title band and tabs and the dock; the job's panel floats on the map with the job as a menu in its head, a grip, and
   its fold. Drag the head to the other side (or *Move the panel right/left* in that menu); the side is kept on that
-  computer, the full map until the tab closes. Esc leaves it unless a menu, sheet or drawing is open. Tools and cards
-  on the map keep clear of the panel.
+  computer, the full map until the tab closes. Esc leaves it unless a menu, sheet or drawing is open. Tools, cards and
+  pins on the map keep clear of the panel, and framing (a day's area, matches) leaves room for it and the tool rail.
+- **Asked by the orchestrator after Route areas merged:** the route list keeps its Time column at 1360px and under
+  (it was hidden there), and area chips hold room on the map so street names give way to them.
 - **Adding an address to skip (#118, "why would I put info for one form in another form"):** the card has its own
-  *Find the address* search (`OutreachAdmin.FindAddresses`); the five matches nearest the map's view are numbered in
-  the card and on the map, the rest counted. Clicking a letterbox still works; *Choose a different address* goes back.
+  *Find the address* search (`OutreachAdmin.FindAddresses`); up to three matches within 15 km of the map's view are
+  numbered in the card and on the map, and the map frames them (with none that near, the three nearest instead); the
+  rest are named by suburb as off the map. Clicking a letterbox still works; *Choose a different address* goes back.
   Places' drawer search now finds places already skipped (owner: "search is search. form is form. keep them separate").
   Chosen on the decision page (`.impeccable/mocks/outreach-skip-address/`, *numbered on the map*).
 - **Don't letterbox marker on by default (#119):** a new address to skip, in Places or from a walker's report, shows
@@ -824,8 +827,8 @@ The owner's feedback from dev (#117–#123, admin panel in Safari on a Mac):
   and the heading grew when the planner's actions arrived. The planner now keeps the dock and a drawer frame while it
   loads, and the title band keeps the actions' height. The map itself still redraws, because the planner has its own
   map (*Open* below). The panel's links and the Days tab's *Plan the routes* were already in-app links.
-- **Map details:** the credits sit on one line with ⓘ for the full text (every map); start, pin and meeting places
-  keep their room so suburb and street names give way (every map); a chosen address lands beside the card, not at the
+- **Map details:** the credits sit on one line with ⓘ for the full text (every map, the phone's too); start, pin and
+  meeting places and every map pin keep their room so suburb and street names give way (every map); a chosen address lands beside the card, not at the
   map's edge.
 
 ### Open (for stage 2 and the owner)
