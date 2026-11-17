@@ -799,6 +799,10 @@ components:
     textColor: "{colors.ink-2}"
     typography: "{typography.caption}"
     padding: "16px"
+  opened-page-band:
+    backgroundColor: "{colors.navy}"
+    textColor: "{colors.white}"
+    padding: "16px 32px"
   writing-desk-page:
     backgroundColor: "{colors.white}"
     rounded: "{rounded.card}"
