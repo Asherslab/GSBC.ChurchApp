@@ -87,5 +87,20 @@ public sealed class DigestTests
         Assert.Equal("Thursday 12 November", WhatsNextDigest.WhenAsSent(weeks[0].Items[0]));
     }
 
+    [Fact]
+    public void SomethingWrittenWithoutADateSitsInTheDigestsWeeksInStaffsOrderAndGoesWhenTheDigestEnds()
+    {
+        WhatsNextDigest digest = new(new DigestShown { Start = "2026-12-14", End = "2026-12-27" },
+        [
+            Item("no-bible-study", "2026-12-16"),
+            Item("baptisms", ""),
+        ]);
+
+        IReadOnlyList<WhatsNextWeek> weeks = digest.Weeks(new DateOnly(2026, 11, 17));
+
+        Assert.Equal(["no-bible-study", "baptisms"], Assert.Single(weeks).Items.Select(item => item.Key));
+        Assert.Empty(digest.Weeks(new DateOnly(2026, 12, 28)));
+    }
+
     private static DigestShownItem Item(string key, string date) => new() { Key = key, FirstDate = date, LastDate = date, Words = new DigestWords { Title = key } };
 }

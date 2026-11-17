@@ -64,11 +64,11 @@ public sealed record StaffView(IReadOnlyList<StaffCase> Cases, bool MayCare)
 
     public IReadOnlyList<StaffCase> ForTheWall => Cases.Where(item => item.AsksForTheWall).ToList();
 
-    public IReadOnlyList<StaffCase> New => Cases.Where(item => item.IsNew && !item.AsksForTheWall).ToList();
+    public IReadOnlyList<StaffCase> New => Cases.Where(item => item.IsNew && !item.AsksForTheWall && !item.OnTheWall).ToList();
 
-    public IReadOnlyList<StaffCase> OnTheWall => Cases.Where(item => item.OnTheWall && !item.IsNew).ToList();
+    public IReadOnlyList<StaffCase> OnTheWall => Cases.Where(item => item.OnTheWall).ToList();
 
-    public int Waiting => Cases.Count(item => (item.AsksForTheWall || item.IsNew) && item.Pending is null);
+    public int Waiting => Cases.Count(item => item.AsksForTheWall && item.Pending is null);
 
     public StaffCase? Find(string id) => Cases.FirstOrDefault(item => item.Id == id);
 }
