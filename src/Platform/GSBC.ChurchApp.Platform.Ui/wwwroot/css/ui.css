@@ -1774,6 +1774,39 @@ span.stage-pipeline__stage { pointer-events: none; }
 .map-view__credits-toggle:hover, .map-view__attribution--open .map-view__credits-toggle { color: var(--ink); }
 .map-view__credits-toggle:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .map-view .maplibregl-canvas:focus { outline: none; }
+.location-row .row__trail { align-self: center; }
+.map-pin--tip { pointer-events: none; }
+.map-pin--tip .map-pin__body { transform: translate(-50%, -100%); }
+.location-pin { display: block; width: 28px; height: 38px; filter: drop-shadow(0 2px 3px var(--scrim)); }
+.location-pin path { fill: var(--primary); stroke: var(--page); stroke-width: 2; }
+.location-pin circle { fill: var(--page); }
+.location-row__map .location-pin { width: 16px; height: 22px; }
+.location-row__note { display: block; margin-top: var(--space-3xs); font-size: var(--text-caption); line-height: 1.4; color: var(--ink-2); }
+.location-row__map { display: block; width: 64px; height: 64px; overflow: hidden; border-radius: var(--radius-tile); box-shadow: 0 0 0 1px var(--line); }
+.location-row__map .map-view, .location-row__map .map-view__map { width: 64px; height: 64px; min-height: 0; }
+.location-row__map .map-view__attribution { display: none; }
+.location-sheet__map { overflow: hidden; border-radius: var(--radius-card); box-shadow: 0 0 0 1px var(--line); }
+.location-sheet__map .map-view__map { height: min(56vh, 420px); border-radius: var(--radius-card); }
+.location-sheet__map .map-view__attribution { padding-inline: var(--space-2xs); }
+.location-sheet__note { max-width: 65ch; margin: var(--space-md) 0 0; color: var(--ink-2); line-height: 1.5; }
+.location-field__chosen { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: var(--space-md); padding: var(--space-sm) var(--space-md); border-radius: var(--radius-field); background: var(--field); box-shadow: inset 0 0 0 1px var(--field-edge); }
+.location-field__words { display: grid; gap: var(--space-3xs); min-width: 0; }
+.location-field__title { font-size: var(--text-row); font-weight: 600; color: var(--ink); overflow-wrap: anywhere; }
+.location-field__detail { font-size: var(--text-caption); line-height: 1.4; color: var(--ink-2); overflow-wrap: anywhere; }
+.location-field__tools { display: flex; align-items: center; gap: var(--space-xs); }
+.location-picker { display: grid; gap: var(--stack); }
+.location-picker__split { display: grid; gap: var(--space-md); }
+.location-picker-layer .sheet__actions { position: sticky; bottom: 0; z-index: 1; padding-block: var(--space-md); border-top: 1px solid var(--line); background: var(--page); }
+.location-picker__search, .location-picker__place { display: grid; gap: var(--space-md); align-content: start; min-width: 0; }
+.location-picker__results { max-height: 22rem; overflow: auto; }
+.location-picker__map { overflow: hidden; border-radius: var(--radius-field); background: var(--sand); box-shadow: 0 0 0 1px var(--line); }
+.location-picker__map .map-view__map { height: 220px; }
+.location-picker__map .map-view__attribution { padding-inline: var(--space-2xs); }
+.location-picker__empty { display: grid; place-items: center; align-content: center; gap: var(--space-sm); height: 220px; padding: var(--space-xl); text-align: center; font-size: var(--text-caption); line-height: 1.45; color: var(--ink-2); }
+.location-picker__empty .icon { color: var(--accent); }
+@media (min-width: 720px) {
+  .location-picker__split { grid-template-columns: minmax(15rem, 17rem) minmax(0, 1fr); gap: var(--space-xl); }
+}
 .map-view__outside { position: absolute; top: var(--space-md); left: 50%; z-index: 2; display: grid; gap: var(--space-2xs); width: max-content; max-width: min(24rem, calc(100% - 2 * var(--space-lg))); padding: var(--space-md) var(--space-lg); transform: translateX(-50%); border-radius: var(--radius-field); background: var(--surface); color: var(--ink-2); box-shadow: 0 0 0 1px var(--line), 0 18px 36px -16px var(--scrim); font-size: var(--text-caption); text-align: center; }
 
 .map-desk { display: grid; grid-template-columns: minmax(0, 1fr) minmax(360px, 460px); min-height: 0; }

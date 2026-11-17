@@ -1,4 +1,5 @@
 using GSBC.ChurchApp.Platform.Contracts.Content;
+using GSBC.ChurchApp.Platform.Contracts.Locations;
 using GSBC.ChurchApp.Platform.Contracts.Tiers;
 using ProtoBuf;
 
@@ -54,6 +55,7 @@ public sealed class MinistrySummary
     [ProtoMember(17)] public int Waiting { get; set; }
     [ProtoMember(18)] public bool MayAddUnder { get; set; }
     [ProtoMember(20)] public bool Hidden { get; set; }
+    [ProtoMember(21)] public Location? Where { get; set; }
 }
 
 [ProtoContract]
@@ -88,6 +90,7 @@ public sealed class MinistryDetails
     [ProtoMember(23)] public string ChatStarters { get; set; } = "";
     [ProtoMember(24)] public bool Hidden { get; set; }
     [ProtoMember(25)] public string HiddenBy { get; set; } = "";
+    [ProtoMember(26)] public Location? Where { get; set; }
 }
 
 [ProtoContract]
@@ -550,6 +553,13 @@ public sealed class MinistryCard
 {
     [ProtoMember(1, IsRequired = true)] public MinistryDetails Ministry { get; set; } = new();
     [ProtoMember(2)] public List<PersonLine> Leaders { get; set; } = [];
+}
+
+[ProtoContract]
+public sealed class MinistryPlace
+{
+    [ProtoMember(1)] public string MinistryId { get; set; } = "";
+    [ProtoMember(2)] public Location? Where { get; set; }
 }
 
 [ProtoContract]

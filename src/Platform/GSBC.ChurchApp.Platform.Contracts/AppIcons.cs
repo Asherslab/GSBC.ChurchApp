@@ -78,7 +78,6 @@ public static class AppIcons
     public const string DrawArea = "pentagon";
     public const string DrawRoute = "pencil";
     public const string RouteStart = "flag-triangle-right";
-    public const string MeetingPoint = "map-pin";
     public const string PrintMaps = "printer";
     public const string Rebalance = "scale";
     public const string Lock = "lock";
@@ -95,6 +94,9 @@ public static class AppIcons
     public const string MapAreas = "grid";
     public const string PlanADay = "route";
     public const string HideDrawer = "panel-left-close";
+    public const string PlaceOffSite = "map-pin";
+    public const string AtChurch = "church";
+    public const string Directions = "navigation";
     public const string FullMap = "maximize-2";
     public const string LeaveFullMap = "minimize-2";
     public const string MovePanel = "arrow-left-right";

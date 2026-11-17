@@ -90,7 +90,11 @@ internal sealed class MinistriesPublisher(
         List<Row> rows = [];
         foreach (MinistryRecord ministry in tree.All)
         {
-            MinistryCard card = new() { Ministry = MinistryViews.Details(ministry, tree), Leaders = Leaders(tree, ministry, holdings, names) };
+            MinistryCard card = new() { Ministry = MinistryViews.Placed(MinistryViews.Details(ministry, tree), false), Leaders = Leaders(tree, ministry, holdings, names) };
+            if (ministry.Where is { Home: true } home)
+                foreach (string audience in Audiences.All.Where(audience => audience != Audiences.Everyone))
+                    rows.AddRange(ForAudience(MinistriesFeeds.Places, MinistriesFeeds.Places, ministry.Id, ministry.Id, audience, tree,
+                        new MinistryPlace { MinistryId = ministry.Id.ToString(), Where = home }).Select(row => row with { RecordId = $"{row.RecordId}@{audience}" }));
             rows.AddRange(tree.IsHidden(ministry.Id)
                 ? ForSeers(MinistriesFeeds.PrivateDirectory, ministry.Id.ToString(), ministry.Id, tree, card)
                 : [Public(MinistriesFeeds.Directory, ministry.Id, card)]);

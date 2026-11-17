@@ -1,0 +1,54 @@
+@using GSBC.ChurchApp.Platform.Contracts.Locations
+@using GSBC.ChurchApp.Platform.Ui.Maps
+@inject LocationMaps Maps
+
+@if (_source is not null && Location.HasPin)
+{
+    <MapView @ref="_view" Source="_source" Label="@($"Map of {LocationWords.Headline(Location)}")" Centre="Point" Zoom="Zoom" MinZoom="@(Location.Map is { MinZoom: > 0 } map ? map.MinZoom : null)" Interactive="Interactive"
+             Reach="_reach" OnTap="OnTap" Class="@Class">
+        <Overlay>
+            <MapPin Point="Point" Class="map-pin--tip">
+                <svg class="location-pin" viewBox="0 0 28 38" aria-hidden="true">
+                    <path d="M14 37s12-13.4 12-22.5A12 12 0 0 0 2 14.5C2 23.6 14 37 14 37z" />
+                    <circle cx="14" cy="14.5" r="4.5" />
+                </svg>
+            </MapPin>
+        </Overlay>
+    </MapView>
+}
+
+@code {
+    private MapSource? _source;
+    private Location? _shown;
+    private MapView? _view;
+    private MapReach? _reach;
+    private int _centredKey;
+
+    [Parameter, EditorRequired] public required Location Location { get; set; }
+    [Parameter] public double Zoom { get; set; } = 16;
+    [Parameter] public bool Interactive { get; set; }
+    [Parameter] public EventCallback<MapPoint> OnTap { get; set; }
+    [Parameter] public string? Class { get; set; }
+    [Parameter] public int CentreKey { get; set; }
+
+    private MapPoint Point => new(Location.Latitude ?? 0, Location.Longitude ?? 0);
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (Location.SameAs(_shown))
+            return;
+        _shown = Location.Copy();
+        _reach = Interactive && Location.Map is { Url.Length: > 0 } map
+            ? new MapReach([new MapFrame(map.South, map.West, map.North, map.East)], [], [], new MapFrame(map.South, map.West, map.North, map.East))
+            : null;
+        _source = await Maps.SourceAsync(Location);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (CentreKey == _centredKey || _view is null)
+            return;
+        _centredKey = CentreKey;
+        await _view.CentreAsync(Point);
+    }
+}

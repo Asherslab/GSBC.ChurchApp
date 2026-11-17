@@ -38,6 +38,7 @@ public static class ClientServiceCollectionExtensions
         services.TryAddSingleton<ILocationSession, LocationSession>();
         services.TryAddSingleton<IWalkActivity, WalkActivity>();
         services.TryAddSingleton<IKeptFiles, KeptFiles>();
+        services.TryAddSingleton(provider => new Locations.LocationFinder(provider.GetRequiredService<Grpc.Core.ChannelBase>()));
         return services;
     }
 }

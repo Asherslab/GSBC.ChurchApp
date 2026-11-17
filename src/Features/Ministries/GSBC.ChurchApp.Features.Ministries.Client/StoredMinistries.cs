@@ -234,7 +234,7 @@ public sealed class StoredMinistries(ILocalFeeds feeds, IAccess access, TimeProv
 
     private static MinistrySummary Summary(MinistryDetails ministry, string yours = "", string latest = "", int waiting = 0, bool mayAddUnder = false) => new()
     {
-        Id = ministry.Id, ParentId = ministry.ParentId, Name = ministry.Name, Summary = ministry.Summary, Meets = ministry.Meets, Colour = ministry.Colour,
+        Id = ministry.Id, ParentId = ministry.ParentId, Name = ministry.Name, Summary = ministry.Summary, Meets = ministry.Meets, Where = ministry.Where, Colour = ministry.Colour,
         Icon = ministry.Icon, TeamJoin = ministry.TeamJoin, AttendJoin = ministry.AttendJoin, Order = ministry.Order, Yours = yours, RoundId = ministry.RoundId,
         ShowsInLifeGroups = ministry.ShowsInLifeGroups, Latest = latest, Waiting = waiting, MayAddUnder = mayAddUnder,
         Hidden = MinistryLogic.IsHidden(ministry),
@@ -245,6 +245,12 @@ public sealed class StoredMinistries(ILocalFeeds feeds, IAccess access, TimeProv
         List<MinistryCard> cards = await AllAsync<MinistryCard>(MinistriesFeeds.Directory);
         if (access.SignedIn)
             cards.AddRange(await AllAsync<MinistryCard>(MinistriesFeeds.PrivateDirectory));
+        Dictionary<string, MinistryPlace> places = access.SignedIn
+            ? (await AllAsync<MinistryPlace>(MinistriesFeeds.Places)).DistinctBy(place => place.MinistryId).ToDictionary(place => place.MinistryId)
+            : [];
+        foreach (MinistryCard card in cards)
+            if (places.GetValueOrDefault(card.Ministry.Id)?.Where is { } where)
+                card.Ministry.Where = where;
         return new MinistryMap(cards.DistinctBy(card => card.Ministry.Id));
     }
 

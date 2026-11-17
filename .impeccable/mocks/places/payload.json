@@ -1,0 +1,46 @@
+{
+  "title": "A place off site: choosing it and showing it",
+  "question": "One shared component for anywhere a record says where something happens off site: an outreach day's meeting point, an event, a Life Group in a home. Each sketch shows the admin panel choosing a place at the left, then a leader choosing one on the phone, then the phone showing it to everyone. Which way should it work?",
+  "options": [
+    {
+      "id": "a-row-and-picker",
+      "kind": "assigned",
+      "kicker": "THE ROLL",
+      "label": "A row, and a picker of its own",
+      "thesis": "A place shows as one quiet row with a small square map at its end; choosing one opens its own picker, with the search and results beside the map.",
+      "palette": ["#ffffff", "#f4efe7", "#2a3d5e", "#00776d"],
+      "materials": ["hairline row with a map tile", "picker dialog: search and results left, map right", "phone: a full-screen picker page"],
+      "viewport": "Admin: the day's form, with Where people meet as a field showing the chosen place's row and Change; the picker open over it (At church or Somewhere else, the search, results with how far from church, the map with its pin, name and note, Cancel and Use this place). Phone: the same picker as a page. Showing: a row under the event's time, a pin icon, the name, the address, the note in ink 2, and a 64px map square at the right.",
+      "risk": "The map is small when shown, so someone may not notice it opens a bigger map.",
+      "html": ".impeccable/mocks/places/a-row-and-picker.html",
+      "htmlFrame": "1440x900"
+    },
+    {
+      "id": "b-search-first",
+      "kind": "dealt",
+      "label": "Search first, the map confirms",
+      "thesis": "Choosing starts as one address search right in the form; picking a result drops the pin on a compact map below, to drag to the exact spot. Showing leads with the words and opens the map on request.",
+      "palette": ["#ffffff", "#f4efe7", "#2a3d5e", "#00776d"],
+      "materials": ["At church / Somewhere else segmented", "search field with suggestions", "compact map under the field", "text-first block with Show on the map"],
+      "viewport": "Admin: Where people meet as At church | Somewhere else, the search with its suggestions open (street address, suburb, how far from church), then the compact map, Name and Note. Phone: the same fields inline in the leader's settings, the keyboard's search. Showing: name, address and note as text with two quiet buttons, Show on the map and Directions.",
+      "risk": "The map stays secondary, so a place without a good address relies on people finding the pin.",
+      "html": ".impeccable/mocks/places/b-search-first.html",
+      "htmlFrame": "1440x900"
+    },
+    {
+      "id": "c-map-strip",
+      "kind": "dealt",
+      "label": "The map strip",
+      "thesis": "The map always leads: a wide strip of map over the address and note when shown, and the map beside the fields when chosen, both always in view.",
+      "palette": ["#ffffff", "#f4efe7", "#2a3d5e", "#00776d"],
+      "materials": ["16:9 map strip with the pin", "fields and map side by side (admin)", "map above fields (phone)", "Open in Maps"],
+      "viewport": "Admin: Where people meet spans the form, the search, Name and Note on the left and a map with the pin on the right, always shown. Phone: the map across the top of the page with the search over it, then Name and Note. Showing: a card with the map strip on top, then the name, address and note, and Open in Maps.",
+      "risk": "Every place shows a sizeable map, which takes room on pages with several facts.",
+      "html": ".impeccable/mocks/places/c-map-strip.html",
+      "htmlFrame": "1440x900"
+    }
+  ],
+  "reroll": true,
+  "steer": true,
+  "buildPath": {"value": "code"}
+}

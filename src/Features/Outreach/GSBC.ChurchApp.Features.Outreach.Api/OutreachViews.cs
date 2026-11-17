@@ -1,6 +1,7 @@
 using GSBC.ChurchApp.Features.Outreach.Api.Data;
 using GSBC.ChurchApp.Features.Outreach.Contracts;
 using GSBC.ChurchApp.Platform.Common;
+using GSBC.ChurchApp.Platform.Contracts.Locations;
 using GSBC.ChurchApp.Platform.Contracts.Media;
 
 namespace GSBC.ChurchApp.Features.Outreach.Api;
@@ -42,6 +43,7 @@ internal static class OutreachViews
         EndsAt = day.EndsAt,
         MeetingPoint = new GeoPoint { Lat = day.MeetingLat, Lng = day.MeetingLng },
         MeetingPlace = day.MeetingPlace,
+        Meeting = day.Meeting ?? (day.MeetingPlace.Length > 0 ? Location.Written(day.MeetingPlace) : null),
         Note = day.Note,
         Mode = day.Mode,
         Published = day.Published,

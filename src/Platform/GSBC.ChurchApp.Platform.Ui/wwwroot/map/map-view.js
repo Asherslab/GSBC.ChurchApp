@@ -362,7 +362,7 @@ export async function create(element, optionsJson, receiver) {
     center: options.centre ?? [153.0, -27.35],
     zoom: options.zoom ?? 15,
     maxZoom: deepestZoom,
-    minZoom: backdrop ? overviewMinZoom : regionsMinZoom,
+    minZoom: options.minZoom ?? (backdrop ? overviewMinZoom : regionsMinZoom),
     attributionControl: false,
     interactive: options.interactive !== false,
     dragRotate: false,

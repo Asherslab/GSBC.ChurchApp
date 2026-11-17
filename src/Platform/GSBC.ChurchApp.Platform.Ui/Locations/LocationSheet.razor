@@ -1,0 +1,42 @@
+@using GSBC.ChurchApp.Platform.Client.Native
+@using GSBC.ChurchApp.Platform.Contracts.Locations
+@using GSBC.ChurchApp.Platform.Icons
+@using Microsoft.Extensions.DependencyInjection
+@inject Shell Shell
+@inject IServiceProvider Services
+
+<Sheet Open="Open" OpenChanged="OpenChanged" Title="@LocationWords.Headline(Location)" Lead="@LocationWords.Address(Location)" Wide="true" LayerClass="location-sheet">
+    <ChildContent>
+        @if (Location.HasPin)
+        {
+            <div class="location-sheet__map">
+                <LocationMapView Location="Location" Zoom="15" Interactive="true" />
+            </div>
+        }
+        @if (LocationWords.Note(Location) is { } note)
+        {
+            <p class="location-sheet__note">@note</p>
+        }
+    </ChildContent>
+    <Actions>
+        @if (OnAndroid)
+        {
+            <Button Block="true" Icon="@AppIcons.Directions" OnClick="() => OpenAsync(LocationWords.PhoneMaps(Location))">Open in Maps</Button>
+        }
+        else
+        {
+            <Button Block="true" Icon="@AppIcons.Directions" OnClick="() => OpenAsync(LocationWords.AppleMaps(Location))">Open in Apple Maps</Button>
+            <Button Block="true" Variant="ButtonVariant.Quiet" Icon="external-link" OnClick="() => OpenAsync(LocationWords.GoogleMaps(Location))">Open in Google Maps</Button>
+        }
+    </Actions>
+</Sheet>
+
+@code {
+    [Parameter, EditorRequired] public required Location Location { get; set; }
+    [Parameter] public bool Open { get; set; }
+    [Parameter] public EventCallback<bool> OpenChanged { get; set; }
+
+    private bool OnAndroid => Services.GetService<NativeBridge>() is { IsNative: true, Platform: "android" };
+
+    private Task OpenAsync(string url) => Shell.OpenExternalAsync(url).AsTask();
+}

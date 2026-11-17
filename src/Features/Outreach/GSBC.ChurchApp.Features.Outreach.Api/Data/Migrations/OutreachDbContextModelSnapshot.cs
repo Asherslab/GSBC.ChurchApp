@@ -306,6 +306,10 @@ namespace GSBC.ChurchApp.Features.Outreach.Api.Data.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("ends_at");
 
+                    b.Property<string>("Meeting")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("meeting");
+
                     b.Property<double>("MeetingLat")
                         .HasColumnType("double precision")
                         .HasColumnName("meeting_lat");

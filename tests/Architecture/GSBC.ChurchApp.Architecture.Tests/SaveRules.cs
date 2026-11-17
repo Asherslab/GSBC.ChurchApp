@@ -10,6 +10,7 @@ public sealed partial class SaveRules
         ["src/Features/Accounts/GSBC.ChurchApp.Features.Accounts.Admin/Pages/People.razor"] = "a list with a search and filters",
         ["src/Platform/GSBC.ChurchApp.Platform.Ui/TellSheet.razor"] = "send or skip, after what it tells about is already saved",
         ["src/Platform/GSBC.ChurchApp.Platform.Ui/DesignGallery.razor"] = "the component gallery, which keeps nothing",
+        ["src/Platform/GSBC.ChurchApp.Platform.Ui/Locations/LocationPicker.razor"] = "hands the chosen place back to the form, which saves it and asks before it's lost",
         ["src/Features/Outreach/GSBC.ChurchApp.Features.Outreach.Admin/Components/CoverageJob.razor"] = "choosing what the map shows; marking streets not done applies at once with an undo",
     };
 

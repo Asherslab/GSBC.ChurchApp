@@ -36,6 +36,8 @@ public sealed class OutreachAtlas
 
     public MapOverview? Overview { get; }
 
+    public MapPoint? Church => _church;
+
     public MapBackdrop? Backdrop => Overview is { } overview ? new MapBackdrop(overview.Map.Url, Box(overview.Bounds), overview.MaxZoom) : null;
 
     public IReadOnlyList<OutreachRegion> Regions { get; }

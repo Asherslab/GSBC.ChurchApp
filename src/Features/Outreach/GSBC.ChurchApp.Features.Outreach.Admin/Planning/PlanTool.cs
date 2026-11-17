@@ -11,5 +11,4 @@ public enum PlanTool
     Lasso,
     Erase,
     Start,
-    Meeting,
 }

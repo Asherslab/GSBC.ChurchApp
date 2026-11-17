@@ -70,7 +70,7 @@ internal sealed class OverviewMap(OutreachMapsDbContext db, IMapSources sources,
             }
             : new MapOverview();
 
-    private static async Task<string> Sha256Async(string path, CancellationToken cancellationToken)
+    public static async Task<string> Sha256Async(string path, CancellationToken cancellationToken)
     {
         await using FileStream stream = File.OpenRead(path);
         return Convert.ToHexStringLower(await SHA256.HashDataAsync(stream, cancellationToken));

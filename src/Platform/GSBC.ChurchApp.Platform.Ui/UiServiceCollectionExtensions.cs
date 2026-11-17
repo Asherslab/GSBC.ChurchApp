@@ -1,7 +1,9 @@
 using GSBC.ChurchApp.Platform.Contracts.Destinations;
 using GSBC.ChurchApp.Platform.Client.Destinations;
 using GSBC.ChurchApp.Platform.Contracts.Configuration;
+using GSBC.ChurchApp.Platform.Client.Modules;
 using GSBC.ChurchApp.Platform.Ui.Destinations;
+using GSBC.ChurchApp.Platform.Ui.Locations;
 using GSBC.ChurchApp.Platform.Ui.Surfaces;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -14,6 +16,8 @@ public static class UiServiceCollectionExtensions
     {
         services.TryAddSingleton(TimeProvider.System);
         services.AddDestinations(ShellDestinations.All);
+        services.TryAddSingleton<LocationMaps>();
+        services.AddSingleton<IClientStartupTask>(provider => provider.GetRequiredService<LocationMaps>());
         return services.AddSingleton(new UiHost(desktop)).AddSingleton<Shell>().AddSingleton<UnsavedChanges>().AddSingleton<SidebarPins>().AddSingleton<Appearance>().AddSingleton<LinkOpener>().AddSingleton<SurfaceViews>()
             .AddSurfaceView<LinkTileView>(HubSurfaces.LinkTile.Surface)
             .AddHubTile<WordsTileView>(HubSurfaces.PlainTile);

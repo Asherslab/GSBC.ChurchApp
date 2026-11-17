@@ -9,7 +9,7 @@ public static class MapJson
 {
     private const int LineHead = 3;
 
-    public static string Options(MapSource source, MapPoint? centre, double zoom, bool interactive, bool follow, MapBackdrop? backdrop = null, bool heading = false) => Write(json =>
+    public static string Options(MapSource source, MapPoint? centre, double zoom, bool interactive, bool follow, MapBackdrop? backdrop = null, bool heading = false, double? minZoom = null) => Write(json =>
     {
         json.WriteStartObject();
         json.WriteStartObject("source");
@@ -42,6 +42,8 @@ public static class MapJson
             Point(json, point);
         }
         json.WriteNumber("zoom", zoom);
+        if (minZoom is { } lowest)
+            json.WriteNumber("minZoom", lowest);
         json.WriteBoolean("interactive", interactive);
         json.WriteBoolean("follow", follow);
         json.WriteBoolean("heading", heading);

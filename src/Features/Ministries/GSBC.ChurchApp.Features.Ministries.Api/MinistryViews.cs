@@ -36,6 +36,23 @@ internal sealed class MinistryViews(
             node => grants.IsAllowed(Permission(node), ministryId.ToString()),
             node => tree.Below(ministryId).Any(below => grants.IsAllowed(Permission(node), below.Id.ToString())));
 
+    public static bool SeesHome(GrantSet grants, MinistryTree tree, Guid ministryId) =>
+        Audiences.All.Where(audience => audience != Audiences.Everyone).Any(audience => MaySee(audience, grants, tree, ministryId));
+
+    public static MinistryDetails Placed(MinistryDetails ministry, bool insider)
+    {
+        if (!insider)
+            ministry.Where = ministry.Where?.SeenFromOutside();
+        return ministry;
+    }
+
+    public static MinistrySummary Placed(MinistrySummary ministry, bool insider)
+    {
+        if (!insider)
+            ministry.Where = ministry.Where?.SeenFromOutside();
+        return ministry;
+    }
+
     public static bool MaySeeMinistry(GrantSet grants, MinistryTree tree, Guid ministryId) =>
         !tree.IsHidden(ministryId) || tree.SeenFrom(ministryId).Any(place => Holds(grants, MinistriesPermissions.SeeHidden, place));
 
@@ -199,7 +216,7 @@ internal sealed class MinistryViews(
     {
         Hidden = ministry.Hidden, HiddenBy = tree?.HiddenBy(ministry.Id)?.Name ?? "",
         Id = ministry.Id.ToString(), ParentId = ministry.ParentId?.ToString() ?? "", Name = ministry.Name,
-        Summary = ministry.Summary, About = ministry.About, Meets = ministry.Meets, WhoFor = ministry.WhoFor, Colour = ministry.Colour,
+        Summary = ministry.Summary, About = ministry.About, Meets = ministry.Meets, Where = ministry.Where?.Copy(), WhoFor = ministry.WhoFor, Colour = ministry.Colour,
         Icon = ministry.Icon, TeamJoin = ministry.TeamJoin, AttendJoin = ministry.AttendJoin, RoundId = ministry.RoundId?.ToString() ?? "",
         ShowsInLifeGroups = ministry.ShowsInLifeGroups, Order = ministry.Order,
         PartsOff = [.. ministry.PartsOff], PartsFromBelow = [.. ministry.PartsFromBelow], PartsOrder = MinistryParts.Ordered(ministry.PartsOrder),
@@ -210,7 +227,7 @@ internal sealed class MinistryViews(
     {
         Hidden = tree.IsHidden(ministry.Id),
         Id = ministry.Id.ToString(), ParentId = ministry.ParentId?.ToString() ?? "", Name = ministry.Name,
-        Summary = ministry.Summary, Meets = ministry.Meets, Colour = ministry.Colour, Icon = ministry.Icon, TeamJoin = ministry.TeamJoin,
+        Summary = ministry.Summary, Meets = ministry.Meets, Where = ministry.Where?.Copy(), Colour = ministry.Colour, Icon = ministry.Icon, TeamJoin = ministry.TeamJoin,
         AttendJoin = ministry.AttendJoin, Order = ministry.Order, Yours = yours, RoundId = ministry.RoundId?.ToString() ?? "",
         ShowsInLifeGroups = ministry.ShowsInLifeGroups, Latest = latest, Waiting = waiting,
     };

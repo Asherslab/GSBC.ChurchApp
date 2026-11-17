@@ -3,6 +3,7 @@ using GSBC.ChurchApp.Features.Outreach.Client.Phone;
 using GSBC.ChurchApp.Features.Outreach.Contracts;
 using GSBC.ChurchApp.Platform.Client.Destinations;
 using GSBC.ChurchApp.Platform.Client.Modules;
+using GSBC.ChurchApp.Platform.Ui.Locations;
 using GSBC.ChurchApp.Platform.Ui.Surfaces;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -28,7 +29,10 @@ public static class OutreachClientExtensions
             .AddSingleton<OutreachDayRoutes>()
             .AddSingleton<OutreachDayBoard>()
             .AddSingleton<MyOutreach>()
-            .AddSingleton<OfflineMaps>();
+            .AddSingleton<OfflineMaps>()
+            .AddSingleton<OutreachLocations>()
+            .AddSingleton<ILocationSource>(provider => provider.GetRequiredService<OutreachLocations>())
+            .AddSingleton<IKeptMapCover>(provider => provider.GetRequiredService<OutreachLocations>());
 
     public static IServiceCollection AddOutreachClient(this IServiceCollection services) =>
         services

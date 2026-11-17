@@ -30,6 +30,9 @@ public sealed partial class SyncOnlyRules
         "IAccountsService.RemovePasskey",
         "IMediaService.List",
         "IMediaFoldersService.List",
+        "ILocationsService.Find",
+        "ILocationsService.Nearest",
+        "ILocationsService.PrepareMap",
     ];
 
     private static readonly string[] MadeOnlyByTheOutboxWorker =

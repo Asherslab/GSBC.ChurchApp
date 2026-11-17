@@ -113,6 +113,7 @@ public sealed class OutreachDbContext(DbContextOptions<OutreachDbContext> option
             entity.HasKey(day => day.Id);
             entity.Property(day => day.Id).ValueGeneratedNever();
             entity.HasIndex(day => day.StartsAt);
+            entity.Property(day => day.Meeting).AsJson();
             entity.HasMany<RouteRecord>().WithOne().HasForeignKey(route => route.DayId).OnDelete(DeleteBehavior.Cascade);
         });
         modelBuilder.Entity<RouteRecord>(entity =>

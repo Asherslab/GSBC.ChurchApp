@@ -1,0 +1,69 @@
+@using GSBC.ChurchApp.Platform.Contracts.Locations
+@using GSBC.ChurchApp.Platform.Icons
+
+<div class="field">
+    <span class="field__label" id="@_id">@Label</span>
+    @if (Description is not null)
+    {
+        <span class="field__hint">@Description</span>
+    }
+    @if (Value is { IsSet: true } chosen)
+    {
+        <div class="location-field__chosen" role="group" aria-labelledby="@_id">
+            <span class="row__icon"><Icon Name="@(chosen.Kind == LocationKind.AtChurch ? AppIcons.AtChurch : AppIcons.PlaceOffSite)" Size="IconSize.Small" /></span>
+            <span class="location-field__words">
+                <span class="location-field__title">@LocationWords.Headline(chosen)</span>
+                @if (LocationWords.Address(chosen) is { } address)
+                {
+                    <span class="location-field__detail">@address</span>
+                }
+                @if (chosen.Note.Length > 0)
+                {
+                    <span class="location-field__detail">@chosen.Note</span>
+                }
+                @if (chosen.Kind == LocationKind.None)
+                {
+                    <span class="location-field__detail">Written before places had a map. Change it to put it on the map.</span>
+                }
+            </span>
+            <span class="location-field__tools">
+                <Button Variant="ButtonVariant.Link" OnClick="() => _choosing = true">Change</Button>
+                @if (Optional)
+                {
+                    <Button Variant="ButtonVariant.Quiet" Small="true" Icon="x" AriaLabel="@($"Remove {Label.ToLowerInvariant()}")" OnClick="() => ValueChanged.InvokeAsync(null)" />
+                }
+            </span>
+        </div>
+    }
+    else
+    {
+        <Button Variant="ButtonVariant.Quiet" Icon="@AppIcons.PlaceOffSite" OnClick="() => _choosing = true">Choose a place</Button>
+    }
+    @if (Problem is not null)
+    {
+        <span class="field__problem" role="alert">@Problem</span>
+    }
+</div>
+
+<LocationPicker @bind-Open="_choosing" Title="@Label" Value="Value" AllowHome="AllowHome" Recent="Recent" OnChoose="ChooseAsync" />
+
+@code {
+    private static int _fields;
+    private readonly string _id = $"location-field-{Interlocked.Increment(ref _fields)}";
+    private bool _choosing;
+
+    [Parameter, EditorRequired] public required string Label { get; set; }
+    [Parameter] public string? Description { get; set; }
+    [Parameter] public Location? Value { get; set; }
+    [Parameter] public EventCallback<Location?> ValueChanged { get; set; }
+    [Parameter] public bool AllowHome { get; set; }
+    [Parameter] public bool Optional { get; set; }
+    [Parameter] public IReadOnlyList<Location> Recent { get; set; } = [];
+    [Parameter] public string? Problem { get; set; }
+
+    private async Task ChooseAsync(Location chosen)
+    {
+        _choosing = false;
+        await ValueChanged.InvokeAsync(chosen);
+    }
+}

@@ -2,12 +2,13 @@ using GSBC.ChurchApp.Features.Ministries.Client.Components;
 using GSBC.ChurchApp.Features.Ministries.Contracts;
 using GSBC.ChurchApp.Platform.Client.Content;
 using GSBC.ChurchApp.Platform.Client.Destinations;
-using GSBC.ChurchApp.Platform.Contracts.Content;
 using GSBC.ChurchApp.Platform.Client.Media;
 using GSBC.ChurchApp.Platform.Client.Modules;
-using GSBC.ChurchApp.Platform.Client.Scopes;
-using GSBC.ChurchApp.Platform.Ui.Surfaces;
 using GSBC.ChurchApp.Platform.Client.News;
+using GSBC.ChurchApp.Platform.Client.Scopes;
+using GSBC.ChurchApp.Platform.Contracts.Content;
+using GSBC.ChurchApp.Platform.Ui.Locations;
+using GSBC.ChurchApp.Platform.Ui.Surfaces;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace GSBC.ChurchApp.Features.Ministries.Client;
@@ -21,6 +22,7 @@ public static class MinistriesClientExtensions
             .AddSingleton<HeldParts>()
             .AddSingleton<StoredMinistries>()
             .AddSingleton<IMinistryReads>(provider => provider.GetRequiredService<StoredMinistries>())
+            .AddSingleton<ILocationSource, MinistryLocations>()
             .AddNewsSource<MinistryNewsSource>()
             .AddEveryMinistrysNews<StoredEveryMinistrysNews>()
             .AddMediaPrefetch(_ => MinistryPostMedia.Prefetch(MinistriesFeeds.Posts))

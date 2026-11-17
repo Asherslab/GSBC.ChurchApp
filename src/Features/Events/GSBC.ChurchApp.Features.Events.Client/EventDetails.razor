@@ -1,3 +1,4 @@
+@using GSBC.ChurchApp.Platform.Ui.Locations
 @using GSBC.ChurchApp.Platform.Ui.Content
 
 <div class="event-body">
@@ -19,10 +20,9 @@
         {
             <ListRow Icon="book-open" Title="@($"Open {Occurrence.KeptBy}")" Subtitle="All its details are there" Href="@Occurrence.OpensAt" Chevron="true" />
         }
-        @if (Occurrence.Fields.Place is { } place && (place.Name.Length > 0 || place.Address.Length > 0))
+        @if (EventPlaces.LocationOf(Occurrence.Fields.Place) is { IsSet: true } location)
         {
-            <ListRow Icon="map-pin" Title="@(place.Name.Length > 0 ? place.Name : place.Address)" Subtitle="@PlaceDetail(place)"
-                     Href="@MapsLink(place)" External="true" />
+            <LocationRow Location="location" />
         }
         else if (Occurrence.Missing.Contains(EventFieldKeys.Place))
         {
@@ -60,14 +60,6 @@
     [Parameter] public bool SignedIn { get; set; }
     [Parameter] public RenderFragment? Actions { get; set; }
     [Parameter] public RenderFragment? Note { get; set; }
-
-    private static string? PlaceDetail(EventPlace place) =>
-        place.Name.Length > 0 && place.Address.Length > 0 ? $"{place.Address} · opens Maps"
-        : place.Address.Length > 0 ? "Opens Maps"
-        : place.PlaceId is not null ? "At the church" : null;
-
-    private static string? MapsLink(EventPlace place) =>
-        place.Address.Length > 0 ? $"https://maps.apple.com/?q={Uri.EscapeDataString(EventWords.Join(place.Name, place.Address))}" : null;
 
     private string? ContactDetail(EventContact contact)
     {

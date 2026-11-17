@@ -1,4 +1,5 @@
 using GSBC.ChurchApp.Platform.Contracts.Content;
+using GSBC.ChurchApp.Platform.Contracts.Locations;
 using GSBC.ChurchApp.Platform.Contracts.Media;
 using GSBC.ChurchApp.Platform.Contracts.Tiers;
 using ProtoBuf;
@@ -37,6 +38,7 @@ public sealed class EventPlace
     [ProtoMember(1)] public string? PlaceId { get; set; }
     [ProtoMember(2)] public string Name { get; set; } = "";
     [ProtoMember(3)] public string Address { get; set; } = "";
+    [ProtoMember(4)] public Location? Location { get; set; }
 }
 
 [ProtoContract]

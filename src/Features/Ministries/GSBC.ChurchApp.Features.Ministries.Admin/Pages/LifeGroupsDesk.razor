@@ -288,7 +288,7 @@
             <ul class="lg-groups">
                 @foreach (MinistrySummary group in groups)
                 {
-                    <li @key="group.Id"><a href="@($"ministries/{group.Id}")">@group.Name</a>@if (group.Meets.Length == 0) {<span class="lg-missing">Where it meets is missing</span>}</li>
+                    <li @key="group.Id"><a href="@($"ministries/{group.Id}")">@group.Name</a>@if (group.Where is not { IsSet: true } && group.Meets.Length == 0) {<span class="lg-missing">Where it meets is missing</span>}</li>
                 }
                 @foreach ((MinistrySummary group, SittingOut sitting) in off)
                 {
