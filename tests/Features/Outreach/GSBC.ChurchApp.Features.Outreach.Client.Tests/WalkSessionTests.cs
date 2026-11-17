@@ -56,6 +56,7 @@ public sealed class WalkSessionTests
         Assert.True(last.Ended);
         Assert.Contains(last.Uncovered, stretch => walked.Step.Sides.Any(side => Matches(stretch, side)));
         Assert.Contains(last.Covered, stretch => missed.Step.Sides.Any(side => Matches(stretch, side)));
+        Assert.Equal(ticked.Sum(index => steps[index].Step.Letterboxes), phone.Walk.JustSaved!.Letterboxes);
         Assert.Null(phone.Walk.Current);
         Assert.False(phone.Location.Running);
     }

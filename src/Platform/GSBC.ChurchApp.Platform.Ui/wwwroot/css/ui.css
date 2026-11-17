@@ -172,6 +172,10 @@ button.card { cursor: pointer; }
 .card__title { font-size: var(--text-lead); font-weight: 700; line-height: 1.25; letter-spacing: -0.01em; color: var(--ink); }
 .card--masthead .card__title { color: var(--on-masthead); }
 .card__footer { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
+.card--with-icon { flex-direction: row; align-items: flex-start; }
+.card--with-icon .card__body { flex: 1; padding-left: var(--space-md); }
+.card__icon { flex: none; padding: var(--space-lg) 0 0 var(--space-lg); color: var(--accent); line-height: 0; }
+.card--masthead .card__icon { color: var(--on-masthead); }
 .card__mark { position: absolute; right: -40px; bottom: -30px; width: 150px; opacity: 0.07; z-index: -1; pointer-events: none; }
 
 .list { border-top: 1px solid var(--line); }
