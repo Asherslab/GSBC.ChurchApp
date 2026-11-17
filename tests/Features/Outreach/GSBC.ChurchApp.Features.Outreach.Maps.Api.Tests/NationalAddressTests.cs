@@ -93,7 +93,7 @@ public sealed class NationalAddressTests : IAsyncLifetime
     {
         await _host.WithDbAsync(async db =>
         {
-            db.NationalReleases.Add(new Data.NationalReleaseRecord { Name = "Broken", Source = "test", StartedAt = DateTime.UtcNow });
+            db.NationalReleases.Add(new Data.NationalReleaseRecord { Name = "Broken", Source = "test", StartedAt = _host.Clock.GetUtcNow().UtcDateTime });
             return await db.SaveChangesAsync();
         });
 

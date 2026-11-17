@@ -1,4 +1,5 @@
 using GSBC.ChurchApp.Features.Outreach.Contracts;
+using GSBC.ChurchApp.Platform.Contracts.Locations;
 
 namespace GSBC.ChurchApp.Features.Outreach.Api.Data;
 
@@ -202,6 +203,7 @@ public sealed class DayRecord
     public double MeetingLat { get; set; }
     public double MeetingLng { get; set; }
     public string MeetingPlace { get; set; } = "";
+    public Location? Meeting { get; set; }
     public string Note { get; set; } = "";
     public WalkMode Mode { get; set; }
     public bool Published { get; set; }

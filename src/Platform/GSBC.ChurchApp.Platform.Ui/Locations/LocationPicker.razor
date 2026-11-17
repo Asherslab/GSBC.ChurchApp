@@ -1,0 +1,253 @@
+@using Grpc.Core
+@using GSBC.ChurchApp.Platform.Client.Locations
+@using GSBC.ChurchApp.Platform.Contracts.Locations
+@using GSBC.ChurchApp.Platform.Icons
+@using GSBC.ChurchApp.Platform.Ui.Maps
+@inject LocationFinder Finder
+
+<Sheet Open="Open" OpenChanged="OpenChanged" Title="@Title" Wide="true" ActionsInView="true" LayerClass="location-picker-layer">
+    <ChildContent>
+        <div class="location-picker">
+            <Segmented TValue="LocationKind" Label="@($"{Title}: at church or somewhere else")" Options="Kinds" Value="_kind" ValueChanged="KindChanged" />
+            @if (_kind == LocationKind.AtChurch)
+            {
+                <TextField Label="Where at church" @bind-Value="_note" MaxLength="120"
+                           Hint="Leave this empty for the usual place. A room or a door helps people find it." />
+            }
+            else
+            {
+                <div class="location-picker__split">
+                    <div class="location-picker__search">
+                        <SearchField Label="Search for the address" Value="@_search" ValueChanged="SearchAsync" AutoFocus="@(!_pinned)" />
+                        @if (_offline)
+                        {
+                            <p class="field__hint" role="status">Searching needs a connection. Type the address below, and choose it on the map later.</p>
+                        }
+                        else if (_found.Count > 0)
+                        {
+                            <div class="list location-picker__results" role="list">
+                                @foreach (FoundLocation found in _found)
+                                {
+                                    <ListRow @key="found" Icon="@(found.Kind == FoundLocationKind.Suburb ? AppIcons.Directions : AppIcons.PlaceOffSite)" Title="@LocationWords.FoundTitle(found)"
+                                             Subtitle="@(found.Kind == FoundLocationKind.Named ? $"{found.Address} · {LocationWords.FromChurch(found)}" : LocationWords.Found(found))"
+                                             Current="@(_chosen == found)" OnClick="() => ChooseAsync(found)" />
+                                }
+                            </div>
+                        }
+                        else if (_search.Trim().Length >= 3 && !_searching)
+                        {
+                            <p class="field__hint" role="status">No address matches "@_search.Trim()". Try the street and suburb, or tap the map.</p>
+                        }
+                        <p class="field__hint">Or tap the map to put the pin on the exact spot.</p>
+                    </div>
+                    <div class="location-picker__place">
+                        <div class="location-picker__map">
+                            @if (Pinned is { } pinned)
+                            {
+                                <LocationMapView Location="pinned" Zoom="16" Interactive="true" OnTap="PinAsync" CentreKey="_centred" />
+                            }
+                            else
+                            {
+                                <div class="location-picker__empty">
+                                    <Icon Name="@AppIcons.PlaceOffSite" />
+                                    <span>@(_preparing ? "Getting the map…" : "Choose an address and the map shows it here, with a pin you can move.")</span>
+                                </div>
+                            }
+                        </div>
+                        @if (_preparing && Pinned is not null)
+                        {
+                            <p class="field__hint" role="status">Getting the map…</p>
+                        }
+                        <TextField Label="Address" @bind-Value="_address" MaxLength="160" Hint="Filled in from the search or the pin. Change it if it reads better another way." />
+                        <TextField Label="Name" @bind-Value="_name" MaxLength="80" Hint="Leave this empty to show the address. People see the name above the address." />
+                        <TextField Label="Note" @bind-Value="_note" MaxLength="160" Hint="Anything that helps people find it, such as where to park." />
+                        @if (AllowHome)
+                        {
+                            <ToggleRow Title="This is someone's home" Description="@HomeDescription" @bind-Checked="_home" />
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    </ChildContent>
+    <Actions>
+        <SaveBar Label="Use this place" CancelLabel="Cancel" New="true" OnCancel="() => OpenChanged.InvokeAsync(false)" OnSave="UseAsync" Blocked="@WhyNot" />
+    </Actions>
+</Sheet>
+
+@code {
+    private static readonly IReadOnlyList<SegmentOption<LocationKind>> Kinds =
+    [
+        new(LocationKind.AtChurch, LocationWords.AtChurch),
+        new(LocationKind.OffSite, LocationWords.SomewhereElse),
+    ];
+
+    private const double NearTheEdge = 0.15;
+
+    private LocationKind _kind = LocationKind.OffSite;
+    private string _search = "";
+    private string _name = "";
+    private string _address = "";
+    private string _suburb = "";
+    private string _note = "";
+    private bool _home;
+    private double? _latitude;
+    private double? _longitude;
+    private LocationMap? _map;
+    private List<FoundLocation> _found = [];
+    private FoundLocation? _chosen;
+    private bool _searching;
+    private bool _offline;
+    private bool _preparing;
+    private bool _pinned;
+    private int _centred;
+    private bool _wasOpen;
+    private CancellationTokenSource? _searchRun;
+
+    [Parameter, EditorRequired] public required string Title { get; set; }
+    [Parameter] public bool Open { get; set; }
+    [Parameter] public EventCallback<bool> OpenChanged { get; set; }
+    [Parameter] public Location? Value { get; set; }
+    [Parameter] public bool AllowHome { get; set; }
+    [Parameter] public EventCallback<Location> OnChoose { get; set; }
+
+    private string HomeDescription => _suburb.Length > 0
+        ? $"Only its own people see the street address and the map. Everyone else sees \"A home in {_suburb}\"."
+        : "Only its own people see the street address and the map. Everyone else sees the suburb.";
+
+    private Location? Pinned => _latitude is { } latitude && _longitude is { } longitude && _map is not null
+        ? new Location { Kind = LocationKind.OffSite, Name = _name, Address = _address, Latitude = latitude, Longitude = longitude, Map = _map }
+        : null;
+
+    private string? WhyNot => _kind == LocationKind.OffSite && _address.Trim().Length == 0 && _name.Trim().Length == 0 && _latitude is null
+        ? "Search for the address, tap the map or type the address."
+        : null;
+
+    protected override void OnParametersSet()
+    {
+        if (Open && !_wasOpen)
+            Start(Value);
+        _wasOpen = Open;
+    }
+
+    private void Start(Location? value)
+    {
+        Location start = value ?? new Location { Kind = LocationKind.OffSite };
+        _kind = start.Kind == LocationKind.AtChurch ? LocationKind.AtChurch : LocationKind.OffSite;
+        (_name, _address, _suburb, _note, _home) = (start.Name, start.Kind == LocationKind.None ? start.Text : start.Address, start.Suburb, start.Note, start.Home);
+        (_latitude, _longitude, _map) = (start.Latitude, start.Longitude, start.Map);
+        _pinned = start.HasPin;
+        (_search, _found, _chosen, _offline) = ("", [], null, false);
+    }
+
+    private void KindChanged(LocationKind kind)
+    {
+        if (kind == _kind)
+            return;
+        _kind = kind;
+    }
+
+    private async Task SearchAsync(string text)
+    {
+        _search = text;
+        _searchRun?.Cancel();
+        if (text.Trim().Length < 3)
+        {
+            _found = [];
+            return;
+        }
+        CancellationTokenSource run = _searchRun = new CancellationTokenSource();
+        _searching = true;
+        try
+        {
+            FoundLocations results = await Finder.FindAsync(text, run.Token);
+            if (run.IsCancellationRequested)
+                return;
+            (_found, _offline) = (results.Found, false);
+        }
+        catch (RpcException exception) when (exception.StatusCode is StatusCode.Unavailable or StatusCode.DeadlineExceeded or StatusCode.Internal)
+        {
+            _offline = true;
+        }
+        catch (RpcException exception) when (exception.StatusCode == StatusCode.Cancelled)
+        {
+        }
+        finally
+        {
+            if (ReferenceEquals(_searchRun, run))
+                _searching = false;
+        }
+    }
+
+    private async Task ChooseAsync(FoundLocation found)
+    {
+        _chosen = found;
+        if (found.Kind == FoundLocationKind.Named && _name.Length == 0)
+            _name = found.Name;
+        _address = found.Kind == FoundLocationKind.Suburb ? "" : found.Address;
+        _suburb = found.Suburb;
+        await PlaceAsync(found.Latitude, found.Longitude, true);
+    }
+
+    private async Task PinAsync(MapPoint point)
+    {
+        _chosen = null;
+        await PlaceAsync(point.Lat, point.Lon, false);
+        try
+        {
+            if (await Finder.NearestAsync(point.Lat, point.Lon) is { } nearest)
+                (_address, _suburb) = (nearest.Address, nearest.Suburb);
+        }
+        catch (RpcException)
+        {
+            _offline = true;
+        }
+    }
+
+    private async Task PlaceAsync(double latitude, double longitude, bool centre)
+    {
+        (_latitude, _longitude, _pinned) = (latitude, longitude, true);
+        if (centre)
+            _centred++;
+        if (_map is { } map && Inside(map, latitude, longitude))
+            return;
+        _preparing = true;
+        StateHasChanged();
+        try
+        {
+            _map = await Finder.PrepareMapAsync(latitude, longitude) ?? _map;
+            _centred++;
+        }
+        catch (RpcException)
+        {
+            _offline = true;
+        }
+        finally
+        {
+            _preparing = false;
+        }
+    }
+
+    private static bool Inside(LocationMap map, double latitude, double longitude)
+    {
+        double latitudeMargin = (map.North - map.South) * NearTheEdge;
+        double longitudeMargin = (map.East - map.West) * NearTheEdge;
+        return latitude > map.South + latitudeMargin && latitude < map.North - latitudeMargin
+                                                    && longitude > map.West + longitudeMargin && longitude < map.East - longitudeMargin;
+    }
+
+    private Task UseAsync() => OnChoose.InvokeAsync(_kind == LocationKind.AtChurch
+        ? Location.AtChurch(_note.Trim())
+        : new Location
+        {
+            Kind = LocationKind.OffSite,
+            Name = _name.Trim(),
+            Address = _address.Trim(),
+            Suburb = _suburb,
+            Note = _note.Trim(),
+            Latitude = _latitude,
+            Longitude = _longitude,
+            Map = _latitude is null ? null : _map,
+            Home = AllowHome && _home,
+        });
+}

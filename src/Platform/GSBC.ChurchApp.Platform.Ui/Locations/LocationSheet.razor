@@ -1,0 +1,54 @@
+@using GSBC.ChurchApp.Platform.Client.Native
+@using GSBC.ChurchApp.Platform.Contracts.Locations
+@using GSBC.ChurchApp.Platform.Icons
+@using Microsoft.Extensions.DependencyInjection
+@inject Shell Shell
+@inject IServiceProvider Services
+
+<Sheet Open="Open" OpenChanged="OpenChanged" Title="@LocationWords.Headline(Location)" Lead="@LocationWords.Address(Location)" Wide="true" LayerClass="location-sheet">
+    <ChildContent>
+        @if (Location.HasPin)
+        {
+            <div class="location-sheet__map">
+                <LocationMapView Location="Location" Zoom="16" Interactive="true" />
+            </div>
+        }
+        @if (LocationWords.Note(Location) is { } note)
+        {
+            <p class="location-sheet__note">@note</p>
+        }
+    </ChildContent>
+    <Actions>
+        @if (OnAndroid)
+        {
+            <Button Block="true" Icon="@AppIcons.Directions" OnClick="() => OpenAsync(LocationWords.PhoneMaps(Location))">Open in Maps</Button>
+        }
+        else
+        {
+            <Menu Label="Directions" Text="Directions" Icon="@AppIcons.Directions" Variant="ButtonVariant.Primary" Block="true" Items="Directions" />
+            <Menu Label="Open in Maps" Text="Open in Maps" Icon="external-link" Variant="ButtonVariant.Quiet" Block="true" Items="Opens" />
+        }
+    </Actions>
+</Sheet>
+
+@code {
+    [Parameter, EditorRequired] public required Location Location { get; set; }
+    [Parameter] public bool Open { get; set; }
+    [Parameter] public EventCallback<bool> OpenChanged { get; set; }
+
+    private bool OnAndroid => Services.GetService<NativeBridge>() is { IsNative: true, Platform: "android" };
+
+    private IReadOnlyList<MenuItem> Directions =>
+    [
+        this.Item("Apple Maps", () => OpenAsync(LocationWords.AppleDirections(Location))),
+        this.Item("Google Maps", () => OpenAsync(LocationWords.GoogleDirections(Location))),
+    ];
+
+    private IReadOnlyList<MenuItem> Opens =>
+    [
+        this.Item("Apple Maps", () => OpenAsync(LocationWords.AppleMaps(Location))),
+        this.Item("Google Maps", () => OpenAsync(LocationWords.GoogleMaps(Location))),
+    ];
+
+    private Task OpenAsync(string url) => Shell.OpenExternalAsync(url).AsTask();
+}

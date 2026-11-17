@@ -7,6 +7,8 @@
 @using GSBC.ChurchApp.Platform.Contracts.Content
 @using GSBC.ChurchApp.Platform.Ui.News
 @using GSBC.ChurchApp.Platform.Ui.Destinations
+@using GSBC.ChurchApp.Platform.Contracts.Locations
+@using GSBC.ChurchApp.Platform.Ui.Locations
 @inject TimeProvider Clock
 @inject UiHost Host
 
@@ -249,6 +251,8 @@
             @<CopyField Label="Link for calendar apps" Value="https://example.com/calendars/services.ics" Hint="Anyone can subscribe with this." />)
         @Item("A link inside words: TextLink", "Never a button dressed as a link.",
             @<p class="gallery__note">Read it on <TextLink Href="gallery">the church's website</TextLink>.</p>)
+        @Item("A place off site: LocationField", "Where something happens: At church, or somewhere else found by its address or a pin on the map, with a name and a note. Change opens the picker; a home shows only its suburb to everyone else.",
+            @<LocationField Label="Where people meet" Description="Printed on every route map and shown on the day's page." @bind-Value="_place" AllowHome="true" Optional="true" />)
     </Section>
 
     <Section Title="Dates" Lead="The admin panel types or picks from a calendar; the phone uses its own wheel.">
@@ -361,6 +365,12 @@
                 <ListRow Title="Coming later" Subtitle="Not in this version" Icon="lock" Disabled="true" />
                 <ListRow Title="Services" Subtitle="A row with its own ⋯ menu (Actions): the row opens it, the menu acts on it" Icon="link" IconTone="RowTone.Quiet" Href="gallery" Actions="RowActions" />
             </ListGroup>)
+        @Item("Where it is: LocationRow", "A place as one row: its name, address and note, and a small map at the end that opens the place's map with Directions and Open in Maps. At church has no map; a home shows only its suburb to everyone else.",
+            @<div class="list">
+                <LocationRow Location="SamplePlace" />
+                <LocationRow Location="SampleAtChurch" />
+                <LocationRow Location="SampleHome" />
+            </div>)
         @Item("Putting things in order: ReorderList", "Drag a row by its handle, or use its ⋯ menu to move it up or down; the preview above follows as you drag.",
             @<ReorderList TItem="string" Items="_order" Key="name => name" Name="name => name" Label="Tabs, in order" OnReordered="order => _order = order">
                 <Preview>@foreach (string name in context) { <span @key="name">@name</span> }</Preview>
@@ -488,6 +498,17 @@
 </PagedSheet>
 
 @code {
+    private static readonly Location SamplePlace = new()
+    {
+        Kind = LocationKind.OffSite, Name = "Eatons Hill shops car park", Address = "640 South Pine Road, Eatons Hill QLD 4037", Suburb = "Eatons Hill",
+        Note = "Park at the far end, near the bakery.", Latitude = -27.339, Longitude = 152.96,
+    };
+
+    private static readonly Location SampleAtChurch = Location.AtChurch("The hall doors");
+
+    private static readonly Location SampleHome = new Location { Kind = LocationKind.OffSite, Home = true, Suburb = "Albany Creek" }.SeenFromOutside();
+
+    private Location? _place = SamplePlace;
     private static readonly VideoLink SampleVideoLink = new(VideoSite.Vimeo, "76979871");
 
     private const string SampleMinistry = "Kids Ministries";

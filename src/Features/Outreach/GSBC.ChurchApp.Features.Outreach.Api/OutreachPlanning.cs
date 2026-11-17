@@ -1,8 +1,10 @@
 using System.Security.Cryptography;
-using Grpc.Core;
 using GSBC.ChurchApp.Features.Outreach.Api.Data;
 using GSBC.ChurchApp.Features.Outreach.Contracts;
+using GSBC.ChurchApp.Platform.Api.Locations;
 using GSBC.ChurchApp.Platform.Common;
+using GSBC.ChurchApp.Platform.Contracts.Locations;
+using Grpc.Core;
 using Microsoft.EntityFrameworkCore;
 
 namespace GSBC.ChurchApp.Features.Outreach.Api;
@@ -254,8 +256,9 @@ internal sealed class OutreachPlanning(
             throw Invalid(finished);
         day.CampaignId = campaignId;
         (day.StartsAt, day.EndsAt) = (starts, ends);
-        (day.MeetingLat, day.MeetingLng) = (asked.MeetingPoint.Lat, asked.MeetingPoint.Lng);
-        day.MeetingPlace = OutreachRules.Clip(asked.MeetingPlace, OutreachRules.LongestName);
+        day.Meeting = LocationRules.Cleaned(asked.Meeting) ?? (asked.MeetingPlace.Trim().Length > 0 ? Location.Written(asked.MeetingPlace) : null);
+        (day.MeetingLat, day.MeetingLng) = day.Meeting is { HasPin: true } pinned ? (pinned.Latitude!.Value, pinned.Longitude!.Value) : (asked.MeetingPoint.Lat, asked.MeetingPoint.Lng);
+        day.MeetingPlace = OutreachRules.Clip(LocationRules.Text(day.Meeting), OutreachRules.LongestName);
         day.Note = OutreachRules.Clip(asked.Note, OutreachRules.LongestNote);
         day.Mode = Enum.IsDefined(asked.Mode) ? asked.Mode : WalkMode.Letterbox;
         day.Published = asked.Published;

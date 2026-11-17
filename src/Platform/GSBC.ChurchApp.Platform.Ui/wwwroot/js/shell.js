@@ -351,7 +351,7 @@ window.gsbcShell = (() => {
       const ease = 'cubic-bezier(0.22, 1, 0.36, 1)';
       const backdrop = () => sheet.parentElement?.querySelector('.sheet-backdrop');
       const docked = () => getComputedStyle(sheet).bottom === '0px';
-      const fixed = 'input, textarea, select, [contenteditable="true"], .chips, .no-sheet-drag';
+      const fixed = 'input, textarea, select, [contenteditable="true"], .chips, .no-sheet-drag, .map-view';
       let start = null;
       const place = (dy) => {
         sheet.style.transform = `translateY(${dy}px)`;

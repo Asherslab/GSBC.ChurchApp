@@ -1,5 +1,6 @@
 @page "/outreach/days/{DayId}"
 @using GSBC.ChurchApp.Features.Outreach.Client.Planning
+@using GSBC.ChurchApp.Platform.Ui.Locations
 @inject OutreachDayRoutes Days
 @inject IAccess Access
 
@@ -19,11 +20,13 @@
         {
             <Masthead Title="@(view.Campaign?.Name ?? "Outreach day")" Note="@OutreachPhoneWords.DayWhen(day)" />
             <Section First="true">
+                @if (day.Meeting is { IsSet: true } meeting)
+                {
+                    <div class="list">
+                        <LocationRow Location="meeting" />
+                    </div>
+                }
                 <FactList>
-                    @if (day.MeetingPlace.Length > 0)
-                    {
-                        <Fact Label="Meet at" Text="@day.MeetingPlace" Icon="map-pin" />
-                    }
                     <Fact Label="What it is" Text="@(day.Mode == WalkMode.Doorknock ? "Doorknocking, in pairs" : "Letterboxing, alone or together")" Icon="@(day.Mode == WalkMode.Doorknock ? "door-open" : "mail")" />
                     @if (view.Campaign?.HandedOut is { Length: > 0 } handedOut)
                     {

@@ -1,3 +1,4 @@
+using GSBC.ChurchApp.Platform.Contracts.Locations;
 using GSBC.ChurchApp.Platform.Contracts.Media;
 using GSBC.ChurchApp.Platform.Contracts.Tiers;
 using ProtoBuf;
@@ -332,6 +333,7 @@ public sealed class OutreachDay
     [ProtoMember(7)] public string Note { get; set; } = "";
     [ProtoMember(8)] public WalkMode Mode { get; set; }
     [ProtoMember(9)] public bool Published { get; set; }
+    [ProtoMember(10)] public Location? Meeting { get; set; }
 }
 
 [ProtoContract]

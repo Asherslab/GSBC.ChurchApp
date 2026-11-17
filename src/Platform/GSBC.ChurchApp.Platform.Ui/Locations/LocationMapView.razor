@@ -1,0 +1,43 @@
+@using GSBC.ChurchApp.Platform.Contracts.Locations
+@using GSBC.ChurchApp.Platform.Ui.Maps
+@inject LocationMaps Maps
+
+@if (_source is not null && Location.HasPin)
+{
+    <MapView @ref="_view" Source="_source" Label="@($"Map of {LocationWords.Headline(Location)}")" Centre="Point" Zoom="Zoom" Interactive="Interactive"
+             Markers="_markers" OnTap="OnTap" Class="@($"location-map {Class}")" />
+}
+
+@code {
+    private MapSource? _source;
+    private Location? _shown;
+    private IReadOnlyList<MapMarker> _markers = [];
+    private MapView? _view;
+    private int _centredKey;
+
+    [Parameter, EditorRequired] public required Location Location { get; set; }
+    [Parameter] public double Zoom { get; set; } = 16;
+    [Parameter] public bool Interactive { get; set; }
+    [Parameter] public EventCallback<MapPoint> OnTap { get; set; }
+    [Parameter] public string? Class { get; set; }
+    [Parameter] public int CentreKey { get; set; }
+
+    private MapPoint Point => new(Location.Latitude ?? 0, Location.Longitude ?? 0);
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (Location.SameAs(_shown))
+            return;
+        _shown = Location.Copy();
+        _markers = Location.HasPin ? [new MapMarker(Point, MapMarkerKind.Pin)] : [];
+        _source = await Maps.SourceAsync(Location);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (CentreKey == _centredKey || _view is null)
+            return;
+        _centredKey = CentreKey;
+        await _view.CentreAsync(Point);
+    }
+}

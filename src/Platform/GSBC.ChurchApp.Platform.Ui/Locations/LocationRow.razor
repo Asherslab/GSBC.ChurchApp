@@ -1,0 +1,28 @@
+@using GSBC.ChurchApp.Platform.Contracts.Locations
+@using GSBC.ChurchApp.Platform.Icons
+
+@if (Location.IsSet)
+{
+    <ListRow Icon="@(Location.Kind == LocationKind.AtChurch ? AppIcons.AtChurch : AppIcons.PlaceOffSite)" Title="@LocationWords.Headline(Location)"
+             Subtitle="@LocationWords.Address(Location)" OnClick="Tap"
+             Class="location-row" Below="Below" TrailingContent="@(ShowsMap && LocationWords.Opens(Location) && Location.HasPin ? Square : null)" />
+    @if (LocationWords.Opens(Location))
+    {
+        <LocationSheet Location="Location" @bind-Open="_open" />
+    }
+}
+
+@code {
+    private bool _open;
+
+    [Parameter, EditorRequired] public required Location Location { get; set; }
+    [Parameter] public bool ShowsMap { get; set; } = true;
+
+    private RenderFragment? Below => LocationWords.Note(Location) is { } note
+        ? @<span class="location-row__note">@note</span>
+        : Location.AddressHidden ? @<span class="location-row__note">@LocationWords.HiddenHome</span> : null;
+
+    private RenderFragment Square => @<span class="location-row__map" aria-hidden="true"><LocationMapView Location="Location" Zoom="15" /></span>;
+
+    private EventCallback Tap => LocationWords.Opens(Location) ? EventCallback.Factory.Create(this, () => _open = true) : EventCallback.Empty;
+}

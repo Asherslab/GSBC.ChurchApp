@@ -1,3 +1,4 @@
+@using GSBC.ChurchApp.Platform.Contracts.Locations
 @using GSBC.ChurchApp.Features.Outreach.Admin.Planning
 @using GSBC.ChurchApp.Features.Outreach.Client.Planning
 @using GSBC.ChurchApp.Features.Outreach.Routing
@@ -168,7 +169,6 @@ else
         new(PlanTool.Lasso, AppIcons.LassoStreets, "Lasso", "Loop streets into the selected route, or into a new one", NeedsRoutes: true),
         new(PlanTool.Erase, AppIcons.LeaveOut, "Eraser", "Drag along streets to leave them out of the day", NeedsRoutes: true),
         new(PlanTool.Start, AppIcons.RouteStart, "Start pin", "Click where the selected route starts", NeedsRoute: true),
-        new(PlanTool.Meeting, AppIcons.MeetingPoint, "Meeting point", "Click where everyone meets"),
     ];
 
     private static readonly IReadOnlyList<SegmentOption<PlanView>> Views = [new(PlanView.Plan, "Plan"), new(PlanView.OnTheDay, "On the day")];
@@ -231,7 +231,7 @@ else
         PlanTool.Cut => MapSketchTool.Line,
         PlanTool.Brush or PlanTool.Erase => MapSketchTool.Brush,
         PlanTool.Lasso => MapSketchTool.Lasso,
-        PlanTool.Start or PlanTool.Meeting => MapSketchTool.Pin,
+        PlanTool.Start => MapSketchTool.Pin,
         _ => MapSketchTool.None,
     };
 
@@ -245,7 +245,6 @@ else
         PlanTool.Lasso => Selected is { } chosen ? $"Draw a loop around streets to give them to route {chosen.Number}." : "Draw a loop around streets to make them a new route.",
         PlanTool.Erase => "Drag along streets to leave them out of the day. Click a street to leave all of it out.",
         PlanTool.Start => Selected is { } chosen ? $"Click the corner where route {chosen.Number} should start." : null,
-        PlanTool.Meeting => "Click where everyone meets. It's printed on every map.",
         _ => _planner?.Note,
     };
 
@@ -305,6 +304,8 @@ else
 
     private static GeoPoint Meeting(PlanSetup setup, Maps.Contracts.OutreachRegion region)
     {
+        if (setup.Day.Meeting is { Kind: LocationKind.AtChurch } && setup.Atlas.Church is { } church)
+            return new GeoPoint(church.Lat, church.Lon);
         if (setup.Day.MeetingPoint is { Lat: not 0 } meeting)
             return EngineInputs.Point(meeting);
         (double lat, double lon) = OutreachRegions.Centre(region);
@@ -465,7 +466,6 @@ else
             PlanTool.Erase => EditAsync(planner => planner.Apply(planner.Draft.Erase(planner.Brush(points)))),
             PlanTool.Lasso => EditAsync(planner => planner.Apply(planner.Draft.Lasso(_selected, points))),
             PlanTool.Start when _selected is { } route && points.Count > 0 => EditAsync(planner => planner.Apply(planner.Draft.MoveStart(route, points[0]))),
-            PlanTool.Meeting when points.Count > 0 => MoveMeetingAsync(points[0]),
             _ => Task.CompletedTask,
         };
     }
@@ -507,17 +507,6 @@ else
         {
             Id = Guid.CreateVersion7().ToString(), Name = name, Area = planner.Area.Select(EngineInputs.Point).ToList(),
         }));
-    }
-
-    private async Task MoveMeetingAsync(GeoPoint point)
-    {
-        if (_planner is not { } planner)
-            return;
-        planner.Meeting = point;
-        _tool = PlanTool.Select;
-        Setup.Day.MeetingPoint = EngineInputs.Point(point);
-        await RunAsync(() => Outreach.SaveDayAsync(Setup.Scope, Setup.Day));
-        await EditAsync(_ => true);
     }
 
     private Task EditAsync(Func<DayPlanner, bool> edit, bool fit = false)

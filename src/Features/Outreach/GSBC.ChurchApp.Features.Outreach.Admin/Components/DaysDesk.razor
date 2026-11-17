@@ -1,3 +1,5 @@
+@using GSBC.ChurchApp.Platform.Ui.Locations
+@using GSBC.ChurchApp.Platform.Contracts.Locations
 @inject OutreachDeskClient Outreach
 @inject UnsavedChanges Unsaved
 @inject TimeProvider Time
@@ -53,8 +55,7 @@
                         <TimeField Label="Ends" @bind-Value="_ends" Min="@_starts" />
                     </div>
                     <p class="field__hint">A walk anyone starts between these times counts toward the day, from wherever they set out.</p>
-                    <TextField Label="Where people meet" @bind-Value="_place" MaxLength="80" Placeholder="Church, at the hall doors"
-                               Hint="Printed on every map. Put the pin on the map when you plan the routes." />
+                    <LocationField Label="Where people meet" Description="Printed on every route map and shown on the day's page in the app." @bind-Value="_meeting" />
                     <Segmented TValue="WalkMode" Label="What people do" ShowLabel="true" Options="Modes" @bind-Value="_mode" />
                     <TextField Label="Note for walkers" @bind-Value="_note" Multiline="true" MaxLength="1000"
                                Hint="Shown with the day in the app, such as morning tea after or what to bring." />
@@ -97,7 +98,8 @@
 
     private LiveData<OutreachDesk>? _live;
     private OutreachDay? _editing;
-    private string _campaign = "", _date = "", _starts = "", _ends = "", _place = "", _note = "";
+    private string _campaign = "", _date = "", _starts = "", _ends = "", _note = "";
+    private Location? _meeting;
     private WalkMode _mode;
     private bool _busy, _saved, _opened;
     private DayDeletion? _deletion;
@@ -109,7 +111,7 @@
 
     private bool Changed => _editing is { } editing && Asked() is { } asked
         ? IsNew || asked.Campaign != editing.Campaign || asked.StartsAt != editing.StartsAt || asked.EndsAt != editing.EndsAt
-          || _place != editing.MeetingPlace || _note != editing.Note || _mode != editing.Mode
+          || !SameMeeting(_meeting, editing.Meeting) || _note != editing.Note || _mode != editing.Mode
         : _editing is not null;
 
     private string? WhyNotSave =>
@@ -170,7 +172,7 @@
 
     private string Lead(OutreachDay day, DayFacts facts) =>
         day.Id.Length == 0 ? "When it runs, where people meet and the campaign it's for. Its routes come next, on the map."
-        : $"{OutreachWords.Window(day)}{(day.MeetingPlace.Length > 0 ? $", meeting at {day.MeetingPlace}" : "")}.";
+        : $"{OutreachWords.Window(day)}{(day.Meeting is { IsSet: true } meeting ? $", meeting at {LocationWords.Headline(meeting)}" : "")}.";
 
     private string GoHint(OutreachDay day, DayFacts facts)
     {
@@ -196,6 +198,7 @@
             EndsAt = ChurchTime.ToUtc(saturday.ToDateTime(ends)),
             MeetingPoint = last?.MeetingPoint ?? new GeoPoint(),
             MeetingPlace = last?.MeetingPlace ?? "",
+            Meeting = last?.Meeting?.Copy(),
         };
     }
 
@@ -206,9 +209,12 @@
         return new OutreachDay
         {
             Id = _editing!.Id, Campaign = _campaign, StartsAt = ChurchTime.ToUtc(date.ToDateTime(starts)), EndsAt = ChurchTime.ToUtc(date.ToDateTime(ends)),
-            MeetingPoint = _editing.MeetingPoint, MeetingPlace = _place.Trim(), Note = _note.Trim(), Mode = _mode, Published = _editing.Published,
+            MeetingPoint = _meeting is { HasPin: true } pinned ? new GeoPoint { Lat = pinned.Latitude!.Value, Lng = pinned.Longitude!.Value } : _editing.MeetingPoint,
+            Meeting = _meeting, Note = _note.Trim(), Mode = _mode, Published = _editing.Published,
         };
     }
+
+    private static bool SameMeeting(Location? asked, Location? saved) => asked is null ? saved is null : asked.SameAs(saved);
 
     private static string DeletionWords(DayDeletion deletion)
     {
@@ -235,7 +241,7 @@
         _editing = day;
         DateTime starts = ChurchTime.ToChurch(day.StartsAt), ends = ChurchTime.ToChurch(day.EndsAt);
         (_campaign, _date, _starts, _ends) = (day.Campaign, OutreachRules.Format(DateOnly.FromDateTime(starts)), starts.ToString("HH:mm"), ends.ToString("HH:mm"));
-        (_place, _note, _mode) = (day.MeetingPlace, day.Note, day.Mode);
+        (_meeting, _note, _mode) = (day.Meeting?.Copy(), day.Note, day.Mode);
     }
 
     private void Close()
