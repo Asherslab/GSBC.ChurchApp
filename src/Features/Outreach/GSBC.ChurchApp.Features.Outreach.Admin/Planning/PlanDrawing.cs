@@ -33,7 +33,9 @@ public static class PlanDrawing
         foreach (PlannedSection section in planner.Sections.OrderBy(section => section.Id == selected))
         {
             string colour = selected is null || selected == section.Id ? RouteColours.Of(section.Colour) : RouteColours.Faded(section.Colour);
-            foreach (int piece in section.Section.Pieces)
+            foreach (int piece in section.WalkedThrough)
+                lines.Add(new MapLine(Points(network.Line(piece)), MapLineStyle.RouteWalkedThrough, Colour: colour, Id: section.Id.ToString()));
+            foreach (int piece in section.Delivered)
                 lines.Add(new MapLine(Points(network.Line(piece)), MapLineStyle.Route, Colour: colour, Id: section.Id.ToString()));
         }
         foreach (Contracts.Stretch stretch in done ?? [])

@@ -228,6 +228,7 @@ public static class MapJson
     {
         MapLineStyle.WalkDone => "walk-done",
         MapLineStyle.LongWalk => "long",
+        MapLineStyle.RouteWalkedThrough => "route-through",
         _ => style.ToString().ToLowerInvariant(),
     };
 
