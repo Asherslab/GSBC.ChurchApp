@@ -127,5 +127,17 @@ public sealed class DigestTests
         Assert.Empty(digest.Weeks(new DateOnly(2026, 12, 28)));
     }
 
+    [Fact]
+    public void ADateThatIsntOnShowsThePictureStaffKeptAndNoneWhenTheyRemovedIt()
+    {
+        EmailItem kept = new(DigestItemKind.NotOn, new DigestWords { Title = "No Bible Study & Prayer" }, "https://media.example.org/break.jpg", "", "");
+        EmailItem removed = kept with { Words = new DigestWords { Title = "No youth" }, PictureUrl = null };
+
+        string html = DigestEmail.Html("Monday 14 – Sunday 27 December", [kept, removed], "https://dev-app.example.org/open/week");
+
+        Assert.Equal(1, html.Split("<img src=\"https://media.example.org/break.jpg\"").Length - 1);
+        Assert.Equal(1, html.Split("<img ").Length - 1);
+    }
+
     private static DigestShownItem Item(string key, string date) => new() { Key = key, FirstDate = date, LastDate = date, Words = new DigestWords { Title = key } };
 }

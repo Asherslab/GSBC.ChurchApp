@@ -102,7 +102,7 @@ public static class DigestEmail
     {
         html.Append($"""<tr><td style="padding:{firstTop ?? "22px"} 32px 4px;font-family:{Font};color:{Ink}">""");
         html.Append(firstTop is not null ? "<div>" : $"""<div style="border-top:1px solid {Line};padding-top:22px">""");
-        string? picture = item.Kind == DigestItemKind.NotOn ? null : item.PictureUrl;
+        string? picture = item.PictureUrl;
         if (picture is not null && item.PictureAt == DigestPictureAt.Beside)
         {
             html.Append("""<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse"><tr>""");
