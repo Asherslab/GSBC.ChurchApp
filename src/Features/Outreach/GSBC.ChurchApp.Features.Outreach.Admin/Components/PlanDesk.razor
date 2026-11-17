@@ -39,7 +39,7 @@ else
                         <div class="plan-rail" role="toolbar" aria-label="Map tools" data-map-cover>
                             @foreach (ToolChoice choice in Tools)
                             {
-                                <Button Variant="ButtonVariant.Quiet" Icon="@choice.Icon" AriaLabel="@choice.Name" Tooltip="@choice.Tip" Pressed="@(_tool == choice.Tool)"
+                                <Button Variant="ButtonVariant.Quiet" Icon="@choice.Icon" AriaLabel="@choice.Name" Tooltip="@choice.Tip" Pressed="@(_tool == choice.Tool || _tool == PlanTool.Redraw && choice.Tool == RedrawingWith)"
                                         Disabled="@(choice.NeedsRoute && _selected is null || choice.NeedsRoutes && _planner.Sections.Count == 0)"
                                         Class="plan-rail__tool" OnClick="() => ChooseTool(choice.Tool)" />
                             }
@@ -47,15 +47,33 @@ else
                             <Button Variant="ButtonVariant.Quiet" Icon="@AppIcons.Undo" AriaLabel="Undo" Tooltip="Undo" Disabled="!_planner.Draft.CanUndo" Class="plan-rail__tool" OnClick="UndoAsync" />
                             <Button Variant="ButtonVariant.Quiet" Icon="@AppIcons.Redo" AriaLabel="Redo" Tooltip="Redo" Disabled="!_planner.Draft.CanRedo" Class="plan-rail__tool" OnClick="RedoAsync" />
                         </div>
-                        @if (_tool == PlanTool.Area)
+                        @if (Outlining)
                         {
-                            <MapDrawBar Class="plan-draw-bar" Text="Area: click each corner" OnUndo="() => _sketch?.UndoPointAsync() ?? Task.CompletedTask" CanUndo="@(_placed > 0)"
+                            <MapDrawBar Class="plan-draw-bar" Text="@OutlineText" OnUndo="() => _sketch?.UndoPointAsync() ?? Task.CompletedTask" CanUndo="@(_placed > 0)"
                                         OnCancel="Cancelled" OnFinish="() => _sketch?.FinishAsync() ?? Task.CompletedTask" CanFinish="@(_placed >= 3)" />
                         }
-                        else if (ToolHint is { } hint)
+                        else
                         {
-                            <p class="plan-hint" role="status">@hint</p>
+                            @foreach (DraftArea area in _planner.Areas)
+                            {
+                                <MapPin @key="area.Id" Point="PlanDrawing.Point(PlanDrawing.Top(area))">
+                                    <Menu Label="@AreaName(area)" Text="@ChipText(area)" Icon="@(area.OneRoute ? AppIcons.DrawRoute : AppIcons.DrawArea)" Chevron="true" Small="true" AlignStart="true"
+                                          Class="map-chip" Items="AreaItems(area)" />
+                                </MapPin>
+                            }
+                            @if (ToolHint is { } hint)
+                            {
+                                <p class="plan-hint" role="status">@hint</p>
+                            }
                         }
+                    }
+                    @if (_view == PlanView.Plan && _planner.Areas.Count > 0 && !Outlining && Selected is null)
+                    {
+                        <div class="plan-key" aria-label="What the outlines mean">
+                            @if (_planner.HasSplitArea) { <span class="plan-key__row"><span class="plan-key__swatch plan-key__swatch--split"></span>An area the app splits</span> }
+                            @if (_planner.Areas.Any(area => area.OneRoute)) { <span class="plan-key__row"><span class="plan-key__swatch plan-key__swatch--drawn"></span>A route drawn as one</span> }
+                            @if (_planner.Overlaps.Count > 0) { <span class="plan-key__row"><span class="plan-key__swatch plan-key__swatch--overlap"></span>Overlap: counted once, in the route named</span> }
+                        </div>
                     }
                     @if (_hovered is { } hovered && Board(hovered) is var progress)
                     {
@@ -104,9 +122,9 @@ else
             <Segmented TValue="PlanView" Label="Show" Options="Views" Value="_view" ValueChanged="ShowAsync" Class="plan-desk__views" />
             @if (_view == PlanView.Plan)
             {
-                <PlanPane Planner="_planner" Areas="Setup.Areas" AreaName="@AreaName" CanPlan="CanPlan" Selected="_selected" Busy="_busy"
-                          OnSelect="SelectAsync" OnDraw="() => ChooseTool(PlanTool.Area)" OnUseArea="UseAreaAsync" OnSize="SizeAsync"
-                          OnIncludeRested="IncludeRestedAsync" OnSaveArea="SaveAreaAsync" OnNextReview="NextReviewAsync" />
+                <PlanPane Planner="_planner" Areas="SavedAreas" AreaName="AreaName" CanPlan="CanPlan" Selected="_selected" Busy="_busy" NamingArea="_namingArea"
+                          OnSelect="SelectAsync" OnDrawRoute="() => ChooseTool(PlanTool.Route)" OnDrawArea="() => ChooseTool(PlanTool.Area)" OnUseArea="UseAreaAsync" OnSize="SizeAsync"
+                          OnIncludeRested="IncludeRestedAsync" OnSaveArea="SaveAreaAsync" OnNameArea="area => _namingArea = area" OnNextReview="NextReviewAsync" />
             }
             else
             {
@@ -121,8 +139,8 @@ else
             {
                 <p class="plan-desk__published">@PublishedLine</p>
                 <div class="plan-desk__actions">
-                    <Button Small="true" Variant="ButtonVariant.Quiet" Icon="@AppIcons.Rebalance" Tooltip="Even out the routes that aren't locked" Disabled="_busy" OnClick="RebalanceAsync">Rebalance</Button>
-                    <Button Small="true" Variant="ButtonVariant.Quiet" Icon="@AppIcons.Regenerate" Tooltip="Split the area again, keeping locked routes" Disabled="@(_busy || !_planner.HasArea)" OnClick="RegenerateAsync">Regenerate</Button>
+                    <Button Small="true" Variant="ButtonVariant.Quiet" Icon="@AppIcons.Rebalance" Tooltip="Even out the app's routes; routes drawn by hand and locked routes stay as they are" Disabled="@(_busy || !_planner.HasSplitArea)" OnClick="RebalanceAsync">Rebalance</Button>
+                    <Button Small="true" Variant="ButtonVariant.Quiet" Icon="@AppIcons.Regenerate" Tooltip="Split the areas again; routes drawn by hand and locked routes stay as they are" Disabled="@(_busy || !_planner.HasSplitArea)" OnClick="RegenerateAsync">Regenerate</Button>
                     <span class="plan-desk__gap"></span>
                     <Button Busy="_busy" Disabled="!Unpublished" OnClick="AskToPublish">@PublishLabel</Button>
                 </div>
@@ -162,7 +180,8 @@ else
     private static readonly IReadOnlyList<ToolChoice> Tools =
     [
         new(PlanTool.Select, AppIcons.SelectOnMap, "Select", "Select a route (click it on the map)"),
-        new(PlanTool.Area, AppIcons.DrawArea, "Draw the area", "Draw the area to cover; it's split into routes"),
+        new(PlanTool.Route, AppIcons.DrawRoute, "Draw a route", "Click round a route's streets; it's one route as drawn"),
+        new(PlanTool.Area, AppIcons.DrawArea, "Draw an area to split", "Click round an area; the app splits it into routes"),
         new(PlanTool.Cut, AppIcons.CutRoutes, "Scissors", "Draw across a route's streets where it should split", NeedsRoutes: true),
         new(PlanTool.Brush, AppIcons.PaintStreets, "Brush", "Drag along streets to paint them into the selected route; click takes a whole street", NeedsRoute: true),
         new(PlanTool.Lasso, AppIcons.LassoStreets, "Lasso", "Loop streets into the selected route, or into a new one", NeedsRoutes: true),
@@ -178,6 +197,8 @@ else
 
     private MapSketch? _sketch;
     private int _placed;
+    private int? _redrawing, _namingArea;
+    private readonly List<SavedArea> _savedHere = [];
     private bool _open = true;
 
     private PlanSetup? _shown;
@@ -223,11 +244,56 @@ else
         $"{OutreachWords.Window(Setup.Day)}{(Setup.Day.MeetingPlace.Length > 0 ? $", meeting at {Setup.Day.MeetingPlace}" : "")} · {Setup.Campaign}"
         + (_planner is { Sections.Count: > 0 } planner ? $" · {OutreachWords.Plural(planner.Sections.Count, "route", "routes")}, {OutreachWords.Plural(planner.Letterboxes, "letterbox", "letterboxes")}" : "");
 
-    private string AreaName => Setup.Areas.FirstOrDefault(area => area.Id == _planner?.AreaId)?.Name ?? "";
+    private IReadOnlyList<SavedArea> SavedAreas => [.. Setup.Areas.Where(area => _savedHere.All(here => here.Id != area.Id)), .. _savedHere];
+
+    private PlanTool RedrawingWith => _planner?.Draft.Area(_redrawing ?? 0) is { OneRoute: true } ? PlanTool.Route : PlanTool.Area;
+
+    private bool Outlining => _tool is PlanTool.Route or PlanTool.Area or PlanTool.Redraw;
+
+    private string OutlineText => _tool switch
+    {
+        PlanTool.Route => $"Route {(_planner?.Sections.Count ?? 0) + 1}: click each corner",
+        PlanTool.Redraw when _planner?.Draft.Area(_redrawing ?? 0) is { } area => $"{AreaName(area)}: click each corner of its new outline",
+        _ => "Area to split: click each corner",
+    };
+
+    private string AreaName(DraftArea area)
+    {
+        if (area.OneRoute)
+            return _planner?.Sections.FirstOrDefault(section => section.Area == area.Id) is { } route ? $"Route {route.Number}" : "A route drawn by hand";
+        if (SavedAreas.FirstOrDefault(saved => saved.Id == area.SavedId) is { } named)
+            return named.Name;
+        return _planner!.StreetsOf(area);
+    }
+
+    private string ChipText(DraftArea area)
+    {
+        if (area.OneRoute)
+            return $"{AreaName(area)} · as drawn";
+        int routes = _planner!.RoutesIn(area);
+        return routes switch
+        {
+            0 => $"{AreaName(area)} · no routes",
+            1 => $"{AreaName(area)} · 1 route",
+            _ => $"{AreaName(area)} · split into {routes}",
+        };
+    }
+
+    private IReadOnlyList<MenuItem> AreaItems(DraftArea area) =>
+    [
+        this.Item("Split it into routes", () => EditAsync(planner => planner.SetOneRoute(area.Id, false)), AppIcons.DrawArea,
+            area.OneRoute ? null : OutreachWords.Plural(_planner!.RoutesIn(area), "route", "routes") + " now", @checked: !area.OneRoute),
+        this.Item("Make it one route", () => EditAsync(planner => planner.SetOneRoute(area.Id, true)), AppIcons.DrawRoute,
+            OutreachWords.Plural(_planner!.LetterboxesIn(area), "letterbox", "letterboxes"), @checked: area.OneRoute),
+        this.Item("Redraw the outline", () => StartRedraw(area.Id), AppIcons.ReplaceIt, startsGroup: true),
+        .. area.SavedId.Length == 0 ? [this.Item("Save for next time…", () => { _namingArea = area.Id; _open = true; }, AppIcons.SavedAreas)] : Array.Empty<MenuItem>(),
+        this.Item(area.OneRoute ? "Delete this route" : "Take it off the day", () => EditAsync(planner => planner.RemoveArea(area.Id)), AppIcons.TakeOut,
+            area.OneRoute ? "Undo brings it back" : "Its routes go too", danger: true, startsGroup: true),
+    ];
 
     private MapSketchTool SketchTool => _tool switch
     {
-        PlanTool.Area => MapSketchTool.Polygon,
+        PlanTool.Route or PlanTool.Area or PlanTool.Redraw => MapSketchTool.Polygon,
         PlanTool.Cut => MapSketchTool.Line,
         PlanTool.Brush or PlanTool.Erase => MapSketchTool.Brush,
         PlanTool.Lasso => MapSketchTool.Lasso,
@@ -239,7 +305,6 @@ else
 
     private string? ToolHint => _tool switch
     {
-        PlanTool.Area => "Click the corners of the area. Click the first corner, or press Enter, to finish. Escape starts again.",
         PlanTool.Cut => "Draw a line across the streets where the route should split.",
         PlanTool.Brush => Selected is { } chosen ? $"Drag along streets to paint them into route {chosen.Number}. Click a street to take all of it." : null,
         PlanTool.Lasso => Selected is { } chosen ? $"Draw a loop around streets to give them to route {chosen.Number}." : "Draw a loop around streets to make them a new route.",
@@ -317,7 +382,8 @@ else
             return;
         _lines = PlanDrawing.Lines(planner, _selected, _view == PlanView.OnTheDay ? _board?.Progress.SelectMany(progress => progress.Done).ToList() : null);
         _labels = PlanDrawing.Labels(planner, _selected);
-        _areas = planner.HasArea ? [new MapArea(PlanDrawing.Points(planner.Area))] : [];
+        _areas = PlanDrawing.Areas(planner);
+        _labels = [.. _labels, .. PlanDrawing.OverlapLabels(planner)];
         List<MapMarker> markers = [new(PlanDrawing.Point(planner.Meeting), MapMarkerKind.Meeting, "Meet here")];
         if (Selected is { } chosen)
             markers.Add(new MapMarker(PlanDrawing.Point(planner.Network.Graph.Projection.ToGeo(planner.Network.Node(chosen.Summary.Plan.Start))), MapMarkerKind.Start, $"Route {chosen.Number} starts"));
@@ -345,8 +411,17 @@ else
     [
         this.Item("Rename…", () => { _name = chosen.Name; _renaming = true; }, AppIcons.Heading),
         .. _planner!.Sections.Where(other => other.Id != chosen.Id).Select(other => this.Item($"Merge with route {other.Number}", () => EditAsync(planner => planner.Apply(planner.Draft.Merge([chosen.Id, other.Id]))), AppIcons.Merge, other.Name, startsGroup: other == _planner.Sections.First(s => s.Id != chosen.Id))),
-        this.Item("Leave its streets out", () => EditAsync(planner => planner.Apply(planner.Draft.Unassign([chosen.Id]))), AppIcons.LeaveOut, "They stay on the map, in no route", danger: true, startsGroup: true),
+        .. _planner.Draft.Area(chosen.Area) is { OneRoute: true } drawn
+            ? [this.Item("Redraw its outline", () => StartRedraw(drawn.Id), AppIcons.ReplaceIt, startsGroup: true),
+               this.Item("Delete this route", () => EditAsync(planner => planner.RemoveArea(drawn.Id)), AppIcons.TakeOut, "Undo brings it back", danger: true, startsGroup: true)]
+            : new[] { this.Item("Leave its streets out", () => EditAsync(planner => planner.Apply(planner.Draft.Unassign([chosen.Id]))), AppIcons.LeaveOut, "They stay on the map, in no route", danger: true, startsGroup: true) },
     ];
+
+    private void StartRedraw(int area)
+    {
+        ChooseTool(PlanTool.Redraw);
+        _redrawing = area;
+    }
 
     private async Task<DayBoard> LoadBoardAsync()
     {
@@ -381,6 +456,7 @@ else
     private void ChooseTool(PlanTool tool)
     {
         _tool = _tool == tool ? PlanTool.Select : tool;
+        _redrawing = null;
         _placed = 0;
         _preview = [];
         _renaming = false;
@@ -453,13 +529,25 @@ else
         _drawnAt = Time.GetUtcNow().UtcDateTime;
         return _tool switch
         {
+            PlanTool.Route => EditAsync(planner =>
+            {
+                bool drawn = planner.AddArea(points, oneRoute: true);
+                _selected = drawn ? planner.Sections.LastOrDefault(section => section.Area == planner.Areas[^1].Id)?.Id : _selected;
+                return drawn;
+            }),
             PlanTool.Area => EditAsync(planner =>
             {
-                bool drawn = planner.Draw(points);
+                bool drawn = planner.AddArea(points, oneRoute: false);
                 _tool = PlanTool.Select;
                 _selected = null;
                 return drawn;
             }, fit: true),
+            PlanTool.Redraw when _redrawing is { } area => EditAsync(planner =>
+            {
+                _tool = PlanTool.Select;
+                _redrawing = null;
+                return planner.RedrawArea(area, points);
+            }),
             PlanTool.Cut => EditAsync(planner => planner.Apply(planner.Draft.Cut(points))),
             PlanTool.Brush when _selected is { } into => EditAsync(planner => planner.Apply(planner.Draft.Paint(into, planner.Brush(points)))),
             PlanTool.Erase => EditAsync(planner => planner.Apply(planner.Draft.Erase(planner.Brush(points)))),
@@ -496,17 +584,21 @@ else
         EditAsync(planner =>
         {
             _selected = null;
-            return planner.Draw(area.Area.Select(EngineInputs.Point).ToList(), area.Id);
+            return planner.AddArea(area.Area.Select(EngineInputs.Point).ToList(), oneRoute: false, area.Id);
         }, fit: true);
 
-    private async Task SaveAreaAsync(string name)
+    private async Task SaveAreaAsync((int Area, string Name) save)
     {
-        if (_planner is not { HasArea: true } planner)
+        _namingArea = null;
+        if (_planner?.Draft.Area(save.Area) is not { } area)
             return;
-        await RunAsync(() => Outreach.SaveAreaAsync(Setup.Scope, new SavedArea
+        SavedArea saved = new() { Id = Guid.CreateVersion7().ToString(), Name = save.Name, Area = area.Outline.Select(EngineInputs.Point).ToList() };
+        await RunAsync(async () =>
         {
-            Id = Guid.CreateVersion7().ToString(), Name = name, Area = planner.Area.Select(EngineInputs.Point).ToList(),
-        }));
+            await Outreach.SaveAreaAsync(Setup.Scope, saved);
+            _savedHere.Add(saved);
+            await EditAsync(planner => planner.SavedAs(area.Id, saved.Id));
+        });
     }
 
     private async Task MoveMeetingAsync(GeoPoint point)

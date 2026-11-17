@@ -35,7 +35,8 @@ public sealed record MapLine(IReadOnlyList<MapPoint> Points, MapLineStyle Style,
 
 public sealed record MapLineSet(string Key, IReadOnlyList<MapLine> Lines);
 
-public sealed record MapArea(IReadOnlyList<MapPoint> Points, string? Colour = null, string? Id = null, bool Dashed = false, bool Outline = false, IReadOnlyList<IReadOnlyList<MapPoint>>? Holes = null);
+public sealed record MapArea(IReadOnlyList<MapPoint> Points, string? Colour = null, string? Id = null, bool Dashed = false, bool Outline = false, IReadOnlyList<IReadOnlyList<MapPoint>>? Holes = null,
+    bool Hatched = false);
 
 public enum MapMarkerKind
 {

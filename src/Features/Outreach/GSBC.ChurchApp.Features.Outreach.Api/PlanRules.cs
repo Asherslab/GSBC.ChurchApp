@@ -6,9 +6,13 @@ internal static class PlanRules
 {
     private const int MostRoutes = 60;
     private const int MostStretches = 20_000;
+    private const int MostAreas = 30;
 
     public static string? WhyNot(DayDraft draft) =>
         draft.Area.Count > 0 && !OutreachRules.IsAPolygon(draft.Area) ? "Draw the area with at least three points."
+        : draft.Areas.Count > MostAreas ? $"A day can have up to {MostAreas} areas."
+        : draft.Areas.Any(area => !OutreachRules.IsAPolygon(area.Outline)) ? "Draw each area with at least three points."
+        : draft.Areas.Select(area => area.Id).Distinct().Count() != draft.Areas.Count ? "Two areas have the same number."
         : !Enum.IsDefined(draft.Target) || draft.PerRoute is < 0 or > 100_000 ? "Choose how big each route should be."
         : WhyNot(draft.Routes.Count, draft.Routes.SelectMany(route => route.Stretches).ToList());
 

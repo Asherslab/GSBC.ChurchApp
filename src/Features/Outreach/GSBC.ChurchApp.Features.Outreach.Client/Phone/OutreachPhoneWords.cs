@@ -47,13 +47,6 @@ public static class OutreachPhoneWords
     public static string Carrying(IReadOnlyList<Campaign> carried) =>
         carried.Count == 0 ? OutreachCampaigns.GeneralName : string.Join(" and ", carried.Select(campaign => campaign.Name));
 
-    public static string HandedOut(IReadOnlyList<Campaign> carried) =>
-        carried.Any(campaign => campaign.HandedOut.Trim().Length > 0)
-            ? $"Carrying {string.Join(" and ", carried.Select(HandedOut))}"
-            : "What you're walking for";
-
-    private static string HandedOut(Campaign campaign) => campaign.HandedOut.Trim() is { Length: > 0 } what ? what : campaign.Name;
-
     public static string Reach(ReachReason reason) => reason.Kind switch
     {
         ReachReasonKind.AllDoneNearby => reason.Names.Count > 0
@@ -146,15 +139,40 @@ public static class OutreachPhoneWords
         };
     }
 
-    public static string SideOf(SavedStep step)
+    private static readonly string[] Compass = ["north", "east", "south", "west"];
+
+    public static string SideOf(SavedStep step) => Facing(step) is { } facing ? $"{step.Title}, {Compass[facing]} side" : step.Title;
+
+    public static IReadOnlyList<string> SidesOf(IReadOnlyList<SavedStep> steps)
+    {
+        string[] sides = [.. steps.Select(SideOf)];
+        foreach (List<int> same in Enumerable.Range(0, steps.Count).GroupBy(i => sides[i]).Select(group => group.ToList()).Where(group => group.Count > 1))
+        {
+            bool runsNorthSouth = Facing(steps[same[0]]) is 1 or 3;
+            (string first, string last) = runsNorthSouth ? ("north", "south") : ("west", "east");
+            List<int> ordered = [.. same.OrderBy(i => runsNorthSouth ? -Middle(steps[i])[0] : Middle(steps[i])[1])];
+            for (int place = 0; place < ordered.Count; place++)
+                sides[ordered[place]] += $", {Stretch(place, ordered.Count, first, last)}";
+        }
+        return sides;
+    }
+
+    private static int? Facing(SavedStep step)
     {
         if (step.Line.Count < 2)
-            return step.Title;
+            return null;
         double bearing = Bearing(step.Line[0], step.Line[^1]);
-        string[] compass = ["north", "east", "south", "west"];
-        string facing = compass[(int)Math.Round(((bearing - 90 + 360) % 360) / 90) % 4];
-        return $"{step.Title}, {facing} side";
+        return (int)Math.Round((bearing - 90 + 360) % 360 / 90) % 4;
     }
+
+    private static double[] Middle(SavedStep step) =>
+        step.Line.Count == 0 ? [0, 0] : [step.Line.Average(point => point[0]), step.Line.Average(point => point[1])];
+
+    private static string Stretch(int place, int count, string first, string last) =>
+        place == 0 ? $"{first} end"
+        : place == count - 1 ? $"{last} end"
+        : count == 3 ? "middle"
+        : $"stretch {place + 1} of {count} from the {first}";
 
     public static string Remaining(int letterboxesLeft) => letterboxesLeft <= 0 ? "done" : $"{OutreachWords.Count(letterboxesLeft)} to go";
 

@@ -19,7 +19,9 @@ A row is at least 56px tall: an optional leading tile or thumbnail, a title and 
 - **Text link:** deep aqua with a chevron and a 44px target, for a "Show me" in a row.
 
 ## Cards / Containers
-- **Callout:** sand, a bold lead line then text; the bulletin's shaded box ("Your challenge this week").
+- **Callout:** sand, a bold lead line then text; the bulletin's shaded box ("Your challenge this week"). With `Icon`,
+  a deep-aqua icon sits beside the words (a confirmation: *Your walk is saved* on Outreach); never with a picture. A link
+  in its foot keeps a 44pt tap area.
 - **Sermon head:** a sand band with a 16:9 thumbnail, the title and "speaker · watch or listen", linking to the sermon.
 - **Feature card:** the only picture card, for upcoming events: a 16:7 cover over a white body, lifted.
 - **Covers:** images fill their box; sermon artwork is always 16:9 so its text is never cropped. No image: a navy (or aqua- or orange-tinted) block with the mark at 10% and an optional title.

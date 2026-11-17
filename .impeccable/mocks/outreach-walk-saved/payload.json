@@ -1,0 +1,22 @@
+{
+  "title": "After Save the walk",
+  "question": "#116: Save the walk now goes straight back to the Outreach page you started from. It needs a short, quiet word there that the walk was saved. Which look?",
+  "options": [
+    { "id": "line", "kind": "grounded", "label": "A: A saved box at the top of Outreach",
+      "thesis": "Where the \"Your walk is on\" card sat, a sand box says the walk is saved, with its distance and letterboxes and a link to My outreach. It stays until you leave the page.",
+      "palette": ["#f4efe7", "#00776d", "#2a3d5e", "#ffffff"], "materials": ["the page's sand box", "a deep-aqua tick"],
+      "viewport": "Outreach: masthead, the saved box, then Got an hour? and the rows.",
+      "risk": "Pushes Got an hour? down a little while it shows.", "html": ".impeccable/mocks/outreach-walk-saved/saved-line.html" },
+    { "id": "toast", "kind": "grounded", "label": "B: A short note above the tab bar",
+      "thesis": "A navy note floats above the tab bar for a few seconds (\"Walk saved · 62 letterboxes\", My outreach), then goes.",
+      "palette": ["#2a3d5e", "#d5c9b7", "#ffffff", "#f4efe7"], "materials": ["navy", "a floating note"],
+      "viewport": "Outreach as it is, with the note above the tabs.",
+      "risk": "A new kind of thing in the app; easy to miss if you look away.", "html": ".impeccable/mocks/outreach-walk-saved/saved-toast.html" },
+    { "id": "mast", "kind": "grounded", "label": "C: Said in the masthead",
+      "thesis": "The masthead's beige line says \"Walk saved: 1.4 km, 62 letterboxes. Thank you.\" until you leave; nothing else moves.",
+      "palette": ["#2a3d5e", "#d5c9b7", "#ffffff", "#f4efe7"], "materials": ["the masthead note line"],
+      "viewport": "Outreach with the saved words in the masthead.",
+      "risk": "The quietest; no link to My outreach.", "html": ".impeccable/mocks/outreach-walk-saved/saved-mast.html" }
+  ],
+  "steer": true
+}

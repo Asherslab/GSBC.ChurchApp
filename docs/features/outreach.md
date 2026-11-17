@@ -877,6 +877,40 @@ Built overnight by the planner station while the owner slept. *Claude's default*
 - **The meeting point** is set with its pin on the map (*Claude's default*: the day's form only names the place; the
   centre of the region until a pin is set).
 
+### Several areas a day (2026-11-17, feedback #124)
+
+The owner: "allow multiple area selections, such that the person can choose the actual routes individually if they
+decide to, instead of the app splitting one big area into each route." Settled in the interview (owner, 2026-11-17):
+a route drawn by hand is outlined by clicking its corners; where they overlap, a route drawn by hand keeps its streets
+from an area the app splits; most days will be mixed. Chosen on the decision page (`.impeccable/mocks/route-areas/`):
+*areas live on the map, each with its own chip*; *routes grouped under their areas* and *choose what drawing does*
+stay on the page.
+
+- **A day has areas** (up to 30), in the order drawn. Each is either **one route as drawn** or **split into routes by
+  the app** (as before). *Draw a route* (the pencil) makes one route of every street side inside the outline, and stays
+  on so the next route is the next outline; *Draw an area to split* (the pentagon) and a saved area are split. Places
+  to skip, streets left out of outreach and streets done recently (unless included) are left out of both kinds.
+- **Overlaps:** every letterbox is in one route. A route drawn by hand takes the streets inside it from the app's
+  routes; between two routes drawn by hand, or two split areas, the one drawn first keeps them; locked routes keep
+  theirs. On the map the overlap is hatched with "Route 8 keeps these" in it, split areas are dashed and routes drawn
+  by hand are outlined in their colour.
+- **The chip** on the top of each outline names it ("Faheys Rd · split into 6", "Route 7 · as drawn") and its menu
+  switches it between one route and split, redraws its outline, saves it for next time, or takes it off the day
+  (a route drawn by hand: *Delete this route*). Redrawing a route drawn by hand keeps its number, name, colour and, once
+  published, its printed code. Undo covers all of it.
+- **Rebalance and Regenerate rework only the app's routes** (*Claude's default*, from the brief): routes drawn by hand,
+  routes made with the lasso and locked routes stay as they are. Rebalance evens each split area's routes among
+  themselves. Taking an area off the day takes its routes; any of its streets inside another split area are left out
+  until Regenerate.
+- **The routes list** stays one list, with a pencil on routes drawn by hand and filter chips (All, each split area,
+  Drawn by hand) once there's more than one kind.
+- **Downstream nothing changes:** publishing, printing, On the day and the phones get routes as before.
+- **Stored** in the day's draft: each area's outline, saved area, and kind, and each route's area. A draft saved before
+  this change (one outline) reads as one area split by the app, with every route in it (`DayDraft.Upgraded`, on the
+  server when a plan is read and in the planner); no table changed, so there's no schema migration.
+- **Shared:** `MapPin` (Platform.Ui) keeps a control on a point of the map as it pans; map areas can be hatched
+  (`MapArea.Hatched`).
+
 ### Printed route maps
 
 *Claude's decision*: made in the admin panel as a real PDF (`PdfDocument` in Platform.Common, `RouteSheets` in
@@ -960,6 +994,23 @@ stops for the end of a walk; B and C stay on the page for the owner). Detail: [d
   phone, so it carries on after the app is closed, numbering included.
 - **The end** shows what you walked and the planned streets as a line of stops, each ticked where the app saw you walk;
   untick what it got wrong (taken back), tick what it missed (added), save. *Keep walking* goes back to the walk.
+- **After saving** (owner, 2026-11-17, #116: "should be just Save the walk, then straight to Outreach. Not My Outreach
+  or the No walk on page"): Save the walk goes back to the Outreach page you planned from, which says *Your walk is
+  saved* with its distance and letterboxes and a link to My outreach until you leave it (owner's pick A on the decision
+  page). Before, Save opened My outreach; its Back went through history to the walking page, by then *No walk on*, and
+  *Go to Outreach* added a fourth page. Now Save, the walking page's Back and *Go to Outreach* all return to the earlier
+  Outreach in the history (`Shell.ReturnToAsync`), or replace the walking page with Outreach when there is none (the app
+  was opened on the walk from the Live Activity), so Back from Outreach goes where you were before the walk. A Finish
+  from the Live Activity opens the end screen and saving it does the same. There is no way to discard a walk; a walk you
+  don't want is saved with everything unticked.
+- **Two stretches of one side** of a street on the end list (#116: "Whimbrel St, east side" twice): the route leaves
+  a street for a side street and comes back to the same side further along, so they are two stretches. They now say
+  which end ("…, east side, north end" and "…, south end"; "middle" for a third). House numbers aren't in the phone's
+  street file, so ends rather than numbers (*Claude's default*).
+- **Ticked stretches count** in the saved walk's letterboxes (#116): a stretch ticked at the end because the app missed
+  it was sent as covered but counted 0 letterboxes in My outreach.
+- **The four short walks in #116** (10 m, 10 m, 50 m, 0 m) were four separate walks, each started and saved on its own
+  (different walks, started 2:57am, 2:36pm, 5:04pm and 5:04pm, 8 seconds to 2 minutes each); one Finish saves one walk.
 - **Doorknocking:** at a door, *Knocked, no answer*, *Spoke with them*, *Spoke, and they'd like a follow-up* (first name,
   phone or email and a note kept only when *They agreed to be contacted* is on; otherwise just a conversation), or *They
   want nothing to do with it* (explained, then confirmed). Check-in at start and finish is the walk's first and last piece

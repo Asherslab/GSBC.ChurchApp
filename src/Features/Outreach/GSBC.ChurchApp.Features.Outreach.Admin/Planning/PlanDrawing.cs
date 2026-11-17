@@ -28,8 +28,7 @@ public static class PlanDrawing
         List<MapLine> lines = [];
         HashSet<int> owned = planner.Draft.Sections.SelectMany(section => section.Pieces).Select(piece => network[piece].Street).ToHashSet();
         IEnumerable<int> left = planner.Draft.Streets.Where(street => !owned.Contains(street));
-        IEnumerable<int> rested = planner is { Selection: { } selection, RestedToo: false } ? selection.Rested : [];
-        foreach (int street in left.Concat(rested).Distinct())
+        foreach (int street in left.Concat(planner.LeftOutAsRested).Distinct())
             lines.Add(new MapLine(Points(network.Graph.ShapePoints(street)), MapLineStyle.Walked));
         foreach (PlannedSection section in planner.Sections.OrderBy(section => section.Id == selected))
         {
@@ -56,6 +55,126 @@ public static class PlanDrawing
                 : new MapLabel(Point(middle), selected is null ? full : brief, RouteColours.Of(section.Colour), section.Number, MapLabelStyle.Ring, brief, Points(places));
         }).ToList();
 
+    public static IReadOnlyList<MapArea> Areas(DayPlanner planner)
+    {
+        List<MapArea> areas = [];
+        foreach (DraftArea area in planner.Areas)
+        {
+            if (!area.OneRoute)
+                areas.Add(new MapArea(Points(area.Outline), "--primary", Key(area), Dashed: true));
+            else if (planner.Sections.FirstOrDefault(section => section.Area == area.Id) is { } route)
+                areas.Add(new MapArea(Points(area.Outline), RouteColours.Of(route.Colour), Key(area), Outline: true));
+            else
+                areas.Add(new MapArea(Points(area.Outline), "--primary", Key(area), Dashed: true, Outline: true));
+        }
+        areas.AddRange(OverlapShapes(planner).Select(overlap => new MapArea(Points(overlap.Shape), Hatched: true)));
+        return areas;
+    }
+
+    public static IReadOnlyList<MapLabel> OverlapLabels(DayPlanner planner) =>
+        OverlapShapes(planner).Select(overlap => new MapLabel(Point(Middle(planner, overlap.Shape)), $"Route {overlap.KeptBy.Number} keeps these", "--ink-2", Order: -1,
+            Short: $"Route {overlap.KeptBy.Number} keeps these", Places: Points(InsideCorners(planner, overlap.Shape)))).ToList();
+
+    public static GeoPoint Top(DraftArea area) => area.Outline.MaxBy(point => point.Lat)!;
+
+    private static string Key(DraftArea area) => $"area-{area.Id}";
+
+    private static IEnumerable<(PlannedSection KeptBy, IReadOnlyList<GeoPoint> Shape)> OverlapShapes(DayPlanner planner)
+    {
+        LocalProjection projection = planner.Network.Graph.Projection;
+        foreach (AreaOverlap overlap in planner.Overlaps)
+        {
+            if (planner.Draft.Area(overlap.KeptBy.Area) is not { } keeper)
+                continue;
+            List<Flat> shape = Clip(overlap.Area.Outline.Select(projection.ToFlat).ToList(), keeper.Outline.Select(projection.ToFlat).ToList());
+            if (shape.Count >= 3)
+                yield return (overlap.KeptBy, shape.Select(projection.ToGeo).ToList());
+        }
+    }
+
+    private static IEnumerable<GeoPoint> InsideCorners(DayPlanner planner, IReadOnlyList<GeoPoint> shape)
+    {
+        LocalProjection projection = planner.Network.Graph.Projection;
+        Flat middle = projection.ToFlat(Middle(planner, shape));
+        return shape.Select(projection.ToFlat).Select(corner => projection.ToGeo(new Flat((corner.X + middle.X) / 2, (corner.Y + middle.Y) / 2)));
+    }
+
+    private static GeoPoint Middle(DayPlanner planner, IReadOnlyList<GeoPoint> shape)
+    {
+        LocalProjection projection = planner.Network.Graph.Projection;
+        List<Flat> flat = shape.Select(projection.ToFlat).ToList();
+        return projection.ToGeo(new Flat(flat.Average(f => f.X), flat.Average(f => f.Y)));
+    }
+
+    private static List<Flat> Clip(List<Flat> subject, List<Flat> clip)
+    {
+        if (!Convex(clip))
+            (subject, clip) = Convex(subject) ? (clip, subject) : (subject, Hull(clip));
+        if (Area2(clip) < 0)
+            clip.Reverse();
+        List<Flat> output = subject;
+        for (int i = 0; i < clip.Count && output.Count > 0; i++)
+        {
+            (Flat a, Flat b) = (clip[i], clip[(i + 1) % clip.Count]);
+            List<Flat> input = output;
+            output = [];
+            for (int j = 0; j < input.Count; j++)
+            {
+                (Flat p, Flat q) = (input[j], input[(j + 1) % input.Count]);
+                bool pIn = Side(a, b, p) >= 0, qIn = Side(a, b, q) >= 0;
+                if (pIn)
+                    output.Add(p);
+                if (pIn != qIn)
+                    output.Add(Crossing(a, b, p, q));
+            }
+        }
+        return output;
+    }
+
+    private static double Side(Flat a, Flat b, Flat p) => (b.X - a.X) * (p.Y - a.Y) - (b.Y - a.Y) * (p.X - a.X);
+
+    private static Flat Crossing(Flat a, Flat b, Flat p, Flat q)
+    {
+        double t = Side(a, b, p) / (Side(a, b, p) - Side(a, b, q));
+        return new Flat(p.X + (q.X - p.X) * t, p.Y + (q.Y - p.Y) * t);
+    }
+
+    private static double Area2(List<Flat> polygon) =>
+        polygon.Select((p, i) => p.X * polygon[(i + 1) % polygon.Count].Y - polygon[(i + 1) % polygon.Count].X * p.Y).Sum();
+
+    private static bool Convex(List<Flat> polygon)
+    {
+        int sign = 0;
+        for (int i = 0; i < polygon.Count; i++)
+        {
+            double turn = Side(polygon[i], polygon[(i + 1) % polygon.Count], polygon[(i + 2) % polygon.Count]);
+            if (Math.Abs(turn) < 1e-9)
+                continue;
+            if (sign != 0 && Math.Sign(turn) != sign)
+                return false;
+            sign = Math.Sign(turn);
+        }
+        return true;
+    }
+
+    private static List<Flat> Hull(List<Flat> points)
+    {
+        List<Flat> sorted = points.OrderBy(p => p.X).ThenBy(p => p.Y).ToList();
+        List<Flat> hull = [];
+        foreach (IEnumerable<Flat> pass in new[] { sorted, Enumerable.Reverse(sorted) })
+        {
+            int start = hull.Count;
+            foreach (Flat p in pass)
+            {
+                while (hull.Count >= start + 2 && Side(hull[^2], hull[^1], p) <= 0)
+                    hull.RemoveAt(hull.Count - 1);
+                hull.Add(p);
+            }
+            hull.RemoveAt(hull.Count - 1);
+        }
+        return hull;
+    }
+
     public static IReadOnlyList<MapLine> CutPreview(DayPlanner planner, IReadOnlyList<CutPreview> cuts) =>
         cuts.SelectMany(cut => cut.Pieces.SelectMany(piece => piece.Pieces.Select(p =>
             new MapLine(Points(planner.Network.Line(p)), MapLineStyle.Route, Colour: RouteColours.Of(piece.Colour))))).ToList();
@@ -74,7 +193,7 @@ public static class PlanDrawing
 
     public static MapFrame Frame(DayPlanner planner, GeoPoint meeting)
     {
-        IEnumerable<GeoPoint> points = planner.HasArea ? planner.Area
+        IEnumerable<GeoPoint> points = planner.Areas.Count > 0 ? planner.Areas.SelectMany(area => area.Outline)
             : planner.Sections.SelectMany(section => section.Section.Pieces).Select(piece => planner.Network.Graph.Projection.ToGeo(planner.Network.Midpoint(piece)));
         List<MapPoint> all = [.. Points(points), Point(meeting)];
         if (all.Count == 1)
