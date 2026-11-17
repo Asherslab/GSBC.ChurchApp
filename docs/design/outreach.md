@@ -234,14 +234,16 @@ masthead's navy at display size and the map supports it. Maps are `MapView` ([ma
 
 - **Outreach** (`/outreach`): the masthead, then your walk if one is on (a navy `Card`), the outreach day if one is on
   (a section with *Pick a route*), then the ask: a sand box with *Got an hour? Walk from your door*, a line on how it
-  works, a `Segmented` length (30 min, 1 hr, 2 hr, Distance, then 1 to 8 km), what you carry as a row opening a `Sheet` of
-  `ToggleRow`s, and the block *Plan my walk*. *Around you* is a 13.5rem rounded map, not interactive, with streets walked
-  lately in grey. Then the next outreach days and the rows My outreach and Offline maps.
+  works, a `Segmented` length (30 min, 1 hr, 2 hr, Distance, then 1 to 8 km) and the block *Plan my walk*. Then the next
+  outreach days and the rows My outreach and Offline maps. No map here (owner, 2026-11-17, #110: *Around you* is gone).
 - **Your walk** (`/outreach/walk`, solid top bar): the map full width (38% of the screen, at least 14rem), framed on
   the walk, connectors, a long walk dotted and labelled, recent coverage and the start; then the figures (distance and time at headline size,
   letterboxes, bundles and *back by* in a caption), the reach note in a sand box with its two ways to get more as link
   buttons, warnings as `Notice`s, and *Start the walk*. *Change the walk* holds the length, letterboxes or doorknocking,
-  *I'm walking with someone*, where you start (tap the map, or find a street in a `Sheet` with a `SearchField`). Empty
+  *I'm walking with someone*, where you start (tap the map, or find a street in a `Sheet` with a `SearchField`), and what
+  you carry: a row (the campaigns, what's handed out) opening *What you're carrying*, a `Sheet` of `ToggleRow`s (turning off the last one
+  leaves it on and says "You carry at least one"); doorknocking opens *What you're knocking for*, one campaign in
+  `Segmented Rows`. Either redraws the plan at once (owner, 2026-11-17, #113). Empty
   states say why there's no plan (no location, no maps yet, outside the area, getting the map, no street near).
 - **Walking** (`/outreach/walking`, a full-screen task: `Page Focused`, so the tab bar steps aside while a walk is on and
   ‹ Outreach is the way back, the walk carrying on; the map takes the room the tab bar left and the walk's bar sits just

@@ -78,8 +78,10 @@ those fonts change; never edit the files by hand.
 ## The component
 
 `MapView` (Platform.Ui `Maps/`) is the one map on both sides: MapLibre in the web view over a region's PMTiles file, with
-`mapStyle` and the overlays below. Pass the map file as `MapSource.KeptFile(id, attribution)` on the phone (the file kept
-on the phone, read by byte ranges through the native layer, so it works offline) or `MapSource.Url(url, attribution)` in
+`mapStyle` and the overlays below. Pass the map file as `MapSource.KeptFile(id, attribution, url)` on the phone (the file kept
+on the phone, read by byte ranges through the native layer, so it works offline; until that copy is whole and of the
+same `url`, the map reads the same file by range from the media host, so the streets in view show while the region
+downloads, #112) or `MapSource.Url(url, attribution)` in
 the admin panel; `MapSource.Urls(urls, attribution)` draws several map files as one map (each base layer once per file,
 in order, so the 2 km overlaps meet without a seam). It follows light and dark by itself.
 
@@ -93,13 +95,17 @@ in order, so the 2 km overlaps meet without a seam). It follows light and dark b
   area's squares with no homes or still to add, and the hovered square in ink).
 - **Markers** (`MapMarker`): `Start`, `Pin`, `Meeting` (with a label), and from zoom 15 `NoJunkMail`, `DontLetterbox`, `Skip`,
   `Check` (small dots; the first two labelled from zoom 17).
-- **You** (`MapYou`): the orange dot with its accuracy ring.
+- **You** (`MapYou`): the orange dot with its accuracy ring. With `ShowsHeading` (the walk and Your walk), a soft orange
+  fan from the dot shows which way you face (owner's pick, 2026-11-17, #115, `.impeccable/mocks/outreach-heading/`): the
+  direction you're moving once you've gone 6 m (for 10 s after), otherwise the phone's compass, 50° wide when it's
+  within 20°, widening to 110° and fading as it gets less sure, gone past 60°. It sits under the drawn lines, the dot on
+  top. The compass is read natively and needs no permission; iOS's calibration prompt is turned off.
 - **Where it looks:** `Frame` fits the map to a box (`StartPadding` keeps room on the left for a tool rail), and again whenever the box changes, unless someone has dragged the
   map. With `Follow`, a screen gives a `Frame` around you and what's next to you (the walk: you, the street you're on and
   the next one, at street level), so the map moves with you; with no `Frame`, it centres on you at zoom 17. The first drag
   stops following (`OnStoppedFollowing`) and setting `Follow` again brings it back. `Centre` and `Zoom` place a map with
   neither. `Interactive="false"`
-  makes a still map (*Around you*).
+  makes a still map.
 - **Reach** (`MapReach`): where the maps end. Outside its `Covered` squares the map is hatched (the land colour with
   ink-3 stripes at 40%) under a thin ink edge, or veiled when there's a `Backdrop` (below); `Others` and `Notes` mark
   squares not built yet; `Clear` lifts the veil off squares being looked at (a map area being added); `Limit` stops

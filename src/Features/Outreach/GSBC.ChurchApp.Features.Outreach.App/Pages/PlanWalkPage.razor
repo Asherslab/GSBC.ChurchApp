@@ -81,9 +81,8 @@
         {
             @foreach (Campaign campaign in _active)
             {
-                bool on = _chosen.Contains(campaign.Id);
-                <ToggleRow @key="campaign.Id" Title="@campaign.Name" Description="@(on && _chosen.Count == 1 ? "You carry at least one" : HandedOut(campaign))"
-                           Checked="on" Disabled="@(on && _chosen.Count == 1)" CheckedChanged="carry => CarryAsync(campaign.Id, carry)" />
+                <ToggleRow @key="@($"{campaign.Id}/{_kept}")" Title="@campaign.Name" Description="@(campaign.Id == _keptOn ? "You carry at least one" : HandedOut(campaign))"
+                           Checked="_chosen.Contains(campaign.Id)" CheckedChanged="carry => CarryAsync(campaign.Id, carry)" />
             }
         }
     </ChildContent>
@@ -111,6 +110,8 @@
     private List<Campaign> _active = [];
     private List<string> _chosen = [];
     private string? _knockingFor;
+    private string? _keptOn;
+    private int _kept;
     private bool _withPartner;
     private bool _starting;
     private string _query = "";
@@ -235,7 +236,7 @@
             <ListGroup>
                 <ListRow Title="@(_start is null ? "Starting from here" : "Starting from the pin")" Subtitle="Tap the map to start somewhere else" Icon="map-pin"
                          Chevron="true" OnClick="() => _finding = true" />
-                <ListRow Title="@OutreachPhoneWords.Carrying(plan.Carried)" Subtitle="@(doorknock ? "A doorknock counts for one campaign" : OutreachPhoneWords.HandedOut(plan.Carried))"
+                <ListRow Title="@OutreachPhoneWords.Carrying(plan.Carried)" Subtitle="@(doorknock ? "A doorknock counts for one campaign" : WhatYouHandOut(plan.Carried))"
                          Icon="mail" Chevron="true" OnClick="() => OpenCarryingAsync(plan)" />
             </ListGroup>
         </Section>
@@ -284,14 +285,22 @@
         _active = [.. plan.Now.Campaigns.Where(campaign => OutreachRules.IsActive(campaign, today)).OrderByDescending(campaign => !campaign.General).ThenBy(campaign => campaign.Name)];
         _chosen = [.. WalkPlanning.Carried(plan.Now, await Choices.CarryingAsync(), today)];
         _knockingFor = WalkPlanning.KnockingFor(plan.Now, await Choices.KnockingForAsync(), _chosen, today);
+        _keptOn = null;
         _carrying = true;
     }
 
     private Task CarryAsync(string campaign, bool carry)
     {
+        _keptOn = null;
+        if (!carry && _chosen.SequenceEqual([campaign]))
+        {
+            _keptOn = campaign;
+            _kept++;
+            return Task.CompletedTask;
+        }
         if (carry && !_chosen.Contains(campaign))
             _chosen.Add(campaign);
-        else if (!carry && _chosen.Count > 1)
+        else if (!carry)
             _chosen.Remove(campaign);
         return SaveCarryingAsync();
     }
@@ -317,6 +326,9 @@
 
     private IReadOnlyList<SegmentOption<string>> CampaignOptions() =>
         [.. _active.Select(campaign => new SegmentOption<string>(campaign.Id, campaign.Name, Detail: HandedOut(campaign)))];
+
+    private static string WhatYouHandOut(IReadOnlyList<Campaign> carried) =>
+        carried.Select(HandedOut).OfType<string>().ToList() is { Count: > 0 } handedOut ? string.Join(" and ", handedOut) : "What you're walking for";
 
     private static string? HandedOut(Campaign campaign) => campaign.HandedOut.Trim() is { Length: > 0 } what ? what : null;
 
