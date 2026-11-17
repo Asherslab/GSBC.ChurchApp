@@ -1,5 +1,6 @@
 ---
 title: Places on a map, with directions
+audience: everyone
 added: 2026-11-17
 icon: map-pin
 area: Events
