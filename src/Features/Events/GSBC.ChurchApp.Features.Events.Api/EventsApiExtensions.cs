@@ -23,6 +23,7 @@ public static class EventsApiExtensions
         services.AddScoped<INewsWatcher, DigestNewsWatcher>();
         services.AddScoped<IPersonData, EventsPersonData>();
         services.AddScoped<EventWriter>();
+        services.AddScoped<EventsForEveryone>();
         services.AddScoped<HandledRequests>();
         services.AddScoped<CalendarFollowing>();
         services.AddScoped<CalendarRemover>();

@@ -56,7 +56,7 @@ const settle = page => page.evaluate(async limit => {
 }, settleLimit);
 
 const waitForApp = async page => {
-  await page.waitForFunction(() => document.querySelector('.admin-shell') || document.querySelector('.sign-in-stage, .signin'), null, { timeout: 60000 });
+  await page.waitForFunction(() => document.querySelector('.admin-shell') || document.querySelector('.sign-in-stage, .signin, .opened-page'), null, { timeout: 60000 });
   await settle(page);
 };
 

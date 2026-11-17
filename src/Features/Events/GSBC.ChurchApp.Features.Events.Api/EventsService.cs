@@ -6,7 +6,7 @@ using ProtoBuf.Grpc;
 
 namespace GSBC.ChurchApp.Features.Events.Api;
 
-internal sealed class EventsService(CalendarFollowing following, CalendarLinkSecrets links) : IEventsService
+internal sealed class EventsService(CalendarFollowing following, CalendarLinkSecrets links, EventsForEveryone forEveryone) : IEventsService
 {
     public async ValueTask<MyCalendars> ChooseAsync(CalendarChoice request, CallContext context = default) =>
         await following.ChooseAsync(CallingInstall.Of(context), context.ServerCallContext?.GetHttpContext().User ?? new System.Security.Claims.ClaimsPrincipal(), request, context.CancellationToken);
@@ -18,6 +18,9 @@ internal sealed class EventsService(CalendarFollowing following, CalendarLinkSec
             await links.ClaimForPersonAsync(installId, person, context.CancellationToken);
         return await following.MineAsync(installId, CallerId(context), context.CancellationToken);
     }
+
+    public async ValueTask<PublicEvents> ForEveryoneAsync(Done request, CallContext context = default) =>
+        await forEveryone.ReadAsync(context.CancellationToken);
 
     private static Guid? CallerId(CallContext context) =>
         context.ServerCallContext?.GetHttpContext().User is { } user ? Caller.UserId(user) : null;

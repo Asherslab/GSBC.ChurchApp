@@ -7,7 +7,7 @@ using ProtoBuf.Grpc;
 
 namespace GSBC.ChurchApp.Features.News.Api;
 
-internal sealed class NewsService(NewsDesk desk, NewsTelling telling, IAccessEvaluator access, AppCardChecks cards) : INewsService
+internal sealed class NewsService(NewsDesk desk, NewsTelling telling, NewsReader reader, IAccessEvaluator access, AppCardChecks cards) : INewsService
 {
     public async ValueTask<NewsPost> SaveAsync(NewsSave request, CallContext context = default)
     {
@@ -62,6 +62,9 @@ internal sealed class NewsService(NewsDesk desk, NewsTelling telling, IAccessEva
         var reach = await telling.ReachAsync(request.Audience, context.CancellationToken);
         return new NewsReach { People = reach.People, Phones = reach.Phones };
     }
+
+    public async ValueTask<NewsReading> ReadAsync(NewsRef request, CallContext context = default) =>
+        new() { Post = await reader.ReadAsync(context.ServerCallContext?.GetHttpContext().User ?? new ClaimsPrincipal(), request.Id, context.CancellationToken) };
 
     private async Task<Writer> WriterAsync(CallContext context)
     {

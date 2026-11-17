@@ -1,8 +1,11 @@
+using System.Security.Claims;
+using GSBC.ChurchApp.Platform.Api.Access;
 using GSBC.ChurchApp.Platform.Api.Media;
 using GSBC.ChurchApp.Platform.Api.Notifications;
 using GSBC.ChurchApp.Platform.Api.People;
 using GSBC.ChurchApp.Platform.Contracts.Media;
 using GSBC.ChurchApp.Platform.Contracts.Notifications;
+using GSBC.ChurchApp.Platform.Permissions;
 
 namespace GSBC.ChurchApp.Features.News.Api.Tests;
 
@@ -85,4 +88,22 @@ internal sealed class LibraryMedia : IMediaReferences, IMediaSystemFolders
     public Task ForgetAsync(MediaSystemArea area, IReadOnlyCollection<string> mediaIds, CancellationToken cancellationToken) => Task.CompletedTask;
 
     public Task ForgetUnusedAsync(MediaSystemArea area, DateTime uploadedBefore, CancellationToken cancellationToken) => Task.CompletedTask;
+}
+
+internal sealed class HeldRoles : IAccessEvaluator
+{
+    private readonly Dictionary<Guid, GrantSet> _grants = [];
+
+    public ClaimsPrincipal Person(params Guid[] roles)
+    {
+        Guid id = Guid.CreateVersion7();
+        _grants[id] = new GrantSet(roles.Select(role => new Grant(PermissionPattern.Parse(RoleMembership.NodeOf(role)), Scope.Global)).ToList());
+        return new ClaimsPrincipal(new ClaimsIdentity([new Claim(Caller.UserIdClaim, id.ToString())], "test"));
+    }
+
+    public ValueTask<bool> IsAllowedAsync(ClaimsPrincipal user, string node, string? scopeId, CancellationToken cancellationToken) =>
+        ValueTask.FromResult(Caller.UserId(user) is { } id && _grants.GetValueOrDefault(id, GrantSet.Empty).IsAllowed(new Permission(node, ScopeKind.Global, node), scopeId));
+
+    public ValueTask<GrantSet> GrantsForAsync(Guid userId, CancellationToken cancellationToken) =>
+        ValueTask.FromResult(_grants.GetValueOrDefault(userId, GrantSet.Empty));
 }

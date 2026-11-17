@@ -10,8 +10,10 @@ public sealed class PlaceAccess(IAccessEvaluator access)
     {
         if (audience == Audience.Everyone)
             return true;
-        if (Caller.UserId(user) is null)
+        if (Caller.UserId(user) is not { } id)
             return false;
+        if (audience.IsForRoles)
+            return audience.Includes(Viewer.Of(await access.GrantsForAsync(id, cancellationToken)));
         return audience.Node is not { } node || await access.IsAllowedAsync(user, node, scope, cancellationToken);
     }
 }

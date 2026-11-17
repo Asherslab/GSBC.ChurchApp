@@ -16,5 +16,7 @@ public sealed class OnlineNews(ChannelBase channel) : INewsReads
 
     public async Task<IReadOnlyList<NewsPost>> DeskAsync() => (await _service.DeskAsync(new DeskRequest())).Posts;
 
+    public async Task<NewsPost?> ReadAsync(string id) => (await _service.ReadAsync(new NewsRef { Id = id })).Post;
+
     public async Task<NewsReach> ReachAsync(string audience) => await _service.ReachAsync(new ReachRequest { Audience = audience });
 }

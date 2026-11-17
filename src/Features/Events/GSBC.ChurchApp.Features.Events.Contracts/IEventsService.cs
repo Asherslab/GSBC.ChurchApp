@@ -12,4 +12,7 @@ public interface IEventsService
 
     [AppInstall]
     ValueTask<MyCalendars> MineAsync(Done request, CallContext context = default);
+
+    [Public]
+    ValueTask<PublicEvents> ForEveryoneAsync(Done request, CallContext context = default);
 }

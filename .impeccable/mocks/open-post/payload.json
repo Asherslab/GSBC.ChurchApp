@@ -1,0 +1,46 @@
+{
+  "title": "A church news post, opened from the email without the app",
+  "question": "Someone taps Read the post in the What's Next email on a computer, or on a phone without the app. Each sketch shows a window at the left and a phone at the right. Which way should the post sit?",
+  "options": [
+    {
+      "id": "a-sheet-on-sand",
+      "kind": "assigned",
+      "kicker": "THE ROLL",
+      "label": "A bulletin page on the desk",
+      "thesis": "The post as the app sets it, on a white page lying on sand, with the church's name above and the app line under it.",
+      "palette": ["#f4efe7", "#ffffff", "#2a3d5e", "#00776d"],
+      "materials": ["sand stage", "white page up to 720px", "the post's navy rule and sand foot"],
+      "viewport": "Good Shepherd with the mark at the top left of a sand stage; a white page centred with the post (navy rule, date block, title, picture, lead); under the page a quiet caption: also in the app, ask the church office. On a phone the page runs edge to edge.",
+      "risk": "Two sands meet at the page's foot, so the post's own sand foot needs a hairline to read as the end.",
+      "html": ".impeccable/mocks/open-post/a-sheet-on-sand.html",
+      "comp": ".impeccable/mocks/open-post/a-sheet-on-sand.png"
+    },
+    {
+      "id": "b-app-strip",
+      "kind": "dealt",
+      "label": "The app strip at the top",
+      "thesis": "A sand strip across the top says who it's from and that it's in the app; under it the post is a plain white page.",
+      "palette": ["#ffffff", "#f4efe7", "#2a3d5e", "#18233a"],
+      "materials": ["sand strip with the mark", "white reading page", "foot to the window's bottom"],
+      "viewport": "A sand strip across the top: the mark and Good Shepherd at the left, and 'This post is also in the Good Shepherd app. Ask the church office how to get it.' at the right; then the post in a 680px column on white, its sand foot across the window.",
+      "risk": "A strip at the top looks like an app banner and may be read past.",
+      "html": ".impeccable/mocks/open-post/b-app-strip.html",
+      "comp": ".impeccable/mocks/open-post/b-app-strip.png"
+    },
+    {
+      "id": "c-navy-band",
+      "kind": "dealt",
+      "label": "A navy band, like the app's masthead",
+      "thesis": "A navy band with the mark and 'Church news' opens the page as the app's masthead would; the app line closes the sand foot.",
+      "palette": ["#2a3d5e", "#d5c9b7", "#ffffff", "#f4efe7"],
+      "materials": ["navy band, beige note", "white reading column", "sand foot carrying the app line"],
+      "viewport": "A short navy band across the top: the white mark, Good Shepherd, and 'Church news' in beige; then the post in a 680px column on white; its sand foot says who posted it and, on a second line, that it's also in the app.",
+      "risk": "The navy band and the post's own navy rule sit close together; the band must stay short.",
+      "html": ".impeccable/mocks/open-post/c-navy-band.html",
+      "comp": ".impeccable/mocks/open-post/c-navy-band.png"
+    }
+  ],
+  "reroll": true,
+  "steer": true,
+  "buildPath": {"value": "code"}
+}
