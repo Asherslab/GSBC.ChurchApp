@@ -1769,6 +1769,12 @@ span.stage-pipeline__stage { pointer-events: none; }
 .map-view__attribution { padding: var(--space-2xs) 0 0; font-size: var(--text-micro); font-weight: 400; color: var(--ink-3); }
 .map-view .maplibregl-canvas:focus { outline: none; }
 .location-row .row__trail { align-self: center; }
+.map-pin--tip { pointer-events: none; }
+.map-pin--tip .map-pin__body { transform: translate(-50%, -100%); }
+.location-pin { display: block; width: 28px; height: 38px; filter: drop-shadow(0 2px 3px var(--scrim)); }
+.location-pin path { fill: var(--primary); stroke: var(--page); stroke-width: 2; }
+.location-pin circle { fill: var(--page); }
+.location-row__map .location-pin { width: 16px; height: 22px; }
 .location-row__note { display: block; margin-top: var(--space-3xs); font-size: var(--text-caption); line-height: 1.4; color: var(--ink-2); }
 .location-row__map { display: block; width: 64px; height: 64px; overflow: hidden; border-radius: var(--radius-tile); box-shadow: 0 0 0 1px var(--line); }
 .location-row__map .map-view, .location-row__map .map-view__map { width: 64px; height: 64px; min-height: 0; }

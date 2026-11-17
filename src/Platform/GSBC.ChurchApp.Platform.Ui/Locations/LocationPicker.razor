@@ -34,6 +34,16 @@
                                 }
                             </div>
                         }
+                        else if (_search.Trim().Length == 0 && Recent.Count > 0)
+                        {
+                            <div class="list location-picker__results" role="list" aria-label="Used before">
+                                @foreach (Location used in Recent)
+                                {
+                                    <ListRow @key="used" Icon="@AppIcons.PlaceOffSite" Title="@LocationWords.Headline(used)" Subtitle="@(LocationWords.Address(used) ?? "Used before")"
+                                             OnClick="() => UseRecent(used)" />
+                                }
+                            </div>
+                        }
                         else if (_search.Trim().Length >= 3 && !_searching)
                         {
                             <p class="field__hint" role="status">No address matches "@_search.Trim()". Try the street and suburb, or tap the map.</p>
@@ -109,6 +119,7 @@
     [Parameter] public EventCallback<bool> OpenChanged { get; set; }
     [Parameter] public Location? Value { get; set; }
     [Parameter] public bool AllowHome { get; set; }
+    [Parameter] public IReadOnlyList<Location> Recent { get; set; } = [];
     [Parameter] public EventCallback<Location> OnChoose { get; set; }
 
     private string HomeDescription => _suburb.Length > 0
@@ -138,6 +149,12 @@
         (_latitude, _longitude, _map) = (start.Latitude, start.Longitude, start.Map);
         _pinned = start.HasPin;
         (_search, _found, _chosen, _offline) = ("", [], null, false);
+    }
+
+    private void UseRecent(Location used)
+    {
+        Start(used);
+        _centred++;
     }
 
     private void KindChanged(LocationKind kind)

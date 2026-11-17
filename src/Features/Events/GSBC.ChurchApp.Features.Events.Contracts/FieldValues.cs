@@ -75,7 +75,9 @@ public static class FieldValues
         EventFieldKeys.Label => value.Fields.Label,
         EventFieldKeys.Picture => value.Fields.Picture?.Id ?? "",
         EventFieldKeys.Description => value.Fields.Description is { IsEmpty: false } description ? description.Markdown + "|" + string.Join(",", description.Media.Select(media => media.Id)) : "",
-        EventFieldKeys.Place => IsSet(value.Fields, EventFieldKeys.Place) ? $"{value.Fields.Place!.PlaceId}|{value.Fields.Place.Name}|{value.Fields.Place.Address}" : "",
+        EventFieldKeys.Place => IsSet(value.Fields, EventFieldKeys.Place)
+            ? $"{value.Fields.Place!.PlaceId}|{value.Fields.Place.Name}|{value.Fields.Place.Address}|{value.Fields.Place.Location?.Note}|{value.Fields.Place.Location?.Latitude}|{value.Fields.Place.Location?.Longitude}|{value.Fields.Place.Location?.Home}"
+            : "",
         EventFieldKeys.Contacts => string.Join("\n", value.Fields.Contacts.Select(contact => $"{contact.PersonId}|{contact.Name}|{contact.Phone}|{contact.Email}")),
         EventFieldKeys.Register => value.Fields.RegisterLink,
         _ => string.Join("\n", value.Fields.Links.Select(link => $"{link.Title}|{link.Url}")),

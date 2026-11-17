@@ -1,12 +1,13 @@
 using System.Security.Claims;
-using Grpc.Core;
 using GSBC.ChurchApp.Features.Events.Api.Data;
 using GSBC.ChurchApp.Features.Events.Contracts;
 using GSBC.ChurchApp.Platform.Api.Access;
+using GSBC.ChurchApp.Platform.Api.Locations;
 using GSBC.ChurchApp.Platform.Api.Media;
 using GSBC.ChurchApp.Platform.Common;
 using GSBC.ChurchApp.Platform.Contracts.Content;
 using GSBC.ChurchApp.Platform.Contracts.Media;
+using Grpc.Core;
 using Microsoft.EntityFrameworkCore;
 
 namespace GSBC.ChurchApp.Features.Events.Api;
@@ -477,7 +478,8 @@ internal sealed class EventWriter(EventsDbContext db, EventsPublisher publisher,
             Label = fields.Label.Trim(),
             Picture = picture,
             Description = checkedDescription,
-            Place = fields.Place is { } place && (place.PlaceId is { Length: > 0 } || place.Name.Trim().Length > 0 || place.Address.Trim().Length > 0)
+            Place = fields.Place is { Location: not null } located ? EventPlaces.From(LocationRules.Cleaned(located.Location))
+                : fields.Place is { } place && (place.PlaceId is { Length: > 0 } || place.Name.Trim().Length > 0 || place.Address.Trim().Length > 0)
                 ? new EventPlace { PlaceId = place.PlaceId is { Length: > 0 } ? place.PlaceId : null, Name = place.Name.Trim(), Address = place.Address.Trim() }
                 : null,
             Contacts = fields.Contacts.Where(contact => contact.Name.Trim().Length > 0).Select(contact => new EventContact

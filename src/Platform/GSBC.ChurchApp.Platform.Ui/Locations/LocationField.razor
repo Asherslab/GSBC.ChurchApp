@@ -45,7 +45,7 @@
     }
 </div>
 
-<LocationPicker @bind-Open="_choosing" Title="@Label" Value="Value" AllowHome="AllowHome" OnChoose="ChooseAsync" />
+<LocationPicker @bind-Open="_choosing" Title="@Label" Value="Value" AllowHome="AllowHome" Recent="Recent" OnChoose="ChooseAsync" />
 
 @code {
     private static int _fields;
@@ -58,6 +58,7 @@
     [Parameter] public EventCallback<Location?> ValueChanged { get; set; }
     [Parameter] public bool AllowHome { get; set; }
     [Parameter] public bool Optional { get; set; }
+    [Parameter] public IReadOnlyList<Location> Recent { get; set; } = [];
     [Parameter] public string? Problem { get; set; }
 
     private async Task ChooseAsync(Location chosen)
