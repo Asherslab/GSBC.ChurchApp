@@ -42,4 +42,7 @@ public interface INewsService
 
     [SignedIn]
     ValueTask<NewsReach> ReachAsync(ReachRequest request, CallContext context = default);
+
+    [Public]
+    ValueTask<NewsReading> ReadAsync(NewsRef request, CallContext context = default);
 }

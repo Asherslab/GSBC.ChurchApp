@@ -105,4 +105,10 @@ public sealed class NewsList
 }
 
 [ProtoContract]
+public sealed class NewsReading
+{
+    [ProtoMember(1)] public NewsPost? Post { get; set; }
+}
+
+[ProtoContract]
 public sealed class Done;
