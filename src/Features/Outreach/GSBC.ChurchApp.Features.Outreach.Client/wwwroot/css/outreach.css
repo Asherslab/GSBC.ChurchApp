@@ -196,6 +196,7 @@
 .outreach-outside__title { margin: 0; color: var(--ink); font-weight: 600; }
 .outreach-outside__body { margin: 0; }
 .outreach-map { margin-top: var(--after-tabs); }
+.outreach-map__waiting { position: absolute; inset: 0; background: var(--map-land); }
 .outreach-map__stack { display: grid; align-content: start; gap: var(--space-lg); }
 .outreach-map__matches { margin-top: var(--space-xs); border-radius: var(--radius-field); box-shadow: 0 0 0 1px var(--line); overflow: hidden; }
 .outreach-map__list { display: grid; margin-inline: calc(-1 * var(--space-sm)); }

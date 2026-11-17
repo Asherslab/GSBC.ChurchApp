@@ -190,8 +190,9 @@ function overlayLayers(c) {
         "circle-color": ["match", ["get", "kind"], "start", c.walk, c.primary],
         "circle-stroke-color": c.surface, "circle-stroke-width": 3,
       } },
-    { id: "place-labels", type: "symbol", source: "markers", filter: ["all", kindIs("start", "pin", "meeting"), ["has", "label"]],
-      layout: { "text-field": ["get", "label"], "text-font": ["montserrat-semibold"], "text-size": 12, "text-offset": [0, 1.3], "text-anchor": "top" },
+    { id: "place-labels", type: "symbol", source: "markers", filter: kindIs("start", "pin", "meeting"),
+      layout: { "icon-image": placeRoom, "icon-allow-overlap": true, "text-field": ["coalesce", ["get", "label"], ""], "text-font": ["montserrat-semibold"], "text-size": 12,
+        "text-offset": [0, 1.3], "text-anchor": "top", "text-allow-overlap": true },
       paint: { "text-color": c.ink, "text-halo-color": c.surface, "text-halo-width": 2 } },
     { id: "you-accuracy", type: "circle", source: "you",
       paint: { "circle-radius": ["get", "radius"], "circle-color": c.you, "circle-opacity": 0.16, "circle-pitch-alignment": "map" } },
@@ -210,6 +211,8 @@ const notePaint = (c) => ({ "text-color": c.ink, "text-halo-color": c.surface, "
 
 const hatch = "reach-hatch";
 const closedHatch = "reach-closed-hatch";
+const placeRoom = "place-room";
+const placeRoomSize = 22;
 const deepestZoom = 19;
 const overviewMinZoom = 3;
 const regionsMinZoom = 9;
@@ -360,6 +363,10 @@ export async function create(element, optionsJson, receiver) {
   };
   map.on("style.load", addHatch);
   map.on("styleimagemissing", (e) => (e.id === hatch || e.id === closedHatch) && addHatch());
+  const addPlaceRoom = () => map.hasImage(placeRoom)
+    || map.addImage(placeRoom, { width: placeRoomSize, height: placeRoomSize, data: new Uint8Array(placeRoomSize * placeRoomSize * 4) });
+  map.on("style.load", addPlaceRoom);
+  map.on("styleimagemissing", (e) => e.id === placeRoom && addPlaceRoom());
 
   let covered = [];
   const insideCovered = ({ lng, lat }) => covered.some((box) => lat >= box.south && lat <= box.north && lng >= box.west && lng <= box.east);

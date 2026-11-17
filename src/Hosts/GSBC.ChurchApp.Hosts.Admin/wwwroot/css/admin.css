@@ -230,7 +230,7 @@ button.module-nav__link { width: 100%; border: 0; background: none; font-family:
 .title-band__title:focus { outline: none; }
 .title-band__lead { margin: 0; max-width: 72ch; color: var(--ink-2); font-size: var(--text-caption); }
 .title-band__actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
-.title-band__actions:empty { display: none; }
+.title-band__actions:empty { min-height: var(--touch); }
 .title-band:has(> .title-band__actions > .menu:only-child) { flex-wrap: nowrap; }
 .title-band:has(> .title-band__actions > .menu:only-child) { align-items: flex-start; }
 .title-band:has(> .title-band__actions > .menu:only-child) > .title-band__actions { flex: none; }

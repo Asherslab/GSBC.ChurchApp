@@ -436,7 +436,7 @@
 
     private static PlaceLine NewZone() => new($"{NewKey}zone", PlaceKind.Zone, "A new area", "", null, new ExclusionZone { Reason = ExclusionReason.NotHomes });
 
-    private static PlaceLine NewAddress() => new($"{NewKey}address", PlaceKind.Address, "A new address", "", null, new ExclusionAddress { Reason = ExclusionReason.Complaint });
+    private static PlaceLine NewAddress() => new($"{NewKey}address", PlaceKind.Address, "A new address", "", null, new ExclusionAddress { Reason = ExclusionReason.Complaint, ShowMarker = true });
 
     private static string Code(ExclusionReason reason) => ((int)reason).ToString(System.Globalization.CultureInfo.InvariantCulture);
 
