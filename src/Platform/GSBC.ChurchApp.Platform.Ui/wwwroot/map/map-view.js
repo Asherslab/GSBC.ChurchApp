@@ -207,6 +207,10 @@ function overlayLayers(c) {
       paint: { "circle-radius": ["get", "radius"], "circle-color": c.you, "circle-opacity": 0.16, "circle-pitch-alignment": "map" } },
     { id: "you", type: "circle", source: "you",
       paint: { "circle-radius": 8, "circle-color": c.you, "circle-stroke-color": c.surface, "circle-stroke-width": 3 } },
+    { id: "pin-room", type: "symbol", source: "pin-room",
+      layout: { "text-field": ["get", "label"], "text-font": ["montserrat-semibold"], "text-size": 14, "text-max-width": 100, "text-anchor": "bottom", "text-offset": [0, -0.5],
+        "text-padding": 14, "text-allow-overlap": true },
+      paint: { "text-opacity": 0 } },
   ];
 }
 
@@ -293,6 +297,7 @@ function withOverlays(base, data, overview) {
   base.sources.areas = { type: "geojson", data: data.areas };
   base.sources.markers = { type: "geojson", data: data.markers };
   base.sources.you = { type: "geojson", data: data.you };
+  base.sources["pin-room"] = { type: "geojson", data: data.pinRoom };
   base.layers.push(...overlayLayers(c));
   return base;
 }
@@ -334,7 +339,7 @@ export async function create(element, optionsJson, receiver) {
   const tiles = await tilesFor(options.source);
   const backdrop = options.backdrop ?? null;
   const backdropLimit = backdrop && [[backdrop.bounds.west, backdrop.bounds.south], [backdrop.bounds.east, backdrop.bounds.north]];
-  const data = { lines: empty, areas: empty, markers: empty, you: empty, reach: null };
+  const data = { lines: empty, areas: empty, markers: empty, you: empty, pinRoom: empty, reach: null };
   let you = null;
   let following = !!options.follow;
   let dragged = false;
@@ -489,25 +494,41 @@ export async function create(element, optionsJson, receiver) {
 
   const figure = element.parentElement;
   const placePins = () => {
-    const width = figure.clientWidth;
+    const canvas = element.getBoundingClientRect();
     for (const pin of figure.querySelectorAll("[data-map-pin]")) {
       const [lat, lon] = pin.dataset.mapPin.split(",").map(Number);
       const at = map.project([lon, lat]);
+      const room = (pin.offsetParent ?? figure).getBoundingClientRect();
       const half = (pin.firstElementChild?.offsetWidth ?? 0) / 2;
       const start = parseFloat(getComputedStyle(pin).getPropertyValue("--map-pin-start")) || pinGutter;
-      const x = Math.max(start + half, Math.min(width - pinGutter - half, at.x));
-      pin.style.transform = `translate(${Math.round(x)}px, ${Math.round(at.y)}px)`;
+      const x = Math.max(start + half, Math.min(room.width - pinGutter - half, at.x - (room.left - canvas.left)));
+      pin.style.transform = `translate(${Math.round(x)}px, ${Math.round(at.y - (room.top - canvas.top))}px)`;
     }
   };
   map.on("move", placePins);
   map.on("resize", placePins);
+  const holdPinRoom = () => {
+    const features = [...figure.querySelectorAll("[data-map-pin]")].map((pin) => ({
+      type: "Feature",
+      properties: { label: pin.textContent.trim() || "·" },
+      geometry: { type: "Point", coordinates: pin.dataset.mapPin.split(",").map(Number).reverse() },
+    }));
+    data.pinRoom = { type: "FeatureCollection", features };
+    map.getSource("pin-room")?.setData(data.pinRoom);
+  };
   const pinsChanged = () => {
     placePins();
+    holdPinRoom();
     map.fire("pinschanged");
   };
   map.once("load", pinsChanged);
   const pins = new MutationObserver(pinsChanged);
   pins.observe(figure, { childList: true, subtree: true, attributes: true, attributeFilter: ["data-map-pin"] });
+  const overlayResized = new ResizeObserver(placePins);
+  figure.querySelectorAll(".map-view__overlay").forEach((overlay) => overlayResized.observe(overlay));
+  const roomMoved = new MutationObserver(() => requestAnimationFrame(placePins));
+  const workspace = figure.closest(".map-workspace");
+  if (workspace) roomMoved.observe(workspace, { attributes: true, attributeFilter: ["class"] });
 
   let limit = null;
   const showReach = () => {
@@ -565,6 +586,8 @@ export async function create(element, optionsJson, receiver) {
       stopCompass?.();
       watcher.disconnect();
       pins.disconnect();
+      overlayResized.disconnect();
+      roomMoved.disconnect();
       map.remove();
     },
   };

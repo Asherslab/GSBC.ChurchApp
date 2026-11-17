@@ -18,7 +18,7 @@
             <StableSection SectionName="@OutreachMap.DrawerSection">
                 <PaneHead Title="Places outreach skips" Lead="Walkers never get these on a route." />
                 <div class="outreach-map__stack">
-                    <SearchField Label="Find a place outreach skips" Placeholder="Find a place outreach skips…" Value="@_find" ValueChanged="text => _find = text" />
+                    <SearchField Label="Find a place outreach skips" Placeholder="Find a skipped place…" Value="@_find" ValueChanged="text => _find = text" />
                     <FilterChips TValue="PlaceKind?" Label="Show" ShowLabel="false" Options="Filters(lists)" Value="_filter" ValueChanged="kind => _filter = kind" />
                     @if (Shown(lists).ToList() is { Count: > 0 } shown)
                     {
@@ -158,7 +158,7 @@
     {
         ExclusionZone when _area is not { Count: >= 3 } => "Draw the area on the map to save it.",
         ExclusionZone when _name.Trim().Length == 0 => "Give the area a name to save it.",
-        ExclusionAddress when IsNew && _address is null => "Find the address, or click its letterbox on the map.",
+        ExclusionAddress when IsNew && _address is null => "Choose the address first.",
         _ => null,
     };
 

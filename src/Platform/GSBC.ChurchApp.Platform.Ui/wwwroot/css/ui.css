@@ -661,7 +661,7 @@ button.text-link:disabled { color: var(--ink-3); cursor: default; }
 .pane-head { display: flex; align-items: flex-start; gap: var(--space-sm); margin-bottom: var(--space-xl); }
 .pane-head__text { flex: 1; min-width: 0; }
 .pane-head__title { display: -webkit-box; margin: 0; overflow: hidden; font-size: var(--text-title-lg); font-weight: 700; letter-spacing: -0.02em; line-height: 1.2; overflow-wrap: break-word; text-wrap: balance; -webkit-box-orient: vertical; -webkit-line-clamp: 3; line-clamp: 3; }
-.pane-head__lead { margin: var(--space-2xs) 0 0; color: var(--ink-2); font-size: var(--text-caption); }
+.pane-head__lead { margin: var(--space-2xs) 0 0; color: var(--ink-2); font-size: var(--text-caption); text-wrap: pretty; }
 .pane-head__tools { display: flex; flex: none; align-items: center; gap: var(--space-3xs); margin: calc(-1 * var(--space-xs)) calc(-1 * var(--space-xs)) 0 0; }
 .pane-head__tools .btn--quiet.btn--icon { background: none; color: var(--ink-2); }
 .pane-head__tools .btn--quiet.btn--icon:hover { background: var(--field); color: var(--ink); }
@@ -1770,7 +1770,7 @@ span.stage-pipeline__stage { pointer-events: none; }
 .map-view__credits { flex: 1 1 auto; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .map-view__attribution--open .map-view__credits { white-space: normal; text-wrap: pretty; }
 .map-view__credits-toggle { position: relative; display: inline-grid; flex: none; place-items: center; width: 20px; height: 20px; padding: 0; border: 0; border-radius: 50%; background: none; color: var(--ink-3); cursor: pointer; }
-.map-view__credits-toggle::after { content: ""; position: absolute; inset: -12px; }
+.map-view__credits-toggle::after { content: ""; position: absolute; inset: -12px -6px -12px -12px; }
 .map-view__credits-toggle:hover, .map-view__attribution--open .map-view__credits-toggle { color: var(--ink); }
 .map-view__credits-toggle:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .map-view .maplibregl-canvas:focus { outline: none; }
@@ -1821,8 +1821,10 @@ span.stage-pipeline__stage { pointer-events: none; }
 .map-workspace__map .map-view__attribution { padding: var(--space-2xs) var(--space-sm) var(--space-xs); }
 .map-workspace__map .map-view__credits { text-align: right; }
 .map-workspace__full.btn { position: absolute; top: var(--space-md); right: var(--space-md); z-index: 3; gap: var(--space-xs); min-height: 40px; min-width: 40px; background: var(--page); box-shadow: var(--map-float); }
+.map-workspace:not(.map-workspace--full) .map-workspace__full.btn { width: 36px; min-width: 36px; min-height: 36px; padding: 0; }
 .map-workspace__key { padding: 0 var(--space-2xs); border-radius: var(--radius-tile); background: var(--fill-on-surface); color: var(--ink-2); font: inherit; font-size: var(--text-micro); font-weight: 700; }
 .map-workspace--full { --panel-room: calc(var(--drawer) + 2 * var(--space-md)); position: relative; grid-template-columns: minmax(0, 1fr); }
+.map-workspace--full.map-workspace--wide { --drawer: 440px; }
 .map-workspace--full .map-workspace__map { grid-column: 1 / -1; }
 .map-workspace--full .map-workspace__drawer { position: absolute; z-index: 4; top: var(--space-md); bottom: calc(var(--space-md) + 1.5rem); left: var(--space-md); border-right: 0; border-radius: var(--radius); box-shadow: var(--map-float); overflow: hidden; }
 .map-workspace--full.map-workspace--panel-right .map-workspace__drawer { left: auto; right: var(--space-md); }
@@ -1836,7 +1838,7 @@ span.stage-pipeline__stage { pointer-events: none; }
 .map-workspace--full .map-view__overlay { margin-left: var(--panel-room); }
 .map-workspace--full.map-workspace--panel-right .map-view__overlay { margin-left: 0; margin-right: var(--panel-room); }
 .map-workspace--full.map-workspace--panel-right .map-workspace__full.btn { right: var(--panel-room); }
-.map-workspace--full .map-card { top: calc(2 * var(--space-md) + 40px); right: var(--space-md); }
+.map-workspace--full .map-card { top: calc(2 * var(--space-md) + 40px); right: var(--space-md); max-height: calc(100% - 3 * var(--space-md) - 40px); }
 .map-workspace--full.map-workspace--panel-right .map-card { right: 0; }
 .map-workspace--dragging .map-workspace__drawer { z-index: 6; cursor: grabbing; box-shadow: 0 0 0 1px var(--accent), 0 30px 60px -20px var(--scrim); }
 .map-workspace--dragging .map-workspace__head { cursor: grabbing; }
