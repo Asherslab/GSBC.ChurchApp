@@ -138,7 +138,7 @@
         <Detail>
             <div class="digest-desk__preview-head">
                 <Segmented TValue="bool" Label="Preview" Options="PreviewOptions" Value="_email" ValueChanged="value => _email = value" />
-                <span class="digest-desk__preview-hint" aria-live="polite">@(_email ? "Copy for email gives this as HTML. In Elvanto, switch the email to its HTML source and paste it in." : "Click a title in the app to change it.")</span>
+                <span class="digest-desk__preview-hint" aria-live="polite">@(_email ? "Copy for email gives this as HTML. In Elvanto, start the email in the drag-and-drop builder, set Body → Content Width to 600px, add an HTML block with no padding and paste it in." : "Click a title in the app to change it.")</span>
             </div>
             @if (_email)
             {

@@ -807,7 +807,8 @@ digests from the page's foot; Copy for email gives only the content block. Decis
 - **Copy for email** gives the content block only, 600px wide, with every style inline, tables throughout and buttons
   drawn as table cells so Outlook shows them; Elvanto's template adds the logo, footer and unsubscribe. The clipboard holds
   the HTML source as text (for Elvanto's HTML source view) and as HTML. The Email preview shows that same HTML, and
-  under it: "Copy for email gives this as HTML. In Elvanto, switch the email to its HTML source and paste it in." The
+  under it how to paste it into Elvanto (since 2026-11-17: the drag-and-drop builder's HTML block, content width 600px,
+  no padding; the classic HTML source pinned it left and let Mail recolour it in dark mode). The
   plain-text copy is gone.
 - **Checked** on a backend at `Dev__PortOffset=1000` with main's database copied: bulletin tiles at five sizes turned
   into What's next on restart; a digest sent from the desk showed on Home and on What's next in the Simulator, light and

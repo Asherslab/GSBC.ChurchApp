@@ -35,12 +35,14 @@ public static class DigestEmail
         picture?.At(MediaSizeName.ForPhones) is { IsPrivate: false, Url: { } url } && IsWeb(url) ? url : null;
 
     public const int Width = 600;
+    private const string LightOnly = "<style>:root{color-scheme:light only;supported-color-schemes:light only}</style>";
     private const int Inner = Width - 64;
     private const string PictureShare = "34%";
 
     public static string Html(string range, IReadOnlyList<EmailItem> items, string allEventsLink, string? topPictureUrl = null)
     {
         StringBuilder html = new();
+        html.Append(LightOnly);
         html.Append($"""<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="{Behind}" style="width:100%;background:{Behind};border-collapse:collapse;color-scheme:light only">""");
         html.Append("""<tr><td align="center" style="padding:0 0 32px">""");
         html.Append($"""<!--[if mso]><table role="presentation" width="{Width}" align="center" cellpadding="0" cellspacing="0" border="0"><tr><td><![endif]-->""");

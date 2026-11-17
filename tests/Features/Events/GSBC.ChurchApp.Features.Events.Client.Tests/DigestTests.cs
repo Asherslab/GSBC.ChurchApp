@@ -43,16 +43,16 @@ public sealed class DigestTests
     }
 
     [Fact]
-    public void CopyForEmailGivesABlockElvantosTemplateCanHoldWithEveryStyleInlineAndButtonsMailClientsDraw()
+    public void CopyForEmailGivesABlockElvantosBuilderCanHoldStyledInlineButOneLightOnlyRuleAndButtonsMailClientsDraw()
     {
         EmailItem highTea = new(DigestItemKind.Event, new DigestWords { Title = "High tea", RegisterLink = "https://example.org/high-tea" }, null, "", "");
 
         string html = DigestEmail.Html("Monday 9 – Sunday 22 November", [highTea], "https://dev-app.example.org/open/week");
 
-        Assert.StartsWith("<table", html);
+        Assert.StartsWith("<style>:root{color-scheme:light only;supported-color-schemes:light only}</style><table", html);
         Assert.DoesNotContain("<html", html);
         Assert.DoesNotContain("<body", html);
-        Assert.DoesNotContain("<style", html);
+        Assert.Single(html.Split("<style")[1..]);
         Assert.DoesNotContain("class=", html);
         Assert.Equal(2, html.Split("<td bgcolor=\"#2A3D5E\" style=\"background:#2A3D5E;border-radius:20px\"><a href=").Length - 1);
     }
@@ -66,7 +66,7 @@ public sealed class DigestTests
 
         string html = DigestEmail.Html("Monday 14 – Sunday 27 December", [beside, across, post], "https://dev-app.example.org/open/week", "https://media.example.org/church.jpg");
 
-        Assert.StartsWith("<table role=\"presentation\" width=\"100%\"", html);
+        Assert.Contains("</style><table role=\"presentation\" width=\"100%\"", html);
         Assert.Contains("width=\"100%\" align=\"center\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" bgcolor=\"#ffffff\" style=\"width:100%;max-width:600px", html);
         Assert.True(html.IndexOf("church.jpg", StringComparison.Ordinal) < html.IndexOf("What's Next at Good Shepherd", StringComparison.Ordinal));
         Assert.Matches("<td width=\"34%\"[^>]*><img src=\"https://media.example.org/baptisms.jpg\"", html);
