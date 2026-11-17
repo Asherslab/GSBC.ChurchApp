@@ -174,12 +174,7 @@
         _centred++;
     }
 
-    private void KindChanged(LocationKind kind)
-    {
-        if (kind == _kind)
-            return;
-        _kind = kind;
-    }
+    private void KindChanged(LocationKind kind) => _kind = kind;
 
     private async Task SearchAsync(string text)
     {

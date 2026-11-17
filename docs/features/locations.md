@@ -121,6 +121,14 @@ only to someone who may see one of those audiences (`MinistryViews.SeesHome`). *
 "home" choice, because an event is only shown to its calendar's audience; a private calendar already keeps an event
 and its place to its people.
 
+### Where the build differs from the plan
+
+- **Choosing on the phone** is the same picker as on the desk, as a tall sheet, not a page of its own (decision 5): the
+  fields and the map fit in one sheet, and the sheet keeps *Cancel* and *Use this place* in view. *Claude's default*;
+  the owner may want a page.
+- **Tapping a place** opens the place's sheet (its map, the note, *Open in Apple Maps*, *Open in Google Maps*), not a
+  full-screen map page (decision 8). The map in the sheet is held to the place's own block.
+
 ### What changed where
 
 - Outreach: the day's *Where people meet* is a place; the day page on the phone shows it as a row; the printed route

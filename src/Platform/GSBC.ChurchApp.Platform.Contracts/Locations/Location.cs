@@ -44,7 +44,7 @@ public sealed class Location
     };
 
     public bool SameAs(Location? other) => other is not null && Kind == other.Kind && Name == other.Name && Address == other.Address
-        && Suburb == other.Suburb && Note == other.Note && Latitude == other.Latitude && Longitude == other.Longitude && Home == other.Home
+        && Suburb == other.Suburb && Note == other.Note && Nullable.Equals(Latitude, other.Latitude) && Nullable.Equals(Longitude, other.Longitude) && Home == other.Home
         && Map?.Url == other.Map?.Url && Text == other.Text && AddressHidden == other.AddressHidden;
 }
 

@@ -110,7 +110,8 @@ internal sealed class GnafImport(OutreachMapsDbContext db, IGnafSource source, N
 
     private static async Task ExecuteAsync(NpgsqlConnection connection, string sql, CancellationToken cancellationToken)
     {
-        await using NpgsqlCommand command = new(sql, connection) { CommandTimeout = 0 };
+        await using NpgsqlCommand command = new(sql, connection);
+        command.CommandTimeout = 0;
         await command.ExecuteNonQueryAsync(cancellationToken);
     }
 
