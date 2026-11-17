@@ -26,6 +26,7 @@ const session = () => sessionStorage;
 const kept = () => localStorage;
 
 export function attach(root, workspace) {
+  if (!root?.isConnected) return null;
   let dragging = null;
   let full = false;
   attached++;

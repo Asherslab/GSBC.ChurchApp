@@ -90,7 +90,7 @@
     private const int MatchesShown = 5;
 
     private string _name = "", _reason = "", _note = "", _caller = "", _search = "", _find = "";
-    private bool _marker, _busy, _saved, _deleting, _picking;
+    private bool _marker, _busy, _saved, _deleting;
     private string? _problem;
     private IReadOnlyList<MapPoint>? _area;
     private AddressPoint? _address;
@@ -185,7 +185,7 @@
             <SelectField Label="Why it's skipped" Options="Reasons" @bind-Value="_reason" Disabled="!CanChangeExclusions" Hint="Only staff see why." />
             <TextField Label="Note" @bind-Value="_note" Multiline="true" MaxLength="1000" Disabled="!CanChangeExclusions" />
         </div>,
-        ExclusionAddress address => @<div class="outreach-map__stack">
+        ExclusionAddress => @<div class="outreach-map__stack">
             <PaneHead Title="@(IsNew ? (_address is { } picked ? OutreachWords.Place(picked) : "A new address to skip") : line.Title)" Lead="Every campaign skips this letterbox and door."
                       Actions="@(CanChangeExclusions && !IsNew ? [this.Item("Delete this address…", () => _deleting = true, "trash-2", "Walks deliver there again", danger: true, disabled: _busy)] : null)"
                       OnClose="CloseAsync" />
@@ -371,7 +371,7 @@
 
     public override void LetGo()
     {
-        (_open, _picking, _problem, _deleting) = (null, false, null, false);
+        (_open, _problem, _deleting) = (null, null, false);
         Map.Redraw();
     }
 
@@ -379,7 +379,7 @@
     {
         if (_open?.Key != line?.Key && !await Unsaved.MayLeaveAsync())
             return false;
-        (_open, _saved, _problem, _deleting, _picking, _address, _area) = (null, false, null, false, false, null, null);
+        (_open, _saved, _problem, _deleting, _address, _area) = (null, false, null, false, null, null);
         if (line is not null)
         {
             Take(line);
@@ -418,9 +418,7 @@
 
     private async Task PickAddressAsync()
     {
-        if (!await OpenAsync(NewAddress(), fly: false))
-            return;
-        _picking = true;
+        await OpenAsync(NewAddress(), fly: false);
     }
 
     private void Take(PlaceLine line)
@@ -511,7 +509,7 @@
                 _open = _open! with { Key = $"address/{addressId}" };
                 break;
         }
-        (_saved, _picking) = (true, false);
+        _saved = true;
     });
 
     private Task DeleteAsync(PlaceLine? line) => line is null ? Task.CompletedTask : RunAsync(async () =>

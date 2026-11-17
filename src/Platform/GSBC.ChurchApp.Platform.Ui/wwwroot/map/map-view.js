@@ -449,9 +449,21 @@ export async function create(element, optionsJson, receiver) {
     });
 
   let framed = null;
+  const coveredSides = () => {
+    const overlay = element.parentElement.querySelector(".map-view__overlay");
+    if (!overlay) return { left: 0, right: 0 };
+    const canvas = element.getBoundingClientRect();
+    const room = overlay.getBoundingClientRect();
+    return { left: Math.max(0, room.left - canvas.left), right: Math.max(0, canvas.right - room.right) };
+  };
   const fit = (b, animate = false) => {
     freeZoom();
-    map.fitBounds([[b.west, b.south], [b.east, b.north]], { padding: framePadding(b), duration: animate ? 600 : 0, maxZoom: b.maxZoom ?? 17 });
+    const padding = framePadding(b);
+    const covered = coveredSides();
+    map.fitBounds([[b.west, b.south], [b.east, b.north]], {
+      padding: { ...padding, left: padding.left + covered.left, right: padding.right + covered.right },
+      duration: animate ? 600 : 0, maxZoom: b.maxZoom ?? 17,
+    });
   };
   const showYou = (animate = false) => {
     freeZoom();
