@@ -5,7 +5,7 @@
 @if (_source is not null && Location.HasPin)
 {
     <MapView @ref="_view" Source="_source" Label="@($"Map of {LocationWords.Headline(Location)}")" Centre="Point" Zoom="Zoom" MinZoom="@(Location.Map is { MinZoom: > 0 } map ? map.MinZoom : null)" Interactive="Interactive"
-             OnTap="OnTap" Class="@Class">
+             Reach="_reach" OnTap="OnTap" Class="@Class">
         <Overlay>
             <MapPin Point="Point" Class="map-pin--tip">
                 <svg class="location-pin" viewBox="0 0 28 38" aria-hidden="true">
@@ -21,6 +21,7 @@
     private MapSource? _source;
     private Location? _shown;
     private MapView? _view;
+    private MapReach? _reach;
     private int _centredKey;
 
     [Parameter, EditorRequired] public required Location Location { get; set; }
@@ -37,6 +38,9 @@
         if (Location.SameAs(_shown))
             return;
         _shown = Location.Copy();
+        _reach = Interactive && Location.Map is { Url.Length: > 0 } map
+            ? new MapReach([new MapFrame(map.South, map.West, map.North, map.East)], [], [], new MapFrame(map.South, map.West, map.North, map.East))
+            : null;
         _source = await Maps.SourceAsync(Location);
     }
 

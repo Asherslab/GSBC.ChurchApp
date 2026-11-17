@@ -135,22 +135,26 @@
         ? "Search for the address, tap the map or type the address."
         : null;
 
-    protected override void OnParametersSet()
+    protected override async Task OnParametersSetAsync()
     {
-        if (Open && !_wasOpen)
-            Start(Value);
+        bool opening = Open && !_wasOpen;
         _wasOpen = Open;
+        if (!opening)
+            return;
+        Start(Value);
+        if (_search.Length > 0)
+            await SearchAsync(_search);
     }
 
     private void Start(Location? value)
     {
         Location start = value ?? new Location { Kind = LocationKind.OffSite };
         _kind = start.Kind == LocationKind.AtChurch ? LocationKind.AtChurch : LocationKind.OffSite;
-        (_name, _address, _suburb, _note, _home) = (start.Name, start.Kind == LocationKind.None ? start.Text : start.Address, start.Suburb, start.Note, start.Home);
+        (_name, _address, _suburb, _note, _home) = (start.Name, start.Address, start.Suburb, start.Note, start.Home);
         (_latitude, _longitude, _map) = (start.Latitude, start.Longitude, start.Map);
         _pinned = start.HasPin;
         _nameTyped = false;
-        (_search, _found, _chosen, _offline) = ("", [], null, false);
+        (_search, _found, _chosen, _offline) = (start.Kind == LocationKind.None ? start.Text : "", [], null, false);
     }
 
     private void NameTyped(string name) => (_name, _nameTyped) = (name, true);
@@ -207,7 +211,7 @@
             _name = found.Name;
         else if (!_nameTyped)
             _name = "";
-        _address = found.Kind == FoundLocationKind.Suburb ? "" : found.Address;
+        _address = found.Address;
         _suburb = found.Suburb;
         await PlaceAsync(found.Latitude, found.Longitude, true);
     }
