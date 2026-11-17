@@ -31,13 +31,18 @@ public sealed record WhatsNextDigest(DigestShown? Header, IReadOnlyList<DigestSh
     }
 
     public IReadOnlyList<WhatsNextWeek> WeeksAsSent() => Items
-        .GroupBy(item => ChurchTime.WeekStart(EventDates.Parse(item.FirstDate) ?? EventDates.Parse(Header?.Start ?? "") ?? DateOnly.MinValue))
+        .GroupBy(item => ChurchTime.WeekStart(FirstOf(item) ?? DateOnly.MinValue))
         .OrderBy(week => week.Key)
         .Select(week => new WhatsNextWeek($"Week of {week.Key.ToString("d MMMM", English)}", RangeOf(week.Key), week.ToList()))
         .ToList();
 
     private IReadOnlyList<DigestShownItem> StillToCome(DateOnly today) =>
-        Items.Where(item => (EventDates.Parse(item.LastDate) ?? EventDates.Parse(item.FirstDate) ?? DateOnly.MaxValue) >= today).ToList();
+        Items.Where(item => (LastOf(item) ?? DateOnly.MaxValue) >= today).ToList();
+
+    private DateOnly? FirstOf(DigestShownItem item) => EventDates.Parse(item.FirstDate) ?? EventDates.Parse(Header?.Start ?? "");
+
+    private DateOnly? LastOf(DigestShownItem item) =>
+        EventDates.Parse(item.LastDate) ?? EventDates.Parse(item.FirstDate) ?? EventDates.Parse(Header?.End ?? "");
 
     public string Range => Header is { } header && EventDates.Parse(header.Start) is { } start && EventDates.Parse(header.End) is { } end ? EventWords.Range(start, end) : "";
 
@@ -56,7 +61,7 @@ public sealed record WhatsNextDigest(DigestShown? Header, IReadOnlyList<DigestSh
     {
         DateOnly thisWeek = ChurchTime.WeekStart(Header is { } header && EventDates.Parse(header.Start) is { } start && today < start ? start : today);
         return StillToCome(today)
-            .GroupBy(item => ChurchTime.WeekStart(Max(EventDates.Parse(item.FirstDate) ?? today, today)))
+            .GroupBy(item => ChurchTime.WeekStart(Max(FirstOf(item) ?? today, today)))
             .OrderBy(week => week.Key)
             .Select(week => new WhatsNextWeek(Heading(week.Key, thisWeek), RangeOf(week.Key), week.ToList()))
             .ToList();

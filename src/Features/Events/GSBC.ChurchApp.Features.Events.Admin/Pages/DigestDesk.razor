@@ -334,7 +334,7 @@
         {
             Key = item.Key, Order = order, Kind = item.Kind, Words = item.Shown, Picture = item.Shown.Picture, Place = item.Place, Contacts = item.Contacts,
             Link = item.Link, Posted = item.Posted,
-            OccurrenceId = item.OccurrenceIds.FirstOrDefault() ?? "", FirstDate = item.FirstDate.Length > 0 ? item.FirstDate : draft.Start, LastDate = item.LastDate.Length > 0 ? item.LastDate : draft.End,
+            OccurrenceId = item.OccurrenceIds.FirstOrDefault() ?? "", FirstDate = item.FirstDate, LastDate = item.LastDate,
         }).ToList();
         return new WhatsNextDigest(new DigestShown { Start = draft.Start, End = draft.End }, items);
     }
