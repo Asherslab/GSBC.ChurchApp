@@ -59,7 +59,8 @@ The base map leaves the colour to the overlays. Each screen draws them the same 
 - **Streets walked recently:** ink-3 (`#626a79`) at 45%.
 - **You:** the orange marker (`#e7ae74`).
 - **Attribution under every map:** the region's sources (© OpenStreetMap contributors, and the address sources it
-  used), passed as `attribution`.
+  used), passed as `attribution`, on one line, cut short with an ellipsis, with an ⓘ that shows them all
+  (2026-11-17).
 
 ## Switching look
 
@@ -94,7 +95,9 @@ in order, so the 2 km overlaps meet without a seam). It follows light and dark b
 - **Areas** (`MapArea`): a polygon in its colour at 12% with an edge. `Outline` drops the fill and keeps the edge (a map
   area's squares with no homes or still to add, and the hovered square in ink).
 - **Markers** (`MapMarker`): `Start`, `Pin`, `Meeting` (with a label), and from zoom 15 `NoJunkMail`, `DontLetterbox`, `Skip`,
-  `Check` (small dots; the first two labelled from zoom 17).
+  `Check` (small dots; the first two labelled from zoom 17), and `Match` (a numbered accent pin with a page ring, for
+  search matches). `Start`, `Pin` and `Meeting` dots and every `MapPin` hold their room on the map, so the base map's
+  labels give way to them.
 - **You** (`MapYou`): the orange dot with its accuracy ring. With `ShowsHeading` (the walk and Your walk), a soft orange
   fan from the dot shows which way you face (owner's pick, 2026-11-17, #115, `.impeccable/mocks/outreach-heading/`): the
   direction you're moving once you've gone 6 m or further than the fix's accuracy (for 10 s after), otherwise the
@@ -103,7 +106,8 @@ in order, so the 2 km overlaps meet without a seam). It follows light and dark b
   read natively on iOS and needs no permission; iOS's calibration prompt is turned off. Android has no compass yet, so
   it shows the fan only while you move.
 - **Where it looks:** `Frame` fits the map to a box (`StartPadding` keeps room on the left for a tool rail), and again whenever the box changes, unless someone has dragged the
-  map. With `Follow`, a screen gives a `Frame` around you and what's next to you (the walk: you, the street you're on and
+  map. Framing also leaves room on either side for what covers the map: the overlay's inset (a full map's floating
+  panel) and any tall element marked `data-map-cover` (a tool rail), and the map follows when that room changes. With `Follow`, a screen gives a `Frame` around you and what's next to you (the walk: you, the street you're on and
   the next one, at street level), so the map moves with you; with no `Frame`, it centres on you at zoom 17. The first drag
   stops following (`OnStoppedFollowing`) and setting `Follow` again brings it back. `Centre` and `Zoom` place a map with
   neither. `Interactive="false"`
