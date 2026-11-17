@@ -5,7 +5,8 @@ let package = Package(
     name: "GsbcDataLayer",
     platforms: [.iOS(.v15)],
     products: [
-        .library(name: "GsbcDataLayer", targets: ["DataLayerPlugin"])
+        .library(name: "GsbcDataLayer", targets: ["DataLayerPlugin"]),
+        .library(name: "WalkActivityKit", targets: ["WalkActivityKit"])
     ],
     dependencies: [
         .package(url: "https://github.com/ionic-team/capacitor-swift-pm.git", from: "8.0.0"),
@@ -17,9 +18,13 @@ let package = Package(
             dependencies: [.product(name: "GRDB", package: "GRDB.swift")],
             path: "ios/Sources/DataLayerCore"),
         .target(
+            name: "WalkActivityKit",
+            path: "ios/Sources/WalkActivityKit"),
+        .target(
             name: "DataLayerPlugin",
             dependencies: [
                 "DataLayerCore",
+                "WalkActivityKit",
                 .product(name: "Capacitor", package: "capacitor-swift-pm"),
                 .product(name: "Cordova", package: "capacitor-swift-pm")
             ],

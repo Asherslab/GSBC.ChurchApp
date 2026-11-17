@@ -11,6 +11,8 @@ final class LocationSession: NSObject, CLLocationManagerDelegate {
     private let defaults = UserDefaults.standard
     private let runningKey = "gsbc.location.running"
     private let purposeKey = "gsbc.location.purpose"
+    private let beganKey = "gsbc.location.began"
+    private let abandonedAfter: TimeInterval = 60 * 60
     private var waitingForAnswer: [(String) -> Void] = []
     private var lastNotified = Date.distantPast
     private var notifyScheduled = false
@@ -30,6 +32,7 @@ final class LocationSession: NSObject, CLLocationManagerDelegate {
 
     func resumeIfRunning() {
         guard running else { return }
+        guard !abandoned else { return end() }
         servicesEnabled { [weak self] enabled in
             guard let self else { return }
             if enabled && self.authorized { self.begin() } else { self.end() }
@@ -111,8 +114,15 @@ final class LocationSession: NSObject, CLLocationManagerDelegate {
         }
     }
 
+    private var abandoned: Bool {
+        let lastFix = journal.since(journal.latest - 1).fixes.last.map { Double($0.at) / 1000 } ?? 0
+        let lastActive = max(lastFix, defaults.double(forKey: beganKey))
+        return Date().timeIntervalSince1970 - lastActive > abandonedAfter
+    }
+
     private func begin() {
         defaults.set(true, forKey: runningKey)
+        defaults.set(Date().timeIntervalSince1970, forKey: beganKey)
         manager.allowsBackgroundLocationUpdates = true
         manager.showsBackgroundLocationIndicator = true
         manager.startUpdatingLocation()
