@@ -62,6 +62,7 @@ public sealed class WalkSession(
     private const string SkippedPrefix = "skipped:";
     private static readonly TimeSpan SendEvery = TimeSpan.FromSeconds(90);
     private static readonly TimeSpan RecentFix = TimeSpan.FromMinutes(2);
+    public static readonly TimeSpan LeftFor = TimeSpan.FromHours(1);
 
     private readonly SemaphoreSlim _working = new(1, 1);
     private WalkState? _state;
@@ -100,8 +101,17 @@ public sealed class WalkSession(
         {
             _working.Release();
         }
-        if (_state is { Finished: false, Paused: false, Tracking: true })
-            await location.StartAsync(Purpose);
+        if (_state is { Finished: false, Paused: false, Tracking: true } walking)
+        {
+            if (time.GetUtcNow() - await LastActiveAsync(walking) > LeftFor)
+            {
+                walking.Paused = true;
+                await location.StopAsync();
+                await SaveStateAsync();
+            }
+            else
+                await location.StartAsync(Purpose);
+        }
         return _state;
     }
 
@@ -152,7 +162,7 @@ public sealed class WalkSession(
         return started;
     }
 
-    public async Task<bool> DrainAsync()
+    public async Task<bool> DrainAsync(DateTimeOffset? until = null)
     {
         if (_state is not { Finished: false } state || _follower is null)
             return false;
@@ -162,7 +172,7 @@ public sealed class WalkSession(
         try
         {
             LocationFixes fixes = await location.FixesAsync(state.FixLatest);
-            List<LocationFix> fresh = [.. fixes.Fixes.Where(fix => fix.Seq > state.FixLatest)];
+            List<LocationFix> fresh = [.. fixes.Fixes.Where(fix => fix.Seq > state.FixLatest && (until is null || fix.At <= until))];
             foreach (LocationFix fix in fresh)
                 _follower.Add(new GpsFix(fix.At, new RoutingPoint(fix.Lat, fix.Lon), fix.Accuracy));
             moved = fresh.Count > 0;
@@ -346,6 +356,15 @@ public sealed class WalkSession(
 
     public int LetterboxesOf(IReadOnlySet<int> walkedSteps) =>
         _progress?.Steps.Where(step => walkedSteps.Contains(step.Index)).Sum(step => Math.Max(step.Done, step.Share >= StepDoneShare ? step.Step.Letterboxes : 0)) ?? 0;
+
+    private async Task<DateTimeOffset> LastActiveAsync(WalkState state)
+    {
+        long latest = (await location.FixesAsync(long.MaxValue)).Latest;
+        LocationFix? last = latest > 0 ? (await location.FixesAsync(latest - 1)).Fixes.LastOrDefault() : null;
+        DateTimeOffset started = new(state.StartedAt, TimeSpan.Zero);
+        DateTimeOffset sent = new(state.LastSentAt, TimeSpan.Zero);
+        return new[] { started, sent, last?.At ?? started }.Max();
+    }
 
     private async Task<long> RecentFixAsync(long latest)
     {

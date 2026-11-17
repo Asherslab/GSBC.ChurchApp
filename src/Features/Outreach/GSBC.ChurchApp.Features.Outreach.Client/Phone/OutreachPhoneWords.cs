@@ -1,6 +1,7 @@
 using System.Globalization;
 using GSBC.ChurchApp.Features.Outreach.Contracts;
 using GSBC.ChurchApp.Features.Outreach.Routing;
+using GSBC.ChurchApp.Platform.Client.Location;
 using GSBC.ChurchApp.Platform.Common;
 
 namespace GSBC.ChurchApp.Features.Outreach.Client.Phone;
@@ -87,6 +88,11 @@ public static class OutreachPhoneWords
 
     public static string AllDone(StartChoice start) => $"The nearest good start is the {start.Street} area, {Distance(start.Metres)} away.";
 
+    public const string FindingYou = "Finding you";
+    public const string FindingYouNote = "Walk to the start. The app follows you once it has your location.";
+    public const string RouteDone = "That's the route";
+    public const string RouteDoneNote = "Every street on the plan is done. Finish when you're ready.";
+
     public static string Side(bool houses) => houses ? "Houses on your left" : "Nothing to deliver here";
 
     public static string Turn(SavedStep from, SavedStep to) => TurnOf(from, to) switch
@@ -104,6 +110,14 @@ public static class OutreachPhoneWords
         TurnKind.Left => "arrow-left",
         TurnKind.Right => "arrow-right",
         _ => "arrow-up",
+    };
+
+    public static WalkTurn TurnFor(SavedStep from, SavedStep to) => TurnOf(from, to) switch
+    {
+        TurnKind.OtherSide or TurnKind.Back => WalkTurn.Back,
+        TurnKind.Left => WalkTurn.Left,
+        TurnKind.Right => WalkTurn.Right,
+        _ => WalkTurn.Straight,
     };
 
     private enum TurnKind

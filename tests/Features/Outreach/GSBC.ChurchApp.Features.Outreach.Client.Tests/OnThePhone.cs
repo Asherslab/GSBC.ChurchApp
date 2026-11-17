@@ -9,6 +9,7 @@ using GSBC.ChurchApp.Platform.Client.Location;
 using GSBC.ChurchApp.Platform.Client.Outbox;
 using GSBC.ChurchApp.Platform.Client.Preferences;
 using GSBC.ChurchApp.Platform.Permissions;
+using Microsoft.AspNetCore.Components;
 using ProtoBuf.Meta;
 
 namespace GSBC.ChurchApp.Features.Outreach.Client.Tests;
@@ -198,7 +199,17 @@ internal sealed class Phone
         Store = new OutreachStore(Feeds, new SignedOut());
         Regions = new RegionMaps(new RegionFiles(Fixture.AlbanyCreekBytes()), Preferences);
         Walk = new WalkSession(Location, Outbox, Preferences, Regions, Store, Clock);
+        Actions = new WalkActions(Walk, Clock);
+        Companion = new WalkCompanion(Walk, Actions, Location, LockScreen, Pages, Clock);
     }
+
+    public WalkActions Actions { get; }
+
+    public WalkCompanion Companion { get; }
+
+    public LockScreen LockScreen { get; } = new();
+
+    public Pages Pages { get; } = new();
 
     public StoredFeeds Feeds { get; } = new();
 
@@ -222,4 +233,59 @@ internal sealed class StoppedClock(DateTimeOffset now) : TimeProvider
     public DateTimeOffset Now { get; set; } = now;
 
     public override DateTimeOffset GetUtcNow() => Now;
+
+    public override ITimer CreateTimer(TimerCallback callback, object? state, TimeSpan dueTime, TimeSpan period) => new StoppedTimer();
+
+    private sealed class StoppedTimer : ITimer
+    {
+        public bool Change(TimeSpan dueTime, TimeSpan period) => true;
+
+        public void Dispose()
+        {
+        }
+
+        public ValueTask DisposeAsync() => ValueTask.CompletedTask;
+    }
+}
+
+internal sealed class LockScreen : IWalkActivity
+{
+    private readonly List<WalkTap> _taps = [];
+
+    public List<(WalkActivityState State, string? Alert)> Shown { get; } = [];
+
+    public int Ended { get; private set; }
+
+    public event Action? TapArrived { add { } remove { } }
+
+    public void Tap(WalkTapKind kind, DateTimeOffset at) => _taps.Add(new WalkTap(_taps.Count + 1, kind, at));
+
+    public Task ShowAsync(string name, WalkActivityState state, string? alert)
+    {
+        Shown.Add((state, alert));
+        return Task.CompletedTask;
+    }
+
+    public Task EndAsync()
+    {
+        Ended++;
+        return Task.CompletedTask;
+    }
+
+    public Task<IReadOnlyList<WalkTap>> TapsAsync(long since) => Task.FromResult<IReadOnlyList<WalkTap>>([.. _taps.Where(tap => tap.Seq > since)]);
+
+    public Task ClearTapsAsync(long upTo)
+    {
+        _taps.RemoveAll(tap => tap.Seq <= upTo);
+        return Task.CompletedTask;
+    }
+}
+
+internal sealed class Pages : NavigationManager
+{
+    public Pages() => Initialize("https://app.example/", "https://app.example/");
+
+    public List<string> Opened { get; } = [];
+
+    protected override void NavigateToCore(string uri, bool forceLoad) => Opened.Add(uri);
 }

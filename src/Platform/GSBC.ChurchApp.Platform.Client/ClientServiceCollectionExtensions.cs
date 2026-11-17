@@ -36,6 +36,7 @@ public static class ClientServiceCollectionExtensions
         services.TryAddSingleton<IAudioPlayer, AudioPlayer>();
         services.TryAddSingleton<IAudioDownloads, AudioDownloads>();
         services.TryAddSingleton<ILocationSession, LocationSession>();
+        services.TryAddSingleton<IWalkActivity, WalkActivity>();
         services.TryAddSingleton<IKeptFiles, KeptFiles>();
         return services;
     }
