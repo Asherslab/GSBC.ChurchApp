@@ -88,7 +88,7 @@
         @if (view.Source is not null)
         {
             <MapView Class="outreach-walk-map" Source="view.Source" Label="Your walk, with you on it" Lines="view.Lines" Markers="view.Markers" Frame="view.Frame"
-                     You="view.You" Follow="_following" OnStoppedFollowing="() => _following = false" Zoom="17">
+                     You="view.You" Follow="_following" ShowsHeading="true" OnStoppedFollowing="() => _following = false" Zoom="17">
                 <Overlay>
                     @if (!_following)
                     {

@@ -29,6 +29,9 @@ public static class WalkPlanning
         return active.Count > 0 ? active : [OutreachCampaigns.GeneralId.ToString()];
     }
 
+    public static string KnockingFor(OutreachNow now, string? chosen, IReadOnlyList<string> carried, DateOnly today) =>
+        chosen is not null && now.CampaignOf(chosen) is { } campaign && OutreachRules.IsActive(campaign, today) ? chosen : carried[0];
+
     public static WalkPlanner Planner(OutreachNow now, StreetGraph graph, IReadOnlyList<string> campaigns, WalkMode mode, DateOnly today)
     {
         Openness open = new(

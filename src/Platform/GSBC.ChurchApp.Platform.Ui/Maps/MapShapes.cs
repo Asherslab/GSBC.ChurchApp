@@ -2,7 +2,7 @@ namespace GSBC.ChurchApp.Platform.Ui.Maps;
 
 public readonly record struct MapPoint(double Lat, double Lon);
 
-public sealed record MapSource(string Kind, string Location, string Attribution)
+public sealed record MapSource(string Kind, string Location, string Attribution, string? Fallback = null)
 {
     private const string FromUrl = "url";
     public const string FromKeptFile = "kept";
@@ -14,7 +14,7 @@ public sealed record MapSource(string Kind, string Location, string Attribution)
 
     public IReadOnlyList<string> Locations => Location.Split('\n', StringSplitOptions.RemoveEmptyEntries);
 
-    public static MapSource KeptFile(string id, string attribution) => new(FromKeptFile, id, attribution);
+    public static MapSource KeptFile(string id, string attribution, string? url = null) => new(FromKeptFile, id, attribution, url);
 }
 
 public sealed record MapBackdrop(string Url, MapFrame Bounds, int MaxZoom);

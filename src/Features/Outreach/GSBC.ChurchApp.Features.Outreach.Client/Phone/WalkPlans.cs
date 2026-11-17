@@ -46,13 +46,14 @@ public sealed class WalkPlans(OutreachStore store, WhereYouAre where, RegionMaps
     {
         OutreachNow now = await store.LoadAsync();
         DateOnly today = ChurchTime.Today(time);
+        IReadOnlyList<string> carrying = WalkPlanning.Carried(now, await choices.CarryingAsync(), today);
         IReadOnlyList<string> carried = request.Mode == WalkMode.Doorknock
-            ? [WalkPlanning.Carried(now, await choices.CarryingAsync(), today)[0]]
-            : WalkPlanning.Carried(now, await choices.CarryingAsync(), today);
+            ? [WalkPlanning.KnockingFor(now, await choices.KnockingForAsync(), carrying, today)]
+            : carrying;
         List<Campaign> campaigns = [.. carried.Select(now.CampaignOf).OfType<Campaign>()];
         Here here = request.Start is null ? await where.FindAsync(mayAsk: true) : new Here(HereState.Found, request.Start);
-        PlanView Empty(PlanState state, RegionOnPhone? region = null, MapSource? source = null) =>
-            new(state, request, now, here, campaigns, region, source, null, [], [], null, []);
+        PlanView Empty(PlanState state, RegionOnPhone? kept = null, MapSource? source = null) =>
+            new(state, request, now, here, campaigns, kept, source, null, [], [], null, []);
 
         if (here.Point is not { } start)
             return Empty(PlanState.NeedsLocation);
