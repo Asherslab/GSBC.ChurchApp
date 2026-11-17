@@ -100,7 +100,7 @@ struct LockScreenWalk: View {
                     Text(state.street).font(.montserrat(.bold, 22)).lineLimit(1).minimumScaleFactor(0.7)
                     Text(sideLine).font(.montserrat(.semibold, 14)).lineLimit(2).minimumScaleFactor(0.85)
                     if !state.next.isEmpty {
-                        Text(state.next).font(.montserrat(.regular, 12.5)).foregroundStyle(Palette.beige).lineLimit(1)
+                        Text(state.next).font(.montserrat(.regular, 12.5)).foregroundStyle(Palette.beige).lineLimit(1).minimumScaleFactor(0.8)
                     }
                 }
                 .foregroundStyle(.white)

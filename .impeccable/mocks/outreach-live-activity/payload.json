@@ -1,0 +1,46 @@
+{
+  "title": "A walk on the Lock Screen and in the Dynamic Island",
+  "question": "While a walk is on, a Live Activity shows it on the Lock Screen and in the Dynamic Island, with No junk mail, Spoke to someone, Pause and Finish working from there. Your answers: Finish opens the walk's end screen; the phone buzzes only at a turn; a mark shows a line with Undo for about 12 seconds. Each sketch shows the Lock Screen, the Dynamic Island held open (with that line), and its compact and minimal forms. Pick the structure to build.",
+  "reroll": true,
+  "steer": true,
+  "buildPath": {"value": "code", "toggle": false},
+  "options": [
+    {
+      "id": "turn-sign",
+      "kind": "assigned",
+      "kicker": "THE ROLL",
+      "label": "Turn sign",
+      "thesis": "Like a navigation app's Lock Screen: a white sign at the left with the next turn's arrow and how many houses until it, the street and side beside it, then the four buttons in a row. The compact Dynamic Island is the arrow and the count; the minimal one is just the arrow.",
+      "palette": ["#2a3d5e", "#ffffff", "#d5c9b7", "#2ec4b6", "#e7ae74"],
+      "materials": ["navy card", "white turn sign", "four buttons in a row", "bright aqua in the island"],
+      "viewport": "Lock Screen: walking time and totals on a top line; the turn sign with Greensill Rd, 'Houses on your left · 13 to go' and 'Then left into Wilson Ave · 17'; No junk mail, Spoke to someone, Pause and Finish.",
+      "risk": "The sign shows the next turn, so on a long straight street the arrow is the least urgent thing on the card.",
+      "html": ".impeccable/mocks/outreach-live-activity/a-turn-sign.html",
+      "htmlFrame": "390x844"
+    },
+    {
+      "id": "tallies",
+      "kind": "dealt",
+      "label": "Tallies first",
+      "thesis": "The two marks are counters you build up, like a clicker: big tappable tiles with the count of No junk mail letterboxes and conversations on this walk, Pause and Finish beside them. The street, side and next turn sit above as words. A tap visibly bumps its number.",
+      "palette": ["#2a3d5e", "#ffffff", "#d5c9b7", "#2ec4b6"],
+      "materials": ["navy card", "counter tiles", "words above", "footprints in the island"],
+      "viewport": "Lock Screen: Greensill Rd with totals at the right; side and houses to go; the next turn; tiles '3 No junk mail' and '2 Conversations', then Pause and Finish as square buttons.",
+      "risk": "The counts are small numbers that matter less than where you are; the tiles look like scores.",
+      "html": ".impeccable/mocks/outreach-live-activity/b-tallies.html",
+      "htmlFrame": "390x844"
+    },
+    {
+      "id": "line-of-stops",
+      "kind": "dealt",
+      "label": "Line of stops",
+      "thesis": "The walk's streets as a line of stops across the card, the same line the end of a walk uses: streets done in aqua, you as the orange stop, the rest open, with the next street named. The street and side lead above it; the four buttons sit below.",
+      "palette": ["#2a3d5e", "#ffffff", "#2ec4b6", "#e7ae74"],
+      "materials": ["navy card", "line of stops", "orange you", "progress ring in the island"],
+      "viewport": "Lock Screen: Greensill Rd with totals at the right; 'Houses on your left · 13 to go'; nine stops with three done and you on the fourth, named '3 streets done · Greensill Rd · Wilson Ave next · 5 more'; the four buttons.",
+      "risk": "A long walk has more streets than fit, so the line has to fold the far ends into counts.",
+      "html": ".impeccable/mocks/outreach-live-activity/c-line-of-stops.html",
+      "htmlFrame": "390x844"
+    }
+  ]
+}

@@ -935,6 +935,56 @@ stops for the end of a walk; B and C stay on the page for the owner). Detail: [d
 - **Offline maps:** each region with its size; the one you walk in is kept by itself, others by choice; Remove takes the
   files off the phone. The map reads the kept file by byte ranges through the native layer, so it works with no signal.
 
+### Walking in the background and the Live Activity (2026-11-17, feedback #114)
+
+The owner: "Let's use iOS live activities to let the user interact with this from home screen/etc. Also don't forget we
+need background GPS while they're walking."
+
+**Background GPS, checked on the Simulator** (iOS 26.3, a GPX-style track along the planned streets, 1.6 to 3 m/s):
+
+- With the app on the Home Screen for 90 seconds and the phone locked for 150 seconds, the native layer kept recording
+  (139 fixes while locked), the page's code kept running (its timers slowed to about one tick in two seconds), the walk
+  marked streets (37 of 63 letterboxes, 880 m) and pieces went into the outbox while away. When In Use permission is
+  enough; the location arrow shows in the status bar while the app isn't in front.
+- Pause and Finish stop the GPS (no fixes after Pause; the arrow goes). Closing the app completely stops recording (a
+  31-second gap while it was closed) and opening it again picks recording up by itself.
+- **Fixed:** the walk was only worked through while the walking screen was open, so moving to another page stopped the
+  streets being marked (the phone kept the fixes; they were only counted on coming back). A long-lived `WalkCompanion`
+  now drains the fixes wherever the app is, so the Live Activity and the pieces keep up.
+- **Fixed:** a walk left on and the app opened again hours later started recording again. Now a walk whose last fix (or
+  start) is more than an hour old opens paused, in the native layer at launch and in `WalkSession` (*Claude's default*:
+  one hour, `WalkSession.LeftFor`).
+- **Open:** the Simulator runs the web view more freely than a phone may. The first real-phone walk in a pocket is the
+  check that the page's code keeps running while locked; if it doesn't, the native layer still records every fix and
+  queues every tap, and both are counted the moment the app runs.
+
+**The Live Activity** (owner's pick on the decision page: *Turn sign*, `.impeccable/mocks/outreach-live-activity/`):
+
+- On the Lock Screen: a top line (Walking · 38 min; letterboxes and distance so far), a white sign with the next turn's
+  arrow over the houses left before it, the street at title size, "Houses on your left · 13 to go" and the next turn in
+  beige, then No junk mail (At a door when doorknocking), Spoke, Pause or Carry on, and Finish. In the Dynamic Island:
+  compact is the arrow, the count and the street; minimal is the arrow; held open is the sign in bright aqua, street and
+  side, the count, the line below and the four buttons. Detail: [design/outreach.md](../design/outreach.md).
+- **The owner's answers (2026-11-17):** Finish opens the app on the walk's end screen (nothing is saved without
+  looking); the phone lights up and buzzes only when the step you reach is a turn into another street, not on a straight
+  run or the other side of the same street; a mark shows a line with Undo for about 12 seconds ("Marked No junk mail
+  (14 Smith St)." on the Lock Screen, the full sentence in the app).
+- **Same code paths:** the buttons are App Intents that run in the app (`LiveActivityIntent`): each tap is queued on the
+  phone (`WalkTaps`) and the walk works through the queue in order, through `WalkActions`, the same actions the walking
+  screen's buttons use. A No junk mail tap is counted where you were when you tapped (the fixes up to that moment first).
+  So a Spoke to someone from the Lock Screen is the same record, kept on the phone and sent through the outbox. Finish and
+  At a door open the app (the end screen; the door sheet); a tap on the card opens the walking screen.
+- It starts with the walk, updates on the phone as the walk moves (no push), refreshes at least once a minute, says
+  "Open the app to keep marking streets" if three minutes pass without an update (the app was closed), and ends when the
+  walk finishes. iOS asks once whether to allow Live Activities.
+- **Signing:** a widget extension, `WalkActivity` (iOS 17 and later), with its own App ID per environment:
+  `au.com.baptist.app.dev.walk`, `.uat.walk` and `au.com.baptist.app.walk`. No capabilities, App Group or push key. The
+  owner (2026-11-17): let the builds register them (deploy.sh and the TestFlight workflow sign with
+  `-allowProvisioningUpdates`), under the Good Shepherd Baptist Church team, never a personal team; the extension takes
+  the app's `DEVELOPMENT_TEAM`, so it can't land elsewhere.
+- **Android:** no equivalent yet. Its data layer is still a stub; an ongoing notification with actions would be the
+  Android counterpart when it gets one.
+
 Open for the owner:
 
 - **Android:** the background location and kept files are iOS only; Android's data layer is still a stub.
@@ -1080,7 +1130,7 @@ engine in admin for day routes. The phone sends only what was walked.
 
 | Need | Real app | PWA preview |
 |---|---|---|
-| Your position while walking | Foreground location; background only if we add "street done" alerts, which App Store review scrutinises | Foreground only, while the screen is on |
+| Your position while walking | Location in the background for the walk's length (When In Use), with a Live Activity on iOS | Foreground only, while the screen is on |
 | Screen stays on | Native keep-awake | Wake Lock API, where the iOS version supports it in Home Screen apps |
 | Shared claims and coverage | The feeds above | Not possible without a server: kept on the phone, with sample claims and coverage |
 | Offline map | Cached tiles | Online only |
