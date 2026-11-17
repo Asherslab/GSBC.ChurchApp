@@ -147,7 +147,8 @@
             return;
         _focusPending = false;
         await PlaceAsync();
-        await item.FocusAsync();
+        if (_open)
+            await item.FocusAsync();
     }
 
     private async Task PlaceAsync()

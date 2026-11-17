@@ -18,28 +18,7 @@
             <StableSection SectionName="@OutreachMap.DrawerSection">
                 <PaneHead Title="Places outreach skips" Lead="Walkers never get these on a route." />
                 <div class="outreach-map__stack">
-                    @if (CanChangeExclusions)
-                    {
-                        <div>
-                            <SearchField Label="Type an address to skip" Placeholder="Number and street…" Value="@_search" ValueChanged="SearchAsync" />
-                            @if (_found is { } found)
-                            {
-                                @if (found.Count == 0)
-                                {
-                                    <p class="field__hint">@(_search.Trim().Length < 3 ? "Type the number and street." : "No address like that on our maps. Check the spelling, or pick the letterbox on the map.")</p>
-                                }
-                                else
-                                {
-                                    <div class="outreach-map__matches" role="list" aria-label="Addresses found">
-                                        @foreach (AddressMatch match in found)
-                                        {
-                                            <ListRow Title="@match.Label" Icon="map-pin" IconTone="RowTone.Quiet" OnClick="() => TakeMatchAsync(match)" />
-                                        }
-                                    </div>
-                                }
-                            }
-                        </div>
-                    }
+                    <SearchField Label="Find a place outreach skips" Placeholder="Find a place outreach skips…" Value="@_find" ValueChanged="text => _find = text" />
                     <FilterChips TValue="PlaceKind?" Label="Show" ShowLabel="false" Options="Filters(lists)" Value="_filter" ValueChanged="kind => _filter = kind" />
                     @if (Shown(lists).ToList() is { Count: > 0 } shown)
                     {
@@ -52,7 +31,7 @@
                     }
                     else
                     {
-                        <EmptyState Icon="@AppIcons.PlacesSkipped" Title="@(_filter is null ? "Nowhere is skipped yet" : "None of these")"
+                        <EmptyState Icon="@AppIcons.PlacesSkipped" Title="@(_find.Trim().Length > 0 ? $"Nothing skipped matches “{_find.Trim()}”" : _filter is null ? "Nowhere is skipped yet" : "None of these")"
                                     Body="Walkers mark No junk mail and doors that want nothing to do with outreach; areas and addresses are added here, or from a walker's report." />
                     }
                 </div>
@@ -108,7 +87,9 @@
     private Lists? _lists;
     private PlaceKind? _filter;
     private PlaceLine? _open;
-    private string _name = "", _reason = "", _note = "", _caller = "", _search = "";
+    private const int MatchesShown = 5;
+
+    private string _name = "", _reason = "", _note = "", _caller = "", _search = "", _find = "";
     private bool _marker, _busy, _saved, _deleting, _picking;
     private string? _problem;
     private IReadOnlyList<MapPoint>? _area;
@@ -158,6 +139,9 @@
                     .Select(address => new MapMarker(PointOf(address.Address)!.Value, MapMarkerKind.DontLetterbox, "Don't letterbox", address.Id)));
             if (IsNew && _address is { } picked && PointOf(picked) is { } point)
                 markers.Add(new MapMarker(point, MapMarkerKind.Pin));
+            if (IsNew && _address is null && _found is { } found)
+                markers.AddRange(Nearest(found).Select((match, index) =>
+                    new MapMarker(new MapPoint(match.Point.Lat, match.Point.Lng), MapMarkerKind.Match, (index + 1).ToString(System.Globalization.CultureInfo.InvariantCulture))));
             return markers;
         }
     }
@@ -174,7 +158,7 @@
     {
         ExclusionZone when _area is not { Count: >= 3 } => "Draw the area on the map to save it.",
         ExclusionZone when _name.Trim().Length == 0 => "Give the area a name to save it.",
-        ExclusionAddress when IsNew && _address is null => "Type the address in Places, or click its letterbox on the map.",
+        ExclusionAddress when IsNew && _address is null => "Find the address, or click its letterbox on the map.",
         _ => null,
     };
 
@@ -207,7 +191,39 @@
                       OnClose="CloseAsync" />
             @if (IsNew && _address is null)
             {
-                <p class="field__hint">Type the address in Places on the left, or click its letterbox on the map.</p>
+                <div class="field">
+                    <span class="field__label">Find the address</span>
+                    <span class="field__hint">Or click its letterbox on the map.</span>
+                    <SearchField Label="Find the address" Placeholder="Number and street…" Value="@_search" ValueChanged="SearchAsync" AutoFocus="true" />
+                    @if (_found is { } found)
+                    {
+                        @if (Nearest(found) is { Count: > 0 } nearest)
+                        {
+                            <div class="outreach-map__matches" role="list" aria-label="Addresses found">
+                                @for (int index = 0; index < nearest.Count; index++)
+                                {
+                                    AddressMatch match = nearest[index];
+                                    int number = index + 1;
+                                    <ListRow Title="@Street(match)" Trailing="@Suburb(match)" OnClick="() => TakeMatchAsync(match)">
+                                        <Leading><span class="outreach-map__match-number" aria-label="@($"Number {number} on the map")">@number</span></Leading>
+                                    </ListRow>
+                                }
+                            </div>
+                            @if (found.Count > nearest.Count)
+                            {
+                                <p class="field__hint">@OutreachWords.Plural(found.Count - nearest.Count, "more match", "more matches") further away. Type more of the address to narrow it.</p>
+                            }
+                        }
+                        else
+                        {
+                            <p class="field__hint">@(_search.Trim().Length < 3 ? "Type the number and street." : "No address like that on our maps. Check the spelling, or click its letterbox on the map.")</p>
+                        }
+                    }
+                </div>
+            }
+            else if (IsNew)
+            {
+                <Button Variant="ButtonVariant.Link" Class="outreach-map__change" OnClick="ChangeAddress">Choose a different address</Button>
             }
             <SelectField Label="Why it's skipped" Options="Reasons" @bind-Value="_reason" Disabled="!CanChangeExclusions" />
             <TextField Label="Who asked" @bind-Value="_caller" MaxLength="200" Disabled="!CanChangeExclusions"
@@ -258,7 +274,28 @@
         _ => "Hostile",
     };
 
-    private IEnumerable<PlaceLine> Shown(Lists lists) => lists.Places.Where(line => _filter is null || line.Kind == _filter);
+    private IEnumerable<PlaceLine> Shown(Lists lists) => lists.Places.Where(line => (_filter is null || line.Kind == _filter) && Matches(line));
+
+    private bool Matches(PlaceLine line) =>
+        _find.Trim() is not { Length: > 0 } text
+        || line.Title.Contains(text, StringComparison.OrdinalIgnoreCase)
+        || line.Caption.Contains(text, StringComparison.OrdinalIgnoreCase);
+
+    private List<AddressMatch> Nearest(IReadOnlyList<AddressMatch> found)
+    {
+        MapPoint centre = (Map.View ?? Map.Frame) is { } view ? new MapPoint((view.North + view.South) / 2, (view.East + view.West) / 2) : default;
+        return [.. found.OrderBy(match => MetresBetween(centre, new MapPoint(match.Point.Lat, match.Point.Lng))).Take(MatchesShown)];
+    }
+
+    private static string Street(AddressMatch match) => match.Label.LastIndexOf(", ", StringComparison.Ordinal) is var at and > 0 ? match.Label[..at] : match.Label;
+
+    private static string? Suburb(AddressMatch match) => match.Label.LastIndexOf(", ", StringComparison.Ordinal) is var at and > 0 ? match.Label[(at + 2)..] : null;
+
+    private void ChangeAddress()
+    {
+        (_address, _search, _found) = (null, "", null);
+        Map.Redraw();
+    }
 
     private PlaceLine? Chosen(Lists lists) => _open is { } open ? IsNew ? open : lists.Places.FirstOrDefault(line => line.Key == open.Key) : null;
 
@@ -268,13 +305,17 @@
         if (text.Trim().Length < 3)
         {
             _found = text.Trim().Length == 0 ? null : [];
+            Map.Redraw();
             return;
         }
         try
         {
             IReadOnlyList<AddressMatch> found = await Outreach.FindAddressesAsync(Map.Scope, text);
             if (_search == text)
+            {
                 _found = found;
+                Map.Redraw();
+            }
         }
         catch (RpcException exception)
         {
@@ -289,7 +330,7 @@
             _problem = "That address isn't on a street we have. Pick its letterbox on the map.";
             return;
         }
-        if (!await OpenAsync(NewAddress(), fly: false))
+        if (!IsNew && !await OpenAsync(NewAddress(), fly: false))
             return;
         _address = address;
         (_search, _found) = ("", null);

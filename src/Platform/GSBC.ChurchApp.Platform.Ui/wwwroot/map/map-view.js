@@ -28,6 +28,8 @@ const token = (name) => getComputedStyle(document.documentElement).getPropertyVa
 function colours() {
   return {
     walk: token("--accent"),
+    accent: token("--accent"),
+    onAccent: token("--on-primary"),
     walked: token("--ink-3"),
     you: token("--marker"),
     marker: token("--marker"),
@@ -194,6 +196,12 @@ function overlayLayers(c) {
       layout: { "icon-image": placeRoom, "icon-allow-overlap": true, "text-field": ["coalesce", ["get", "label"], ""], "text-font": ["montserrat-semibold"], "text-size": 12,
         "text-offset": [0, 1.3], "text-anchor": "top", "text-allow-overlap": true },
       paint: { "text-color": c.ink, "text-halo-color": c.surface, "text-halo-width": 2 } },
+    { id: "matches", type: "circle", source: "markers", filter: kindIs("match"),
+      paint: { "circle-radius": 12, "circle-color": c.accent, "circle-stroke-color": c.surface, "circle-stroke-width": 3 } },
+    { id: "match-numbers", type: "symbol", source: "markers", filter: kindIs("match"),
+      layout: { "text-field": ["coalesce", ["get", "label"], ""], "text-font": ["montserrat-semibold"], "text-size": 12, "text-allow-overlap": true,
+        "icon-image": placeRoom, "icon-allow-overlap": true },
+      paint: { "text-color": c.onAccent } },
     { id: "you-accuracy", type: "circle", source: "you",
       paint: { "circle-radius": ["get", "radius"], "circle-color": c.you, "circle-opacity": 0.16, "circle-pitch-alignment": "map" } },
     { id: "you", type: "circle", source: "you",

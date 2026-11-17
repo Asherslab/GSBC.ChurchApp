@@ -1,0 +1,44 @@
+{
+  "title": "Outreach → Map: adding an address to skip (#118)",
+  "question": "The A new address to skip card gets its own address search, so you never type into one form for another; clicking its letterbox on the map still works. The Places drawer's search becomes a way to find places already skipped (your answer). You said search and the form stay separate. The three sketches differ in how the search sits in the card. Pick the one to build.",
+  "followup": true,
+  "options": [
+    {
+      "id": "picker",
+      "kind": "assigned",
+      "kicker": "THE ROLL",
+      "label": "An Address field that searches as you type",
+      "thesis": "The card's first field is Address: type the number and street and matches drop down under it (street, then suburb); choosing one fills the field and puts the pin on the map. Clicking a letterbox on the map fills it too. The same field the app already uses for picking from a long list.",
+      "palette": ["#141d31", "#1d2840", "#00c2b0", "#e7ae74"],
+      "materials": ["Address field with a drop-down of matches", "map click fills it", "the shared search picker"],
+      "viewport": "Places, A new address to skip: Address with '18 Tan' typed and 18 Tanager Street (Albany Creek), 18 Tandoor Drive (Petrie)… dropped down over Why it's skipped; the drawer's search now says Find a place outreach skips.",
+      "risk": "Search and answer live in one box, which is closest to what you asked to keep apart; the drop-down covers the next fields while it's open.",
+      "html": ".impeccable/mocks/outreach-skip-address/picker.html"
+    },
+    {
+      "id": "pins",
+      "kind": "dealt",
+      "label": "Matches in the card and numbered on the map",
+      "thesis": "A Find the address search at the card's top; matches list under it, numbered, and the same numbers show on the map so you can see which 18 Tan… is near the church. Click a match (or its number, or any letterbox) to choose it; the form below stays as it is.",
+      "palette": ["#141d31", "#1d2840", "#00c2b0", "#e7ae74"],
+      "materials": ["search box in the card", "numbered matches", "numbered pins on the map", "off-the-map count"],
+      "viewport": "Places, A new address to skip: '18 Tan' with 1 18 Tanager Street, 2 18 Tandoor Drive, 3 18 Tanderra Street; 1, 2 and 3 on the map; '1 more is off the map (Shailer Park)'.",
+      "risk": "Busier map while searching; matches far away only show as a count.",
+      "html": ".impeccable/mocks/outreach-skip-address/pins.html"
+    },
+    {
+      "id": "first",
+      "kind": "dealt",
+      "label": "Find the address first, then the rest",
+      "thesis": "The card reads in two steps: 1 · The address (a search box and its matches, or click the letterbox on the map) in a shaded box at the top, then 2 · Why and who, which waits greyed until an address is chosen. Once chosen, step 1 shows the address with Change.",
+      "palette": ["#141d31", "#1d2840", "#00c2b0", "#e7ae74"],
+      "materials": ["shaded search step", "matches list", "greyed form until chosen", "Change"],
+      "viewport": "Places, A new address to skip: step 1 with '18 Tan' and three matches, 'Or click its letterbox on the map', step 2 Why it's skipped, Who asked, Note greyed below.",
+      "risk": "Numbered steps for a short form; greyed fields look broken if you don't read step 1.",
+      "html": ".impeccable/mocks/outreach-skip-address/first.html"
+    }
+  ],
+  "reroll": true,
+  "steer": true,
+  "buildPath": {"value": "code"}
+}

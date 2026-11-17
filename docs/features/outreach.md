@@ -796,6 +796,38 @@ panes, etc. can also be used to expand and change "Map Areas" and view coverage.
   frames left are maplibre's own drawing in headless software GL. The other map jobs don't recompute anything when the
   map moves.
 
+### The Map tab, round two (2026-11-17)
+
+The owner's feedback from dev (#117–#123, admin panel in Safari on a Mac):
+
+- **Typing kept losing its place (#117, #120):** every box in a Map tab drawer or card (Places' search, a saved area's
+  name, a skip area's name) lost focus after each letter. Blazor's `SectionOutlet` keys what it shows on the
+  `RenderFragment` it was given, and each job handed it a new one on every render, so the whole drawer or card was
+  rebuilt per keystroke. `StableSection` (Platform.Ui) hands the outlet one fragment for its life; every section on the
+  Outreach desk goes through it and `SectionRules` holds it. The Days tab never used sections and wasn't affected.
+- **The full map (#123, owner: "more realestate … not a full browser maximise"):** chosen on the decision page
+  (`.impeccable/mocks/outreach-map-max/`, the owner's steer "floating panel, but allow the user to also move it to the
+  right side", then *Drag it by its head*). Full map, top right of any `MapWorkspace`, hides the admin sidebar, the
+  title band and tabs and the dock; the job's panel floats on the map with the job as a menu in its head, a grip, and
+  its fold. Drag the head to the other side (or *Move the panel right/left* in that menu); the side is kept on that
+  computer, the full map until the tab closes. Esc leaves it unless a menu, sheet or drawing is open. Tools and cards
+  on the map keep clear of the panel.
+- **Adding an address to skip (#118, "why would I put info for one form in another form"):** the card has its own
+  *Find the address* search (`OutreachAdmin.FindAddresses`); the five matches nearest the map's view are numbered in
+  the card and on the map, the rest counted. Clicking a letterbox still works; *Choose a different address* goes back.
+  Places' drawer search now finds places already skipped (owner: "search is search. form is form. keep them separate").
+  Chosen on the decision page (`.impeccable/mocks/outreach-skip-address/`, *numbered on the map*).
+- **Don't letterbox marker on by default (#119):** a new address to skip, in Places or from a walker's report, shows
+  walkers the marker unless it's turned off. Existing skips keep what they have (the dev database had none).
+- **Opening a day "reloaded the page" (#122):** it never reloaded; the Map tab swapped its whole workspace for the
+  planner, which loads the day and its streets and builds its own map, so the dock, drawer and map vanished for a moment
+  and the heading grew when the planner's actions arrived. The planner now keeps the dock and a drawer frame while it
+  loads, and the title band keeps the actions' height. The map itself still redraws, because the planner has its own
+  map (*Open* below). The panel's links and the Days tab's *Plan the routes* were already in-app links.
+- **Map details:** the credits sit on one line with ⓘ for the full text (every map); start, pin and meeting places
+  keep their room so suburb and street names give way (every map); a chosen address lands beside the card, not at the
+  map's edge.
+
 ### Open (for stage 2 and the owner)
 
 - Checking walked lengths against the street graph on the server (today the phone's figures are trusted within the

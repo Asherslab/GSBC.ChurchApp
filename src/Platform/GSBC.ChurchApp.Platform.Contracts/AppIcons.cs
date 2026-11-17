@@ -94,4 +94,10 @@ public static class AppIcons
     public const string MapAreas = "grid";
     public const string PlanADay = "route";
     public const string HideDrawer = "panel-left-close";
+    public const string FullMap = "maximize-2";
+    public const string LeaveFullMap = "minimize-2";
+    public const string MovePanel = "arrow-left-right";
+    public const string DragPanel = "grip";
+    public const string FoldPanel = "chevron-up";
+    public const string UnfoldPanel = "chevron-down";
 }

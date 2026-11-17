@@ -198,7 +198,10 @@
 .outreach-map { margin-top: var(--after-tabs); }
 .outreach-map__waiting { position: absolute; inset: 0; background: var(--map-land); }
 .outreach-map__stack { display: grid; align-content: start; gap: var(--space-lg); }
-.outreach-map__matches { margin-top: var(--space-xs); border-radius: var(--radius-field); box-shadow: 0 0 0 1px var(--line); overflow: hidden; }
+.outreach-map__matches { display: grid; margin-top: var(--space-xs); border-radius: var(--radius-field); box-shadow: 0 0 0 1px var(--line); overflow: hidden; }
+.outreach-map__matches .row { padding-inline: var(--space-sm); }
+.outreach-map__match-number { display: inline-grid; place-items: center; flex: none; width: 24px; height: 24px; border-radius: var(--radius-full); background: var(--accent); color: var(--on-primary); font-size: var(--text-micro); font-weight: 700; font-variant-numeric: tabular-nums; }
+.outreach-map__change.btn { justify-self: start; }
 .outreach-map__list { display: grid; margin-inline: calc(-1 * var(--space-sm)); }
 .outreach-map__list .row { padding-inline: var(--space-sm); border-radius: var(--radius-field); }
 .outreach-map__foot-actions { display: flex; flex-wrap: wrap; gap: var(--space-xs); }

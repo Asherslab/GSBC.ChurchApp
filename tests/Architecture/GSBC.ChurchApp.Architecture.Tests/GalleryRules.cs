@@ -25,6 +25,7 @@ public sealed class GalleryRules
         ["Maps/MapView"] = "draws a region's map file, which comes from the outreach.regions feed; the gallery has no feeds",
         ["Maps/MapSketch"] = "draws on a MapView, which needs a region's map file from the outreach.regions feed; the gallery has no feeds",
         ["RefreshOn"] = "reloads when feeds change; nothing to see",
+        ["StableSection"] = "fills a SectionOutlet elsewhere on the page; nothing of its own to see",
         ["AddressWatch"] = "tells a page its address moved; nothing to see",
         ["UnsavedGuard"] = "asks before leaving with unsaved changes; nothing to see",
         ["ModuleRouter"] = "routes pages",
