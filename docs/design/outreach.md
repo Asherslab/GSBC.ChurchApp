@@ -260,11 +260,15 @@ masthead's navy at display size and the map supports it. Maps are `MapView` ([ma
   sign at 24% radius holding the next turn's arrow in navy (the walking screen's `arrow-left`, `arrow-right`, `arrow-up`
   or `rotate-ccw`; footprints while finding you, a tick at the route's end) over the houses left before it; beside it the
   street in Montserrat Bold 22, *Houses on your left · 13 to go* in SemiBold 14 and the next turn in beige Regular 12.5;
-  then one row of buttons: No junk mail (At a door when doorknocking) and Spoke as capsules in white at 14%, Pause (Carry
-  on) a 36pt circle in the same, Finish a white circle with a navy tick. A mark replaces the top line with its line and
-  an underlined *Undo* for 12 seconds; three minutes without an update reads *Open the app to keep marking streets*.
-  **Dynamic Island** (on black): held open, a 48pt sign in bright aqua, street and side, the count at the right, the
-  line in bright aqua at 16% with Undo in bright aqua, and the buttons with Finish in bright aqua; compact, the arrow and
+  then one row of 44pt buttons: No junk mail (At a door when doorknocking) and Spoke as capsules in white at 14%, Pause
+  (Carry on) a circle in the same, Finish a white circle with a navy tick. Paused, the sign turns beige and the side
+  line starts *Paused ·*. On the last street the sign holds a flag and the next line reads *That's the last street.*
+  A mark (No junk mail or Spoke) replaces the top line with its line and an underlined *Undo*, the whole line the
+  button, for 12 seconds; text is capped at xLarge; in Always-On the sign and Finish turn to outlines; three minutes without an update reads *Open the app to keep marking streets*.
+  **Dynamic Island** (on black): held open, a 48pt sign in bright aqua (white at 16% when paused), street and side
+  (*Paused · …*), the count at the right on the street's line, and the buttons with Finish in bright aqua; a mark's line
+  (bright aqua at 16%, Undo in bright aqua, the whole line the button) takes the buttons' place for its 12 seconds,
+  because the island is capped at 160pt; compact, the arrow and
   count in bright aqua and the street; minimal, the arrow. The whole card opens the walking screen. Fonts ship in the
   extension (TTF from the app's subset) and icons are generated from `IconPaths.cs` (`tools/ios/walk-activity-icons.py`).
 - **The end** (on the walking page once finished): a masthead (*Well walked*, or *Thanks for knocking*), the figures, and

@@ -45,13 +45,13 @@ struct WalkActivityWidget: Widget {
                     .frame(maxWidth: .infinity, alignment: .leading)
                 }
                 DynamicIslandExpandedRegion(.bottom) {
-                    VStack(spacing: 8) {
-                        if !state.said.isEmpty {
+                    Group {
+                        if state.said.isEmpty {
+                            WalkButtons(state: state, tone: .island)
+                        } else {
                             SaidLine(state: state, tone: .island)
                         }
-                        WalkButtons(state: state, tone: .island)
                     }
-                    .padding(.top, 6)
                     .dynamicTypeSize(...DynamicTypeSize.xLarge)
                 }
             } compactLeading: {
@@ -86,7 +86,7 @@ struct LockScreenWalk: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            if state.said.isEmpty || state.phase == .paused {
+            if state.said.isEmpty {
                 HStack {
                     Text(stale ? "Open the app to keep marking streets" : state.status)
                     Spacer(minLength: 8)
@@ -217,8 +217,8 @@ struct SaidLine: View {
             }
         }
         .padding(.horizontal, 12)
-        .frame(height: tone == .island ? 34 : 26)
-        .background(tone == .island ? Palette.brightAqua.opacity(0.16) : Color.white.opacity(0.14), in: RoundedRectangle(cornerRadius: 11, style: .continuous))
+        .frame(height: tone == .island ? 44 : 26)
+        .background(tone == .island ? Palette.brightAqua.opacity(0.16) : Color.white.opacity(0.14), in: RoundedRectangle(cornerRadius: tone == .island ? 22 : 11, style: .continuous))
         .contentShape(Rectangle())
     }
 }
