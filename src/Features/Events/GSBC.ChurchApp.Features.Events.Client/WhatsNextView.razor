@@ -1,30 +1,26 @@
 
 <Masthead Title="What's next" Note="@(Digest.Header is null ? null : Digest.Range)">
-    @if (Digest.Header is not null && Weeks.Count > 0)
+    @if (Digest.Header is not null && Shown.Count > 0)
     {
         <p class="whats-next__lead">@(AsSent ? Digest.SentLead : Digest.Lead(Today))</p>
     }
 </Masthead>
 
-@if (Weeks.Count == 0)
+@if (Shown.Count == 0)
 {
     <EmptyState Icon="megaphone" Title="Nothing in What's next yet" Body="When the church office sends What's next, it shows here. Everything that's on is in the calendar.">
         <Button Variant="ButtonVariant.Quiet" Href="@(Preview ? null : EventsPlaces.Week)">Open the calendar</Button>
     </EmptyState>
 }
-@for (int index = 0; index < Weeks.Count; index++)
+else
 {
-    WhatsNextWeek week = Weeks[index];
-    <Section Title="@week.Heading" First="@(index == 0)">
-        <Trailing><span class="whats-next__range">@week.Range</span></Trailing>
-        <ChildContent>
-            <div class="whats-next__items">
-                @foreach (DigestShownItem item in week.Items)
-                {
-                    <WhatsNextCard Item="item" When="@WhenOf(item)" Preview="Preview" HasEvent="HasEvent" OnAdd="OnAdd" OnRegister="OnRegister" OnPick="OnPick" />
-                }
-            </div>
-        </ChildContent>
+    <Section First="true">
+        <div class="whats-next__items">
+            @foreach (DigestShownItem item in Shown)
+            {
+                <WhatsNextCard Item="item" When="@WhenOf(item)" Preview="Preview" HasEvent="HasEvent" OnAdd="OnAdd" OnRegister="OnRegister" OnPick="OnPick" />
+            }
+        </div>
     </Section>
 }
 
@@ -50,7 +46,7 @@
     [Parameter] public bool AsSent { get; set; }
     [Parameter] public EventCallback<DigestShownItem> OnPick { get; set; }
 
-    private IReadOnlyList<WhatsNextWeek> Weeks => AsSent ? Digest.WeeksAsSent() : Digest.Weeks(Today);
+    private IReadOnlyList<DigestShownItem> Shown => AsSent ? Digest.Items : Digest.Coming(Today);
 
     private string WhenOf(DigestShownItem item) => AsSent ? WhatsNextDigest.WhenAsSent(item) : WhatsNextDigest.WhenLine(item.Words);
 }

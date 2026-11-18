@@ -232,7 +232,6 @@
 .title-fields { display: grid; gap: 8px; }
 
 .whats-next__lead { margin: 0; max-width: 34ch; color: var(--on-masthead-2); font-size: var(--text-row); line-height: 1.45; }
-.whats-next__range { color: var(--ink-3); font-size: var(--text-caption); font-variant-numeric: tabular-nums; }
 .whats-next__items { display: grid; gap: 14px; }
 .whats-next-card .card__body { gap: 2px; }
 .whats-next-card__label { color: var(--accent); font-size: var(--text-caption); font-weight: 700; }
