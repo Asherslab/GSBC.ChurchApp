@@ -13,8 +13,8 @@ public interface IPrayerService
     [AppInstall]
     ValueTask<Done> PrayAsync(PrayMark request, CallContext context = default);
 
-    [AppInstall]
-    ValueTask<Done> AnsweredAsync(AnsweredSave request, CallContext context = default);
+    [AppInstall, Operation(PrayerOperations.Close)]
+    ValueTask<Done> CloseAsync(CloseSave request, CallContext context = default);
 
     [AppInstall]
     ValueTask<Done> TakeDownAsync(RequestRef request, CallContext context = default);

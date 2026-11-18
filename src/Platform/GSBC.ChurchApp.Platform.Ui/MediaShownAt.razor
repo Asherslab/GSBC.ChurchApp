@@ -5,7 +5,8 @@
 @code {
     [Parameter, EditorRequired] public required MediaRef Media { get; set; }
     [Parameter] public MediaSizeName Size { get; set; } = MediaSizeName.ForPhones;
+    [Parameter] public string ShownIn { get; set; } = MediaSizes.InTheApp;
     [Parameter] public string? Class { get; set; }
 
-    private IReadOnlyList<string> Parts => MediaSizes.ShownAs(Media.At(Size));
+    private IReadOnlyList<string> Parts => MediaSizes.ShownAs(Media.At(Size), ShownIn);
 }

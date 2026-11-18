@@ -21,23 +21,17 @@ public sealed class DigestTests
     }
 
     [Fact]
-    public void TheAppsDigestDropsWhatHasPassedAndHeadsEachWeekFromToday()
+    public void TheAppsDigestKeepsStaffsOrderAndDropsWhatHasPassed()
     {
         WhatsNextDigest digest = new(Fortnight,
         [
+            Item("high-tea", "2026-11-21"),
             Item("agm", "2026-11-12"),
             Item("outreach", "2026-11-14"),
-            Item("high-tea", "2026-11-21"),
         ]);
 
-        IReadOnlyList<WhatsNextWeek> sentOnSunday = digest.Weeks(new DateOnly(2026, 11, 8));
-        IReadOnlyList<WhatsNextWeek> onFriday = digest.Weeks(new DateOnly(2026, 11, 13));
-        IReadOnlyList<WhatsNextWeek> nextMonday = digest.Weeks(new DateOnly(2026, 11, 16));
-
-        Assert.Equal(["This week", "Next week"], sentOnSunday.Select(week => week.Heading));
-        Assert.Equal(["This week", "Next week"], onFriday.Select(week => week.Heading));
-        Assert.Equal(["outreach"], onFriday[0].Items.Select(item => item.Key));
-        Assert.Equal("This week", Assert.Single(nextMonday).Heading);
+        Assert.Equal(["high-tea", "agm", "outreach"], digest.Coming(new DateOnly(2026, 11, 8)).Select(item => item.Key));
+        Assert.Equal(["high-tea", "outreach"], digest.Coming(new DateOnly(2026, 11, 13)).Select(item => item.Key));
         Assert.Equal("One thing coming up at Good Shepherd in the week ahead.", digest.Lead(new DateOnly(2026, 11, 16)));
         Assert.Equal("Three things coming up at Good Shepherd in the next two weeks.", digest.Lead(new DateOnly(2026, 11, 8)));
     }
@@ -101,19 +95,13 @@ public sealed class DigestTests
     }
 
     [Fact]
-    public void AnEarlierDigestReadsAsItWasSentWithNothingDroppedItsWeeksNamedByDateAndEachDayNamedOutright()
+    public void AnEarlierDigestNamesEachDayOutright()
     {
-        WhatsNextDigest digest = new(Fortnight, [Item("agm", "2026-11-12"), Item("high-tea", "2026-11-21"), Item("own:bee", "")]);
-
-        IReadOnlyList<WhatsNextWeek> weeks = digest.WeeksAsSent();
-
-        Assert.Equal(["Week of 9 November", "Week of 16 November"], weeks.Select(week => week.Heading));
-        Assert.Equal(["agm", "own:bee", "high-tea"], weeks.SelectMany(week => week.Items).Select(item => item.Key));
-        Assert.Equal("Thursday 12 November", WhatsNextDigest.WhenAsSent(weeks[0].Items[0]));
+        Assert.Equal("Thursday 12 November", WhatsNextDigest.WhenAsSent(Item("agm", "2026-11-12")));
     }
 
     [Fact]
-    public void SomethingWrittenWithoutADateSitsInTheDigestsWeeksInStaffsOrderAndGoesWhenTheDigestEnds()
+    public void SomethingWrittenWithoutADateStaysInStaffsOrderUntilTheDigestEnds()
     {
         WhatsNextDigest digest = new(new DigestShown { Start = "2026-12-14", End = "2026-12-27" },
         [
@@ -121,10 +109,8 @@ public sealed class DigestTests
             Item("baptisms", ""),
         ]);
 
-        IReadOnlyList<WhatsNextWeek> weeks = digest.Weeks(new DateOnly(2026, 11, 17));
-
-        Assert.Equal(["no-bible-study", "baptisms"], Assert.Single(weeks).Items.Select(item => item.Key));
-        Assert.Empty(digest.Weeks(new DateOnly(2026, 12, 28)));
+        Assert.Equal(["no-bible-study", "baptisms"], digest.Coming(new DateOnly(2026, 11, 17)).Select(item => item.Key));
+        Assert.Empty(digest.Coming(new DateOnly(2026, 12, 28)));
     }
 
     [Fact]

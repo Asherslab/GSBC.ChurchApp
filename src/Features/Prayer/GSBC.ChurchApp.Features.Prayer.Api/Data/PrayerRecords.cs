@@ -17,6 +17,7 @@ public sealed class RequestRecord
     public bool ForSomeoneElse { get; set; }
     public CareState Care { get; set; }
     public string AnsweredNote { get; set; } = "";
+    public string Message { get; set; } = "";
     public WallState Wall { get; set; }
     public string WallText { get; set; } = "";
     public bool WallShowsName { get; set; }

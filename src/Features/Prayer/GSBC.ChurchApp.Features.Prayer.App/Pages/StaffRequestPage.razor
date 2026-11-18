@@ -10,7 +10,7 @@
         {
             <Section First="true">
                 <EmptyState Icon="check" Title="Nothing to do here now"
-                            Body="This request has been answered and is off the prayer wall, or it was deleted. The full inbox, including answered requests, is in the admin panel under Prayer.">
+                            Body="This request is answered or closed and off the prayer wall, or it was deleted. The full inbox, with every request, is in the admin panel under Prayer.">
                     <Button Variant="ButtonVariant.Quiet" Href="prayer/approve">Back to To approve</Button>
                 </EmptyState>
             </Section>
@@ -28,7 +28,7 @@
                 </p>
                 @if (item.Care is { } care)
                 {
-                    <CareSteps Care="care.Care" AnsweredNote="@care.AnsweredNote" Move="(state, note) => Approvals.CareAsync(Id, state, note)" />
+                    <CareSteps Care="care.Care" AnsweredNote="@care.AnsweredNote" Message="@care.Message" Move="(state, note) => Approvals.CareAsync(Id, state, note)" />
                 }
                 else if (item.Wall is { } asked)
                 {

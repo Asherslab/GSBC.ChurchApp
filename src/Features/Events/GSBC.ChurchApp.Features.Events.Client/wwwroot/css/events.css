@@ -6,7 +6,7 @@
 .toggle-chips__browse { display: inline-flex; flex: none; align-items: center; gap: 4px; min-height: 36px; padding: 0 6px; color: var(--accent); font-size: var(--text-caption); font-weight: 600; text-decoration: none; }
 
 .week-day { padding: 0 var(--gutter); margin-top: 20px; }
-.week-day__head { display: flex; align-items: baseline; gap: 8px; margin: 0 0 6px; font-size: var(--text-row); font-weight: 700; scroll-margin-top: calc(var(--top-h) + var(--sat) + 120px); }
+.week-day__head { display: flex; flex-direction: column; gap: 2px; margin: 0 0 6px; font-size: var(--text-row); font-weight: 700; scroll-margin-top: calc(var(--top-h) + var(--sat) + 120px); }
 .week-day__head span { color: var(--ink-3); font-size: var(--text-caption); font-weight: 400; }
 .week-day .list { border-top: 0; }
 .week-day .agenda-row { border-top: 1px solid var(--line); border-bottom: 0; }
@@ -232,7 +232,6 @@
 .title-fields { display: grid; gap: 8px; }
 
 .whats-next__lead { margin: 0; max-width: 34ch; color: var(--on-masthead-2); font-size: var(--text-row); line-height: 1.45; }
-.whats-next__range { color: var(--ink-3); font-size: var(--text-caption); font-variant-numeric: tabular-nums; }
 .whats-next__items { display: grid; gap: 14px; }
 .whats-next-card .card__body { gap: 2px; }
 .whats-next-card__label { color: var(--accent); font-size: var(--text-caption); font-weight: 700; }

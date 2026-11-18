@@ -26,9 +26,16 @@ public sealed record YourLine(
     int Prayed,
     bool Answered,
     string AnsweredNote,
+    bool Closed,
+    string Message,
     string WallName,
     bool AskedForWall,
-    bool Known);
+    bool Known)
+{
+    public bool MayClose => Sending != Sending.CouldNotSend && !Closed && Message.Length == 0 && (!Answered || Wall is WallState.Waiting or WallState.Shown);
+
+    public bool MessageOnTheWall => Wall == WallState.Shown && Message.Length > 0;
+}
 
 public sealed record WallLine(WallPost Post, bool PrayedHere, bool Yours);
 

@@ -32,7 +32,7 @@
                 <Section Title="New for the pastoral team" Lead="Only the pastoral team reads these.">
                     @if (context.Value.New.Count == 0)
                     {
-                        <EmptyState Icon="check" Title="Nothing new" Body="Every request has been answered." />
+                        <EmptyState Icon="check" Title="Nothing new" Body="New requests show here as they arrive." />
                     }
                     else
                     {
@@ -57,7 +57,7 @@
                 </Section>
             }
             <Section>
-                <p class="prayer-staff__more">The full inbox, with notes, history and everything answered, is in the admin panel under Prayer.</p>
+                <p class="prayer-staff__more">The full inbox, with notes, history and every request answered or closed, is in the admin panel under Prayer.</p>
             </Section>
         }
     </LiveData>

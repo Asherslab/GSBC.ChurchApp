@@ -6,6 +6,10 @@
     {
         <p class="prayer-post__answered"><Icon Name="check" Size="IconSize.Small" />Answered@(Line.Post.AnsweredNote.Length > 0 ? $": {Line.Post.AnsweredNote}" : "")</p>
     }
+    @if (Line.Post.Message.Length > 0)
+    {
+        <p class="prayer-post__message"><Icon Name="message-square" Size="IconSize.Small" /><span><strong>@PrayerWords.MessageFrom(Line)</strong> @Line.Post.Message</span></p>
+    }
     <footer class="prayer-post__foot">
         <span class="prayer-post__who">@(Line.Yours ? "Yours · " : "")@PrayerWords.WhoAndWhen(Line.Post, Time.GetUtcNow().UtcDateTime)</span>
         @if (CanPray && OnPray.HasDelegate)

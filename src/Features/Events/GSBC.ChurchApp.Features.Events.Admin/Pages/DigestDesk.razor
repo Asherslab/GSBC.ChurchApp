@@ -144,7 +144,7 @@
             {
                 <div class="digest-desk__top">
                 <Section Grouped="true" Title="Top of the email" Lead="An optional photo across the top, and what goes under it.">
-                    <PictureField Label="Photo" Value="draft.TopPicture" ValueChanged="SetTopPictureAsync" Adding="Choose a photo" />
+                    <PictureField Label="Photo" Value="draft.TopPicture" ValueChanged="SetTopPictureAsync" Adding="Choose a photo" ShownIn="The email" />
                     @if (draft.TopPicture is not null)
                     {
                         <Segmented TValue="DigestHeading" Label="Under the photo" ShowLabel="true" Options="HeadingOptions" Value="draft.Heading" ValueChanged="SetHeadingAsync" />
@@ -321,15 +321,13 @@
     {
         if (draft.Items.Count == 0)
             return "Add at least one thing to send it to the app or copy it for email.";
-        int count = draft.Items.Count;
-        string things = count == 1 ? "1 item" : $"{count} items";
         return draft switch
         {
             { SentAsItIs: true, NotifiedAt: { } notified } => $"The app shows this digest as it is now. People were notified {Ago(notified)}.",
             { SentAsItIs: true } => "The app shows this digest as it is now.",
-            { NotifiedAt: null } => $"Puts {things} on What's next and notifies everyone who'll see at least one of them. Anyone in quiet hours is notified in the morning.",
-            _ when _notifyAgain => $"Puts {things} on What's next and notifies everyone who'll see them again.",
-            _ => $"Puts {things} on What's next. Nobody is notified again.",
+            { NotifiedAt: null } => "Notifies everyone who'll see at least one item. Anyone in quiet hours is notified in the morning.",
+            _ when _notifyAgain => "Notifies everyone who'll see it again.",
+            _ => "",
         };
     }
 

@@ -6,8 +6,6 @@ using GSBC.ChurchApp.Platform.Common;
 
 namespace GSBC.ChurchApp.Features.Events.Client;
 
-public sealed record WhatsNextWeek(string Heading, string Range, IReadOnlyList<DigestShownItem> Items);
-
 public sealed record EarlierDigest(string Start, string Range, int Count);
 
 public sealed record WhatsNextDigest(DigestShown? Header, IReadOnlyList<DigestShownItem> Items, IReadOnlyList<EarlierDigest>? Earlier = null)
@@ -30,16 +28,8 @@ public sealed record WhatsNextDigest(DigestShown? Header, IReadOnlyList<DigestSh
         }
     }
 
-    public IReadOnlyList<WhatsNextWeek> WeeksAsSent() => Items
-        .GroupBy(item => ChurchTime.WeekStart(FirstOf(item) ?? DateOnly.MinValue))
-        .OrderBy(week => week.Key)
-        .Select(week => new WhatsNextWeek($"Week of {week.Key.ToString("d MMMM", English)}", RangeOf(week.Key), week.ToList()))
-        .ToList();
-
     private IReadOnlyList<DigestShownItem> StillToCome(DateOnly today) =>
         Items.Where(item => (LastOf(item) ?? DateOnly.MaxValue) >= today).ToList();
-
-    private DateOnly? FirstOf(DigestShownItem item) => EventDates.Parse(item.FirstDate) ?? EventDates.Parse(Header?.Start ?? "");
 
     private DateOnly? LastOf(DigestShownItem item) =>
         EventDates.Parse(item.LastDate) ?? EventDates.Parse(item.FirstDate) ?? EventDates.Parse(Header?.End ?? "");
@@ -57,16 +47,6 @@ public sealed record WhatsNextDigest(DigestShown? Header, IReadOnlyList<DigestSh
         return $"{things} coming up at Good Shepherd in {ahead}.";
     }
 
-    public IReadOnlyList<WhatsNextWeek> Weeks(DateOnly today)
-    {
-        DateOnly thisWeek = ChurchTime.WeekStart(Header is { } header && EventDates.Parse(header.Start) is { } start && today < start ? start : today);
-        return StillToCome(today)
-            .GroupBy(item => ChurchTime.WeekStart(Max(FirstOf(item) ?? today, today)))
-            .OrderBy(week => week.Key)
-            .Select(week => new WhatsNextWeek(Heading(week.Key, thisWeek), RangeOf(week.Key), week.ToList()))
-            .ToList();
-    }
-
     public static string WhenAsSent(DigestShownItem item)
     {
         if (EventDates.Parse(item.FirstDate) is not { } first)
@@ -79,20 +59,9 @@ public sealed record WhatsNextDigest(DigestShown? Header, IReadOnlyList<DigestSh
     public static string WhenLine(DigestWords words, string between = " · ") =>
         words.Time.Length > 0 && words.When.Length > 0 ? $"{words.When}{between}{words.Time}" : words.When + words.Time;
 
-    private static string Heading(DateOnly week, DateOnly thisWeek) => (week.DayNumber - thisWeek.DayNumber) switch
-    {
-        <= 0 => "This week",
-        7 => "Next week",
-        _ => $"Week of {week.ToString("d MMMM", English)}",
-    };
-
-    private static string RangeOf(DateOnly week) => Dates(week, week.AddDays(6));
-
     public static string Dates(DateOnly first, DateOnly last) => first.Month == last.Month
         ? $"{first.Day} – {last.ToString("d MMMM", English)}"
         : $"{first.ToString("d MMMM", English)} – {last.ToString("d MMMM", English)}";
-
-    private static DateOnly Max(DateOnly first, DateOnly second) => first > second ? first : second;
 }
 
 public sealed class DigestReader(IServiceProvider services)

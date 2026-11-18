@@ -12,6 +12,7 @@ public sealed partial class SaveRules
         ["src/Platform/GSBC.ChurchApp.Platform.Ui/DesignGallery.razor"] = "the component gallery, which keeps nothing",
         ["src/Platform/GSBC.ChurchApp.Platform.Ui/Locations/LocationPicker.razor"] = "hands the chosen place back to the form, which saves it and asks before it's lost",
         ["src/Features/Outreach/GSBC.ChurchApp.Features.Outreach.Admin/Components/CoverageJob.razor"] = "choosing what the map shows; marking streets not done applies at once with an undo",
+        ["src/Features/Media/GSBC.ChurchApp.Features.Media.Client/MediaLibrary.razor"] = "a library with a view switch and confirm sheets; naming a folder is FolderNameSheet, which guards itself",
     };
 
     [Fact]

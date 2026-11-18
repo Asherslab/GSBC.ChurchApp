@@ -9,6 +9,7 @@ internal static class PrayerRules
     public const int LongestText = 2000;
     public const int LongestNote = 2000;
     public const int LongestAnsweredNote = 500;
+    public const int LongestMessage = 500;
     public const int LongestName = 60;
     public const int LongestChurchName = 40;
     public const string ChurchNameToStart = "GSBC";
@@ -19,7 +20,7 @@ internal static class PrayerRules
     public static readonly TimeSpan OnTheWallFor = TimeSpan.FromDays(30);
     public static readonly TimeSpan LongestOnTheWall = TimeSpan.FromDays(365);
     public static readonly TimeSpan KeptFor = TimeSpan.FromDays(365);
-    private static readonly TimeSpan ThanksShownFor = TimeSpan.FromDays(3);
+    private static readonly TimeSpan MessageShownFor = TimeSpan.FromDays(3);
 
     public static string Clip(string value, int longest)
     {
@@ -60,8 +61,11 @@ internal static class PrayerRules
 
     public static bool IsDueForDeletion(RequestRecord request, DateTime now) => request.ChangedAt <= now - KeptFor;
 
-    public static DateTime UntilWithThanks(DateTime? until, DateTime now) =>
-        until is { } day && day <= now + ThanksShownFor ? day : now + ThanksShownFor;
+    public static DateTime UntilWithMessage(DateTime? until, DateTime now) =>
+        until is { } day && day <= now + MessageShownFor ? day : now + MessageShownFor;
+
+    public static bool MayClose(RequestRecord request) =>
+        request.Care != CareState.Closed && request.Message.Length == 0 && (request.Care == CareState.New || request.Wall is WallState.Waiting or WallState.Shown);
 
     public static DateTime? ClampedUntil(DateTime until, DateTime now) =>
         until <= now || until > now + LongestOnTheWall ? null : until;
@@ -76,6 +80,7 @@ internal static class PrayerRules
         Prayed = request.Prayed,
         Answered = request.Care == CareState.Answered,
         AnsweredNote = request.Care == CareState.Answered ? request.AnsweredNote : "",
+        Message = request.Message,
     };
 
     public static YourRequest Yours(RequestRecord request) => new()
@@ -90,6 +95,8 @@ internal static class PrayerRules
         AnsweredNote = request.AnsweredNote,
         WallName = request.Wall == WallState.Shown && request.WallShowsName ? WallName(request) : "",
         WallText = request.Wall == WallState.Shown ? request.WallText : "",
+        Closed = request.Care == CareState.Closed,
+        Message = request.Message,
     };
 
     public static WallCase ForApprovers(RequestRecord request) => new()
@@ -118,6 +125,7 @@ internal static class PrayerRules
         Minor = request.Minor,
         SignedIn = request.UserId is not null,
         AnsweredNote = request.AnsweredNote,
+        Message = request.Message,
         Notes = notes.Select(note => new CareNote { Id = note.Id.ToString(), Text = note.Text, Author = names.GetValueOrDefault(note.AuthorId, "Someone"), At = note.At })
             .ToList(),
         ChangedAt = request.ChangedAt,
