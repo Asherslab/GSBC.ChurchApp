@@ -2,7 +2,7 @@
 @inject PrayerOnPhone Prayer
 @inject NavigationManager Navigation
 
-<UnsavedGuard Changed="() => _asking is Ask.Answered or Ask.Remove && _note.Trim().Length > 0" What="your words of thanks" />
+<UnsavedGuard Changed="() => _asking == Ask.Close && _message.Trim().Length > 0" What="your message" />
 
 <Page Title="Your request" BackHref="prayer" BackLabel="Prayer" TopBar="TopBarStyle.Solid">
     <LiveData TValue="PrayerView" Load="Prayer.LoadAsync" Feeds="PrayerOnPhone.Feeds" ReloadOn="Reload" Remember="prayer.view">
@@ -42,21 +42,25 @@
                 <p class="prayer-request__text">@line.Text</p>
                 @if (line.Answered && line.AnsweredNote.Length > 0)
                 {
-                    <Card Class="prayer-yours__answered" Title="Answered"><p>@line.AnsweredNote</p></Card>
+                    <Card Class="prayer-yours__note" Title="The pastoral team marked it answered"><p>@line.AnsweredNote</p></Card>
+                }
+                @if (line.Message.Length > 0)
+                {
+                    <Card Class="prayer-yours__note" Title="Your message"><p>@line.Message</p></Card>
                 }
             </Section>
-            @if (!line.Answered && line.Sending != Sending.CouldNotSend)
+            @if (line.MayClose)
             {
                 <Section>
                     @if (line.Wall == WallState.Shown)
                     {
-                        <Button Block="true" Icon="eye-off" OnClick="() => Open(Ask.Remove)">Remove from prayer wall</Button>
-                        <p class="prayer-request__fact prayer-yours__hint">Was it answered? You can add a few words of thanks first, and the wall shows them for 3 days before your request comes down.</p>
+                        <Button Block="true" Icon="eye-off" OnClick="() => Open(Ask.Close, line)">Take down your request</Button>
+                        <p class="prayer-request__fact prayer-yours__hint">Answered or not, you can take it down whenever you like, and leave a message for everyone who prayed.</p>
                     }
                     else
                     {
-                        <Button Block="true" Icon="check" OnClick="() => Open(Ask.Answered)">Mark as answered</Button>
-                        <p class="prayer-request__fact prayer-yours__hint">Let the pastoral team know.</p>
+                        <Button Block="true" Icon="check" OnClick="() => Open(Ask.Close, line)">Close your request</Button>
+                        <p class="prayer-request__fact prayer-yours__hint">Answered or not, let the pastoral team know you no longer need prayer for it.</p>
                     }
                 </Section>
             }
@@ -64,24 +68,18 @@
     </LiveData>
 </Page>
 
-<Sheet Open="_asking == Ask.Answered" OpenChanged="Closed" Title="Mark as answered" Lead="Praise God! If you'd like to add a few words of thanks, the pastoral team will see them.">
-    <ChildContent>
-        <TextField Label="Words of thanks" Hint="Optional" Multiline="true" MaxLength="500" @bind-Value="_note" />
-    </ChildContent>
-    <Actions>
-        <SaveBar Block="true" Label="Mark as answered" Busy="_busy" OnSave="AnsweredAsync" />
-    </Actions>
-</Sheet>
-
-<Sheet Open="_asking == Ask.Remove" OpenChanged="Closed" Title="Remove from the prayer wall"
-       Lead="Was your request answered? Add a few words of thanks and the wall shows them under your request for 3 days before it comes down. Without them, your request comes down now.">
-    <ChildContent>
-        <TextField Label="Words of thanks" Hint="Optional" Multiline="true" MaxLength="500" @bind-Value="_note" />
-    </ChildContent>
-    <Actions>
-        <SaveBar Block="true" Label="@(_note.Trim().Length > 0 ? "Remove in 3 days" : "Remove now")" Busy="_busy" OnSave="RemoveAsync" />
-    </Actions>
-</Sheet>
+@if (_closing is { } closing)
+{
+    <Sheet Open="_asking == Ask.Close" OpenChanged="Closed" Title="@CloseTitle(closing)" Lead="@CloseLead(closing)">
+        <ChildContent>
+            <TextField Label="@(closing.Wall == WallState.Shown ? "A message for everyone who prayed" : "A message for the pastoral team")"
+                       Hint="Optional. A thank you, how it was answered, or how things are now." Multiline="true" MaxLength="500" @bind-Value="_message" />
+        </ChildContent>
+        <Actions>
+            <SaveBar Block="true" Label="@CloseLabel(closing)" Busy="_busy" OnSave="CloseAsync" />
+        </Actions>
+    </Sheet>
+}
 
 <Sheet Open="_asking == Ask.TakeDown" OpenChanged="Closed" Title="Take your request off the prayer wall?" Lead="The pastoral team keeps your request. Once it's off the wall, it can't go back on.">
     <Actions>
@@ -101,8 +99,7 @@
     private enum Ask
     {
         Nothing,
-        Answered,
-        Remove,
+        Close,
         TakeDown,
         Delete,
     }
@@ -111,7 +108,7 @@
     {
         Sent,
         Wall,
-        Answered,
+        Done,
     }
 
     private const ChangeKind Reload = ChangeKind.Reconnected | ChangeKind.Session | ChangeKind.Access | ChangeKind.Outbox;
@@ -119,14 +116,29 @@
     [Parameter] public string Id { get; set; } = "";
 
     private Ask _asking;
-    private string _note = "";
+    private string _message = "";
+    private YourLine? _closing;
     private bool _busy;
 
     private static IReadOnlyList<SegmentOption<YourStage>> Stages(YourLine line) => line.AskedForWall
-        ? [new(YourStage.Sent, "Sent"), new(YourStage.Wall, line.Wall is WallState.Ended or WallState.TakenDown ? "Was on the wall" : "On the wall"), new(YourStage.Answered, "Answered")]
-        : [new(YourStage.Sent, "Sent"), new(YourStage.Answered, "Answered")];
+        ? [new(YourStage.Sent, "Sent"), new(YourStage.Wall, line.Wall is WallState.Ended or WallState.TakenDown ? "Was on the wall" : "On the wall"), Done(line)]
+        : [new(YourStage.Sent, "Sent"), Done(line)];
 
-    private static YourStage Stage(YourLine line) => line.Answered ? YourStage.Answered
+    private static SegmentOption<YourStage> Done(YourLine line) => new(YourStage.Done, line.Answered ? "Answered" : "Closed");
+
+    private static string CloseTitle(YourLine line) => line.Wall == WallState.Shown ? "Take down your request" : "Close your request";
+
+    private static string CloseLead(YourLine line) => line.Wall switch
+    {
+        WallState.Shown => "Leave a message and the wall shows it under your request for 3 days, then it comes down. Without one, it comes down now.",
+        WallState.Waiting => "It won't go on the prayer wall. The pastoral team sees that you closed it, and any message you leave.",
+        _ => "The pastoral team sees that you closed it, and any message you leave.",
+    };
+
+    private string CloseLabel(YourLine line) => line.Wall != WallState.Shown ? "Close the request"
+        : _message.Trim().Length > 0 ? "Take down in 3 days" : "Take down now";
+
+    private static YourStage Stage(YourLine line) => line.Answered || line.Closed ? YourStage.Done
         : line.Wall is WallState.Shown or WallState.Ended ? YourStage.Wall
         : YourStage.Sent;
 
@@ -139,7 +151,7 @@
         return items;
     }
 
-    private void Open(Ask ask) => (_asking, _note) = (ask, "");
+    private void Open(Ask ask, YourLine? closing = null) => (_asking, _message, _closing) = (ask, "", closing);
 
     private void Closed(bool open)
     {
@@ -147,9 +159,7 @@
             _asking = Ask.Nothing;
     }
 
-    private Task AnsweredAsync() => DoAsync(() => Prayer.AnsweredAsync(Id, _note, removeFromWall: false));
-
-    private Task RemoveAsync() => DoAsync(() => Prayer.AnsweredAsync(Id, _note, removeFromWall: true));
+    private Task CloseAsync() => DoAsync(() => Prayer.CloseAsync(Id, _message));
 
     private Task TakeDownAsync() => DoAsync(() => Prayer.TakeDownAsync(Id));
 

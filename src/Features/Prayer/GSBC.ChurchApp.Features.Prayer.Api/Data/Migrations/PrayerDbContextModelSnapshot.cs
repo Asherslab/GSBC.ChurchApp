@@ -153,6 +153,11 @@ namespace GSBC.ChurchApp.Features.Prayer.Api.Data.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("install_id");
 
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("message");
+
                     b.Property<bool>("Minor")
                         .HasColumnType("boolean")
                         .HasColumnName("minor");

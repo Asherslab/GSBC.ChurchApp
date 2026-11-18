@@ -22,9 +22,9 @@ internal sealed class PrayerService(PrayerRequests requests, IAccessEvaluator ac
         return new Done();
     }
 
-    public async ValueTask<Done> AnsweredAsync(AnsweredSave request, CallContext context = default)
+    public async ValueTask<Done> CloseAsync(CloseSave request, CallContext context = default)
     {
-        await requests.AnsweredAsync(CallingInstall.Of(context), CallerId(context), request, context.CancellationToken);
+        await requests.CloseAsync(CallingInstall.Of(context), CallerId(context), request, context.CancellationToken);
         return new Done();
     }
 

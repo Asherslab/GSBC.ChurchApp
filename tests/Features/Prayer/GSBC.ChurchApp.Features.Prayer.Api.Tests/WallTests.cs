@@ -93,26 +93,26 @@ public sealed class WallTests : PrayerHost
     }
 
     [Fact]
-    public async Task RemovingItWithoutThanksTakesItOffTheWallAtOnce()
+    public async Task ClosingItWithoutAMessageTakesItOffTheWallAtOnceWithoutCallingItAnswered()
     {
         string id = await SendAsync(Phone, null, "For a new job", forWall: true);
         await ShowAsync(id);
 
-        await AppAsync(app => app.AnsweredAsync(Phone, null, new AnsweredSave { Id = id, RemoveFromWall = true }, Cancel));
+        await AppAsync(app => app.CloseAsync(Phone, null, new CloseSave { Id = id }, Cancel));
 
         Assert.Empty(await WallAsync());
-        Assert.Equal((WallState.TakenDown, CareState.Answered), ((await RecordAsync(id))!.Wall, (await RecordAsync(id))!.Care));
+        Assert.Equal((WallState.TakenDown, CareState.Closed), ((await RecordAsync(id))!.Wall, (await RecordAsync(id))!.Care));
     }
 
     [Fact]
-    public async Task RemovingItWithThanksShowsTheThanksForThreeDaysThenTakesItOff()
+    public async Task ClosingItWithAMessageShowsTheirMessageForThreeDaysThenTakesItOff()
     {
         string id = await SendAsync(Phone, null, "For a new job", forWall: true);
         await ShowAsync(id);
 
-        await AppAsync(app => app.AnsweredAsync(Phone, null, new AnsweredSave { Id = id, Note = "I start Monday!", RemoveFromWall = true }, Cancel));
+        await AppAsync(app => app.CloseAsync(Phone, null, new CloseSave { Id = id, Message = "I start Monday!" }, Cancel));
         WallPost post = Assert.Single(await WallAsync());
-        Assert.Equal(("I start Monday!", Clock.GetUtcNow().UtcDateTime.AddDays(3)), (post.AnsweredNote, post.Until));
+        Assert.Equal(("I start Monday!", false, Clock.GetUtcNow().UtcDateTime.AddDays(3)), (post.Message, post.Answered, post.Until));
 
         Clock.Advance(TimeSpan.FromDays(3));
         await WithAsync(provider => provider.GetRequiredService<PrayerKeeping>().RunAsync(Cancel));
@@ -120,14 +120,15 @@ public sealed class WallTests : PrayerHost
     }
 
     [Fact]
-    public async Task SayingItWasAnsweredWithoutRemovingItLeavesItUpUntilItsDay()
+    public async Task ClosingItWhileItWaitsForTheWallKeepsItOff()
     {
         string id = await SendAsync(Phone, null, "For a new job", forWall: true);
+
+        await AppAsync(app => app.CloseAsync(Phone, null, new CloseSave { Id = id }, Cancel));
         await ShowAsync(id);
 
-        await AppAsync(app => app.AnsweredAsync(Phone, null, new AnsweredSave { Id = id, Note = "Thank you" }, Cancel));
-
-        Assert.Equal(Clock.GetUtcNow().UtcDateTime.AddDays(30), Assert.Single(await WallAsync()).Until);
+        Assert.Empty(await WallAsync());
+        Assert.Equal(WallState.TakenDown, (await RecordAsync(id))!.Wall);
     }
 
     private static Task<RequestDetails> Get(IServiceProvider provider, string id) =>
