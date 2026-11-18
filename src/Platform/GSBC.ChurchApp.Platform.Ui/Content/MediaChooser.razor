@@ -14,6 +14,7 @@
     [Parameter] public bool ImagesOnly { get; set; } = true;
     [Parameter] public bool FontsOnly { get; set; }
     [Parameter] public MediaSizeName Size { get; set; } = MediaSizeName.ForPhones;
+    [Parameter] public string ShownIn { get; set; } = MediaSizes.InTheApp;
     [Parameter] public EventCallback<MediaRef> OnChosen { get; set; }
     [Parameter] public EventCallback OnCancel { get; set; }
     [Parameter] public IReadOnlyList<MediaRef>? Offered { get; set; }
@@ -38,6 +39,7 @@
         builder.AddComponentParameter(3, MediaPicker.OnCancelParameter, EventCallback.Factory.Create(this, () => OnCancel.InvokeAsync()));
         builder.AddComponentParameter(4, MediaPicker.SizeParameter, Size);
         builder.AddComponentParameter(5, MediaPicker.FontsOnlyParameter, FontsOnly);
+        builder.AddComponentParameter(9, MediaPicker.ShownInParameter, ShownIn);
         if (UploadTo is not null)
             builder.AddComponentParameter(8, MediaPicker.UploadToParameter, UploadTo);
         if (Kinds is not null)
