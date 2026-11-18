@@ -232,6 +232,10 @@ namespace GSBC.ChurchApp.Features.Ministries.Api.Data.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("updated_at");
 
+                    b.Property<string>("Where")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("where");
+
                     b.Property<string>("WhoFor")
                         .IsRequired()
                         .HasColumnType("text")

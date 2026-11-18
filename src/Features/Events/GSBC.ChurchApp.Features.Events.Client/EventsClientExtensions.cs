@@ -1,8 +1,9 @@
 using GSBC.ChurchApp.Features.Events.Contracts;
 using GSBC.ChurchApp.Platform.Client.Content;
 using GSBC.ChurchApp.Platform.Client.Destinations;
-using GSBC.ChurchApp.Platform.Contracts.Content;
 using GSBC.ChurchApp.Platform.Client.Modules;
+using GSBC.ChurchApp.Platform.Contracts.Content;
+using GSBC.ChurchApp.Platform.Ui.Locations;
 using GSBC.ChurchApp.Platform.Ui.Surfaces;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -22,7 +23,8 @@ public static class EventsClientExtensions
             .AddSingleton<IYourCalendarLink, PhoneCalendarLink>()
             .AddSingleton<IEventChoices, DiaryEventChoices>()
             .AddSingleton<IEventCards, DiaryEventCards>()
-            .AddSingleton<IClientStartupTask>(provider => provider.GetRequiredService<YourCalendars>());
+            .AddSingleton<IClientStartupTask>(provider => provider.GetRequiredService<YourCalendars>())
+            .AddSingleton<ILocationSource, EventLocations>();
 
     public static IServiceCollection AddEventsClient(this IServiceCollection services) =>
         services

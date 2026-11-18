@@ -1,0 +1,12 @@
+{
+  "name": "gsbc-outreach-map",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@mapbox/tiny-sdf": "2.0.6",
+    "esbuild": "0.28.2",
+    "maplibre-gl": "6.16.0",
+    "playwright-core": "1.56.1",
+    "pmtiles": "4.5.0"
+  }
+}

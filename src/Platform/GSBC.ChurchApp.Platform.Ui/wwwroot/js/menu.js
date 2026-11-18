@@ -16,6 +16,11 @@ const windowBox = (panel) => {
   return { top: safeTop, bottom: Math.min(window.innerHeight, visible, barTop) };
 };
 
+const fitsAcross = (panel) => {
+  const box = panel.getBoundingClientRect();
+  return box.left >= gap && box.right <= window.innerWidth - gap;
+};
+
 const inWindow = (panel, trigger, height, room, fromStart, again) => {
   const width = panel.getBoundingClientRect().width;
   const below = room.bottom - trigger.bottom - gap * 2;
@@ -58,10 +63,11 @@ export function place(panel) {
   const trigger = panel.parentElement.getBoundingClientRect();
   const height = panel.getBoundingClientRect().height;
 
-  if (height <= bottom - trigger.bottom - gap * 2) return;
+  if (height <= bottom - trigger.bottom - gap * 2 && fitsAcross(panel)) return;
   if (height <= trigger.top - top - gap * 2) {
     panel.classList.add('menu__panel--up');
-    return;
+    if (fitsAcross(panel)) return;
+    panel.classList.remove('menu__panel--up');
   }
   inWindow(panel, trigger, height, room, panel.classList.contains('menu__panel--start') || !!panel.closest('.menu--block'), place);
 }

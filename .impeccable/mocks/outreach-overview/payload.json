@@ -1,0 +1,44 @@
+{
+  "title": "Outreach → Map: looking past the edge of our maps",
+  "question": "The admin panel gets one low-zoom map of all of Australia (zoom 0 to 10: suburb names and the main roads, 57 MB on the server; the browser only fetches what's in view). You said: everyone on the Map tab can look past the edge; all of Australia shows but areas can't be added outside Queensland; placing an area needs town and suburb names, roads and built-up land. The three sketches differ in how the map behaves past the edge of the built areas and how you tell where walkers have maps. Each sketch has three views: adding Gympie, the edge of Around the church with Coverage open, and the Queensland border. Pick the one to build.",
+  "reroll": true,
+  "steer": true,
+  "buildPath": { "value": "code" },
+  "options": [
+    {
+      "id": "ground",
+      "kind": "assigned",
+      "kicker": "THE ROLL",
+      "label": "The ground says where walkers have maps",
+      "thesis": "Pan and zoom anywhere in Australia. Land with walker maps is drawn clear, as today; everything else sits under a grey veil, so the edge of our maps reads at a glance wherever you are. A small key on the map names the five kinds of ground: walkers have maps, waiting to build, switched off, overview only, outside Queensland. Outside built areas you can zoom in only as far as the overview has detail (about suburb level). Coverage, Places, Reports and Plan a day draw only where walkers have maps and say so in their drawer.",
+      "palette": ["#2a3d5e", "#f7f4ee", "#00776d", "#9aa0ab"],
+      "materials": ["grey veil over overview-only land", "key of five kinds of ground", "dashed aqua for waiting", "hatched for switched off and outside Queensland", "zoom capped outside built areas"],
+      "viewport": "Outreach, Map tab, Map areas → Add a map area: 'Gympie' found 130 km north; its 3 × 3 squares drawn clear through the veil with each square's letterboxes (9,780 in the middle, two with no homes hatched); the key bottom left.",
+      "risk": "The veil dims real map detail out there; at dusk-dark screens grey-on-grey needs care in dark mode.",
+      "raised": [{ "from": "notation-diagram-systems-orienteering-map", "raise": "The kinds of ground are a fixed, ranked key on the map, as an orienteering legend is, rather than a note in a drawer." }],
+      "html": ".impeccable/mocks/outreach-overview/ground.html"
+    },
+    {
+      "id": "step-out",
+      "kind": "dealt",
+      "label": "Past the edge, the map steps back to Australia",
+      "thesis": "Your idea, played straight. Our maps behave as today, held to the built areas with the hatched edge. Drag on past it, zoom right out, or press Show all of Australia, and the map eases back to an Australia view: built areas as navy blocks, zoom held at about suburb level, a navy bar saying where you are with Back to our maps. Adding and growing areas happen in the Australia view; Coverage, Places, Reports and Plan a day stay on our maps.",
+      "palette": ["#2a3d5e", "#f7f4ee", "#00776d", "#ffffff"],
+      "materials": ["hatched edge as today", "navy 'Australia view' bar with Back to our maps", "built areas as navy blocks", "zoom held outside"],
+      "viewport": "Outreach, Map tab, Map areas → Add a map area: the navy bar 'Australia view · walkers have maps only in the navy areas · Back to our maps' at the top; Gympie's squares with their letterboxes; zoom-in greyed.",
+      "risk": "Two views of one map: a leader has to know which one they're in, and a drag that 'steps out' by itself can surprise.",
+      "html": ".impeccable/mocks/outreach-overview/step-out.html"
+    },
+    {
+      "id": "grid",
+      "kind": "dealt",
+      "label": "The grid runs on past the edge",
+      "thesis": "Pan anywhere, under a light veil. Past the edge each area's own grid carries on faintly across the overview, so you see the squares it could grow into; the ones touching it carry a +. Point at one for its letterboxes and download size, and add it to the area from there, whichever drawer is out. A new area far away gets its own grid, previewed square by square.",
+      "palette": ["#2a3d5e", "#f7f4ee", "#00776d", "#9aa0ab"],
+      "materials": ["faint grid over the overview", "+ on squares touching an area", "hover card with letterboxes, size and Add", "light veil"],
+      "viewport": "Outreach, Map tab, Map areas → Add a map area: Gympie's 3 × 3 squares and letterboxes over a light veil; at the edge of Around the church (second view) the grid runs on north with + marks and a card for Narangba and Burpengary: about 11,600 letterboxes, 2.3 MB, Add it to Around the church.",
+      "risk": "Grid lines everywhere add noise for people who only use Coverage or Reports; adding from any drawer blurs Map areas' job.",
+      "html": ".impeccable/mocks/outreach-overview/grid.html"
+    }
+  ]
+}

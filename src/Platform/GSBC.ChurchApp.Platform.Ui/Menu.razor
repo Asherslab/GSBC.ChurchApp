@@ -137,7 +137,7 @@
         if (next is { } at)
         {
             _active = at;
-            await _items[at].FocusAsync();
+            await FocusAsync(_items[at]);
         }
     }
 
@@ -147,7 +147,19 @@
             return;
         _focusPending = false;
         await PlaceAsync();
-        await item.FocusAsync();
+        if (_open)
+            await FocusAsync(item);
+    }
+
+    private static async Task FocusAsync(ElementReference element)
+    {
+        try
+        {
+            await element.FocusAsync();
+        }
+        catch (JSException)
+        {
+        }
     }
 
     private async Task PlaceAsync()

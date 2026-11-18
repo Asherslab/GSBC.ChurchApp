@@ -1,0 +1,43 @@
+@using GSBC.ChurchApp.Features.Outreach.Admin.Map
+@inherits OutreachMapPart
+
+@if (Shown)
+{
+    <div class="outreach-map__key" role="group" aria-label="Where walkers have maps">
+        <p class="outreach-map__key-title">Where walkers have maps</p>
+        <ul class="outreach-map__key-rows">
+            <li><span class="outreach-map__key-swatch outreach-map__key-swatch--maps"></span><span><b>Walkers have maps</b></span></li>
+            @if (Map.Atlas.Reach.Others.Count > 0)
+            {
+                <li><span class="outreach-map__key-swatch outreach-map__key-swatch--waiting"></span><span><b>Waiting to build</b></span></li>
+                <li><span class="outreach-map__key-swatch outreach-map__key-swatch--off"></span><span><b>Switched off</b></span></li>
+            }
+            <li><span class="outreach-map__key-swatch outreach-map__key-swatch--overview"></span><span><b>Overview only</b></span></li>
+            @if (Map.Atlas.Reach.Addable is { Count: > 0 })
+            {
+                <li><span class="outreach-map__key-swatch outreach-map__key-swatch--closed"></span><span><b>Outside Queensland</b></span></li>
+            }
+        </ul>
+    </div>
+}
+
+@code {
+    private const double AllInside = 1;
+
+    private bool Shown => Map.Atlas.Overview is not null && Map.View is { } view && Map.Atlas.Reach.ShareOf(view) < AllInside;
+
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        Map.Moved += Rerender;
+    }
+
+    public override void Dispose()
+    {
+        Map.Moved -= Rerender;
+        base.Dispose();
+    }
+
+    private void Rerender() => _ = InvokeAsync(StateHasChanged);
+}

@@ -9,7 +9,7 @@
 @inject NewsLastLooked LastLooked
 
 <AddressWatch Changed="StateHasChanged" />
-<Page Title="News">
+<Page Title="News" Place="news">
     <Masthead Title="News" Note="From the church and the ministries you're in" />
     <LiveData TValue="NewsHome" Load="() => NewsHome.LoadAsync(News, Sources, SeesEveryMinistry ? EveryMinistry.First() : null)" Feeds="Feeds" ReloadOn="Reload" Remember="news.home">
         @if (TabsOf(context.Value) is { Count: > 1 } tabs)

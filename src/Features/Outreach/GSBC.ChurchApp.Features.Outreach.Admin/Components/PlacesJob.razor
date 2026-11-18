@@ -1,0 +1,586 @@
+@using GSBC.ChurchApp.Features.Outreach.Admin.Map
+@using GSBC.ChurchApp.Platform.Icons
+@using GSBC.ChurchApp.Platform.Ui.Maps
+@using MapAreaShape = GSBC.ChurchApp.Platform.Ui.Maps.MapArea
+@inherits OutreachMapLayer
+@inject OutreachDeskClient Outreach
+@inject Letterboxes Letterboxes
+@inject UnsavedChanges Unsaved
+@inject IAccess Access
+
+<UnsavedGuard Changed="() => Changed" What="this place" Save="SaveBeforeLeavingAsync" />
+
+<LiveData @ref="_live" TValue="Lists" Feeds="Feeds" Load="LoadAsync" Remember="@($"outreach.map.places.{Map.Scope}")" FailedTitle="Can't load the places right now">
+    <ChildContent>
+        @{ Lists lists = context.Value; }
+        @if (IsOpen)
+        {
+            <StableSection SectionName="@OutreachMap.DrawerSection">
+                <PaneHead Title="Places outreach skips" Lead="Walkers never get these on a route." />
+                <div class="outreach-map__stack">
+                    <SearchField Label="Find a place outreach skips" Placeholder="Find a skipped place…" Value="@_find" ValueChanged="text => _find = text" />
+                    <FilterChips TValue="PlaceKind?" Label="Show" ShowLabel="false" Options="Filters(lists)" Value="_filter" ValueChanged="kind => _filter = kind" />
+                    @if (Shown(lists).ToList() is { Count: > 0 } shown)
+                    {
+                        <div class="outreach-map__list" role="list" aria-label="Places outreach skips">
+                            @foreach (PlaceLine line in shown)
+                            {
+                                <ListRow Title="@line.Title" Subtitle="@line.Caption" Current="@(_open?.Key == line.Key)" OnClick="() => OpenAsync(line, fly: true)" />
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <EmptyState Icon="@AppIcons.PlacesSkipped" Title="@(_find.Trim().Length > 0 ? $"Nothing skipped matches “{_find.Trim()}”" : _filter is null ? "Nowhere is skipped yet" : "None of these")"
+                                    Body="Walkers mark No junk mail and doors that want nothing to do with outreach; areas and addresses are added here, or from a walker's report." />
+                    }
+                </div>
+            </StableSection>
+            @if (CanChangeExclusions)
+            {
+                <StableSection SectionName="@OutreachMap.FootSection">
+                    <div class="outreach-map__foot-actions">
+                        <Button Variant="ButtonVariant.Quiet" Icon="@AppIcons.DrawArea" OnClick="DrawZoneAsync">Draw an area</Button>
+                        <Button Variant="ButtonVariant.Quiet" Icon="map-pin" OnClick="PickAddressAsync">Pick a letterbox</Button>
+                    </div>
+                </StableSection>
+            }
+        }
+        @if (HasCard && Chosen(lists) is { } chosen)
+        {
+            <StableSection SectionName="@OutreachMap.CardSection">
+                <MapCard Label="@chosen.Title">
+                    <ChildContent>@Record(chosen)</ChildContent>
+                    <Foot>@Foot(chosen)</Foot>
+                </MapCard>
+            </StableSection>
+        }
+        <Sheet Open="_deleting" OpenChanged="open => _deleting = open" Title="@DeleteTitle(Chosen(lists))"
+               Lead="Walks deliver there again from now. A walker or staff can mark it again later.">
+            <Actions>
+                <Button Block="true" Variant="ButtonVariant.Danger" Busy="_busy" OnClick="() => DeleteAsync(Chosen(lists))">@DeleteAction(Chosen(lists))</Button>
+                <Button Block="true" Variant="ButtonVariant.Quiet" OnClick="() => _deleting = false">Keep it</Button>
+            </Actions>
+        </Sheet>
+    </ChildContent>
+    <Loading>
+        @if (IsOpen)
+        {
+            <StableSection SectionName="@OutreachMap.DrawerSection">
+                <PaneHead Title="Places outreach skips" Lead="Walkers never get these on a route." />
+                <Skeleton />
+            </StableSection>
+        }
+    </Loading>
+</LiveData>
+
+@code {
+    private static readonly IReadOnlyList<string> Feeds = [OutreachFeeds.Skips, OutreachFeeds.Exclusions];
+    private const string NewKey = "new/";
+
+    private static readonly IReadOnlyList<FieldOption> Reasons = Enum.GetValues<ExclusionReason>()
+        .Select(reason => new FieldOption(((int)reason).ToString(System.Globalization.CultureInfo.InvariantCulture), OutreachWords.Reason(reason))).ToList();
+
+    private sealed record Lists(List<PlaceLine> Places, Exclusions Exclusions, SkipLines Skips);
+
+    private LiveData<Lists>? _live;
+    private Lists? _lists;
+    private PlaceKind? _filter;
+    private PlaceLine? _open;
+    private const int MatchesShown = 3;
+    private const double NearbyMetres = 15_000;
+    private const int SuburbsNamed = 3;
+
+    private string _name = "", _reason = "", _note = "", _caller = "", _search = "", _find = "";
+    private bool _marker, _busy, _saved, _deleting;
+    private string? _problem;
+    private IReadOnlyList<MapPoint>? _area;
+    private AddressPoint? _address;
+    private Matches? _found;
+
+    public override OutreachMapJob Job => OutreachMapJob.Places;
+
+    private bool CanChangeExclusions => Access.Can(OutreachPermissions.Settings, MinistryScope);
+
+    private bool CanClearMarks => Access.Can(OutreachPermissions.Review, MinistryScope);
+
+    private bool IsNew => _open?.Key.StartsWith(NewKey, StringComparison.Ordinal) == true;
+
+    public override IReadOnlyList<LayerCount> Shows =>
+    [
+        .. CanChangeExclusions ? [new LayerCount(OutreachLayer.SkippedPlaces, (_lists?.Exclusions.Zones.Count ?? 0) + (_lists?.Exclusions.Addresses.Count ?? 0))] : Array.Empty<LayerCount>(),
+        .. CanClearMarks ? [new LayerCount(OutreachLayer.Marks, _lists?.Skips.Lines.Count ?? 0)] : Array.Empty<LayerCount>(),
+    ];
+
+    public override IReadOnlyList<MapAreaShape> Areas
+    {
+        get
+        {
+            List<MapAreaShape> areas = Map.Shows(OutreachLayer.SkippedPlaces) && _lists is { } lists
+                ? [.. lists.Exclusions.Zones.Where(zone => zone.Area.Count >= 3 && _open?.Item != zone)
+                    .Select(zone => new MapAreaShape([.. zone.Area.Select(point => new MapPoint(point.Lat, point.Lng))], "--danger", zone.Id, Dashed: true))]
+                : [];
+            if (_open?.Item is ExclusionZone && _area is { Count: >= 3 } area)
+                areas.Add(new MapAreaShape(area, "--danger", "chosen"));
+            return areas;
+        }
+    }
+
+    public override IReadOnlyList<MapMarker> Markers
+    {
+        get
+        {
+            List<MapMarker> markers = [];
+            if (_lists is not { } lists)
+                return markers;
+            if (Map.Shows(OutreachLayer.Marks))
+                markers.AddRange(lists.Skips.Lines.Where(skip => PointOf(skip.Address) is not null)
+                    .Select(skip => new MapMarker(PointOf(skip.Address)!.Value, skip.Hostile ? MapMarkerKind.Skip : MapMarkerKind.NoJunkMail, skip.Hostile ? "Hostile" : "No junk mail", skip.Id)));
+            if (Map.Shows(OutreachLayer.SkippedPlaces))
+                markers.AddRange(lists.Exclusions.Addresses.Where(address => PointOf(address.Address) is not null)
+                    .Select(address => new MapMarker(PointOf(address.Address)!.Value, MapMarkerKind.DontLetterbox, "Don't letterbox", address.Id)));
+            if (IsNew && _address is { } picked && PointOf(picked) is { } point)
+                markers.Add(new MapMarker(point, MapMarkerKind.Pin));
+            if (IsNew && _address is null && _found is { } found)
+                markers.AddRange(found.Shown.Select((match, index) =>
+                    new MapMarker(PointOf(match), MapMarkerKind.Match, (index + 1).ToString(System.Globalization.CultureInfo.InvariantCulture))));
+            return markers;
+        }
+    }
+
+    private bool Changed => _open?.Item switch
+    {
+        ExclusionZone zone => _name != zone.Name || _reason != Code(zone.Reason) || _note != zone.Note || !SameArea(zone),
+        ExclusionAddress address => _reason != Code(address.Reason) || _note != address.Note || _caller != address.Caller || _marker != address.ShowMarker
+                                    || (IsNew && _address is not null),
+        _ => false,
+    };
+
+    private string? Blocked => _open?.Item switch
+    {
+        ExclusionZone when _area is not { Count: >= 3 } => "Draw the area on the map to save it.",
+        ExclusionZone when _name.Trim().Length == 0 => "Give the area a name to save it.",
+        ExclusionAddress when IsNew && _address is null => "Choose the address first.",
+        _ => null,
+    };
+
+    private async Task<Lists> LoadAsync()
+    {
+        Task<Exclusions> exclusions = CanChangeExclusions ? Outreach.ExclusionsAsync(Map.Scope) : Task.FromResult(new Exclusions());
+        Task<SkipLines> skips = CanClearMarks ? Outreach.SkipsAsync(Map.Scope) : Task.FromResult(new SkipLines());
+        await Task.WhenAll(exclusions, skips);
+        Lists lists = new([.. PlaceLine.Of(await exclusions, await skips)], await exclusions, await skips);
+        if (_open is { } open && (!Changed || _saved) && lists.Places.FirstOrDefault(line => line.Key == open.Key) is { } fresh)
+            Take(fresh);
+        _lists = lists;
+        Map.Redraw();
+        return lists;
+    }
+
+    private RenderFragment Record(PlaceLine line) => line.Item switch
+    {
+        ExclusionZone => @<div class="outreach-map__stack">
+            <PaneHead Title="@(IsNew ? "A new area to skip" : line.Title)" Lead="Streets inside it are walked through to get somewhere, never delivered to."
+                      Actions="@(CanChangeExclusions && !IsNew ? [this.Item("Draw it again", DrawZoneAgainAsync, AppIcons.DrawArea), this.Item("Delete this area…", () => _deleting = true, "trash-2", "Walks deliver there again", danger: true, startsGroup: true, disabled: _busy)] : null)"
+                      OnClose="CloseAsync" />
+            <TextField Label="Name" @bind-Value="_name" MaxLength="80" Disabled="!CanChangeExclusions" />
+            <SelectField Label="Why it's skipped" Options="Reasons" @bind-Value="_reason" Disabled="!CanChangeExclusions" Hint="Only staff see why." />
+            <TextField Label="Note" @bind-Value="_note" Multiline="true" MaxLength="1000" Disabled="!CanChangeExclusions" />
+        </div>,
+        ExclusionAddress => @<div class="outreach-map__stack">
+            <PaneHead Title="@(IsNew ? (_address is { } picked ? OutreachWords.Place(picked) : "A new address to skip") : line.Title)" Lead="Every campaign skips this letterbox and door."
+                      Actions="@(CanChangeExclusions && !IsNew ? [this.Item("Delete this address…", () => _deleting = true, "trash-2", "Walks deliver there again", danger: true, disabled: _busy)] : null)"
+                      OnClose="CloseAsync" />
+            @if (IsNew && _address is null)
+            {
+                <div class="field">
+                    <span class="field__label">Find the address</span>
+                    <span class="field__hint">Or click its letterbox on the map.</span>
+                    <SearchField Label="Find the address" Placeholder="Number and street…" Value="@_search" ValueChanged="SearchAsync" AutoFocus="true" />
+                    @if (_found is { } found)
+                    {
+                        @if (found.Shown is { Count: > 0 } shown)
+                        {
+                            <div class="outreach-map__matches" role="list" aria-label="Addresses found">
+                                @for (int index = 0; index < shown.Count; index++)
+                                {
+                                    AddressMatch match = shown[index];
+                                    int number = index + 1;
+                                    <ListRow Title="@Street(match)" Trailing="@Suburb(match)" OnClick="() => TakeMatchAsync(match)">
+                                        <Leading><span class="outreach-map__match-number" aria-label="@($"Number {number} on the map")">@number</span></Leading>
+                                    </ListRow>
+                                }
+                            </div>
+                            @if (found.Further.Count > 0)
+                            {
+                                <p class="field__hint">@FurtherLine(found.Further) Type more of the address to narrow it.</p>
+                            }
+                        }
+                        else
+                        {
+                            <p class="field__hint">@(_search.Trim().Length < 3 ? "Type the number and street." : "No address like that on our maps. Check the spelling, or click its letterbox on the map.")</p>
+                        }
+                    }
+                </div>
+            }
+            else if (IsNew)
+            {
+                <Button Variant="ButtonVariant.Link" Class="outreach-map__change" OnClick="ChangeAddress">Choose a different address</Button>
+            }
+            <SelectField Label="Why it's skipped" Options="Reasons" @bind-Value="_reason" Disabled="!CanChangeExclusions" />
+            <TextField Label="Who asked" @bind-Value="_caller" MaxLength="200" Disabled="!CanChangeExclusions"
+                       Hint="A name and how to reach them, if they called. Only outreach leaders see it." />
+            <TextField Label="Note" @bind-Value="_note" Multiline="true" MaxLength="1000" Disabled="!CanChangeExclusions" />
+            <ToggleRow Title="Show walkers a Don't letterbox marker" @bind-Checked="_marker" Disabled="!CanChangeExclusions"
+                       Description="The walking screen and map mark the letterbox. It never says why." />
+        </div>,
+        SkipLine skip => @<div class="outreach-map__stack">
+            <PaneHead Title="@line.Title" Lead="@(skip.Hostile ? "A walker marked this door: they want nothing to do with outreach." : "A walker marked a No junk mail sign here.")"
+                      Actions="@(CanClearMarks ? [this.Item(skip.Hostile ? "Clear this mark…" : "Clear No junk mail…", () => _deleting = true, "trash-2", "Walks deliver there again", danger: true, disabled: _busy)] : null)"
+                      OnClose="CloseAsync" />
+            <FactList>
+                <Fact Label="Marked" Icon="calendar" Text="@OutreachWords.Date(skip.At)" />
+                <Fact Label="Kept until" Icon="clock" Text="@(skip.Hostile ? "Someone clears it" : $"{OutreachWords.Date(skip.Until)}, unless a walker marks it again")" />
+            </FactList>
+            <p class="field__hint">
+                @(skip.Hostile
+                    ? "Every campaign skips this address for letterboxing and doorknocking. Who marked it isn't kept."
+                    : "Every campaign skips this letterbox; doorknocking still knocks. Clear it if the sign has gone. Who marked it isn't kept.")
+            </p>
+            <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+        </div>,
+        _ => @<span></span>,
+    };
+
+    private RenderFragment? Foot(PlaceLine line) => line.Item is SkipLine
+        ? null
+        : CanChangeExclusions
+            ? @<div>
+                <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+                <SaveBar New="IsNew" Label="@(IsNew ? (line.Kind == PlaceKind.Zone ? "Add the area" : "Add the address") : "Save")" Busy="_busy" OnSave="SaveAsync" OnCancel="CloseAsync"
+                         State="SaveBar.For(Changed, _saved)" Blocked="@Blocked" />
+            </div>
+            : @<p class="field__hint">Only outreach leaders can change this.</p>;
+
+    private IReadOnlyList<FilterOption<PlaceKind?>> Filters(Lists lists) =>
+    [
+        new(null, "Everything", lists.Places.Count),
+        .. Enum.GetValues<PlaceKind>().Select(kind => new FilterOption<PlaceKind?>(kind, Plural(kind), lists.Places.Count(line => line.Kind == kind))),
+    ];
+
+    private static string Plural(PlaceKind kind) => kind switch
+    {
+        PlaceKind.Zone => "Areas",
+        PlaceKind.Address => "Addresses",
+        PlaceKind.NoJunkMail => "No junk mail",
+        _ => "Hostile",
+    };
+
+    private IEnumerable<PlaceLine> Shown(Lists lists) => lists.Places.Where(line => (_filter is null || line.Kind == _filter) && Found(line));
+
+    private bool Found(PlaceLine line) =>
+        _find.Trim() is not { Length: > 0 } text
+        || line.Title.Contains(text, StringComparison.OrdinalIgnoreCase)
+        || line.Caption.Contains(text, StringComparison.OrdinalIgnoreCase);
+
+    private sealed record Matches(IReadOnlyList<AddressMatch> Shown, IReadOnlyList<AddressMatch> Further);
+
+    private Matches Sort(IReadOnlyList<AddressMatch> found)
+    {
+        MapPoint centre = (Map.View ?? Map.Frame) is { } view ? new MapPoint((view.North + view.South) / 2, (view.East + view.West) / 2) : default;
+        List<(AddressMatch Match, double Metres)> nearest = [.. found.Select(match => (match, MetresBetween(centre, PointOf(match)))).OrderBy(pair => pair.Item2)];
+        List<AddressMatch> nearby = [.. nearest.Where(pair => pair.Metres <= NearbyMetres).Take(MatchesShown).Select(pair => pair.Match)];
+        List<AddressMatch> shown = nearby.Count > 0 ? nearby : [.. nearest.Take(MatchesShown).Select(pair => pair.Match)];
+        return new Matches(shown, [.. nearest.Select(pair => pair.Match).Where(match => !shown.Contains(match))]);
+    }
+
+    private static MapPoint PointOf(AddressMatch match) => new(match.Point.Lat, match.Point.Lng);
+
+    private static string FurtherLine(IReadOnlyList<AddressMatch> further)
+    {
+        List<string> suburbs = [.. further.Select(Suburb).OfType<string>().Distinct().Take(SuburbsNamed)];
+        string more = OutreachWords.Plural(further.Count, "more is", "more are");
+        return suburbs.Count == 0 ? $"{more} off the map." : $"{more} off the map ({string.Join(", ", suburbs)}{(further.Select(Suburb).Distinct().Count() > suburbs.Count ? "…" : "")}).";
+    }
+
+    private static string Street(AddressMatch match) => match.Label.LastIndexOf(", ", StringComparison.Ordinal) is var at and > 0 ? match.Label[..at] : match.Label;
+
+    private static string? Suburb(AddressMatch match) => match.Label.LastIndexOf(", ", StringComparison.Ordinal) is var at and > 0 ? match.Label[(at + 2)..] : null;
+
+    private void ChangeAddress()
+    {
+        (_address, _search, _found) = (null, "", null);
+        Map.Redraw();
+    }
+
+    private PlaceLine? Chosen(Lists lists) => _open is { } open ? IsNew ? open : lists.Places.FirstOrDefault(line => line.Key == open.Key) : null;
+
+    private async Task SearchAsync(string text)
+    {
+        _search = text;
+        if (text.Trim().Length < 3)
+        {
+            _found = text.Trim().Length == 0 ? null : new Matches([], []);
+            Map.Redraw();
+            return;
+        }
+        try
+        {
+            IReadOnlyList<AddressMatch> found = await Outreach.FindAddressesAsync(Map.Scope, text);
+            if (_search == text)
+            {
+                _found = Sort(found);
+                if (_found.Shown.Count > 0)
+                    Map.FlyBesideCard([.. _found.Shown.Select(PointOf)]);
+                Map.Redraw();
+            }
+        }
+        catch (RpcException exception)
+        {
+            (_found, _problem) = (new Matches([], []), exception.Status.Detail);
+        }
+    }
+
+    private async Task TakeMatchAsync(AddressMatch match)
+    {
+        if (await Letterboxes.ForAsync(Map.Atlas, match) is not { } address)
+        {
+            _problem = "That address isn't on a street we have. Pick its letterbox on the map.";
+            return;
+        }
+        if (!IsNew && !await OpenAsync(NewAddress(), fly: false))
+            return;
+        _address = address;
+        (_search, _found) = ("", null);
+        FlyTo(address);
+        Map.Redraw();
+    }
+
+    public override async Task<bool> TapAsync(MapPoint point, double reachMetres)
+    {
+        if (_open?.Item is ExclusionAddress && IsNew)
+        {
+            if (await Letterboxes.NearestAsync(Map.Atlas, point) is { } address)
+            {
+                _address = address;
+                Map.Redraw();
+            }
+            return true;
+        }
+        if (_lists is not { } lists)
+            return false;
+        PlaceLine? hit = lists.Places
+            .Where(line => line.Item switch
+            {
+                SkipLine => Map.Shows(OutreachLayer.Marks),
+                _ => Map.Shows(OutreachLayer.SkippedPlaces),
+            })
+            .Select(line => (Line: line, Metres: Distance(line, point)))
+            .Where(found => found.Metres <= reachMetres)
+            .OrderBy(found => found.Metres)
+            .Select(found => found.Line)
+            .FirstOrDefault()
+            ?? lists.Places.FirstOrDefault(line => Map.Shows(OutreachLayer.SkippedPlaces) && line.Item is ExclusionZone zone && Inside(zone, point));
+        if (hit is null)
+            return false;
+        await OpenAsync(hit, fly: false);
+        return true;
+    }
+
+    public override void LetGo()
+    {
+        (_open, _problem, _deleting) = (null, null, false);
+        Map.Redraw();
+    }
+
+    private async Task<bool> OpenAsync(PlaceLine? line, bool fly)
+    {
+        if (_open?.Key != line?.Key && !await Unsaved.MayLeaveAsync())
+            return false;
+        (_open, _saved, _problem, _deleting, _address, _area) = (null, false, null, false, null, null);
+        if (line is not null)
+        {
+            Take(line);
+            Map.Choose(this);
+            if (fly)
+                FlyTo(line);
+        }
+        else
+            Map.LetGo(this);
+        Map.Redraw();
+        return true;
+    }
+
+    private Task CloseAsync() => OpenAsync(null, fly: false);
+
+    private async Task DrawZoneAsync()
+    {
+        if (!await OpenAsync(NewZone(), fly: false))
+            return;
+        StartDrawing();
+    }
+
+    private Task DrawZoneAgainAsync()
+    {
+        StartDrawing();
+        return Task.CompletedTask;
+    }
+
+    private void StartDrawing() =>
+        Map.Draw(new OutreachMapDrawing(MapSketchTool.Polygon, "Skip area: click each corner", points =>
+        {
+            if (points.Count >= 3)
+                _area = points;
+            return Task.CompletedTask;
+        }));
+
+    private async Task PickAddressAsync()
+    {
+        await OpenAsync(NewAddress(), fly: false);
+    }
+
+    private void Take(PlaceLine line)
+    {
+        _open = line;
+        switch (line.Item)
+        {
+            case ExclusionZone zone:
+                (_name, _reason, _note) = (zone.Name, Code(zone.Reason), zone.Note);
+                _area = [.. zone.Area.Select(point => new MapPoint(point.Lat, point.Lng))];
+                break;
+            case ExclusionAddress address:
+                (_reason, _note, _caller, _marker) = (Code(address.Reason), address.Note, address.Caller, address.ShowMarker);
+                break;
+        }
+    }
+
+    private void FlyTo(PlaceLine line)
+    {
+        switch (line.Item)
+        {
+            case ExclusionZone { Area.Count: >= 3 } zone:
+                Map.FlyBesideCard([.. zone.Area.Select(point => new MapPoint(point.Lat, point.Lng))]);
+                break;
+            case ExclusionAddress address:
+                FlyTo(address.Address);
+                break;
+            case SkipLine skip:
+                FlyTo(skip.Address);
+                break;
+        }
+    }
+
+    private void FlyTo(AddressPoint address)
+    {
+        if (PointOf(address) is { } point)
+            Map.FlyBesideCard([point]);
+    }
+
+    private static double Distance(PlaceLine line, MapPoint point) => line.Item switch
+    {
+        ExclusionAddress address when PointOf(address.Address) is { } at => MetresBetween(at, point),
+        SkipLine skip when PointOf(skip.Address) is { } at => MetresBetween(at, point),
+        _ => double.MaxValue,
+    };
+
+    private static bool Inside(ExclusionZone zone, MapPoint point) =>
+        zone.Area.Count >= 3 && OutreachRules.Contains(zone.Area, new GeoPoint { Lat = point.Lat, Lng = point.Lon });
+
+    private bool SameArea(ExclusionZone zone) =>
+        _area is { } area && area.Count == zone.Area.Count && area.Zip(zone.Area).All(pair => pair.First.Lat == pair.Second.Lat && pair.First.Lon == pair.Second.Lng);
+
+    private static MapPoint? PointOf(AddressPoint place) => place.Point is { Lat: not 0 } point ? new MapPoint(point.Lat, point.Lng) : null;
+
+    private static PlaceLine NewZone() => new($"{NewKey}zone", PlaceKind.Zone, "A new area", "", null, new ExclusionZone { Reason = ExclusionReason.NotHomes });
+
+    private static PlaceLine NewAddress() => new($"{NewKey}address", PlaceKind.Address, "A new address", "", null, new ExclusionAddress { Reason = ExclusionReason.Complaint, ShowMarker = true });
+
+    private static string Code(ExclusionReason reason) => ((int)reason).ToString(System.Globalization.CultureInfo.InvariantCulture);
+
+    private ExclusionReason ReasonChosen => int.TryParse(_reason, out int code) && Enum.IsDefined((ExclusionReason)code) ? (ExclusionReason)code : ExclusionReason.Other;
+
+    private async Task<bool> SaveBeforeLeavingAsync()
+    {
+        await SaveAsync();
+        return _problem is null;
+    }
+
+    private Task SaveAsync() => RunAsync(async () =>
+    {
+        switch (_open?.Item)
+        {
+            case ExclusionZone zone:
+                string zoneId = IsNew ? Guid.CreateVersion7().ToString() : zone.Id;
+                await Outreach.SaveZoneAsync(Map.Scope, new ExclusionZone
+                {
+                    Id = zoneId, Name = _name.Trim(), Reason = ReasonChosen, Note = _note.Trim(),
+                    Area = [.. (_area ?? []).Select(point => new GeoPoint { Lat = point.Lat, Lng = point.Lon })],
+                });
+                _open = _open! with { Key = $"zone/{zoneId}" };
+                break;
+            case ExclusionAddress address:
+                string addressId = IsNew ? Guid.CreateVersion7().ToString() : address.Id;
+                await Outreach.SaveAddressAsync(Map.Scope, new ExclusionAddress
+                {
+                    Id = addressId, Address = _address ?? address.Address, Reason = ReasonChosen, Note = _note.Trim(), Caller = _caller.Trim(), ShowMarker = _marker,
+                });
+                _open = _open! with { Key = $"address/{addressId}" };
+                break;
+        }
+        _saved = true;
+    });
+
+    private Task DeleteAsync(PlaceLine? line) => line is null ? Task.CompletedTask : RunAsync(async () =>
+    {
+        switch (line.Item)
+        {
+            case ExclusionZone zone:
+                await Outreach.DeleteZoneAsync(Map.Scope, zone.Id);
+                break;
+            case ExclusionAddress address:
+                await Outreach.DeleteAddressAsync(Map.Scope, address.Id);
+                break;
+            case SkipLine skip:
+                await Outreach.ClearSkipAsync(Map.Scope, skip.Id);
+                break;
+        }
+        (_deleting, _open) = (false, null);
+        Map.LetGo(this);
+    });
+
+    private static string DeleteTitle(PlaceLine? line) => line?.Kind switch
+    {
+        PlaceKind.Zone => "Delete this area?",
+        PlaceKind.Address => "Delete this address?",
+        PlaceKind.Hostile => "Clear this mark?",
+        _ => "Clear No junk mail?",
+    };
+
+    private static string DeleteAction(PlaceLine? line) => line?.Kind switch
+    {
+        PlaceKind.Zone => "Delete the area",
+        PlaceKind.Address => "Delete the address",
+        _ => "Clear it",
+    };
+
+    private async Task RunAsync(Func<Task> work)
+    {
+        _busy = true;
+        _problem = null;
+        try
+        {
+            await work();
+            if (_live is not null)
+                await _live.ReloadAsync();
+        }
+        catch (RpcException exception)
+        {
+            _problem = exception.Status.Detail;
+            _deleting = false;
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+}

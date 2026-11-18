@@ -1,0 +1,186 @@
+@using GSBC.ChurchApp.Features.Outreach.Client.Planning
+@using GSBC.ChurchApp.Platform.Icons
+@using GSBC.ChurchApp.Features.Outreach.Routing
+
+@if (Planner.Sections.Count == 0)
+{
+    <PaneHead Title="Plan the routes" Lead="Click round a route's streets and it's one route, just as you drew it. Or draw a bigger area and the app splits it into even routes. Streets this campaign did recently are left out." />
+    @if (CanPlan)
+    {
+        <div class="plan-pane__start">
+            <Button Icon="@AppIcons.DrawRoute" OnClick="OnDrawRoute">Draw a route</Button>
+            <Button Variant="ButtonVariant.Quiet" Icon="@AppIcons.DrawArea" OnClick="OnDrawArea">Draw an area to split</Button>
+            @if (Areas.Count > 0)
+            {
+                <div class="plan-pane__area">
+                    <SelectField Label="Or split a saved area" Options="AreaOptions" @bind-Value="_area" />
+                    <Button Variant="ButtonVariant.Quiet" Disabled="@(_area.Length == 0)" OnClick="UseAreaAsync">Use it</Button>
+                </div>
+            }
+        </div>
+        <RouteSize Target="Planner.Target" PerRoute="Planner.PerRoute" OnChange="OnSize" BundleSize="Planner.Open.Settings.BundleSize" />
+    }
+    else
+    {
+        <p class="field__hint">Only the outreach leaders plan the routes.</p>
+    }
+}
+else
+{
+    <p class="plan-pane__from">@From@if (Planner.NeedingReview > 0) { <text> · </text><Button Variant="ButtonVariant.Link" OnClick="OnNextReview">@(Planner.NeedingReview == 1 ? "1 needs a look" : $"{Planner.NeedingReview} need a look")</Button> }</p>
+    @if (Planner.RestedLetterboxes > 0)
+    {
+        <ToggleRow Title="Include streets done recently" Checked="Planner.RestedToo" CheckedChanged="OnIncludeRested" Disabled="!CanPlan"
+                   Description="@($"{OutreachWords.Plural(Planner.RestedLetterboxes, "letterbox", "letterboxes")} in the area had this campaign within the rest period. They're grey on the map and left out unless you include them.")" />
+    }
+    @if (Filters is { Count: > 2 } filters)
+    {
+        <FilterChips TValue="string" Label="Show" ShowLabel="false" Options="filters" Value="@Filter" ValueChanged="value => _filter = value" />
+    }
+    <DataTable TItem="PlannedSection" Label="The routes" Items="Shown" Columns="Columns" Key="section => section.Id.ToString()"
+               Selected="Chosen" SelectedChanged="section => OnSelect.InvokeAsync(section.Id)" Class="plan-pane__routes" />
+    @if (CanPlan)
+    {
+        @if (NamingArea is { } naming && Planner.Draft.Area(naming) is { } area)
+        {
+            <div class="plan-pane__area">
+                <TextField Label="@($"Name {AreaName(area)} to use it again")" @bind-Value="_areaName" MaxLength="80" Placeholder="Albany Creek north" />
+                <Button Variant="ButtonVariant.Quiet" Disabled="@(_areaName.Trim().Length == 0)" OnClick="() => SaveAreaAsync(area)">Save it</Button>
+                <Button Variant="ButtonVariant.Quiet" OnClick="() => OnNameArea.InvokeAsync(null)">Cancel</Button>
+            </div>
+        }
+        <div class="plan-pane__more">
+            @if (Planner.HasSplitArea)
+            {
+                <Button Variant="ButtonVariant.Link" OnClick="() => _sizing = !_sizing">@(_sizing ? "Done" : "Change how big routes are")</Button>
+            }
+            @if (Areas.Count > 0)
+            {
+                <Button Variant="ButtonVariant.Link" OnClick="() => _adding = !_adding">@(_adding ? "Not now" : "Split a saved area too")</Button>
+            }
+        </div>
+        @if (_sizing)
+        {
+            <RouteSize Target="Planner.Target" PerRoute="Planner.PerRoute" OnChange="SizeAsync" Apply="true" BundleSize="Planner.Open.Settings.BundleSize" />
+        }
+        @if (_adding)
+        {
+            <div class="plan-pane__area">
+                <SelectField Label="A saved area" Options="AreaOptions" @bind-Value="_area" />
+                <Button Variant="ButtonVariant.Quiet" Disabled="@(_area.Length == 0)" OnClick="UseAreaAsync">Use it</Button>
+            </div>
+        }
+    }
+}
+
+@code {
+    [Parameter, EditorRequired] public required DayPlanner Planner { get; set; }
+    [Parameter, EditorRequired] public required IReadOnlyList<SavedArea> Areas { get; set; }
+    [Parameter, EditorRequired] public required Func<DraftArea, string> AreaName { get; set; }
+    [Parameter] public int? NamingArea { get; set; }
+    [Parameter] public bool CanPlan { get; set; }
+    [Parameter] public int? Selected { get; set; }
+    [Parameter] public bool Busy { get; set; }
+    [Parameter] public EventCallback<int?> OnSelect { get; set; }
+    [Parameter] public EventCallback OnDrawRoute { get; set; }
+    [Parameter] public EventCallback OnDrawArea { get; set; }
+    [Parameter] public EventCallback<SavedArea> OnUseArea { get; set; }
+    [Parameter] public EventCallback<(PlanTarget Target, double PerRoute)> OnSize { get; set; }
+    [Parameter] public EventCallback<bool> OnIncludeRested { get; set; }
+    [Parameter] public EventCallback<(int Area, string Name)> OnSaveArea { get; set; }
+    [Parameter] public EventCallback<int?> OnNameArea { get; set; }
+    [Parameter] public EventCallback OnNextReview { get; set; }
+
+    private const string Everything = "all";
+    private const string ByHand = "hand";
+
+    private string _area = "", _areaName = "", _filter = Everything;
+    private bool _sizing, _adding;
+
+    private IReadOnlyList<FieldOption> AreaOptions => [new("", "Choose an area"), .. Areas.Select(area => new FieldOption(area.Id, area.Name))];
+
+    private PlannedSection? Chosen => Selected is { } id ? Planner.Section(id) : null;
+
+    private string Filter => Filters.Any(option => option.Value == _filter) ? _filter : Everything;
+
+    private IReadOnlyList<FilterOption<string>> Filters
+    {
+        get
+        {
+            List<FilterOption<string>> options =
+            [
+                new(Everything, "All", Planner.Sections.Count),
+                .. Planner.Areas.Where(area => !area.OneRoute && Planner.RoutesIn(area) > 0)
+                    .Select(area => new FilterOption<string>(area.Id.ToString(), AreaName(area), Planner.RoutesIn(area))),
+            ];
+            int byHand = Planner.Sections.Count(Planner.MadeByHand);
+            if (byHand > 0)
+                options.Add(new FilterOption<string>(ByHand, "Drawn by hand", byHand, AppIcons.DrawRoute));
+            return options;
+        }
+    }
+
+    private IReadOnlyList<PlannedSection> Shown => Filter switch
+    {
+        Everything => Planner.Sections,
+        ByHand => [.. Planner.Sections.Where(Planner.MadeByHand)],
+        var area => [.. Planner.Sections.Where(section => section.Area.ToString() == area)],
+    };
+
+    private string From
+    {
+        get
+        {
+            int split = Planner.Areas.Count(area => !area.OneRoute), byHand = Planner.Sections.Count(Planner.MadeByHand);
+            List<string> parts = [];
+            if (split == 1 && byHand == 0 && Planner.Areas[0] is { SavedId.Length: > 0 } saved)
+                parts.Add($"From the saved area {AreaName(saved)}");
+            else if (split > 0)
+                parts.Add($"From {(split == 1 ? "the area you drew" : $"{split} areas")}{(byHand > 0 ? $" and {OutreachWords.Plural(byHand, "route", "routes")} drawn by hand" : "")}");
+            else if (Planner.Areas.Count > 0)
+                parts.Add(byHand == 1 ? "1 route drawn by hand" : $"{byHand} routes drawn by hand");
+            else
+                parts.Add("The published routes");
+            if (split > 0)
+                parts.Add(byHand > 0 ? $"the app's routes about {RouteSize.Words(Planner.Target, Planner.PerRoute)} each" : $"about {RouteSize.Words(Planner.Target, Planner.PerRoute)} a route");
+            if (Planner.NeedingReview == 0)
+                parts.Add("all look fine");
+            return string.Join(" · ", parts);
+        }
+    }
+
+    private IReadOnlyList<TableColumn<PlannedSection>> Columns =>
+    [
+        new("Route", section => @<span class="plan-pane__route">
+            <span class="plan-dot" style="--route: @RouteColours.Of(section.Colour)"></span>
+            <span class="outreach-desk__cell">
+                <span class="outreach-desk__name"><span class="plan-pane__number">@section.Number ·</span> @section.Name</span>
+                <span class="outreach-desk__sub plan-pane__figures">@OutreachWords.Plural(section.Letterboxes, "letterbox", "letterboxes") · @OutreachWords.Minutes(section.Minutes)</span>
+                @if (Planner.MadeByHand(section)) { <span class="outreach-desk__sub plan-pane__locked"><Icon Name="@AppIcons.DrawRoute" Size="IconSize.Small" />Drawn by hand</span> }
+                @if (section.Locked) { <span class="outreach-desk__sub plan-pane__locked"><Icon Name="@AppIcons.Lock" Size="IconSize.Small" />Locked</span> }
+                @if (section.Review is { } review) { <span class="plan-pane__review"><Pill Tone="PillTone.Marker">Needs review</Pill> @review</span> }
+            </span>
+        </span>, section => section.Number),
+        new("Letterboxes", section => @<span>@OutreachWords.Count(section.Letterboxes)</span>, section => section.Letterboxes, "num"),
+        new("Time", section => @<span>@OutreachWords.Minutes(section.Minutes)</span>, section => section.Minutes, "num plan-pane__time"),
+    ];
+
+    private Task UseAreaAsync()
+    {
+        _adding = false;
+        return Areas.FirstOrDefault(saved => saved.Id == _area) is { } chosen ? OnUseArea.InvokeAsync(chosen) : Task.CompletedTask;
+    }
+
+    private async Task SizeAsync((PlanTarget Target, double PerRoute) size)
+    {
+        _sizing = false;
+        await OnSize.InvokeAsync(size);
+    }
+
+    private async Task SaveAreaAsync(DraftArea area)
+    {
+        string name = _areaName.Trim();
+        _areaName = "";
+        await OnSaveArea.InvokeAsync((area.Id, name));
+    }
+}

@@ -1,5 +1,6 @@
 using GSBC.ChurchApp.Features.Prayer.Api.Data;
 using GSBC.ChurchApp.Features.Prayer.Contracts;
+using GSBC.ChurchApp.Platform.Common;
 
 namespace GSBC.ChurchApp.Features.Prayer.Api;
 
@@ -31,7 +32,7 @@ internal static class PrayerRules
 
     public static bool MayPrayMore(int prayedInTheLastDay) => prayedInTheLastDay < PrayersPerDay;
 
-    public static string ShortName(string name) => PrayerNames.Short(name);
+    public static string ShortName(string name) => PersonNames.Short(name);
 
     public static string WallName(RequestRecord request) => request.FromChurch ? request.Name : ShortName(request.Name);
 

@@ -11,6 +11,7 @@ using GSBC.ChurchApp.Features.Ministries.App;
 using GSBC.ChurchApp.Features.Notifications.App;
 using GSBC.ChurchApp.Features.People.App;
 using GSBC.ChurchApp.Features.News.App;
+using GSBC.ChurchApp.Features.Outreach.App;
 using GSBC.ChurchApp.Features.Prayer.App;
 using GSBC.ChurchApp.Features.ReleaseNotes.App;
 using GSBC.ChurchApp.Features.Rosters.App;
@@ -44,6 +45,7 @@ builder.Services
     .AddMinistriesApp(modules)
     .AddNewsApp(modules)
     .AddPrayerApp(modules)
+    .AddOutreachApp(modules)
     .AddRostersApp(modules)
     .AddChatsApp(modules)
     .AddConfigurationApp(modules)

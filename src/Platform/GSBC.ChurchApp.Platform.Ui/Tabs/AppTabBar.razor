@@ -14,6 +14,7 @@
 
 @code {
     private IReadOnlyList<AppTab> _tabs = TabBar.Starting;
+    private IDisposable? _moving;
 
     private string Path => Navigation.ToBaseRelativePath(Navigation.Uri);
 
@@ -25,6 +26,7 @@
     protected override async Task OnInitializedAsync()
     {
         Tabs.Changed += OnTabsChanged;
+        _moving = Navigation.RegisterLocationChangingHandler(Moving);
         Navigation.LocationChanged += OnLocationChanged;
         foreach (ILiveTabIcon icon in LiveIcons)
             icon.Changed += OnIconChanged;
@@ -47,6 +49,12 @@
     private string IconOf(AppTab tab) =>
         LiveIcons.FirstOrDefault(icon => string.Equals(icon.Route.Trim('/'), tab.Route.Trim('/'), StringComparison.OrdinalIgnoreCase))?.Icon ?? tab.Icon;
 
+    private ValueTask Moving(LocationChangingContext context)
+    {
+        Tabs.Moved(Path, Navigation.ToBaseRelativePath(Navigation.ToAbsoluteUri(context.TargetLocation).ToString()));
+        return ValueTask.CompletedTask;
+    }
+
     private void OnLocationChanged(object? sender, LocationChangedEventArgs args) => InvokeAsync(StateHasChanged);
 
     private void OnIconChanged() => InvokeAsync(StateHasChanged);
@@ -55,6 +63,7 @@
     {
         Tabs.Changed -= OnTabsChanged;
         Navigation.LocationChanged -= OnLocationChanged;
+        _moving?.Dispose();
         foreach (ILiveTabIcon icon in LiveIcons)
             icon.Changed -= OnIconChanged;
     }

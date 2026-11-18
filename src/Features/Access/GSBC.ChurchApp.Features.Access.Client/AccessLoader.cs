@@ -4,7 +4,6 @@ using GSBC.ChurchApp.Platform.Client.Access;
 using GSBC.ChurchApp.Platform.Client.Feeds;
 using GSBC.ChurchApp.Platform.Client.Modules;
 using GSBC.ChurchApp.Platform.Client.Sessions;
-using GSBC.ChurchApp.Platform.Permissions;
 using GSBC.ChurchApp.Platform.Client.Online;
 
 namespace GSBC.ChurchApp.Features.Access.Client;
@@ -30,9 +29,9 @@ internal sealed class AccessLoader(AccessClient access, GrantedAccess granted, S
         {
             granted.Replace(GrantLists.ToGrantSet(await access.GetMineAsync()), signedIn: true);
         }
-        catch (RpcException)
+        catch (RpcException exception)
         {
-            granted.Replace(GrantSet.Empty, signedIn: false);
+            granted.CouldNotLoad(exception.StatusCode);
         }
     }
 }

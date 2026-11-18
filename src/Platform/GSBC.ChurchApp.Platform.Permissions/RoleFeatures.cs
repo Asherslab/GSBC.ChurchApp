@@ -10,8 +10,9 @@ public static class RoleFeatures
     public const string People = "People";
     public const string Ministries = "Ministries";
     public const string Prayer = "Prayer";
+    public const string Outreach = "Outreach";
     public const string InsightsAndHealth = "Insights and health";
     public const string Everything = "Everything";
 
-    public static readonly IReadOnlyList<string> InOrder = [Sermons, Calendar, News, App, Media, People, Ministries, Prayer, InsightsAndHealth, Everything];
+    public static readonly IReadOnlyList<string> InOrder = [Sermons, Calendar, News, App, Media, People, Ministries, Prayer, Outreach, InsightsAndHealth, Everything];
 }

@@ -1,0 +1,232 @@
+@using GSBC.ChurchApp.Features.Outreach.Admin.Map
+@using GSBC.ChurchApp.Platform.Icons
+@using GSBC.ChurchApp.Platform.Ui.Maps
+@using MapAreaShape = GSBC.ChurchApp.Platform.Ui.Maps.MapArea
+@inherits OutreachMapLayer
+@inject OutreachDeskClient Outreach
+@inject UnsavedChanges Unsaved
+
+<UnsavedGuard Changed="() => Changed" What="this area" Save="SaveBeforeLeavingAsync" />
+
+<LiveData @ref="_live" TValue="OutreachDesk" Feeds="Feeds" Load="LoadAsync" Remember="@($"outreach.map.areas.{Map.Scope}")" FailedTitle="Can't load the saved areas right now">
+    <ChildContent>
+        @{ OutreachDesk desk = context.Value; }
+        @if (IsOpen)
+        {
+            <StableSection SectionName="@OutreachMap.DrawerSection">
+                <PaneHead Title="Saved areas" Lead="Parts of the suburbs by the names everyone uses. A day's routes can start from one." />
+                @if (desk.Areas.Count > 0)
+                {
+                    <div class="outreach-map__list" role="list" aria-label="Saved areas">
+                        @foreach (SavedArea area in desk.Areas)
+                        {
+                            <ListRow Title="@area.Name" Subtitle="@(area.Note.Length > 0 ? area.Note : null)" Current="@(_editing?.Id == area.Id)" OnClick="() => OpenAsync(area, fly: true)" />
+                        }
+                    </div>
+                }
+                else
+                {
+                    <EmptyState Icon="@AppIcons.SavedAreas" Title="No saved areas yet"
+                                Body="Save the parts of the suburb the church covers, by the names everyone uses, and start an outreach day's routes from one." />
+                }
+            </StableSection>
+            <StableSection SectionName="@OutreachMap.FootSection">
+                <Button Variant="ButtonVariant.Quiet" Icon="@AppIcons.DrawArea" Block="true" OnClick="NewAsync">Draw a new area</Button>
+            </StableSection>
+        }
+        @if (HasCard && _editing is { } editing)
+        {
+            <StableSection SectionName="@OutreachMap.CardSection">
+                <MapCard Label="@(IsNew ? "A new area" : editing.Name)">
+                    <ChildContent>
+                        <PaneHead Title="@(IsNew ? "A new area" : editing.Name)" Lead="Planners can start a day's routes from it. Changing it doesn't change days already planned."
+                                  Actions="@(IsNew ? null : [this.Item("Draw it again", DrawAgainAsync, AppIcons.DrawArea), this.Item("Delete this area…", () => _deleting = true, "trash-2", "Days planned from it keep their routes", danger: true, startsGroup: true, disabled: _busy)])"
+                                  OnClose="CloseAsync" />
+                        <div class="outreach-map__stack">
+                            <TextField Label="Name" @bind-Value="_name" MaxLength="80" Placeholder="Albany Creek north" Hint="The name everyone uses for this part of the suburb." />
+                            <TextField Label="Note" @bind-Value="_note" Multiline="true" MaxLength="1000" Hint="For planners, such as where to park or what to watch out for." />
+                        </div>
+                    </ChildContent>
+                    <Foot>
+                        <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+                        <SaveBar New="IsNew" Label="@(IsNew ? "Save the area" : "Save")" Busy="_busy" OnSave="SaveAsync" OnCancel="CloseAsync"
+                                 State="SaveBar.For(Changed, _saved)" Blocked="@WhyNotSave" />
+                    </Foot>
+                </MapCard>
+            </StableSection>
+        }
+        <Sheet Open="_deleting" OpenChanged="open => _deleting = open" Title="@($"Delete {_editing?.Name}?")">
+            <ChildContent>
+                <p class="sheet__lead">Planners can't start from it any more. Days planned from it keep their routes. This can't be undone.</p>
+                <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+            </ChildContent>
+            <Actions>
+                <Button Block="true" Variant="ButtonVariant.Danger" Busy="_busy" OnClick="DeleteAsync">Delete the area</Button>
+                <Button Block="true" Variant="ButtonVariant.Quiet" OnClick="() => _deleting = false">Keep it</Button>
+            </Actions>
+        </Sheet>
+    </ChildContent>
+    <Loading>
+        @if (IsOpen)
+        {
+            <StableSection SectionName="@OutreachMap.DrawerSection">
+                <PaneHead Title="Saved areas" Lead="Parts of the suburbs by the names everyone uses." />
+                <Skeleton />
+            </StableSection>
+        }
+    </Loading>
+</LiveData>
+
+@code {
+    private static readonly IReadOnlyList<string> Feeds = [OutreachFeeds.Desk];
+
+    private LiveData<OutreachDesk>? _live;
+    private OutreachDesk? _desk;
+    private SavedArea? _editing;
+    private string _name = "", _note = "";
+    private IReadOnlyList<GeoPoint> _points = [];
+    private bool _busy, _saved, _deleting;
+    private string? _problem;
+
+    public override OutreachMapJob Job => OutreachMapJob.SavedAreas;
+
+    public override IReadOnlyList<LayerCount> Shows => [new(OutreachLayer.SavedAreas, _desk?.Areas.Count ?? 0)];
+
+    public override IReadOnlyList<MapAreaShape> Areas
+    {
+        get
+        {
+            List<MapAreaShape> areas = Map.Shows(OutreachLayer.SavedAreas) && _desk is { } desk
+                ? [.. desk.Areas.Where(area => area.Area.Count >= 3 && area.Id != _editing?.Id).Select(area => new MapAreaShape(Points(area.Area), "--accent", area.Id, Dashed: true))]
+                : [];
+            if (HasCard && _points.Count >= 3)
+                areas.Add(new MapAreaShape(Points(_points), "--accent", "chosen-area"));
+            return areas;
+        }
+    }
+
+    private bool IsNew => _editing is { Id.Length: 0 };
+
+    private bool Changed => _editing is { } editing && (IsNew || _name != editing.Name || _note != editing.Note || !SameShape(_points, editing.Area));
+
+    private string? WhyNotSave => _name.Trim().Length == 0 ? "Enter a name for the saved area." : _points.Count < 3 ? "Draw it on the map to save it." : null;
+
+    private async Task<OutreachDesk> LoadAsync()
+    {
+        OutreachDesk desk = await Outreach.DeskAsync(Map.Scope);
+        _desk = desk;
+        Map.Redraw();
+        return desk;
+    }
+
+    public override Task<bool> TapAsync(MapPoint point, double reachMetres)
+    {
+        if (!Map.Shows(OutreachLayer.SavedAreas) || _desk is not { } desk)
+            return Task.FromResult(false);
+        SavedArea? hit = desk.Areas.FirstOrDefault(area => area.Area.Count >= 3 && OutreachRules.Contains(area.Area, new GeoPoint { Lat = point.Lat, Lng = point.Lon }));
+        return hit is null ? Task.FromResult(false) : OpenAsync(hit, fly: false);
+    }
+
+    public override void LetGo()
+    {
+        (_editing, _deleting, _saved, _problem) = (null, false, false, null);
+        Map.Redraw();
+    }
+
+    private async Task<bool> OpenAsync(SavedArea area, bool fly)
+    {
+        if (_editing?.Id != area.Id && !await Unsaved.MayLeaveAsync())
+            return false;
+        Edit(area);
+        Map.Choose(this);
+        if (fly && area.Area.Count >= 3)
+            Map.FlyBesideCard(Points(area.Area));
+        Map.Redraw();
+        return true;
+    }
+
+    private async Task NewAsync()
+    {
+        if (!await OpenAsync(new SavedArea(), fly: false))
+            return;
+        Draw();
+    }
+
+    private Task DrawAgainAsync()
+    {
+        Draw();
+        return Task.CompletedTask;
+    }
+
+    private void Draw() =>
+        Map.Draw(new OutreachMapDrawing(MapSketchTool.Polygon, "Saved area: click each corner", points =>
+        {
+            if (points.Count >= 3)
+                _points = [.. points.Select(point => new GeoPoint { Lat = point.Lat, Lng = point.Lon })];
+            return Task.CompletedTask;
+        }));
+
+    private async Task CloseAsync()
+    {
+        if (!await Unsaved.MayLeaveAsync())
+            return;
+        LetGo();
+        Map.StopDrawing();
+        Map.LetGo(this);
+    }
+
+    private void Edit(SavedArea area)
+    {
+        (_editing, _deleting, _saved, _problem) = (area, false, false, null);
+        (_name, _note, _points) = (area.Name, area.Note, area.Area);
+    }
+
+    private static IReadOnlyList<MapPoint> Points(IEnumerable<GeoPoint> points) => [.. points.Select(point => new MapPoint(point.Lat, point.Lng))];
+
+    private static bool SameShape(IReadOnlyList<GeoPoint> a, IReadOnlyList<GeoPoint> b) =>
+        a.Select(point => (point.Lat, point.Lng)).SequenceEqual(b.Select(point => (point.Lat, point.Lng)));
+
+    private async Task<bool> SaveBeforeLeavingAsync()
+    {
+        if (WhyNotSave is not null)
+            return false;
+        await SaveAsync();
+        return _problem is null;
+    }
+
+    private Task SaveAsync() => RunAsync(async () =>
+    {
+        SavedArea saved = new() { Id = IsNew ? Guid.CreateVersion7().ToString() : _editing!.Id, Name = _name.Trim(), Note = _note.Trim(), Area = [.. _points] };
+        await Outreach.SaveAreaAsync(Map.Scope, saved);
+        Edit(saved);
+        _saved = true;
+    });
+
+    private Task DeleteAsync() => RunAsync(async () =>
+    {
+        await Outreach.DeleteAreaAsync(Map.Scope, _editing!.Id);
+        LetGo();
+        Map.LetGo(this);
+    });
+
+    private async Task RunAsync(Func<Task> work)
+    {
+        _busy = true;
+        _problem = null;
+        try
+        {
+            await work();
+            if (_live is not null)
+                await _live.ReloadAsync();
+        }
+        catch (RpcException exception)
+        {
+            _problem = exception.Status.Detail;
+        }
+        finally
+        {
+            _busy = false;
+            Map.Redraw();
+        }
+    }
+}

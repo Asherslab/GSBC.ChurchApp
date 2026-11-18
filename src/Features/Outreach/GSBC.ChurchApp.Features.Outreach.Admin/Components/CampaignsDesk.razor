@@ -1,0 +1,403 @@
+@inject OutreachDeskClient Outreach
+@inject UnsavedChanges Unsaved
+@inject IAccess Access
+@inject TimeProvider Time
+
+<UnsavedGuard Changed="() => Changed" What="this campaign" Save="SaveBeforeLeavingAsync" />
+
+<LiveData @ref="_live" TValue="OutreachDesk" Feeds="Feeds" Load="() => Outreach.DeskAsync(Scope)" Remember="@($"outreach.campaigns.{Scope}")" FailedTitle="Can't load the campaigns right now">
+    <StableSection SectionName="@OutreachHead.ActionsSection">
+        @if (MayPlan)
+        {
+            <Button Icon="plus" OnClick="() => OpenAsync(() => Edit(NewCampaign(context.Value)))">New campaign</Button>
+        }
+    </StableSection>
+    @{
+        OutreachDesk desk = context.Value;
+        _settings = desk.Settings;
+        OpenAsked(desk);
+        DateOnly today = ChurchTime.DayOf(Now);
+        Campaign? general = desk.Campaigns.FirstOrDefault(campaign => campaign.General);
+        List<Campaign> staged = [.. desk.Campaigns.Where(campaign => !campaign.General), .. IsNew ? [_editing!] : Array.Empty<Campaign>()];
+        List<int> years = [.. staged.Where(campaign => StageOf(campaign, today) == CampaignStage.Finished).Select(CampaignFacts.YearOf).Distinct().OrderDescending()];
+        int year = years.Contains(_year) ? _year : years.FirstOrDefault(today.Year);
+    }
+    @if (general is not null)
+    {
+        @if (_editing is { General: true } editingGeneral)
+        {
+            <section class="campaign-always campaign-always--open" aria-label="Always on">@Record(desk, editingGeneral, today)</section>
+        }
+        else
+        {
+            <section class="campaign-always" aria-label="Always on">
+                <span class="campaign-always__label">Always on</span>
+                <span class="campaign-always__name"><a href="@Link(general)" @onclick="() => OpenAsync(() => Edit(general))" @onclick:preventDefault="true">@general.Name</a>
+                    <span>@CampaignFacts.Handed(general, desk.Settings)</span></span>
+                <span><b>@OutreachWords.Count(TotalsOf(desk, general).LetterboxesThisMonth)</b> letterboxes this month</span>
+                @if (CampaignFacts.Next(desk, general, Now) is { } generalDay)
+                {
+                    <span>Next day <b>@CampaignFacts.NextWords(generalDay, CampaignStage.Ongoing)</b></span>
+                }
+                else
+                {
+                    <span class="campaign-always__none">No outreach day planned</span>
+                }
+                <Button Small="true" Variant="ButtonVariant.Quiet" Class="campaign-always__open" OnClick="() => OpenAsync(() => Edit(general))">Open</Button>
+            </section>
+        }
+    }
+    <Board TItem="Campaign" TColumn="CampaignStage" Label="Campaigns, by where they are" Items="staged.Where(campaign => Shown(campaign, today, year)).ToList()"
+           ColumnOf="campaign => StageOf(campaign, today)" Columns="Columns(staged, today, year)" OnMove="Moves"
+           OnAdd="_ => OpenAsync(() => Edit(NewCampaign(desk)))" AddLabel="New campaign" Class="campaign-board">
+        <ColumnExtra Context="stage">
+            @if (stage == CampaignStage.Finished && years.Count > 1)
+            {
+                <Segmented TValue="int" Label="Which year" Options="@years.Select(each => new SegmentOption<int>(each, each.ToString(System.Globalization.CultureInfo.InvariantCulture))).ToList()" Value="year" ValueChanged="each => _year = each" />
+            }
+        </ColumnExtra>
+        <Card Context="campaign">
+            @if (IsOpen(campaign))
+            {
+                <article class="campaign-card campaign-card--open" aria-label="@(IsNew ? "A new campaign" : campaign.Name)">@Record(desk, _editing!, today)</article>
+            }
+            else if (StageOf(campaign, today) == CampaignStage.Finished)
+            {
+                @FinishedLine(desk, campaign)
+            }
+            else
+            {
+                @CampaignCard(desk, campaign, today)
+            }
+        </Card>
+    </Board>
+    <Notice Tone="NoticeTone.Warning" Text="@(_editing is null ? _problem : null)" />
+    <Sheet Open="_deletion is not null" OpenChanged="open => { if (!open) StopDeleting(); }" Title="@($"Delete {_deleting?.Name}?")">
+        <ChildContent>
+            @if (_deletion is { } deletion)
+            {
+                <p class="sheet__lead">@(deletion.WhyNot.Length > 0 ? deletion.WhyNot : DeletionWords(deletion))</p>
+            }
+            <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+        </ChildContent>
+        <Actions>
+            @if (_deletion is { WhyNot.Length: 0 })
+            {
+                <Button Block="true" Variant="ButtonVariant.Danger" Busy="_busy" OnClick="DeleteAsync">Delete the campaign</Button>
+            }
+            <Button Block="true" Variant="ButtonVariant.Quiet" OnClick="StopDeleting">Keep it</Button>
+        </Actions>
+    </Sheet>
+</LiveData>
+
+@code {
+    private static readonly IReadOnlyList<string> Feeds = [OutreachFeeds.Desk, OutreachFeeds.Campaigns];
+
+    [Parameter, EditorRequired] public required string Scope { get; set; }
+    [SupplyParameterFromQuery(Name = "campaign")] public string? Asked { get; set; }
+
+    private LiveData<OutreachDesk>? _live;
+    private Campaign? _editing;
+    private Campaign? _deleting;
+    private CampaignForm _form = new();
+    private OutreachSettings _settings = OutreachDefaults.Settings();
+    private bool _busy, _saved, _askedOpened;
+    private int _year;
+    private CampaignDeletion? _deletion;
+    private string? _problem;
+
+    private DateTime Now => Time.GetUtcNow().UtcDateTime;
+
+    private bool MayPlan => Access.Can(OutreachPermissions.Plan, Scope.Length == 0 ? null : Scope);
+
+    private bool IsNew => _editing is { Id.Length: 0 };
+
+    private EventCallback<BoardMove<Campaign, CampaignStage>> Moves =>
+        MayPlan ? EventCallback.Factory.Create<BoardMove<Campaign, CampaignStage>>(this, MoveAsync) : default;
+
+    private bool Changed => _editing is { } editing && !_form.Same(CampaignForm.Of(editing, _settings));
+
+    private bool IsOpen(Campaign campaign) => _editing is { } editing && (IsNew ? ReferenceEquals(campaign, editing) : campaign.Id == editing.Id);
+
+    private static CampaignStage StageOf(Campaign campaign, DateOnly today) =>
+        campaign.Id.Length == 0 ? CampaignStage.Preparing : CampaignStages.Now(campaign, today);
+
+    private bool Shown(Campaign campaign, DateOnly today, int year) =>
+        StageOf(campaign, today) != CampaignStage.Finished || CampaignFacts.YearOf(campaign) == year || IsOpen(campaign);
+
+    private IReadOnlyList<BoardColumn<CampaignStage>> Columns(List<Campaign> staged, DateOnly today, int year) =>
+        CampaignStages.InOrder.Select(stage => new BoardColumn<CampaignStage>(stage,
+            stage == CampaignStage.Finished ? $"Finished in {year}" : CampaignFacts.StageName(stage), EmptyWords(stage),
+            Narrow: stage == CampaignStage.Finished && !OpenIn(staged, stage, today),
+            Folds: stage == CampaignStage.Finished && _editing is not null && !OpenIn(staged, stage, today),
+            Addable: stage == CampaignStage.Preparing && MayPlan && !IsNew,
+            Wide: OpenIn(staged, stage, today))).ToList();
+
+    private bool OpenIn(List<Campaign> staged, CampaignStage stage, DateOnly today) => staged.Any(campaign => IsOpen(campaign) && StageOf(campaign, today) == stage);
+
+    private static string EmptyWords(CampaignStage stage) => stage switch
+    {
+        CampaignStage.Preparing => "Nothing being prepared. A new campaign starts here.",
+        CampaignStage.Ongoing => "No campaign on now. Walks carry General outreach.",
+        CampaignStage.WrappingUp => "Campaigns move here a few days before they end, and the church is told.",
+        _ => "Campaigns fold in here once they end, kept for looking back.",
+    };
+
+    private static string Link(Campaign campaign) => $"outreach?campaign={campaign.Id}";
+
+    private static CampaignTotals TotalsOf(OutreachDesk desk, Campaign campaign) =>
+        desk.Totals.FirstOrDefault(totals => totals.Campaign == campaign.Id) ?? new CampaignTotals();
+
+    private RenderFragment CampaignCard(OutreachDesk desk, Campaign campaign, DateOnly today) => __builder =>
+    {
+        CampaignStage stage = StageOf(campaign, today);
+        CampaignTotals totals = TotalsOf(desk, campaign);
+        NextDay? next = CampaignFacts.Next(desk, campaign, Now);
+        CampaignSpan? span = CampaignFacts.Span(campaign, today);
+        <article @key="campaign.Id" class="campaign-card" aria-label="@campaign.Name">
+            <div class="campaign-card__head">
+                <a class="campaign-card__title" href="@Link(campaign)" @onclick="() => OpenAsync(() => Edit(campaign))" @onclick:preventDefault="true">@campaign.Name</a>
+                @if (MayPlan)
+                {
+                    <Menu Label="@($"More for {campaign.Name}")" Items="CardActions(campaign, stage)" Small="true" />
+                }
+            </div>
+            <span>@CampaignFacts.Handed(campaign, desk.Settings)</span>
+            <span class="campaign-card__when">@CampaignFacts.When(campaign, stage, today)</span>
+            @if (span is not null)
+            {
+                <SpanLine From="@span.From" To="@span.To" Done="span.Done" Closing="span.Closing"
+                          Description="@($"{Math.Round(span.Done * 100)}% of the way from {span.From} to {span.To}; the last {CampaignStages.WrapUpDaysOf(campaign)} days are wrapping up")" />
+            }
+            @if (stage == CampaignStage.Preparing)
+            {
+                <span class="@(CampaignFacts.HasArea(campaign) ? "" : "campaign-card__area--none")">@CampaignFacts.AreaWords(campaign)</span>
+            }
+            @if (CampaignFacts.Told(campaign) is { Length: > 0 } told)
+            {
+                <span class="campaign-card__told"><Icon Name="bell" Size="IconSize.Small" />@told</span>
+            }
+            @if (totals.Letterboxes > 0 || campaign.BundlesMade > 0)
+            {
+                <span class="campaign-card__figures">
+                    <span><b>@OutreachWords.Count(totals.Letterboxes)</b> letterboxes</span>
+                    @if (totals.LetterboxesThisWeek > 0)
+                    {
+                        <span><b>@OutreachWords.Count(totals.LetterboxesThisWeek)</b> this week</span>
+                    }
+                </span>
+                @if (CampaignFacts.BundlesOut(campaign, totals, desk.Settings) is { } bundles)
+                {
+                    <span>@bundles</span>
+                }
+            }
+            <span class="campaign-card__day @(next is null ? "campaign-card__day--none" : "")"><Icon Name="calendar" Size="IconSize.Small" />@CampaignFacts.NextWords(next, stage)</span>
+        </article>
+    };
+
+    private RenderFragment FinishedLine(OutreachDesk desk, Campaign campaign) => __builder =>
+    {
+        <article @key="campaign.Id" class="campaign-line" aria-label="@campaign.Name">
+            <a class="campaign-line__name" href="@Link(campaign)" @onclick="() => OpenAsync(() => Edit(campaign))" @onclick:preventDefault="true">@campaign.Name</a>
+            <span class="campaign-line__when">@OutreachWords.When(campaign)</span>
+            <span>@OutreachWords.Plural(TotalsOf(desk, campaign).Letterboxes, "letterbox", "letterboxes")</span>
+        </article>
+    };
+
+    private RenderFragment Record(OutreachDesk desk, Campaign editing, DateOnly today) => __builder =>
+    {
+        CampaignStage stage = StageOf(editing, today);
+        bool finished = stage == CampaignStage.Finished && !IsNew;
+        bool readOnly = !MayPlan;
+        <div class="campaign-record">
+            <PaneHead Title="@(IsNew ? "A new campaign" : editing.Name)" Lead="@Lead(editing, stage, today)"
+                      Actions="@(IsNew || editing.General || readOnly ? null : [this.Item("Delete this campaign…", () => AskToDeleteAsync(editing), "trash-2", "Says first what goes with it", danger: true, disabled: _busy)])"
+                      OnClose="() => OpenAsync(Close)" />
+            @if (!IsNew && !editing.General)
+            {
+                <StagePipeline TValue="CampaignStage" Label="Where it is" Stages="StageOptions" Value="stage" ValueChanged="to => MoveToAsync(editing, to)"
+                               ReadOnly="readOnly" Disabled="_busy" />
+            }
+            @if (!IsNew)
+            {
+                CampaignTotals totals = TotalsOf(desk, editing);
+                <div class="outreach-desk__totals">
+                    <StatTile Value="@OutreachWords.Count(totals.Letterboxes)" Label="letterboxes" Quiet="true" />
+                    <StatTile Value="@OutreachWords.Kilometres(totals.Metres)" Label="walked" Quiet="true" />
+                    <StatTile Value="@OutreachWords.Count(totals.Days)" Label="@(totals.Days == 1 ? "outreach day" : "outreach days")" Quiet="true" />
+                </div>
+            }
+            @if (finished)
+            {
+                <p class="field__hint">It has finished, so its dates, bundle size and wrap-up stay as they were. Move it back to Ongoing to change them.</p>
+            }
+            <TextField Label="Name" @bind-Value="_form.Name" MaxLength="80" Disabled="readOnly" Hint="@(editing.General ? "General outreach is always there; its name can change." : null)" />
+            <div class="ui-pair">
+                <TextField Label="What's handed out" @bind-Value="_form.HandedOut" MaxLength="80" Disabled="readOnly" Hint="For example tracts, or invitations to carols." />
+                <TextField Label="Bundle size" Type="number" Unit="letterboxes" Min="1" Max="1000" @bind-Value="_form.BundleSize" Disabled="@(readOnly || finished)" Problem="@_form.BundleSizeProblem"
+                           Hint="@($"In a bundle of what's handed out; walkers are told how many bundles to take. Usually {desk.Settings.BundleSize}.")" />
+            </div>
+            @if (!editing.General)
+            {
+                <div class="ui-pair">
+                    <DateField Label="Starts" @bind-Value="_form.Starts" Shortcuts="false" Disabled="@(readOnly || finished)" />
+                    <DateField Label="Ends" @bind-Value="_form.Ends" Shortcuts="false" Min="@_form.Starts" Disabled="@(readOnly || finished)" />
+                </div>
+                <div class="ui-pair">
+                    <TextField Label="Wrap up before it ends" Type="number" Unit="days" Min="1" Max="60" @bind-Value="_form.WrapUpDays" Disabled="@(readOnly || finished)" Problem="@_form.WrapUpProblem"
+                               Hint="@(finished ? null : WrapUpHint())" />
+                    <TextField Label="Bundles made" Type="number" Unit="bundles" Min="0" @bind-Value="_form.BundlesMade" Disabled="readOnly" Problem="@_form.BundlesMadeProblem"
+                               Hint="@BundlesMadeHint(desk, editing)" />
+                </div>
+            }
+            <ToggleRow Title="Show a leaderboard" @bind-Checked="_form.Leaderboard" Disabled="readOnly"
+                       Description="Walkers counted by name see who's done the most. Anyone who has turned that off is counted without a name." />
+            @if (!readOnly)
+            {
+                <div class="editor-foot">
+                    <Notice Tone="NoticeTone.Warning" Text="@(_deletion is null ? _problem : null)" />
+                    <SaveBar New="IsNew" Label="@(IsNew ? "Add the campaign" : "Save")" Busy="_busy" OnSave="SaveAsync" OnCancel="() => OpenAsync(Close)"
+                             State="SaveBar.For(Changed, _saved)" Blocked="@_form.Blocked" />
+                </div>
+            }
+        </div>
+    };
+
+    private static readonly IReadOnlyList<SegmentOption<CampaignStage>> StageOptions =
+        [.. CampaignStages.InOrder.Select(stage => new SegmentOption<CampaignStage>(stage, CampaignFacts.StageName(stage)))];
+
+    private string WrapUpHint() =>
+        _form.WrapsUpOn() is { } wrap
+            ? $"On {wrap.ToString("ddd d MMM", System.Globalization.CultureInfo.InvariantCulture)} it moves to Wrapping up and the church is told it ends soon."
+            : "With an end date, it moves to Wrapping up this long before and the church is told it ends soon.";
+
+    private static string BundlesMadeHint(OutreachDesk desk, Campaign campaign) =>
+        CampaignFacts.BundlesOut(campaign, TotalsOf(desk, campaign), desk.Settings) is { } gone
+            ? $"How many were printed or packed. {gone}."
+            : "How many were printed or packed, to compare with how many go out.";
+
+    private static string Lead(Campaign campaign, CampaignStage stage, DateOnly today) =>
+        campaign.Id.Length == 0 ? "It starts in Preparing: walkers see it once it's on. It keeps its own record of streets done."
+        : campaign.General ? "Always there. Walkers carry it unless they choose another campaign."
+        : $"{CampaignFacts.ForWalkers(stage)} {CampaignFacts.NextDate(campaign, stage, today)}".Trim();
+
+    private IReadOnlyList<MenuItem> CardActions(Campaign campaign, CampaignStage stage) =>
+    [
+        .. CampaignStages.InOrder.Where(to => to != stage)
+            .Select(to => this.Item($"Move to {CampaignFacts.StageName(to)}", () => MoveToAsync(campaign, to), "arrow-right", to == CampaignStage.WrappingUp && campaign.ToldEndingOn.Length == 0 ? "Tells the church it ends soon" : null)),
+        this.Item("Delete this campaign…", () => AskToDeleteAsync(campaign), "trash-2", "Says first what goes with it", danger: true, startsGroup: true),
+    ];
+
+    private static string DeletionWords(CampaignDeletion deletion)
+    {
+        List<string> goes = [];
+        if (deletion.CoveredStretches > 0)
+            goes.Add("its record of streets done");
+        if (deletion.PastDays > 0)
+            goes.Add(OutreachWords.Plural(deletion.PastDays, "past outreach day", "past outreach days"));
+        string taken = goes.Count == 0 ? "Nothing else goes with it." : $"It takes {string.Join(" and ", goes)} with it.";
+        string walks = deletion.Walks > 0 ? $" {OutreachWords.Plural(deletion.Walks, "walk stays", "walks stay")} in the totals." : "";
+        return $"{taken}{walks} This can't be undone.";
+    }
+
+    private void OpenAsked(OutreachDesk desk)
+    {
+        if (_askedOpened || Asked is not { Length: > 0 } asked)
+            return;
+        _askedOpened = true;
+        if (desk.Campaigns.FirstOrDefault(campaign => campaign.Id == asked) is { } found)
+            Edit(found);
+    }
+
+    private Campaign NewCampaign(OutreachDesk desk) => new() { BundleSize = desk.Settings.BundleSize, WrapUpDays = CampaignStages.DefaultWrapUpDays };
+
+    private async Task OpenAsync(Action open)
+    {
+        if (await Unsaved.MayLeaveAsync())
+            open();
+    }
+
+    private void Edit(Campaign campaign)
+    {
+        Close();
+        _editing = campaign;
+        _form = CampaignForm.Of(campaign, _settings);
+    }
+
+    private void Close()
+    {
+        StopDeleting();
+        _editing = null;
+        _saved = false;
+        _problem = null;
+    }
+
+    private async Task<bool> SaveBeforeLeavingAsync()
+    {
+        if (_form.Blocked is not null)
+            return false;
+        await SaveAsync();
+        return _problem is null;
+    }
+
+    private Task SaveAsync() => RunAsync(async () =>
+    {
+        Campaign saved = _form.Into(_editing!, IsNew ? Guid.CreateVersion7().ToString() : _editing!.Id);
+        await Outreach.SaveCampaignAsync(Scope, saved);
+        Edit(saved);
+        _saved = true;
+    });
+
+    private Task MoveAsync(BoardMove<Campaign, CampaignStage> move) => move.Item.Id.Length == 0 ? Task.CompletedTask : MoveToAsync(move.Item, move.To);
+
+    private Task MoveToAsync(Campaign campaign, CampaignStage to) => RunAsync(async () =>
+    {
+        await Outreach.MoveCampaignAsync(Scope, campaign.Id, to);
+        if (_editing is { } editing && editing.Id == campaign.Id)
+        {
+            (_editing.Stage, _editing.StageSetOn) = (to, OutreachRules.Format(ChurchTime.DayOf(Now)));
+            _year = 0;
+        }
+    });
+
+    private Task AskToDeleteAsync(Campaign campaign) => RunAsync(async () =>
+    {
+        _deleting = campaign;
+        _deletion = await Outreach.CampaignDeletionAsync(Scope, campaign.Id);
+    }, reload: false);
+
+    private void StopDeleting()
+    {
+        _deletion = null;
+        _deleting = null;
+        _problem = null;
+    }
+
+    private Task DeleteAsync() => RunAsync(async () =>
+    {
+        await Outreach.DeleteCampaignAsync(Scope, _deleting!.Id);
+        if (_editing?.Id == _deleting.Id)
+            Close();
+        StopDeleting();
+    });
+
+    private async Task RunAsync(Func<Task> work, bool reload = true)
+    {
+        _busy = true;
+        _problem = null;
+        try
+        {
+            await work();
+            if (reload && _live is not null)
+                await _live.ReloadAsync();
+        }
+        catch (RpcException exception)
+        {
+            _problem = exception.Status.Detail;
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+}

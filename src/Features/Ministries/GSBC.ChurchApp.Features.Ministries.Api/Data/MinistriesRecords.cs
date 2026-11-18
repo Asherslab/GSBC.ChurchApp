@@ -1,4 +1,5 @@
 using GSBC.ChurchApp.Platform.Api.News;
+using GSBC.ChurchApp.Platform.Contracts.Locations;
 
 namespace GSBC.ChurchApp.Features.Ministries.Api.Data;
 
@@ -10,6 +11,7 @@ public sealed class MinistryRecord
     public string Summary { get; set; } = "";
     public string About { get; set; } = "";
     public string Meets { get; set; } = "";
+    public Location? Where { get; set; }
     public string WhoFor { get; set; } = "";
     public string Colour { get; set; } = "";
     public string Icon { get; set; } = "";

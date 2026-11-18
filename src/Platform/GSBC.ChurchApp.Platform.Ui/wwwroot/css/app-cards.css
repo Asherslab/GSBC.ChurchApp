@@ -21,7 +21,7 @@
 
 .app-card--lifegroup {
     --app-card-tone: var(--marker-ink);
-    --app-card-tile: color-mix(in srgb, var(--marker) 30%, transparent);
+    --app-card-tile: var(--marker-soft);
     --app-card-solid: var(--marker);
     --app-card-on-solid: var(--on-marker);
 }

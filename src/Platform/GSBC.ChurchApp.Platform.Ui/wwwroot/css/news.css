@@ -89,7 +89,7 @@
     width: 34px;
     height: 34px;
     border-radius: var(--radius-tile);
-    background: color-mix(in srgb, var(--marker) 30%, transparent);
+    background: var(--marker-soft);
     color: var(--marker-ink);
 }
 

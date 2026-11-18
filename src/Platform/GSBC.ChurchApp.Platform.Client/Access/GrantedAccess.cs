@@ -1,3 +1,4 @@
+using Grpc.Core;
 using GSBC.ChurchApp.Platform.Permissions;
 
 namespace GSBC.ChurchApp.Platform.Client.Access;
@@ -21,5 +22,11 @@ public sealed class GrantedAccess : IAccess
         _grants = grants;
         SignedIn = signedIn;
         Changed?.Invoke();
+    }
+
+    public void CouldNotLoad(StatusCode status)
+    {
+        if (status is StatusCode.Unauthenticated or StatusCode.PermissionDenied)
+            Replace(GrantSet.Empty, signedIn: false);
     }
 }

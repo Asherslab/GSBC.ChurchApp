@@ -1,0 +1,22 @@
+{
+  "title": "A sign that a row scrolls",
+  "question": "Chip rows (the phone's calendar) and tabs (the admin panel's page tabs at a narrow window) are cut off at the edge with no sign there's more. One answer for both, on both sides, shown only where there's more to see. Which?",
+  "options": [
+    { "id": "fade", "kind": "grounded", "label": "A: A soft fade",
+      "thesis": "The row fades into the page at the edge that has more; nothing is added.",
+      "palette": ["#ffffff", "#141d31", "#2a3d5e", "#e7ae74"], "materials": ["a 40px fade at the edge"],
+      "viewport": "Calendar chips fading out at the right; Outreach's tabs fading at both edges part way along.",
+      "risk": "Quietest: someone may still not think to swipe, and on a mouse there's nothing to click.", "html": ".impeccable/mocks/scroll-cue/fade.html" },
+    { "id": "arrows", "kind": "grounded", "label": "B: A fade with an arrow",
+      "thesis": "The same fade plus a small round arrow on each side that has more; click or tap it to move along.",
+      "palette": ["#ffffff", "#141d31", "#2a3d5e", "#e7ae74"], "materials": ["a fade", "a 32px round arrow button"],
+      "viewport": "A › at the right of the calendar chips; ‹ and › on Outreach's tabs part way along.",
+      "risk": "Adds a control to every row; on the phone it covers part of a chip.", "html": ".impeccable/mocks/scroll-cue/arrows.html" },
+    { "id": "shadow", "kind": "grounded", "label": "C: A shadow at the edge",
+      "thesis": "A soft shadow inside the edge that has more, as menus already show when they scroll; chips stay at full strength.",
+      "palette": ["#ffffff", "#141d31", "#2a3d5e", "#e7ae74"], "materials": ["a 14px edge shadow"],
+      "viewport": "A shadow at the right edge of the calendar chips; at both edges of Outreach's tabs part way along.",
+      "risk": "Easy to miss on the white page in light; nothing to click on a computer.", "html": ".impeccable/mocks/scroll-cue/shadow.html" }
+  ],
+  "steer": true
+}

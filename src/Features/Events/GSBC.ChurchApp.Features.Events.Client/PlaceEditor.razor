@@ -1,18 +1,9 @@
-<div class="field">
-    <SearchPicker TItem="EventPlace" Label="Place" Items="Used" Text="place => place.Name.Length > 0 ? place.Name : place.Address" Detail="place => place.Name.Length > 0 ? place.Address : string.Empty"
-                  Value="Chosen" ValueChanged="PickAsync" NoneText="@(Missing ? EventFieldKeys.Missing(EventFieldKeys.Place) : "No place")"
-                  Hint="Search the places used before, or type the name of a new one." CreateText="@(text => $"Add “{text}” as a new place")" OnCreate="CreateAsync"
-                  Problem="@(Missing && Place is null ? "Each date needs a place." : null)" />
-    @if (Place is { } place && !Used.Any(used => Same(used, place)))
-    {
-        <div class="ui-pair">
-            <TextField Label="Name of the place" Value="@place.Name" ValueChanged="value => Change(place, name: value)" MaxLength="80" />
-            <TextField Label="Address" Value="@place.Address" ValueChanged="value => Change(place, address: value)" MaxLength="160"
-                       Hint="Street and suburb. With an address, tapping the place opens the phone's maps." />
-        </div>
-        <span class="field__hint">With an address, tapping the place opens the phone's maps.</span>
-    }
-</div>
+@using GSBC.ChurchApp.Platform.Contracts.Locations
+@using GSBC.ChurchApp.Platform.Ui.Locations
+
+<LocationField Label="Place" Value="EventPlaces.LocationOf(Place)" ValueChanged="ChangeAsync" Optional="true" Recent="Recent"
+               Description="Where it happens. Tapping it in the app shows the map and directions."
+               Problem="@(Missing && Place is null ? "Each date needs a place." : null)" />
 
 @code {
     [Parameter] public EventPlace? Place { get; set; }
@@ -20,16 +11,7 @@
     [Parameter] public IReadOnlyList<EventPlace> Used { get; set; } = [];
     [Parameter] public bool Missing { get; set; }
 
-    private EventPlace? Chosen => Place is null ? null : Used.FirstOrDefault(used => Same(used, Place)) ?? Place;
+    private IReadOnlyList<Location> Recent => [.. Used.Select(EventPlaces.LocationOf).OfType<Location>()];
 
-    private static bool Same(EventPlace one, EventPlace other) =>
-        one.PlaceId == other.PlaceId && one.Name == other.Name && one.Address == other.Address;
-
-    private Task PickAsync(EventPlace? place) =>
-        PlaceChanged.InvokeAsync(place is null ? null : new EventPlace { PlaceId = place.PlaceId, Name = place.Name, Address = place.Address });
-
-    private Task CreateAsync(string text) => PlaceChanged.InvokeAsync(new EventPlace { Name = text.Trim() });
-
-    private Task Change(EventPlace place, string? name = null, string? address = null) =>
-        PlaceChanged.InvokeAsync(new EventPlace { PlaceId = place.PlaceId, Name = name ?? place.Name, Address = address ?? place.Address });
+    private Task ChangeAsync(Location? location) => PlaceChanged.InvokeAsync(EventPlaces.From(location));
 }

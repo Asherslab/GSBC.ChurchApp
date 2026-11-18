@@ -1,0 +1,106 @@
+@page "/outreach"
+@inject OutreachNearby Nearby
+@inject TimeProvider Clock
+@inject WalkSession Walk
+
+<Page Title="Outreach" Place="outreach">
+    <Masthead Title="Outreach" Note="@OutreachPhoneWords.Note" />
+    <LiveData TValue="Nearby" Load="Nearby.LoadAsync" Feeds="OutreachNearby.Feeds" ReloadOn="Reload" Remember="outreach.home">
+        @{
+            Nearby near = context.Value;
+            DateTime utc = Clock.GetUtcNow().UtcDateTime;
+            OutreachDay? on = OutreachDays.On(near.Now, utc);
+            List<OutreachDay> coming = [.. OutreachDays.Coming(near.Now, utc).Take(3)];
+            bool first = true;
+        }
+        @if (near.Walk is null && _saved is { } saved)
+        {
+            first = false;
+            <Section First="true">
+                <Card Title="Your walk is saved" Icon="check">
+                    <ChildContent><span>@Saved(saved)</span></ChildContent>
+                    <Footer><Button Variant="ButtonVariant.Link" Href="@OutreachLinks.Mine">See it in My outreach</Button></Footer>
+                </Card>
+            </Section>
+        }
+        @if (near.Walk is { } walking)
+        {
+            first = false;
+            <Section First="true">
+                <Card Tone="CardTone.Masthead" Title="@(walking.Finished ? "Your walk is waiting to be saved" : "Your walk is on")" Href="@OutreachLinks.Walking">
+                    <p>@(walking.Finished ? "Check what you covered and save it." : $"{walking.Name} · started {OutreachPhoneWords.Clock(walking.StartedAt)}")</p>
+                </Card>
+            </Section>
+        }
+        @if (on is not null)
+        {
+            <Section First="first" Title="An outreach day is on now" Lead="@($"{CampaignName(near, on)} · on till {OutreachPhoneWords.Time(on.EndsAt)} · {OutreachPhoneWords.RoutesClaimed(OutreachDays.Claimed(near.Now, on), near.Now.RoutesOf(on.Id).Count())}")">
+                <Button Block="true" Icon="map" Href="@OutreachLinks.Day(on.Id)">Pick a route</Button>
+            </Section>
+            first = false;
+        }
+        <Section First="first">
+            <div class="outreach-ask">
+                <h2 class="outreach-ask__title">@OutreachPhoneWords.AskTitle</h2>
+                <p class="outreach-ask__body">@OutreachPhoneWords.AskBody</p>
+                <Segmented TValue="string" Label="How long" Options="LengthOptions" Value="@LengthKey" ValueChanged="ChooseLength" />
+                @if (!_length.ByTime)
+                {
+                    <Segmented TValue="string" Label="How far" Options="DistanceOptions" Value="@_length.Label" ValueChanged="ChooseDistance" />
+                }
+                <Button Block="true" Icon="footprints" Href="@($"{OutreachLinks.PlanWalk}?{_length.Query}")">Plan my walk</Button>
+            </div>
+        </Section>
+        @if (coming.Count > 0)
+        {
+            <Section Title="Outreach days">
+                <ListGroup>
+                    @foreach (OutreachDay day in coming)
+                    {
+                        <ListRow @key="day.Id" Title="@CampaignName(near, day)" Subtitle="@OutreachPhoneWords.DayWhen(day)" Icon="calendar" Chevron="true" Href="@OutreachLinks.Day(day.Id)" />
+                    }
+                </ListGroup>
+            </Section>
+        }
+        <Section>
+            <ListGroup>
+                <ListRow Title="My outreach" Subtitle="Your walks and your totals" Icon="footprints" Chevron="true" Href="@OutreachLinks.Mine" />
+                <ListRow Title="Offline maps" Subtitle="The maps kept on this phone" Icon="map" Chevron="true" Href="@OutreachLinks.OfflineMaps" />
+            </ListGroup>
+        </Section>
+    </LiveData>
+</Page>
+
+@code {
+    private const ChangeKind Reload = ChangeKind.Reconnected | ChangeKind.Session | ChangeKind.Access | ChangeKind.Outbox;
+    private const string DistanceKey = "distance";
+    private static readonly IReadOnlyList<SegmentOption<string>> LengthOptions =
+        [.. WalkLength.Times.Select(length => new SegmentOption<string>(length.Label, length.Label)), new(DistanceKey, "Distance")];
+    private static readonly IReadOnlyList<SegmentOption<string>> DistanceOptions =
+        [.. WalkLength.Distances.Select(length => new SegmentOption<string>(length.Label, length.Label))];
+
+    private WalkLength _length = WalkLength.Default;
+    private WalkHistoryEntry? _saved;
+
+    protected override void OnInitialized()
+    {
+        _saved = Walk.JustSaved;
+        Walk.ForgetJustSaved();
+    }
+
+    private static string Saved(WalkHistoryEntry walk)
+    {
+        string done = walk.Mode == WalkMode.Doorknock ? OutreachPhoneWords.Doors(walk.Doors) : OutreachPhoneWords.Letterboxes(walk.Letterboxes);
+        string distance = OutreachPhoneWords.Distance(walk.Metres);
+        return distance == OutreachPhoneWords.Distance(0) ? $"{done}. Thank you for walking." : $"{distance} and {done}. Thank you for walking.";
+    }
+
+    private string LengthKey => _length.ByTime ? _length.Label : DistanceKey;
+
+    private void ChooseLength(string key) =>
+        _length = key == DistanceKey ? WalkLength.Distances[1] : WalkLength.Times.First(length => length.Label == key);
+
+    private void ChooseDistance(string label) => _length = WalkLength.Distances.First(length => length.Label == label);
+
+    private static string CampaignName(Nearby near, OutreachDay day) => near.Now.CampaignOf(day.Campaign)?.Name ?? "Outreach";
+}

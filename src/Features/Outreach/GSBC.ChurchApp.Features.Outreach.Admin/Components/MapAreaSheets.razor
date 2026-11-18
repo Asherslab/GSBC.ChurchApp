@@ -1,0 +1,116 @@
+@using GSBC.ChurchApp.Features.Outreach.Maps.Contracts
+@using Area = GSBC.ChurchApp.Features.Outreach.Maps.Contracts.MapArea
+@inject OutreachMapsClient Maps
+
+<UnsavedGuard Changed="() => _renaming is { } area && _name.Trim() != area.Name" What="the new name" Save="SaveBeforeLeavingAsync" />
+
+<Sheet Open="_renaming is not null" OpenChanged="open => { if (!open) _renaming = null; }" Title="Rename this map area">
+    <ChildContent>
+        <TextField Label="Name" @bind-Value="_name" MaxLength="80" Hint="What staff call the place, so it's easy to find again." />
+        <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+    </ChildContent>
+    <Actions>
+        <Button Block="true" Busy="_busy" Disabled="@(_name.Trim().Length == 0)" OnClick="RenameAsync">Rename it</Button>
+        <Button Block="true" Variant="ButtonVariant.Quiet" OnClick="() => _renaming = null">Cancel</Button>
+    </Actions>
+</Sheet>
+
+<Sheet Open="_deleting is not null" OpenChanged="open => { if (!open) _deleting = null; }" Title="@($"Delete {_deleting?.Name}?")" Lead="@DeleteLead">
+    <ChildContent>
+        @if (_uses.Count > 0)
+        {
+            <ul class="area-desk__uses">
+                @foreach (RegionUse use in _uses)
+                {
+                    <li>@MapAreaWords.Use(use) uses @(_deleting?.Regions.FirstOrDefault(region => region.Id == use.RegionId)?.Name ?? "one of its regions"): its walkers would have no map there.</li>
+                }
+            </ul>
+        }
+        <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+    </ChildContent>
+    <Actions>
+        <Button Block="true" Variant="ButtonVariant.Danger" Busy="_busy" OnClick="DeleteAsync">Delete the map area</Button>
+        <Button Block="true" Variant="ButtonVariant.Quiet" OnClick="() => _deleting = null">Keep it</Button>
+    </Actions>
+</Sheet>
+
+@code {
+    [Parameter] public EventCallback OnChanged { get; set; }
+    [Parameter] public EventCallback OnDeleted { get; set; }
+
+    private Area? _renaming, _deleting;
+    private List<RegionUse> _uses = [];
+    private string _name = "";
+    private bool _busy;
+    private string? _problem;
+
+    private string DeleteLead => _deleting is not { } area ? "" : MapAreaWords.DeleteLead(area);
+
+    public static IReadOnlyList<MenuItem> Actions(IHandleEvent owner, Area area, MapAreaSheets? sheets, bool busy, Func<Task> rebuild) =>
+    [
+        owner.Item("Rebuild it now", rebuild, "refresh", "Fetches the streets, addresses and maps again for every region",
+            disabled: busy || area.State is MapAreaStates.Building or MapAreaStates.Waiting),
+        owner.Item("Rename…", () => sheets?.Rename(area), "pencil"),
+        owner.Item("Delete…", () => sheets?.DeleteAsync(area) ?? Task.CompletedTask, "trash-2", "Its maps and streets go from phones", danger: true, startsGroup: true,
+            disabled: busy || area.State == MapAreaStates.Building),
+    ];
+
+    public void Rename(Area area)
+    {
+        (_renaming, _name, _problem) = (area, area.Name, null);
+        StateHasChanged();
+    }
+
+    public async Task DeleteAsync(Area area)
+    {
+        (_deleting, _uses, _problem) = (area, [], null);
+        StateHasChanged();
+        List<CellRef> on = area.Cells.Where(cell => cell.On).Select(cell => cell.Ref).ToList();
+        try
+        {
+            _uses = (await Maps.CheckChangeAsync(new RegionChange { AreaId = area.Id, Off = on })).Uses;
+        }
+        catch (RpcException exception)
+        {
+            _problem = exception.Status.Detail;
+        }
+    }
+
+    private async Task<bool> SaveBeforeLeavingAsync()
+    {
+        await RenameAsync();
+        return _problem is null;
+    }
+
+    private Task RenameAsync() => _renaming is not { } area ? Task.CompletedTask : RunAsync(async () =>
+    {
+        await Maps.RenameAsync(area.Id, _name.Trim());
+        _renaming = null;
+        await OnChanged.InvokeAsync();
+    });
+
+    private Task DeleteAsync() => _deleting is not { } area ? Task.CompletedTask : RunAsync(async () =>
+    {
+        await Maps.DeleteAsync(area.Id);
+        _deleting = null;
+        await OnDeleted.InvokeAsync();
+    });
+
+    private async Task RunAsync(Func<Task> work)
+    {
+        _busy = true;
+        _problem = null;
+        try
+        {
+            await work();
+        }
+        catch (RpcException exception)
+        {
+            _problem = exception.Status.Detail;
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+}

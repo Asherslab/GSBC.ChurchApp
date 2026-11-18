@@ -1,0 +1,24 @@
+@using GSBC.ChurchApp.Features.Outreach.Admin.Map
+@using GSBC.ChurchApp.Platform.Icons
+@inherits OutreachMapPart
+
+<div class="outreach-map__layers" data-map-cover>
+    <Button Variant="ButtonVariant.Quiet" Small="true" Icon="@AppIcons.Coverage" Expanded="_open" OnClick="() => _open = !_open">Layers</Button>
+    <Popover Label="Show on the map" Open="_open" OpenChanged="open => _open = open" Class="outreach-map__layers-panel">
+        <p class="outreach-map__layers-title">Show on the map</p>
+        @foreach (LayerCount layer in Offered)
+        {
+            <ToggleRow Title="@Title(layer)" Checked="@Map.Shows(layer.Layer)" CheckedChanged="on => Map.Show(layer.Layer, on)" />
+        }
+        <p class="field__hint">Kept as you left it on this computer.</p>
+    </Popover>
+</div>
+
+@code {
+    private bool _open;
+
+    private IEnumerable<LayerCount> Offered => Map.Layers.SelectMany(layer => layer.Shows).OrderBy(layer => layer.Layer);
+
+    private static string Title(LayerCount layer) =>
+        layer.Layer == OutreachLayer.Coverage ? OutreachMapJobs.Name(layer.Layer) : $"{OutreachMapJobs.Name(layer.Layer)} ({OutreachWords.Count(layer.Count)})";
+}

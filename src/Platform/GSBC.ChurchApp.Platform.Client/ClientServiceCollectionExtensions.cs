@@ -2,6 +2,8 @@ using GSBC.ChurchApp.Platform.Client.Access;
 using GSBC.ChurchApp.Platform.Client.Analytics;
 using GSBC.ChurchApp.Platform.Client.Audio;
 using GSBC.ChurchApp.Platform.Client.Diagnostics;
+using GSBC.ChurchApp.Platform.Client.Files;
+using GSBC.ChurchApp.Platform.Client.Location;
 using GSBC.ChurchApp.Platform.Client.Scopes;
 using GSBC.ChurchApp.Platform.Client.Media;
 using GSBC.ChurchApp.Platform.Client.Modules;
@@ -27,11 +29,16 @@ public static class ClientServiceCollectionExtensions
         services.TryAddSingleton<IDeviceSession, CookieSession>();
         services.TryAddSingleton<IFileShelf, NoFileShelf>();
         services.AddSingleton<FileUploads>();
+        services.AddSingleton<Files.FileSaver>();
         services.AddSingleton<CurrentPage>();
         services.AddSingleton<OpeningSheets>();
         services.TryAddSingleton<IUsage, NoUsage>();
         services.TryAddSingleton<IAudioPlayer, AudioPlayer>();
         services.TryAddSingleton<IAudioDownloads, AudioDownloads>();
+        services.TryAddSingleton<ILocationSession, LocationSession>();
+        services.TryAddSingleton<IWalkActivity, WalkActivity>();
+        services.TryAddSingleton<IKeptFiles, KeptFiles>();
+        services.TryAddSingleton(provider => new Locations.LocationFinder(provider.GetRequiredService<Grpc.Core.ChannelBase>()));
         return services;
     }
 }

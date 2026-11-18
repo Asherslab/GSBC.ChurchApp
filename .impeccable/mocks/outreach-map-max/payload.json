@@ -1,0 +1,44 @@
+{
+  "title": "Outreach → Map: the full map (#123)",
+  "question": "Your steer: the panel floats on the map, and you can move it to the right side. A control at the map's top right takes the map to the whole window (no admin nav, Outreach heading, tabs or rail of jobs); the job is named at the panel's top (Plan a day ▾ changes job); the chevron folds the panel to that button; the same control and Esc bring everything back, kept until you close the tab. Where you put the panel is remembered on this computer. The three sketches differ in how you move it across. Pick the one to build.",
+  "followup": true,
+  "options": [
+    {
+      "id": "edge",
+      "kind": "assigned",
+      "kicker": "THE ROLL",
+      "label": "A tab on the panel's inner edge moves it across",
+      "thesis": "A small tab sticks out of the panel's edge that faces the map (‹ when it's on the right, › when it's on the left). Click it and the panel moves to the other side; the drawing tools and Leave full map move out of its way. One click, always in the same place, and it says what it does.",
+      "palette": ["#141d31", "#1d2840", "#00c2b0", "#e7ae74"],
+      "materials": ["floating panel", "edge tab ‹ ›", "tools swap sides with it", "remembered side"],
+      "viewport": "Planning Saturday 21 November with the panel on the right: the route table and Publish in the card, a ‹ tab on its left edge (Move it to the left), the tools down the map's left edge, Leave full map · Esc to the left of the panel.",
+      "risk": "One more small control on the map; the tab can sit over a route near the panel's edge.",
+      "html": ".impeccable/mocks/outreach-map-max/edge.html"
+    },
+    {
+      "id": "auto",
+      "kind": "dealt",
+      "label": "It steps aside by itself, and a pin keeps it put",
+      "thesis": "The panel starts on the left. When you click something on the map that's under it (a route, a pin), it slides to the other side so you can see it. A pin in its head keeps it where it is; the pinned side is remembered.",
+      "palette": ["#141d31", "#1d2840", "#00c2b0", "#e7ae74"],
+      "materials": ["floating panel", "moves aside on its own", "pin in the head", "remembered side"],
+      "viewport": "Planning Saturday 21 November with the panel on the left: a pin button beside the fold chevron, a one-time note on the map saying the panel moves aside when you click under it.",
+      "risk": "A panel that moves by itself can surprise; you only choose the side by pinning.",
+      "html": ".impeccable/mocks/outreach-map-max/auto.html"
+    },
+    {
+      "id": "drag",
+      "kind": "dealt",
+      "label": "Drag it by its head to either side",
+      "thesis": "Grab the panel's head (a grip beside the fold chevron) and drag; the far side lights up as a drop place, and letting go there keeps it on that side. Nothing else on screen; it works like moving a window.",
+      "palette": ["#141d31", "#1d2840", "#00c2b0", "#e7ae74"],
+      "materials": ["floating panel", "drag by the head", "snaps to left or right", "remembered side"],
+      "viewport": "Planning Saturday 21 November, mid-drag: the panel lifted over the middle of the map with an aqua outline, the right edge shown dashed with 'Let go to keep it on the right'.",
+      "risk": "Nobody finds a drag they aren't told about; it needs a keyboard way too (a Move to the right item in the panel's ⋯).",
+      "html": ".impeccable/mocks/outreach-map-max/drag.html"
+    }
+  ],
+  "reroll": true,
+  "steer": true,
+  "buildPath": {"value": "code"}
+}

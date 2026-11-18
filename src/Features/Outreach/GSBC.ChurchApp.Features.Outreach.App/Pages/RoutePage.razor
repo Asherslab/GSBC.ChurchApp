@@ -1,0 +1,151 @@
+@page "/outreach/r/{Code}"
+@using GSBC.ChurchApp.Features.Outreach.Routing
+@inject OutreachDayRoutes Days
+@inject OutreachClaims Claims
+@inject WalkSession Walk
+@inject NavigationManager Nav
+@inject TimeProvider Clock
+
+<Page Title="Route" BackHref="@(_dayId is null ? OutreachLinks.Home : OutreachLinks.Day(_dayId))" BackLabel="@(_dayId is null ? "Outreach" : "Outreach day")" TopBar="TopBarStyle.Solid">
+    <LiveData @key="Code" TValue="DayRouteView" Load="LoadAsync" Feeds="OutreachDayRoutes.Feeds" ReloadOn="Reload">
+        @{
+            DayRouteView view = context.Value;
+        }
+        @if (view.Source is not null)
+        {
+            <MapView Class="outreach-plan-map" Source="view.Source" Label="The route on the map" Lines="view.Lines" Markers="view.Markers" Frame="view.Frame" Zoom="15" />
+        }
+        @switch (view.State)
+        {
+            case RouteState.NotOnThisPhone:
+                <Section First="true">
+                    <EmptyState Icon="map" Title="This route isn't on this phone yet" Body="Routes come to the phone up to four weeks before their outreach day. If you've just installed the app, give it a minute with signal, then open the QR code again." />
+                </Section>
+                break;
+            case RouteState.Over:
+                <Section First="true">
+                    <EmptyState Icon="calendar" Title="This outreach day has finished" Body="Thanks to everyone who walked. Plan a walk from your door any time." >
+                        <Button Variant="ButtonVariant.Quiet" Icon="footprints" Href="@OutreachLinks.Home">Go to Outreach</Button>
+                    </EmptyState>
+                </Section>
+                break;
+            case RouteState.GettingTheMap:
+                <Section First="true">
+                    <EmptyState Icon="download" Title="Getting the map for this route" Body="It stays on this phone, so the walk works without signal." />
+                </Section>
+                break;
+            default:
+                @Ready(view)
+                break;
+        }
+    </LiveData>
+</Page>
+
+@code {
+    private const ChangeKind Reload = ChangeKind.Reconnected | ChangeKind.Session | ChangeKind.Outbox;
+    private string? _dayId;
+    private string _name = "";
+    private bool _busy;
+    private bool _withPartner;
+    private string? _problem;
+
+    [Parameter] public string Code { get; set; } = "";
+
+    private async Task<DayRouteView> LoadAsync()
+    {
+        DayRouteView view = await Days.RouteAsync(Code);
+        _dayId = view.Day?.Id;
+        if (_name.Length == 0)
+            _name = view.FirstName;
+        return view;
+    }
+
+    private RenderFragment Ready(DayRouteView view) => __builder =>
+    {
+        DayRoute route = view.Route!;
+        OutreachDay day = view.Day!;
+        RouteSummary summary = view.Walk!.Summary;
+        bool doorknock = day.Mode == WalkMode.Doorknock;
+        bool started = day.StartsAt <= Clock.GetUtcNow().UtcDateTime;
+        bool walking = view.Walking is { Finished: false };
+        <Section First="true">
+            <div class="outreach-figures">
+                <h1 class="outreach-route-title">@DayPage.RouteTitle(route)</h1>
+                <p class="outreach-figures__line">@($"{(view.Campaign?.Name ?? "Outreach")} · {OutreachPhoneWords.DayWhen(day)}")</p>
+                <p class="outreach-figures__big">@OutreachPhoneWords.Distance(route.Metres) · @OutreachPhoneWords.Duration(TimeSpan.FromMinutes(route.Minutes))</p>
+                <p class="outreach-figures__line">@(doorknock ? OutreachPhoneWords.Doors(route.Letterboxes) : $"{OutreachPhoneWords.Letterboxes(route.Letterboxes)} · {OutreachPhoneWords.Bundles(summary.BundlesToTake, view.BundleSize)}")</p>
+                @if (view.Walk.ShareDone > 0)
+                {
+                    <p class="outreach-figures__line">@($"{Math.Round(view.Walk.ShareDone * 100)}% done already today")</p>
+                }
+            </div>
+            @if (doorknock)
+            {
+                <ToggleRow Title="I'm walking with someone" Description="Doorknocking is in pairs, together." Checked="_withPartner" CheckedChanged="on => _withPartner = on" />
+            }
+            <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+            @if (walking)
+            {
+                <Notice Text="You're on a walk already. Finish it before starting this route." />
+            }
+            <Button Block="true" Icon="footprints" Disabled="@(walking || _busy || (doorknock && !_withPartner))" OnClick="() => StartAsync(view)">
+                @(started ? "Start this route" : $"Start this route ({OutreachPhoneWords.Clock(day.StartsAt)} on the day)")
+            </Button>
+        </Section>
+        <Section Title="Who's taking it" Lead="@(view.Claims.Count == 0 ? "Nobody yet. Say you'll take it so others go elsewhere." : string.Join(", ", view.Claims.Select(claim => claim.FirstName)))">
+            @if (view.Mine is { } mine)
+            {
+                <Button Variant="ButtonVariant.Quiet" Block="true" OnClick="() => UnclaimAsync(mine.Id)">I'm not taking it after all</Button>
+            }
+            else
+            {
+                <TextField Label="Your first name" MaxLength="OutreachRules.LongestFirstName" AutoComplete="given-name" @bind-Value="_name" />
+                <Button Variant="ButtonVariant.Quiet" Block="true" Icon="check" Disabled="@(_name.Trim().Length == 0 || _busy)" OnClick="() => ClaimAsync(route)">I'll take this route</Button>
+            }
+        </Section>
+        <Section Title="The streets">
+            <ListGroup>
+                @foreach (StreetLine street in summary.Streets)
+                {
+                    <ListRow Title="@street.Title" Subtitle="@($"{(street.Sides == 2 ? "Both sides" : "One side")} · {OutreachPhoneWords.Letterboxes(street.Letterboxes)}")" />
+                }
+            </ListGroup>
+        </Section>
+    };
+
+    private async Task StartAsync(DayRouteView view)
+    {
+        if (view.Walk is not { } planned || view.Day is not { } day || view.Route is not { } route)
+            return;
+        _busy = true;
+        _problem = null;
+        try
+        {
+            await Walk.StartAsync(new WalkStart(DayPage.RouteTitle(route), [day.Campaign], day.Mode, planned.Region, planned.Summary, day.Id, route.Id, _withPartner));
+            Nav.NavigateTo(OutreachLinks.Walking, replace: true);
+        }
+        catch (InvalidOperationException)
+        {
+            _problem = "You're on a walk already. Finish it before starting this route.";
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private async Task ClaimAsync(DayRoute route)
+    {
+        _busy = true;
+        try
+        {
+            await Claims.ClaimAsync(route, _name);
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private Task UnclaimAsync(string id) => Claims.UnclaimAsync(id);
+}

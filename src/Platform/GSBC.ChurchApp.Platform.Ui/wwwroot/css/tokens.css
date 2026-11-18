@@ -21,6 +21,8 @@
   --field-edge: color-mix(in srgb, var(--ink-3) 70%, transparent);
   --page: #ffffff;
   --surface: #ffffff;
+  --map-land: #f7f4ee;
+  --map-veil: rgba(98, 106, 121, 0.3);
   --sand: #f4efe7;
   --sand-strong: #e9e1d4;
   --segment-on: var(--surface);
@@ -31,6 +33,7 @@
   --scrim: rgb(0 0 0 / 0.38);
   --video-ground: #000;
   --on-video: #fff;
+  --on-route: #ffffff;
   --video-shade: rgb(0 0 0 / 0.55);
   --video-note: rgb(0 0 0 / 0.72);
   --shadow-play: 0 10px 30px rgb(0 0 0 / 0.35);
@@ -50,6 +53,9 @@
   --marker: #e7ae74;
   --marker-ink: #8a5422;
   --highlight: color-mix(in srgb, var(--marker) 42%, transparent);
+  --marker-wash: color-mix(in srgb, var(--marker) 14%, transparent);
+  --marker-wash-raised: var(--marker-wash);
+  --marker-soft: color-mix(in srgb, var(--marker) 30%, transparent);
   --on-marker: #2a1a08;
   --danger: #b4372f;
   --knob: #ffffff;
@@ -93,6 +99,7 @@
   --row: 56px;
   --radius-inner: 9px;
   --radius-tile: 10px;
+  --field-inset: 14px;
   --radius-field: 12px;
   --radius: 14px;
   --radius-sheet: 22px;
@@ -125,6 +132,8 @@
   --field: #2d374d;
   --page: #141d31;
   --surface: #1d2840;
+  --map-land: #141d31;
+  --map-veil: rgba(98, 106, 121, 0.25);
   --sand: #1d2840;
   --sand-strong: #26334f;
   --segment-on: #34446a;
@@ -132,7 +141,7 @@
   --ink-2: #b2b8c5;
   --ink-3: #9ca2b1;
   --line: rgb(255 255 255 / 0.09);
-  --scrim: rgb(0 0 0 / 0.55);
+  --scrim: rgb(4 8 18 / 0.72);
   --masthead: #283c62;
   --masthead-deep: #20314f;
   --masthead-chip: rgb(255 255 255 / 0.1);
@@ -143,6 +152,9 @@
   --on-live: #062522;
   --marker-ink: #f0c493;
   --highlight: color-mix(in srgb, var(--marker) 34%, transparent);
+  --marker-wash: oklch(from var(--marker) 0.265 0.03 h);
+  --marker-wash-raised: oklch(from var(--marker) 0.33 0.035 h);
+  --marker-soft: oklch(from var(--marker) 0.37 0.065 h);
   --danger: #f08a80;
   --knob: #f2ede4;
   --bar: rgb(20 29 49 / 0.9);

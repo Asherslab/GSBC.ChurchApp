@@ -44,8 +44,8 @@ internal sealed class MinistriesService(
         return new MinistryDirectory
         {
             Ministries = tree.All.Where(ministry => MinistryViews.MaySeeMinistry(grants, tree, ministry.Id)).OrderBy(ministry => ministry.Order).ThenBy(ministry => ministry.Name, StringComparer.CurrentCulture)
-                .Select(ministry => MayAddUnder(MinistryViews.Summary(ministry, tree, yours.GetValueOrDefault(ministry.Id) ?? "", latest.GetValueOrDefault(ministry.Id) ?? "",
-                    waiting.GetValueOrDefault(ministry.Id)), ministry, grants))
+                .Select(ministry => MayAddUnder(MinistryViews.Placed(MinistryViews.Summary(ministry, tree, yours.GetValueOrDefault(ministry.Id) ?? "", latest.GetValueOrDefault(ministry.Id) ?? "",
+                    waiting.GetValueOrDefault(ministry.Id)), MinistryViews.SeesHome(grants, tree, ministry.Id)), ministry, grants))
                 .ToList(),
             MayCreate = grants.IsAllowed(MinistriesPermissions.Create),
         };
@@ -66,9 +66,9 @@ internal sealed class MinistriesService(
         MinistryRecord ministry = Seen(tree, request.MinistryId, grants);
         MinistryPage page = new()
         {
-            Ministry = MinistryViews.Details(ministry, tree),
+            Ministry = MinistryViews.Placed(MinistryViews.Details(ministry, tree), MinistryViews.SeesHome(grants, tree, ministry.Id)),
             Leaders = await views.LeadersAsync(tree, ministry.Id, cancellationToken),
-            SubMinistries = tree.ChildrenOf(ministry.Id).Where(child => MinistryViews.MaySeeMinistry(grants, tree, child.Id)).Select(child => MinistryViews.Summary(child, tree)).ToList(),
+            SubMinistries = tree.ChildrenOf(ministry.Id).Where(child => MinistryViews.MaySeeMinistry(grants, tree, child.Id)).Select(child => MinistryViews.Placed(MinistryViews.Summary(child, tree), MinistryViews.SeesHome(grants, tree, child.Id))).ToList(),
             Path = tree.Above(ministry.Id).Reverse().Select(above => new Crumb { Id = above.Id.ToString(), Name = above.Name }).ToList(),
             Posts = await views.PostsAsync(tree, ministry.Id, grants, cancellationToken),
             Files = await views.FilesAsync(tree, ministry.Id, grants, cancellationToken),
@@ -111,7 +111,7 @@ internal sealed class MinistriesService(
             SittingOut = sitOuts.Select(sitOut => MinistryViews.SittingOut(sitOut, null, tree)).ToList(),
             Rounds = (await db.Rounds.AsNoTracking().ToListAsync(cancellationToken))
                 .OrderBy(round => round.Sundays.DefaultIfEmpty().Min()).Select(MinistryViews.Round).ToList(),
-            Groups = groups.Select(group => MinistryViews.Summary(group, tree, yours.GetValueOrDefault(group.Id) ?? "")).ToList(),
+            Groups = groups.Select(group => MinistryViews.Placed(MinistryViews.Summary(group, tree, yours.GetValueOrDefault(group.Id) ?? ""), MinistryViews.SeesHome(grants, tree, group.Id))).ToList(),
             MayPlan = grants.IsAllowed(MinistriesPermissions.PlanLifeGroups),
             Under = groups.Select(group => group.ParentId).OfType<Guid>().Distinct().Select(tree.Find).OfType<MinistryRecord>()
                 .Select(parent => new Crumb { Id = parent.Id.ToString(), Name = parent.Name }).ToList(),

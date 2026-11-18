@@ -4,6 +4,7 @@ using GSBC.ChurchApp.Platform.Api.Access;
 using GSBC.ChurchApp.Platform.Api.Calendars;
 using GSBC.ChurchApp.Platform.Api.Chats;
 using GSBC.ChurchApp.Platform.Api.Hosting;
+using GSBC.ChurchApp.Platform.Api.Locations;
 using GSBC.ChurchApp.Platform.Api.Ministries;
 using GSBC.ChurchApp.Platform.Api.News;
 using GSBC.ChurchApp.Platform.Api.People;
@@ -40,6 +41,7 @@ public static class MinistriesApiExtensions
         services.AddSingleton<IScopeHierarchy, MinistryHierarchy>();
         services.AddScoped<IScopeObjects, MinistryScopeObjects>();
         services.AddScoped<IPersonData, MinistriesPersonData>();
+        services.AddScoped<ILocationUses, MinistryLocationUses>();
         services.AddScoped<IMinistryFacts, MinistryFactsSource>();
         services.AddScoped<IChatPlaces, MinistryChatPlaces>();
         services.AddHostedService<SampleMinistries>();
@@ -78,7 +80,7 @@ public static class MinistriesApiExtensions
         services.AddFeed(new FeedDefinition(MinistriesFeeds.Ministries, FeedAudience.Public));
         foreach (string feed in MinistriesFeeds.OnPhones)
             services.AddFeed(new FeedDefinition(feed, FeedAudience.Public));
-        foreach (string feed in new[] { MinistriesFeeds.PrivateDirectory, MinistriesFeeds.PrivatePosts, MinistriesFeeds.PrivateFiles, MinistriesFeeds.PrivateCalendars, MinistriesFeeds.People })
+        foreach (string feed in new[] { MinistriesFeeds.PrivateDirectory, MinistriesFeeds.PrivatePosts, MinistriesFeeds.PrivateFiles, MinistriesFeeds.PrivateCalendars, MinistriesFeeds.People, MinistriesFeeds.Places })
             services.AddFeed(new FeedDefinition(feed, FeedAudience.EachRow));
         services.AddFeed(new FeedDefinition(MinistriesFeeds.Yours, FeedAudience.OwnRecords));
         services.AddDestinations(MinistriesDestinations.All);

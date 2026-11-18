@@ -1,0 +1,5 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\Platform\GSBC.ChurchApp.Platform.Contracts\GSBC.ChurchApp.Platform.Contracts.csproj" />
+  </ItemGroup>
+</Project>

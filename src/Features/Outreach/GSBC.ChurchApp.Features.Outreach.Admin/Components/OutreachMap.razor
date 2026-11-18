@@ -1,0 +1,286 @@
+@using GSBC.ChurchApp.Features.Outreach.Admin.Map
+@using GSBC.ChurchApp.Features.Outreach.Maps.Contracts
+@using GSBC.ChurchApp.Platform.Icons
+@using GSBC.ChurchApp.Platform.Ui.Maps
+@using MapArea = GSBC.ChurchApp.Platform.Ui.Maps.MapArea
+@implements IDisposable
+@inject OutreachMapsClient Maps
+@inject OutreachDeskClient Outreach
+@inject OutreachMapMemory Memory
+@inject NavigationManager Navigation
+@inject UnsavedChanges Unsaved
+@inject IAccess Access
+
+<LiveData TValue="OutreachAtlas" Feeds="Feeds" Load="LoadAsync" Remember="outreach.map.atlas" FailedTitle="Can't load the outreach map right now">
+    @if (_context is { } map)
+    {
+        <CascadingValue Value="map" IsFixed="true">
+            @if (Day is { Length: > 0 } day)
+            {
+                <PlanDayMode DayId="@day" Scope="@Scope" Dock="Dock" />
+            }
+            else
+            {
+                <MapWorkspace Label="Outreach map" Jobs="Jobs" Current="@OutreachMapJobs.Slug(map.Job)" OnChoose="ChooseAsync" Open="map.Open" OpenChanged="FoldAsync"
+                              DrawerLabel="@JobName(map.Job)" Class="outreach-map">
+                    <Drawer><SectionOutlet SectionName="@DrawerSection" /></Drawer>
+                    <DrawerFoot><SectionOutlet SectionName="@FootSection" /></DrawerFoot>
+                    <Map>
+                        @if (map.Atlas.Source is { } source)
+                        {
+                            <MapView @ref="_view" Source="@source" Backdrop="@map.Atlas.Backdrop" Reach="@ReachFor(map)" Label="@MapLabel" Lines="@Lines" LineSets="@LineSets" Areas="@Areas" Markers="@Markers"
+                                     Frame="@map.Frame" OnTap="map.TapAsync" OnMoved="MovedAsync" Outside="@OutsideNote(map)">
+                                <Overlay>
+                                    @if (map.Drawing is null)
+                                    {
+                                        <OutreachMapLayers />
+                                    }
+                                    @if (map.Drawing is { } drawing)
+                                    {
+                                        <MapDrawBar Text="@drawing.Text" Icon="@(drawing.Tool == MapSketchTool.Lasso ? AppIcons.LassoStreets : AppIcons.DrawArea)"
+                                                    OnUndo="@WhenPolygon(UndoPointAsync)" CanUndo="@(map.Placed > 0)"
+                                                    OnCancel="map.StopDrawing" OnFinish="@WhenPolygon(FinishAsync)"
+                                                    CanFinish="@(map.Placed >= 3)" FinishLabel="@drawing.FinishLabel" />
+                                    }
+                                    <SectionOutlet SectionName="@CardSection" />
+                                    <div class="outreach-map__corner">
+                                        <OutreachMapKey />
+                                        <SectionOutlet SectionName="@LegendSection" />
+                                    </div>
+                                </Overlay>
+                            </MapView>
+                            <MapSketch @ref="_sketch" Map="_view" Tool="@(map.Drawing?.Tool ?? MapSketchTool.None)" OnDrawn="stroke => map.DrawnAsync(stroke.Points)"
+                                       OnDrawing="stroke => map.PlacedPoints(stroke.Points.Count)" OnCancelled="map.StopDrawing" />
+                        }
+                        else
+                        {
+                            <div class="outreach-map__none">
+                                <EmptyState Icon="map" Title="No map yet"
+                                            Body="@(CanManageMaps ? "Add a map area to build the first map: open Map areas on the left." : "The outreach map appears once someone who looks after maps adds a map area. Building it takes a few minutes.")" />
+                            </div>
+                        }
+                    </Map>
+                </MapWorkspace>
+                <CoverageJob />
+                @if (CanSeePlaces)
+                {
+                    <PlacesJob />
+                }
+                @if (CanPlan)
+                {
+                    <SavedAreasJob />
+                    <PlanJob />
+                }
+                @if (CanReview)
+                {
+                    <ReportsJob Open="@Report" />
+                }
+                @if (CanManageMaps)
+                {
+                    <MapAreasJob Open="@Area" />
+                }
+            }
+        </CascadingValue>
+    }
+</LiveData>
+
+@code {
+    public const string DrawerSection = "outreach-map-drawer";
+    public const string FootSection = "outreach-map-foot";
+    public const string CardSection = "outreach-map-card";
+    public const string LegendSection = "outreach-map-legend";
+
+    private static readonly IReadOnlyList<string> Feeds = [OutreachMapsFeeds.Regions, OutreachMapsFeeds.Builds, OutreachFeeds.Desk];
+
+    [Parameter, EditorRequired] public required string Scope { get; set; }
+    [Parameter] public OutreachMapJob? Job { get; set; }
+    [Parameter] public string? Day { get; set; }
+    [Parameter] public string? Report { get; set; }
+    [Parameter] public string? Area { get; set; }
+
+    private OutreachMapContext? _context;
+    private OutreachDesk? _desk;
+    private MapView? _view;
+    private MapSketch? _sketch;
+    private (OutreachAtlas Atlas, IReadOnlyList<MapFrame> Boxes, MapReach Reach)? _cleared;
+    private int _drawnVersion = -1;
+    private IReadOnlyList<MapLine> _lines = [];
+    private IReadOnlyList<MapLineSet> _lineSets = [];
+    private IReadOnlyList<MapArea> _areas = [];
+    private IReadOnlyList<MapMarker> _markers = [];
+
+    private string? MinistryScope => Scope.Length == 0 ? null : Scope;
+
+    private bool CanSeePlaces => Access.Can(OutreachPermissions.Settings, MinistryScope) || Access.Can(OutreachPermissions.Review, MinistryScope);
+
+    private bool CanPlan => Access.Can(OutreachPermissions.Plan, MinistryScope);
+
+    private bool CanReview => Access.Can(OutreachPermissions.Review, MinistryScope);
+
+    private bool CanManageMaps => Access.Can(OutreachMapsPermissions.Manage);
+
+    private string MapLabel => _context?.Shows(OutreachLayer.Coverage) == true
+        ? "Map of outreach: streets done recently in deep aqua, darker the more recently, with the places outreach skips"
+        : "Map of outreach";
+
+    private IReadOnlyList<MapWorkspaceJob> Jobs =>
+    [
+        new(OutreachMapJobs.Slug(OutreachMapJob.Coverage), "Coverage", AppIcons.Coverage),
+        .. CanSeePlaces ? [new MapWorkspaceJob(OutreachMapJobs.Slug(OutreachMapJob.Places), "Places", AppIcons.PlacesSkipped)] : Array.Empty<MapWorkspaceJob>(),
+        .. CanPlan ? [new MapWorkspaceJob(OutreachMapJobs.Slug(OutreachMapJob.SavedAreas), "Saved areas", AppIcons.SavedAreas)] : Array.Empty<MapWorkspaceJob>(),
+        .. CanReview ? [new MapWorkspaceJob(OutreachMapJobs.Slug(OutreachMapJob.Reports), "Reports", AppIcons.WalkersReports, _desk?.NewReports ?? 0)] : Array.Empty<MapWorkspaceJob>(),
+        .. CanManageMaps ? [new MapWorkspaceJob(OutreachMapJobs.Slug(OutreachMapJob.MapAreas), "Map areas", AppIcons.MapAreas)] : Array.Empty<MapWorkspaceJob>(),
+        .. CanPlan ? [new MapWorkspaceJob(OutreachMapJobs.Slug(OutreachMapJob.Plan), "Plan a day", AppIcons.PlanADay, StartsGroup: true)] : Array.Empty<MapWorkspaceJob>(),
+    ];
+
+    private OutreachDock Dock => new(Jobs, OutreachMapJob.Plan, ChooseAsync);
+
+    private IReadOnlyList<MapLine> Lines
+    {
+        get
+        {
+            Collect();
+            return _lines;
+        }
+    }
+
+    private IReadOnlyList<MapLineSet> LineSets
+    {
+        get
+        {
+            Collect();
+            return _lineSets;
+        }
+    }
+
+    private IReadOnlyList<MapArea> Areas
+    {
+        get
+        {
+            Collect();
+            return _areas;
+        }
+    }
+
+    private IReadOnlyList<MapMarker> Markers
+    {
+        get
+        {
+            Collect();
+            return _markers;
+        }
+    }
+
+    private async Task<OutreachAtlas> LoadAsync()
+    {
+        Task<OutreachAtlas> atlas = OutreachAtlas.LoadAsync(Maps, Access);
+        Task<OutreachDesk> desk = Outreach.DeskAsync(Scope);
+        await Task.WhenAll(atlas, desk);
+        _desk = await desk;
+        if (_context is null)
+        {
+            OutreachMapRemembered remembered = await Memory.LastAsync();
+            if (Job is { } asked)
+                remembered = remembered with { Job = asked, Open = true };
+            if (!Allowed(remembered.Job))
+                remembered = remembered with { Job = OutreachMapJob.Coverage };
+            _context = new OutreachMapContext(Scope, await atlas, remembered);
+            _context.Changed += Redraw;
+        }
+        else
+            _context.Atlas = await atlas;
+        return await atlas;
+    }
+
+    protected override void OnParametersSet()
+    {
+        if (_context is not null && Job is { } job && job != _context.Job && Allowed(job))
+            _context.Go(job);
+    }
+
+    private bool Allowed(OutreachMapJob job) => job switch
+    {
+        OutreachMapJob.Places => CanSeePlaces,
+        OutreachMapJob.SavedAreas or OutreachMapJob.Plan => CanPlan,
+        OutreachMapJob.Reports => CanReview,
+        OutreachMapJob.MapAreas => CanManageMaps,
+        _ => true,
+    };
+
+    private void Collect()
+    {
+        if (_context is not { } map || map.Version == _drawnVersion)
+            return;
+        _drawnVersion = map.Version;
+        _lines = [.. map.Layers.SelectMany(layer => layer.Lines)];
+        _lineSets = [.. map.Layers.SelectMany(layer => layer.LineSets)];
+        _areas = [.. map.Layers.SelectMany(layer => layer.Areas)];
+        _markers = [.. map.Layers.SelectMany(layer => layer.Markers)];
+    }
+
+    private MapReach ReachFor(OutreachMapContext map)
+    {
+        if (map.Job != OutreachMapJob.MapAreas || !map.Open)
+            return map.Atlas.Limits;
+        if (map.Clearing.Count == 0)
+            return map.Atlas.Reach;
+        if (_cleared is not { } cleared || !ReferenceEquals(cleared.Atlas, map.Atlas) || !ReferenceEquals(cleared.Boxes, map.Clearing))
+            _cleared = cleared = (map.Atlas, map.Clearing, map.Atlas.Reach with { Clear = map.Clearing });
+        return cleared.Reach;
+    }
+
+    private static RenderFragment? OutsideNote(OutreachMapContext map) =>
+        map.Atlas.Overview is not null && map.Job == OutreachMapJob.MapAreas ? null : @<OutreachMapOutside Overview="@(map.Atlas.Overview is not null)" />;
+
+    private EventCallback WhenPolygon(Func<Task> act) =>
+        _context?.Drawing?.Tool == MapSketchTool.Polygon ? EventCallback.Factory.Create(this, act) : default;
+
+    private void Redraw()
+    {
+        _ = Memory.RememberAsync(_context!.Remembered);
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    private async Task ChooseAsync(string slug)
+    {
+        if (OutreachMapJobs.Of(slug) is not { } job || _context is not { } map)
+            return;
+        if (Day is not null)
+            Navigation.NavigateTo(OutreachMapJobs.Href(job));
+        else if (map.Chosen?.Job is not { } chosen || chosen == job || await Unsaved.MayLeaveAsync())
+            map.Go(job);
+    }
+
+    private Task FoldAsync(bool open)
+    {
+        _context?.Fold(open);
+        return Task.CompletedTask;
+    }
+
+    private Task MovedAsync(MapFrame view)
+    {
+        _context?.SawView(view);
+        _ = Memory.RememberAsync(_context!.Remembered);
+        return Task.CompletedTask;
+    }
+
+    private Task UndoPointAsync() => _sketch?.UndoPointAsync() ?? Task.CompletedTask;
+
+    private Task FinishAsync() => _sketch?.FinishAsync() ?? Task.CompletedTask;
+
+    private static string JobName(OutreachMapJob job) => job switch
+    {
+        OutreachMapJob.Places => "Places outreach skips",
+        OutreachMapJob.SavedAreas => "Saved areas",
+        OutreachMapJob.Reports => "Walkers' reports",
+        OutreachMapJob.MapAreas => "Map areas",
+        OutreachMapJob.Plan => "Plan an outreach day",
+        _ => "Coverage",
+    };
+
+    public void Dispose()
+    {
+        if (_context is not null)
+            _context.Changed -= Redraw;
+    }
+}

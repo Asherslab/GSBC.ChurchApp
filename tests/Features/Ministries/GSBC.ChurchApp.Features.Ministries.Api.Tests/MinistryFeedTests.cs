@@ -20,6 +20,7 @@ using GSBC.ChurchApp.Platform.Contracts.Configuration;
 using GSBC.ChurchApp.Platform.Api.Content;
 using GSBC.ChurchApp.Platform.Api.Destinations;
 using GSBC.ChurchApp.Platform.Contracts.Content;
+using GSBC.ChurchApp.Platform.Contracts.Locations;
 using GSBC.ChurchApp.Platform.Contracts.News;
 using GSBC.ChurchApp.Platform.Data;
 using GSBC.ChurchApp.Platform.Permissions;
@@ -405,6 +406,35 @@ public sealed class MinistryFeedTests : IAsyncLifetime
         Assert.Equal(Bytes(await ServerDirectoryAsync(bookkeeper)), Bytes(await bea.Ministries.DirectoryAsync()));
         foreach (MinistryRecord ministry in new[] { office, accounts })
             Assert.Equal(Bytes(await ServerPageAsync(bookkeeper, ministry.Id)), Bytes(await bea.Ministries.MinistryAsync(ministry.Id.ToString())));
+    }
+
+    [Fact]
+    public async Task AGroupInAHomeShowsItsStreetAddressOnlyToItsOwnPeople()
+    {
+        MinistryRecord group = Ministry("Tuesday night group", null);
+        group.Where = new Location
+        {
+            Kind = LocationKind.OffSite, Name = "The Example home", Address = "12 Kenrick Street, Albany Creek QLD 4035", Suburb = "Albany Creek",
+            Note = "Come round the side gate", Latitude = -27.35, Longitude = 152.969, Home = true,
+        };
+        Guid attendee = _people.Add("Ari");
+        _roles.Give(Roles.Attendee, attendee, group.Id);
+        _grants[attendee] = Grants((group.Id, [MinistriesPermissions.AttendeesViewNode]));
+        await AddAsync([group]);
+
+        Phone outsider = await PhoneOfAsync(_visitor);
+        Assert.DoesNotContain(outsider.Stored.Values.SelectMany(rows => rows.Values), row => Encoding.UTF8.GetString(row.Payload).Contains("Kenrick", StringComparison.Ordinal)
+                                                                                           || Encoding.UTF8.GetString(row.Payload).Contains("side gate", StringComparison.Ordinal));
+        Location seen = (await outsider.Ministries.MinistryAsync(group.Id.ToString())).Ministry.Where!;
+        Assert.True(seen.AddressHidden);
+        Assert.Equal("Albany Creek", seen.Suburb);
+        Assert.Null(seen.Latitude);
+        Assert.Equal(Bytes(await ServerPageAsync(_visitor, group.Id)), Bytes(await outsider.Ministries.MinistryAsync(group.Id.ToString())));
+
+        Phone own = await PhoneOfAsync(attendee);
+        Assert.Equal("12 Kenrick Street, Albany Creek QLD 4035", (await own.Ministries.MinistryAsync(group.Id.ToString())).Ministry.Where!.Address);
+        Assert.Equal(Bytes(await ServerPageAsync(attendee, group.Id)), Bytes(await own.Ministries.MinistryAsync(group.Id.ToString())));
+        Assert.Equal(Bytes(await ServerDirectoryAsync(attendee)), Bytes(await own.Ministries.DirectoryAsync()));
     }
 
     [Fact]

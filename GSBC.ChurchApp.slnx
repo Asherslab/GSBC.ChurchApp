@@ -141,6 +141,16 @@
     <Project Path="src/Features/News/GSBC.ChurchApp.Features.News.Client/GSBC.ChurchApp.Features.News.Client.csproj" />
     <Project Path="src/Features/News/GSBC.ChurchApp.Features.News.Contracts/GSBC.ChurchApp.Features.News.Contracts.csproj" />
   </Folder>
+  <Folder Name="/src/Features/Outreach/">
+    <Project Path="src/Features/Outreach/GSBC.ChurchApp.Features.Outreach.Admin/GSBC.ChurchApp.Features.Outreach.Admin.csproj" />
+    <Project Path="src/Features/Outreach/GSBC.ChurchApp.Features.Outreach.Api/GSBC.ChurchApp.Features.Outreach.Api.csproj" />
+    <Project Path="src/Features/Outreach/GSBC.ChurchApp.Features.Outreach.App/GSBC.ChurchApp.Features.Outreach.App.csproj" />
+    <Project Path="src/Features/Outreach/GSBC.ChurchApp.Features.Outreach.Client/GSBC.ChurchApp.Features.Outreach.Client.csproj" />
+    <Project Path="src/Features/Outreach/GSBC.ChurchApp.Features.Outreach.Contracts/GSBC.ChurchApp.Features.Outreach.Contracts.csproj" />
+    <Project Path="src/Features/Outreach/GSBC.ChurchApp.Features.Outreach.Maps.Api/GSBC.ChurchApp.Features.Outreach.Maps.Api.csproj" />
+    <Project Path="src/Features/Outreach/GSBC.ChurchApp.Features.Outreach.Maps.Contracts/GSBC.ChurchApp.Features.Outreach.Maps.Contracts.csproj" />
+    <Project Path="src/Features/Outreach/GSBC.ChurchApp.Features.Outreach.Routing/GSBC.ChurchApp.Features.Outreach.Routing.csproj" />
+  </Folder>
   <Folder Name="/src/Features/Prayer/">
     <Project Path="src/Features/Prayer/GSBC.ChurchApp.Features.Prayer.Admin/GSBC.ChurchApp.Features.Prayer.Admin.csproj" />
     <Project Path="src/Features/Prayer/GSBC.ChurchApp.Features.Prayer.Api/GSBC.ChurchApp.Features.Prayer.Api.csproj" />
@@ -238,6 +248,12 @@
     <Project Path="tests/Features/News/GSBC.ChurchApp.Features.News.Api.Tests/GSBC.ChurchApp.Features.News.Api.Tests.csproj" />
     <Project Path="tests/Features/News/GSBC.ChurchApp.Features.News.Client.Tests/GSBC.ChurchApp.Features.News.Client.Tests.csproj" />
   </Folder>
+  <Folder Name="/tests/Features/Outreach/">
+    <Project Path="tests/Features/Outreach/GSBC.ChurchApp.Features.Outreach.Api.Tests/GSBC.ChurchApp.Features.Outreach.Api.Tests.csproj" />
+    <Project Path="tests/Features/Outreach/GSBC.ChurchApp.Features.Outreach.Client.Tests/GSBC.ChurchApp.Features.Outreach.Client.Tests.csproj" />
+    <Project Path="tests/Features/Outreach/GSBC.ChurchApp.Features.Outreach.Maps.Api.Tests/GSBC.ChurchApp.Features.Outreach.Maps.Api.Tests.csproj" />
+    <Project Path="tests/Features/Outreach/GSBC.ChurchApp.Features.Outreach.Routing.Tests/GSBC.ChurchApp.Features.Outreach.Routing.Tests.csproj" />
+  </Folder>
   <Folder Name="/tests/Features/Prayer/">
     <Project Path="tests/Features/Prayer/GSBC.ChurchApp.Features.Prayer.Api.Tests/GSBC.ChurchApp.Features.Prayer.Api.Tests.csproj" />
   </Folder>
@@ -259,6 +275,7 @@
   </Folder>
   <Folder Name="/tests/Platform/">
     <Project Path="tests/Platform/GSBC.ChurchApp.Platform.Api.Tests/GSBC.ChurchApp.Platform.Api.Tests.csproj" />
+    <Project Path="tests/Platform/GSBC.ChurchApp.Platform.Common.Tests/GSBC.ChurchApp.Platform.Common.Tests.csproj" />
     <Project Path="tests/Platform/GSBC.ChurchApp.Platform.Contracts.Tests/GSBC.ChurchApp.Platform.Contracts.Tests.csproj" />
     <Project Path="tests/Platform/GSBC.ChurchApp.Platform.Permissions.Tests/GSBC.ChurchApp.Platform.Permissions.Tests.csproj" />
   </Folder>

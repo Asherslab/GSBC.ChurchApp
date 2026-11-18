@@ -1,0 +1,96 @@
+using Grpc.Core;
+using GSBC.ChurchApp.Features.Outreach.Contracts;
+using GSBC.ChurchApp.Platform.Client.Online;
+using ProtoBuf.Grpc.Client;
+
+namespace GSBC.ChurchApp.Features.Outreach.Client;
+
+[AdminOnly]
+public sealed class OutreachDeskClient(ChannelBase channel)
+{
+    private readonly IOutreachAdminService _admin = channel.CreateGrpcService<IOutreachAdminService>();
+
+    public async Task<RunningMinistries> MinistriesAsync() => await _admin.MinistriesAsync(new MinistryRef());
+
+    public async Task<OutreachDesk> DeskAsync(string ministryId) => await _admin.DeskAsync(new MinistryRef { MinistryId = ministryId });
+
+    public async Task SaveSettingsAsync(string ministryId, OutreachSettings settings) =>
+        await _admin.SaveSettingsAsync(new SettingsSave { MinistryId = ministryId, Settings = settings });
+
+    public async Task SaveCampaignAsync(string ministryId, Campaign campaign) =>
+        await _admin.SaveCampaignAsync(new CampaignSave { MinistryId = ministryId, Campaign = campaign });
+
+    public async Task MoveCampaignAsync(string ministryId, string id, CampaignStage stage) =>
+        await _admin.MoveCampaignAsync(new CampaignMove { MinistryId = ministryId, Id = id, Stage = stage });
+
+    public async Task<CampaignDeletion> CampaignDeletionAsync(string ministryId, string id) =>
+        await _admin.CampaignDeletionAsync(new ThingRef { MinistryId = ministryId, Id = id });
+
+    public async Task DeleteCampaignAsync(string ministryId, string id) => await _admin.DeleteCampaignAsync(new ThingRef { MinistryId = ministryId, Id = id });
+
+    public async Task<FollowUps> FollowUpsAsync(string ministryId) => await _admin.FollowUpsAsync(new MinistryRef { MinistryId = ministryId });
+
+    public async Task FollowUpDoneAsync(string ministryId, string id, bool done) =>
+        await _admin.FollowUpDoneAsync(new FollowUpDone { MinistryId = ministryId, Id = id, Done = done });
+
+    public async Task DeleteFollowUpAsync(string ministryId, string id) => await _admin.DeleteFollowUpAsync(new ThingRef { MinistryId = ministryId, Id = id });
+
+    public async Task<Reports> ReportsAsync(string ministryId) => await _admin.ReportsAsync(new MinistryRef { MinistryId = ministryId });
+
+    public async Task ResolveReportAsync(string ministryId, string id, ReportState outcome, ExclusionReason excludeAs = ExclusionReason.NotHomes, List<GeoPoint>? area = null) =>
+        await _admin.ResolveReportAsync(new ReportResolve { MinistryId = ministryId, Id = id, Outcome = outcome, ExcludeAs = excludeAs, ShowMarker = true, Area = area ?? [] });
+
+    public async Task DeleteReportAsync(string ministryId, string id) => await _admin.DeleteReportAsync(new ThingRef { MinistryId = ministryId, Id = id });
+
+    public async Task SaveDayAsync(string ministryId, OutreachDay day) => await _admin.SaveDayAsync(new DaySave { MinistryId = ministryId, Day = day });
+
+    public async Task<DayDeletion> DayDeletionAsync(string ministryId, string id) => await _admin.DayDeletionAsync(new ThingRef { MinistryId = ministryId, Id = id });
+
+    public async Task DeleteDayAsync(string ministryId, string id) => await _admin.DeleteDayAsync(new ThingRef { MinistryId = ministryId, Id = id });
+
+    public async Task<PlanningMarks> PlanningMarksAsync(string ministryId) => await _admin.PlanningMarksAsync(new MinistryRef { MinistryId = ministryId });
+
+    public async Task<Totals> TotalsAsync(string ministryId, DateTime from, DateTime to, TotalsBy by, string campaign) =>
+        await _admin.TotalsAsync(new TotalsQuery { MinistryId = ministryId, From = from, To = to, By = by, Campaign = campaign });
+
+    public async Task<CoverageMap> CoverageAsync(string ministryId, string campaign) =>
+        await _admin.CoverageAsync(new CoverageQuery { MinistryId = ministryId, Campaign = campaign });
+
+    public async Task<DayPlan> PlanAsync(string ministryId, string dayId) => await _admin.PlanAsync(new ThingRef { MinistryId = ministryId, Id = dayId });
+
+    public async Task SaveDraftAsync(string ministryId, string dayId, DayDraft? draft) =>
+        await _admin.SaveDraftAsync(new DraftSave { MinistryId = ministryId, DayId = dayId, Draft = draft });
+
+    public async Task<IReadOnlyList<DayRoute>> PublishAsync(string ministryId, string dayId, IReadOnlyList<DayRoute> routes) =>
+        (await _admin.PublishRoutesAsync(new RoutesPublish { MinistryId = ministryId, DayId = dayId, Routes = [.. routes] })).Routes;
+
+    public async Task<DayBoard> BoardAsync(string ministryId, string dayId) => await _admin.BoardAsync(new BoardQuery { MinistryId = ministryId, DayId = dayId });
+
+    public async Task SaveAreaAsync(string ministryId, SavedArea area) => await _admin.SaveAreaAsync(new AreaSave { MinistryId = ministryId, Area = area });
+
+    public async Task DeleteAreaAsync(string ministryId, string id) => await _admin.DeleteAreaAsync(new ThingRef { MinistryId = ministryId, Id = id });
+
+    public async Task<Expired> ExpireAsync(string ministryId, string campaign, List<GeoPoint> area, List<Stretch> stretches) =>
+        await _admin.ExpireAsync(new ExpireCoverage { MinistryId = ministryId, Campaign = campaign, Area = area, Stretches = stretches });
+
+    public async Task<Expired> UndoExpiryAsync(string ministryId, string campaign, DateTime at) =>
+        await _admin.UndoExpiryAsync(new ExpiryUndo { MinistryId = ministryId, Campaign = campaign, At = at });
+
+    public async Task<SkipLines> SkipsAsync(string ministryId) => await _admin.SkipsAsync(new MinistryRef { MinistryId = ministryId });
+
+    public async Task ClearSkipAsync(string ministryId, string id) => await _admin.ClearSkipAsync(new ThingRef { MinistryId = ministryId, Id = id });
+
+    public async Task<IReadOnlyList<AddressMatch>> FindAddressesAsync(string ministryId, string text) =>
+        (await _admin.FindAddressesAsync(new AddressSearch { MinistryId = ministryId, Text = text })).Addresses;
+
+    public async Task<Exclusions> ExclusionsAsync(string ministryId) => await _admin.ExclusionsAsync(new MinistryRef { MinistryId = ministryId });
+
+    public async Task SaveZoneAsync(string ministryId, ExclusionZone zone) => await _admin.SaveZoneAsync(new ZoneSave { MinistryId = ministryId, Zone = zone });
+
+    public async Task DeleteZoneAsync(string ministryId, string id) => await _admin.DeleteZoneAsync(new ThingRef { MinistryId = ministryId, Id = id });
+
+    public async Task SaveAddressAsync(string ministryId, ExclusionAddress address) =>
+        await _admin.SaveAddressAsync(new AddressSave { MinistryId = ministryId, Address = address });
+
+    public async Task DeleteAddressAsync(string ministryId, string id) => await _admin.DeleteAddressAsync(new ThingRef { MinistryId = ministryId, Id = id });
+}

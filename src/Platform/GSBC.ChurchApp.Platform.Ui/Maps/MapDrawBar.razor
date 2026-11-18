@@ -1,0 +1,31 @@
+@using GSBC.ChurchApp.Platform.Icons
+<div class="map-draw-bar@(Class is null ? "" : $" {Class}")" role="status">
+    <Icon Name="@Icon" Size="IconSize.Small" />
+    <p class="map-draw-bar__text">@Text</p>
+    <span class="map-draw-bar__actions">
+        @if (OnUndo.HasDelegate)
+        {
+            <Button Variant="ButtonVariant.Quiet" Small="true" Icon="@AppIcons.Undo" Disabled="!CanUndo" Class="map-draw-bar__quiet" OnClick="OnUndo">Undo last point</Button>
+        }
+        @if (OnCancel.HasDelegate)
+        {
+            <Button Variant="ButtonVariant.Quiet" Small="true" Class="map-draw-bar__quiet" OnClick="OnCancel">Cancel</Button>
+        }
+        @if (OnFinish.HasDelegate)
+        {
+            <Button Variant="ButtonVariant.Quiet" Small="true" Icon="check" Disabled="!CanFinish" Class="map-draw-bar__finish" OnClick="OnFinish">@FinishLabel</Button>
+        }
+    </span>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public required string Text { get; set; }
+    [Parameter] public string Icon { get; set; } = AppIcons.DrawArea;
+    [Parameter] public EventCallback OnUndo { get; set; }
+    [Parameter] public bool CanUndo { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+    [Parameter] public EventCallback OnFinish { get; set; }
+    [Parameter] public bool CanFinish { get; set; }
+    [Parameter] public string FinishLabel { get; set; } = "Finish";
+    [Parameter] public string? Class { get; set; }
+}

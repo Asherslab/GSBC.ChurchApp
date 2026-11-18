@@ -1,0 +1,9 @@
+@page "/outreach/days/{DayId}/plan"
+@using GSBC.ChurchApp.Features.Outreach.Admin.Map
+@inject NavigationManager Navigation
+
+@code {
+    [Parameter] public string DayId { get; set; } = "";
+
+    protected override void OnInitialized() => Navigation.NavigateTo(OutreachMapJobs.PlanHref(DayId), replace: true);
+}

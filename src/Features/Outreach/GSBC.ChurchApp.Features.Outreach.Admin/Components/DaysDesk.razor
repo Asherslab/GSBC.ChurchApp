@@ -1,0 +1,306 @@
+@using GSBC.ChurchApp.Platform.Ui.Locations
+@using GSBC.ChurchApp.Platform.Contracts.Locations
+@inject OutreachDeskClient Outreach
+@inject UnsavedChanges Unsaved
+@inject TimeProvider Time
+
+<UnsavedGuard Changed="() => Changed" What="this outreach day" Save="SaveBeforeLeavingAsync" />
+
+<LiveData @ref="_live" TValue="OutreachDesk" Feeds="Feeds" Load="LoadAsync" Remember="@($"outreach.days.{Scope}")" FailedTitle="Can't load the outreach days right now">
+    <StableSection SectionName="@OutreachHead.ActionsSection">
+        <Can Permission="OutreachPermissions.Plan" ObjectId="@Scope">
+            <Button Icon="plus" OnClick="() => OpenAsync(() => Edit(NewDay(context.Value)))">New outreach day</Button>
+        </Can>
+    </StableSection>
+    <Workbench DetailLabel="The outreach day" Showing="@(_editing is null ? WorkbenchPane.Main : WorkbenchPane.Detail)">
+        <ChildContent>
+            <DataTable TItem="OutreachDay" Label="Outreach days" Items="Ordered(context.Value)" Columns="Columns(context.Value)" Key="day => day.Id"
+                       Selected="Chosen(context.Value)" SelectedChanged="day => OpenAsync(() => Edit(day))">
+                <Empty>
+                    <EmptyState Icon="calendar" Title="No outreach days yet"
+                                Body="Add the next outreach Saturday: when it runs, where people meet and the campaign it's for. Then plan its routes on the map." />
+                </Empty>
+            </DataTable>
+        </ChildContent>
+        <Detail>
+            <div class="outreach-desk__edit">
+                @if (_editing is { } editing)
+                {
+                    DayFacts facts = FactsOf(context.Value, editing);
+                    <PaneHead Title="@(IsNew ? "A new outreach day" : OutreachWords.DayTitle(editing))" Lead="@Lead(editing)"
+                              Actions="@(IsNew ? null : [this.Item("Delete this outreach day…", AskToDeleteAsync, "trash-2", "Says first what goes with it", danger: true, disabled: _busy)])"
+                              OnClose="() => OpenAsync(Close)" />
+                    @if (!IsNew && facts.Routes > 0)
+                    {
+                        <div class="outreach-desk__totals">
+                            <StatTile Value="@OutreachWords.Count(facts.Routes)" Label="@(facts.Routes == 1 ? "route" : "routes")" Quiet="true" />
+                            <StatTile Value="@OutreachWords.Count(facts.Letterboxes)" Label="letterboxes" Quiet="true" />
+                            <StatTile Value="@OutreachWords.Count(facts.Claims)" Label="@(facts.Claims == 1 ? "claim" : "claims")" Quiet="true" />
+                        </div>
+                    }
+                    @if (!IsNew)
+                    {
+                        <div class="outreach-day__go">
+                            <Button Variant="ButtonVariant.Primary" Icon="map" Href="@OutreachLinks.DayPlan(editing.Id)">
+                                @(facts.Routes > 0 ? "Open the routes" : facts.HasDraft ? "Carry on planning" : "Plan the routes")
+                            </Button>
+                            <p class="field__hint">@GoHint(editing, facts)</p>
+                        </div>
+                    }
+                    <SelectField Label="Campaign" Options="CampaignOptions(context.Value)" @bind-Value="_campaign"
+                                 Hint="What's handed out. The routes avoid streets this campaign has done recently." />
+                    <DateField Label="Day" @bind-Value="_date" Shortcuts="false" />
+                    <div class="ui-pair ui-pair--wide">
+                        <TimeField Label="Starts" @bind-Value="_starts" />
+                        <TimeField Label="Ends" @bind-Value="_ends" Min="@_starts" />
+                    </div>
+                    <p class="field__hint">A walk anyone starts between these times counts toward the day, from wherever they set out.</p>
+                    <LocationField Label="Where people meet" Description="Printed on every route map and shown on the day's page in the app." @bind-Value="_meeting" />
+                    <Segmented TValue="WalkMode" Label="What people do" ShowLabel="true" Options="Modes" @bind-Value="_mode" />
+                    <TextField Label="Note for walkers" @bind-Value="_note" Multiline="true" MaxLength="1000"
+                               Hint="Shown with the day in the app, such as morning tea after or what to bring." />
+                    <div class="editor-foot">
+                        <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+                        <SaveBar New="IsNew" Label="@(IsNew ? "Add the day" : "Save")" Busy="_busy" OnSave="SaveAsync" OnCancel="() => OpenAsync(Close)"
+                                 State="SaveBar.For(Changed, _saved)" Blocked="@WhyNotSave" />
+                    </div>
+                }
+                else
+                {
+                    <EmptyState Icon="map" Title="Choose an outreach day"
+                                Body="Each day has its routes, split from an area on the map, printed one to a page with a QR code that opens the route in the app." />
+                }
+            </div>
+        </Detail>
+    </Workbench>
+    <Sheet Open="_deletion is not null" OpenChanged="open => { if (!open) StopDeleting(); }" Title="@($"Delete {DeletingTitle}?")">
+        <ChildContent>
+            @if (_deletion is { } deletion)
+            {
+                <p class="sheet__lead">@DeletionWords(deletion)</p>
+            }
+            <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+        </ChildContent>
+        <Actions>
+            <Button Block="true" Variant="ButtonVariant.Danger" Busy="_busy" OnClick="DeleteAsync">Delete the day</Button>
+            <Button Block="true" Variant="ButtonVariant.Quiet" OnClick="StopDeleting">Keep it</Button>
+        </Actions>
+    </Sheet>
+</LiveData>
+
+@code {
+    private static readonly IReadOnlyList<string> Feeds = [OutreachFeeds.Desk, OutreachFeeds.Campaigns, OutreachFeeds.Claims];
+    private static readonly IReadOnlyList<SegmentOption<WalkMode>> Modes =
+        [new(WalkMode.Letterbox, "Letterboxing"), new(WalkMode.Doorknock, "Doorknocking", Detail: "In pairs")];
+
+    [Parameter, EditorRequired] public required string Scope { get; set; }
+    [Parameter] public string? Open { get; set; }
+
+    private LiveData<OutreachDesk>? _live;
+    private OutreachDay? _editing;
+    private string _campaign = "", _date = "", _starts = "", _ends = "", _note = "";
+    private Location? _meeting;
+    private WalkMode _mode;
+    private bool _busy, _saved, _opened;
+    private DayDeletion? _deletion;
+    private string? _problem;
+
+    private bool IsNew => _editing is { Id.Length: 0 };
+
+    private string DeletingTitle => _editing is null ? "" : OutreachWords.DayTitle(_editing);
+
+    private bool Changed => _editing is { } editing && Asked() is { } asked
+        ? IsNew || asked.Campaign != editing.Campaign || asked.StartsAt != editing.StartsAt || asked.EndsAt != editing.EndsAt
+          || !SameMeeting(_meeting, editing.Meeting) || _note != editing.Note || _mode != editing.Mode
+        : _editing is not null;
+
+    private string? WhyNotSave =>
+        _campaign.Length == 0 ? "Choose the campaign to save it."
+        : OutreachRules.DateOf(_date) is null ? "Choose the day to save it."
+        : Asked() is not { } asked ? "Enter a start and an end time."
+        : asked.EndsAt <= asked.StartsAt ? "It ends after it starts."
+        : null;
+
+    private async Task<OutreachDesk> LoadAsync()
+    {
+        OutreachDesk desk = await Outreach.DeskAsync(Scope);
+        if (!_opened && Open is { Length: > 0 } open && desk.Days.FirstOrDefault(candidate => candidate.Id == open) is { } day)
+        {
+            _opened = true;
+            Edit(day);
+        }
+        return desk;
+    }
+
+    private IReadOnlyList<OutreachDay> Ordered(OutreachDesk desk)
+    {
+        DateTime now = Time.GetUtcNow().UtcDateTime;
+        return [.. desk.Days.Where(day => day.EndsAt > now).OrderBy(day => day.StartsAt), .. desk.Days.Where(day => day.EndsAt <= now).OrderByDescending(day => day.StartsAt)];
+    }
+
+    private OutreachDay? Chosen(OutreachDesk desk) => _editing is { Id.Length: > 0 } editing ? desk.Days.FirstOrDefault(day => day.Id == editing.Id) : null;
+
+    private static DayFacts FactsOf(OutreachDesk desk, OutreachDay day) => desk.DayFacts.FirstOrDefault(facts => facts.DayId == day.Id) ?? new DayFacts();
+
+    private static IReadOnlyList<FieldOption> CampaignOptions(OutreachDesk desk) => desk.Campaigns.Select(campaign => new FieldOption(campaign.Id, campaign.Name)).ToList();
+
+    private static string CampaignName(OutreachDesk desk, string id) => desk.Campaigns.FirstOrDefault(campaign => campaign.Id == id)?.Name ?? "A campaign that's gone";
+
+    private IReadOnlyList<TableColumn<OutreachDay>> Columns(OutreachDesk desk) =>
+    [
+        new("Outreach day", day => @<span class="outreach-desk__cell"><span class="outreach-desk__name">@OutreachWords.DayTitle(day) <Pill Tone="@Tone(day, FactsOf(desk, day))">@State(day, FactsOf(desk, day))</Pill></span><span class="outreach-desk__sub">@OutreachWords.Window(day) · @CampaignName(desk, day.Campaign)</span></span>, day => day.StartsAt),
+        new("Routes", day => @<span class="outreach-desk__cell"><span>@Routes(FactsOf(desk, day))</span>@if (FactsOf(desk, day).Routes > 0) { <span class="outreach-desk__sub">@OutreachWords.Plural(FactsOf(desk, day).Letterboxes, "letterbox", "letterboxes")</span> }</span>, day => FactsOf(desk, day).Routes),
+    ];
+
+    private static string Routes(DayFacts facts) => facts.Routes == 0 ? (facts.HasDraft ? "Being planned" : "None yet") : OutreachWords.Plural(facts.Routes, "route", "routes");
+
+    private string State(OutreachDay day, DayFacts facts)
+    {
+        DateTime now = Time.GetUtcNow().UtcDateTime;
+        return day.StartsAt <= now && now < day.EndsAt ? "On now"
+            : day.EndsAt <= now ? "Done"
+            : facts.Routes > 0 ? "Ready"
+            : "To plan";
+    }
+
+    private PillTone Tone(OutreachDay day, DayFacts facts) => State(day, facts) switch
+    {
+        "On now" => PillTone.Accent,
+        "To plan" => PillTone.Marker,
+        _ => PillTone.Quiet,
+    };
+
+    private static string Lead(OutreachDay day) =>
+        day.Id.Length == 0 ? "When it runs, where people meet and the campaign it's for. Its routes come next, on the map."
+        : $"{OutreachWords.Window(day)}{(day.Meeting is { IsSet: true } meeting ? $", meeting {LocationWords.At(meeting)}" : "")}.";
+
+    private string GoHint(OutreachDay day, DayFacts facts)
+    {
+        DateTime now = Time.GetUtcNow().UtcDateTime;
+        return day.StartsAt <= now && now < day.EndsAt ? "It's on now: the routes page shows who has each route and how much is done."
+            : facts.Routes > 0 ? $"Published {(facts.RoutesPublishedAt is { } at ? OutreachWords.At(at) : "")}. Change them, print the maps or watch the day from there."
+            : facts.HasDraft ? "The routes are drafted but not published yet; walkers can't see them."
+            : "Draw the area to cover and it's split into even routes for you to check.";
+    }
+
+    private OutreachDay NewDay(OutreachDesk desk)
+    {
+        DateOnly today = ChurchTime.Today(Time);
+        int ahead = ((int)DayOfWeek.Saturday - (int)today.DayOfWeek + 7) % 7;
+        DateOnly saturday = today.AddDays(ahead == 0 ? 7 : ahead);
+        OutreachDay? last = desk.Days.MaxBy(day => day.StartsAt);
+        TimeOnly starts = last is null ? new TimeOnly(8, 30) : TimeOnly.FromDateTime(ChurchTime.ToChurch(last.StartsAt));
+        TimeOnly ends = last is null ? new TimeOnly(11, 30) : TimeOnly.FromDateTime(ChurchTime.ToChurch(last.EndsAt));
+        return new OutreachDay
+        {
+            Campaign = desk.Campaigns.FirstOrDefault(campaign => campaign.General)?.Id ?? desk.Campaigns.FirstOrDefault()?.Id ?? "",
+            StartsAt = ChurchTime.ToUtc(saturday.ToDateTime(starts)),
+            EndsAt = ChurchTime.ToUtc(saturday.ToDateTime(ends)),
+            MeetingPoint = last?.MeetingPoint ?? new GeoPoint(),
+            MeetingPlace = last?.MeetingPlace ?? "",
+            Meeting = last?.Meeting?.Copy(),
+        };
+    }
+
+    private OutreachDay? Asked()
+    {
+        if (OutreachRules.DateOf(_date) is not { } date || !TimeOnly.TryParse(_starts, out TimeOnly starts) || !TimeOnly.TryParse(_ends, out TimeOnly ends))
+            return null;
+        return new OutreachDay
+        {
+            Id = _editing!.Id, Campaign = _campaign, StartsAt = ChurchTime.ToUtc(date.ToDateTime(starts)), EndsAt = ChurchTime.ToUtc(date.ToDateTime(ends)),
+            MeetingPoint = _meeting is { HasPin: true } pinned ? new GeoPoint { Lat = pinned.Latitude!.Value, Lng = pinned.Longitude!.Value } : _editing.MeetingPoint,
+            Meeting = _meeting, Note = _note.Trim(), Mode = _mode, Published = _editing.Published,
+        };
+    }
+
+    private static bool SameMeeting(Location? asked, Location? saved) => asked?.SameAs(saved) ?? saved is null;
+
+    private static string DeletionWords(DayDeletion deletion)
+    {
+        List<string> goes = [];
+        if (deletion.Routes > 0)
+            goes.Add(OutreachWords.Plural(deletion.Routes, "route", "routes"));
+        if (deletion.Claims > 0)
+            goes.Add(OutreachWords.Plural(deletion.Claims, "claim", "claims"));
+        string now = deletion.OnNow ? "It's on now: anyone out walking loses their route. " : "";
+        string taken = goes.Count == 0 ? "Nothing else goes with it." : $"Its {string.Join(" and ", goes)} go with it, and printed QR codes stop opening them.";
+        string walks = deletion.Walks > 0 ? $" {OutreachWords.Plural(deletion.Walks, "walk", "walks")} made during it stay, as ordinary walks, and so do the streets they covered." : "";
+        return $"{now}{taken}{walks} This can't be undone.";
+    }
+
+    private async Task OpenAsync(Action open)
+    {
+        if (await Unsaved.MayLeaveAsync())
+            open();
+    }
+
+    private void Edit(OutreachDay day)
+    {
+        Close();
+        _editing = day;
+        DateTime starts = ChurchTime.ToChurch(day.StartsAt), ends = ChurchTime.ToChurch(day.EndsAt);
+        (_campaign, _date, _starts, _ends) = (day.Campaign, OutreachRules.Format(DateOnly.FromDateTime(starts)), starts.ToString("HH:mm"), ends.ToString("HH:mm"));
+        (_meeting, _note, _mode) = (day.Meeting?.Copy(), day.Note, day.Mode);
+    }
+
+    private void Close()
+    {
+        StopDeleting();
+        _editing = null;
+        _saved = false;
+        _problem = null;
+    }
+
+    private async Task<bool> SaveBeforeLeavingAsync()
+    {
+        if (WhyNotSave is not null)
+            return false;
+        await SaveAsync();
+        return _problem is null;
+    }
+
+    private Task SaveAsync() => RunAsync(async () =>
+    {
+        OutreachDay saved = Asked()!;
+        if (saved.Id.Length == 0)
+            saved.Id = Guid.CreateVersion7().ToString();
+        await Outreach.SaveDayAsync(Scope, saved);
+        Edit(saved);
+        _saved = true;
+    });
+
+    private Task AskToDeleteAsync() => RunAsync(async () => _deletion = await Outreach.DayDeletionAsync(Scope, _editing!.Id), reload: false);
+
+    private void StopDeleting()
+    {
+        _deletion = null;
+        _problem = null;
+    }
+
+    private Task DeleteAsync() => RunAsync(async () =>
+    {
+        await Outreach.DeleteDayAsync(Scope, _editing!.Id);
+        Close();
+    });
+
+    private async Task RunAsync(Func<Task> work, bool reload = true)
+    {
+        _busy = true;
+        _problem = null;
+        try
+        {
+            await work();
+            if (reload && _live is not null)
+                await _live.ReloadAsync();
+        }
+        catch (RpcException exception)
+        {
+            _problem = exception.Status.Detail;
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+}

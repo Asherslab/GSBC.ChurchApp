@@ -180,8 +180,8 @@ public sealed record TileSettings(
     public IReadOnlyList<Setting> All => [Columns, Rows, Tone, Icon, IconTone, Title, Text, Image, Focus, Link, Layout, Fade];
 
     public static TileSettings For(TileDefaults defaults, IReadOnlyList<TileVariant> variants) => new(
-        new NumberSetting(HubTileKeys.Columns, "Width", defaults.Columns, 1, HubGrid.MostColumns, help: "The number of columns the tile spans."),
-        new NumberSetting(HubTileKeys.Rows, "Height", defaults.Rows, 1, HubGrid.MostRows, help: "The number of rows the tile spans."),
+        new NumberSetting(HubTileKeys.Columns, "Width", defaults.Columns, 1, HubGrid.MostColumns, help: "The number of columns the tile spans.", unit: "columns"),
+        new NumberSetting(HubTileKeys.Rows, "Height", defaults.Rows, 1, HubGrid.MostRows, help: "The number of rows the tile spans.", unit: "rows"),
         new ColourSetting(HubTileKeys.Tone, "Colour", TileTones.Choices, (defaults.Tone ?? TileTones.Sand).Value),
         new IconSetting(HubTileKeys.Icon, "Icon", defaults.Icon),
         new ChoiceSetting(HubTileKeys.IconTone, "Icon colour", IconTones.Choices, IconTones.Auto),

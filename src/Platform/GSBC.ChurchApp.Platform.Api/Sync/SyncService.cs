@@ -1,13 +1,14 @@
+using System.Data.Common;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 using Grpc.Core;
 using GSBC.ChurchApp.Platform.Api.Access;
-using GSBC.ChurchApp.Platform.Contracts.Configuration;
 using GSBC.ChurchApp.Platform.Contracts.Sync;
 using GSBC.ChurchApp.Platform.Data;
 using GSBC.ChurchApp.Platform.Permissions;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 using ProtoBuf.Grpc;
 
 namespace GSBC.ChurchApp.Platform.Api.Sync;
@@ -18,6 +19,7 @@ public sealed class SyncService(
     private const int PageSize = 500;
     private static readonly TimeSpan HeartbeatInterval = TimeSpan.FromSeconds(30);
     private static readonly TimeSpan AudienceMarkResolution = TimeSpan.FromDays(1);
+    private static readonly TimeSpan[] WaitsForTheDatabase = [TimeSpan.Zero, TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(2), TimeSpan.FromSeconds(4), TimeSpan.FromSeconds(8)];
 
     public async ValueTask<PullReply> PullAsync(PullRequest request, CallContext context = default)
     {
@@ -45,7 +47,7 @@ public sealed class SyncService(
         bool caughtUp = false;
         while (!cancellationToken.IsCancellationRequested)
         {
-            List<FeedBatch> batches = await ReadAsync(cursors, due, user, cancellationToken, caughtUp ? [] : latest, caughtUp ? [] : stale);
+            List<FeedBatch> batches = await ReadThroughRestartsAsync(cursors, due, user, cancellationToken, caughtUp ? [] : latest, caughtUp ? [] : stale);
             if (batches.Count > 0 || !caughtUp)
                 yield return new WatchEvent { Feeds = batches, Origin = origin };
             caughtUp = true;
@@ -97,6 +99,34 @@ public sealed class SyncService(
         if (Caller.SessionId(user) is { } session && !await sessions.IsCurrentAsync(session, cancellationToken))
             throw new RpcException(new Status(StatusCode.Unauthenticated, "That sign-in has ended."));
     }
+
+    private async Task<List<FeedBatch>> ReadThroughRestartsAsync(
+        Dictionary<string, long> cursors, IEnumerable<string> due, ClaimsPrincipal user, CancellationToken cancellationToken,
+        IReadOnlySet<string> announce, IReadOnlySet<string> stale)
+    {
+        Dictionary<string, long> before = new(cursors);
+        List<string> feedsDue = due.ToList();
+        for (int attempt = 0; ; attempt++)
+        {
+            try
+            {
+                return await ReadAsync(cursors, feedsDue, user, cancellationToken, announce, stale);
+            }
+            catch (Exception exception) when (LostTheDatabase(exception) && !cancellationToken.IsCancellationRequested)
+            {
+                if (attempt == WaitsForTheDatabase.Length)
+                    throw new RpcException(new Status(StatusCode.Unavailable, "The database isn't answering."));
+                foreach ((string feed, long cursor) in before)
+                    cursors[feed] = cursor;
+                if (db.Database.GetDbConnection() is NpgsqlConnection connection)
+                    NpgsqlConnection.ClearPool(connection);
+                await Task.Delay(WaitsForTheDatabase[attempt], time, cancellationToken);
+            }
+        }
+    }
+
+    private static bool LostTheDatabase(Exception exception) =>
+        exception is DbException { IsTransient: true } || exception.InnerException is { } inner && LostTheDatabase(inner);
 
     private async Task<List<FeedBatch>> ReadAsync(
         Dictionary<string, long> cursors, IEnumerable<string> due, ClaimsPrincipal user, CancellationToken cancellationToken,

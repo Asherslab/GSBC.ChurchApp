@@ -10,7 +10,6 @@ public static class WaitingTiles
         public const string Theme = "theme";
         public const string Verse = "verse";
         public const string JustALink = "link";
-        public const string Invitation = "invitation";
     }
 
     private static readonly TileVariant Link = new(Layouts.JustALink, "Link only", "Shows the icon and title, with a count when there is one.",
@@ -31,18 +30,6 @@ public static class WaitingTiles
             .. TileVariants.Pictures,
         ]);
 
-    public static readonly HubTileKind Outreach = new("hub.outreach", "Outreach day",
-        "Invites people to outreach days, and shows as live while one is on.", "Outreach",
-        new TileDefaults("Got an hour?", "Walk from your door: a loop of letterbox drops", Columns: 2, Tone: TileTones.MarkerSoft, Icon: "footprints",
-            Link: ComingSoonDestinations.Outreach.Path, TitleLabel: "Title shown between outreach days"),
-        sample: true, variants:
-        [
-            new(Layouts.Invitation, "Invitation", "The invitation and how to join. One row tall, it shows as a row; taller, as a poster with a link line.",
-                TileVariant.AnySize, (_, _) => true),
-            Link,
-            .. TileVariants.Pictures,
-        ]);
-
     public static readonly HubTileKind Give = new("hub.give", "Give",
         "Opens giving online", "Giving",
         new TileDefaults("Give", "Online at baptist.com.au", Icon: "heart", Link: "https://baptist.com.au/give"), offered: false);
@@ -56,7 +43,7 @@ public static class WaitingTiles
         new TileDefaults("Visit us", "Sundays 10:30am and 6pm · 185 Old Northern Road, Albany Creek", Columns: 2, Tone: TileTones.Raised, Icon: "map-pin",
             Link: "https://maps.apple.com/?q=185+Old+Northern+Road,+Albany+Creek+QLD+4035"), offered: false);
 
-    public static readonly IReadOnlyList<HubTileKind> All = [Bulletin, Outreach, Give, Bible, Visit];
+    public static readonly IReadOnlyList<HubTileKind> All = [Bulletin, Give, Bible, Visit];
 
     public static SurfaceSet Surfaces => new(All.Select(kind => kind.Surface).ToList());
 }

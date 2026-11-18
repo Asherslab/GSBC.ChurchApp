@@ -1,0 +1,397 @@
+@page "/outreach/walk"
+@using GSBC.ChurchApp.Features.Outreach.Routing
+@implements IDisposable
+@inject WalkPlans Plans
+@inject WalkSession Walk
+@inject RegionMaps Regions
+@inject WalkChoices Choices
+@inject NavigationManager Nav
+@inject TimeProvider Clock
+
+<Page Title="Your walk" BackHref="@OutreachLinks.Home" BackLabel="Outreach" TopBar="TopBarStyle.Solid">
+    <LiveData @ref="_live" TValue="PlanView" Load="LoadAsync" Feeds="WalkPlans.Feeds" ReloadOn="Reload">
+        @{
+            PlanView plan = context.Value;
+        }
+        @if (plan.Source is not null)
+        {
+            <MapView Class="outreach-plan-map" Source="plan.Source" Label="Your walk on the map" Lines="plan.Lines" Markers="plan.Markers" Frame="plan.Frame" You="plan.You" ShowsHeading="true"
+                     Centre="@(plan.StartPoint is { } at ? new MapPoint(at.Lat, at.Lon) : null)" Zoom="15" OnTap="PinAsync" />
+        }
+        @switch (plan.State)
+        {
+            case PlanState.NeedsLocation:
+                <Section First="true">
+                    <EmptyState Icon="map-pin" Title="Where are you starting?" Body="@NeedsLocationBody(plan.Here)">
+                        <Button Variant="ButtonVariant.Quiet" Icon="search" OnClick="() => _finding = true">Find a street</Button>
+                    </EmptyState>
+                </Section>
+                break;
+            case PlanState.NoMapsYet:
+                <Section First="true">
+                    <EmptyState Icon="map" Title="The church's maps aren't ready yet" Body="Staff build the outreach maps in the admin panel. They come to this phone by themselves once they're ready." />
+                </Section>
+                break;
+            case PlanState.OutsideTheArea:
+                <Section First="true">
+                    <EmptyState Icon="map" Title="You're outside the area the app maps" Body="Outreach covers the streets around the church and the places campaigns go. Find a street in the area to start there." >
+                        <Button Variant="ButtonVariant.Quiet" Icon="search" OnClick="() => _finding = true">Find a street</Button>
+                    </EmptyState>
+                </Section>
+                break;
+            case PlanState.GettingTheMap:
+                <Section First="true">
+                    <EmptyState Icon="download" Title="Getting the map for this area" Body="@($"{plan.Region?.Region.Name}: about {Megabytes(plan.Region?.Bytes ?? 0)}. It stays on this phone, so walks here work without signal.")" />
+                </Section>
+                break;
+            case PlanState.NoStreetNear:
+                <Section First="true">
+                    <EmptyState Icon="map-pin" Title="There's no street near here" Body="Tap the map where you'd like to start, or find a street." >
+                        <Button Variant="ButtonVariant.Quiet" Icon="search" OnClick="() => _finding = true">Find a street</Button>
+                    </EmptyState>
+                </Section>
+                break;
+            default:
+                @Ready(plan)
+                break;
+        }
+    </LiveData>
+</Page>
+
+<Sheet @bind-Open="_finding" Title="Start somewhere else" Lead="Find a street, or close this and tap the map where you'll park.">
+    <ChildContent>
+        <SearchField Label="Street" Placeholder="Street name" @bind-Value="_query" />
+        <ListGroup>
+            @foreach (string street in Matches())
+            {
+                <ListRow @key="street" Title="@street" Icon="map-pin" OnClick="() => StartOnAsync(street)" />
+            }
+        </ListGroup>
+    </ChildContent>
+</Sheet>
+
+<Sheet @bind-Open="_carrying" Title="@(_mode == WalkMode.Doorknock ? "What you're knocking for" : "What you're carrying")"
+       Lead="@(_mode == WalkMode.Doorknock ? "A doorknock counts for one campaign, so choose which." : "A walk counts for each campaign you carry, so streets get done for each one.")">
+    <ChildContent>
+        @if (_mode == WalkMode.Doorknock)
+        {
+            <Segmented TValue="string" Label="Campaign" Rows="true" Options="CampaignOptions()" Value="@_knockingFor" ValueChanged="KnockForAsync" />
+        }
+        else
+        {
+            @foreach (Campaign campaign in _active)
+            {
+                <ToggleRow @key="@($"{campaign.Id}/{_kept}")" Title="@campaign.Name" Description="@(campaign.Id == _keptOn ? "Keep at least one on" : HandedOut(campaign))"
+                           Checked="_chosen.Contains(campaign.Id)" CheckedChanged="carry => CarryAsync(campaign.Id, carry)" />
+            }
+        }
+    </ChildContent>
+</Sheet>
+
+@code {
+    private const ChangeKind Reload = ChangeKind.Reconnected | ChangeKind.Session;
+    private const int MostMatches = 12;
+    private const string DistanceKey = "distance";
+    private static readonly IReadOnlyList<SegmentOption<string>> LengthOptions =
+        [.. WalkLength.Times.Select(length => new SegmentOption<string>(length.Label, length.Label)), new(DistanceKey, "Distance")];
+    private static readonly IReadOnlyList<SegmentOption<string>> DistanceOptions =
+        [.. WalkLength.Distances.Select(length => new SegmentOption<string>(length.Label, length.Label))];
+    private static readonly IReadOnlyList<SegmentOption<WalkMode>> ModeOptions =
+        [new(WalkMode.Letterbox, "Letterboxes"), new(WalkMode.Doorknock, "Doorknocking")];
+
+    private LiveData<PlanView>? _live;
+    private PlanView? _shown;
+    private WalkLength _length = WalkLength.Default;
+    private Routing.GeoPoint? _start;
+    private WalkMode _mode;
+    private bool _takeHop;
+    private bool _finding;
+    private bool _carrying;
+    private List<Campaign> _active = [];
+    private List<string> _chosen = [];
+    private string? _knockingFor;
+    private string? _keptOn;
+    private int _kept;
+    private bool _withPartner;
+    private bool _starting;
+    private string _query = "";
+    private string? _problem;
+
+    [SupplyParameterFromQuery(Name = "minutes")] public int? Minutes { get; set; }
+    [SupplyParameterFromQuery(Name = "km")] public double? Kilometres { get; set; }
+    [SupplyParameterFromQuery(Name = "lat")] public double? Lat { get; set; }
+    [SupplyParameterFromQuery(Name = "lon")] public double? Lon { get; set; }
+
+    protected override void OnInitialized()
+    {
+        _length = WalkLength.Parse(Minutes, Kilometres);
+        _start = Lat is { } lat && Lon is { } lon ? new Routing.GeoPoint(lat, lon) : null;
+        Regions.Changed += OnFilesChanged;
+    }
+
+    private async Task<PlanView> LoadAsync()
+    {
+        await Walk.LoadAsync();
+        _shown = await Plans.LoadAsync(new PlanRequest(_length, _start, _mode, _takeHop));
+        return _shown;
+    }
+
+    private RenderFragment Ready(PlanView plan) => __builder =>
+    {
+        PlannedWalk walk = plan.Walk!;
+        RouteSummary summary = walk.Summary;
+        OutreachSettings settings = plan.Now.Settings;
+        DateTime now = Clock.GetUtcNow().UtcDateTime;
+        bool doorknock = _mode == WalkMode.Doorknock;
+        bool needsPartner = doorknock && settings.DoorknockInPairs && !_withPartner;
+        bool mayStart = !walk.IsEmpty && !needsPartner && Walk.Current is not { Finished: false };
+        <Section First="true">
+            <div class="outreach-figures">
+                @if (walk.IsEmpty)
+                {
+                    <p class="outreach-figures__big">Nearby is done for now</p>
+                }
+                else
+                {
+                    <p class="outreach-figures__big">@OutreachPhoneWords.Distance(summary.Metres) · @OutreachPhoneWords.Duration(summary.Time)</p>
+                    <p class="outreach-figures__line">
+                        @(doorknock ? OutreachPhoneWords.Doors(summary.Letterboxes) : OutreachPhoneWords.Letterboxes(summary.Letterboxes))
+                        @if (!doorknock)
+                        {
+                            <span> · @OutreachPhoneWords.Bundles(summary.BundlesToTake, walk.Planner.Open.Settings.BundleSize)</span>
+                        }
+                        <span> · back by @OutreachPhoneWords.Clock(now + summary.Time)</span>
+                    </p>
+                }
+            </div>
+            @if (walk.Reach.Status != ReachStatus.Full)
+            {
+                <div class="outreach-reach" aria-live="polite">
+                    @if (walk.IsEmpty)
+                    {
+                        <p><strong>@OutreachPhoneWords.Reach(walk.Reach.Reasons.FirstOrDefault() ?? new ReachReason(ReachReasonKind.AllDoneNearby, []))</strong></p>
+                        @if (walk.Reach.Elsewhere is { } better)
+                        {
+                            <p>@OutreachPhoneWords.AllDone(better)</p>
+                            <Button Block="true" Icon="map-pin" OnClick="() => StartAtAsync(better.Point)">Start there</Button>
+                        }
+                    }
+                    else
+                    {
+                        <p><strong>@(walk.Reach.Status == ReachStatus.Short ? OutreachPhoneWords.Short(walk.Ask.Budget, walk.Plan) : OutreachPhoneWords.Long(walk.Ask.Budget, walk.Plan))</strong></p>
+                        @foreach (ReachReason reason in walk.Reach.Reasons.Where(reason => reason.Kind != ReachReasonKind.AllDoneNearby))
+                        {
+                            <p>@OutreachPhoneWords.Reach(reason)</p>
+                        }
+                        <div class="outreach-reach__ways">
+                            @if (walk.Plan.Hop is not null)
+                            {
+                                <Button Variant="ButtonVariant.Link" OnClick="() => HopAsync(false)">Leave out the long walk</Button>
+                            }
+                            else if (walk.Reach.Hop is { } hop)
+                            {
+                                <Button Variant="ButtonVariant.Link" OnClick="() => HopAsync(true)">@OutreachPhoneWords.Hop(hop)</Button>
+                            }
+                            @if (walk.Reach.Elsewhere is { } elsewhere)
+                            {
+                                <Button Variant="ButtonVariant.Link" OnClick="() => StartAtAsync(elsewhere.Point)">@OutreachPhoneWords.Elsewhere(elsewhere, walk.Ask.Budget)</Button>
+                            }
+                            @if (walk.Reach.Hop is null && walk.Plan.Hop is null && walk.Reach.Elsewhere is null)
+                            {
+                                @if (walk.Reach.Status == ReachStatus.Short && Longer() is { } longer)
+                                {
+                                    <Button Variant="ButtonVariant.Link" OnClick="() => ChangeLengthAsync(longer.Label)">@($"Make it {longer.Label} instead")</Button>
+                                }
+                                <Button Variant="ButtonVariant.Link" OnClick="() => _finding = true">Start from another street</Button>
+                            }
+                        </div>
+                    }
+                </div>
+            }
+            @if (Walk.Current is { Finished: false })
+            {
+                <Notice Text="You're on a walk already. Finish it before starting another." />
+            }
+            @if (_problem is not null)
+            {
+                <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+            }
+            <Button Block="true" Icon="footprints" Disabled="@(!mayStart || _starting)" OnClick="() => StartAsync(plan)">Start the walk</Button>
+        </Section>
+        <Section Title="Change the walk">
+            <Segmented TValue="string" Label="How long" ShowLabel="true" Options="LengthOptions" Value="@(_length.ByTime ? _length.Label : DistanceKey)" ValueChanged="ChangeLengthAsync" />
+            @if (!_length.ByTime)
+            {
+                <Segmented TValue="string" Label="How far" Options="DistanceOptions" Value="@_length.Label" ValueChanged="ChangeLengthAsync" />
+            }
+            <Segmented TValue="WalkMode" Label="What you're doing" ShowLabel="true" Options="ModeOptions" Value="_mode" ValueChanged="ChangeModeAsync" />
+            @if (doorknock)
+            {
+                <p class="outreach-note">You'll check in when you start and when you finish.</p>
+                @if (settings.DoorknockInPairs)
+                {
+                    <ToggleRow Title="I'm walking with someone" Description="Doorknocking needs two of you, together." Checked="_withPartner" CheckedChanged="on => _withPartner = on" />
+                }
+            }
+            <ListGroup>
+                <ListRow Title="@(_start is null ? "Starting from here" : "Starting from the pin")" Subtitle="Tap the map to start somewhere else" Icon="map-pin"
+                         Chevron="true" OnClick="() => _finding = true" />
+                <ListRow Title="@OutreachPhoneWords.Carrying(plan.Carried)" Subtitle="@(doorknock ? "A doorknock counts for one campaign" : WhatYouHandOut(plan.Carried))"
+                         Icon="mail" Chevron="true" OnClick="() => OpenCarryingAsync(plan)" />
+            </ListGroup>
+        </Section>
+        @if (!walk.IsEmpty)
+        {
+            <Section Title="The streets">
+                <ListGroup>
+                    @foreach (StreetLine street in summary.Streets)
+                    {
+                        <ListRow Title="@street.Title" Subtitle="@($"{(street.Sides == 2 ? "Both sides" : "One side")} · {OutreachPhoneWords.Letterboxes(street.Letterboxes)}")" />
+                    }
+                </ListGroup>
+                @if (summary.SkippedNonHomes > 0)
+                {
+                    <p class="outreach-note">@($"Skips {OutreachWords.Plural(summary.SkippedNonHomes, "place that isn't a home", "places that aren't homes")}; the walk shows where.")</p>
+                }
+            </Section>
+        }
+    };
+
+    private async Task StartAsync(PlanView plan)
+    {
+        if (plan.Walk is not { } walk || plan.Region is null)
+            return;
+        _starting = true;
+        _problem = null;
+        try
+        {
+            string name = _mode == WalkMode.Doorknock ? "Doorknocking" : $"A {_length.Label} walk";
+            await Walk.StartAsync(new WalkStart(name, walk.Ask.Campaigns, _mode, plan.Region.Region, walk.Summary, WithPartner: _withPartner));
+            Nav.NavigateTo(OutreachLinks.Walking, replace: true);
+        }
+        catch (InvalidOperationException)
+        {
+            _problem = "You're on a walk already. Finish it before starting another.";
+        }
+        finally
+        {
+            _starting = false;
+        }
+    }
+
+    private async Task OpenCarryingAsync(PlanView plan)
+    {
+        DateOnly today = ChurchTime.Today(Clock);
+        _active = [.. plan.Now.Campaigns.Where(campaign => OutreachRules.IsActive(campaign, today)).OrderByDescending(campaign => !campaign.General).ThenBy(campaign => campaign.Name)];
+        _chosen = [.. WalkPlanning.Carried(plan.Now, await Choices.CarryingAsync(), today)];
+        _knockingFor = WalkPlanning.KnockingFor(plan.Now, await Choices.KnockingForAsync(), _chosen, today);
+        _keptOn = null;
+        _carrying = true;
+    }
+
+    private Task CarryAsync(string campaign, bool carry)
+    {
+        _keptOn = null;
+        if (!carry && _chosen.SequenceEqual([campaign]))
+        {
+            _keptOn = campaign;
+            _kept++;
+            return Task.CompletedTask;
+        }
+        if (carry && !_chosen.Contains(campaign))
+            _chosen.Add(campaign);
+        else if (!carry)
+            _chosen.Remove(campaign);
+        return SaveCarryingAsync();
+    }
+
+    private async Task KnockForAsync(string campaign)
+    {
+        _knockingFor = campaign;
+        await Choices.KnockForAsync(campaign);
+        await ReplanAsync();
+    }
+
+    private async Task SaveCarryingAsync()
+    {
+        await Choices.CarryAsync(_chosen);
+        await ReplanAsync();
+    }
+
+    private Task ReplanAsync()
+    {
+        _takeHop = false;
+        return ReloadAsync();
+    }
+
+    private IReadOnlyList<SegmentOption<string>> CampaignOptions() =>
+        [.. _active.Select(campaign => new SegmentOption<string>(campaign.Id, campaign.Name, Detail: HandedOut(campaign)))];
+
+    private static string WhatYouHandOut(IReadOnlyList<Campaign> carried) =>
+        carried.Select(HandedOut).OfType<string>().ToList() is { Count: > 0 } handedOut ? string.Join(" and ", handedOut) : "What you're walking for";
+
+    private static string? HandedOut(Campaign campaign) => campaign.HandedOut.Trim() is { Length: > 0 } what ? what : null;
+
+    private Task ChangeLengthAsync(string label)
+    {
+        _length = label == DistanceKey ? WalkLength.Distances[1] : WalkLength.Times.Concat(WalkLength.Distances).First(length => length.Label == label);
+        _takeHop = false;
+        return ReloadAsync();
+    }
+
+    private Task ChangeModeAsync(WalkMode mode)
+    {
+        _mode = mode;
+        _takeHop = false;
+        return ReloadAsync();
+    }
+
+    private WalkLength? Longer() =>
+        (_length.ByTime ? WalkLength.Times : WalkLength.Distances).FirstOrDefault(length => _length.ByTime ? length.Minutes > _length.Minutes : length.Kilometres > _length.Kilometres);
+
+    private Task HopAsync(bool take)
+    {
+        _takeHop = take;
+        return ReloadAsync();
+    }
+
+    private Task StartAtAsync(Routing.GeoPoint point)
+    {
+        _start = point;
+        _takeHop = false;
+        return ReloadAsync();
+    }
+
+    private Task PinAsync(MapPoint point) => StartAtAsync(new Routing.GeoPoint(point.Lat, point.Lon));
+
+    private Task StartOnAsync(string street)
+    {
+        _finding = false;
+        _query = "";
+        return Plans.CentreOf(_shown, street) is { } point ? StartAtAsync(point) : Task.CompletedTask;
+    }
+
+    private IEnumerable<string> Matches() =>
+        _query.Trim().Length < 2 || _shown is null ? []
+            : _shown.StreetNames.Where(name => name.Contains(_query.Trim(), StringComparison.OrdinalIgnoreCase))
+                .OrderBy(name => !name.StartsWith(_query.Trim(), StringComparison.OrdinalIgnoreCase)).Take(MostMatches);
+
+    private Task ReloadAsync() => _live?.ReloadAsync() ?? Task.CompletedTask;
+
+    private void OnFilesChanged()
+    {
+        if (_shown?.State == PlanState.GettingTheMap)
+            InvokeAsync(ReloadAsync);
+    }
+
+    private static string NeedsLocationBody(Here here) => here.State switch
+    {
+        HereState.Denied => "Location is off for this app. Turn it on in Settings to start from here, or find a street to start from.",
+        HereState.Off => "Location services are off on this phone. Find a street to start from instead.",
+        _ => "The phone couldn't find where you are just now. Find a street to start from, or try again outside.",
+    };
+
+    private static string Megabytes(long bytes) => $"{Math.Max(1, Math.Round(bytes / 1_000_000.0))} MB";
+
+    public void Dispose() => Regions.Changed -= OnFilesChanged;
+}

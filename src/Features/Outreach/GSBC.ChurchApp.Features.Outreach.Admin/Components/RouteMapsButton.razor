@@ -1,0 +1,50 @@
+@using GSBC.ChurchApp.Features.Outreach.Admin.Planning
+@using GSBC.ChurchApp.Features.Outreach.Client.Planning
+@using GSBC.ChurchApp.Platform.Client.Files
+@using GSBC.ChurchApp.Platform.Common.Printing
+@using GSBC.ChurchApp.Platform.Icons
+@inject FileSaver Files
+@inject NavigationManager Navigation
+
+<Button Variant="ButtonVariant.Quiet" Icon="@AppIcons.PrintMaps" Disabled="@(WhyNot is not null || _making)" Busy="_making" Tooltip="@(WhyNot ?? "One A4 page a route, ready to print")"
+        OnClick="PrintAsync">Print the maps</Button>
+
+@code {
+    [Parameter, EditorRequired] public required PlanSetup Setup { get; set; }
+    [Parameter] public DayPlanner? Planner { get; set; }
+    [Parameter] public IReadOnlyList<DayRoute> Routes { get; set; } = [];
+    [Parameter] public bool Changed { get; set; }
+
+    private bool _making;
+
+    private string? WhyNot =>
+        Planner is null ? "The map isn't ready"
+        : Routes.Count == 0 ? "Publish the routes first; each map's QR opens its published route"
+        : Changed ? "Publish your changes first, so the maps match what walkers see"
+        : null;
+
+    private async Task PrintAsync()
+    {
+        if (WhyNot is not null || Planner is not { } planner)
+            return;
+        _making = true;
+        try
+        {
+            await Task.Yield();
+            Uri appHost = new(Navigation.BaseUri);
+            List<SheetRoute> sheets = Routes.OrderBy(route => route.Number)
+                .Select(route => planner.Sections.FirstOrDefault(section => section.Number == route.Number) is { } section
+                    ? new SheetRoute(section, route.Code, OutreachLinks.RouteLink(appHost, route.Code))
+                    : null)
+                .OfType<SheetRoute>().ToList();
+            SheetDay day = new($"Outreach {OutreachWords.DayTitle(Setup.Day)}", OutreachWords.Window(Setup.Day), Setup.Day.MeetingPlace, Setup.Campaign,
+                Setup.HandedOut, Setup.Day.Note, Setup.Region?.Attribution ?? "");
+            PdfDocument document = RouteSheets.Make(planner, day, sheets);
+            await Files.SaveAsync($"Outreach {ChurchTime.DayOf(Setup.Day.StartsAt):yyyy-MM-dd} route maps.pdf", "application/pdf", document.ToBytes());
+        }
+        finally
+        {
+            _making = false;
+        }
+    }
+}

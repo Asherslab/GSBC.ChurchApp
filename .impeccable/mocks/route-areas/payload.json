@@ -1,0 +1,43 @@
+{
+  "title": "Plan a day: several areas, each one route or split",
+  "question": "A day can now have several areas. Each one either is a route exactly as you drew it, or is split into routes by the app as today. Your answers (2026-11-17): you outline a route by clicking its corners; a hand-drawn route keeps its streets where it overlaps an area the app splits; most days are mixed. The three sketches differ in where the areas live and where you choose 'one route' or 'split'. Drawing route after route is the same in all three: draw, it's a route, draw the next. Pick the one to build.",
+  "options": [
+    {
+      "id": "map-chips",
+      "kind": "assigned",
+      "kicker": "THE ROLL",
+      "label": "Areas live on the map, each with its own chip",
+      "thesis": "Every area is an outline on the map with a chip on its edge: 'Faheys Rd · split into 6' or 'Drawn as one route'. Click the chip to switch between One route and Split it, redraw it, or take it off the day. The rail has two outline tools: Draw a route and Draw an area to split. The routes list stays one list, with a filter row (All, by area, Drawn by hand). Overlaps are hatched and labelled with who keeps them.",
+      "palette": ["#2a3d5e", "#ffffff", "#00776d", "#e7ae74"],
+      "materials": ["area chips on the map", "two outline tools in the rail", "one routes list with area filter", "hatched overlap with its owner"],
+      "viewport": "Outreach Saturday 21 November: Faheys Rd split into 6 routes, plus routes 7 and 8 drawn by hand beside it; route 8 overlaps Faheys Rd and the overlap is hatched 'Route 8 keeps these'; the chip menu on Faheys Rd open (One route · Split it · Redraw · Take off the day).",
+      "risk": "The choice lives on the map, so with many areas the chips crowd; the list alone doesn't say how each area was made.",
+      "html": ".impeccable/mocks/route-areas/map-chips.html"
+    },
+    {
+      "id": "area-cards",
+      "kind": "dealt",
+      "label": "The routes grouped under their areas",
+      "thesis": "The drawer lists the day's areas, each a group with its routes under it. An area the app splits shows 'Split into 6 routes' with One route / Split beside its name; an area drawn as one route is a single row. ⋯ on each area: Redraw, Save for next time, Take off the day. Below the groups: Draw a route, Draw an area to split, Use a saved area. Rebalance and Regenerate say they only touch split areas.",
+      "palette": ["#2a3d5e", "#ffffff", "#00776d", "#e7ae74"],
+      "materials": ["grouped routes table", "One route / Split segmented per area", "area ⋯ menu", "add buttons under the list"],
+      "viewport": "Same day: the drawer shows 'Faheys Rd · Split into 6 routes · 706 letterboxes' with its 6 routes, then 'Drawn by hand' with routes 7 and 8; route 8's row says '12 letterboxes go to it from Faheys Rd'. The map shows the outlines, hand-drawn ones solid, split ones dashed.",
+      "risk": "A longer drawer: with 3 or 4 areas the routes list scrolls further than today.",
+      "html": ".impeccable/mocks/route-areas/area-cards.html"
+    },
+    {
+      "id": "draw-mode",
+      "kind": "dealt",
+      "label": "Choose what drawing does, then just draw",
+      "thesis": "One outline tool. Above the routes, one switch says what the next outline becomes: 'Each outline is a route' or 'Split each outline into routes'. Draw, finish, draw the next. The routes list is one list; hand-drawn routes carry a small pen mark. To change an area afterwards, select one of its routes: the bar on the map offers 'Split this area' or 'Make it one route'.",
+      "palette": ["#2a3d5e", "#ffffff", "#00776d", "#e7ae74"],
+      "materials": ["one outline tool", "Segmented 'what drawing makes'", "pen mark on hand-drawn rows", "area actions in the chosen bar"],
+      "viewport": "Same day, mid-draw: the switch set to 'Each outline is a route', a navy bar 'Route: click each corner · Undo last point · Cancel · Finish', route 9 half outlined; the list shows routes 1–6 from Faheys Rd and 7–8 with the pen mark.",
+      "risk": "The switch is easy to forget: an outline meant as one route comes out split (Undo fixes it).",
+      "html": ".impeccable/mocks/route-areas/draw-mode.html"
+    }
+  ],
+  "reroll": true,
+  "steer": true,
+  "buildPath": {"value": "code"}
+}

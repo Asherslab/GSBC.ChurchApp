@@ -2,7 +2,7 @@
 @inject PrayerOnPhone Prayer
 @inject PrayerApprovals Approvals
 
-<Page Title="Prayer" BackHref="" BackLabel="Home">
+<Page Title="Prayer" Place="prayer">
     <Masthead Title="Prayer" Note="@PrayerWords.Note" />
     @if (Approvals.MayApprove)
     {

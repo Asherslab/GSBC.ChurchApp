@@ -18,8 +18,8 @@ The system ships in `src/Platform/GSBC.ChurchApp.Platform.Ui`; the app links all
 | Screen frame, top bar, back | `Page` | `BackHref` makes a pushed page (back, edge swipe); `OnBack`; `Actions` |
 | Masthead | `Masthead` | Title, note, live-element slot; `Beside` for a control on the title's row |
 | Section and section head | `Section` | Title, lead, "see all" link; `Grouped` is a settings group (a card on the admin panel, an inset group on the phone), `Foot` |
-| Callout, picture card, navy card | `Card` | `CardTone.Callout`, `Raised` (only where a picture leads), `Masthead` |
-| Rows and boxed lists | `ListGroup`, `ListRow` | Tile tones, chevron or external-link icon; `Reading`, `TitleExtra`, `Below`; `Unread` sets the dot and weight; `Current` marks the open one (`aria-current`) |
+| Callout, picture card, navy card | `Card` | `CardTone.Callout`, `Raised` (only where a picture leads), `Masthead`; `Icon` (an `AppIcons` name) beside the words, deep aqua (a confirmation: *Your walk is saved*) |
+| Rows and boxed lists | `ListGroup`, `ListRow` | Tile tones, chevron or external-link icon; `Reading`, `TitleExtra`, `Below`; `Unread` sets the dot and weight; `Current` marks the open or chosen one with the selected fill (`aria-current`), on a link row or a clickable (`OnClick`) row |
 | Pull to refresh | `PullToRefresh` | Wraps the whole page body, masthead included. Touch only, so offer a button too |
 | Sheet | `Sheet` | Escape and the scrim close it; centred on wide screens; `Cover` adds the navy band (name it with `Label`); `Wide` (760px); `Widest` (1080px, for one item's fields beside its live look; its actions held in view); `ActionsInView` (the actions held at its foot while a long list scrolls); `LayerClass`. A native `<dialog>` via `showModal()` so no ancestor clips it; opening moves focus in without scrolling the page, to an `autofocus` child if there is one, and closing returns it |
 | Sheet heading | `SheetHeading` | `Icon`, `Title`, `Note`; goes in a sheet's `Cover` |
@@ -50,7 +50,7 @@ The system ships in `src/Platform/GSBC.ChurchApp.Platform.Ui`; the app links all
 | More actions | `Menu`, `MenuItem`, `MenuItems`, `MenuButton` | `this.Item(label, action, icon:, detail:, danger:, startsGroup:, @checked:, disabled:)`; `Text`; `MenuButton` is a row in a hand-built panel |
 | A small panel | `Popover` | Focus moves in; Escape and a click outside close it |
 | Roles | `RoleMenu`, `RoleChoice`, `RoleTick`, `RoleGives` | One role, with what it allows and an optional Remove; or several as ticks |
-| Boards | `Board`, `BoardColumn`, `BoardCard`, `BoardMove` | Columns `Narrow`, `Folds`, `Addable`; `OnMove`, `OnAdd`, `Compact` |
+| Boards | `Board`, `BoardColumn`, `BoardCard`, `BoardMove` | Columns `Narrow`, `Folds`, `Addable`, `Wide`; `OnMove`, `OnAdd`, `Compact` |
 | Dates and times | `DateField`, `TimeField`, `DateTimeField` (`TypedDates`) | A popover on the desk (`UiHost.Desktop`), the native field on the phone |
 | A picture, bigger | `PictureOpen`, `PictureViewer` | Download of the original |
 | Light or dark | `SchemeChoice` | Automatic, Light, Dark |
@@ -67,6 +67,7 @@ The system ships in `src/Platform/GSBC.ChurchApp.Platform.Ui`; the app links all
 | Edits in children | `EditScope` | Re-renders around any edit inside, so a header or save button stays current |
 | Unsaved changes | `UnsavedGuard`, `UnsavedChanges` | Leaving with changes opens a sheet: *Save and leave* (when it can save), *Discard the changes*, *Stay here*; closing the browser tab gets the browser's warning |
 | Stages | `StagePipeline` | `Stages` (`SegmentOption`s in order), `ReadOnly` |
+| How far through a span | `SpanLine` | `From`, `To`, `Done` and `Closing` (shares of the span), `Description` for screen readers; today's dot only while under way |
 | Sidebar counts | `INavCounts` (Platform.Client) | A count per page href, added to the office week's |
 | Sidebar actions | `SidebarAction` (Platform.Client) | Title, icon, permission, the sheet it opens; in the foot above You |
 | Tabs with counts | `TabStrip` | Counts; orange underline on the selected tab; `Href` for link tabs; `Sticky` on the phone |

@@ -1,3 +1,5 @@
+@using GSBC.ChurchApp.Platform.Icons
+@using GSBC.ChurchApp.Platform.Ui.Maps
 @using GSBC.ChurchApp.Platform.Client.People
 @using GSBC.ChurchApp.Platform.Contracts.Media
 @using GSBC.ChurchApp.Platform.Ui.Content
@@ -5,6 +7,8 @@
 @using GSBC.ChurchApp.Platform.Contracts.Content
 @using GSBC.ChurchApp.Platform.Ui.News
 @using GSBC.ChurchApp.Platform.Ui.Destinations
+@using GSBC.ChurchApp.Platform.Contracts.Locations
+@using GSBC.ChurchApp.Platform.Ui.Locations
 @inject TimeProvider Clock
 @inject UiHost Host
 
@@ -52,6 +56,47 @@
                     </ChildContent>
                 </Workbench>
             </div>)
+        @Item("A map to work on: MapDesk", "The map fills the page under the title band with its pane on the right and the page's actions in the pane's foot. Tools float on the map. The outreach planner draws on it.",
+            @<div class="gallery__frame gallery__frame--tall">
+                <MapDesk PaneLabel="Routes" Class="gallery__map-desk">
+                    <Map><div class="gallery__map-stand-in" role="img" aria-label="Where the map goes"></div></Map>
+                    <Pane><PaneHead Title="Plan the routes" Lead="Draw the area to cover and it's split into even routes." /></Pane>
+                    <Foot><Button>Publish</Button></Foot>
+                </MapDesk>
+            </div>)
+        @Item("A map with many jobs: MapWorkspace", "A dock of jobs down the map's left edge; the chosen job's drawer folds out beside it and folds away. What's chosen on the map shows in a MapCard top right; drawing shows a MapDrawBar with Undo last point, Cancel and Finish. Outreach's Map tab uses it.",
+            @<div class="gallery__frame gallery__frame--tall">
+                <MapWorkspace Label="Outreach map" Jobs="SampleJobs" Current="places" Class="gallery__map-desk">
+                    <Drawer><PaneHead Title="Places outreach skips" Lead="Walkers never get these on a route." /></Drawer>
+                    <DrawerFoot><Button Variant="ButtonVariant.Quiet" Block="true">Draw an area</Button></DrawerFoot>
+                    <Map>
+                        <div class="gallery__map-stand-in" role="img" aria-label="Where the map goes">
+                            <MapDrawBar Text="Skip area: click each corner" OnUndo="() => { }" CanUndo="true" OnCancel="() => { }" OnFinish="() => { }" CanFinish="true" />
+                            <MapCard Label="A report">
+                                <ChildContent><PaneHead Title="Not a home" Lead="Bunya Rd · sent Saturday" /></ChildContent>
+                                <Foot><Button Block="true">Never deliver there</Button></Foot>
+                            </MapCard>
+                        </div>
+                    </Map>
+                </MapWorkspace>
+            </div>)
+        @Item("The map's chips in one strip: MapChipStrip", "A row of chips along the top of the map, from the tool rail to the top-right button, wrapping to a second line when there are many. Each chip is a Menu: what the thing is and what you can do with it. Outreach's planner puts each area's chip here, a route drawn by hand ringed in its colour, and pointing at one lights its routes.",
+            @<div class="gallery__frame gallery__frame--short">
+                <div class="gallery__map-stand-in" role="img" aria-label="Where the map goes">
+                    <MapChipStrip Label="The day's areas">
+                        <span class="map-chip map-chip--route" style="--route: var(--accent)"><Menu Label="Route 4" Text="Route 4" Icon="@AppIcons.DrawRoute" Chevron="true" Small="true" AlignStart="true" Items="AreaChoices" /></span>
+                        <span class="map-chip"><Menu Label="Faheys Rd" Text="Faheys Rd · split into 6" Icon="@AppIcons.DrawArea" Chevron="true" Small="true" AlignStart="true" Items="AreaChoices" /></span>
+                    </MapChipStrip>
+                </div>
+            </div>)
+        @Item("Something that belongs to a place on the map: MapPin", "Keeps a control (a chip with its Menu, a small card) on a point of the map as it pans and zooms, above the point. A chip with its Menu tied to one point, such as a place's pin.",
+            @<div class="gallery__frame gallery__frame--short">
+                <div class="gallery__map-stand-in" role="img" aria-label="Where the map goes">
+                    <MapPin Point="new MapPoint(-27.3433, 152.9646)">
+                        <Menu Label="Meet here" Text="Meet here" Icon="@AppIcons.PlaceOffSite" Chevron="true" Small="true" AlignStart="true" Class="map-chip" Items="AreaChoices" />
+                    </MapPin>
+                </div>
+            </div>)
         @Item("The heading of a record: PaneHead", "Title, one line under it, and the record's own actions in its More menu (Delete is always there, last and red).",
             @<PaneHead Title="Jordan Example" Lead="jordan@example.com · joined Sun 1 Nov" Actions="RecordActions" OnClose="() => { }" OnOpen="() => { }" />)
         @Item("Settings in groups: Section, Grouped", "A card on the admin panel, an inset group on the phone. A Foot says what the group does or holds its Save.",
@@ -74,6 +119,7 @@
         @Item("Something to read or open on the phone: Card", "One card, never cards inside cards.",
             @<div class="gallery__stack">
                 <Card Title="Your challenge this week">Read Job 33 and pray for one person by name each morning.</Card>
+                <Card Title="Your walk is saved" Icon="check"><span>1.4 km and 62 letterboxes. Thank you for walking.</span></Card>
                 <Card Tone="CardTone.Masthead" Title="Almighty God" Href="gallery"><span>Job 33:4 · the 2026 theme</span></Card>
                 <Card Tone="CardTone.Raised" Title="Family games night" Href="gallery">
                     <Media><span class="gallery__cover"><BrandMark Decorative="true" /></span></Media>
@@ -188,11 +234,12 @@
                 <ToggleRow Title="Hide my name" Description="The pastoral team sees it as anonymous" @bind-Checked="_anonymous" />
                 <ToggleRow Title="Notify me" Description="Not available yet" Disabled="true" />
             </div>)
-        @Item("Typing: TextField", "Labels above; a hint under; a problem says how to fix it.",
+        @Item("Typing: TextField", "Labels above; a hint under; a problem says how to fix it. A number's unit sits inside the field (Unit).",
             @<div class="gallery__stack">
                 <TextField Label="Your name" @bind-Value="_name" Placeholder="First name is fine" />
                 <TextField Label="Prayer request" @bind-Value="_request" Multiline="true" MaxLength="500" Hint="Only the pastoral team sees this." />
                 <TextField Label="Link" Value="http://example" Problem="A link starts with https://." />
+                <TextField Label="Spare tracts" Type="number" Unit="%" @bind-Value="_spare" Hint="More than the walk's letterboxes, so nobody runs out. Usually 10." />
             </div>)
         @Item("Fields side by side: ui-pair", "The boxes line up whichever fields have a description and however long it runs.",
             @<div class="gallery__stack">
@@ -222,6 +269,8 @@
             @<CopyField Label="Link for calendar apps" Value="https://example.com/calendars/services.ics" Hint="Anyone can subscribe with this." />)
         @Item("A link inside words: TextLink", "Never a button dressed as a link.",
             @<p class="gallery__note">Read it on <TextLink Href="gallery">the church's website</TextLink>.</p>)
+        @Item("A place off site: LocationField", "Where something happens: At church, or somewhere else found by its address or a pin on the map, with a name and a note. Change opens the picker; a home shows only its suburb to everyone else.",
+            @<LocationField Label="Where people meet" Description="Printed on every route map and shown on the day's page." @bind-Value="_place" AllowHome="true" Optional="true" />)
     </Section>
 
     <Section Title="Dates" Lead="The admin panel types or picks from a calendar; the phone uses its own wheel.">
@@ -334,6 +383,12 @@
                 <ListRow Title="Coming later" Subtitle="Not in this version" Icon="lock" Disabled="true" />
                 <ListRow Title="Services" Subtitle="A row with its own ⋯ menu (Actions): the row opens it, the menu acts on it" Icon="link" IconTone="RowTone.Quiet" Href="gallery" Actions="RowActions" />
             </ListGroup>)
+        @Item("Where it is: LocationRow", "A place as one row: its name, address and note, and a small map at the end that opens the place's map with Directions and Open in Maps. At church has no map; a home shows only its suburb to everyone else.",
+            @<div class="list">
+                <LocationRow Location="SamplePlace" />
+                <LocationRow Location="SampleAtChurch" />
+                <LocationRow Location="SampleHome" />
+            </div>)
         @Item("Putting things in order: ReorderList", "Drag a row by its handle, or use its ⋯ menu to move it up or down; the preview above follows as you drag.",
             @<ReorderList TItem="string" Items="_order" Key="name => name" Name="name => name" Label="Tabs, in order" OnReordered="order => _order = order">
                 <Preview>@foreach (string name in context) { <span @key="name">@name</span> }</Preview>
@@ -359,6 +414,8 @@
                     </BoardCard>
                 </Card>
             </Board>)
+        @Item("How far through a span of time: SpanLine", "Start to end, how far through today is, and the closing stretch in the marker (a campaign's wrapping up). Pass Wide to a board column to open a card where it sits.",
+            @<SpanLine From="7 Nov" To="14 Dec" Done="0.22" Closing="0.19" Description="22% of the way from 7 Nov to 14 Dec" />)
         @Item("Putting things in order, quietly: ReorderList Quiet", "For a short list in a narrow column (the calendars): the handle shows on hover or focus; drag it, or press Alt and an up or down arrow on it.",
             @<ReorderList TItem="string" Items="_ordered" Key="name => name" Name="name => name" Label="Calendars, in order" Quiet="true" OnReordered="order => _ordered = [.. order]">
                 <ItemTemplate><span>@context</span></ItemTemplate>
@@ -459,6 +516,17 @@
 </PagedSheet>
 
 @code {
+    private static readonly Location SamplePlace = new()
+    {
+        Kind = LocationKind.OffSite, Name = "Eatons Hill shops car park", Address = "640 South Pine Road, Eatons Hill QLD 4037", Suburb = "Eatons Hill",
+        Note = "Park at the far end, near the bakery.", Latitude = -27.339, Longitude = 152.96,
+    };
+
+    private static readonly Location SampleAtChurch = Location.AtChurch("The hall doors");
+
+    private static readonly Location SampleHome = new Location { Kind = LocationKind.OffSite, Home = true, Suburb = "Albany Creek" }.SeenFromOutside();
+
+    private Location? _place = SamplePlace;
     private static readonly VideoLink SampleVideoLink = new(VideoSite.Vimeo, "76979871");
 
     private const string SampleMinistry = "Kids Ministries";
@@ -511,6 +579,12 @@
 
     private static readonly IReadOnlyList<TabOption<string>> Tabs = [new("about", "About"), new("news", "News", 2), new("people", "People"), new("settings", "Settings")];
     private static readonly IReadOnlyList<Crumb> Trail = [new("Library", "library", "folder"), new("Events", "events"), new("2026", "2026")];
+    private static readonly IReadOnlyList<MapWorkspaceJob> SampleJobs =
+    [
+        new("coverage", "Coverage", AppIcons.Coverage), new("places", "Places", AppIcons.PlacesSkipped), new("reports", "Reports", AppIcons.WalkersReports, 3),
+        new("plan", "Plan a day", AppIcons.PlanADay, StartsGroup: true),
+    ];
+
     private static readonly IReadOnlyList<SegmentOption<string>> Views = [new("grid", "Grid"), new("list", "List")];
     private static readonly IReadOnlyList<AppCardAction> SampleCardActions = [new("Add to calendar", "calendar-plus", Main: true), new("Open", Href: "gallery")];
     private static readonly IReadOnlyList<AppCardAction> SampleOpenOnly = [new("Open", Href: "gallery")];
@@ -578,6 +652,7 @@
     private string _view = "grid";
     private string _name = "";
     private string _request = "";
+    private string _spare = "10";
     private string _service = "am";
     private SamplePerson? _speaker;
     private IReadOnlyList<SamplePerson> _leaders = [];
@@ -634,6 +709,13 @@
         this.Item("Send a recovery link", () => Task.CompletedTask, "send"),
         this.Item("Open as a page", () => Task.CompletedTask, "maximize-2"),
         this.Item("Delete Jordan…", () => { _deleting = true; return Task.CompletedTask; }, "trash-2", danger: true, startsGroup: true),
+    ];
+
+    private IReadOnlyList<MenuItem> AreaChoices =>
+    [
+        this.Item("Split it into routes", () => { }, "pentagon", "6 routes now", @checked: true),
+        this.Item("Make it one route", () => { }, "pencil", "706 letterboxes"),
+        this.Item("Take it off the day", () => { }, "trash", "Its routes go too", danger: true, startsGroup: true),
     ];
 
     private IReadOnlyList<MenuItem> RowActions =>

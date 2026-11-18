@@ -7,7 +7,7 @@
 <UnsavedGuard Changed="() => _sentId is null && (_text.Trim().Length > 0 || _picked.Count > 0)" What="your feedback" />
 <RefreshOn On="ChangeKind.Outbox | ChangeKind.Session | ChangeKind.Access" Changed="LoadAsync" />
 
-<Page Title="Send feedback" BackHref="more" BackLabel="More" TopBar="TopBarStyle.Solid">
+<Page Title="Send feedback" Place="@FeedbackDestinations.Send" TopBar="TopBarStyle.Solid">
     @if (_here is null || _allowed is null)
     {
         <Section First="true"><Skeleton /></Section>

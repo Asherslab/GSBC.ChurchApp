@@ -105,6 +105,30 @@ window.gsbcShell = (() => {
     });
   };
   keepPlaces();
+  const entryIndex = () => history.state?._index ?? 0;
+  const visited = [];
+  const noteVisit = () => { visited[entryIndex()] = location.pathname; };
+  for (const method of ['pushState', 'replaceState']) {
+    const original = history[method].bind(history);
+    history[method] = (...args) => {
+      original(...args);
+      noteVisit();
+    };
+  }
+  addEventListener('popstate', noteVisit);
+  noteVisit();
+
+  const returnTo = (href) => {
+    const target = new URL(href, document.baseURI).pathname;
+    const here = entryIndex();
+    for (let earlier = here - 1; earlier >= 0; earlier--) {
+      if (visited[earlier] === target) {
+        history.go(earlier - here);
+        return;
+      }
+    }
+    window.Blazor.navigateTo(href, { replaceHistoryEntry: true });
+  };
 
   document.addEventListener('scroll', (event) => {
     const page = event.target;
@@ -118,6 +142,33 @@ window.gsbcShell = (() => {
     const titleGone = !!title && title.bottom <= bottom;
     topbar.classList.toggle('is-stuck', titleGone || (!marked && page.scrollTop > Number(page.dataset.stuckAt ?? 44)));
     topbar.classList.toggle('is-solid', !!masthead && page.scrollTop > 0 && (masthead.getBoundingClientRect().bottom < bottom + mastheadLead || (!!title && title.top < bottom)));
+  }, { capture: true, passive: true });
+
+  const sidewaysRows = '[data-scroll-cue]';
+  const markMore = (row) => {
+    const end = row.scrollWidth - row.clientWidth;
+    const at = Math.abs(row.scrollLeft);
+    const more = end <= 1 ? null : at <= 1 ? 'end' : at >= end - 1 ? 'start' : 'both';
+    if (more === null) delete row.dataset.more;
+    else if (row.dataset.more !== more) row.dataset.more = more;
+  };
+  const resized = new ResizeObserver((entries) => entries.forEach((entry) => markMore(entry.target)));
+  const watchedRows = new WeakSet();
+  let rowsPending = false;
+  const markAllRows = () => {
+    rowsPending = false;
+    for (const row of document.querySelectorAll(sidewaysRows)) {
+      if (!watchedRows.has(row)) { watchedRows.add(row); resized.observe(row); }
+      markMore(row);
+    }
+  };
+  new MutationObserver(() => {
+    if (rowsPending) return;
+    rowsPending = true;
+    requestAnimationFrame(markAllRows);
+  }).observe(document.documentElement, { childList: true, subtree: true });
+  document.addEventListener('scroll', (event) => {
+    if (event.target instanceof Element && event.target.matches(sidewaysRows)) markMore(event.target);
   }, { capture: true, passive: true });
 
   const movingKeys = new Set(['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'PageUp', 'PageDown', 'Home', 'End']);
@@ -365,7 +416,7 @@ window.gsbcShell = (() => {
       if (!tab || strip.scrollWidth <= strip.clientWidth) return;
       const start = tab.offsetLeft - strip.offsetLeft;
       const end = start + tab.offsetWidth;
-      const margin = 24;
+      const margin = parseFloat(getComputedStyle(strip).getPropertyValue('--scroll-fade')) || 24;
       if (start - margin < strip.scrollLeft) strip.scrollTo({ left: Math.max(0, start - margin), behavior: 'smooth' });
       else if (end + margin > strip.scrollLeft + strip.clientWidth) strip.scrollTo({ left: end + margin - strip.clientWidth, behavior: 'smooth' });
     },
@@ -414,6 +465,8 @@ window.gsbcShell = (() => {
 
     back,
 
+    returnTo,
+
     scrollToTop() {
       scroller()?.scrollTo({ top: 0, behavior: reducedMotion.matches ? 'auto' : 'smooth' });
     },
@@ -445,7 +498,7 @@ window.gsbcShell = (() => {
       const ease = 'cubic-bezier(0.22, 1, 0.36, 1)';
       const backdrop = () => sheet.parentElement?.querySelector('.sheet-backdrop');
       const docked = () => getComputedStyle(sheet).bottom === '0px';
-      const fixed = 'input, textarea, select, [contenteditable="true"], .chips, .no-sheet-drag';
+      const fixed = 'input, textarea, select, [contenteditable="true"], .chips, .no-sheet-drag, .map-view';
       let start = null;
       const place = (dy) => {
         sheet.style.transform = `translateY(${dy}px)`;

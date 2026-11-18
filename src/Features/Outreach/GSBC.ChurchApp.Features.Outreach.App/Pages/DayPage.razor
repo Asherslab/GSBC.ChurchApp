@@ -1,0 +1,100 @@
+@page "/outreach/days/{DayId}"
+@using GSBC.ChurchApp.Features.Outreach.Client.Planning
+@using GSBC.ChurchApp.Platform.Ui.Locations
+@inject OutreachDayRoutes Days
+@inject IAccess Access
+
+<Page Title="Outreach day" BackHref="@OutreachLinks.Home" BackLabel="Outreach">
+    <LiveData @key="DayId" TValue="DayView" Load="() => Days.DayAsync(DayId)" Feeds="OutreachDayRoutes.Feeds" ReloadOn="Reload">
+        @{
+            DayView view = context.Value;
+        }
+        @if (view.Day is not { } day)
+        {
+            <Masthead Title="Outreach day" />
+            <Section First="true">
+                <EmptyState Icon="calendar" Title="This outreach day isn't on this phone" Body="It may have finished, or it's more than four weeks away." />
+            </Section>
+        }
+        else
+        {
+            <Masthead Title="@(view.Campaign?.Name ?? "Outreach day")" Note="@OutreachPhoneWords.DayWhen(day)" />
+            <Section First="true">
+                @if (day.Meeting is { IsSet: true } meeting)
+                {
+                    <div class="list">
+                        <LocationRow Location="meeting" />
+                    </div>
+                }
+                <FactList>
+                    <Fact Label="What it is" Text="@(day.Mode == WalkMode.Doorknock ? "Doorknocking, in pairs" : "Letterboxing, alone or together")" Icon="@(day.Mode == WalkMode.Doorknock ? "door-open" : "mail")" />
+                    @if (view.Campaign?.HandedOut is { Length: > 0 } handedOut)
+                    {
+                        <Fact Label="Handing out" Text="@handedOut" Icon="mail" />
+                    }
+                </FactList>
+                @if (day.Note.Length > 0)
+                {
+                    <p class="outreach-note">@day.Note</p>
+                }
+                @if (Access.CanSomewhere(OutreachPermissions.Reports))
+                {
+                    <Button Block="true" Variant="ButtonVariant.Quiet" Icon="chart-line" Href="@OutreachLinks.DayBoard(day.Id)">How the day is going</Button>
+                }
+            </Section>
+            <Section Title="Routes" Lead="@(view.Over ? "This day has finished." : "Pick one. Several people can take the same route, together or apart.")">
+                @if (view.Routes.Count == 0)
+                {
+                    <EmptyState Icon="map" Title="The routes aren't out yet" Body="They show here once the outreach team publishes them." />
+                }
+                else
+                {
+                    <ListGroup>
+                        @foreach (RouteLine line in view.Routes)
+                        {
+                            <ListRow @key="line.Route.Id" Class="outreach-route-row" Title="@RouteName(line.Route)" Subtitle="@RouteLine(day, line)" Chevron="true"
+                                     Href="@OutreachLinks.Route(line.Route.Code)">
+                                <Leading>
+                                    <span class="outreach-route-number" style="--route: @RouteColours.Of(line.Route.Colour)">@line.Route.Number</span>
+                                </Leading>
+                                <Below>
+                                    <span class="outreach-route-row__who">@Who(line)</span>
+                                </Below>
+                                <TrailingContent>
+                                    @if (line.Mine)
+                                    {
+                                        <Pill Tone="PillTone.Accent">Yours</Pill>
+                                    }
+                                </TrailingContent>
+                            </ListRow>
+                        }
+                    </ListGroup>
+                }
+            </Section>
+        }
+    </LiveData>
+</Page>
+
+@code {
+    private const ChangeKind Reload = ChangeKind.Reconnected | ChangeKind.Session | ChangeKind.Access | ChangeKind.Outbox;
+
+    [Parameter] public string DayId { get; set; } = "";
+
+    public static string RouteTitle(DayRoute route) => route.Name.Length > 0 ? $"Route {route.Number} · {route.Name}" : $"Route {route.Number}";
+
+    private static string RouteName(DayRoute route) => route.Name.Length > 0 ? route.Name : $"Route {route.Number}";
+
+    private static string RouteLine(OutreachDay day, RouteLine line) => string.Join(" · ",
+        OutreachPhoneWords.Distance(line.Route.Metres),
+        OutreachPhoneWords.Duration(TimeSpan.FromMinutes(line.Route.Minutes)),
+        day.Mode == WalkMode.Doorknock ? OutreachPhoneWords.Doors(line.Route.Letterboxes) : OutreachPhoneWords.Letterboxes(line.Route.Letterboxes));
+
+    private static string Who(RouteLine line) => line.Claims.Count == 0 ? "No one on it yet" : $"{Names(line.Claims)} {(line.Claims.Count == 1 ? "is" : "are")} on it";
+
+    private static string Names(IReadOnlyList<Claim> claims) => claims.Count switch
+    {
+        1 => claims[0].FirstName,
+        2 => $"{claims[0].FirstName} and {claims[1].FirstName}",
+        _ => $"{claims[0].FirstName}, {claims[1].FirstName} and {OutreachWords.Plural(claims.Count - 2, "other", "others")}",
+    };
+}

@@ -1,0 +1,82 @@
+@page "/outreach/mine"
+@inject MyOutreach Mine
+
+<Page Title="My outreach" BackHref="@OutreachLinks.Home" BackLabel="Outreach">
+    <Masthead Title="My outreach" Note="Your walks, on this phone and wherever you're signed in" />
+    <LiveData TValue="MyOutreachView" Load="Mine.LoadAsync" Feeds="MyOutreach.Feeds" ReloadOn="Reload">
+        @{
+            MyOutreachView view = context.Value;
+        }
+        @if (view.Walks.Count == 0)
+        {
+            <Section First="true">
+                <EmptyState Icon="footprints" Title="No walks yet" Body="Your walks show here once you've saved one.">
+                    <Button Variant="ButtonVariant.Quiet" Icon="footprints" Href="@OutreachLinks.Home">Plan a walk</Button>
+                </EmptyState>
+            </Section>
+        }
+        else
+        {
+            @if (view.Waiting + view.Failed > 0)
+            {
+                <Section First="true">
+                    <div class="outreach-waiting">
+                        <p>@Waiting(view)</p>
+                        @if (view.Failed > 0)
+                        {
+                            <Button Small="true" Variant="ButtonVariant.Quiet" Icon="refresh" OnClick="Mine.RetryAsync">Try again</Button>
+                        }
+                    </div>
+                </Section>
+            }
+            <Section First="@(view.Waiting + view.Failed == 0)">
+                <p class="outreach-figures__big">@OutreachPhoneWords.Letterboxes(view.Letterboxes)</p>
+                <p class="outreach-figures__line">@Totals(view)</p>
+            </Section>
+            <Section Title="Your walks">
+                <ListGroup>
+                    @foreach (MyWalk walk in view.Walks)
+                    {
+                        <ListRow @key="walk.Id" Title="@OutreachPhoneWords.Walked(walk.StartedAt)" Subtitle="@Line(walk)" Icon="@(walk.Mode == WalkMode.Doorknock ? "door-open" : "footprints")" />
+                    }
+                </ListGroup>
+            </Section>
+        }
+        <Section Title="Being counted" Grouped="true">
+            <ChildContent>
+                @if (view.SignedIn)
+                {
+                    <ToggleRow Title="Count me by name" Description="Your totals show with your name where the church thanks people who walk a lot. Off, you're counted with everyone else, without your name. Nobody else ever sees which streets you walked."
+                               Checked="view.CountedByName" CheckedChanged="Mine.CountByNameAsync" />
+                }
+                else
+                {
+                    <p class="outreach-note">You're not signed in, so your walks count for the church without your name. They're kept on this phone.</p>
+                }
+            </ChildContent>
+            <Foot>@(view.SignedIn ? "This changes straight away." : "")</Foot>
+        </Section>
+    </LiveData>
+</Page>
+
+@code {
+    private const ChangeKind Reload = ChangeKind.Reconnected | ChangeKind.Session | ChangeKind.Access | ChangeKind.Outbox;
+
+    private static string Waiting(MyOutreachView view) =>
+        view.Failed > 0
+            ? $"{OutreachWords.Plural(view.Failed, "change", "changes")} from your walks couldn't be sent yet. They're kept on this phone."
+            : $"{OutreachWords.Plural(view.Waiting, "change", "changes")} from your walks {(view.Waiting == 1 ? "is" : "are")} waiting for signal. They send by themselves.";
+
+    private static string Totals(MyOutreachView view)
+    {
+        List<string> parts = [OutreachWords.Plural(view.Walks.Count, "walk", "walks"), OutreachPhoneWords.Distance(view.Metres)];
+        if (view.Doors > 0)
+            parts.Add(OutreachPhoneWords.Doors(view.Doors));
+        if (view.Conversations > 0)
+            parts.Add(OutreachWords.Plural(view.Conversations, "conversation", "conversations"));
+        return string.Join(" · ", parts);
+    }
+
+    private static string Line(MyWalk walk) =>
+        $"{OutreachPhoneWords.Distance(walk.Metres)} · {(walk.Mode == WalkMode.Doorknock ? OutreachPhoneWords.Doors(walk.Doors) : OutreachPhoneWords.Letterboxes(walk.Letterboxes))} · {walk.Campaigns}";
+}
