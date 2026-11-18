@@ -18,7 +18,7 @@
                                   Hint="@PictureHint" Unavailable="Pictures can only be chosen in the admin panel." />
                     @BackTo(DigestFields.Picture)
                 </div>
-                @if (Shown.Picture is not null && _working.Kind != DigestItemKind.NotOn)
+                @if (Shown.Picture is not null)
                 {
                     <Segmented TValue="DigestPictureAt" Label="Picture in the email" ShowLabel="true" Options="PictureAtOptions" Value="_working.PictureAt" ValueChanged="SetPictureAt"
                                Hint="Where the picture sits in the email. The app always shows it across the top." />
@@ -102,7 +102,6 @@
     {
         DigestItemKind.Own => "From the media library. Shown in the app and the email.",
         DigestItemKind.News => "The post's own picture. Choose another from the media library for the digest only.",
-        DigestItemKind.NotOn => "A date that isn't on shows without a picture in the email.",
         _ => "The event's picture. Choose another from the media library for the digest only.",
     };
 

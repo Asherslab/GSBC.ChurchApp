@@ -94,7 +94,7 @@
                     <ItemTemplate>
                         <button type="button" class="digest-row__open" aria-label="@($"Change {TitleOf(context)}")" @onclick="() => Edit(context)">
                             <span class="digest-row__thumb">
-                                @if (context.Shown.Picture is { } picture && context.Kind != DigestItemKind.NotOn)
+                                @if (context.Shown.Picture is { } picture)
                                 {
                                     <MediaImage Media="picture" Size="MediaSizeName.Thumbnail" Alt="" />
                                 }
