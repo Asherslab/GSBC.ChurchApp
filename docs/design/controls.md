@@ -77,7 +77,7 @@ The docked feedback ticket's status, and a prayer request's care steps (New, Ans
 - **Both:** the last row of a group has no hairline under it; the card's ring is the only edge (2026-11-12). A ⋯ menu in a card's head adds no height to it (2026-11-13).
 
 ## Date and time fields
-See DESIGN.md, *Pattern map*. Admin: no placeholder (owner, 2026-11-16, #18), a calendar or clock button at the field's right end; the read-back is led by an accent check, and what it can't read is a problem line giving the formats ("Type a date such as 15 Nov, 15/11/2026 or next Sunday, or choose one from the calendar.").
+See DESIGN.md, *Pattern map*. Admin: no placeholder (owner, 2026-11-16, #18), a calendar or clock button at the field's right end; the read-back is led by an accent check; on a page it is at most 22rem wide, but beside other fields (a `ui-pair`, the record pane) it is as wide as they are (2026-11-18); and what it can't read is a problem line giving the formats ("Type a date such as 15 Nov, 15/11/2026 or next Sunday, or choose one from the calendar.").
 - **Date popover:** the month between step buttons, weekday heads, the days (Sundays in accent, today ringed in primary, the chosen day primary), and quick choices as filter chips (only those in the field's range; none with `Shortcuts="false"`).
 - **Months and years:** the month heading opens the twelve months under a year stepper; the year opens twenty years, ‹ › stepping twenty. Out-of-range ones are ink-3. Choosing a year goes to its months, a month to its days; Escape steps back a level before closing.
 - **Time popover:** the chosen time has an accent check. `DateTimeField` puts both under one label.
