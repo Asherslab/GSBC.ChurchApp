@@ -12,6 +12,100 @@ window.gsbcShell = (() => {
     else window.Blazor.navigateTo(fallback);
   };
 
+  const keepPlaces = () => {
+    const places = new Map();
+    const holdUnseen = 400;
+    const giveUpAfter = 1500;
+    const settledFor = 200;
+    const interruptions = ['touchstart', 'pointerdown', 'wheel', 'keydown'];
+    let here = history.state?._index ?? 0;
+    let returning = null;
+
+    const stopReturning = () => {
+      if (!returning) return;
+      const { page, frame } = returning;
+      returning = null;
+      cancelAnimationFrame(frame);
+      interruptions.forEach((kind) => removeEventListener(kind, stopReturning, true));
+      if (!page?.classList.contains('is-returning')) return;
+      page.classList.remove('is-returning');
+      if (reducedMotion.matches) return;
+      page.classList.add('is-returned');
+      page.addEventListener('animationend', () => page.classList.remove('is-returned'), { once: true });
+    };
+
+    const hold = (page) => {
+      if (returning.page === page) return;
+      returning.page?.classList.remove('is-returning');
+      returning.page = page;
+      page?.classList.add('is-returning');
+    };
+
+    const looksOf = (page) => [page, page?.querySelector('.topbar__title')?.textContent, page?.querySelector(':scope > .page')?.firstElementChild];
+    const replaced = (before, page) => looksOf(page).some((part, index) => part !== before[index]);
+
+    const returnTo = (top) => {
+      const started = performance.now();
+      const leaving = looksOf(scroller());
+      let room = -1;
+      let steadySince = started;
+      returning = { page: null, frame: 0 };
+      interruptions.forEach((kind) => addEventListener(kind, stopReturning, { capture: true, passive: true }));
+      hold(leaving[0]);
+      const step = (now) => {
+        const page = scroller();
+        if (!page || document.querySelector('dialog[open]')) { stopReturning(); return; }
+        const late = now - started > giveUpAfter;
+        if (late || replaced(leaving, page)) {
+          hold(page);
+          const reach = page.scrollHeight - page.clientHeight;
+          if (reach !== room) { room = reach; steadySince = now; }
+          const loading = !!page.querySelector('.skeleton');
+          if ((!loading && (room >= top || now - steadySince > settledFor)) || late) {
+            page.scrollTop = Math.min(top, room);
+            stopReturning();
+            return;
+          }
+        }
+        if (now - started > holdUnseen) returning.page?.classList.remove('is-returning');
+        returning.frame = requestAnimationFrame(step);
+      };
+      returning.frame = requestAnimationFrame(step);
+    };
+
+    const leave = () => {
+      stopReturning();
+      const page = scroller();
+      if (page) places.set(here, page.scrollTop);
+    };
+
+    const pushState = history.pushState;
+    history.pushState = function (...args) {
+      leave();
+      const result = pushState.apply(this, args);
+      here = history.state?._index ?? here + 1;
+      for (const index of places.keys()) if (index >= here) places.delete(index);
+      return result;
+    };
+
+    const replaceState = history.replaceState;
+    history.replaceState = function (...args) {
+      const before = location.href;
+      const result = replaceState.apply(this, args);
+      here = history.state?._index ?? here;
+      if (location.href !== before) places.delete(here);
+      return result;
+    };
+
+    addEventListener('popstate', () => {
+      leave();
+      here = history.state?._index ?? 0;
+      const top = places.get(here);
+      if (top > 0) returnTo(top);
+    });
+  };
+  keepPlaces();
+
   document.addEventListener('scroll', (event) => {
     const page = event.target;
     if (!(page instanceof Element) || !page.matches('.page-scroll, .phone-frame__screen')) return;

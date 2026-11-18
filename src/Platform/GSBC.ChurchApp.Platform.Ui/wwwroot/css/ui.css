@@ -27,6 +27,8 @@
   scrollbar-width: none;
 }
 .page-scroll::-webkit-scrollbar { display: none; }
+.page-scroll.is-returning { opacity: 0; }
+.page-scroll.is-returned { animation: fade 140ms var(--ease-out); }
 .page { min-height: 100%; background: var(--ground, var(--page)); }
 .page:not(:has(.masthead)) { display: flow-root; }
 .page [id] { scroll-margin-top: calc(var(--sat) + 100px); }
