@@ -15,7 +15,7 @@
             }
             @if (request.MayRead)
             {
-                <CareSteps Care="line.Care" AnsweredNote="@request.AnsweredNote" Busy="@(_busy == "care")" Move="CareAsync" />
+                <CareSteps Care="line.Care" AnsweredNote="@request.AnsweredNote" Message="@request.Message" Busy="@(_busy == "care")" Move="CareAsync" />
             }
             else
             {

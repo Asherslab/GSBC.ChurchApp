@@ -74,7 +74,7 @@
     {
         Sending.Waiting => "clock",
         Sending.CouldNotSend => "cloud-off",
-        _ when line.Answered => "check",
+        _ when line.Answered || line.Closed => "check",
         _ when line.Wall == WallState.Shown => "prayer",
         _ => "lock",
     };
@@ -84,6 +84,7 @@
         Sending.CouldNotSend => RowTone.Warm,
         Sending.Waiting => RowTone.Quiet,
         _ when line.Wall == WallState.Shown || line.Answered => RowTone.Accent,
+        _ when line.Closed => RowTone.Quiet,
         _ => RowTone.Primary,
     };
 }

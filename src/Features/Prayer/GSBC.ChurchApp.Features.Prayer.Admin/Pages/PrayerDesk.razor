@@ -53,6 +53,7 @@
         ForTheWall,
         OnTheWall,
         Answered,
+        Closed,
         Everything,
         Settings,
     }
@@ -83,6 +84,10 @@
                 @if (line.Care == CareState.New && inbox.MayRead)
                 {
                     <Pill>New</Pill>
+                }
+                @if (line.Care == CareState.Closed && inbox.MayRead)
+                {
+                    <Pill Tone="PillTone.Quiet">Closed by them</Pill>
                 }
                 @if (line.Wall == WallState.Waiting)
                 {
@@ -127,7 +132,10 @@
         tabs.Add(new(Tab.ForTheWall, "For the wall", Count(inbox, Tab.ForTheWall)));
         tabs.Add(new(Tab.OnTheWall, "On the wall"));
         if (inbox.MayRead)
+        {
             tabs.Add(new(Tab.Answered, "Answered"));
+            tabs.Add(new(Tab.Closed, "Closed by them"));
+        }
         tabs.Add(new(Tab.Everything, "Everything"));
         if (inbox.MayRead || Access.Can(PrayerPermissions.Settings))
             tabs.Add(new(Tab.Settings, "Settings"));
@@ -142,6 +150,7 @@
         Tab.ForTheWall => line.Wall == WallState.Waiting,
         Tab.OnTheWall => line.Wall == WallState.Shown,
         Tab.Answered => line.Care == CareState.Answered,
+        Tab.Closed => line.Care == CareState.Closed,
         _ => true,
     };
 
@@ -157,7 +166,7 @@
 
     private string EmptyBody(Inbox inbox) => _query.Length > 0
         ? "Try other words, or look under Everything."
-        : TabFor(inbox) == Tab.New ? "Every request has been answered. New ones appear here as they arrive." : "Requests appear here as they arrive.";
+        : TabFor(inbox) == Tab.New ? "New requests appear here as they arrive." : "Requests appear here as they arrive.";
 
     private async Task ChooseTabAsync(Tab tab)
     {

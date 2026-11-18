@@ -9,6 +9,7 @@ public enum CareState
 {
     New = 0,
     Answered = 2,
+    Closed = 3,
 }
 
 public enum WrittenFrom
@@ -81,11 +82,10 @@ public sealed class PrayMark
 }
 
 [ProtoContract]
-public sealed class AnsweredSave
+public sealed class CloseSave
 {
     [ProtoMember(1)] public string Id { get; set; } = "";
-    [ProtoMember(2)] public string Note { get; set; } = "";
-    [ProtoMember(3)] public bool RemoveFromWall { get; set; }
+    [ProtoMember(2)] public string Message { get; set; } = "";
 }
 
 [ProtoContract]
@@ -99,6 +99,7 @@ public sealed class WallPost
     [ProtoMember(6)] public int Prayed { get; set; }
     [ProtoMember(7)] public bool Answered { get; set; }
     [ProtoMember(8)] public string AnsweredNote { get; set; } = "";
+    [ProtoMember(9)] public string Message { get; set; } = "";
 }
 
 [ProtoContract]
@@ -114,6 +115,8 @@ public sealed class YourRequest
     [ProtoMember(8)] public string AnsweredNote { get; set; } = "";
     [ProtoMember(9)] public string WallName { get; set; } = "";
     [ProtoMember(10)] public string WallText { get; set; } = "";
+    [ProtoMember(11)] public bool Closed { get; set; }
+    [ProtoMember(12)] public string Message { get; set; } = "";
 }
 
 [ProtoContract]
@@ -125,6 +128,8 @@ public sealed class SentOnPhone
     [ProtoMember(4)] public bool ForWall { get; set; }
     [ProtoMember(5)] public string OutboxId { get; set; } = "";
     [ProtoMember(6)] public bool SignedIn { get; set; }
+    [ProtoMember(7)] public bool Closed { get; set; }
+    [ProtoMember(8)] public string Message { get; set; } = "";
 }
 
 [ProtoContract]
@@ -199,6 +204,7 @@ public sealed class RequestDetails
     [ProtoMember(15)] public bool MayDelete { get; set; }
     [ProtoMember(16)] public bool FromChurch { get; set; }
     [ProtoMember(17)] public bool ForSomeoneElse { get; set; }
+    [ProtoMember(18)] public string Message { get; set; } = "";
 }
 
 [ProtoContract]
@@ -281,4 +287,5 @@ public sealed class CareCase
     [ProtoMember(13)] public DateTime ChangedAt { get; set; }
     [ProtoMember(14)] public bool FromChurch { get; set; }
     [ProtoMember(15)] public bool ForSomeoneElse { get; set; }
+    [ProtoMember(16)] public string Message { get; set; } = "";
 }

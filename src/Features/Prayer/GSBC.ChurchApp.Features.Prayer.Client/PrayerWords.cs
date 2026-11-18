@@ -35,11 +35,15 @@ public static class PrayerWords
     {
         Sending.Waiting => "Waiting to send. It goes by itself when you're back online.",
         Sending.CouldNotSend => "Couldn't send",
-        _ => string.Join(" · ", new[] { Where(line), line.Answered ? "Answered" : null }.OfType<string>()),
+        _ => string.Join(" · ", new[] { Where(line), Settled(line) }.OfType<string>()),
     };
+
+    private static string? Settled(YourLine line) =>
+        line.Answered ? "Answered" : line is { Closed: true, MessageOnTheWall: false } ? "Closed" : null;
 
     public static string Where(YourLine line) => line.Wall switch
     {
+        WallState.Shown when line is { MessageOnTheWall: true, WallUntil: { } until } => $"Your message is on the prayer wall until {Day(until)} · {Prayed(line.Prayed)}",
         WallState.Shown when line.WallUntil is { } until => $"On the prayer wall until {Day(until)} · {Prayed(line.Prayed)}",
         WallState.Shown => $"On the prayer wall · {Prayed(line.Prayed)}",
         WallState.Waiting when line.Known => "With the pastoral team, who'll read your request before it goes on the wall",
@@ -69,7 +73,15 @@ public static class PrayerWords
         return $"{from} · {ChurchDates.Ago(item.SentAt, now)}";
     }
 
-    public static string Care(CareState care) => care == CareState.Answered ? "Answered" : "New";
+    public static string Care(CareState care) => care switch
+    {
+        CareState.Answered => "Answered",
+        CareState.Closed => "Closed by them",
+        _ => "New",
+    };
+
+    public static string MessageFrom(WallLine line) =>
+        line.Yours ? "Your message:" : line.Post.Name.Length > 0 ? $"Message from {line.Post.Name}:" : "Message from the person who asked:";
 
     public static string WallLine(WallState wall) => wall switch
     {

@@ -1,5 +1,9 @@
 <div class="prayer-care">
     <StagePipeline TValue="CareState" Label="Pastoral care" Stages="Stages" Value="Care" Disabled="Busy" ValueChanged="MoveAsync" />
+    @if (Message.Length > 0)
+    {
+        <p class="prayer-care__message"><strong>Their message:</strong> @Message</p>
+    }
     @if (Care == CareState.Answered && AnsweredNote.Length > 0)
     {
         <p class="prayer-care__answered">Answered: @AnsweredNote</p>
@@ -19,22 +23,25 @@
 </Sheet>
 
 @code {
-    private static readonly IReadOnlyList<SegmentOption<CareState>> Stages =
-    [
-        new(CareState.New, PrayerWords.Care(CareState.New)),
-        new(CareState.Answered, PrayerWords.Care(CareState.Answered)),
-    ];
+    private IReadOnlyList<SegmentOption<CareState>> Stages => Care == CareState.Closed
+        ? [Stage(CareState.New), Stage(CareState.Closed), Stage(CareState.Answered)]
+        : [Stage(CareState.New), Stage(CareState.Answered)];
 
     [Parameter, EditorRequired] public required CareState Care { get; set; }
     [Parameter, EditorRequired] public required Func<CareState, string, Task> Move { get; set; }
     [Parameter] public string AnsweredNote { get; set; } = "";
+    [Parameter] public string Message { get; set; } = "";
     [Parameter] public bool Busy { get; set; }
 
     private bool _answering;
     private string _note = "";
 
+    private static SegmentOption<CareState> Stage(CareState care) => new(care, PrayerWords.Care(care));
+
     private Task MoveAsync(CareState care)
     {
+        if (care == CareState.Closed)
+            return Task.CompletedTask;
         if (care != CareState.Answered)
             return Move(care, "");
         (_answering, _note) = (true, "");

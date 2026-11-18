@@ -93,6 +93,7 @@ internal sealed class PastoralCare(
             WallUntil = record.WallUntil,
             Prayed = record.Prayed,
             AnsweredNote = record.AnsweredNote,
+            Message = record.Message,
             MayRead = mayRead,
             MayDelete = PrayerRules.MayDelete(record, mayRead),
             FromChurch = record.FromChurch,
@@ -122,7 +123,7 @@ internal sealed class PastoralCare(
         if (await handled.AlreadyAsync(queuedId, cancellationToken))
             return;
         RequestRecord record = await FindAsync(change.Id, cancellationToken);
-        if (record.Care == change.Care && record.AnsweredNote == change.AnsweredNote.Trim())
+        if (change.Care == CareState.Closed || (record.Care == change.Care && record.AnsweredNote == change.AnsweredNote.Trim()))
             return;
         DateTime now = time.GetUtcNow().UtcDateTime;
         bool newlyAnswered = change.Care == CareState.Answered && record.Care != CareState.Answered;

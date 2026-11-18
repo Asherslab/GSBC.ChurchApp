@@ -10,7 +10,7 @@ namespace GSBC.ChurchApp.Features.Prayer.Contracts;
 [ProtoSerializable(typeof(PrayerRequestSend))]
 [ProtoSerializable(typeof(RequestRef))]
 [ProtoSerializable(typeof(PrayMark))]
-[ProtoSerializable(typeof(AnsweredSave))]
+[ProtoSerializable(typeof(CloseSave))]
 [ProtoSerializable(typeof(WallPost))]
 [ProtoSerializable(typeof(YourRequest))]
 [ProtoSerializable(typeof(SentOnPhone))]

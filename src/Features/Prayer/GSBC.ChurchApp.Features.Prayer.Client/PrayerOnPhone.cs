@@ -78,8 +78,15 @@ public sealed class PrayerOnPhone(ILocalFeeds feeds, IOutbox outbox, ILocalPrefe
         });
     }
 
-    public async Task AnsweredAsync(string id, string note, bool removeFromWall) =>
-        await outbox.EnqueueAsync(Service + "Answered", new AnsweredSave { Id = id, Note = note.Trim(), RemoveFromWall = removeFromWall }, PrayerContractsModel.Instance);
+    public async Task CloseAsync(string id, string message)
+    {
+        await outbox.EnqueueAsync(Service + PrayerOperations.Close, new CloseSave { Id = id, Message = message.Trim() }, PrayerContractsModel.Instance);
+        await KeepAsync(kept =>
+        {
+            if (kept.Sent.FirstOrDefault(entry => entry.Id == id) is { } sent)
+                (sent.Closed, sent.Message) = (true, message.Trim());
+        });
+    }
 
     public async Task TakeDownAsync(string id) =>
         await outbox.EnqueueAsync(Service + "TakeDown", new RequestRef { Id = id }, PrayerContractsModel.Instance);
@@ -101,14 +108,14 @@ public sealed class PrayerOnPhone(ILocalFeeds feeds, IOutbox outbox, ILocalPrefe
 
     private YourLine FromFeed(YourRequest request, WallPost? post) => new(
         request.Id, request.Text, request.SentAt, Sending.Sent, null, request.Wall, request.WallUntil, post?.Prayed ?? request.Prayed,
-        request.Answered, request.AnsweredNote, request.WallName, request.Wall != WallState.NotAsked, Known: true);
+        request.Answered, request.AnsweredNote, request.Closed, request.Message, request.WallName, request.Wall != WallState.NotAsked, Known: true);
 
     private static YourLine FromPhone(SentOnPhone sent, OutboxEntry? entry, WallPost? post) => new(
         sent.Id, sent.Text, sent.SentAt,
         entry is null ? Sending.Sent : entry.Failed ? Sending.CouldNotSend : Sending.Waiting,
         entry?.Failed == true ? entry.LastError : null,
-        post is not null ? WallState.Shown : sent.ForWall ? WallState.Waiting : WallState.NotAsked,
-        post?.Until, post?.Prayed ?? 0, post?.Answered ?? false, post?.AnsweredNote ?? "", post?.Name ?? "", sent.ForWall, Known: false);
+        post is not null ? WallState.Shown : !sent.ForWall ? WallState.NotAsked : sent.Closed ? WallState.TakenDown : WallState.Waiting,
+        post?.Until, post?.Prayed ?? 0, post?.Answered ?? false, post?.AnsweredNote ?? "", sent.Closed, post?.Message ?? sent.Message, post?.Name ?? "", sent.ForWall, Known: false);
 
     private async Task<KeptOnPhone> KeptAsync()
     {

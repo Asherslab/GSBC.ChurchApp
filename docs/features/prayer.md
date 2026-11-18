@@ -55,12 +55,23 @@ is the owner's is marked so.
   phone can't read a private feed. It knows a request is on the wall by finding its id in the public wall feed (the id
   is random and made on the phone, so it says nothing about who sent it).
 - Each shows where it is: waiting to send, couldn't send, with the pastoral team, on the wall until a day with its
-  prayer count, was on the wall, answered. Its page (2026-11-12) opens on the same sand band as staff see, with the
-  steps read only (owner, 2026-11-12): *Sent*, *On the wall* (only when they asked for it) and *Answered*. The main
-  action is one wide button. On the wall it is *Remove from prayer wall* (UAT feedback #7, 2026-11-16; the owner: a
-  change of words, not of what it does): it marks the request answered with optional words of thanks. **With thanks the
-  wall shows them under the request for 3 days, then it comes down; with none it comes down at once** (owner,
-  2026-11-16). Off the wall it stays *Mark as answered*. The band's ⋯ menu holds *Take your request off the prayer wall* while it
+  prayer count, was on the wall, answered or closed. Its page (2026-11-12) opens on the same sand band as staff see, with the
+  steps read only (owner, 2026-11-12): *Sent*, *On the wall* (only when they asked for it) and *Answered* or *Closed*. The main
+  action is one wide button.
+- **Taking a request down needn't mean it was answered** (owner, 2026-11-18, UAT feedback #34: "we want people to
+  understand they can take a prayer request down without it being answered, and they can leave a message for people to
+  see such as a thanks for praying, how it was answered, etc."). On the wall the button is *Take down your request*;
+  off it, *Close your request*. Either asks for an optional message (500 characters). **With a message the wall shows
+  it under the request for 3 days, then it comes down; with none it comes down at once** (owner, 2026-11-16, for what
+  was *Remove from prayer wall*, UAT #7). Closing one that still waits for the wall keeps it off. The wall attributes the
+  message to them (*Message from Sam S.:*) and never calls it answered.
+- **Closed is the person's, Answered the pastoral team's.** Closing sets the care step to *Closed by them*
+  (`CareState.Closed`) only while it's *New*; one the team already marked answered stays answered. The message is its
+  own field (`message`), apart from the team's words for the wall (`answered_note`), so neither overwrites the other.
+  Staff can't choose *Closed by them*; they can still mark a closed request answered or new again. The gRPC method keeps
+  its old name (`Answered`, as `PrayerOperations.Close`) so sends queued on phones before the change still arrive.
+  Migration `ClosedByThem` moved requests people had marked answered themselves to *Closed by them* with their words as
+  the message, and restarted the prayer feeds so phones pick up the change (`PrayerKeeping` refills them). The band's ⋯ menu holds *Take your request off the prayer wall* while it
   still waits for the wall (it can't go back) and *Delete it* (from the pastoral team and the wall; can't be undone),
   each asking once.
 
@@ -71,16 +82,16 @@ is the owner's is marked so.
   too much), the name (staff can hide one; they can never show one the person didn't allow), and the day it leaves
   (30 days to start, up to a year). A request that didn't ask for the wall can never be shown.
 - **The public feed** `prayer.wall` carries only the shown words, the short name ("Sam S.") if allowed, when it was shown, until
-  when, the prayer count and an answered line. No install or person.
+  when, the prayer count, an answered line (staff's) and the person's message. No install or person.
 - **It leaves the wall** when its day passes (`PrayerSchedule`, every 15 minutes, one replica at a time), when the
-  person takes it down, when staff take it down or keep it private, or when it's deleted.
+  person takes it down or closes it, when staff take it down or keep it private, or when it's deleted.
 - **Pray** (*Claude's default*): one mark per phone per request; tapping again takes it back. The count is all anyone
   sees. The button turns aqua once you've prayed (DESIGN.md's "praying" state).
 
 ## The pastoral inbox (admin panel)
 
 - One page, `/prayer`, on the workbench (2026-11-12, DESIGN.md's pattern map): the title band; a rail with the search
-  and the filters *New*, *For the wall*, *On the wall*, *Answered*, *Everything* and *Settings* (a
+  and the filters *New*, *For the wall*, *On the wall*, *Answered*, *Closed by them*, *Everything* and *Settings* (a
   wall-only holder sees the wall-related ones); the requests as a table (the request with its pills, who sent it,
   when); and the chosen request in the record pane: its head says who sent it and when, with Delete in its ⋯ menu; their
   words; for the pastoral team the care steps (`CareSteps`: the shared stage pipeline, New and Answered,
@@ -154,7 +165,7 @@ else. The page is the owner's pick on the decision page, "A page to write on" (`
 
 | Kind | Who | When |
 |---|---|---|
-| `prayer.new` *Someone sends a prayer request* | holders of `prayer.requests.read` | a request arrives; waits until it's marked answered (by staff or the person) |
+| `prayer.new` *Someone sends a prayer request* | holders of `prayer.requests.read` | a request arrives; waits until staff mark it answered or the person closes it |
 | `prayer.wall.waiting` *A prayer request asks to be on the prayer wall* | holders of `prayer.wall.moderate` | a request asks for the wall; one notification per person with the one above (most specific first); waits until the wall is decided |
 | `prayer.prayed` *How many people have prayed for your prayer request* (renamed 2026-11-12 from "Someone prays…", which read as one notification per prayer) | the person | a digest (below); opens their request |
 | `prayer.answered` *The pastoral team marks your prayer request answered* | the person | staff mark it answered; opens their request |

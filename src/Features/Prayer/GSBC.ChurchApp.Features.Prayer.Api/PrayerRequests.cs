@@ -93,16 +93,17 @@ internal sealed class PrayerRequests(
             await telling.PrayedForAsync(record, user, cancellationToken);
     }
 
-    public async Task AnsweredAsync(Guid install, Guid? user, AnsweredSave save, CancellationToken cancellationToken)
+    public async Task CloseAsync(Guid install, Guid? user, CloseSave save, CancellationToken cancellationToken)
     {
-        if (await TheirsAsync(install, user, save.Id, cancellationToken) is not { } record)
+        if (await TheirsAsync(install, user, save.Id, cancellationToken) is not { } record || !PrayerRules.MayClose(record))
             return;
         DateTime now = time.GetUtcNow().UtcDateTime;
-        record.Care = CareState.Answered;
-        record.AnsweredNote = PrayerRules.Clip(save.Note, PrayerRules.LongestAnsweredNote);
+        if (record.Care == CareState.New)
+            record.Care = CareState.Closed;
+        record.Message = PrayerRules.Clip(save.Message, PrayerRules.LongestMessage);
         record.ChangedAt = now;
-        record.Steps.Add(new StepRecord { At = now, What = "They said it was answered" });
-        bool takenDown = save.RemoveFromWall && PrayerRules.IsOnTheWall(record, now) && RemoveFromWall(record, now);
+        record.Steps.Add(new StepRecord { At = now, What = record.Message.Length > 0 ? "They closed the request and left a message" : "They closed the request" });
+        bool takenDown = TakeDownOnClosing(record, now);
         await publisher.ChangedAsync(record, now, cancellationToken);
         await db.SaveChangesAsync(cancellationToken);
         await telling.CaredForAsync(record, cancellationToken);
@@ -110,15 +111,17 @@ internal sealed class PrayerRequests(
             await telling.WallDecidedAsync(record, cancellationToken);
     }
 
-    private static bool RemoveFromWall(RequestRecord record, DateTime now)
+    private static bool TakeDownOnClosing(RequestRecord record, DateTime now)
     {
-        if (record.AnsweredNote.Length > 0)
+        if (PrayerRules.IsOnTheWall(record, now) && record.Message.Length > 0)
         {
-            DateTime until = PrayerRules.UntilWithThanks(record.WallUntil, now);
+            DateTime until = PrayerRules.UntilWithMessage(record.WallUntil, now);
             record.WallUntil = until;
-            record.Steps.Add(new StepRecord { At = now, What = $"Shows their thanks on the prayer wall until {ChurchTime.ToChurch(until):d MMMM}" });
+            record.Steps.Add(new StepRecord { At = now, What = $"Shows their message on the prayer wall until {ChurchTime.ToChurch(until):d MMMM}" });
             return false;
         }
+        if (record.Wall is not (WallState.Waiting or WallState.Shown))
+            return false;
         record.Wall = WallState.TakenDown;
         record.Steps.Add(new StepRecord { At = now, What = "They took it off the prayer wall" });
         return true;
