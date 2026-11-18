@@ -172,7 +172,7 @@
 
     private string Lead(OutreachDay day, DayFacts facts) =>
         day.Id.Length == 0 ? "When it runs, where people meet and the campaign it's for. Its routes come next, on the map."
-        : $"{OutreachWords.Window(day)}{(day.Meeting is { IsSet: true } meeting ? $", meeting at {LocationWords.Headline(meeting)}" : "")}.";
+        : $"{OutreachWords.Window(day)}{(day.Meeting is { IsSet: true } meeting ? $", meeting {LocationWords.At(meeting)}" : "")}.";
 
     private string GoHint(OutreachDay day, DayFacts facts)
     {

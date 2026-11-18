@@ -272,7 +272,7 @@ a.whats-next-card__title:active { opacity: 0.7; }
 .digest-row__open:hover .digest-row__title { text-decoration: underline; text-decoration-color: var(--ink-3); text-underline-offset: 3px; }
 .digest-row__thumb { display: grid; flex: none; width: 72px; height: 48px; overflow: hidden; border-radius: var(--radius-inner); background: var(--sand-strong); place-items: center; }
 .digest-row__thumb img { width: 100%; height: 100%; object-fit: cover; }
-.digest-row__no-picture { color: var(--ink-2); font-size: var(--text-micro); font-weight: 600; }
+.digest-row__no-picture { color: var(--ink-2); font-size: var(--text-micro); font-weight: 600; text-wrap: balance; }
 .digest-row__no-picture--off { color: var(--marker-ink); }
 .digest-row__body { display: grid; gap: var(--space-3xs); min-width: 0; }
 .digest-row__source { display: inline-flex; align-items: center; gap: var(--space-2xs); color: var(--ink-3); font-size: var(--text-micro); font-weight: 600; }

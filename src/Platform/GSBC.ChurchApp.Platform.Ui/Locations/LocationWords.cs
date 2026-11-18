@@ -18,6 +18,14 @@ public static class LocationWords
         _ => location.Text,
     };
 
+    public static string At(Location location) => location switch
+    {
+        { Kind: LocationKind.AtChurch } => "at church",
+        { Kind: LocationKind.OffSite, AddressHidden: true } => location.Suburb.Length > 0 ? $"at a home in {location.Suburb}" : "at a home",
+        { Kind: LocationKind.OffSite, Name.Length: 0, Address.Length: 0 } => "at a place on the map",
+        _ => $"at {Headline(location)}",
+    };
+
     public static string? Address(Location location) => location is { Kind: LocationKind.OffSite, AddressHidden: false, Name.Length: > 0 }
         ? location.Address.Length > 0 ? location.Address : location.Suburb.Length > 0 ? location.Suburb : null
         : null;

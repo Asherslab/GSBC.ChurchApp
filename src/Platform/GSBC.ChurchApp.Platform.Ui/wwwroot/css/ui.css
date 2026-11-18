@@ -124,7 +124,7 @@
   text-wrap: balance;
 }
 h1:focus { outline: none; }
-.masthead__note { margin: 8px 0 0; font-size: var(--text-label); font-weight: 600; color: var(--masthead-note); text-wrap: pretty; }
+.masthead__note { margin: 8px 0 0; font-size: var(--text-label); font-weight: 600; color: var(--masthead-note); text-wrap: balance; }
 .masthead__extra { margin-top: 18px; }
 
 .section { margin-top: var(--section); padding: 0 var(--gutter); }
