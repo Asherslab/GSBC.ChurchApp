@@ -572,8 +572,9 @@ button.text-link:disabled { color: var(--ink-3); cursor: default; }
 .save-bar--on-masthead :is(.save-bar__why, .save-status, .save-status > .icon) { color: var(--on-masthead-2); }
 .edit-scope { display: contents; }
 
-.tab-strip { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2xs) 22px; margin-bottom: var(--after-tabs); box-shadow: inset 0 -1px 0 var(--line); }
-.tab-strip__tab { position: relative; display: inline-flex; align-items: center; gap: 6px; min-height: var(--touch); padding: 0; border: 0; background: none; color: var(--ink-3); font: inherit; font-size: var(--text-label); font-weight: 600; cursor: pointer; }
+.tab-strip { display: flex; align-items: center; gap: var(--space-2xs) 22px; margin-bottom: var(--after-tabs); overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain; scrollbar-width: none; box-shadow: inset 0 -1px 0 var(--line); }
+.tab-strip::-webkit-scrollbar { display: none; }
+.tab-strip__tab { position: relative; display: inline-flex; flex: none; align-items: center; gap: 6px; min-height: var(--touch); padding: 0; border: 0; background: none; color: var(--ink-3); font: inherit; font-size: var(--text-label); font-weight: 600; white-space: nowrap; cursor: pointer; }
 .tab-strip__tab[aria-selected="true"] { color: var(--ink); }
 .tab-strip__tab[aria-selected="true"]::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 3px; border-radius: 3px; background: var(--marker); }
 .tab-strip__count, .segmented__count { display: inline-grid; place-items: center; min-width: 18px; height: 18px; padding: 0 5px; border-radius: var(--radius-full); background: color-mix(in srgb, var(--marker) 22%, transparent); color: var(--marker-ink); font-size: var(--text-pill); font-weight: 700; font-variant-numeric: tabular-nums; }
@@ -599,7 +600,7 @@ button.text-link:disabled { color: var(--ink-3); cursor: default; }
   .workbench:not(.workbench--no-aside, .workbench--no-detail) .workbench__aside { align-self: start; padding: var(--space-lg) var(--space-3xl); }
   .workbench { --record: minmax(320px, 380px); }
   .workbench--wide-detail { --record: minmax(0, 1fr); }
-  .workbench--wide-detail.workbench--no-aside { grid-template-columns: minmax(24rem, 1fr) minmax(22rem, 1fr); }
+  .workbench--wide-detail.workbench--no-aside { grid-template-columns: minmax(22rem, 1fr) minmax(22rem, 1fr); }
   .workbench--fold-aside:not(.workbench--no-aside, .workbench--no-detail) { grid-template-areas: "main detail"; }
   .workbench--fold-aside:not(.workbench--no-aside, .workbench--no-detail) .workbench__aside { display: none; }
 }
@@ -1419,18 +1420,8 @@ button.text-link:disabled { color: var(--ink-3); cursor: default; }
 .tab-strip__tab { text-decoration: none; }
 .tab-strip__tab[aria-current="page"] { color: var(--ink); }
 .tab-strip__tab[aria-current="page"]::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 3px; border-radius: 3px; background: var(--marker); }
-.tab-strip__tab:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 6px; }
-.tab-strip--sticky { margin-bottom: 0; position: sticky; top: calc(var(--top-h) + var(--sat)); z-index: 5; flex-wrap: nowrap; overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain; scrollbar-width: none; padding: 0 var(--gutter); background: var(--page); }
-.tab-strip--sticky .tab-strip__tab { flex: none; white-space: nowrap; }
-.tab-strip--sticky::-webkit-scrollbar { display: none; }
-@media (max-width: 760px) {
-  .tab-strip { flex-wrap: nowrap; overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain; scrollbar-width: none; }
-  .tab-strip:not(.tab-strip--sticky) { padding-right: var(--space-2xl); mask-image: linear-gradient(to right, var(--ink) calc(100% - var(--space-2xl)), transparent); }
-  .tab-strip::-webkit-scrollbar { display: none; }
-  .tab-strip__tab { flex: none; white-space: nowrap; }
-  .tab-strip__tab:focus-visible { outline-offset: -2px; }
-}
-.tab-strip--sticky .tab-strip__tab:focus-visible { outline-offset: -2px; }
+.tab-strip__tab:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; border-radius: 6px; }
+.tab-strip--sticky { margin-bottom: 0; position: sticky; top: calc(var(--top-h) + var(--sat)); z-index: 5; padding: 0 var(--gutter); background: var(--page); }
 
 .bubble-row { display: grid; grid-template-columns: 30px minmax(0, 1fr); gap: 8px; align-items: end; margin-top: 3px; }
 .bubble-row--first { margin-top: 12px; }
