@@ -248,7 +248,7 @@ button.module-nav__link { width: 100%; border: 0; background: none; font-family:
 .office-tasks, .office-areas { margin: 0; padding: 0; list-style: none; border-top: 1px solid var(--line); }
 .office-task, .office-area { display: flex; align-items: center; gap: 14px; min-height: 64px; padding: 10px 0; border-bottom: 1px solid var(--line); }
 .office-task__tile, .office-area__tile { display: grid; flex: none; place-items: center; width: 34px; height: 34px; border-radius: var(--radius-tile); background: var(--sand); color: var(--primary); }
-.office-task__tile { background: color-mix(in srgb, var(--marker) 30%, transparent); color: var(--marker-ink); }
+.office-task__tile { background: var(--marker-soft); color: var(--marker-ink); }
 .office-task__text, .office-area__text { display: grid; flex: 1; min-width: 0; gap: 2px; }
 .office-task__title { color: var(--ink); font-size: var(--text-row); font-weight: 600; text-decoration: none; }
 .office-task__title:hover { text-decoration: underline; text-underline-offset: 3px; }
@@ -449,7 +449,7 @@ input[type="checkbox"]:not([class]), input[type="radio"]:not([class]) { display:
 .section--grouped > .section__lead { margin: var(--space-3xs) var(--space-xl) 0; }
 .section--grouped > .section__group { container-type: inline-size; padding: var(--space-lg) var(--space-xl) var(--space-xl); border-radius: 0; background: none; }
 :not(.page) > .section--grouped > .section__group { box-shadow: none; }
-.date-field { max-width: 22rem; }
+.date-field:not(.ui-pair > *, .workbench__detail *) { max-width: 22rem; }
 @container (min-width: 37rem) {
   .section__group :is(.field:has(> input.field__input, > .field__with-unit), .date-field):not(.ui-pair *) { max-width: calc((100% - var(--stack)) / 2); }
 }

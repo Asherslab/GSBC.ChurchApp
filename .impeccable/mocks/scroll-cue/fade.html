@@ -1,0 +1,35 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>A: A soft fade</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap"><style>
+*{box-sizing:border-box}body{margin:0;padding:24px;font-family:Montserrat,-apple-system,system-ui,sans-serif;background:#e9e5de;color:#18233a}
+h1{font-size:20px;margin:0 0 4px}p.lead{margin:0 0 20px;color:#545e70;font-size:14px;max-width:70ch;line-height:1.45}
+.row{display:flex;flex-wrap:wrap;gap:24px;align-items:flex-start}
+.cap{font-size:12px;font-weight:600;color:#545e70;margin:0 0 8px}
+.light{--page:#fff;--ink:#18233a;--ink-2:#545e70;--ink-3:#626a79;--line:rgb(42 61 94/.12);--field:#f4efe7;--primary:#2a3d5e;--on-primary:#fff;--marker:#e7ae74;--masthead:#2a3d5e;--edge:rgb(24 35 58/.18);--btn:#fff}
+.dark{--page:#141d31;--ink:#f2ede4;--ink-2:#b2b8c5;--ink-3:#9ca2b1;--line:rgb(255 255 255/.09);--field:#2d374d;--primary:#2ec4b6;--on-primary:#062522;--marker:#e7ae74;--masthead:#283c62;--edge:rgb(0 0 0/.55);--btn:#26334f}
+.phone{width:390px;border-radius:28px;overflow:hidden;background:var(--page);color:var(--ink);box-shadow:0 0 0 8px #000}
+.mast{background:var(--masthead);color:#fff;padding:54px 20px 18px}.mast b{font-size:30px;display:block;letter-spacing:-.03em}.mast span{color:#d5c9b7;font-size:13px}
+.strip{position:relative}
+.chips{display:flex;gap:8px;padding:14px 20px 10px;overflow:hidden;white-space:nowrap}
+.chip{flex:none;display:inline-flex;align-items:center;min-height:36px;padding:0 14px;border-radius:999px;background:var(--field);color:var(--ink-2);font-size:14px;font-weight:600}
+.chip.on{background:var(--primary);color:var(--on-primary)}
+.agenda{padding:6px 20px 24px}.agenda div{padding:14px 0;border-bottom:1px solid var(--line);font-size:15px;font-weight:600}.agenda small{display:block;font-weight:400;color:var(--ink-2);font-size:13px;margin-top:3px}
+.desk{width:640px;background:var(--page);color:var(--ink);padding:24px 28px;border-radius:10px}
+.desk h2{margin:0 0 4px;font-size:27px;letter-spacing:-.02em}.desk .sub{color:var(--ink-2);font-size:13px;margin:0 0 14px}
+.tabs{display:flex;gap:22px;overflow:hidden;white-space:nowrap;box-shadow:inset 0 -1px 0 var(--line)}
+.tab{flex:none;min-height:44px;display:inline-flex;align-items:center;font-size:14.5px;font-weight:600;color:var(--ink-3);position:relative}
+.tab.on{color:var(--ink)}.tab.on:after{content:"";position:absolute;left:0;right:0;bottom:0;height:3px;border-radius:3px;background:var(--marker)}
+.body{height:70px;margin-top:20px;border-radius:12px;background:var(--field);opacity:.5}
+.note{font-size:12px;color:#545e70;max-width:390px;line-height:1.45;margin:10px 0 0}
+.shifted .inner{margin-left:-120px}.shifted .tabs .inner{margin-left:-90px}
+.inner{display:flex;gap:inherit}
+.cue-r{-webkit-mask-image:linear-gradient(to right,#000 calc(100% - 40px),transparent);mask-image:linear-gradient(to right,#000 calc(100% - 40px),transparent)}
+.cue-both>:is(.chips,.tabs){-webkit-mask-image:linear-gradient(to right,transparent,#000 40px,#000 calc(100% - 40px),transparent);mask-image:linear-gradient(to right,transparent,#000 40px,#000 calc(100% - 40px),transparent)}</style></head><body>
+<h1>A: A soft fade</h1><p class="lead">The row fades into the page at whichever edge has more. Nothing is added; the cut-off chip or tab just softens. The cue shows only on a side with more to see: at the start, the right only; part way along, both sides; at the end, the left only. The same answer for chip rows and tabs, on the phone and in the admin panel.</p>
+<div class="row"><div><p class="cap">Phone · Calendar · light</p><div class="phone light"><div class="mast"><b>Calendar</b><span>This week · 16 to 22 November</span></div>
+<div class="strip chipstrip cue-r"><div class="chips"><div class="inner"><span class="chip on">Sunday services</span><span class="chip on">Prayer</span><span class="chip">Kids</span><span class="chip">Youth</span><span class="chip on">Life Groups</span><span class="chip">Bible study</span><span class="chip">Men's breakfast</span></div></div></div>
+<div class="agenda"><div>Sunday morning service<small>Sunday 22 Nov · 10:30am</small></div><div>Prayer meeting<small>Friday 20 Nov · 7:00pm</small></div></div></div></div><div><p class="cap">Phone · Calendar · dark · scrolled along</p><div class="phone dark"><div class="mast"><b>Calendar</b><span>This week · 16 to 22 November</span></div>
+<div class="strip chipstrip cue-both shifted"><div class="chips"><div class="inner"><span class="chip on">Sunday services</span><span class="chip on">Prayer</span><span class="chip">Kids</span><span class="chip">Youth</span><span class="chip on">Life Groups</span><span class="chip">Bible study</span><span class="chip">Men's breakfast</span></div></div></div>
+<div class="agenda"><div>Sunday morning service<small>Sunday 22 Nov · 10:30am</small></div><div>Prayer meeting<small>Friday 20 Nov · 7:00pm</small></div></div></div></div></div>
+<div class="row" style="margin-top:28px"><div><p class="cap">Admin panel · Outreach at a narrow window · light</p><div class="desk light"><h2>Outreach</h2><p class="sub">Campaigns, outreach days and their routes.</p>
+<div class="strip tabstrip cue-r" style="width:360px"><div class="tabs"><div class="inner"><span class="tab">Campaigns</span><span class="tab">Map</span><span class="tab on">Days</span><span class="tab">Numbers</span><span class="tab">Follow-ups</span><span class="tab">Settings</span></div></div></div><div class="body"></div></div></div><div><p class="cap">Admin panel · Outreach at a narrow window · dark · scrolled along</p><div class="desk dark"><h2>Outreach</h2><p class="sub">Campaigns, outreach days and their routes.</p>
+<div class="strip tabstrip cue-both shifted" style="width:360px"><div class="tabs"><div class="inner"><span class="tab">Campaigns</span><span class="tab">Map</span><span class="tab on">Days</span><span class="tab">Numbers</span><span class="tab">Follow-ups</span><span class="tab">Settings</span></div></div></div><div class="body"></div></div></div></div></body></html>
