@@ -250,8 +250,8 @@ else
     private bool Unpublished => _changedSincePublished || _published.Count == 0;
 
     private string Lead =>
-        $"{OutreachWords.Window(Setup.Day)}{(Setup.Day.MeetingPlace.Length > 0 ? $", meeting at {Setup.Day.MeetingPlace}" : "")} · {Setup.Campaign}"
-        + (_planner is { Sections.Count: > 0 } planner ? $" · {OutreachWords.Plural(planner.Sections.Count, "route", "routes")}, {OutreachWords.Plural(planner.Letterboxes, "letterbox", "letterboxes")}" : "");
+        $"{OutreachWords.Window(Setup.Day)}{(Setup.Day.MeetingPlace.Length > 0 ? $", meeting at {Setup.Day.MeetingPlace}" : "")}\u00a0· {Setup.Campaign}"
+        + (_planner is { Sections.Count: > 0 } planner ? $"\u00a0· {OutreachWords.Plural(planner.Sections.Count, "route", "routes")}, {OutreachWords.Plural(planner.Letterboxes, "letterbox", "letterboxes")}" : "");
 
     private IReadOnlyList<SavedArea> SavedAreas => [.. Setup.Areas.Where(area => _savedHere.All(here => here.Id != area.Id)), .. _savedHere];
 

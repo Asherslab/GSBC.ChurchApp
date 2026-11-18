@@ -7,6 +7,10 @@
     {
         <SaveStatus State="state" SavedText="@SavedText" WaitingText="@WaitingText" FailedText="@FailedText" Detail="@Detail" Retry="Retry" />
     }
+    else if (State is not null)
+    {
+        <p class="save-bar__quiet" role="status" aria-live="polite"></p>
+    }
     <div class="save-bar__row">
         @if (OnCancel.HasDelegate)
         {

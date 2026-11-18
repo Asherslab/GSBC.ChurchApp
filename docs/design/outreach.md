@@ -120,7 +120,7 @@ and *Print the maps* sit in the title band's actions. *Plan a day* without a day
   along the top of the map, from the rail to the top-right button, wrapping onto a second line when there are many
   (`MapChipStrip`, 2026-11-17; a `map-chip` `Menu`: white pill on the map shadow, icon, "Faheys Rd · split into 6" or,
   for a route drawn by hand, "Route 7" ringed in its colour and, on a map under 1100px wide, its numbered disc alone;
-  chevron). The chip is a control: its facts stay in the table and its menu, and no hover card opens beside it. Its menu: Split it into routes / Make it one route (the current one ticked, with
+  chevron; under 480px the numbered chips tighten so three share a line, 2026-11-18). The chip is a control: its facts stay in the table and its menu, and no hover card opens beside it. Its menu: Split it into routes / Make it one route (the current one ticked, with
   how many routes or letterboxes), Redraw the outline, Save for next time…, and Take it off the day or Delete this route
   (red, last). Where areas overlap the overlap is hatched in marker ink (warm brown, its own hatch, apart from the grey one for
   closed or rested ground) with "Route 8 keeps these" in an ink ring, placed clear of the chips. Split areas are
@@ -145,7 +145,8 @@ and *Print the maps* sit in the title band's actions. *Plan a day* without a day
   map*, *Or start from a saved area*, and how big each route is (`RouteSize`: by letterboxes, minutes or bundles, in a
   sand box). With routes: one caption line (where they came from, the size, and *5 need a look* as a link that picks the
   next flagged route), *Include streets done recently* when there are any, the routes `DataTable` (dot, number and name
-  over a *Needs review* pill and the reason, letterboxes, time; the time column drops at 1360px and under), then
+  over a *Needs review* pill and the reason, letterboxes, time; at 1200px and under, while the drawer is docked, letterboxes and time leave their columns for a caption
+  under the name, "301 letterboxes · 2 h 42 min", 2026-11-18), then
   *Change how big routes are* and *Save this area for next time* as links.
 - **The foot:** a status line at the right ("Not published yet: walkers can't see these routes."), then Rebalance and
   Regenerate as small quiet buttons (left) and *Publish 9 routes* or *Publish the changes* (right). Publishing asks in a `Sheet`, listing
@@ -273,7 +274,7 @@ masthead's navy at display size and the map supports it. Maps are `MapView` ([ma
   walk is saved* (a sand `Card` with a deep-aqua tick, the distance and letterboxes, *Thank you for walking* and *See it in
   My outreach*; shown until you leave the page; owner's pick A, `.impeccable/mocks/outreach-walk-saved/`, #116), the outreach day if one is on
   (a section with *Pick a route*), then the ask: a sand box with *Got an hour? Walk from your door*, a line on how it
-  works, a `Segmented` length (30 min, 1 hr, 2 hr, Distance, then 1 to 8 km) and the block *Plan my walk*. Then the next
+  works, a `Segmented` length on strong sand, so its track shows on the sand box (30 min, 1 hr, 2 hr, Distance, then 1 to 8 km) and the block *Plan my walk*. Then the next
   outreach days and the rows My outreach and Offline maps. No map here (owner, 2026-11-17, #110: *Around you* is gone).
 - **Your walk** (`/outreach/walk`, solid top bar): the map full width (38% of the screen, at least 14rem), framed on
   the walk, connectors as round dots, a long walk dotted and labelled, recent coverage and the start; then the figures (distance and time at headline size,
