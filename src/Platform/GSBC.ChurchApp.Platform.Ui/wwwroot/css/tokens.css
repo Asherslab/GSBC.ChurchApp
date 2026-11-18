@@ -54,6 +54,7 @@
   --marker-ink: #8a5422;
   --highlight: color-mix(in srgb, var(--marker) 42%, transparent);
   --marker-wash: color-mix(in srgb, var(--marker) 14%, transparent);
+  --marker-wash-raised: var(--marker-wash);
   --marker-soft: color-mix(in srgb, var(--marker) 30%, transparent);
   --on-marker: #2a1a08;
   --danger: #b4372f;
@@ -152,6 +153,7 @@
   --marker-ink: #f0c493;
   --highlight: color-mix(in srgb, var(--marker) 34%, transparent);
   --marker-wash: oklch(from var(--marker) 0.265 0.03 h);
+  --marker-wash-raised: oklch(from var(--marker) 0.33 0.035 h);
   --marker-soft: oklch(from var(--marker) 0.37 0.065 h);
   --danger: #f08a80;
   --knob: #f2ede4;

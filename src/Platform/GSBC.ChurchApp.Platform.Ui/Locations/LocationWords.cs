@@ -12,8 +12,8 @@ public static class LocationWords
     {
         { Kind: LocationKind.AtChurch } => AtChurch,
         { Kind: LocationKind.OffSite, AddressHidden: true } => location.Suburb.Length > 0 ? $"A home in {location.Suburb}" : "A home",
-        { Kind: LocationKind.OffSite } when location.Name.Length > 0 => location.Name,
-        { Kind: LocationKind.OffSite } when location.Address.Length > 0 => location.Address,
+        { Kind: LocationKind.OffSite, Name.Length: > 0 } => location.Name,
+        { Kind: LocationKind.OffSite, Address.Length: > 0 } => location.Address,
         { Kind: LocationKind.OffSite } => "A place on the map",
         _ => location.Text,
     };
@@ -50,7 +50,7 @@ public static class LocationWords
 
     private static string AfterStreet(string address) => address.Split(", ", 2) is [_, var rest] ? rest : "";
 
-    public static string FromChurch(FoundLocation found) => found.FromChurchKm < 0.5
+    private static string FromChurch(FoundLocation found) => found.FromChurchKm < 0.5
         ? "near the church"
         : string.Join(' ', new[] { $"{Math.Max(1, Math.Round(found.FromChurchKm)).ToString(CultureInfo.InvariantCulture)} km", found.Direction, "of church" }.Where(part => part.Length > 0));
 

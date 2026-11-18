@@ -1,7 +1,7 @@
 .chat-row__end { display: grid; justify-items: end; gap: var(--space-2xs); color: var(--ink-3); }
 .chat-row__time { font-size: var(--text-caption); font-variant-numeric: tabular-nums; }
 .chat-row__count { min-width: 20px; padding: var(--space-3xs) var(--space-xs); border-radius: var(--radius-full); background: var(--marker); color: var(--on-marker); font-size: var(--text-pill); font-weight: 700; text-align: center; font-variant-numeric: tabular-nums; }
-.chat-row--waiting { background: var(--marker-wash); }
+.chat-row--waiting { background: var(--marker-wash-raised); }
 
 .chat { display: flex; flex-direction: column; height: calc(100dvh - var(--top-h) - var(--sat) - var(--tab-h) - var(--sab)); }
 .keyboard-open .chat { height: calc(100dvh - var(--top-h) - var(--sat) - var(--kb, 0px)); }

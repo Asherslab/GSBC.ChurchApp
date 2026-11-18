@@ -1425,7 +1425,8 @@ button.text-link:disabled { color: var(--ink-3); cursor: default; }
 .tab-strip__tab[aria-current="page"] { color: var(--ink); }
 .tab-strip__tab[aria-current="page"]::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 3px; border-radius: 3px; background: var(--marker); }
 .tab-strip__tab:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; border-radius: 6px; }
-.tab-strip--sticky { margin-bottom: 0; position: sticky; top: calc(var(--top-h) + var(--sat)); z-index: 5; padding: 0 var(--gutter); background: var(--page); }
+.tab-strip-dock > .tab-strip { margin-bottom: 0; }
+.tab-strip-dock { position: sticky; top: calc(var(--top-h) + var(--sat)); z-index: 5; padding: 0 var(--gutter); background: var(--page); }
 
 .bubble-row { display: grid; grid-template-columns: 30px minmax(0, 1fr); gap: 8px; align-items: end; margin-top: 3px; }
 .bubble-row--first { margin-top: 12px; }

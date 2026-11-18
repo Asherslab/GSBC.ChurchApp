@@ -7,7 +7,7 @@
     {
         <SaveStatus State="state" SavedText="@SavedText" WaitingText="@WaitingText" FailedText="@FailedText" Detail="@Detail" Retry="Retry" />
     }
-    else
+    else if (State is not null)
     {
         <p class="save-bar__quiet" role="status" aria-live="polite"></p>
     }

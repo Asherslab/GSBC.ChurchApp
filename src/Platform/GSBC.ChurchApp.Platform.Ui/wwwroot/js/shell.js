@@ -323,7 +323,7 @@ window.gsbcShell = (() => {
       if (!tab || strip.scrollWidth <= strip.clientWidth) return;
       const start = tab.offsetLeft - strip.offsetLeft;
       const end = start + tab.offsetWidth;
-      const margin = 24;
+      const margin = parseFloat(getComputedStyle(strip).getPropertyValue('--scroll-fade')) || 24;
       if (start - margin < strip.scrollLeft) strip.scrollTo({ left: Math.max(0, start - margin), behavior: 'smooth' });
       else if (end + margin > strip.scrollLeft + strip.clientWidth) strip.scrollTo({ left: end + margin - strip.clientWidth, behavior: 'smooth' });
     },

@@ -27,7 +27,7 @@
                 @if (_editing is { } editing)
                 {
                     DayFacts facts = FactsOf(context.Value, editing);
-                    <PaneHead Title="@(IsNew ? "A new outreach day" : OutreachWords.DayTitle(editing))" Lead="@Lead(editing, facts)"
+                    <PaneHead Title="@(IsNew ? "A new outreach day" : OutreachWords.DayTitle(editing))" Lead="@Lead(editing)"
                               Actions="@(IsNew ? null : [this.Item("Delete this outreach day…", AskToDeleteAsync, "trash-2", "Says first what goes with it", danger: true, disabled: _busy)])"
                               OnClose="() => OpenAsync(Close)" />
                     @if (!IsNew && facts.Routes > 0)
@@ -124,7 +124,7 @@
     private async Task<OutreachDesk> LoadAsync()
     {
         OutreachDesk desk = await Outreach.DeskAsync(Scope);
-        if (!_opened && Open is { Length: > 0 } open && desk.Days.FirstOrDefault(day => day.Id == open) is { } day)
+        if (!_opened && Open is { Length: > 0 } open && desk.Days.FirstOrDefault(candidate => candidate.Id == open) is { } day)
         {
             _opened = true;
             Edit(day);
@@ -170,7 +170,7 @@
         _ => PillTone.Quiet,
     };
 
-    private string Lead(OutreachDay day, DayFacts facts) =>
+    private static string Lead(OutreachDay day) =>
         day.Id.Length == 0 ? "When it runs, where people meet and the campaign it's for. Its routes come next, on the map."
         : $"{OutreachWords.Window(day)}{(day.Meeting is { IsSet: true } meeting ? $", meeting {LocationWords.At(meeting)}" : "")}.";
 
@@ -214,7 +214,7 @@
         };
     }
 
-    private static bool SameMeeting(Location? asked, Location? saved) => asked is null ? saved is null : asked.SameAs(saved);
+    private static bool SameMeeting(Location? asked, Location? saved) => asked?.SameAs(saved) ?? saved is null;
 
     private static string DeletionWords(DayDeletion deletion)
     {

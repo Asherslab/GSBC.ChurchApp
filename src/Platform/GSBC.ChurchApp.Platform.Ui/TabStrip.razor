@@ -2,21 +2,14 @@
 @inject NavigationManager Navigation
 @inject Shell Shell
 
-<div @ref="_strip" class="tab-strip @(Sticky ? "tab-strip--sticky" : "")" role="@(Href is null ? "tablist" : null)" aria-label="@Label" data-look-scroll data-scroll-cue>
-    @foreach (TabOption<TValue> option in Options)
-    {
-        bool selected = EqualityComparer<TValue>.Default.Equals(option.Value, Value);
-        @if (Href is { } href)
-        {
-            <a href="@href(option.Value)" class="tab-strip__tab" aria-current="@(selected ? "page" : null)" @onclick="() => GoAsync(option.Value, href)" @onclick:preventDefault="true">@Tab(option)</a>
-        }
-        else
-        {
-            <button type="button" role="tab" class="tab-strip__tab" aria-selected="@(selected ? "true" : "false")" @onclick="() => ValueChanged.InvokeAsync(option.Value)">@Tab(option)</button>
-        }
-    }
-    @Trailing
-</div>
+@if (Sticky)
+{
+    <div class="tab-strip-dock">@Strip</div>
+}
+else
+{
+    @Strip
+}
 
 @code {
     private ElementReference _strip;
@@ -30,6 +23,22 @@
     [Parameter] public RenderFragment? Trailing { get; set; }
     [Parameter] public Func<TValue, string>? Href { get; set; }
     [Parameter] public bool Sticky { get; set; }
+
+    private RenderFragment Strip => @<div @ref="_strip" class="tab-strip" role="@(Href is null ? "tablist" : null)" aria-label="@Label" data-look-scroll data-scroll-cue>
+        @foreach (TabOption<TValue> option in Options)
+        {
+            bool selected = EqualityComparer<TValue>.Default.Equals(option.Value, Value);
+            @if (Href is { } href)
+            {
+                <a href="@href(option.Value)" class="tab-strip__tab" aria-current="@(selected ? "page" : null)" @onclick="() => GoAsync(option.Value, href)" @onclick:preventDefault="true">@Tab(option)</a>
+            }
+            else
+            {
+                <button type="button" role="tab" class="tab-strip__tab" aria-selected="@(selected ? "true" : "false")" @onclick="() => ValueChanged.InvokeAsync(option.Value)">@Tab(option)</button>
+            }
+        }
+        @Trailing
+    </div>;
 
     private static RenderFragment Tab(TabOption<TValue> option) => @<text>
         @option.Label
