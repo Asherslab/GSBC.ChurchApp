@@ -51,6 +51,33 @@ window.gsbcShell = (() => {
     topbar.classList.toggle('is-solid', !!masthead && page.scrollTop > 0 && (masthead.getBoundingClientRect().bottom < bottom + mastheadLead || (!!title && title.top < bottom)));
   }, { capture: true, passive: true });
 
+  const sidewaysRows = '[data-scroll-cue]';
+  const markMore = (row) => {
+    const end = row.scrollWidth - row.clientWidth;
+    const at = Math.abs(row.scrollLeft);
+    const more = end <= 1 ? null : at <= 1 ? 'end' : at >= end - 1 ? 'start' : 'both';
+    if (more === null) delete row.dataset.more;
+    else if (row.dataset.more !== more) row.dataset.more = more;
+  };
+  const resized = new ResizeObserver((entries) => entries.forEach((entry) => markMore(entry.target)));
+  const watchedRows = new WeakSet();
+  let rowsPending = false;
+  const markAllRows = () => {
+    rowsPending = false;
+    for (const row of document.querySelectorAll(sidewaysRows)) {
+      if (!watchedRows.has(row)) { watchedRows.add(row); resized.observe(row); }
+      markMore(row);
+    }
+  };
+  new MutationObserver(() => {
+    if (rowsPending) return;
+    rowsPending = true;
+    requestAnimationFrame(markAllRows);
+  }).observe(document.documentElement, { childList: true, subtree: true });
+  document.addEventListener('scroll', (event) => {
+    if (event.target instanceof Element && event.target.matches(sidewaysRows)) markMore(event.target);
+  }, { capture: true, passive: true });
+
   const movingKeys = new Set(['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'PageUp', 'PageDown', 'Home', 'End']);
   document.addEventListener('keydown', (event) => {
     if (movingKeys.has(event.key) && event.target instanceof Element && event.target.closest('[data-keep-arrows]')) event.preventDefault();

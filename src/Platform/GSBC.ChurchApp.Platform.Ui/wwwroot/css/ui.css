@@ -1338,6 +1338,10 @@ button.text-link:disabled { color: var(--ink-3); cursor: default; }
 
 .toggle-chips { display: flex; gap: 8px; margin: 0 calc(-1 * var(--gutter)); padding: 0 var(--gutter); overflow-x: auto; scrollbar-width: none; white-space: nowrap; }
 .toggle-chips::-webkit-scrollbar { display: none; }
+[data-scroll-cue] { --scroll-fade: 40px; --fade-start: 0px; --fade-end: 0px; scroll-padding-inline: var(--scroll-fade); }
+[data-scroll-cue][data-more] { -webkit-mask-image: linear-gradient(to right, transparent, var(--ink) var(--fade-start), var(--ink) calc(100% - var(--fade-end)), transparent); mask-image: linear-gradient(to right, transparent, var(--ink) var(--fade-start), var(--ink) calc(100% - var(--fade-end)), transparent); }
+[data-scroll-cue]:is([data-more="start"], [data-more="both"]) { --fade-start: var(--scroll-fade); }
+[data-scroll-cue]:is([data-more="end"], [data-more="both"]) { --fade-end: var(--scroll-fade); }
 .toggle-chips .filter-chip { flex: none; min-height: 36px; padding: 0 14px; }
 .masthead__row { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 10px; }
 .masthead__row h1 { min-width: 0; max-width: none; }

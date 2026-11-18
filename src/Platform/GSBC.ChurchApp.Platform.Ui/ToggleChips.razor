@@ -1,7 +1,7 @@
 @typeparam TValue
 @inject Shell Shell
 
-<div class="toggle-chips @(Quiet ? "toggle-chips--wrap toggle-chips--quiet" : "") @Class" role="group" aria-label="@Label">
+<div class="toggle-chips @(Quiet ? "toggle-chips--wrap toggle-chips--quiet" : "") @Class" role="group" aria-label="@Label" data-look-scroll data-scroll-cue>
     @foreach (ToggleChip<TValue> chip in Chips)
     {
         <button type="button" class="filter-chip @(chip.On ? "filter-chip--on" : "")" aria-pressed="@(chip.On ? "true" : "false")" @onclick="() => ToggleAsync(chip)">
