@@ -3,11 +3,16 @@
 @inject ClientSignals Signals
 @inject FileUploads Uploads
 @inject IServiceProvider Services
+@inject IAccess Access
 
 <div class="media-choice">
     <div class="media-choice__tools">
         <SearchField Label="@FindLabel" Placeholder="@FindLabel"
                      Value="@_query" ValueChanged="SearchAsync" SettleMilliseconds="200" />
+        @if (CanMakeFolders)
+        {
+            <Button Variant="ButtonVariant.Quiet" Icon="folder-plus" OnClick="() => _makingFolder = true">New folder</Button>
+        }
         @if (PhoneUpload || DirectUpload is not null)
         {
             <Button Variant="ButtonVariant.Quiet" Icon="@(_uploading ? "x" : "arrow-up")" OnClick="() => _uploading = !_uploading">@(_uploading ? "Close upload" : "Upload")</Button>
@@ -66,10 +71,13 @@
                 }
                 else
                 {
-                    <EmptyState Icon="image" Title="@(Searching ? "Nothing matches" : FontsOnly ? (_folderId is null ? "No font files here" : "No font files in this folder") : _folderId is null ? $"No {Noun}s yet" : $"No {Noun}s in this folder")"
-                                Body="@(Searching ? "Try another word." : FontsOnly ? "Upload the church's font file, or open the folder it's in. Only use a font the church is licensed to use in an app." : _folderId is null ? "Upload a file here, and Media keeps it for any tile or page." : "Open another folder, or upload a file into this one.")" />
+                    <EmptyState Icon="image" Title="@EmptyTitle(tree.Value)" Body="@EmptyBody(tree.Value)" />
                 }
             </LiveData>
+            @if (_makingFolder && NewFolder is { } making)
+            {
+                @RenderNewFolder(making, tree.Value)
+            }
         </LiveData>
     }
     <div class="media-choice__foot">
@@ -77,7 +85,7 @@
             <span>@(_selected is null ? "Nothing chosen yet" : NameOf(_selected))</span>
             @if (_selected is { IsImage: true } picture)
             {
-                <MediaShownAt Media="picture" Size="Size" />
+                <MediaShownAt Media="picture" Size="Size" ShownIn="@ShownIn" />
             }
         </span>
         <div class="media-choice__actions">
@@ -98,12 +106,14 @@
     private string _query = "";
     private MediaRef? _selected;
     private bool _uploading;
+    private bool _makingFolder;
 
     [Parameter] public EventCallback<MediaRef> OnPick { get; set; }
     [Parameter] public EventCallback OnCancel { get; set; }
     [Parameter] public bool ImagesOnly { get; set; }
     [Parameter] public bool FontsOnly { get; set; }
     [Parameter] public MediaSizeName Size { get; set; } = MediaSizeName.ForPhones;
+    [Parameter] public string ShownIn { get; set; } = MediaSizes.InTheApp;
     [Parameter] public IReadOnlyList<MediaRef>? Offered { get; set; }
     [Parameter] public PickableFiles? Kinds { get; set; }
     [Parameter] public UploadTarget? UploadTo { get; set; }
@@ -185,6 +195,45 @@
 
     private bool Searching => _query.Length > 0;
 
+    private MediaNewFolder? NewFolder => Services.GetService(typeof(MediaNewFolder)) as MediaNewFolder;
+
+    private bool CanMakeFolders => NewFolder is not null && !FontsOnly && Access.Can(MediaPermissions.Organise);
+
+    private RenderFragment RenderNewFolder(MediaNewFolder making, FolderMap map) => builder =>
+    {
+        builder.OpenComponent(0, making.Component);
+        builder.AddComponentParameter(2, MediaNewFolder.ParentIdParameter, _folderId);
+        builder.AddComponentParameter(3, MediaNewFolder.ParentNameParameter, map.PathName(_folderId));
+        builder.AddComponentParameter(4, MediaNewFolder.OnDoneParameter, EventCallback.Factory.Create<FolderInfo?>(this, FolderMadeAsync));
+        builder.AddComponentParameter(5, MediaNewFolder.OnCancelParameter, EventCallback.Factory.Create(this, () => _makingFolder = false));
+        builder.CloseComponent();
+    };
+
+    private bool OnlyFoldersHere(FolderMap map) => !Searching && map.ChildrenOf(_folderId, system: false).Any();
+
+    private string EmptyTitle(FolderMap map)
+    {
+        if (Searching)
+            return "Nothing matches";
+        string noun = FontsOnly ? "font file" : Noun;
+        if (OnlyFoldersHere(map))
+            return $"No {noun}s here, only folders";
+        if (FontsOnly)
+            return _folderId is null ? "No font files here" : "No font files in this folder";
+        return _folderId is null ? $"No {Noun}s yet" : $"No {Noun}s in this folder";
+    }
+
+    private string EmptyBody(FolderMap map)
+    {
+        if (Searching)
+            return "Try another word.";
+        if (FontsOnly)
+            return "Upload the church's font file, or open the folder it's in. Only use a font the church is licensed to use in an app.";
+        if (OnlyFoldersHere(map))
+            return _folderId is null ? "Open a folder above, or upload one to keep at the top." : "Open a folder above, or upload one into this folder.";
+        return _folderId is null ? "Upload a file here, and Media keeps it for any tile or page." : "Open another folder, or upload a file into this one.";
+    }
+
     private string FindLabel => FontsOnly ? "Find a font file in every folder" : $"Find a {Noun} in every folder";
 
     protected override async Task OnInitializedAsync() => _folderId = await Memory.LastFolderAsync();
@@ -235,6 +284,15 @@
         _wanted += PageSize;
         if (_live is not null)
             await _live.ReloadAsync();
+    }
+
+    private async Task FolderMadeAsync(FolderInfo? made)
+    {
+        _makingFolder = false;
+        _query = "";
+        if (_treeLive is not null)
+            await _treeLive.ReloadAsync();
+        await OpenAsync(made?.Id ?? _folderId);
     }
 
     private async Task UploadedAsync(UploadedMedia uploaded)

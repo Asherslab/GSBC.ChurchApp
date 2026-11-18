@@ -19,6 +19,7 @@ public static class MediaAdminExtensions
             .AddSingleton<MediaLibraryClient>()
             .AddSingleton(provider => new MediaUploadClient(provider.GetRequiredService<Grpc.Core.ChannelBase>(), new HttpClient()))
             .AddSingleton(new MediaDirectUpload(typeof(MediaUpload)))
+            .AddSingleton(new MediaNewFolder(typeof(FolderNameSheet)))
             .AddSingleton<IDirectUploads, MediaDirectUploads>()
             .AddSingleton<IMediaPlaces, MediaPlacesClient>()
             .AddSingleton<IFontLibrary>(provider => new FontLibrary(provider.GetRequiredService<Grpc.Core.ChannelBase>(), provider.GetRequiredService<GSBC.ChurchApp.Platform.Client.Access.IAccess>()))

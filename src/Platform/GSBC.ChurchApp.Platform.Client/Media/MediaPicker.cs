@@ -9,6 +9,7 @@ public sealed class MediaPicker([DynamicallyAccessedMembers(MediaPicker.Componen
     public const string OnPickParameter = "OnPick";
     public const string OnCancelParameter = "OnCancel";
     public const string SizeParameter = "Size";
+    public const string ShownInParameter = "ShownIn";
     public const string OfferedParameter = "Offered";
     public const string KindsParameter = "Kinds";
     public const string UploadToParameter = "UploadTo";

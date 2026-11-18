@@ -1,0 +1,62 @@
+@using GSBC.ChurchApp.Platform.Client.Online
+@attribute [AdminOnly]
+@inject MediaLibraryClient Library
+
+<UnsavedGuard Changed="() => Name.Trim() != SavedName" What="the folder's name" />
+
+<Sheet Open="true" OpenChanged="_ => OnCancel.InvokeAsync()" Title="@(Renaming is null ? "New folder" : "Rename folder")"
+       Lead="@(Renaming is null ? $"The new folder goes in {ParentName}." : null)">
+    <ChildContent>
+        <form class="panel-form" @onsubmit="SaveAsync" @onsubmit:preventDefault="true">
+            <TextField Label="Name" Value="@Name" ValueChanged="name => _name = name" MaxLength="80" Problem="@_problem" AutoFocus="true" />
+        </form>
+    </ChildContent>
+    <Actions>
+        <Button Icon="check" Busy="_busy" Disabled="@(Name.Trim().Length == 0)" OnClick="SaveAsync">@(Renaming is null ? "Make folder" : "Rename")</Button>
+        <Button Variant="ButtonVariant.Quiet" OnClick="() => OnCancel.InvokeAsync()">Cancel</Button>
+    </Actions>
+</Sheet>
+
+@code {
+    private string? _name;
+    private string? _savedName;
+    private string? _problem;
+    private bool _busy;
+
+    [Parameter] public FolderInfo? Renaming { get; set; }
+    [Parameter] public string? ParentId { get; set; }
+    [Parameter] public string ParentName { get; set; } = "the Library";
+    [Parameter] public EventCallback<FolderInfo?> OnDone { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+
+    private string Name => _name ?? Renaming?.Name ?? "";
+
+    private string SavedName => _savedName ?? Renaming?.Name ?? "";
+
+    private async Task SaveAsync()
+    {
+        string name = Name.Trim();
+        if (_busy || name.Length == 0)
+            return;
+        _busy = true;
+        _problem = null;
+        try
+        {
+            FolderInfo? made = null;
+            if (Renaming is null)
+                made = await Library.CreateFolderAsync(ParentId, name);
+            else
+                await Library.RenameFolderAsync(Renaming.Id, name);
+            _savedName = Name;
+            await OnDone.InvokeAsync(made);
+        }
+        catch (RpcException exception)
+        {
+            _problem = exception.Status.Detail;
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+}
