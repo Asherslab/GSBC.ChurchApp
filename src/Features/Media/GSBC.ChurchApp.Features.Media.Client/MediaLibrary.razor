@@ -6,8 +6,6 @@
 @inject MediaLibraryClient Library
 @inject IAccess Access
 
-<UnsavedGuard Changed="() => _sheet is FolderSheet.Create or FolderSheet.Rename && _name.Trim() != _nameWas" What="the folder's name" />
-
 <LiveData @ref="_treeLive" TValue="FolderMap" Feeds="[MediaFeeds.Library]" Load="LoadTreeAsync" FailedTitle="Can't load the library right now" Context="tree">
     @{ FolderMap map = tree.Value; }
     <LiveData @ref="_live" TValue="MediaList" Feeds="[MediaFeeds.Library]" Load="LoadAsync" FailedTitle="Can't load the library right now">
@@ -54,7 +52,7 @@
                 {
                     @if (context.Value.Items.Count == 0 && OnlyFolders(map))
                     {
-                        <p class="media-library__only-folders">No files here, only the folders above. Drag files onto this folder, or upload straight into it.</p>
+                        <p class="media-library__only-folders">@(_folderId is null ? "Nothing loose at the top, only the folders above. Open one, or upload straight here." : "No files here, only the folders above. Drag files onto this folder, or upload straight into it.")</p>
                     }
                     else if (context.Value.Items.Count == 0)
                     {
@@ -130,18 +128,10 @@
                      Current="@_moveFrom" Suggested="@_moveFrom" Blocked="target => IsBlocked(map, target)" Busy="_busy" Problem="@_sheetProblem"
                      OnMove="MoveAsync" OnCancel="CloseSheet" />
 
-        <Sheet Open="_sheet is FolderSheet.Create or FolderSheet.Rename" OpenChanged="_ => CloseSheet()" Title="@(_sheet == FolderSheet.Create ? "New folder" : "Rename folder")"
-               Lead="@(_sheet == FolderSheet.Create ? $"The new folder goes in {map.PathName(_folderId)}." : null)">
-            <ChildContent>
-                <form class="panel-form" @onsubmit="SaveNameAsync" @onsubmit:preventDefault="true">
-                    <TextField Label="Name" @bind-Value="_name" MaxLength="80" Problem="@_sheetProblem" AutoFocus="true" />
-                </form>
-            </ChildContent>
-            <Actions>
-                <Button Icon="check" Busy="_busy" Disabled="@(_name.Trim().Length == 0)" OnClick="SaveNameAsync">@(_sheet == FolderSheet.Create ? "Make folder" : "Rename")</Button>
-                <Button Variant="ButtonVariant.Quiet" OnClick="CloseSheet">Cancel</Button>
-            </Actions>
-        </Sheet>
+        @if (_sheet is FolderSheet.Create or FolderSheet.Rename)
+        {
+            <FolderNameSheet Renaming="@(_sheet == FolderSheet.Rename ? _sheetFolder : null)" ParentId="@_folderId" ParentName="@map.PathName(_folderId)" OnDone="NamedAsync" OnCancel="CloseSheet" />
+        }
 
         <MoveToSheet Open="_sheet == FolderSheet.Delete" Map="map" Title="@($"Delete “{_sheetFolder?.Name}”?")" Action="Move them and delete"
                      Lead="@($"“{_sheetFolder?.Name}” holds {Contents(map, _sheetFolder)}. They aren't deleted: choose a folder to move them to. Anything that uses them keeps working.")"
@@ -194,8 +184,6 @@
 
     private FolderSheet _sheet;
     private FolderInfo? _sheetFolder;
-    private string _name = "";
-    private string _nameWas = "";
     private string? _sheetProblem;
     private string _moveTitle = "";
     private string? _moveFrom;
@@ -395,7 +383,7 @@
                 : "Drag files onto this folder, or upload straight into it.";
 
     private bool OnlyFolders(FolderMap map) =>
-        !Searching && _filter == MediaFilter.All && _folderId is not null && map.ChildrenOf(_folderId, _shelf == Shelf.App).Any();
+        !Searching && _filter == MediaFilter.All && map.ChildrenOf(_folderId, _shelf == Shelf.App).Any();
 
     private bool CanMoveFiles(FolderMap map, MediaItemInfo item) => CanOrganise && map.Find(item.FolderId) is not { IsSystem: true };
 
@@ -577,11 +565,11 @@
             _folderId = null;
             _ = ReloadListAsync();
         }
-        OpenSheet(FolderSheet.Create, null, "");
+        OpenSheet(FolderSheet.Create, null);
         StateHasChanged();
     }
 
-    private void StartRename(FolderInfo folder) => OpenSheet(FolderSheet.Rename, folder, folder.Name);
+    private void StartRename(FolderInfo folder) => OpenSheet(FolderSheet.Rename, folder);
 
     private void StartMoveFolder(FolderInfo folder)
     {
@@ -589,7 +577,7 @@
         _moveFolders = [folder.Id];
         _moveFrom = folder.ParentId;
         _moveTitle = $"Move “{folder.Name}”";
-        OpenSheet(FolderSheet.Move, folder, "");
+        OpenSheet(FolderSheet.Move, folder);
     }
 
     private void StartMoveChosen()
@@ -598,17 +586,16 @@
         _moveFolders = [];
         _moveFrom = Searching ? null : _folderId;
         _moveTitle = _moveItems.Count == 1 ? $"Move “{NameOf(_known[_moveItems[0]].Media!)}”" : $"Move {_moveItems.Count} files";
-        OpenSheet(FolderSheet.Move, null, "");
+        OpenSheet(FolderSheet.Move, null);
     }
 
     private void StartDelete(FolderInfo folder) =>
-        OpenSheet(folder.Files == 0 && !_map.ChildrenOf(folder.Id, system: false).Any() ? FolderSheet.DeleteEmpty : FolderSheet.Delete, folder, "");
+        OpenSheet(folder.Files == 0 && !_map.ChildrenOf(folder.Id, system: false).Any() ? FolderSheet.DeleteEmpty : FolderSheet.Delete, folder);
 
-    private void OpenSheet(FolderSheet sheet, FolderInfo? folder, string name)
+    private void OpenSheet(FolderSheet sheet, FolderInfo? folder)
     {
         _sheet = sheet;
         _sheetFolder = folder;
-        _name = _nameWas = name;
         _sheetProblem = null;
     }
 
@@ -619,17 +606,10 @@
         _busy = false;
     }
 
-    private async Task SaveNameAsync()
+    private async Task NamedAsync(FolderInfo? _)
     {
-        if (_busy || _name.Trim().Length == 0)
-            return;
-        await RunSheetAsync(async () =>
-        {
-            if (_sheet == FolderSheet.Create)
-                await Library.CreateFolderAsync(_folderId, _name.Trim());
-            else
-                await Library.RenameFolderAsync(_sheetFolder!.Id, _name.Trim());
-        });
+        CloseSheet();
+        await ReloadAllAsync();
     }
 
     private Task MoveAsync(string? target) => RunSheetAsync(async () =>

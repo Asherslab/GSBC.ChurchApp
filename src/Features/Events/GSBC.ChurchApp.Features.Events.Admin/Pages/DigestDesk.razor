@@ -144,7 +144,7 @@
             {
                 <div class="digest-desk__top">
                 <Section Grouped="true" Title="Top of the email" Lead="An optional photo across the top, and what goes under it.">
-                    <PictureField Label="Photo" Value="draft.TopPicture" ValueChanged="SetTopPictureAsync" Adding="Choose a photo" />
+                    <PictureField Label="Photo" Value="draft.TopPicture" ValueChanged="SetTopPictureAsync" Adding="Choose a photo" ShownIn="The email" />
                     @if (draft.TopPicture is not null)
                     {
                         <Segmented TValue="DigestHeading" Label="Under the photo" ShowLabel="true" Options="HeadingOptions" Value="draft.Heading" ValueChanged="SetHeadingAsync" />

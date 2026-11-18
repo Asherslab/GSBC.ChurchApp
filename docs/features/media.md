@@ -396,7 +396,9 @@ The admin panel registers `MediaChoice` as the `MediaPicker`, so "choose a pictu
 settings and on a Home tile opens a sheet (`MediaChooser`, Platform.Ui): search, Upload, a grid of
 thumbnails with their names and where they're used, one click to select (an orange ring and a tick),
 double-click or **Choose** to use it, **Cancel** or Escape to leave. A picture uploaded there is selected,
-ready to choose. The Media page's own library (`MediaLibrary`) is for managing files only (owner, 2026-11-04:
+ready to choose. Staff who can organise Media can make a folder there too (New folder, the Media page's own
+`FolderNameSheet`, given to the chooser as `MediaNewFolder` the way the upload is); renaming and deleting folders stay on the
+Media page. The Media page's own library (`MediaLibrary`) is for managing files only (owner, 2026-11-04:
 the table squeezed into a 380 px settings column had two scrollbars and a detail panel on top of it).
 
 ## Configuration

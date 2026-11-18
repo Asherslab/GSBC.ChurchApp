@@ -10,6 +10,7 @@ public sealed partial class SaveRules
         ["src/Features/Accounts/GSBC.ChurchApp.Features.Accounts.Admin/Pages/People.razor"] = "a list with a search and filters",
         ["src/Platform/GSBC.ChurchApp.Platform.Ui/TellSheet.razor"] = "send or skip, after what it tells about is already saved",
         ["src/Platform/GSBC.ChurchApp.Platform.Ui/DesignGallery.razor"] = "the component gallery, which keeps nothing",
+        ["src/Features/Media/GSBC.ChurchApp.Features.Media.Client/MediaLibrary.razor"] = "a library with a view switch and confirm sheets; naming a folder is FolderNameSheet, which guards itself",
     };
 
     [Fact]
