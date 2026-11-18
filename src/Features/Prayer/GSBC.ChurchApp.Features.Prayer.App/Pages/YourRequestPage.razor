@@ -40,7 +40,7 @@
             </div>
             <Section First="true">
                 <p class="prayer-request__text">@line.Text</p>
-                @if (line.Answered && line.AnsweredNote.Length > 0)
+                @if (line is { Answered: true, AnsweredNote.Length: > 0 })
                 {
                     <Card Class="prayer-yours__note" Title="The pastoral team marked it answered"><p>@line.AnsweredNote</p></Card>
                 }

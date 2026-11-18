@@ -7,9 +7,9 @@
 .prayer-wall--one .prayer-post { padding: 0; border-bottom: 0; }
 .prayer-post__text { margin: 0; color: var(--ink); font-size: var(--text-body); line-height: 1.55; white-space: pre-line; overflow-wrap: anywhere; }
 .prayer-post__answered { display: flex; gap: var(--space-xs); align-items: flex-start; margin: var(--space-sm) 0 0; color: var(--accent); font-size: var(--text-caption); font-weight: 600; line-height: 1.45; }
-.prayer-post__answered .icon { flex: none; margin-top: 1px; }
+.prayer-post__answered .icon, .prayer-post__message .icon { flex: none; margin-top: 1px; }
 .prayer-post__message { display: flex; gap: var(--space-xs); align-items: flex-start; margin: var(--space-sm) 0 0; color: var(--ink-2); font-size: var(--text-caption); line-height: 1.45; white-space: pre-line; overflow-wrap: anywhere; }
-.prayer-post__message .icon { flex: none; margin-top: 1px; color: var(--accent); }
+.prayer-post__message .icon { color: var(--accent); }
 .prayer-post__message strong { color: var(--ink); font-weight: 600; }
 .prayer-post__foot { display: flex; align-items: center; gap: var(--space-md); margin-top: var(--space-sm); }
 .prayer-post__who { min-width: 0; color: var(--ink-3); font-size: var(--text-caption); }

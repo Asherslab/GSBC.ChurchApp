@@ -39,11 +39,11 @@ public static class PrayerWords
     };
 
     private static string? Settled(YourLine line) =>
-        line.Answered ? "Answered" : line.Closed && !line.MessageOnTheWall ? "Closed" : null;
+        line.Answered ? "Answered" : line is { Closed: true, MessageOnTheWall: false } ? "Closed" : null;
 
     public static string Where(YourLine line) => line.Wall switch
     {
-        WallState.Shown when line.MessageOnTheWall && line.WallUntil is { } until => $"Your message is on the prayer wall until {Day(until)} · {Prayed(line.Prayed)}",
+        WallState.Shown when line is { MessageOnTheWall: true, WallUntil: { } until } => $"Your message is on the prayer wall until {Day(until)} · {Prayed(line.Prayed)}",
         WallState.Shown when line.WallUntil is { } until => $"On the prayer wall until {Day(until)} · {Prayed(line.Prayed)}",
         WallState.Shown => $"On the prayer wall · {Prayed(line.Prayed)}",
         WallState.Waiting when line.Known => "With the pastoral team, who'll read your request before it goes on the wall",
